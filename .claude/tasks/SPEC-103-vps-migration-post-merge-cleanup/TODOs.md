@@ -228,7 +228,7 @@ After Batch 1: pivot to Coolify ops (T-004 MP toggle, T-006 staging backups, T-0
 
 ## Newly tracked from session findings 2026-05-14
 
-These tasks were added to `state.json` at the close of the operator OAuth smoke pass to make sure the session findings are not lost. Larger findings got their own spec instead of a task here (SPEC-117, SPEC-118 — see Session findings section).
+These tasks were added to `state.json` at the close of the operator OAuth smoke pass to make sure the session findings are not lost. Larger findings got their own spec instead of a task here (SPEC-120, SPEC-118 — see Session findings section). Note: SPEC-120 was originally created as SPEC-117 in this worktree before staging knew the number was already taken by SPEC-117-admin-pages-stabilization; it was renumbered to SPEC-120 to resolve the collision.
 
 - [x] **T-093** (2) — Navbar React island stale immediately after OAuth callback. ✅ Shipped via PR #1087 (stale-while-revalidate in `UserMenu.client.tsx`); verified on staging post-redeploy 2026-05-14 — navbar shows user menu immediately after OAuth callback (avatar/name population is a separate SPEC-113 concern, tracked as T-094).
 - [x] **T-094** (2) — Add-password flow for OAuth-only accounts. ✅ Tracker-only — implementation lives in SPEC-113 (profile completion). Closing here keeps the SPEC-103 dashboard accurate; SPEC-113 picks up the actual UI + Better Auth set-password endpoint work.
@@ -248,7 +248,7 @@ After successful Google signin, the navbar still showed the "Iniciar sesión" bu
 
 ### session-finding-32 — OAuth cancel produces no UI feedback and no Sentry event (T-024 partial)
 
-**Tracked as:** **SPEC-117** — OAuth Cancel/Error Observability (its own spec, can ship independently of this worktree's PRs).
+**Tracked as:** **SPEC-120** — OAuth Cancel/Error Observability (its own spec, can ship independently of this worktree's PRs). _Originally registered as SPEC-117; renumbered to SPEC-120 to resolve a collision with `SPEC-117-admin-pages-stabilization`._
 
 When the user cancels the Google consent screen, the browser redirects back to `/es/auth/signin/` cleanly (recovery UX OK). However:
 

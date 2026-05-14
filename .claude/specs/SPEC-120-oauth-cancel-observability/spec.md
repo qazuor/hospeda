@@ -1,17 +1,19 @@
 ---
-spec-id: SPEC-117
+spec-id: SPEC-120
 title: OAuth Cancel/Error Observability — UI Feedback and Sentry Capture
 type: feature
 complexity: medium
 status: draft
 created: 2026-05-14T10:00:00Z
+renumbered_from: SPEC-117
+renumbered_reason: collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)
 effort_estimate_hours: 4-7
 tags: [auth, oauth, observability, ux, sentry, i18n]
 extracted_from: SPEC-103 operator OAuth smokes (session-finding-32) — 2026-05-14
 priority: medium
 ---
 
-# SPEC-117: OAuth Cancel/Error Observability
+# SPEC-120: OAuth Cancel/Error Observability
 
 ## Part 1 — Functional Specification
 
@@ -82,12 +84,12 @@ Recommended: **(a)** for the user-facing piece + Sentry capture at the API layer
 
 | Task | Title | Status |
 |---|---|---|
-| T-117-01 | Phase 0: catalogue Better Auth error redirect query strings for google + facebook cancel/error | pending |
-| T-117-02 | Phase 1: decide UI + Sentry contract (recommendation: query string + API-side capture) | pending, blocked by T-117-01 |
-| T-117-03 | Phase 2: signin page reads `?error=`, passes to island, renders i18n banner | pending, blocked by T-117-02 |
-| T-117-04 | Phase 2: add i18n keys for known OAuth error codes (es/en/pt) | pending, blocked by T-117-02 |
-| T-117-05 | Phase 3: Sentry capture in OAuth callback handler with tags (provider, error_code, environment) | pending, blocked by T-117-02 |
-| T-117-06 | Phase 4: unit + integration tests + manual smoke against staging | pending, blocked by T-117-03, T-117-04, T-117-05 |
+| T-120-01 | Phase 0: catalogue Better Auth error redirect query strings for google + facebook cancel/error | pending |
+| T-120-02 | Phase 1: decide UI + Sentry contract (recommendation: query string + API-side capture) | pending, blocked by T-120-01 |
+| T-120-03 | Phase 2: signin page reads `?error=`, passes to island, renders i18n banner | pending, blocked by T-120-02 |
+| T-120-04 | Phase 2: add i18n keys for known OAuth error codes (es/en/pt) | pending, blocked by T-120-02 |
+| T-120-05 | Phase 3: Sentry capture in OAuth callback handler with tags (provider, error_code, environment) | pending, blocked by T-120-02 |
+| T-120-06 | Phase 4: unit + integration tests + manual smoke against staging | pending, blocked by T-120-03, T-120-04, T-120-05 |
 
 ---
 

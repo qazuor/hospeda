@@ -795,12 +795,14 @@
             "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
         },
         {
-            "specId": "SPEC-117",
+            "specId": "SPEC-120",
             "title": "OAuth Cancel/Error Observability — UI Feedback and Sentry Capture",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
-            "path": "SPEC-117-oauth-cancel-observability"
+            "path": "SPEC-120-oauth-cancel-observability",
+            "renumberedFrom": "SPEC-117",
+            "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)"
         },
         {
             "specId": "SPEC-118",
