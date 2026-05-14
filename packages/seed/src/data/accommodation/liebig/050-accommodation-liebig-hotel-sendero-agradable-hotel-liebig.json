@@ -16,10 +16,6 @@
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
     },
-    "price": {
-        "price": 18500,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-31.0592",
@@ -30,34 +26,40 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada del hotel",
-            "description": "Vista exterior de Sendero Agradable Hotel",
+            "url": "https://images.pexels.com/photos/28962539/pexels-photo-28962539.jpeg",
+            "caption": "Habitación con vista",
+            "description": "Habitación moderna con ventanal panorámico y vista a la ciudad",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
+                "url": "https://images.pexels.com/photos/34559240/pexels-photo-34559240.jpeg",
+                "caption": "Habitación de lujo",
+                "description": "Habitación amplia con diseño contemporáneo y mobiliario premium",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación doble",
-                "description": "Habitación con camas individuales",
+                "caption": "Habitación standard",
+                "description": "Habitación moderna con tonos neutros y luz natural abundante",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Habitación triple",
-                "description": "Habitación con cama matrimonial y una individual",
+                "url": "https://images.pexels.com/photos/37252307/pexels-photo-37252307.jpeg",
+                "caption": "Lobby contemporáneo",
+                "description": "Lobby espacioso del hotel con decoración contemporánea y luz cuidada",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador",
+                "url": "https://images.pexels.com/photos/14841133/pexels-photo-14841133.jpeg",
+                "caption": "Lobby con araña moderna",
+                "description": "Lobby elegante con araña de diseño moderno y mobiliario contemporáneo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/29649745/pexels-photo-29649745.jpeg",
+                "caption": "Lobby con araña",
+                "description": "Lobby elegante del hotel con araña de cristal y mobiliario clásico",
                 "moderationState": "APPROVED"
             }
         ]

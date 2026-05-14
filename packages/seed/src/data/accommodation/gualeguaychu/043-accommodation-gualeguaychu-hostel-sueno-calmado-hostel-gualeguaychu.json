@@ -23,8 +23,34 @@
         "twitter": "https://twitter.com/suenocalmadohostel"
     },
     "price": {
-        "price": 7800,
-        "currency": "ARS"
+        "price": 14500,
+        "currency": "ARS",
+        "additionalFees": {
+            "luggageStorage": {
+                "price": 500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "cleaning": {
+                "price": 2000,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "tax": {
+                "price": 14,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 15,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,34 +62,64 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
-            "caption": "Fachada del hostel",
-            "description": "Vista exterior de Sueño Calmado Hostel",
+            "url": "https://images.pexels.com/photos/7005428/pexels-photo-7005428.jpeg",
+            "caption": "Cocina comunitaria",
+            "description": "Cocina compartida del hostel con barra y utensilios para los huéspedes",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
+                "url": "https://images.pexels.com/photos/4907600/pexels-photo-4907600.jpeg",
+                "caption": "Viajeros conversando",
+                "description": "Dos viajeros charlando en el dormitorio del hostel con cuchetas",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4907181/pexels-photo-4907181.jpeg",
+                "caption": "Llegada al dormitorio",
+                "description": "Viajeras ingresando al dormitorio compartido al inicio de su estadía",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137963/pexels-photo-5137963.jpeg",
+                "caption": "Mochileros con mapa",
+                "description": "Mochileros consultando un mapa de la zona en el sector de recepción",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137980/pexels-photo-5137980.jpeg",
+                "caption": "Dormitorio con cuchetas",
+                "description": "Dormitorio del hostel con cuchetas prolijas y luz natural",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4907609/pexels-photo-4907609.jpeg",
+                "caption": "Charla entre cuchetas",
+                "description": "Mujeres jóvenes conversando en dormitorio moderno con cuchetas",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4907232/pexels-photo-4907232.jpeg",
+                "caption": "Cucheta superior",
+                "description": "Huéspedes descansando en distintos niveles de las cuchetas del dormitorio",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4907221/pexels-photo-4907221.jpeg",
+                "caption": "Charla en la cucheta",
+                "description": "Dos viajeras sentadas en la cucheta sonriendo y charlando relajadas",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4907211/pexels-photo-4907211.jpeg",
+                "caption": "Encuentro en el dormitorio",
+                "description": "Huéspedes compartiendo un momento en el dormitorio del hostel",
+                "moderationState": "APPROVED"
+            },
+            {
                 "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
-                "caption": "Exterior",
-                "description": "Entrada al hostel",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
-                "caption": "Habitación compartida",
-                "description": "Dormitorio con literas",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina comunitaria",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
-                "caption": "Sala común",
-                "description": "Área de estar",
+                "caption": "Fachada del hostel",
+                "description": "Frente del hostel con balcón ornamentado y torre colonial al fondo",
                 "moderationState": "APPROVED"
             }
         ]

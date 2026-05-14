@@ -16,10 +16,6 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@paraisoencantadoroom.com.ar"
     },
-    "price": {
-        "price": 6200,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-33.004",
@@ -30,28 +26,118 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
-            "caption": "Interior de la habitación",
-            "description": "Vista de la habitación privada",
+            "url": "https://images.pexels.com/photos/6862448/pexels-photo-6862448.jpeg",
+            "caption": "Habitación cálida",
+            "description": "Dormitorio acogedor con cama de madera y luz suave",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
-                "caption": "Habitación",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/6782338/pexels-photo-6782338.jpeg",
+                "caption": "Dormitorio con mesas de luz",
+                "description": "Habitación con mesas de luz, lámparas y silloncito al pie",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
-                "caption": "Baño",
-                "description": "Baño compartido",
+                "url": "https://images.pexels.com/photos/11327757/pexels-photo-11327757.jpeg",
+                "caption": "Dormitorio minimal",
+                "description": "Dormitorio con decoración mínima, cama bien armada y luz natural",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
-                "caption": "Espacio común",
-                "description": "Área con heladera y microondas",
+                "url": "https://images.pexels.com/photos/16436957/pexels-photo-16436957.jpeg",
+                "caption": "Habitación rústica",
+                "description": "Dormitorio con diseño rústico iluminado por luz cálida y mobiliario de madera",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/10917522/pexels-photo-10917522.jpeg",
+                "caption": "Cama con dosel",
+                "description": "Cama con dosel de tela blanca en dormitorio luminoso y ordenado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35236655/pexels-photo-35236655.jpeg",
+                "caption": "Habitación con escritorio",
+                "description": "Dormitorio moderno con escritorio de madera y placard en habitación amplia",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6782578/pexels-photo-6782578.jpeg",
+                "caption": "Cama con almohadones",
+                "description": "Habitación luminosa con almohadones y manta sobre la cama",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/30457596/pexels-photo-30457596.jpeg",
+                "caption": "Habitación acogedora",
+                "description": "Dormitorio cálido con ropa de cama suave y luz tenue para descansar",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36710323/pexels-photo-36710323.jpeg",
+                "caption": "Habitación minimalista",
+                "description": "Dormitorio minimalista con cama prolija y ventanas amplias",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35430054/pexels-photo-35430054.jpeg",
+                "caption": "Dormitorio con madera",
+                "description": "Habitación acogedora con mobiliario de madera y luz cálida",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6580369/pexels-photo-6580369.jpeg",
+                "caption": "Habitación serena",
+                "description": "Dormitorio con iluminación elegante y almohadones acogedores",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7045354/pexels-photo-7045354.jpeg",
+                "caption": "Habitación contemporánea",
+                "description": "Dormitorio con detalles de madera y lámparas colgantes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/14580423/pexels-photo-14580423.jpeg",
+                "caption": "Habitación con almohadones",
+                "description": "Dormitorio acogedor con almohadones y obras de arte sobre la pared",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/31538824/pexels-photo-31538824.jpeg",
+                "caption": "Habitación con macramé",
+                "description": "Dormitorio acogedor con luz cálida y detalles de macramé en la pared",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7511702/pexels-photo-7511702.jpeg",
+                "caption": "Cama con respaldo tapizado",
+                "description": "Habitación con cama de respaldo blando junto a mesa de luz blanca",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/545012/pexels-photo-545012.jpeg",
+                "caption": "Mesa de luz con lámpara",
+                "description": "Cama blanca con mesa de luz y lámpara de cobre en habitación serena",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33619684/pexels-photo-33619684.jpeg",
+                "caption": "Dormitorio con estilo",
+                "description": "Habitación con interior moderno y detalles de decoración cuidados",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/3144580/pexels-photo-3144580.jpeg",
+                "caption": "Dormitorio elegante",
+                "description": "Habitación de diseño con iluminación tenue y ropa de cama prolija",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8089081/pexels-photo-8089081.jpeg",
+                "caption": "Dormitorio minimalista",
+                "description": "Habitación sobria con cama mullida y mobiliario contemporáneo",
                 "moderationState": "APPROVED"
             }
         ]

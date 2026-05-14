@@ -23,7 +23,7 @@
         "twitter": "https://twitter.com/paraisonaturalhotel"
     },
     "price": {
-        "price": 22000,
+        "price": 178500,
         "currency": "ARS"
     },
     "location": {
@@ -36,40 +36,70 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada y entorno natural del hotel",
-            "description": "Vista exterior de Paraíso Natural Hotel rodeado de vegetación",
+            "url": "https://images.pexels.com/photos/29649745/pexels-photo-29649745.jpeg",
+            "caption": "Lobby con araña",
+            "description": "Lobby elegante del hotel con araña de cristal y mobiliario clásico",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
+                "url": "https://images.pexels.com/photos/7512139/pexels-photo-7512139.jpeg",
+                "caption": "Recepción del hotel",
+                "description": "Vista aérea de la recepción moderna del hotel con huéspedes en el lobby",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Piscina",
-                "description": "Área de piscina y solárium con vista al entorno",
+                "url": "https://images.pexels.com/photos/7942138/pexels-photo-7942138.jpeg",
+                "caption": "Atrio del hotel",
+                "description": "Atrio amplio y elegante del hotel con interior moderno y techo alto",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación doble",
-                "description": "Habitación con camas individuales",
+                "url": "https://images.pexels.com/photos/36354489/pexels-photo-36354489.jpeg",
+                "caption": "Lobby moderno",
+                "description": "Lobby del hotel con diseño moderno, mobiliario sobrio y luz cálida",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36816426/pexels-photo-36816426.jpeg",
+                "caption": "Habitación matrimonial",
+                "description": "Habitación con cama doble, lámparas suaves y diseño elegante",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Habitación triple",
-                "description": "Habitación con cama matrimonial y una individual",
+                "caption": "Habitación superior",
+                "description": "Habitación contemporánea minimalista con iluminación cálida",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador con vista al jardín",
+                "url": "https://images.pexels.com/photos/28962539/pexels-photo-28962539.jpeg",
+                "caption": "Habitación con vista",
+                "description": "Habitación moderna con ventanal panorámico y vista a la ciudad",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34559240/pexels-photo-34559240.jpeg",
+                "caption": "Habitación de lujo",
+                "description": "Habitación amplia con diseño contemporáneo y mobiliario premium",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/18117651/pexels-photo-18117651.jpeg",
+                "caption": "Lobby con estilo",
+                "description": "Lobby de hotel con decoración moderna y zonas de estar para huéspedes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Fachada del hotel",
+                "description": "Frente del hotel con entrada principal y cartelería",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación standard",
+                "description": "Habitación moderna con tonos neutros y luz natural abundante",
                 "moderationState": "APPROVED"
             }
         ]

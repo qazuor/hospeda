@@ -40,7 +40,7 @@ export function FeeItem({
 }: {
     name: string;
     fee: FeeData;
-    formatPrice: (amount?: number, curr?: string) => string;
+    formatPrice: (amount: number | null | undefined, curr?: string) => string;
     badges: FeeBadgeLabels;
 }) {
     const badges: string[] = [];
@@ -70,9 +70,11 @@ export function FeeItem({
                 )}
             </div>
             <p className="font-semibold text-sm">
-                {fee.isPercent && fee.price
-                    ? `${fee.price}%`
-                    : formatPrice(fee.price, fee.currency)}
+                {fee.price == null
+                    ? '—'
+                    : fee.isPercent
+                      ? `${fee.price}%`
+                      : formatPrice(fee.price, fee.currency)}
             </p>
         </div>
     );
@@ -86,7 +88,7 @@ export function DiscountItem({
 }: {
     name: string;
     discount: FeeData;
-    formatPrice: (amount?: number, curr?: string) => string;
+    formatPrice: (amount: number | null | undefined, curr?: string) => string;
     badges: DiscountBadgeLabels;
 }) {
     const badges: string[] = [];
@@ -113,10 +115,11 @@ export function DiscountItem({
                 )}
             </div>
             <p className="font-semibold text-green-600 text-sm dark:text-green-400">
-                -
-                {discount.isPercent && discount.price
-                    ? `${discount.price}%`
-                    : formatPrice(discount.price, discount.currency)}
+                {discount.price == null
+                    ? '—'
+                    : discount.isPercent
+                      ? `-${discount.price}%`
+                      : `-${formatPrice(discount.price, discount.currency)}`}
             </p>
         </div>
     );

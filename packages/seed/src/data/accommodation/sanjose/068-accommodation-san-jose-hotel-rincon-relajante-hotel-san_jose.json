@@ -22,8 +22,40 @@
         "twitter": "https://twitter.com/rinconrelajante"
     },
     "price": {
-        "price": 21000,
-        "currency": "ARS"
+        "price": 79500,
+        "currency": "ARS",
+        "additionalFees": {
+            "tax": {
+                "price": 19,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerStay": true
+            },
+            "lateCheckout": {
+                "price": 3000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "pets": {
+                "price": 2500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            }
+        },
+        "discounts": {
+            "weekly": {
+                "price": 10,
+                "currency": "ARS",
+                "isPercent": true
+            },
+            "monthly": {
+                "price": 23,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -35,40 +67,142 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada del hotel",
-            "description": "Vista exterior de Rincón Relajante Hotel",
+            "url": "https://images.pexels.com/photos/36767624/pexels-photo-36767624.jpeg",
+            "caption": "Habitación luminosa",
+            "description": "Suite con ventanal grande, luz natural y mobiliario moderno",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
+                "url": "https://images.pexels.com/photos/7942138/pexels-photo-7942138.jpeg",
+                "caption": "Atrio del hotel",
+                "description": "Atrio amplio y elegante del hotel con interior moderno y techo alto",
+                "moderationState": "APPROVED"
+            },
+            {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
+                "caption": "Fachada del hotel",
+                "description": "Frente del hotel con entrada principal y cartelería",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Piscina",
-                "description": "Área de piscina y solárium",
+                "url": "https://images.pexels.com/photos/35664333/pexels-photo-35664333.jpeg",
+                "caption": "Habitación con cabecero floral",
+                "description": "Habitación elegante del hotel con cabecero de motivos florales",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación doble",
-                "description": "Habitación con camas individuales",
+                "url": "https://images.pexels.com/photos/5378699/pexels-photo-5378699.jpeg",
+                "caption": "Pareja en el lobby",
+                "description": "Pareja caminando por un lobby lujoso del hotel con detalles elegantes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36354489/pexels-photo-36354489.jpeg",
+                "caption": "Lobby moderno",
+                "description": "Lobby del hotel con diseño moderno, mobiliario sobrio y luz cálida",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Habitación triple",
-                "description": "Habitación con cama matrimonial y una individual",
+                "caption": "Habitación superior",
+                "description": "Habitación contemporánea minimalista con iluminación cálida",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador",
+                "url": "https://images.pexels.com/photos/37252307/pexels-photo-37252307.jpeg",
+                "caption": "Lobby contemporáneo",
+                "description": "Lobby espacioso del hotel con decoración contemporánea y luz cuidada",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34559240/pexels-photo-34559240.jpeg",
+                "caption": "Habitación de lujo",
+                "description": "Habitación amplia con diseño contemporáneo y mobiliario premium",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/28102352/pexels-photo-28102352.jpeg",
+                "caption": "Lobby con sillones",
+                "description": "Sillones en el lobby moderno del hotel para descansar y esperar",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6474588/pexels-photo-6474588.jpeg",
+                "caption": "Lobby decorado",
+                "description": "Lobby del hotel con decoración elegante y luces tenues por la noche",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/237371/pexels-photo-237371.jpeg",
+                "caption": "Habitación contemporánea",
+                "description": "Habitación del hotel con diseño contemporáneo y elegancia cuidada",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/13722872/pexels-photo-13722872.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación del hotel con cama doble y diseño moderno cuidado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35103156/pexels-photo-35103156.jpeg",
+                "caption": "Habitación acogedora",
+                "description": "Habitación del hotel de diseño moderno con detalles acogedores",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/14841133/pexels-photo-14841133.jpeg",
+                "caption": "Lobby con araña moderna",
+                "description": "Lobby elegante con araña de diseño moderno y mobiliario contemporáneo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/28962539/pexels-photo-28962539.jpeg",
+                "caption": "Habitación con vista",
+                "description": "Habitación moderna con ventanal panorámico y vista a la ciudad",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/18117651/pexels-photo-18117651.jpeg",
+                "caption": "Lobby con estilo",
+                "description": "Lobby de hotel con decoración moderna y zonas de estar para huéspedes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33400871/pexels-photo-33400871.jpeg",
+                "caption": "Habitación con balcón",
+                "description": "Habitación con acceso a balcón privado y mobiliario contemporáneo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación standard",
+                "description": "Habitación moderna con tonos neutros y luz natural abundante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36816426/pexels-photo-36816426.jpeg",
+                "caption": "Habitación matrimonial",
+                "description": "Habitación con cama doble, lámparas suaves y diseño elegante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7512139/pexels-photo-7512139.jpeg",
+                "caption": "Recepción del hotel",
+                "description": "Vista aérea de la recepción moderna del hotel con huéspedes en el lobby",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/31967701/pexels-photo-31967701.jpeg",
+                "caption": "Habitación de noche",
+                "description": "Habitación moderna del hotel con iluminación cálida en horario nocturno",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/29649745/pexels-photo-29649745.jpeg",
+                "caption": "Lobby con araña",
+                "description": "Lobby elegante del hotel con araña de cristal y mobiliario clásico",
                 "moderationState": "APPROVED"
             }
         ]

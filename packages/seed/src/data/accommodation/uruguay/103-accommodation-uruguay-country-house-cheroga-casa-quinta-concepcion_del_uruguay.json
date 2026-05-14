@@ -23,8 +23,33 @@
         "whatsapp": "https://wa.me/message/CWFRH6N5FURTC1"
     },
     "price": {
-        "price": 45000,
-        "currency": "ARS"
+        "price": 207500,
+        "currency": "ARS",
+        "additionalFees": {
+            "bedlinen": {
+                "price": 3000,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "towels": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "babyCrib": {
+                "price": 1000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 13,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,70 +61,142 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/aerea-3-1.jpg?fit=1200%2C674&ssl=1",
-            "caption": "Cheroga Casa Quinta - Vista aérea",
-            "description": "Vista panorámica aérea de Cheroga Casa Quinta y su amplio parque",
+            "url": "https://images.pexels.com/photos/9811328/pexels-photo-9811328.jpeg",
+            "caption": "Casa de campo entre cultivos",
+            "description": "Casa quinta solitaria rodeada de cultivos verdes bajo cielo despejado",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/aerea-3-1.jpg?fit=1200%2C674&ssl=1",
-                "caption": "Vista aérea",
-                "description": "Vista panorámica aérea de la propiedad y su parque",
+                "url": "https://images.pexels.com/photos/13280780/pexels-photo-13280780.jpeg",
+                "caption": "Casa quinta tranquila",
+                "description": "Casa rural en paisaje natural con vegetación abundante alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/frente_casa-8-1.jpg?fit=1200%2C801&ssl=1",
-                "caption": "Frente de la casa",
-                "description": "Fachada principal de Cheroga Casa Quinta",
+                "url": "https://images.pexels.com/photos/17648544/pexels-photo-17648544.jpeg",
+                "caption": "Casa quinta con campos",
+                "description": "Casa rural pintoresca con techo a dos aguas rodeada de campos verdes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/pileta-10.jpg?fit=1200%2C674&ssl=1",
-                "caption": "Pileta",
-                "description": "Vista aérea de la pileta rodeada de parque",
+                "url": "https://images.pexels.com/photos/19612932/pexels-photo-19612932.jpeg",
+                "caption": "Casa quinta con jardín",
+                "description": "Casa de campo pintoresca rodeada de jardín y cultivos en paisaje rural",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/reposeras-5-1.jpg?fit=1200%2C801&ssl=1",
-                "caption": "Reposeras y parque",
-                "description": "Zona de descanso con reposeras y almohadones",
+                "url": "https://images.pexels.com/photos/17503665/pexels-photo-17503665.jpeg",
+                "caption": "Casa de piedra rural",
+                "description": "Casa de piedra con detalles rojos sobre colinas verdes y cielo abierto",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/parque-12.jpg?fit=1200%2C675&ssl=1",
-                "caption": "Atardecer en el parque",
-                "description": "Atardecer desde el parque de Cheroga",
+                "url": "https://images.pexels.com/photos/6858170/pexels-photo-6858170.jpeg",
+                "caption": "Casa rústica",
+                "description": "Casa con paredes de madera y base de ladrillo rodeada de árboles",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/futbol-1.jpg?fit=1200%2C801&ssl=1",
-                "caption": "Cancha de fútbol",
-                "description": "Cancha de fútbol en el predio",
+                "url": "https://images.pexels.com/photos/17249891/pexels-photo-17249891.jpeg",
+                "caption": "Casa rural pintoresca",
+                "description": "Casa rural con arquitectura rústica en campo soleado y vegetación verde",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/jenga-4.jpg?fit=713%2C1069&ssl=1",
-                "caption": "Jenga gigante",
-                "description": "Juego de Jenga gigante para disfrutar en familia",
+                "url": "https://images.pexels.com/photos/32150698/pexels-photo-32150698.jpeg",
+                "caption": "Casa rural soleada",
+                "description": "Casa rural pintoresca rodeada de vegetación en día soleado de verano",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/tejo-3.jpg?fit=624%2C935&ssl=1",
-                "caption": "Cancha de tejo",
-                "description": "Cancha de tejo playero",
+                "url": "https://images.pexels.com/photos/5543266/pexels-photo-5543266.jpeg",
+                "caption": "Casa de campo con cerco blanco",
+                "description": "Casa rural pintoresca con cerco blanco y vegetación abundante",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/fot-19.jpg?fit=1200%2C757&ssl=1",
-                "caption": "Eventos y decoración",
-                "description": "Decoración para eventos especiales en Cheroga",
+                "url": "https://images.pexels.com/photos/164306/pexels-photo-164306.jpeg",
+                "caption": "Casa rural antigua",
+                "description": "Casa rural envejecida en paisaje vibrante del campo bajo cielo nublado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://i0.wp.com/cherogacasaquinta.com/wp-content/uploads/2022/06/amanecer_anochecer-3.jpg?fit=774%2C648&ssl=1",
-                "caption": "Amanecer en Cheroga",
-                "description": "Amanecer espectacular desde la quinta",
+                "url": "https://images.pexels.com/photos/567186/pexels-photo-567186.jpeg",
+                "caption": "Casona de piedra",
+                "description": "Antigua casa rural en piedra rodeada de verde y árboles",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/23458269/pexels-photo-23458269.jpeg",
+                "caption": "Casa de madera celeste",
+                "description": "Casa rural rústica de madera celeste en zona tranquila",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9811331/pexels-photo-9811331.jpeg",
+                "caption": "Casa de madera rural",
+                "description": "Casa rural de madera rodeada de vegetación abundante en verano",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19937378/pexels-photo-19937378.jpeg",
+                "caption": "Casa rural rústica",
+                "description": "Casa quinta rústica rodeada de naturaleza serena y árboles cercanos",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/27056345/pexels-photo-27056345.jpeg",
+                "caption": "Casa de campo con flores",
+                "description": "Casa rural en paisaje campestre con camino sinuoso y flores silvestres",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living de la casa quinta",
+                "description": "Sala de estar con TV y sillones cómodos para días de descanso",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33623258/pexels-photo-33623258.jpeg",
+                "caption": "Casa quinta con campo",
+                "description": "Casa de campo con tierras alrededor y vista despejada al horizonte",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36394900/pexels-photo-36394900.jpeg",
+                "caption": "Casa con techo rojo",
+                "description": "Casa rural con techo rojo en paisaje sereno del campo verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9769288/pexels-photo-9769288.jpeg",
+                "caption": "Casa quinta con verde",
+                "description": "Casa rural pintoresca rodeada de vegetación verde en día soleado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Interior con detalles rústicos",
+                "description": "Ambiente principal con techos altos y elementos en madera",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Casa de campo con jardín",
+                "description": "Frente de la casa quinta con galería y arboleda al fondo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34467492/pexels-photo-34467492.jpeg",
+                "caption": "Casa rural con galería",
+                "description": "Casa de campo rústica de madera con vista a paisaje montañoso",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36675535/pexels-photo-36675535.jpeg",
+                "caption": "Casa rural con verde",
+                "description": "Casa rural rústica con vegetación frondosa alrededor en día nublado",
                 "moderationState": "APPROVED"
             }
         ]

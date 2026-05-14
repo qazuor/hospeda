@@ -310,6 +310,13 @@
             "status": "in-progress",
             "progress": "26/92",
             "path": "SPEC-103-vps-migration-post-merge-cleanup"
+        },
+        {
+            "specId": "SPEC-119",
+            "title": "Accommodation Example Seeds Realism",
+            "status": "pending",
+            "progress": "0/35",
+            "path": "SPEC-119-accommodation-example-seeds-realism"
         }
     ],
     "standalone": {
