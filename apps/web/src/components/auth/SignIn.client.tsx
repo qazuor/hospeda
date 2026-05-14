@@ -61,7 +61,26 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             if (result.error) {
                 setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesión'));
             } else {
-                window.location.replace(redirectTo);
+                // Mirror the OAuth host-strip+re-attach below. The
+                // server-built `redirectTo` can carry `https://localhost`
+                // when Astro Node runs behind a reverse proxy that does
+                // not forward the original Host header — and the browser
+                // then can't navigate to that URL. Strip the host (if
+                // any) and reattach the browser's real origin.
+                const origin = window.location.origin;
+                let path = redirectTo || '/';
+                if (path.startsWith('http')) {
+                    try {
+                        const parsed = new URL(path);
+                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                    } catch {
+                        path = '/';
+                    }
+                }
+                if (!path.startsWith('/')) {
+                    path = `/${path}`;
+                }
+                window.location.replace(`${origin}${path}`);
             }
         } catch {
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
