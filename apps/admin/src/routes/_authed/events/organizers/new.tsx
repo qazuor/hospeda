@@ -24,7 +24,7 @@ function EventOrganizerCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'event-organizer',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.eventOrganizer.description'),
         entityName,
         entityNamePlural,

@@ -24,7 +24,7 @@ function DestinationCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'destination',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.destination.description'),
         entityName,
         entityNamePlural,

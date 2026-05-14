@@ -24,7 +24,7 @@ function EventLocationCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'event-location',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.eventLocation.description'),
         entityName,
         entityNamePlural,

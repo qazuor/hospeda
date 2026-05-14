@@ -24,7 +24,7 @@ function PostCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'post',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.post.description'),
         entityName,
         entityNamePlural,

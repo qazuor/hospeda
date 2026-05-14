@@ -24,7 +24,7 @@ function FeatureCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'feature',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.feature.description'),
         entityName,
         entityNamePlural,

@@ -24,7 +24,7 @@ function AttractionCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'attraction',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.attraction.description'),
         entityName,
         entityNamePlural,

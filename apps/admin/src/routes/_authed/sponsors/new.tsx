@@ -24,7 +24,7 @@ function SponsorCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'sponsor',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.sponsor.description'),
         entityName,
         entityNamePlural,

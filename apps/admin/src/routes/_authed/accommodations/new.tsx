@@ -34,7 +34,7 @@ function AccommodationCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'accommodation',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.accommodation.description'),
         entityName,
         entityNamePlural,
