@@ -17,8 +17,34 @@
         "homeEmail": "hola@rioapaciblehouse.com.ar"
     },
     "price": {
-        "price": 19000,
-        "currency": "ARS"
+        "price": 122000,
+        "currency": "ARS",
+        "additionalFees": {
+            "lateCheckin": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "luggageStorage": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "cleaning": {
+                "price": 13000,
+                "currency": "ARS",
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "weekly": {
+                "price": 12,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -30,40 +56,58 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
-            "caption": "Casa simple y acogedora",
-            "description": "Vista exterior de Rio Apacible House",
+            "url": "https://images.pexels.com/photos/6952009/pexels-photo-6952009.jpeg",
+            "caption": "Casa amarilla con árboles",
+            "description": "Casa amarilla rodeada de árboles verdes ideal para descanso",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la casa",
+                "url": "https://images.pexels.com/photos/33327061/pexels-photo-33327061.jpeg",
+                "caption": "Casa con follaje otoñal",
+                "description": "Casa suburbana con árboles otoñales y luz cálida en horario de tarde",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
-                "caption": "Living comedor",
-                "description": "Espacio integrado de living y comedor",
+                "url": "https://images.pexels.com/photos/7031408/pexels-photo-7031408.jpeg",
+                "caption": "Casa con piedra y madera",
+                "description": "Casa suburbana privada con fachada de piedra y madera en barrio tranquilo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/4469136/pexels-photo-4469136.jpeg",
+                "caption": "Casa estilo americano",
+                "description": "Casa familiar amplia con estilo americano y entrada para auto",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
-                "caption": "Dormitorio",
-                "description": "Uno de los dormitorios",
+                "url": "https://images.pexels.com/photos/30707539/pexels-photo-30707539.jpeg",
+                "caption": "Casa rojiza con encanto",
+                "description": "Casa de ladrillo rojo en barrio suburbano con árboles maduros alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla",
-                "description": "Parrilla exterior",
+                "url": "https://images.pexels.com/photos/4469146/pexels-photo-4469146.jpeg",
+                "caption": "Casa de dos plantas",
+                "description": "Casa de ladrillo de dos plantas con jardín y árboles maduros",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4469137/pexels-photo-4469137.jpeg",
+                "caption": "Casa familiar",
+                "description": "Casa amplia con frente de ladrillo y jardín de pasto verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8134846/pexels-photo-8134846.jpeg",
+                "caption": "Casa con entrada amplia",
+                "description": "Casa contemporánea con entrada amplia, jardín cuidado y diseño actual",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/209315/pexels-photo-209315.jpeg",
+                "caption": "Casa con jardín cuidado",
+                "description": "Casa de paredes marrones con jardín cuidado y vegetación delantera",
                 "moderationState": "APPROVED"
             }
         ]

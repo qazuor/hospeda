@@ -21,8 +21,42 @@
         "facebook": "https://facebook.com/riotranquiloapartmentok"
     },
     "price": {
-        "price": 12500,
-        "currency": "ARS"
+        "price": 33500,
+        "currency": "ARS",
+        "additionalFees": {
+            "securityDeposit": {
+                "price": 100000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": false,
+                "isIncluded": false
+            },
+            "extraGuest": {
+                "price": 24,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerNight": true,
+                "isPerGuest": true,
+                "isOptional": true
+            },
+            "parking": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerNight": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 15,
+                "currency": "ARS",
+                "isPercent": true
+            },
+            "monthly": {
+                "price": 25,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,34 +70,82 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-            "caption": "Interior del apartamento",
-            "description": "Vista del área de estar y cocina",
+            "url": "https://images.pexels.com/photos/32750273/pexels-photo-32750273.jpeg",
+            "caption": "Apartamento con vista a la ciudad",
+            "description": "Piso alto con ventanal panorámico y vista urbana del Litoral",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-                "caption": "Living",
-                "description": "Espacio integrado de living y cocina",
+                "url": "https://images.pexels.com/photos/34933264/pexels-photo-34933264.jpeg",
+                "caption": "Apartamento moderno",
+                "description": "Living del apartamento con diseño contemporáneo y mobiliario sobrio",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/19916700/pexels-photo-19916700.jpeg",
+                "caption": "Vista del apartamento",
+                "description": "Vista aérea del living del apartamento con sillones y mesa baja",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/14505912/pexels-photo-14505912.jpeg",
+                "caption": "Living totalmente equipado",
+                "description": "Sala completa con sofá, mesas y decoración lista para los huéspedes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
-                "caption": "Baño",
-                "description": "Baño completo",
+                "url": "https://images.pexels.com/photos/37252339/pexels-photo-37252339.jpeg",
+                "caption": "Living minimalista",
+                "description": "Sala de diseño minimalista con líneas limpias y luz natural abundante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7214732/pexels-photo-7214732.jpeg",
+                "caption": "Living con pared de ladrillo",
+                "description": "Sala contemporánea con pared de ladrillo a la vista y zona de TV",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6681824/pexels-photo-6681824.jpeg",
+                "caption": "Rincón junto a la ventana",
+                "description": "Sillón cómodo con muebles de madera junto a la ventana del living",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7511701/pexels-photo-7511701.jpeg",
+                "caption": "Living acogedor",
+                "description": "Sala cálida con sillón, plantas de interior y luz natural suave",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9494898/pexels-photo-9494898.jpeg",
+                "caption": "Living amplio",
+                "description": "Sala espaciosa del apartamento con sillón grande y mobiliario actual",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19674451/pexels-photo-19674451.jpeg",
+                "caption": "Living en piso alto",
+                "description": "Sala de apartamento en piso alto con vista despejada y mobiliario moderno",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7031708/pexels-photo-7031708.jpeg",
+                "caption": "Living con TV",
+                "description": "Sala acogedora con sillón mullido y TV en pared del apartamento",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8089172/pexels-photo-8089172.jpeg",
+                "caption": "Living integrado con cocina",
+                "description": "Diseño minimalista con living y cocina abierta del apartamento",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17832175/pexels-photo-17832175.jpeg",
+                "caption": "Loft con escalera",
+                "description": "Apartamento tipo loft con escalera interior y mobiliario moderno",
                 "moderationState": "APPROVED"
             }
         ]

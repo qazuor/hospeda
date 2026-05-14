@@ -17,8 +17,15 @@
         "homeEmail": "reservas@refugiosoleadoapartment.com.ar"
     },
     "price": {
-        "price": 14000,
-        "currency": "ARS"
+        "price": 61500,
+        "currency": "ARS",
+        "discounts": {
+            "monthly": {
+                "price": 20,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -32,34 +39,58 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
-            "caption": "Interior luminoso del apartamento",
-            "description": "Vista del área de estar con mucha luz natural",
+            "url": "https://images.pexels.com/photos/34933264/pexels-photo-34933264.jpeg",
+            "caption": "Apartamento moderno",
+            "description": "Living del apartamento con diseño contemporáneo y mobiliario sobrio",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
-                "caption": "Living",
-                "description": "Espacio de living-comedor",
+                "url": "https://images.pexels.com/photos/9494898/pexels-photo-9494898.jpeg",
+                "caption": "Living amplio",
+                "description": "Sala espaciosa del apartamento con sillón grande y mobiliario actual",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/17832175/pexels-photo-17832175.jpeg",
+                "caption": "Loft con escalera",
+                "description": "Apartamento tipo loft con escalera interior y mobiliario moderno",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina americana equipada",
+                "url": "https://images.pexels.com/photos/29003510/pexels-photo-29003510.jpeg",
+                "caption": "Ambiente principal luminoso",
+                "description": "Sala elegante con luz natural entrando por los ventanales",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
-                "caption": "Baño",
-                "description": "Baño completo",
+                "url": "https://images.pexels.com/photos/7214732/pexels-photo-7214732.jpeg",
+                "caption": "Living con pared de ladrillo",
+                "description": "Sala contemporánea con pared de ladrillo a la vista y zona de TV",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/32750273/pexels-photo-32750273.jpeg",
+                "caption": "Apartamento con vista a la ciudad",
+                "description": "Piso alto con ventanal panorámico y vista urbana del Litoral",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7511701/pexels-photo-7511701.jpeg",
+                "caption": "Living acogedor",
+                "description": "Sala cálida con sillón, plantas de interior y luz natural suave",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33636640/pexels-photo-33636640.jpeg",
+                "caption": "Sala con cocina abierta",
+                "description": "Living del apartamento integrado con cocina en diseño minimalista",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19899060/pexels-photo-19899060.jpeg",
+                "caption": "Sala con sillón y mesas",
+                "description": "Living con sillón, mesas auxiliares y butaca en ambiente acogedor",
                 "moderationState": "APPROVED"
             }
         ]

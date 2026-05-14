@@ -18,8 +18,16 @@
         "website": "https://www.paraisocalidocountryhouse.com.ar"
     },
     "price": {
-        "price": 32000,
-        "currency": "ARS"
+        "price": 150500,
+        "currency": "ARS",
+        "additionalFees": {
+            "pets": {
+                "price": 6000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -31,52 +39,118 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-            "caption": "Casa de campo con jardín",
-            "description": "Vista exterior de Paraíso Cálido Country House",
+            "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+            "caption": "Living de la casa quinta",
+            "description": "Sala de estar con TV y sillones cómodos para días de descanso",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la casa y jardín",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
-                "caption": "Living",
-                "description": "Sala de estar con chimenea",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina completa",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
-                "caption": "Dormitorio",
-                "description": "Uno de los dormitorios",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
-                "caption": "Piscina",
-                "description": "Piscina en el parque",
+                "url": "https://images.pexels.com/photos/9811331/pexels-photo-9811331.jpeg",
+                "caption": "Casa de madera rural",
+                "description": "Casa rural de madera rodeada de vegetación abundante en verano",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
-                "caption": "Quincho y parrilla",
-                "description": "Área de asador cubierta",
+                "caption": "Galería de la casa quinta",
+                "description": "Galería techada con vista al parque de la propiedad",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
-                "caption": "Parque",
-                "description": "Amplio parque con árboles",
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Interior con detalles rústicos",
+                "description": "Ambiente principal con techos altos y elementos en madera",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36675535/pexels-photo-36675535.jpeg",
+                "caption": "Casa rural con verde",
+                "description": "Casa rural rústica con vegetación frondosa alrededor en día nublado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17648544/pexels-photo-17648544.jpeg",
+                "caption": "Casa quinta con campos",
+                "description": "Casa rural pintoresca con techo a dos aguas rodeada de campos verdes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9811328/pexels-photo-9811328.jpeg",
+                "caption": "Casa de campo entre cultivos",
+                "description": "Casa quinta solitaria rodeada de cultivos verdes bajo cielo despejado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/32150698/pexels-photo-32150698.jpeg",
+                "caption": "Casa rural soleada",
+                "description": "Casa rural pintoresca rodeada de vegetación en día soleado de verano",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17503665/pexels-photo-17503665.jpeg",
+                "caption": "Casa de piedra rural",
+                "description": "Casa de piedra con detalles rojos sobre colinas verdes y cielo abierto",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36394900/pexels-photo-36394900.jpeg",
+                "caption": "Casa con techo rojo",
+                "description": "Casa rural con techo rojo en paisaje sereno del campo verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33623258/pexels-photo-33623258.jpeg",
+                "caption": "Casa quinta con campo",
+                "description": "Casa de campo con tierras alrededor y vista despejada al horizonte",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19612932/pexels-photo-19612932.jpeg",
+                "caption": "Casa quinta con jardín",
+                "description": "Casa de campo pintoresca rodeada de jardín y cultivos en paisaje rural",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/13280780/pexels-photo-13280780.jpeg",
+                "caption": "Casa quinta tranquila",
+                "description": "Casa rural en paisaje natural con vegetación abundante alrededor",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9769288/pexels-photo-9769288.jpeg",
+                "caption": "Casa quinta con verde",
+                "description": "Casa rural pintoresca rodeada de vegetación verde en día soleado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17249891/pexels-photo-17249891.jpeg",
+                "caption": "Casa rural pintoresca",
+                "description": "Casa rural con arquitectura rústica en campo soleado y vegetación verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6858170/pexels-photo-6858170.jpeg",
+                "caption": "Casa rústica",
+                "description": "Casa con paredes de madera y base de ladrillo rodeada de árboles",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34467492/pexels-photo-34467492.jpeg",
+                "caption": "Casa rural con galería",
+                "description": "Casa de campo rústica de madera con vista a paisaje montañoso",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/27056345/pexels-photo-27056345.jpeg",
+                "caption": "Casa de campo con flores",
+                "description": "Casa rural en paisaje campestre con camino sinuoso y flores silvestres",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Casa de campo con jardín",
+                "description": "Frente de la casa quinta con galería y arboleda al fondo",
                 "moderationState": "APPROVED"
             }
         ]

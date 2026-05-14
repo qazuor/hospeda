@@ -21,8 +21,39 @@
         "twitter": "https://twitter.com/paraisoagradablehotel"
     },
     "price": {
-        "price": 19500,
-        "currency": "ARS"
+        "price": 121000,
+        "currency": "ARS",
+        "additionalFees": {
+            "lateCheckout": {
+                "price": 3000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "pets": {
+                "price": 3500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "bedlinen": {
+                "price": 2500,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "towels": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 13,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -34,40 +65,40 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada del hotel",
-            "description": "Vista exterior de Paraíso Agradable Hotel",
+            "url": "https://images.pexels.com/photos/7512139/pexels-photo-7512139.jpeg",
+            "caption": "Recepción del hotel",
+            "description": "Vista aérea de la recepción moderna del hotel con huéspedes en el lobby",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
+                "url": "https://images.pexels.com/photos/6474588/pexels-photo-6474588.jpeg",
+                "caption": "Lobby decorado",
+                "description": "Lobby del hotel con decoración elegante y luces tenues por la noche",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
+                "caption": "Lobby del hotel",
+                "description": "Lobby amplio con arquitectura clásica y techo abovedado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/28962539/pexels-photo-28962539.jpeg",
+                "caption": "Habitación con vista",
+                "description": "Habitación moderna con ventanal panorámico y vista a la ciudad",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36354489/pexels-photo-36354489.jpeg",
+                "caption": "Lobby moderno",
+                "description": "Lobby del hotel con diseño moderno, mobiliario sobrio y luz cálida",
+                "moderationState": "APPROVED"
+            },
+            {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación Standard",
-                "description": "Habitación doble standard",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Habitación Superior",
-                "description": "Habitación superior más amplia",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Piscina",
-                "description": "Área de piscina y solárium",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador",
+                "caption": "Fachada del hotel",
+                "description": "Frente del hotel con entrada principal y cartelería",
                 "moderationState": "APPROVED"
             }
         ]
