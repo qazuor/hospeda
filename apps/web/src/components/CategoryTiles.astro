@@ -100,7 +100,9 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
        ======================================================== */
     .category-tiles {
         background-color: var(--surface-warm);
-        padding-block: var(--space-section, 120px);
+        /* Tighter than the default --space-section: this section uses compact tiles,
+           so 120px top+bottom dwarfs the content. Scales 48px..72px with viewport. */
+        padding-block: clamp(3rem, 6vw, 4.5rem);
     }
 
     .category-tiles__container {
@@ -126,7 +128,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         font-weight: 700;
         color: var(--core-foreground);
         text-align: center;
-        margin-bottom: var(--space-10, 40px);
+        margin-bottom: var(--space-7, 28px);
         line-height: 1.2;
     }
 
