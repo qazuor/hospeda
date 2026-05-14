@@ -119,18 +119,28 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
     };
 }
 
+function isAccessDeniedError(err: unknown): boolean {
+    const name = err instanceof Error ? err.name : '';
+    const msg = err instanceof Error ? err.message : String(err);
+    return name === 'AccessDenied' || msg.includes('Access Denied');
+}
+
+function accessDeniedHint(bucket: string, op: 'reading' | 'writing'): string {
+    const trailer =
+        op === 'writing'
+            ? 'Workaround: apply the rule manually via the Cloudflare R2 dashboard (R2 → bucket → Settings → Object lifecycle rules → Add rule).'
+            : 'The rule may still be applied server-side; verify in the Cloudflare R2 dashboard → bucket → Settings → Object lifecycle rules.';
+    return `Access Denied ${op} lifecycle on s3://${bucket}/. This R2 access token is scoped to "Object Read & Write" — bucket-level admin ops (GetBucketLifecycleConfiguration, PutBucketLifecycleConfiguration) require the "Admin Read & Write" scope. ${trailer}`;
+}
+
 async function showLifecycle(target: Target): Promise<void> {
     const r2 = createR2Client(target);
     let rules: ReadonlyArray<{ id: string; prefix: string; expirationDays: number }> | undefined;
     try {
         rules = await r2.getLifecycle();
     } catch (err) {
-        const name = err instanceof Error ? err.name : '';
-        const msg = err instanceof Error ? err.message : String(err);
-        if (name === 'AccessDenied' || msg.includes('Access Denied')) {
-            log.warn(
-                `Access Denied reading lifecycle on s3://${r2.bucket}/. This R2 access token is scoped to "Object Read & Write" — bucket-level admin ops (GetBucketLifecycleConfiguration, PutBucketLifecycleConfiguration) require the "Admin Read & Write" scope. The rule may still be applied server-side; verify in the Cloudflare R2 dashboard → bucket → Settings → Object lifecycle rules.`
-            );
+        if (isAccessDeniedError(err)) {
+            log.warn(accessDeniedHint(r2.bucket, 'reading'));
             return;
         }
         throw err;
@@ -152,7 +162,18 @@ async function setLifecycle(args: ParsedArgs, target: Target): Promise<void> {
     );
 
     // Surface what's currently there so the operator knows what's being replaced.
-    const existing = await r2.getLifecycle();
+    // If the token is object-scoped, this read fails with AccessDenied — surface
+    // the scope hint here too instead of letting it propagate as a bare error.
+    let existing: ReadonlyArray<{ id: string; prefix: string; expirationDays: number }> | undefined;
+    try {
+        existing = await r2.getLifecycle();
+    } catch (err) {
+        if (isAccessDeniedError(err)) {
+            log.warn(accessDeniedHint(r2.bucket, 'writing'));
+            return;
+        }
+        throw err;
+    }
     if (existing && existing.length > 0) {
         log.warn(
             `Bucket already has ${existing.length} rule(s); this call REPLACES the entire config.`
@@ -172,11 +193,19 @@ async function setLifecycle(args: ParsedArgs, target: Target): Promise<void> {
         }
     }
 
-    await r2.setLifecycleRule({
-        ruleId: args.ruleId,
-        prefix: args.prefix,
-        expirationDays: args.expirationDays
-    });
+    try {
+        await r2.setLifecycleRule({
+            ruleId: args.ruleId,
+            prefix: args.prefix,
+            expirationDays: args.expirationDays
+        });
+    } catch (err) {
+        if (isAccessDeniedError(err)) {
+            log.warn(accessDeniedHint(r2.bucket, 'writing'));
+            return;
+        }
+        throw err;
+    }
     log.ok(
         `Lifecycle rule applied on s3://${r2.bucket}/. Objects under '${args.prefix}' will be deleted after ${args.expirationDays} day(s).`
     );
