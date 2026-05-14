@@ -8,6 +8,7 @@ import { createRouter } from '../../utils/create-app';
 import { cacheStatsRoute } from './cache-stats';
 import { changePasswordRoute } from './change-password';
 import { authMeRoute } from './me';
+import { resetPasswordCheckRoute } from './reset-password-check';
 import { authSignOutRoute } from './signout';
 import { authStatusRoute } from './status';
 
@@ -16,6 +17,7 @@ const app = createRouter();
 app.route('/', authStatusRoute);
 app.route('/', authMeRoute);
 app.route('/', authSignOutRoute);
+app.route('/', resetPasswordCheckRoute);
 
 export const authRoutes = app;
 

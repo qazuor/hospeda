@@ -52,9 +52,29 @@ This is **security-OK** (Better Auth correctly invalidates the token server-side
 
 Recommendation: **(a)**. Add a tiny GET endpoint that uses Better Auth's internal verification primitive. Cleanest contract, no semantic abuse.
 
+##### Phase 0 — Decision (2026-05-14)
+
+Investigation found Better Auth v1.4.18 does NOT expose any public primitive to verify a reset token without consuming it. Tokens are stored in the `verifications` table (`identifier`, `value`, `expiresAt`). On consume, Better Auth deletes the row — there is no `consumed_at` flag.
+
+Implication: we can only honestly distinguish **2 states**, not 3:
+
+- Row missing → could be "used" OR "unknown" — indistinguishable without instrumenting Better Auth (out of scope for a low-priority fix).
+- Row present but past `expiresAt` → `expired`.
+- Row present and live → `valid`.
+
+**Decision: contract reduced to 2 reasons.**
+
+```ts
+{ valid: true } | { valid: false, reason: 'expired' | 'invalid' }
+```
+
+`invalid` covers used + tampered + never-existed with a single generic message. The UX-level CTA is identical for all of these ("Solicitá un enlace nuevo"), so the merged reason does not degrade the user experience. The "ya fue usado" wording from the original spec acceptance criteria is dropped in favor of "ya no es válido".
+
+Implementation note: T-03 queries the `verifications` table directly via Drizzle (`@repo/db`) using the BA identifier prefix for password resets. Confirm exact prefix in dev DB during T-03.
+
 #### Phase 1 — Server-side validation endpoint
 
-- Add `GET /api/auth/reset-password/check?token=<t>` returning `{ valid: true }` or `{ valid: false, reason: 'used' | 'expired' | 'unknown' }`.
+- Add `GET /api/v1/public/auth/reset-password/check?token=<t>` returning `{ valid: true }` or `{ valid: false, reason: 'expired' | 'invalid' }` (see Phase 0 decision above for the 2-reason rationale).
 - Keep the response constant-time (don't leak whether a token was once valid vs. never existed beyond the categorical reason).
 - Apply rate limiting (same bucket as other auth endpoints, see SPEC-110).
 
@@ -63,11 +83,10 @@ Recommendation: **(a)**. Add a tiny GET endpoint that uses Better Auth's interna
 - `apps/web/src/pages/[lang]/auth/reset-password/index.astro` (or equivalent route file):
   - SSR: read `token` query string, call the validation endpoint, branch on result:
     - `valid: true` → render the existing form.
-    - `valid: false, reason: 'used'` → render "Este enlace ya fue usado" + CTA "Solicitar nuevo enlace" linking to `/auth/forgot-password/`.
-    - `valid: false, reason: 'expired'` → render "Este enlace expiró" + same CTA.
-    - `valid: false, reason: 'unknown'` → render "Enlace inválido" + same CTA.
+    - `valid: false, reason: 'expired'` → render "Este enlace expiró" + CTA "Solicitar nuevo enlace" linking to `/auth/forgot-password/`.
+    - `valid: false, reason: 'invalid'` → render "Este enlace ya no es válido" + same CTA. (Covers used + tampered + unknown — see Phase 0 decision.)
   - On the happy path, the existing form continues to work unchanged; if the server somehow returns "valid" on load but rejects on submit (race / TTL boundary), the form's existing submit error handler keeps working as a safety net.
-- i18n keys for the three error variants in `@repo/i18n` (es / en / pt with Spanish as canonical, EN/PT fall back to ES).
+- i18n keys for the two error variants in `@repo/i18n` (es / en / pt — full translations).
 
 #### Phase 3 — Tests + smoke
 
@@ -107,8 +126,8 @@ Recommendation: **(a)**. Add a tiny GET endpoint that uses Better Auth's interna
 
 This spec is "done" when:
 
-- [ ] Re-opening a used reset link renders the "ya fue usado" error state with a CTA to request a new link. No password input is shown.
-- [ ] Visiting a reset URL with a hand-tampered token renders the "enlace inválido" error state with the same CTA. No password input.
+- [ ] Re-opening a used reset link renders the "ya no es válido" error state with a CTA to request a new link. No password input is shown.
+- [ ] Visiting a reset URL with a hand-tampered token renders the same "ya no es válido" error state with the same CTA. No password input. (Phase 0 decision: used + tampered + unknown collapse to a single `invalid` reason.)
 - [ ] Visiting a reset URL with an expired token renders the "enlace expiró" error state.
 - [ ] Happy-path reset still works end-to-end (regression check via E2E).
 - [ ] T-018 in `apps/web/docs/auth-smoke-checklist.md` can be marked PASS without "UX gap noted in session-finding-34".

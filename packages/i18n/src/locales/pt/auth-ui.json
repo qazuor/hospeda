@@ -125,7 +125,18 @@
         },
         "resetPassword": {
             "title": "Redefinir senha",
-            "description": "Defina uma nova senha para sua conta Hospeda"
+            "description": "Defina uma nova senha para sua conta Hospeda",
+            "tokenError": {
+                "expired": {
+                    "title": "Este link expirou",
+                    "description": "Os links de redefinição têm validade curta por segurança. Solicite um novo e tente novamente."
+                },
+                "invalid": {
+                    "title": "Este link não é mais válido",
+                    "description": "É possível que já tenha sido usado ou modificado. Solicite um novo link para continuar."
+                },
+                "requestNewLinkCta": "Solicitar novo link"
+            }
         },
         "verifyEmail": {
             "title": "Verificar email",

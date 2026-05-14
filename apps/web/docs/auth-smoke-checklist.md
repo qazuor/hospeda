@@ -71,10 +71,13 @@ Internal lockout-protected wrappers live at `apps/api/src/routes/auth/handler.ts
 
 #### T-018 — Reset password edge cases
 
+Since SPEC-118 (PR #TBD) the reset-password page SSR-validates the token on first render and shows an error state **before** the form is rendered. The contract collapses three indistinguishable cases (used / tampered / unknown) into a single `invalid` reason; only `expired` is distinguishable.
+
 - [ ] **Happy path**: click reset link, fill new password, submit. Expected: redirect to signin (or auto-signin). Signin with the NEW password works.
-- [ ] **Expired token**: wait > Better Auth token TTL (1 hour by default unless overridden) and click the same link. Expected: error "token expired or invalid".
-- [ ] **Used token**: after happy-path completion, click the SAME reset link a second time. Expected: error "token already used".
-- [ ] **Invalid token**: hand-modify the token in the URL (delete or alter chars), submit. Expected: error.
+- [ ] **Expired token**: wait > Better Auth token TTL (1 hour by default unless overridden) and click the same link. Expected: page renders `ResetPasswordTokenError` with title "Este enlace expiró" and a "Solicitar nuevo enlace" CTA. **No password input is shown.**
+- [ ] **Used token**: after happy-path completion, click the SAME reset link a second time. Expected: page renders `ResetPasswordTokenError` with title "Este enlace ya no es válido" and the same CTA. **No password input is shown.** (Distinct from "expired" wording.)
+- [ ] **Invalid token**: hand-modify the token in the URL (delete or alter chars). Expected: same error state as "Used token" — title "Este enlace ya no es válido" + CTA. (See SPEC-118 Phase 0: indistinguishable from used.)
+- [ ] **Missing token**: visit `/es/auth/reset-password/` without any `?token=` query. Expected: same `invalid` error state, no fetch to the API check endpoint (skipped at SSR).
 
 ### OAuth (T-013, T-014, T-016)
 

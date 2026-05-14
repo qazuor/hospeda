@@ -139,3 +139,59 @@ export const AuthSignOutResponseSchema = z.object({
 });
 
 export type AuthSignOutResponse = z.infer<typeof AuthSignOutResponseSchema>;
+
+/**
+ * Failure reasons for a reset-password token check.
+ *
+ * - `expired`: The token row exists in the `verifications` table but its
+ *   `expiresAt` is in the past.
+ * - `invalid`: The token row is not present. This collapses three real-world
+ *   cases that Better Auth cannot distinguish post-consumption: (1) the token
+ *   was already consumed (Better Auth deletes the row on use), (2) the token
+ *   string was hand-tampered or never existed, (3) the token belongs to a
+ *   different identifier namespace.
+ *
+ * See SPEC-118 Phase 0 decision for the rationale on collapsing
+ * `used`/`unknown`/`tampered` into a single `invalid` reason.
+ */
+export const ResetPasswordCheckReasonSchema = z.enum(['expired', 'invalid']);
+
+export type ResetPasswordCheckReason = z.infer<typeof ResetPasswordCheckReasonSchema>;
+
+/**
+ * Query parameters for `GET /api/v1/public/auth/reset-password/check`.
+ *
+ * The token is the opaque string Better Auth embedded in the password-reset
+ * email URL. We accept it as-is and pass it to the verification lookup; format
+ * validation beyond non-empty is intentionally skipped because Better Auth
+ * controls the token format and may evolve it across versions.
+ */
+export const ResetPasswordCheckQuerySchema = z.object({
+    token: z
+        .string()
+        .min(1, 'Token is required')
+        .max(512, 'Token is too long')
+        .describe('Opaque reset-password token from the email link')
+});
+
+export type ResetPasswordCheckQuery = z.infer<typeof ResetPasswordCheckQuerySchema>;
+
+/**
+ * Response payload for the reset-password token check.
+ *
+ * Discriminated by `valid`. When `valid: false`, `reason` indicates whether
+ * the token is past its TTL (`expired`) or unrecognised (`invalid`). The web
+ * page branches on this to render the form vs an error state with a "request
+ * new link" CTA.
+ */
+export const ResetPasswordCheckResponseSchema = z.discriminatedUnion('valid', [
+    z.object({
+        valid: z.literal(true)
+    }),
+    z.object({
+        valid: z.literal(false),
+        reason: ResetPasswordCheckReasonSchema
+    })
+]);
+
+export type ResetPasswordCheckResponse = z.infer<typeof ResetPasswordCheckResponseSchema>;

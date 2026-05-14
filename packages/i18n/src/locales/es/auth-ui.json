@@ -125,7 +125,18 @@
         },
         "resetPassword": {
             "title": "Restablecer contraseña",
-            "description": "Establece una nueva contraseña para tu cuenta de Hospeda"
+            "description": "Establece una nueva contraseña para tu cuenta de Hospeda",
+            "tokenError": {
+                "expired": {
+                    "title": "Este enlace expiró",
+                    "description": "Los enlaces de restablecimiento tienen una vigencia limitada por seguridad. Solicitá uno nuevo y volvé a intentarlo."
+                },
+                "invalid": {
+                    "title": "Este enlace ya no es válido",
+                    "description": "Es posible que ya lo hayas usado o que haya sido modificado. Solicitá uno nuevo para continuar."
+                },
+                "requestNewLinkCta": "Solicitar nuevo enlace"
+            }
         },
         "verifyEmail": {
             "title": "Verificar email",
