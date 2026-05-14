@@ -337,7 +337,7 @@ jobs:
 - [MercadoPago Developer Portal](https://www.mercadopago.com.ar/developers)
 - [MercadoPago API Reference](https://www.mercadopago.com.ar/developers/en/reference)
 - [QZPay Documentation](https://github.com/qazuor/qzpay)
-- [Project Billing Documentation](../../../docs/billing/)
+- [Project Billing Documentation](../../../docs/billing-api-endpoints.md)
 
 ## Support
 

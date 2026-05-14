@@ -5,7 +5,7 @@ Operational runbook for PostgreSQL advisory locks used in the Hospeda API.
 **Related documents:**
 
 - [Advisory Lock Registry](advisory-locks.md)
-- [ADR-019: Billing Transaction Isolation](../../docs/decisions/ADR-019-billing-transaction-isolation.md)
+- [ADR-019: Billing Transaction Isolation](../../../docs/decisions/ADR-019-billing-transaction-isolation.md)
 
 ---
 

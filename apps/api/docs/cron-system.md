@@ -1418,10 +1418,7 @@ curl http://localhost:3001/api/v1/cron \
 - **Cron Expression Syntax:** [Crontab.guru](https://crontab.guru/)
 - **Vercel Cron Jobs:** [Vercel Docs](https://vercel.com/docs/cron-jobs)
 - **node-cron Documentation:** [GitHub](https://github.com/node-cron/node-cron)
-- **Related Documentation:**
-  - [CRON_CONFIGURATION.md](./CRON_CONFIGURATION.md) - Detailed configuration guide
-  - [CRON_VERIFICATION.md](./CRON_VERIFICATION.md) - Manual verification steps
-  - [TASK_T032_SUMMARY.md](./TASK_T032_SUMMARY.md) - Implementation summary
+- **Related Documentation:** see also [Cron Management Guide](../../../docs/guides/cron-management.md) for operational procedures.
 
 ---
 
