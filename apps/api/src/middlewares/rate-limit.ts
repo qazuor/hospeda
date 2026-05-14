@@ -291,46 +291,137 @@ export const resetRateLimitStore = () => {
 // ─── Shared IP Extraction ─────────────────────────────────────────────────────
 
 /**
- * Extracts the real client IP from the request, respecting proxy trust configuration.
+ * Loopback patterns: IPv4 127.0.0.0/8, IPv6 ::1, and IPv4-mapped IPv6 loopback.
+ * These match container-internal traffic (Docker healthchecks, in-container probes).
+ */
+const LOOPBACK_PATTERNS: readonly RegExp[] = [/^127\./, /^::1$/, /^::ffff:127\./];
+
+/**
+ * Private/internal IP patterns: RFC1918 IPv4 (10/8, 172.16/12, 192.168/16),
+ * IPv4-mapped IPv6 of the same, and IPv6 unique-local fc00::/7 (fc**: and fd**:).
+ * These match traffic from a trusted reverse proxy (Traefik, internal mesh).
+ */
+const PRIVATE_IP_PATTERNS: readonly RegExp[] = [
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[01])\./,
+    /^192\.168\./,
+    /^::ffff:10\./,
+    /^::ffff:172\.(1[6-9]|2[0-9]|3[01])\./,
+    /^::ffff:192\.168\./,
+    /^f[cd][0-9a-f]{2}:/i
+];
+
+/**
+ * Returns true when `ip` is a loopback address (IPv4 127.x, IPv6 ::1, or IPv4-mapped IPv6 loopback).
  *
- * When trustProxy is true, checks headers in order: cf-connecting-ip, x-forwarded-for (first), x-real-ip.
- * When trustProxy is false, returns 'untrusted-proxy' so all requests share a single bucket.
+ * @param ip - The IP string to test.
+ */
+export const isLoopbackIp = (ip: string): boolean => LOOPBACK_PATTERNS.some((p) => p.test(ip));
+
+/**
+ * Returns true when `ip` is a private/internal address (RFC1918 IPv4 or IPv6 unique-local).
  *
- * @param params - Object containing the Hono context
- * @returns The client IP string
+ * @param ip - The IP string to test.
+ */
+export const isPrivateIp = (ip: string): boolean => PRIVATE_IP_PATTERNS.some((p) => p.test(ip));
+
+/**
+ * Determines whether forwarded-IP headers from a request should be trusted.
+ * A socket source is trusted when it is loopback, RFC1918 private, or appears in the
+ * explicit `API_RATE_LIMIT_TRUSTED_PROXIES` list.
+ *
+ * @param socketIp - The IP from the raw TCP socket.
+ * @param explicitProxies - Extra trusted proxy IPs from configuration.
+ */
+const isTrustedSource = (socketIp: string, explicitProxies: readonly string[]): boolean =>
+    isLoopbackIp(socketIp) || isPrivateIp(socketIp) || explicitProxies.includes(socketIp);
+
+/**
+ * Reads the socket remote address from a Hono context when available.
+ * Only present when running on the Node.js adapter; undefined in test/edge runtimes.
+ *
+ * @param c - The Hono context.
+ */
+const getSocketIp = (c: Context): string | undefined => {
+    const raw = c.req.raw as unknown;
+    if (raw && typeof raw === 'object' && 'socket' in raw) {
+        const socket = (raw as { socket?: { remoteAddress?: string } }).socket;
+        return socket?.remoteAddress;
+    }
+    return undefined;
+};
+
+/**
+ * Reads the client IP from proxy headers in priority order:
+ * cf-connecting-ip → first hop of x-forwarded-for → x-real-ip.
+ * Returns undefined when no proxy header is present.
+ *
+ * @param c - The Hono context.
+ */
+const readHeaderIp = (c: Context): string | undefined => {
+    const cf = c.req.header('cf-connecting-ip');
+    if (cf) return cf;
+
+    const xff = c.req.header('x-forwarded-for');
+    if (xff) {
+        const first = xff.split(',')[0]?.trim();
+        if (first) return first;
+    }
+
+    const xri = c.req.header('x-real-ip');
+    if (xri) return xri;
+
+    return undefined;
+};
+
+/**
+ * Extracts a stable rate-limit identifier from the request, applying a trust-chain
+ * validation against the raw socket source.
+ *
+ * Behaviour:
+ * 1. `trustProxy === false`: use the socket IP directly (each client gets its own bucket).
+ * 2. No socket available (tests, edge runtimes): fall back to header-based extraction.
+ * 3. Socket is loopback (Docker healthcheck, in-container probe): returns `internal:<ip>`.
+ *    Combined with the healthcheck-path bypass in {@link rateLimitMiddleware}, this prevents
+ *    internal probes from sharing a bucket with anonymous traffic.
+ * 4. Socket is a trusted source (RFC1918 / explicit list): trust the proxy headers
+ *    (`cf-connecting-ip`, `x-forwarded-for[0]`, `x-real-ip`). When trusted but no headers
+ *    present, returns `proxy:<socket-ip>`.
+ * 5. Socket is an untrusted source (direct external hit bypassing the reverse proxy):
+ *    proxy headers are IGNORED to prevent spoofing. Returns `untrusted:<socket-ip>`.
+ *
+ * The prefixes (`internal:`, `proxy:`, `untrusted:`) are part of the rate-limit key, so
+ * different source classes never collide in one bucket. They also surface in log lines
+ * via `getClientIp` callers in auth handlers, making request origin obvious in audit logs.
+ *
+ * @param params - Object containing the Hono context.
+ * @returns The rate-limit identifier string.
  */
 export const getClientIp = ({ c }: { c: Context }): string => {
     const baseRateLimitConfig = getBaseRateLimitConfig();
     const trustProxy = baseRateLimitConfig.trustProxy;
+    const trustedProxies: readonly string[] = baseRateLimitConfig.trustedProxies ?? [];
+    const socketIp = getSocketIp(c);
 
     if (!trustProxy) {
-        // When proxy is not trusted, use the socket remote address instead of
-        // a shared bucket so each real client gets its own rate limit window.
-        // NOTE: trustProxy=true should only be enabled behind a trusted reverse proxy
-        // (Cloudflare, Nginx, Coolify's Traefik, etc.).
-        const socketIp =
-            c.req.raw && 'socket' in c.req.raw
-                ? (c.req.raw as { socket?: { remoteAddress?: string } }).socket?.remoteAddress
-                : undefined;
-        return socketIp ?? 'unknown';
+        return socketIp ?? readHeaderIp(c) ?? 'unknown';
     }
 
-    const cfConnectingIp = c.req.header('cf-connecting-ip');
-    if (cfConnectingIp) {
-        return cfConnectingIp;
+    if (!socketIp) {
+        return readHeaderIp(c) ?? 'unknown';
     }
 
-    const forwardedFor = c.req.header('x-forwarded-for');
-    if (forwardedFor) {
-        return forwardedFor.split(',')[0]?.trim() || 'unknown';
+    if (isLoopbackIp(socketIp)) {
+        return `internal:${socketIp}`;
     }
 
-    const realIp = c.req.header('x-real-ip');
-    if (realIp) {
-        return realIp;
+    if (isTrustedSource(socketIp, trustedProxies)) {
+        const headerIp = readHeaderIp(c);
+        if (headerIp) return headerIp;
+        return `proxy:${socketIp}`;
     }
 
-    return 'unknown';
+    return `untrusted:${socketIp}`;
 };
 
 // ─── Per-Route Rate Limit Middleware ──────────────────────────────────────────
