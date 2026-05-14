@@ -186,7 +186,12 @@ app.post('/sign-in/email', async (c) => {
  * while allowing the same email to be tried from different IPs.
  * Threshold: 5 attempts per 15-minute window per (email, IP) pair.
  */
-app.post('/forget-password', async (c) => {
+// Better Auth's actual route name is `/request-password-reset`. The
+// historical `/forget-password` here NEVER matched Better Auth's
+// internal router, so the lockout-protected wrapper silently returned
+// Better Auth's 404 for every legitimate password-reset request.
+// Discovered 2026-05-14 during SPEC-103 T-017 smoke.
+app.post('/request-password-reset', async (c) => {
     const ip = getClientIp({ c });
 
     // 1. Parse email from request body
