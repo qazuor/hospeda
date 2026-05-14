@@ -70,6 +70,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!-- Centered auth card -->
 		<main id="main-content" class="auth-content">
+			<slot name="decoratives" />
 			<div class="auth-card">
 				<slot />
 			</div>
@@ -102,14 +103,18 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	}
 
 	.auth-content {
+		position: relative;
 		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: var(--space-8) var(--space-6);
+		overflow: hidden;
 	}
 
 	.auth-card {
+		position: relative;
+		z-index: 1;
 		width: 100%;
 		max-width: 480px;
 		background-color: var(--core-card);
