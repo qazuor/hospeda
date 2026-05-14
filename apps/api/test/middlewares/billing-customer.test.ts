@@ -202,6 +202,81 @@ describe('billingCustomerMiddleware', () => {
         });
     });
 
+    describe('Guest Actor Scenarios (SPEC-116)', () => {
+        const guestActor: Actor = {
+            id: '00000000-0000-4000-8000-000000000000',
+            role: RoleEnum.GUEST,
+            permissions: []
+        };
+
+        it('should skip customer lookup when actor is GUEST (sentinel UUID)', async () => {
+            // Arrange
+            mockContext.get = vi.fn((key: string) => {
+                if (key === 'billingEnabled') return true;
+                if (key === 'actor') return guestActor;
+                return undefined;
+            });
+
+            const middleware = billingCustomerMiddleware();
+
+            // Act
+            await middleware(mockContext as Context<AppBindings>, mockNext);
+
+            // Assert
+            expect(mockContext.set).toHaveBeenCalledWith('billingCustomerId', null);
+            expect(mockNext).toHaveBeenCalled();
+            // Critical: getQZPayBilling MUST NOT be called for guests — that was the
+            // bug that produced "No billing customer found" log noise + 10-50ms latency
+            // on every healthcheck and public request.
+            expect(mockGetQZPayBilling).not.toHaveBeenCalled();
+        });
+
+        it('should skip customer lookup when actor role is GUEST (without sentinel id)', async () => {
+            // Arrange: actor with a non-sentinel id but GUEST role still counts as guest
+            // (isGuestActor checks role OR id, so future-proofs against id format changes)
+            mockContext.get = vi.fn((key: string) => {
+                if (key === 'billingEnabled') return true;
+                if (key === 'actor')
+                    return { id: 'some-other-id', role: RoleEnum.GUEST, permissions: [] };
+                return undefined;
+            });
+
+            const middleware = billingCustomerMiddleware();
+
+            // Act
+            await middleware(mockContext as Context<AppBindings>, mockNext);
+
+            // Assert
+            expect(mockContext.set).toHaveBeenCalledWith('billingCustomerId', null);
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockGetQZPayBilling).not.toHaveBeenCalled();
+        });
+
+        it('should not emit "No billing customer found" log for guest actors', async () => {
+            // Arrange
+            const { apiLogger } = await import('../../src/utils/logger');
+            const debugSpy = vi.mocked(apiLogger.debug);
+            debugSpy.mockClear();
+
+            mockContext.get = vi.fn((key: string) => {
+                if (key === 'billingEnabled') return true;
+                if (key === 'actor') return guestActor;
+                return undefined;
+            });
+
+            const middleware = billingCustomerMiddleware();
+
+            // Act
+            await middleware(mockContext as Context<AppBindings>, mockNext);
+
+            // Assert: the misleading log line must not be emitted for guests
+            const debugCalls = debugSpy.mock.calls.flat();
+            const stringified = JSON.stringify(debugCalls);
+            expect(stringified).not.toContain('No billing customer found');
+            expect(stringified).not.toContain('Billing customer found');
+        });
+    });
+
     describe('Customer Lookup Scenarios', () => {
         it('should set billingCustomerId when customer exists', async () => {
             // Arrange
