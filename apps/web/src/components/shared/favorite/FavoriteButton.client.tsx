@@ -399,11 +399,25 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 onClick={handleClick}
                 disabled={isPending || isHydrating}
             >
-                <FavoriteIcon
-                    size={variant === 'compact' ? 18 : 22}
-                    weight={isFavorited ? 'fill' : 'regular'}
+                <span
+                    className={styles.iconStack}
                     aria-hidden="true"
-                />
+                >
+                    <FavoriteIcon
+                        size={variant === 'compact' ? 18 : 22}
+                        weight={isFavorited ? 'fill' : 'regular'}
+                        aria-hidden="true"
+                    />
+                    {!isFavorited && (
+                        <span className={styles.iconFill}>
+                            <FavoriteIcon
+                                size={variant === 'compact' ? 18 : 22}
+                                weight="fill"
+                                aria-hidden="true"
+                            />
+                        </span>
+                    )}
+                </span>
                 {showCountPill && (
                     <span
                         className={styles.countPill}

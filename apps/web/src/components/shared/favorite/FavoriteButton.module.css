@@ -33,11 +33,13 @@
         box-shadow var(--duration-fast) ease;
 }
 
-/* Hover — subtle lift + accent border hint */
+/* Hover — keep the white card surface so the button stays visible over busy
+ * card photos. Only the heart itself previews the favorited state by swapping
+ * to its filled red form (see .iconFill rules below). Keeping the background
+ * untouched also prevents the red-tint-on-photo look that made the button
+ * blend into the image. */
 .button:hover {
     color: var(--destructive);
-    border-color: oklch(from var(--destructive) l c h / 0.4);
-    background-color: oklch(from var(--destructive) l c h / 0.06);
     transform: scale(1.08);
     box-shadow: var(--shadow-card);
 }
@@ -83,6 +85,41 @@
     gap: 0.375rem;
     border-radius: var(--radius-pill);
     background-color: oklch(from var(--core-card) l c h / 0.92);
+}
+
+/* --- Hover preview: filled heart overlay ---
+ * The icon weight is fixed at render time (regular when not favorited, fill
+ * when favorited). To preview the favorited state on hover without touching
+ * React state, render a second filled icon on top and toggle its opacity via
+ * CSS. The wrapper carries `position: relative` so both icons share the same
+ * box. The fill copy is hidden when the button is already in the pressed
+ * state — the visible icon there is already the filled one. */
+.iconStack {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.iconFill {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--duration-fast) ease;
+    pointer-events: none;
+}
+
+.button:hover .iconFill,
+.button:focus-visible .iconFill {
+    opacity: 1;
+}
+
+.button[aria-pressed="true"] .iconFill {
+    opacity: 0;
 }
 
 /* --- Count pill badge (pill variant only, count >= 3) --- */
