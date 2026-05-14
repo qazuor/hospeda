@@ -41,7 +41,7 @@ interface Props {
 }
 
 const { data, locale, isAuthenticated = false, linkQuery } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
 const detailUrl = linkQuery ? `${baseDetailUrl}?${linkQuery}` : baseDetailUrl;
@@ -141,9 +141,9 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					isAuthenticated={isAuthenticated}
 				/>
 				{(data.photoCount ?? 0) > 0 && (
-					<div class="acc-card__photo-count">
-						<GalleryIcon size={16} weight="fill" aria-hidden="true" />
-						<span>{data.photoCount}</span>
+					<div class="acc-card__photo-count" aria-hidden="true">
+						<GalleryIcon size={18} weight="fill" aria-hidden="true" />
+						<span>{tPlural('common.photos', data.photoCount ?? 0)}</span>
 					</div>
 				)}
 			</div>
@@ -373,18 +373,39 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		outline-offset: 2px;
 	}
 
+	/* Photo-count pill: hidden by default on hover-capable devices and
+	 * revealed when the card is hovered or keyboard-focused. The previous
+	 * tiny chip (11px font, 55% bg) was unreadable over busy photos and
+	 * competed with the favorite button for the corner. Now bigger + more
+	 * opaque so the count reads clearly the moment it's shown.
+	 *
+	 * On touch devices (no hover) the pill is always visible — there's no
+	 * hover gesture to discover it otherwise. */
 	.acc-card__photo-count {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		background-color: oklch(from var(--core-foreground) l c h / 0.55);
-		padding: 4px 8px;
+		gap: 6px;
+		background-color: oklch(from var(--core-foreground) l c h / 0.78);
+		padding: 6px 12px;
 		border-radius: 9999px;
 		color: var(--primary-foreground);
 		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 11px;
-		line-height: 16px;
+		font-weight: 600;
+		font-size: 13px;
+		line-height: 1.2;
+		opacity: 0;
+		transition: opacity 180ms ease;
+	}
+
+	.acc-card:hover .acc-card__photo-count,
+	.acc-card:focus-within .acc-card__photo-count {
+		opacity: 1;
+	}
+
+	@media (hover: none) {
+		.acc-card__photo-count {
+			opacity: 1;
+		}
 	}
 
 	/* CONTENT AREA */
