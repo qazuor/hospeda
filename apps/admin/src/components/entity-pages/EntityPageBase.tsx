@@ -201,7 +201,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         id: `${entityType}-${entityId}`,
         entityType,
         title: (entityConfig.metadata?.title as string) || entityName,
-        description: (entityConfig.metadata?.description as string) || `View ${entityType} details`,
+        description:
+            (entityConfig.metadata?.description as string) ||
+            t('admin-common.entityPage.viewDescription').replace('{entity}', entityType),
         entityName: (entityConfig.metadata?.entityName as string) || entityType,
         entityNamePlural: (entityConfig.metadata?.entityNamePlural as string) || `${entityType}s`,
         sections: currentSections, // ✅ Usar secciones filtradas por modo actual
@@ -233,12 +235,23 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="text-2xl">
-                                {mode === 'view' ? entityName : `Edit ${entityName}`}
+                                {mode === 'view'
+                                    ? entityName
+                                    : t('admin-common.entityPage.editTitle').replace(
+                                          '{entity}',
+                                          entityName
+                                      )}
                             </CardTitle>
                             <p className="text-muted-foreground">
                                 {mode === 'view'
-                                    ? `View ${completeEntityConfig.entityName} details`
-                                    : `Modify ${completeEntityConfig.entityName} details`}
+                                    ? t('admin-common.entityPage.viewDescription').replace(
+                                          '{entity}',
+                                          completeEntityConfig.entityName
+                                      )
+                                    : t('admin-common.entityPage.editDescription').replace(
+                                          '{entity}',
+                                          completeEntityConfig.entityName
+                                      )}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -254,7 +267,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="arrow-left"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        Back
+                                        {t('admin-common.entityPage.actions.back')}
                                     </Button>
                                     {canEdit && (
                                         <Button
@@ -266,7 +279,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                                 name="edit"
                                                 className="mr-2 h-4 w-4"
                                             />
-                                            Edit
+                                            {t('admin-common.entityPage.actions.edit')}
                                         </Button>
                                     )}
                                 </>
@@ -281,7 +294,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="eye"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        View
+                                        {t('admin-common.entityPage.actions.view')}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -292,7 +305,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="close"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        Cancel
+                                        {t('admin-common.entityPage.actions.cancel')}
                                     </Button>
                                 </>
                             )}
