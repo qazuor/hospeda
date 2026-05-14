@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-112",
+    "title": "Per-environment OAuth credentials — Google + Facebook separate for prod and staging",
+    "type": "hardening",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-14T01:50:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["auth", "oauth", "google", "facebook", "security", "hardening", "pre-public-launch"]
+}

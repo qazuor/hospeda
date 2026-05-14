@@ -86,7 +86,12 @@ export async function forgetPassword({
 }): Promise<AuthResult> {
     const baseURL = getAuthBaseUrl();
     try {
-        const response = await fetch(`${baseURL}/api/auth/forget-password`, {
+        // Better Auth exposes this endpoint as `/request-password-reset`
+        // (not `/forget-password`, which the codebase used historically).
+        // Discovered 2026-05-14 during SPEC-103 T-017 smoke when POSTs
+        // to the old path returned 404 from Better Auth's internal
+        // router. See `node_modules/better-auth/dist/api/routes/password.mjs`.
+        const response = await fetch(`${baseURL}/api/auth/request-password-reset`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
