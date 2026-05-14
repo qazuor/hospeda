@@ -275,6 +275,7 @@ function makeService(
     opts: {
         deliveryService?: INewsletterDeliveryService;
         subscriberService?: ReturnType<typeof makeSubscriberService>;
+        notifyCampaignClosedWithFailuresFn?: ReturnType<typeof vi.fn>;
     } = {}
 ) {
     return new NewsletterCampaignService(
@@ -283,7 +284,8 @@ function makeService(
             batchSize: 2,
             softCapDays: 7,
             deliveryService: opts.deliveryService,
-            subscriberService: opts.subscriberService as unknown as NewsletterSubscriberService
+            subscriberService: opts.subscriberService as unknown as NewsletterSubscriberService,
+            notifyCampaignClosedWithFailuresFn: opts.notifyCampaignClosedWithFailuresFn
         }
     );
 }
@@ -843,6 +845,108 @@ describe('NewsletterCampaignService.closeSentCampaigns', () => {
 
         const sql = capturedSqlStrings[0] ?? '';
         expect(sql).toMatch(/sending/i);
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-108 T-108-02: admin notification when failed > 0 on close
+    // -----------------------------------------------------------------------
+
+    it('fires notifyCampaignClosedWithFailuresFn for campaigns closed with failed > 0', async () => {
+        const notifyFn = vi.fn(async () => {});
+        const svc = makeService({ notifyCampaignClosedWithFailuresFn: notifyFn });
+
+        // SELECT (toCloseResult): one campaign to close
+        enqueueExecuteResponse([{ id: CAMPAIGN_ID }]);
+        // UPDATE (bulk transition to sent)
+        enqueueExecuteResponse([]);
+        // SELECT (failure-count aggregate): one campaign with failed > 0
+        enqueueExecuteResponse([
+            {
+                id: CAMPAIGN_ID,
+                subject: 'Test Subject',
+                total_recipients: 100,
+                delivered: 95,
+                failed: 5
+            }
+        ]);
+
+        const result = await svc.closeSentCampaigns();
+
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(1);
+        expect(notifyFn).toHaveBeenCalledTimes(1);
+        expect(notifyFn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                campaignId: CAMPAIGN_ID,
+                subject: 'Test Subject',
+                totalRecipients: 100,
+                delivered: 95,
+                failed: 5,
+                closedAt: expect.any(Date)
+            })
+        );
+    });
+
+    it('does NOT fire notifyCampaignClosedWithFailuresFn when failed === 0', async () => {
+        const notifyFn = vi.fn(async () => {});
+        const svc = makeService({ notifyCampaignClosedWithFailuresFn: notifyFn });
+
+        // SELECT (toCloseResult): one campaign to close
+        enqueueExecuteResponse([{ id: CAMPAIGN_ID }]);
+        // UPDATE (bulk transition to sent)
+        enqueueExecuteResponse([]);
+        // SELECT (failure-count aggregate): the HAVING clause filters out
+        // campaigns with failed === 0 server-side, so the result is empty.
+        enqueueExecuteResponse([]);
+
+        const result = await svc.closeSentCampaigns();
+
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(1);
+        expect(notifyFn).not.toHaveBeenCalled();
+    });
+
+    it('skips the failure-count query when no campaigns transitioned', async () => {
+        const notifyFn = vi.fn(async () => {});
+        const svc = makeService({ notifyCampaignClosedWithFailuresFn: notifyFn });
+
+        // SELECT (toCloseResult): empty — no transitions
+        enqueueExecuteResponse([]);
+
+        const result = await svc.closeSentCampaigns();
+
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(0);
+        // Only one SQL call (the initial SELECT). No UPDATE, no failure-count.
+        expect(capturedSqlStrings).toHaveLength(1);
+        expect(notifyFn).not.toHaveBeenCalled();
+    });
+
+    it('swallows notifier errors so the campaign transition is not rolled back', async () => {
+        const notifyFn = vi.fn(async () => {
+            throw new Error('transport temporarily unavailable');
+        });
+        const svc = makeService({ notifyCampaignClosedWithFailuresFn: notifyFn });
+
+        enqueueExecuteResponse([{ id: CAMPAIGN_ID }]);
+        enqueueExecuteResponse([]);
+        enqueueExecuteResponse([
+            {
+                id: CAMPAIGN_ID,
+                subject: 'Test Subject',
+                total_recipients: 10,
+                delivered: 9,
+                failed: 1
+            }
+        ]);
+
+        const result = await svc.closeSentCampaigns();
+
+        // The service-level result is success — the notifier failure is
+        // logged but does NOT bubble up.
+        expect(result.error).toBeUndefined();
+        expect(result.data).toBe(1);
+        expect(notifyFn).toHaveBeenCalledTimes(1);
     });
 });
 

@@ -244,7 +244,33 @@ export interface NewsletterCampaignServiceOptions {
      * `hmacSecret='__missing__'` (safe for read-only `getEligibleForCampaign`).
      */
     subscriberService?: NewsletterSubscriberService;
+    /**
+     * Optional callback invoked by `closeSentCampaigns` for each campaign
+     * that transitioned to `sent` with at least one failed delivery
+     * (SPEC-108 T-108-02). The host app wires this to
+     * `NotificationService.send({ type: ADMIN_SYSTEM_EVENT, ... })`; tests
+     * inject a `vi.fn()`. Service-core stays decoupled from
+     * `@repo/notifications`.
+     *
+     * The callback is fire-and-forget from the service's point of view —
+     * `closeSentCampaigns` awaits it but catches errors so a notification
+     * failure does not roll back the campaign transition.
+     */
+    notifyCampaignClosedWithFailuresFn?: NotifyCampaignClosedWithFailuresFn;
 }
+
+/**
+ * DI seam: invoked once per campaign that closes with `failed > 0`. The
+ * host app fires the actual admin notification (see SPEC-108 T-108-02).
+ */
+export type NotifyCampaignClosedWithFailuresFn = (event: {
+    campaignId: string;
+    subject: string;
+    totalRecipients: number;
+    delivered: number;
+    failed: number;
+    closedAt: Date;
+}) => Promise<void> | void;
 
 /**
  * NewsletterCampaignService orchestrates the campaign lifecycle for the
@@ -285,6 +311,9 @@ export class NewsletterCampaignService extends BaseService {
     private readonly softCapDays: number;
     private readonly deliveryService: INewsletterDeliveryService | undefined;
     private readonly subscriberService: NewsletterSubscriberService;
+    private readonly notifyCampaignClosedWithFailuresFn:
+        | NotifyCampaignClosedWithFailuresFn
+        | undefined;
 
     /**
      * Creates a new NewsletterCampaignService.
@@ -300,6 +329,7 @@ export class NewsletterCampaignService extends BaseService {
         this.subscriberService =
             options.subscriberService ??
             new NewsletterSubscriberService(config, { hmacSecret: '__missing__' });
+        this.notifyCampaignClosedWithFailuresFn = options.notifyCampaignClosedWithFailuresFn;
     }
 
     // -------------------------------------------------------------------------
@@ -1207,8 +1237,77 @@ export class NewsletterCampaignService extends BaseService {
                     )}])
                 `);
 
+                // SPEC-108 T-108-02: notify admin for each just-closed campaign
+                // that finished with at least one failed delivery. Fires only
+                // once per campaign (this query targets the IDs we just
+                // transitioned, so subsequent cron ticks will not re-notify —
+                // they no longer have status = 'sending'). Notifier errors are
+                // swallowed so a transient transport failure does not roll
+                // back the campaign transition.
+                if (this.notifyCampaignClosedWithFailuresFn) {
+                    await this.fireFailureNotifications(ids);
+                }
+
                 return ids.length;
             }
         });
+    }
+
+    /**
+     * Emits admin notifications for campaigns that just transitioned to
+     * `sent` with at least one failed delivery row. Internal helper for
+     * `closeSentCampaigns`; gated by the optional
+     * `notifyCampaignClosedWithFailuresFn` DI seam.
+     */
+    private async fireFailureNotifications(closedCampaignIds: string[]): Promise<void> {
+        if (!this.notifyCampaignClosedWithFailuresFn || closedCampaignIds.length === 0) {
+            return;
+        }
+
+        const db = getDb();
+        const rows = (
+            await db.execute(sql`
+                SELECT
+                    c.id,
+                    c.subject,
+                    c.total_recipients,
+                    COALESCE(SUM(CASE WHEN d.status = 'delivered' THEN 1 ELSE 0 END), 0)::int AS delivered,
+                    COALESCE(SUM(CASE WHEN d.status = 'failed' THEN 1 ELSE 0 END), 0)::int AS failed
+                FROM newsletter_campaigns c
+                LEFT JOIN newsletter_campaign_deliveries d ON d.campaign_id = c.id
+                WHERE c.id = ANY(ARRAY[${sql.join(
+                    closedCampaignIds.map((id) => sql`${id}::uuid`),
+                    sql`, `
+                )}])
+                GROUP BY c.id, c.subject, c.total_recipients
+                HAVING SUM(CASE WHEN d.status = 'failed' THEN 1 ELSE 0 END) > 0
+            `)
+        ).rows as Array<{
+            id: string;
+            subject: string;
+            total_recipients: number;
+            delivered: number;
+            failed: number;
+        }>;
+
+        const closedAt = new Date();
+        for (const row of rows) {
+            try {
+                await this.notifyCampaignClosedWithFailuresFn({
+                    campaignId: row.id,
+                    subject: row.subject,
+                    totalRecipients: row.total_recipients,
+                    delivered: row.delivered,
+                    failed: row.failed,
+                    closedAt
+                });
+            } catch (error) {
+                this.logger.warn(
+                    `[newsletterCampaign.closeSentCampaigns] admin failure-notification threw for campaign ${row.id}: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`
+                );
+            }
+        }
     }
 }
