@@ -405,26 +405,46 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		flex: 1;
 	}
 
-	/* Category + Location row */
+	/* Category + Location row. The category badge is a bounded enum label
+	 * (CASA, HOTEL, etc.) so it never needs to shrink — flex-shrink: 0
+	 * keeps it intact. The location is the unbounded text (city names
+	 * like "Concepción del Uruguay") so it absorbs the remaining width
+	 * and ellipsises when it would overflow. min-width: 0 on the row is
+	 * required for the inner ellipsis to engage inside a flex layout. */
 	.acc-card__category-row {
 		display: flex;
 		align-items: center;
 		gap: 10px;
+		min-width: 0;
 	}
 
+	.acc-card__category-row > :global(.acc-type-badge) {
+		flex-shrink: 0;
+	}
+
+	/* Destino: plain inline label, no surface. Reads as supporting text
+	 * to the category pill instead of a second competing badge. */
 	.acc-card__location-bar {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background-color: var(--surface-warm, oklch(0.96 0.02 60));
-		padding: 8px 24px 8px 16px;
-		border-radius: var(--radius-sm, 8px);
+		min-width: 0;
 		font-family: var(--font-sans);
 		font-weight: 500;
 		font-size: 12px;
-		line-height: 19.2px;
-		color: var(--core-foreground);
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+	}
+
+	.acc-card__location-bar > :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.acc-card__location-bar > span {
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
+		min-width: 0;
 	}
 
 	/* Name */
