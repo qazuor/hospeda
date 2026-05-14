@@ -44,10 +44,21 @@ export const AccommodationBatchRequestSchema = z.object({
  * ];
  * ```
  */
-export const AccommodationBatchResponseSchema = z.array(AccommodationSchema.nullable());
+/**
+ * Batch item schema for accommodation operations
+ * All fields are optional except `id` (the handler always emits it). Callers
+ * using `fields` receive a partial object; callers without get the full
+ * accommodation.
+ */
+export const AccommodationBatchItemSchema = AccommodationSchema.partial().required({
+    id: true
+});
+
+export const AccommodationBatchResponseSchema = z.array(AccommodationBatchItemSchema.nullable());
 
 /**
  * Type definitions for batch operations
  */
 export type AccommodationBatchRequest = z.infer<typeof AccommodationBatchRequestSchema>;
+export type AccommodationBatchItem = z.infer<typeof AccommodationBatchItemSchema>;
 export type AccommodationBatchResponse = z.infer<typeof AccommodationBatchResponseSchema>;
