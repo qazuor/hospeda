@@ -15,13 +15,28 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
+/* Default hero trigger look matches scrolled (visible on opaque headers).
+   Ghost look is restored below only while the header is actually
+   transparent over the hero image — the React island prop is computed
+   at SSR and never reacts to scroll, so we rely on the parent
+   .navbar--scrolled class on <header> to switch back to the readable
+   default once the header turns opaque. */
 .triggerHero {
+    color: var(--core-foreground);
+    border-color: oklch(from var(--core-foreground) l c h / 0.15);
+}
+
+.triggerHero:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+:global(.header--hero:not(.navbar--scrolled)) .triggerHero {
     color: #fff;
     background-color: rgba(255 255 255 / 0.12);
     border-color: rgba(255 255 255 / 0.25);
 }
 
-.triggerHero:hover {
+:global(.header--hero:not(.navbar--scrolled)) .triggerHero:hover {
     background-color: rgba(255 255 255 / 0.18);
 }
 

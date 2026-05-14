@@ -19,23 +19,39 @@
         var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
 }
 
+/* Default look for the hero variant matches the scrolled look: a filled
+   primary button. This guarantees the CTA stays visible when the header
+   is opaque (light card background), even though the React island was
+   mounted with variant="hero" at SSR. The transparent ghost-button look
+   is restored below ONLY when the header is actually transparent over
+   the hero image. */
 .signInLinkHero {
+    border: 1px solid transparent;
+    color: var(--primary-foreground, #fff);
+    background-color: var(--brand-primary);
+}
+
+.signInLinkHero:hover {
+    background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+}
+
+/* Restore the ghost-button look only while the header is in its
+   transparent hero state. As soon as the user scrolls past the threshold,
+   .navbar--scrolled is added by the header script and the filled primary
+   button above takes over — fixes the invisible white-on-white CTA on
+   the scrolled homepage. */
+:global(.header--hero:not(.navbar--scrolled)) .signInLinkHero {
     border: 1px solid rgba(255 255 255 / 0.35);
     color: #fff;
     background-color: rgba(255 255 255 / 0.12);
 }
 
-.signInLinkHero:hover {
+:global(.header--hero:not(.navbar--scrolled)) .signInLinkHero:hover {
     background-color: rgba(255 255 255 / 0.18);
 }
 
-/* When the header is in scrolled state (white background), the sign-in CTA
-   needs to stand out against the surface — the previous ghost-button look
-   (border at 20% opacity, transparent fill) was almost invisible in light
-   mode because both border and text use --core-foreground in the same
-   value space as the surface. Switch to a filled primary button so the
-   action reads clearly. Matches the SettingsDropdown sign-in link styling
-   for consistency across the navbar entry points. */
+/* Scrolled variant is used on every non-hero route — kept identical to
+   the default hero look so both paths converge on the same filled CTA. */
 .signInLinkScrolled {
     border: 1px solid transparent;
     color: var(--primary-foreground, #fff);
@@ -68,13 +84,25 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
+/* Default hero trigger look matches scrolled (visible on opaque headers).
+   Ghost look is restored below only while the header is actually
+   transparent over the hero image. */
 .triggerHero {
+    color: var(--core-foreground);
+    border-color: oklch(from var(--core-foreground) l c h / 0.15);
+}
+
+.triggerHero:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+:global(.header--hero:not(.navbar--scrolled)) .triggerHero {
     color: #fff;
     background-color: rgba(255 255 255 / 0.12);
     border-color: rgba(255 255 255 / 0.25);
 }
 
-.triggerHero:hover {
+:global(.header--hero:not(.navbar--scrolled)) .triggerHero:hover {
     background-color: rgba(255 255 255 / 0.18);
 }
 
