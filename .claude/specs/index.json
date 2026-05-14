@@ -786,13 +786,29 @@
         },
         {
             "specId": "SPEC-114",
-            "title": "Forget-password endpoint returns 404 on staging — Better Auth misconfig or build artifact stale",
+            "title": "Forget-password endpoint returns 404 on staging \u2014 Better Auth misconfig or build artifact stale",
             "type": "fix",
             "complexity": "small-medium",
             "status": "completed",
             "path": "SPEC-114-forget-password-endpoint-missing",
             "completed": "2026-05-14T04:33:00.000Z",
-            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
+            "completionRef": "commit f08583c5c (PR #1075) \u2014 fix(auth): use better-auth /request-password-reset path (was /forget-password)"
+        },
+        {
+            "specId": "SPEC-117",
+            "title": "OAuth Cancel/Error Observability \u2014 UI Feedback and Sentry Capture",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-117-oauth-cancel-observability"
+        },
+        {
+            "specId": "SPEC-118",
+            "title": "Reset-Password Page Validates Token at Load \u2014 UX Hardening",
+            "type": "fix",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-118-reset-password-token-validation"
         }
     ]
 }

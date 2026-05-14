@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 33/92 tasks (36%)
+## Progress: 33/95 tasks (35%)
 
 **Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -226,15 +226,29 @@ After Batch 1: pivot to Coolify ops (T-004 MP toggle, T-006 staging backups, T-0
 
 ---
 
+## Newly tracked from session findings 2026-05-14
+
+These tasks were added to `state.json` at the close of the operator OAuth smoke pass to make sure the session findings are not lost. Larger findings got their own spec instead of a task here (SPEC-117, SPEC-118 — see Session findings section).
+
+- [ ] **T-093** (2) — Navbar React island stale immediately after OAuth callback. Refetch session on `astro:page-load` or convert to Server Island. Source: session-finding-31.
+- [ ] **T-094** (2) — Add-password flow for OAuth-only accounts. Implementation belongs to SPEC-113 (profile completion); this is the SPEC-103 tracker so it is not lost. Source: session-finding-33.
+- [ ] **T-095** (3) — Audit and fix `hops --target=staging` propagation across all commands. 2-4h estimated focused work. Source: session-finding-14-repro.
+
+---
+
 ## Session findings — 2026-05-14 (operator OAuth smokes)
 
 These items surfaced during the manual OAuth smoke execution against staging. None block the public launch directly, but each is a real gap that should be tracked. They are numbered to match the smoke checklist log entries in `apps/web/docs/auth-smoke-checklist.md`.
 
 ### session-finding-31 — Navbar stale immediately after OAuth callback
 
+**Tracked as:** `T-093` in this spec (state.json).
+
 After successful Google signin, the navbar still showed the "Iniciar sesión" button while `/es/mi-cuenta/` rendered as logged-in. The session was clearly active server-side; the navbar React island simply did not refresh from the new session cookie until the next navigation. Likely caused by the island reading the user prop once at hydration and never refetching `/api/auth/get-session` after the OAuth callback redirect. Fix candidate: have the navbar island refetch the session on `astro:page-load` events, or move the user fetch into a Server Island that re-runs per request.
 
 ### session-finding-32 — OAuth cancel produces no UI feedback and no Sentry event (T-024 partial)
+
+**Tracked as:** **SPEC-117** — OAuth Cancel/Error Observability (its own spec, can ship independently of this worktree's PRs).
 
 When the user cancels the Google consent screen, the browser redirects back to `/es/auth/signin/` cleanly (recovery UX OK). However:
 
@@ -245,20 +259,26 @@ Suggested fix: emit a `?error=oauth_cancelled` query string on the cancel redire
 
 ### session-finding-33 — No "Add password" flow for OAuth-only accounts (matches SPEC-113)
 
+**Tracked as:** `T-094` in this spec (state.json) — scope ref points at SPEC-113.
+
 When an account was created via OAuth (Google / Facebook only, no `credential` row) and the user later tries to sign up with email + password using the same email, Better Auth correctly rejects the signup with `User already exists` (security PASS). But the UX provides no path forward: the user cannot add a password to their existing OAuth account from any page. Closest matching scope is SPEC-113 (profile completion flow). If SPEC-113 does not already include this, scope it in as the "Add password to your account" subtask.
 
 ### session-finding-34 — Reset-password page does not validate token at load (UX gap, security OK)
+
+**Tracked as:** **SPEC-118** — Reset-Password Page Validates Token at Load (its own spec, can ship independently of this worktree's PRs).
 
 Visiting `/es/auth/reset-password/?token=<invalid-or-used>` always renders the "set new password" form. The server correctly returns `Invalid token` on submit, so a used or tampered token cannot actually reset the password — security is intact. The UX gap is that the user only learns the link is dead after typing a new password and submitting. Fix candidate: have the page do a lightweight token-validity check on load (HEAD / GET against `/api/auth/reset-password/verify` or equivalent) and show an inline error / "request a new link" CTA when the token is dead.
 
 ### session-finding-14-repro — `hops --target=staging` ignored on `env-set` and `db-restore --list`
 
+**Tracked as:** `T-095` in this spec (state.json).
+
 Reproduction of the previously-noted hops `--target` propagation gap, with two concrete repros:
 
 1. `hops env-set web PUBLIC_SENTRY_DSN --secret --target=staging` opened an `UPDATE on web [production]` prompt. Aborted before save. Workaround: set the variable via the Coolify UI on the staging app.
-2. `hops db-restore --list --target=staging` printed `Listing backups from s3://hospeda-backups/` (production bucket; staging is `s3://hospeda-staging-backups/`) and offered prod-cron timestamps (`06:00 UTC`) instead of staging-cron timestamps (`06:30 UTC`). Workaround for verification: `aws s3 ls s3://hospeda-staging-backups/` with the credentials in `/etc/hospeda-backup-staging.env` (variables prefixed `R2_*`, not `AWS_*`).
+2. `hops db-restore --list --target=staging` printed `Listing backups from s3://hospeda-backups/` (production bucket; staging is `s3://hospeda-staging-backups/`) and offered prod-cron timestamps (`06:00 UTC`) instead of staging-cron timestamps (`06:30 UTC`). Workaround for verification: `aws s3 ls s3://hospeda-staging-backups/` with the credentials in the staging backup env file (R2_* prefix, not AWS_*).
 
-These belong to the standalone hops `--target` fix (~2-4h tracked separately). The smokes themselves were unblocked by Coolify UI / aws CLI fallbacks.
+These belong to the standalone hops `--target` fix (~2-4h estimated). The smokes themselves were unblocked by Coolify UI / aws CLI fallbacks.
 
 ### admin-csp-node-crypto — Admin staging SPA was broken by `node:crypto` in client bundle (FIXED)
 
