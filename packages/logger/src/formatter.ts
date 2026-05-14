@@ -144,6 +144,24 @@ export function redactSensitiveData(value: unknown, key?: string): unknown {
         return redacted;
     }
 
+    // Handle Error instances explicitly — their fields (name, message, stack,
+    // cause) are non-enumerable, so they would survive the generic object
+    // branch below as `{}` after JSON.stringify, hiding the actual failure.
+    // Extract them by hand so downstream serialization shows the useful info.
+    if (value instanceof Error) {
+        const errorObj: Record<string, unknown> = {
+            name: value.name,
+            message: redactSensitiveData(value.message) as string
+        };
+        if (value.stack) {
+            errorObj.stack = redactSensitiveData(value.stack) as string;
+        }
+        if ('cause' in value && value.cause !== undefined) {
+            errorObj.cause = redactSensitiveData(value.cause);
+        }
+        return errorObj;
+    }
+
     // Handle arrays
     if (Array.isArray(value)) {
         return value.map((item) => redactSensitiveData(item));

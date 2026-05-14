@@ -536,5 +536,46 @@ describe('formatter', () => {
             expect(redactSensitiveData(null)).toBe(null);
             expect(redactSensitiveData(undefined)).toBe(undefined);
         });
+
+        it('should extract Error fields (name, message, stack) instead of producing an empty object', () => {
+            const err = new Error('boom');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.name).toBe('Error');
+            expect(result.message).toBe('boom');
+            expect(typeof result.stack).toBe('string');
+            expect(result.stack).toContain('boom');
+        });
+
+        it('should preserve Error subclass names (e.g. TypeError)', () => {
+            const err = new TypeError('bad input');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.name).toBe('TypeError');
+            expect(result.message).toBe('bad input');
+        });
+
+        it('should serialize Error.cause when present', () => {
+            const inner = new Error('inner reason');
+            const outer = new Error('outer wrap', { cause: inner });
+            const result = redactSensitiveData(outer) as Record<string, unknown>;
+            expect(result.message).toBe('outer wrap');
+            const cause = result.cause as Record<string, unknown>;
+            expect(cause.message).toBe('inner reason');
+        });
+
+        it('should redact sensitive content inside Error.message', () => {
+            const err = new Error('Failed to send to user@example.com');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.message).toContain('[REDACTED]');
+            expect(result.message).not.toContain('user@example.com');
+        });
+
+        it('should serialize Error to JSON with all fields (was {} before fix)', () => {
+            const err = new Error('boom');
+            const result = redactSensitiveData(err);
+            const json = JSON.stringify(result);
+            expect(json).toContain('"name":"Error"');
+            expect(json).toContain('"message":"boom"');
+            expect(json).toContain('"stack"');
+        });
     });
 });
