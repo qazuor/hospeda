@@ -1,14 +1,21 @@
 /**
  * @file webhooks/brevo.ts
  *
- * Brevo webhook receiver for newsletter delivery events (SPEC-101 T-101-32).
+ * Brevo webhook receiver for newsletter delivery events (SPEC-101 T-101-32,
+ * auth mechanism revisited in SPEC-115).
  *
- *   POST /api/v1/public/webhooks/brevo
+ *   POST /api/v1/public/webhooks/brevo/:token
  *
  * Public route — there is no user session involved — but the request is
- * gated by a static shared token Brevo echoes back in the
- * `X-Sib-Webhook-Token` header (matched against `HOSPEDA_BREVO_WEBHOOK_SECRET`
- * via `timingSafeEqual` to defeat short-circuit comparison attacks).
+ * gated by a static shared token embedded in the URL path. Brevo does NOT
+ * send any authentication header on outgoing webhook deliveries by default
+ * (the legacy `X-Sib-Webhook-Token` was a Sendinblue-era convention that
+ * did not survive the rebrand). The dashboard UI does not expose
+ * configuration for custom headers or bearer auth either, so the only
+ * reliable authentication that is robust across UI edits is to encode the
+ * secret in the webhook URL itself. The path param is matched against
+ * `HOSPEDA_BREVO_WEBHOOK_SECRET` via `timingSafeEqual` to defeat
+ * short-circuit comparison attacks.
  *
  * Body shape: Brevo posts either a single event object or an array of
  * events; we normalise to an array and pass each through
@@ -20,6 +27,13 @@
  * certainly a misconfiguration or a probe — not an exception). Other
  * processing errors per-event are warns; we still return 200 to Brevo so
  * it does not retry the entire batch forever.
+ *
+ * Security trade-off: the secret appears in upstream proxy logs
+ * (Cloudflare, Traefik) since it lives in the URL. Rotate the secret
+ * periodically — and ALWAYS after any suspected leak — by generating a
+ * new value (`openssl rand -hex 32`), updating
+ * `HOSPEDA_BREVO_WEBHOOK_SECRET` in Coolify, and updating the webhook URL
+ * in the Brevo dashboard for every environment.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -138,11 +152,11 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
         return c.json({ error: 'invalid_signature' }, 401);
     }
 
-    const headerToken = c.req.header('x-sib-webhook-token') ?? c.req.header('X-Sib-Webhook-Token');
-    if (!verifyWebhookToken({ token: headerToken ?? '', secret: expectedSecret })) {
+    const pathToken = c.req.param('token');
+    if (!verifyWebhookToken({ token: pathToken ?? '', secret: expectedSecret })) {
         apiLogger.warn(
             {
-                hasHeader: Boolean(headerToken),
+                hasToken: Boolean(pathToken),
                 ip: c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? null
             },
             'Brevo webhook: signature mismatch'
@@ -238,9 +252,9 @@ const brevoRateLimiter = createPerRouteRateLimitMiddleware({
     windowMs: 60_000
 });
 
-/** Hono router mounted at `/api/v1/public/webhooks/brevo`. */
+/** Hono router mounted at `/api/v1/public/webhooks/brevo/:token`. */
 export const brevoWebhookRoutes = createRouter().post(
-    '/brevo',
+    '/brevo/:token',
     brevoRateLimiter,
     brevoWebhookHandler
 );

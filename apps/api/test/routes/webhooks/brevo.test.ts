@@ -74,10 +74,25 @@ afterEach(() => {
 // Signature verification
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/public/webhooks/brevo — signature', () => {
-    it('returns 401 invalid_signature when the X-Sib-Webhook-Token header is missing', async () => {
+describe('POST /api/v1/public/webhooks/brevo/:token — signature', () => {
+    it('returns 404 when no token segment is present in the URL', async () => {
+        // The route requires a :token path param, so an unsuffixed POST
+        // does not match — Hono returns 404. This is intentional: random
+        // scanners hitting /brevo without the secret should not even know
+        // the endpoint exists.
         const app = buildApp();
         const res = await app.request('/api/v1/public/webhooks/brevo', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ event: 'delivered', email: 'a@b.com' })
+        });
+        expect(res.status).toBe(404);
+        expect(mockProcessEvent).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 invalid_signature when the token in the path does not match', async () => {
+        const app = buildApp();
+        const res = await app.request('/api/v1/public/webhooks/brevo/wrong-token', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ event: 'delivered', email: 'a@b.com' })
@@ -88,29 +103,12 @@ describe('POST /api/v1/public/webhooks/brevo — signature', () => {
         expect(mockProcessEvent).not.toHaveBeenCalled();
     });
 
-    it('returns 401 invalid_signature when the token does not match', async () => {
-        const app = buildApp();
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': 'wrong-token'
-            },
-            body: JSON.stringify({ event: 'delivered', email: 'a@b.com' })
-        });
-        expect(res.status).toBe(401);
-        expect(mockProcessEvent).not.toHaveBeenCalled();
-    });
-
     it('accepts a request with the correct token', async () => {
         mockProcessEvent.mockResolvedValue({ data: { updated: true }, error: null });
         const app = buildApp();
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
+        const res = await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
                 event: 'delivered',
                 email: 'sub@example.com',
@@ -128,17 +126,14 @@ describe('POST /api/v1/public/webhooks/brevo — signature', () => {
 // Event dispatch
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/public/webhooks/brevo — event dispatch', () => {
+describe('POST /api/v1/public/webhooks/brevo/:token — event dispatch', () => {
     it('forwards a single event to the tracking service with the right shape', async () => {
         mockProcessEvent.mockResolvedValue({ data: { updated: true }, error: null });
         const app = buildApp();
 
-        await app.request('/api/v1/public/webhooks/brevo', {
+        await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
                 event: 'opened',
                 email: 'sub@example.com',
@@ -160,12 +155,9 @@ describe('POST /api/v1/public/webhooks/brevo — event dispatch', () => {
         mockProcessEvent.mockResolvedValue({ data: { updated: true }, error: null });
         const app = buildApp();
 
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
+        const res = await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify([
                 { event: 'delivered', email: 'a@b.com', 'message-id': '<m1>' },
                 { event: 'opened', email: 'a@b.com', 'message-id': '<m1>' },
@@ -181,12 +173,9 @@ describe('POST /api/v1/public/webhooks/brevo — event dispatch', () => {
         mockProcessEvent.mockResolvedValue({ data: { updated: true }, error: null });
         const app = buildApp();
 
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
+        const res = await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify([
                 { event: 'proxy_open', email: 'a@b.com' },
                 { event: 'request', email: 'a@b.com' }
@@ -202,12 +191,9 @@ describe('POST /api/v1/public/webhooks/brevo — event dispatch', () => {
 
     it('returns 400 invalid_payload when the body is not parseable JSON', async () => {
         const app = buildApp();
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
+        const res = await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: 'not json'
         });
         expect(res.status).toBe(400);
@@ -223,12 +209,9 @@ describe('POST /api/v1/public/webhooks/brevo — event dispatch', () => {
         });
         const app = buildApp();
 
-        const res = await app.request('/api/v1/public/webhooks/brevo', {
+        const res = await app.request(`/api/v1/public/webhooks/brevo/${VALID_TOKEN}`, {
             method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'x-sib-webhook-token': VALID_TOKEN
-            },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify([
                 { event: 'delivered', email: 'a@b.com', 'message-id': '<m1>' },
                 { event: 'opened', email: 'a@b.com', 'message-id': '<m1>' }
