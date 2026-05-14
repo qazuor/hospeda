@@ -31,6 +31,28 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---
 
 <ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')} noindex={true}>
+	<div slot="decoratives" class="error-deco error-deco--404" aria-hidden="true">
+		<div class="error-deco__blob"></div>
+		<svg
+			class="error-deco__trail"
+			viewBox="0 0 200 100"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M 10 80 Q 60 10, 110 50 T 190 30"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-dasharray="4 8"
+				stroke-linecap="round"
+				fill="none"
+			/>
+		</svg>
+		<span class="error-deco__dot error-deco__dot--1"></span>
+		<span class="error-deco__dot error-deco__dot--2"></span>
+		<span class="error-deco__dot error-deco__dot--3"></span>
+	</div>
+
 	<!-- Illustrated icon -->
 	<div class="err500-illustration" aria-hidden="true">
 		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -67,3 +89,79 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 		{t('error.404.goHome')}
 	</a>
 </ErrorLayout>
+
+<style is:global>
+	.error-deco {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.error-deco__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(360px, 60vw, 720px);
+		height: clamp(360px, 60vw, 720px);
+		border-radius: 50%;
+		filter: blur(4px);
+	}
+
+	.error-deco--404 .error-deco__blob {
+		background: radial-gradient(
+			circle at 50% 50%,
+			oklch(from var(--brand-primary) l c h / 0.16),
+			oklch(from var(--brand-primary) l c h / 0.05) 55%,
+			transparent 75%
+		);
+	}
+
+	.error-deco__trail {
+		position: absolute;
+		width: clamp(140px, 18vw, 240px);
+		height: clamp(60px, 8vw, 110px);
+		opacity: 0.4;
+	}
+
+	.error-deco--404 .error-deco__trail {
+		top: 14%;
+		right: 8%;
+		color: var(--brand-primary);
+		transform: rotate(8deg);
+	}
+
+	.error-deco__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+
+	.error-deco--404 .error-deco__dot--1 {
+		top: 22%;
+		left: 10%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+	.error-deco--404 .error-deco__dot--2 {
+		bottom: 22%;
+		left: 16%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.error-deco--404 .error-deco__dot--3 {
+		bottom: 30%;
+		right: 14%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.2);
+	}
+
+	@media (max-width: 700px) {
+		.error-deco__trail {
+			display: none;
+		}
+	}
+</style>

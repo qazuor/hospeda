@@ -33,6 +33,28 @@ const showDevDetails = isDevelopment();
 ---
 
 <ErrorLayout locale={locale} title={t('error.500.title')} description={t('error.500.description')} noindex={true}>
+	<div slot="decoratives" class="error-deco error-deco--500" aria-hidden="true">
+		<div class="error-deco__blob"></div>
+		<svg
+			class="error-deco__trail"
+			viewBox="0 0 200 100"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M 10 30 Q 60 90, 110 50 T 190 70"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-dasharray="4 8"
+				stroke-linecap="round"
+				fill="none"
+			/>
+		</svg>
+		<span class="error-deco__dot error-deco__dot--1"></span>
+		<span class="error-deco__dot error-deco__dot--2"></span>
+		<span class="error-deco__dot error-deco__dot--3"></span>
+	</div>
+
 	<!-- Illustrated icon -->
 	<div class="err500-illustration" aria-hidden="true">
 		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -79,6 +101,47 @@ const showDevDetails = isDevelopment();
 		</details>
 	)}
 </ErrorLayout>
+
+<style is:global>
+	.error-deco--500 .error-deco__blob {
+		background: radial-gradient(
+			circle at 50% 50%,
+			oklch(from var(--destructive, #ef4444) l c h / 0.14),
+			oklch(from var(--destructive, #ef4444) l c h / 0.05) 55%,
+			transparent 75%
+		);
+	}
+
+	.error-deco--500 .error-deco__trail {
+		bottom: 16%;
+		left: 8%;
+		color: var(--destructive, #ef4444);
+		transform: rotate(-12deg);
+		opacity: 0.4;
+	}
+
+	.error-deco--500 .error-deco__dot--1 {
+		top: 24%;
+		right: 12%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.28);
+	}
+	.error-deco--500 .error-deco__dot--2 {
+		top: 32%;
+		right: 22%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.error-deco--500 .error-deco__dot--3 {
+		bottom: 26%;
+		left: 18%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.2);
+	}
+</style>
 
 <script>
 	document.getElementById('retry-btn')?.addEventListener('click', () => {

@@ -75,7 +75,8 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			.error-wave svg { width: 100%; height: 80px; display: block; }
 
 			/* ErrorLayout: content area */
-			.error-content { max-width: var(--container-max, 1350px); margin: 0 auto; padding: 4rem 1.5rem; min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+			.error-content { position: relative; max-width: var(--container-max, 1350px); margin: 0 auto; padding: 4rem 1.5rem; min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+			.error-content > :not(.error-deco) { position: relative; z-index: 1; }
 
 			/* ErrorLayout: footer */
 			.error-footer { border-top: 1px solid var(--border); padding: 1.5rem 0; margin-top: auto; }
@@ -137,6 +138,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!-- Error content -->
 		<main id="main-content" class="error-content">
+			<slot name="decoratives" />
 			<slot />
 		</main>
 
