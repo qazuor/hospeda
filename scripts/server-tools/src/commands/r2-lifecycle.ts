@@ -45,6 +45,15 @@ Notes:
   R2 stores at most ONE lifecycle config per bucket; \`set\` replaces any
   existing rules. Run \`show\` first if you want to inspect what's there
   before overwriting.
+
+  Both subcommands require an R2 access token scoped to "Admin Read &
+  Write" — the default token used by daily backups is "Object Read &
+  Write" (sufficient for PutObject / GetObject / ListObjectsV2 but not
+  for bucket-level admin like Put/GetBucketLifecycleConfiguration).
+  When the token lacks admin scope, both subcommands surface a clear
+  "Access Denied" message and the operator can fall back to setting the
+  rule manually in the Cloudflare R2 dashboard
+  (R2 → bucket → Settings → Object lifecycle rules).
 `.trim();
 
 type Subcommand = 'show' | 'set';
@@ -112,7 +121,20 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
 
 async function showLifecycle(target: Target): Promise<void> {
     const r2 = createR2Client(target);
-    const rules = await r2.getLifecycle();
+    let rules: ReadonlyArray<{ id: string; prefix: string; expirationDays: number }> | undefined;
+    try {
+        rules = await r2.getLifecycle();
+    } catch (err) {
+        const name = err instanceof Error ? err.name : '';
+        const msg = err instanceof Error ? err.message : String(err);
+        if (name === 'AccessDenied' || msg.includes('Access Denied')) {
+            log.warn(
+                `Access Denied reading lifecycle on s3://${r2.bucket}/. This R2 access token is scoped to "Object Read & Write" — bucket-level admin ops (GetBucketLifecycleConfiguration, PutBucketLifecycleConfiguration) require the "Admin Read & Write" scope. The rule may still be applied server-side; verify in the Cloudflare R2 dashboard → bucket → Settings → Object lifecycle rules.`
+            );
+            return;
+        }
+        throw err;
+    }
     if (rules === undefined || rules.length === 0) {
         log.info(`No lifecycle rules on s3://${r2.bucket}/.`);
         return;
