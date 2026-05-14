@@ -1966,11 +1966,74 @@
                 "started": "2026-05-12T22:30:00.000Z",
                 "completed": "2026-05-12T22:32:00.000Z"
             }
+        },
+        {
+            "id": "T-093",
+            "title": "Navbar React island stale immediately after OAuth callback (session-finding-31)",
+            "description": "Discovered 2026-05-14 during SPEC-103 T-013 Google OAuth smoke on staging. After a successful OAuth signin, /es/mi-cuenta/ renders as authenticated but the navbar still shows the \"Iniciar sesion\" button. The button only disappears once the user navigates to another page. Likely root cause: the navbar React island reads the user prop once at hydration time and never refetches /api/auth/get-session after the OAuth callback redirect places a new session cookie. Fix candidate: have the navbar island refetch the session on `astro:page-load` events, or convert it into a Server Island so it re-runs server-side per request. Tracked here as a SPEC-103 close-out task so the navbar is corrected before public launch; in-flight scope is small (1-2 files in apps/web).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["auth", "ux", "navbar", "react-island", "section-3.A"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-05-14T10:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-094",
+            "title": "OAuth-only accounts have no \"Add password\" flow (session-finding-33, scope ref SPEC-113)",
+            "description": "Discovered 2026-05-14 during SPEC-103 T-020 cascade smoke. Better Auth correctly blocks email/password signup when a user with the same email already exists (security PASS), but users whose account was created via OAuth-only (google/facebook) have no UI path to ADD a password to their existing account. The error message \"User already exists. Use another email.\" is misleading and leaves the user stuck. Scope is part of SPEC-113 (profile completion flow); this task is the SPEC-103 tracker so the work is not lost. Implementation lives under SPEC-113 and probably involves a settings page \"Add password to your account\" or a one-shot link in the post-OAuth profile completion screen calling Better Auth's set-password endpoint.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["auth", "ux", "tracker", "section-3.A"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-05-14T10:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-095",
+            "title": "hops --target=staging flag is silently ignored on env-set and db-restore --list (session-finding-14-repro)",
+            "description": "Concrete reproduction notes captured 2026-05-14 for the previously-noted hops --target propagation bug. Two failure modes confirmed against the production VPS:\n(1) `hops env-set web PUBLIC_SENTRY_DSN --secret --target=staging` opened an \"UPDATE on web [production]\" confirmation prompt \u2014 aborted before save. Workaround used: set the env var via Coolify UI on hospeda-web-staging.\n(2) `hops db-restore --list --target=staging` printed \"Listing backups from s3://hospeda-backups/\" (production bucket) and offered prod-cron timestamps (06:00 UTC) instead of staging-cron timestamps (06:30 UTC). Workaround: `aws s3 ls s3://hospeda-staging-backups/` directly with credentials from the staging backup env file (R2_* prefix, not AWS_*).\nScope of fix: audit the --target argument propagation in scripts/server-tools/ and ensure every command that touches an environment-specific resource (R2 bucket, Coolify resource UUID, DB connection) honors --target. Estimated 2-4h of focused work.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["hops", "tooling", "bug", "section-3.C"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-05-14T10:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 92,
-        "pending": 44,
+        "total": 95,
+        "pending": 47,
         "inProgress": 0,
         "completed": 33,
         "blocked": 15,
