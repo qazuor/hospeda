@@ -774,8 +774,10 @@
             "title": "Newsletter MVP \u2014 Post-Merge Follow-Ups",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
-            "path": "SPEC-108-newsletter-mvp-followups"
+            "status": "completed",
+            "path": "SPEC-108-newsletter-mvp-followups",
+            "completed": "2026-05-14T00:00:00.000Z",
+            "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account."
         }
     ]
 }
