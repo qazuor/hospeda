@@ -915,7 +915,7 @@ Generate one salt per environment with `openssl rand -base64 48`. Store the prod
 
 1. Restore the old value from your password manager / Vercel rollback if available.
 2. If the old value is unrecoverable, accept the divergence: cached public maps and any external caches will eventually re-fetch the new approximate coordinates over the next CDN TTL. There is no clean fix.
-3. File an incident report and update [`runbooks/`](../runbooks/) with the lesson learned.
+3. File an incident report and update the [runbooks](../runbooks/README.md) with the lesson learned.
 
 #### Validation command
 
