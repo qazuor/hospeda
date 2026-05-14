@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 1,
+        "completed": 2,
         "inProgress": 0,
-        "pending": 13,
+        "pending": 12,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -80,13 +80,13 @@
             "id": "T-106-00",
             "title": "Repair broken links in apps/web/src/content/beta/ (66 — beta tester docs with Astro-route-style relative paths)",
             "phase": "phase1_link_cleanup",
-            "layer": "docs",
+            "layer": "tooling",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
-            "tags": ["docs", "cleanup", "astro-content"],
-            "files": ["apps/web/src/content/beta/**/*.md"],
+            "tags": ["docs", "cleanup", "astro-content", "tooling"],
+            "files": ["scripts/check-links.ts", "scripts/__tests__/check-links.test.ts"],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in apps/web/",
                 "All beta tester docs links resolve correctly (either to Astro routes with leading slash, or removed if not yet authored)",
@@ -95,10 +95,22 @@
             "description": "Beta tester docs in apps/web/src/content/beta/ use relative paths like (beta/host/dashboard) that look like Astro frontend routes. The link checker is filesystem-based and resolves them as relative filesystem references, so they all fail. Decision needed per link: (a) convert to absolute /beta/... if the route exists in Astro, (b) point at the corresponding .md file in the content collection, or (c) remove the link if the target page is not yet authored. Verify Astro routing by reading apps/web/src/pages/beta/ and apps/web/src/content/config.ts. This is a NEW batch not in the original 2026-05-13 spec snapshot — discovered 2026-05-14.",
             "qualityGate": {
                 "lint": "pass",
-                "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in apps/web/"
+                "typecheck": "pass",
+                "tests": "14 new tests for check-links.ts (43/43 total in scripts/__tests__)"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T01:10:00.000Z",
+                "completed": "2026-05-14T01:30:00.000Z"
+            },
+            "findings": {
+                "actualLinkForm": "Links in apps/web/src/content/beta/*.md use absolute Astro routes like `/beta/host/dashboard/` (NOT bare relative paths as the report initially suggested — that was just how `path.relative(cwd, ...)` formatted the broken-link output). Inspected apps/web/src/pages/beta/[...slug].astro: a catch-all route generates pages for every entry in the `beta` content collection, mapping doc.id to /beta/<doc.id>/. So the links are runtime-correct.",
+                "runtimeCorrectness": "Tested resolution path mentally: link `/beta/host/dashboard/` in markdown becomes <a href='/beta/host/dashboard/'>. Browser navigates there; Astro middleware preserves the path under /beta (no locale redirect, noindex stamp); [...slug].astro renders apps/web/src/content/beta/host/dashboard.md. Works.",
+                "checkerLimitation": "scripts/check-links.ts treated absolute paths as filesystem refs from repo root only. With cwd at /repo, link `/beta/host/dashboard/` resolves to /repo/beta/host/dashboard/ — doesn't exist on disk. The checker had no concept of Astro content-collection routing.",
+                "fixApproach": "Added CONTENT_COLLECTION_ALIASES map (one entry today: { urlPrefix: '/beta/', fsPrefix: 'apps/web/src/content/beta/' }). When an absolute link's first candidate misses, the checker also tries <fsPrefix><rest>.md and <fsPrefix><rest>/index.md. A link is valid if ANY candidate exists. No docs changes required.",
+                "extensibility": "Future content collections (e.g. /investors/, /docs-public/) add one line to the alias map. The script also handles `/beta/` (collection root) by checking <fsPrefix>index.md.",
+                "scopeNote": "Spec §2 lists 'improving the link-check script beyond what's needed to land green' as out of scope, but qualifies that with 'the script already works after 960aeb5ba'. The beta docs (not present at spec drafting time) introduced a NEW class of links the script couldn't represent at all. Adding content-collection awareness is a defensible extension because the links themselves are correct."
+            }
         },
         {
             "id": "T-106-01",

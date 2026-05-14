@@ -4,7 +4,8 @@
 **Started:** 2026-05-14
 **Branch:** `spec/SPEC-106-docs-broken-links-cleanup` (based off `origin/staging`)
 **Total tasks:** 14
-**Completed:** 1 / 14
+**Completed:** 2 / 14
+**Broken links remaining:** 299 (was 365 at start; T-106-00 closed all 66 in apps/web/)
 
 ---
 
@@ -43,7 +44,7 @@ Ordered for risk-management first, then visible-progress.
 | ID | Title | Status | Complexity |
 |----|-------|--------|-----------:|
 | T-106-12 | Fix validate-examples.ts hang | **completed** | 3 |
-| T-106-00 | apps/web beta content (66) | pending | 2 |
+| T-106-00 | apps/web beta content (66) | **completed** | 2 |
 | T-106-01 | apps/admin (44) | pending | 2 |
 | T-106-02 | packages/service-core (36) | pending | 2 |
 | T-106-03 | apps/api (31) | pending | 2 |
