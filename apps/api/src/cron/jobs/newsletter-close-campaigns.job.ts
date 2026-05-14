@@ -11,8 +11,11 @@
  * @module cron/jobs/newsletter-close-campaigns
  */
 
+import { NotificationType } from '@repo/notifications';
 import { NewsletterCampaignService } from '@repo/service-core';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -52,7 +55,58 @@ export const newsletterCloseCampaignsJob: CronJobDefinition = {
         }
 
         try {
-            const campaignService = new NewsletterCampaignService({ logger: apiLogger });
+            // SPEC-108 T-108-02: wire the admin failure-notification callback
+            // so campaigns that close with failed > 0 fan out an
+            // ADMIN_SYSTEM_EVENT alert to every address configured in
+            // HOSPEDA_ADMIN_NOTIFICATION_EMAILS. The cron is the only caller
+            // of closeSentCampaigns today; if a second caller appears it
+            // must wire the same DI seam.
+            const adminEmails =
+                env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS?.split(',')
+                    .map((e) => e.trim())
+                    .filter((e) => e.length > 0) ?? [];
+
+            const campaignService = new NewsletterCampaignService(
+                { logger: apiLogger },
+                {
+                    notifyCampaignClosedWithFailuresFn:
+                        adminEmails.length > 0
+                            ? async (event) => {
+                                  for (const adminEmail of adminEmails) {
+                                      await sendNotification({
+                                          type: NotificationType.ADMIN_SYSTEM_EVENT,
+                                          recipientEmail: adminEmail,
+                                          recipientName: 'Admin',
+                                          userId: null,
+                                          severity: 'warning' as const,
+                                          eventDetails: {
+                                              eventType: 'newsletter_campaign_closed_with_failures',
+                                              message: `Campaign "${event.subject}" closed with ${event.failed} failed deliveries (of ${event.totalRecipients} recipients, ${event.delivered} delivered).`,
+                                              campaignId: event.campaignId,
+                                              subject: event.subject,
+                                              totalRecipients: event.totalRecipients,
+                                              delivered: event.delivered,
+                                              failed: event.failed,
+                                              timestamp: event.closedAt.toISOString()
+                                          }
+                                      }).catch((err) => {
+                                          apiLogger.debug(
+                                              {
+                                                  error:
+                                                      err instanceof Error
+                                                          ? err.message
+                                                          : String(err),
+                                                  adminEmail,
+                                                  campaignId: event.campaignId
+                                              },
+                                              'Admin newsletter-failure alert failed (will retry)'
+                                          );
+                                      });
+                                  }
+                              }
+                            : undefined
+                }
+            );
             const result = await campaignService.closeSentCampaigns();
 
             const durationMs = Date.now() - startedAt.getTime();

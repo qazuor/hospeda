@@ -23,6 +23,7 @@
  * @module services/newsletter/delivery-factory
  */
 
+import { render } from '@react-email/render';
 import {
     BrevoEmailTransport,
     NewsletterCampaign,
@@ -35,7 +36,6 @@ import { Queue } from 'bullmq';
 import type { ConnectionOptions } from 'bullmq';
 import IORedis from 'ioredis';
 import type { Redis } from 'ioredis';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 
@@ -142,18 +142,17 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
             sendBatchFn: sendBatch,
             renderTiptapEmailFn: ({ content }) =>
                 renderTiptapEmailContent({ content: content as never }),
-            renderCampaignEmailFn: ({ subject, bodyHtml, unsubscribeUrl, isTest }) => {
+            renderCampaignEmailFn: async ({ subject, bodyHtml, unsubscribeUrl, isTest }) => {
+                // Async render through `@react-email/render` so the template
+                // gets the CSS inlining + Tailwind passes that the sync
+                // `renderToStaticMarkup` path skipped (SPEC-108 T-108-01).
                 const element = NewsletterCampaign({
                     subject,
                     bodyHtml,
                     unsubscribeUrl,
                     isTest
                 });
-                // `renderToStaticMarkup` is synchronous and produces valid HTML
-                // for the @react-email/components used by the template. We avoid
-                // @react-email/render here because its v2 API is async-only,
-                // which would force RenderCampaignEmailFn to return a Promise.
-                return renderToStaticMarkup(element);
+                return await render(element);
             },
             buildCampaignReactElementFn: ({ subject, bodyHtml, unsubscribeUrl, isTest }) =>
                 NewsletterCampaign({

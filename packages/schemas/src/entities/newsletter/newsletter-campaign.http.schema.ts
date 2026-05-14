@@ -39,7 +39,7 @@ export type TestSendNewsletterCampaignRequest = z.infer<
  * Triggers dispatch of a DRAFT campaign to the full subscriber audience.
  * `ignoreSoftCap` bypasses the rolling-window cap that prevents sending a
  * newsletter to the same subscriber more than once per
- * `HOSPEDA_NEWSLETTER_SOFT_CAP_DAYS` days. Use with caution.
+ * `HOSPEDA_NEWSLETTER_SOFTCAP_DAYS` days. Use with caution.
  * `.strict()` rejects unknown fields.
  *
  * @example

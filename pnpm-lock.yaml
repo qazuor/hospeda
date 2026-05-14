@@ -540,9 +540,6 @@ importers:
       '@types/pg':
         specifier: ^8.15.1
         version: 8.15.6
-      '@types/react-dom':
-        specifier: 19.1.7
-        version: 19.1.7(@types/react@19.1.10)
       '@types/sanitize-html':
         specifier: ^2.16.0
         version: 2.16.0
