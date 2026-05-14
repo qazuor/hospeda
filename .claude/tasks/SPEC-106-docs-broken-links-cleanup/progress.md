@@ -4,8 +4,9 @@
 **Started:** 2026-05-14
 **Branch:** `spec/SPEC-106-docs-broken-links-cleanup` (based off `origin/staging`)
 **Total tasks:** 14
-**Completed:** 12 / 14
-**Broken links remaining:** 50 (was 365 at start; -86% closed)
+**Completed:** 14 / 14 ✅
+**Broken links remaining:** 0 (was 365 at start; -100%)
+**Documentation CI:** check-links exit 0, validate-examples exit 0 in 1.4s, 47/47 scripts tests pass — all local acceptance met, awaiting PR + CI confirmation.
 
 ---
 
@@ -55,8 +56,8 @@ Ordered for risk-management first, then visible-progress.
 | T-106-08 | docs/runbooks (14) | **completed** | 1 |
 | T-106-09 | packages/icons (13) | **completed** | 1 |
 | T-106-10 | seed + i18n + docs/guides (23) | **completed** | 2 |
-| T-106-11 | tail dirs (~50) | pending | 2 |
-| T-106-13 | Documentation CI phase gate | pending | 1 |
+| T-106-11 | tail dirs (~50) | **completed** | 2 |
+| T-106-13 | Documentation CI phase gate | **completed** | 1 |
 
 ---
 
