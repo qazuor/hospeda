@@ -16,13 +16,14 @@ import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
+    getBullMQConnection,
     getNewsletterDeliveryService
 } from './services/newsletter/delivery-factory';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
-import { disconnectRedis, getRedisClient } from './utils/redis';
+import { disconnectRedis } from './utils/redis';
 import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
 import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
@@ -135,8 +136,7 @@ const startServer = async (): Promise<void> => {
                                 ? apiLogger.error.bind(apiLogger)
                                 : apiLogger.warn.bind(apiLogger);
                         try {
-                            const redis = await getRedisClient();
-                            if (!redis) {
+                            if (!env.HOSPEDA_REDIS_URL) {
                                 skipLog(
                                     'Newsletter dispatch worker not started — HOSPEDA_REDIS_URL is unset. Admin send campaign WILL fail with SERVICE_UNAVAILABLE.'
                                 );
@@ -148,15 +148,21 @@ const startServer = async (): Promise<void> => {
                                 );
                                 return;
                             }
-                            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (5.10.0 direct dep vs 5.10.1 pulled by bullmq); the runtime instance is structurally compatible with BullMQ's ConnectionOptions but TS treats the duplicated type identities as incompatible.
-                            const deliveryService = getNewsletterDeliveryService(
-                                redis as unknown as Parameters<
-                                    typeof getNewsletterDeliveryService
-                                >[0]
-                            );
-                            // TYPE-WORKAROUND: same dual-version ioredis friction — BullMQ's Worker ConnectionOptions accepts the ioredis instance at runtime.
+                            // The factory manages a dedicated BullMQ Redis
+                            // connection (separate from the shared client)
+                            // so its `maxRetriesPerRequest: null` requirement
+                            // does not bleed into auth-lockout / retry-service.
+                            const deliveryService = getNewsletterDeliveryService();
+                            const bullmqConnection = getBullMQConnection();
+                            if (!deliveryService || !bullmqConnection) {
+                                skipLog(
+                                    'Newsletter dispatch worker not started — factory returned null (delivery service or connection unavailable).'
+                                );
+                                return;
+                            }
+                            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (apps/api uses 5.10.0; bullmq pulls 5.10.1). The runtime instance from getBullMQConnection is structurally compatible with BullMQ's Worker connection option; the cast walks past the duplicated-type-identity friction.
                             newsletterWorker = startNewsletterWorker({
-                                redis: redis as unknown as Parameters<
+                                redis: bullmqConnection as unknown as Parameters<
                                     typeof startNewsletterWorker
                                 >[0]['redis'],
                                 deliveryService,

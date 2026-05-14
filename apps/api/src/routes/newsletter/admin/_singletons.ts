@@ -14,7 +14,6 @@ import type { INewsletterDeliveryService } from '@repo/service-core/services/new
 import { getNewsletterDeliveryService } from '../../../services/newsletter/delivery-factory';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
-import { getRedisClient } from '../../../utils/redis';
 import { getDefaultNewsletterService } from '../protected/_singletons';
 
 let cachedCampaignService: NewsletterCampaignService | null = null;
@@ -80,12 +79,13 @@ export async function getDefaultCampaignService(): Promise<NewsletterCampaignSer
 
     let deliveryService: INewsletterDeliveryService = stubDeliveryService;
     try {
-        const redis = await getRedisClient();
-        if (redis && env.HOSPEDA_EMAIL_API_KEY) {
-            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (5.10.0 direct vs 5.10.1 via bullmq); the runtime instance is structurally compatible with BullMQ's ConnectionOptions, the cast walks past the duplicated-type-identity friction.
-            deliveryService = getNewsletterDeliveryService(
-                redis as unknown as Parameters<typeof getNewsletterDeliveryService>[0]
-            );
+        // The factory now manages its own dedicated BullMQ Redis connection
+        // (BullMQ requires `maxRetriesPerRequest: null` which is incompatible
+        // with the shared client's fail-fast config). The factory returns
+        // null when prerequisites are missing — we fall back to the stub.
+        const real = getNewsletterDeliveryService();
+        if (real) {
+            deliveryService = real;
         } else {
             apiLogger.warn(
                 'Newsletter delivery service falling back to stub (Redis or HOSPEDA_EMAIL_API_KEY missing).'
