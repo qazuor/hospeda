@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 10,
+        "completed": 11,
         "inProgress": 0,
-        "pending": 4,
+        "pending": 3,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -458,11 +458,16 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/icons/**/*.md"],
+            "files": [
+                "packages/icons/docs/README.md",
+                "packages/icons/docs/guides/naming.md",
+                "packages/icons/docs/api/usage-reference.md",
+                "packages/icons/docs/api/icons-catalog.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/icons/",
                 "Per-batch PR titled docs(icons): repair internal links"
@@ -471,9 +476,18 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in packages/icons/"
+                "tests": "broken count in packages/icons/: 13 -> 0; total 86 -> 73"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T04:35:00.000Z",
+                "completed": "2026-05-14T04:45:00.000Z"
+            },
+            "findings": {
+                "phantomGuides": "References to guides/{usage-guide,integration-guide,accessibility-guide,performance-guide}.md never existed. Real guides cover: accessibility, adding-icons, naming, optimization, testing. Remapped: usage-guide -> ../quick-start.md (where usage examples actually live); integration-guide -> ../guides/naming.md (naming conventions); accessibility-guide -> ../guides/accessibility.md (renamed, no -guide suffix); performance-guide -> ../guides/optimization.md.",
+                "wrongDepth": "guides/naming.md linked to `../icons-catalog.md` and `../usage-reference.md` but those files are in `../api/`. Fixed both.",
+                "examplesDir": "docs/README.md `[Code Examples](./examples/)` — no examples dir. Replaced with link to quick-start.md (which has the code examples)."
+            }
         },
         {
             "id": "T-106-10",
