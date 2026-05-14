@@ -18,13 +18,26 @@
  * @see https://tanstack.com/start/latest/docs/framework/react/middleware
  */
 
-import { randomBytes } from 'node:crypto';
 import { createMiddleware } from '@tanstack/react-start';
 import { setResponseHeader } from '@tanstack/react-start/server';
 import { buildCspDirectives } from './lib/csp-helpers';
 
 /** Header name for CSP Report-Only mode (does not block, only reports violations). */
 const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only' as const;
+
+// Web Crypto is used instead of `node:crypto` so this module stays free of
+// Node built-in imports. TanStack Start evaluates start.ts in both server and
+// client bundles; a `node:crypto` import here was being pulled into the
+// client bundle and breaking SPA hydration with a CORS error.
+function generateCspNonce(byteLength: number): string {
+    const bytes = new Uint8Array(byteLength);
+    crypto.getRandomValues(bytes);
+    let binary = '';
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 /**
  * CSP middleware that generates a per-request nonce and sets the CSP header.
@@ -37,7 +50,7 @@ const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only' as const;
  * server functions that may need it (e.g., rendering inline scripts).
  */
 export const cspMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
-    const nonce = randomBytes(16).toString('base64url');
+    const nonce = generateCspNonce(16);
     const sentryDsn = import.meta.env.VITE_SENTRY_DSN ?? '';
     const cspValue = buildCspDirectives({ nonce, sentryDsn });
 
