@@ -1044,7 +1044,7 @@ export const Route = createFileRoute('/users/')({
 
 - **[Architecture Overview](../architecture.md)** - Admin app architecture
 - **[Creating Pages Tutorial](./creating-pages.md)** - Step-by-step page creation
-- **[Authentication Guide](./authentication.md)** - Route protection patterns
+- **[Authentication Guide](../AUTH_SYSTEM.md)** - Route protection patterns
 - **[Data Fetching Guide](./queries.md)** - TanStack Query integration
 
 ### Examples

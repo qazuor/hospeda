@@ -27,13 +27,13 @@ Welcome to the **Hospeda Admin Dashboard** documentation! This admin application
 
 1. **[Setup Guide](./setup.md)** - Get your local environment running (5 minutes)
 2. **[Architecture Overview](./architecture.md)** - Understand TanStack Start (10 minutes)
-3. **[Usage Guides](./usage/)** - Learn how to use admin features (15 minutes)
+3. **[Usage Guides](./usage/README.md)** - Learn how to use admin features (15 minutes)
 
 **For developers:**
 
 1. Complete the setup above
-2. Read **[Development Guides](./development/)** - Build new features
-3. Check **[Examples](./examples/)** - Copy-paste working code
+2. Read **[Development Guides](./development/README.md)** - Build new features
+3. Check the example components under `./development/examples/` — copy-paste working code (`crud-page.tsx`, `form-example.tsx`, `table-example.tsx`, `dashboard-page.tsx`)
 
 ---
 
@@ -62,19 +62,18 @@ For developers building features:
 - **[Forms](./development/forms.md)** - TanStack Form patterns
 - **[Tables](./development/tables.md)** - TanStack Table patterns
 - **[Data Fetching](./development/queries.md)** - TanStack Query (React Query)
-- **[Authentication](./development/authentication.md)** - Better Auth integration
+- **[Authentication](./AUTH_SYSTEM.md)** - Better Auth integration
 - **[UI Components](./development/components.md)** - Shadcn UI & custom components
-- **[State Management](./development/state-management.md)** - Client & server state
-- **[Testing](./development/testing.md)** - Unit, integration, e2e tests
+- **[Permissions](./development/permissions.md)** - Role-based access control
 
 ### 📝 Examples
 
-Working code examples you can copy:
+Working code examples you can copy from `./development/examples/`:
 
-- **[CRUD Page Example](./examples/crud-page.tsx)** - Complete CRUD implementation
-- **[Form Example](./examples/form-component.tsx)** - Complex form with validation
-- **[Table Example](./examples/table-component.tsx)** - Sortable, filterable table
-- **[Protected Route](./examples/protected-route.tsx)** - Auth-protected page
+- **[CRUD Page Example](./development/examples/crud-page.tsx)** - Complete CRUD implementation
+- **[Form Example](./development/examples/form-example.tsx)** - Complex form with validation
+- **[Table Example](./development/examples/table-example.tsx)** - Sortable, filterable table
+- **[Dashboard Page Example](./development/examples/dashboard-page.tsx)** - Composite dashboard layout
 
 ---
 
@@ -124,7 +123,7 @@ pnpm format
 | Create form | Use `@tanstack/react-form` | [Forms](./development/forms.md) |
 | Add table | Use `@tanstack/react-table` | [Tables](./development/tables.md) |
 | Fetch data | Use `useQuery` hook | [Data Fetching](./development/queries.md) |
-| Protect route | Add `beforeLoad` check | [Authentication](./development/authentication.md) |
+| Protect route | Add `beforeLoad` check | [Authentication](./AUTH_SYSTEM.md) |
 
 ---
 
@@ -250,7 +249,7 @@ test/
 └── lib/                 # Utility tests
 ```
 
-**Guide:** [Testing Documentation](./development/testing.md)
+**Guide:** Tests live under `test/`, mirroring `src/`. Run with `pnpm test` (Vitest) or `pnpm test:watch` for watch mode.
 
 ---
 
@@ -300,8 +299,8 @@ VITE_APP_NAME=Hospeda Admin
 
 - **[Project CLAUDE.md](../CLAUDE.md)** - App-specific guidelines
 - **[Root CLAUDE.md](../../../CLAUDE.md)** - Project-wide standards
-- **[API Documentation](../../api/docs/)** - Backend API reference
-- **[Database Schema](../../../packages/db/docs/)** - Database structure
+- **[API Documentation](../../api/docs/README.md)** - Backend API reference
+- **[Database Schema](../../../packages/db/docs/README.md)** - Database structure
 
 ---
 
@@ -321,7 +320,7 @@ VITE_APP_NAME=Hospeda Admin
 2. **Colocate tests** - Keep tests near implementation
 3. **Extract reusable logic** - Create custom hooks
 4. **Use shared services** - Import from `@repo/service-core`
-5. **Follow naming conventions** - See [Code Standards](../../../.claude/docs/standards/code-standards.md)
+5. **Follow naming conventions** - See [Code Standards](../../../.claude/docs/code-standards.md)
 
 ### Performance
 
@@ -390,10 +389,9 @@ pnpm build
 
 ### Resources
 
-1. **Check [Troubleshooting Guide](./development/troubleshooting.md)** first
-2. **Search [TanStack Discord](https://discord.com/invite/tanstack)** - Very active community
-3. **Review [GitHub Issues](https://github.com/hospeda/issues)** - Known issues
-4. **Ask team** in Slack #dev-admin channel
+1. **Search [TanStack Discord](https://discord.com/invite/tanstack)** - Very active community
+2. **Review [GitHub Issues](https://github.com/hospeda/issues)** - Known issues
+3. **Ask team** in Slack #dev-admin channel
 
 ### Reporting Issues
 
@@ -410,7 +408,7 @@ Include:
 
 ## 🤝 Contributing
 
-See main project [Contributing Guide](../../../CONTRIBUTING.md) for:
+See the main project [Contributing Guide](../../../docs/contributing/README.md) for:
 
 - Development workflow
 - Code standards

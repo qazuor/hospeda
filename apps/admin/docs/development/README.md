@@ -43,7 +43,7 @@ This section provides **comprehensive development guides** for engineers buildin
 | Add form to page | [Forms](./forms.md) | 20 min |
 | Add data table | [Tables](./tables.md) | 25 min |
 | Fetch data from API | [Queries](./queries.md) | 15 min |
-| Protect route with auth | [Authentication](./authentication.md) | 10 min |
+| Protect route with auth | [Authentication](../AUTH_SYSTEM.md) | 10 min |
 | Add UI component | [Components](./components.md) | 5 min |
 | Use factory functions | [Factories](./factories.md) | 10 min |
 | Debug SSR issues | [Debugging](./debugging.md) | Variable |
@@ -106,7 +106,7 @@ This section provides **comprehensive development guides** for engineers buildin
 
 ### Authentication & Security
 
-**[Authentication Guide](./authentication.md)**
+**[Authentication Guide](../AUTH_SYSTEM.md)**
 
 - Better Auth integration
 - Protected routes with beforeLoad
@@ -165,9 +165,9 @@ This section provides **comprehensive development guides** for engineers buildin
 - Debug SSR vs client-side code
 - Performance profiling
 
-**[Deployment Guide](./deployment.md)**
+**Deployment Guide** — the admin app is deployed via Coolify on the self-hosted VPS. See the project-level [Deployment docs](../../../../docs/deployment/README.md) for the platform-wide guide and `apps/admin/CLAUDE.md` for app-specific notes.
 
-- Vercel deployment setup
+- Coolify deployment setup
 - Environment variables
 - Build configuration
 - Preview deployments
@@ -185,7 +185,7 @@ This section provides **comprehensive development guides** for engineers buildin
 |------|-------|--------|
 | Add new CRUD page | 1. Create route file`<br>`2. Add loader`<br>`3. Create form`<br>`4. Add table`<br>`5. Wire mutations | [Creating Pages](./creating-pages.md)`<br>`[Forms](./forms.md)`<br>`[Tables](./tables.md) |
 | Add dashboard widget | 1. Create component`<br>`2. Add query`<br>`3. Handle loading/error`<br>`4. Add to dashboard | [Queries](./queries.md)`<br>`[Components](./components.md) |
-| Create protected admin page | 1. Create route`<br>`2. Add beforeLoad`<br>`3. Check permissions`<br>`4. Handle unauthorized | [Protected Routes](./protected-routes.md)`<br>`[Authentication](./authentication.md) |
+| Create protected admin page | 1. Create route`<br>`2. Add beforeLoad`<br>`3. Check permissions`<br>`4. Handle unauthorized | [Protected Routes](./protected-routes.md)`<br>`[Authentication](../AUTH_SYSTEM.md) |
 
 ### Working with Data
 
