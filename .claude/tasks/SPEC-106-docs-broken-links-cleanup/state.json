@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 3,
+        "completed": 4,
         "inProgress": 0,
-        "pending": 11,
+        "pending": 10,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -164,11 +164,23 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/service-core/**/*.md"],
+            "files": [
+                "packages/service-core/README.md",
+                "packages/service-core/CLAUDE.md",
+                "packages/service-core/docs/README.md",
+                "packages/service-core/docs/quick-start.md",
+                "packages/service-core/docs/guides/testing.md",
+                "packages/service-core/docs/guides/lifecycle-hooks.md",
+                "packages/service-core/docs/guides/custom-logic.md",
+                "packages/service-core/docs/guides/creating-services.md",
+                "packages/service-core/docs/api/errors.md",
+                "packages/service-core/docs/api/ServiceOutput.md",
+                "packages/service-core/docs/api/BaseCrudService.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/service-core/",
                 "Per-batch PR titled docs(service-core): repair internal links"
@@ -177,9 +189,19 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in packages/service-core/"
+                "tests": "broken count in packages/service-core/: 36 -> 0; total 255 -> 219"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T02:05:00.000Z",
+                "completed": "2026-05-14T02:25:00.000Z"
+            },
+            "findings": {
+                "examplesDir": "packages/service-core/docs/examples/ NEVER EXISTED as a docs dir. Actual examples live in packages/service-core/src/examples/ as .ts files (basic-service.ts, complex-logic.ts, custom-methods.ts, with-hooks.ts). ~10 broken links pointed at that non-existent docs/examples/ tree. Replaced with prose pointing at src/examples/ .ts files (markdown link to a directory of source files would not render usefully on GitHub anyway).",
+                "apiCapitalization": "api/base-crud-service.md, api/result-types.md, api/service-context.md, api/error-handling.md never existed under those names. Actual files: api/BaseCrudService.md, api/ServiceOutput.md, api/errors.md. Three planned docs (result-types, service-context, error-handling) were consolidated. Remapped accordingly.",
+                "guidesPhantomDocs": "docs/guides/service-composition.md and docs/guides/services.md never existed. Real guides cover: advanced-patterns, creating-services, custom-logic, lifecycle-hooks, performance, permissions, testing. Replaced service-composition refs with advanced-patterns; replaced services refs with creating-services.",
+                "miscellaneous": "docs/guides/adding-services.md (project-level) never existed -> docs/guides/adding-new-entity.md. .claude/docs/standards/testing-standards.md -> .claude/docs/testing-standards.md (no standards/ subdir). [@repo/db]/[@repo/schemas]/[@repo/logger] dir links -> their docs/README.md. api/BaseCrudService.md had a broken link to ../CLAUDE.md (would resolve to docs/CLAUDE.md, which doesn't exist); fixed to ../../CLAUDE.md (package root)."
+            }
         },
         {
             "id": "T-106-03",
