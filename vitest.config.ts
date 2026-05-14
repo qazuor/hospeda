@@ -17,6 +17,7 @@ export default defineConfig({
             'apps/admin/vitest.config.ts',
             'apps/api/vitest.config.ts',
             'packages/*/vitest.config.ts',
+            'scripts/vitest.config.ts',
             'scripts/cli/vitest.config.ts'
         ]
     }
