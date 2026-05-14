@@ -339,21 +339,20 @@ export function UserMenu({
     const texts = TEXTS[locale] ?? TEXTS.es;
 
     // ── Refine auth state from /auth/me on mount ────────────────────────
+    // Stale-while-revalidate: paint from cache instantly (if any) for perceived
+    // perf, but ALWAYS hit /auth/me in background to detect post-OAuth state
+    // changes that would otherwise be masked by a 60s-TTL cache poisoned with
+    // the pre-signin guest snapshot. See SPEC-103 T-093.
     useEffect(() => {
         let cancelled = false;
         const cached = readCachedAuthMe();
         if (cached) {
-            if (!cancelled) {
-                setUser(cached.user);
-                setPermissions(cached.permissions);
-                document.documentElement.setAttribute(
-                    'data-user-authenticated',
-                    cached.isAuthenticated ? 'true' : 'false'
-                );
-            }
-            return () => {
-                cancelled = true;
-            };
+            setUser(cached.user);
+            setPermissions(cached.permissions);
+            document.documentElement.setAttribute(
+                'data-user-authenticated',
+                cached.isAuthenticated ? 'true' : 'false'
+            );
         }
 
         fetchAuthMe()
@@ -368,8 +367,9 @@ export function UserMenu({
                 );
             })
             .catch(() => {
-                // Network error — keep whatever the server-rendered initialUser hint gave us.
-                if (!cancelled) setPermissions([]);
+                // Network error — keep whatever the cache or server-rendered
+                // initialUser hint already gave us.
+                if (!cancelled && !cached) setPermissions([]);
             });
 
         return () => {
