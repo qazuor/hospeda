@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 4,
+        "completed": 5,
         "inProgress": 0,
-        "pending": 10,
+        "pending": 9,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -209,11 +209,23 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["apps/api/**/*.md"],
+            "files": [
+                "apps/api/README.md",
+                "apps/api/docs/README.md",
+                "apps/api/docs/runbook-advisory-locks.md",
+                "apps/api/docs/cron-system.md",
+                "apps/api/docs/TESTING_GUIDE.md",
+                "apps/api/docs/METRICS_SYSTEM.md",
+                "apps/api/docs/ERROR_HANDLING.md",
+                "apps/api/docs/webhooks/mercadopago.md",
+                "apps/api/docs/development/creating-endpoints.md",
+                "apps/api/docs/development/README.md",
+                "apps/api/test/e2e/sandbox/README.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in apps/api/",
                 "Per-batch PR titled docs(api): repair internal links"
@@ -222,9 +234,19 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in apps/api/"
+                "tests": "broken count in apps/api/: 31 -> 0; total 219 -> 188"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T02:30:00.000Z",
+                "completed": "2026-05-14T02:50:00.000Z"
+            },
+            "findings": {
+                "phantomDocs": "Many references pointed at SCREAMING_CASE files that never existed: COMPLETE_API_GUIDE.md (3x), AUTH_SYSTEM.md, ENVIRONMENT_VARIABLES.md (2x), ROUTE_FACTORY_SYSTEM.md (2x), SECURITY_CONFIG.md (2x), ZOD_ERROR_SYSTEM.md, CRON_CONFIGURATION.md, CRON_VERIFICATION.md, TASK_T032_SUMMARY.md. These were planned during initial scaffolding but the content was actually consolidated into kebab-case docs (route-architecture.md, usage/authentication.md, development/route-factories.md, cors-configuration.md, development/validation.md) or moved to project-level (docs/guides/environment-variables.md, docs/guides/cron-management.md). Remapped accordingly; the 3 cron-system internal refs had no replacement so the bullet was replaced with a single link to the project-level cron management guide.",
+                "wrongRelativePathDepth": "apps/api/docs/runbook-advisory-locks.md and apps/api/docs/webhooks/mercadopago.md both linked with one fewer `../` than needed for their depth. runbook ../../docs/... -> ../../../docs/... (3 dirs deep), and mercadopago ../../../packages/... -> ../../../../packages/... (4 dirs deep including webhooks/).",
+                "movedTargetsOneLevelUp": "apps/api/docs/development/setup.md and apps/api/docs/development/testing-guide.md never existed; the actual files are at apps/api/docs/setup.md and apps/api/docs/TESTING_GUIDE.md (one level up).",
+                "miscellaneous": "apps/web/docs/README.md (doesn't exist) -> apps/web/CLAUDE.md (same fix pattern as admin and service-core). apps/api/docs/billing/ (dir, doesn't exist) -> apps/api/docs/billing-api-endpoints.md. apps/api/docs/examples (dir, never docs — examples are .ts files in apps/api/src/examples/) -> prose ref to .ts files. docs/guides/adding-api-routes.md (never existed) -> apps/api/docs/development/creating-endpoints.md (the actual canonical guide for that). docs/guides/authentication.md (never existed) -> docs/security/authentication.md."
+            }
         },
         {
             "id": "T-106-04",
