@@ -4,8 +4,8 @@
 **Started:** 2026-05-14
 **Branch:** `spec/SPEC-106-docs-broken-links-cleanup` (based off `origin/staging`)
 **Total tasks:** 14
-**Completed:** 7 / 14
-**Broken links remaining:** 134 (was 365 at start; -66 web, -44 admin, -36 service-core, -31 api, -27 db, -27 deployment incl. code-block fix)
+**Completed:** 8 / 14
+**Broken links remaining:** 115 (was 365 at start; -66 web, -44 admin, -36 service-core, -31 api, -27 db, -27 deployment, -19 logger)
 
 ---
 
@@ -50,7 +50,7 @@ Ordered for risk-management first, then visible-progress.
 | T-106-03 | apps/api (31) | **completed** | 2 |
 | T-106-04 | packages/db (27) | **completed** | 2 |
 | T-106-05 | docs/deployment (26) | **completed** | 2 |
-| T-106-06 | packages/logger (19) | pending | 1 |
+| T-106-06 | packages/logger (19) | **completed** | 1 |
 | T-106-07 | packages/schemas (15) | pending | 1 |
 | T-106-08 | docs/runbooks (14) | pending | 1 |
 | T-106-09 | packages/icons (13) | pending | 1 |

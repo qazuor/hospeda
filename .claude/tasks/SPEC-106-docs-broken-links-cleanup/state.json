@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 7,
+        "completed": 8,
         "inProgress": 0,
-        "pending": 7,
+        "pending": 6,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -334,11 +334,23 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/logger/**/*.md"],
+            "files": [
+                "packages/logger/README.md",
+                "packages/logger/docs/README.md",
+                "packages/logger/docs/quick-start.md",
+                "packages/logger/docs/guides/testing.md",
+                "packages/logger/docs/guides/structured-logging.md",
+                "packages/logger/docs/guides/scoped-loggers.md",
+                "packages/logger/docs/guides/performance.md",
+                "packages/logger/docs/guides/monitoring.md",
+                "packages/logger/docs/guides/formatting.md",
+                "packages/logger/docs/api/logger-reference.md",
+                "packages/logger/docs/api/log-levels.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/logger/",
                 "Per-batch PR titled docs(logger): repair internal links"
@@ -347,9 +359,18 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in packages/logger/"
+                "tests": "broken count in packages/logger/: 19 -> 0; total 134 -> 115"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T03:45:00.000Z",
+                "completed": "2026-05-14T04:00:00.000Z"
+            },
+            "findings": {
+                "phantomApiDoc": "6 broken refs to api/logger.md never existed; actual file is api/logger-reference.md. Remapped all 6.",
+                "phantomGuides": "configuration.md (4x), best-practices.md (2x), and docs/monitoring/sentry-setup-guide.md (1x) were never written. Removed those bullets from the Related Documentation sections — keeping prose meaningful by linking to actually existing docs (e.g. sentry rotation in docs/deployment/checklist.md).",
+                "examplesDir": "8 broken links pointed at the dir `packages/logger/docs/examples/`. The dir EXISTS with 4 .ts files (basic-logging.ts, scoped-logging.ts, structured-logging.ts, error-logging.ts) but the filesystem checker rejects directories (only checks files). Fix: replaced each dir link with a link to basic-logging.ts plus prose listing the rest. Same pattern used in service-core (T-106-02) and db (T-106-04)."
+            }
         },
         {
             "id": "T-106-07",
