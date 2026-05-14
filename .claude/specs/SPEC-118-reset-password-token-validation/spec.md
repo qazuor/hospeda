@@ -128,7 +128,7 @@ Recorded as `session-finding-34` in `.claude/tasks/SPEC-103-vps-migration-post-m
 Independent of:
 
 - SPEC-114 (CLOSED — forgot-password endpoint rename via PR #1075). This spec is the matching UX hardening on the OTHER side of the reset flow.
-- SPEC-117 (OAuth cancel observability) — same auth surface but distinct concern.
+- SPEC-120 (OAuth cancel observability — originally SPEC-117, renumbered) — same auth surface but distinct concern.
 - The PRs that closed the SPEC-103 ops batch (#1077, #1080, #1085) do NOT block this work.
 
 Can ship anytime against the current staging codebase. Worktree-independent.
