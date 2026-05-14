@@ -402,6 +402,14 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_SENTRY_DSN: z.string().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
+    /**
+     * Sentry environment tag. When set, takes precedence over NODE_ENV
+     * for Sentry event tagging — lets prod and staging both run with
+     * NODE_ENV=production (preserving prod-like behavior like
+     * tracesSampleRate>0) while still separating events in the Sentry
+     * dashboard. Recommended values: `production`, `staging`.
+     */
+    HOSPEDA_SENTRY_ENVIRONMENT: z.string().optional(),
 
     // Media / Cloudinary
     /** Cloudinary cloud name (cloud_name in Cloudinary dashboard) */
