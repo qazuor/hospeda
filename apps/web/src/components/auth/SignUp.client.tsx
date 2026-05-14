@@ -84,7 +84,30 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     result.error.message ?? t('auth.signUp.error', 'Error al crear la cuenta')
                 );
             } else {
-                window.location.replace(redirectTo);
+                // Mirror the OAuth host-strip+re-attach below. The
+                // server-built `redirectTo` can carry `https://localhost`
+                // when Astro Node runs behind a reverse proxy that does
+                // not forward the original Host header (observed
+                // 2026-05-14 during SPEC-103 T-012 smoke: POST /sign-up
+                // returned 200 but the subsequent navigation went to
+                // https://localhost/es/auth/verify-email-sent and
+                // failed). Strip the host (if any) and reattach the
+                // browser's real origin so the navigation always lands
+                // on whatever host the user opened.
+                const origin = window.location.origin;
+                let path = redirectTo || '/';
+                if (path.startsWith('http')) {
+                    try {
+                        const parsed = new URL(path);
+                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                    } catch {
+                        path = '/';
+                    }
+                }
+                if (!path.startsWith('/')) {
+                    path = `/${path}`;
+                }
+                window.location.replace(`${origin}${path}`);
             }
         } catch {
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
