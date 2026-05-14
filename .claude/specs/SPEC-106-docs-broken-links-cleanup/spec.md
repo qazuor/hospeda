@@ -3,8 +3,10 @@ spec-id: SPEC-106
 title: Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)
 type: chore
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-13T03:00:00Z
+started: 2026-05-14T00:00:00Z
+completed: 2026-05-14T06:00:00Z
 effort_estimate_hours: 6-16
 tags: [docs, ci, tech-debt, cleanup]
 extracted_from: SPEC-101 (uncovered by the check-links infinite-loop fix in commit `960aeb5ba` + post-fix audit revealing `validate-examples.ts` also hangs)
@@ -56,9 +58,39 @@ In addition to the broken-link cleanup, this spec also fixes `scripts/validate-e
 4. Likely fix shape: either (a) ditch `getPreEmitDiagnostics` and rely on `sourceFile.parseDiagnostics` alone (syntax-only check, much faster), or (b) build a single Program with all virtual files and re-use it across blocks, or (c) call `ts.transpileModule` (which doesn't type-check but catches syntax errors quickly).
 5. Acceptance: `pnpm docs:validate-examples` finishes in under 60 seconds against the full repo, exits 0 (or surfaces real syntax errors with file:line:reason).
 
-### 3. Current state (snapshot 2026-05-13)
+### 3. Current state
 
-- **299 broken internal links** reported by `pnpm docs:check-links` on `spec/SPEC-101-newsletter-mvp` HEAD `960aeb5ba`.
+**Refresh 2026-05-14** (on `spec/SPEC-106-docs-broken-links-cleanup`, branched from `origin/staging`):
+
+- **365 broken internal links** reported by `pnpm docs:check-links` (up from 299 in the original snapshot because pre-launch sprint added beta tester docs in `apps/web/src/content/beta/` that introduced 66 new broken links — these use relative paths like `(beta/host/dashboard)` that look like Astro frontend routes but are checked as filesystem references and fail).
+- Updated distribution (366 total — small rounding because one is at `docs/index.md` standalone):
+
+| Directory | Broken links |
+|---|---:|
+| `apps/web/` (beta content) | 66 |
+| `apps/admin/` | 44 |
+| `packages/service-core/` | 36 |
+| `apps/api/` | 31 |
+| `packages/db/` | 27 |
+| `docs/deployment/` | 26 |
+| `packages/logger/` | 19 |
+| `packages/schemas/` | 15 |
+| `docs/runbooks/` | 14 |
+| `packages/icons/` | 13 |
+| `packages/seed/` | 9 |
+| `packages/i18n/` | 7 |
+| `docs/guides/` | 7 |
+| `packages/billing/` | 6 |
+| `docs/resources/` | 6 |
+| `docs/examples/` | 6 |
+| `docs/contributing/` | 5 |
+| `docs/testing/` | 4 |
+| `docs/performance/` | 4 |
+| Other (utils, notifications, config, auth-ui, docs/security, docs/architecture, tailwind-config, root) | 21 |
+
+**Original snapshot 2026-05-13** (on `spec/SPEC-101-newsletter-mvp` HEAD `960aeb5ba`):
+
+- **299 broken internal links** reported by `pnpm docs:check-links`.
 - Distribution by top-level dir:
 
 | Directory | Broken links |
@@ -120,6 +152,7 @@ Order proposed (largest first to maximize incremental progress visible in CI):
 
 | Task | Title | Status | Estimated effort |
 |---|---|---|---|
+| T-106-00 | Repair broken links in `apps/web/src/content/beta/` (66 — added 2026-05-14, beta tester docs with Astro-route-style relative paths) | pending | 45-75 min |
 | T-106-01 | Repair broken links in `apps/admin/` (44) | pending | 45-60 min |
 | T-106-02 | Repair broken links in `packages/service-core/` (36) | pending | 45-60 min |
 | T-106-03 | Repair broken links in `apps/api/` (31) | pending | 30-45 min |

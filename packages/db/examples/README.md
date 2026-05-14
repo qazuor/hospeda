@@ -429,7 +429,7 @@ describe('ProductModel', () => {
 - [Package Documentation](../CLAUDE.md)
 - [Drizzle ORM Docs](https://orm.drizzle.team)
 - [BaseModel Source](../src/base/base.model.ts)
-- [Project Standards](../../../.claude/docs/standards/)
+- [Code Standards](../../../.claude/docs/code-standards.md), [API Design Standards](../../../.claude/docs/api-design-standards.md), [Testing Standards](../../../.claude/docs/testing-standards.md)
 
 ## Getting Help
 

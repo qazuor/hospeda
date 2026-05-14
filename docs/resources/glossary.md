@@ -2,7 +2,7 @@
 
 Comprehensive terminology reference for the Hospeda project. This glossary defines technical terms, architecture patterns, and business concepts specific to the Hospeda tourism platform.
 
-**Note**: For Claude Code workflow terminology (agents, commands, PDR, etc.), see [.claude/docs/glossary.md](../../.claude/docs/glossary.md).
+**Note**: For Claude Code workflow terminology (agents, commands, PDR, etc.), see the standards docs under [`.claude/docs/`](../../.claude/docs/development-workflow.md).
 
 ## Table of Contents
 
@@ -1419,7 +1419,7 @@ const service = await touristServiceService.create({
 - [FAQ](./faq.md) - Common questions about these terms
 - [Troubleshooting](./troubleshooting.md) - Fixing issues with these concepts
 - [External Links](./external-links.md) - Official documentation
-- [Claude Code Glossary](../../.claude/docs/glossary.md) - Workflow terminology
+- [Development Workflow](../../.claude/docs/development-workflow.md) - Claude Code workflow terminology (agents, PDR, SDD, etc.)
 
 ---
 

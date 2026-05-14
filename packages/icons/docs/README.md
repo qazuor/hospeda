@@ -590,7 +590,7 @@ For questions or issues:
 
 - Check [Troubleshooting](#troubleshooting) section
 - Review [API Reference](./api/usage-reference.md)
-- Consult [Code Examples](./examples/)
+- See the [Quick Start Guide](./quick-start.md) for code examples
 
 ---
 

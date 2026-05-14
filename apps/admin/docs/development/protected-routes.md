@@ -21,7 +21,7 @@ Route protection ensures that only authenticated and authorized users can access
 
 **Prerequisites:**
 
-- Read [Authentication Guide](./authentication.md)
+- Read [Authentication Guide](../AUTH_SYSTEM.md)
 - Read [Permissions Guide](./permissions.md)
 - Read [Routing Guide](./routing.md)
 - Understanding of TanStack Router
@@ -973,7 +973,7 @@ function ProtectedPage() {
 
 ### Internal Resources
 
-- **[Authentication Guide](./authentication.md)** - Auth basics
+- **[Authentication Guide](../AUTH_SYSTEM.md)** - Auth basics
 - **[Permissions Guide](./permissions.md)** - RBAC implementation
 - **[Routing Guide](./routing.md)** - TanStack Router fundamentals
 

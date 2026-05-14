@@ -265,10 +265,10 @@ git commit -m "docs(resources): add FAQ entry for database migrations"
 
 ### Project Documentation
 
-- [Quick Start Guide](../getting-started/setup.md) - Initial project setup
+- [Local Development Setup](../guides/local-development-setup.md) - Initial project setup
 - [Architecture Overview](../architecture/overview.md) - System architecture
-- [Development Guide](../development/guide.md) - Development workflows
-- [Testing Guide](../testing/guide.md) - Testing strategies
+- [Development Workflow](../../.claude/docs/development-workflow.md) - Development workflows
+- [Testing Strategy](../testing/strategy.md) - Testing strategies
 
 ### Claude Code Documentation
 

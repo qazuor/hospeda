@@ -73,13 +73,14 @@ All CI/CD workflows run on **GitHub Actions** using:
 - [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
 - [.github/workflows/docs.yml](../../.github/workflows/docs.yml)
 - [.github/workflows/validate-docs.yml](../../.github/workflows/validate-docs.yml)
-- [.github/workflows/refresh-search.yml](../../.github/workflows/refresh-search.yml)
+- [.github/workflows/e2e-pr.yml](../../.github/workflows/e2e-pr.yml)
+- [.github/workflows/e2e-nightly.yml](../../.github/workflows/e2e-nightly.yml)
 
 **Related Documentation:**
 
 - [Deployment Overview](./README.md)
-- [Environment Setup](./environment-setup.md)
-- [Testing Standards](../.claude/docs/standards/testing-standards.md)
+- [Environment Variables](../guides/environment-variables.md)
+- [Testing Standards](../../.claude/docs/testing-standards.md)
 
 ---
 
@@ -2419,7 +2420,7 @@ git add packages/db/test/models/user.model.test.ts
 git commit -m "feat(db): add User model with CRUD operations"
 ```
 
-**Full Policy**: See [Atomic Commits Standards](../../.claude/docs/standards/atomic-commits.md)
+**Full Policy**: See the [Development Workflow](../../.claude/docs/development-workflow.md) (atomic commits section) and [Git Branch Workflow](../../.claude/docs/git-branch-workflow.md)
 
 ### PR Workflow
 
@@ -2570,10 +2571,10 @@ git commit -m "feat(db): add User model with CRUD operations"
 ## Related Documentation
 
 - [Deployment Overview](./README.md)
-- [Environment Setup](./environment-setup.md)
-- [Vercel Deployment](./vercel.md)
-- [Testing Standards](../.claude/docs/standards/testing-standards.md)
-- [Atomic Commits](../.claude/docs/standards/atomic-commits.md)
+- [Environment Variables](../guides/environment-variables.md)
+- [First-Time Setup](./first-time-setup.md)
+- [Testing Standards](../../.claude/docs/testing-standards.md)
+- [Development Workflow](../../.claude/docs/development-workflow.md) (atomic commits section)
 
 ---
 

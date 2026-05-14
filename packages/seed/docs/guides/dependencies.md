@@ -923,7 +923,7 @@ You now understand:
 
 - [Creating Seeds Guide](./creating-seeds.md) - Complete seeder creation guide
 - [API Reference](../api/seed-structure.md) - ID Mapper API documentation
-- [Examples](../examples/) - Working relationship examples
+- Working relationship examples in `packages/seed/src/seeders/` (see `accommodations.ts`, `events.ts`, etc.)
 
 ---
 

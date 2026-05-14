@@ -594,10 +594,9 @@ const processErrorAsync = async (error: Error, context: RequestContext) => {
 
 ## 📚 Related Documentation
 
-- [Zod Error Transformer](./ZOD_ERROR_SYSTEM.md) - Detailed validation error handling
-- [Validation System](./COMPLETE_API_GUIDE.md#validation-system) - Request validation
+- [Validation Guide](./development/validation.md) - Request validation and Zod error handling
 - [Metrics System](./METRICS_SYSTEM.md) - Error rate monitoring
-- [Security Configuration](./SECURITY_CONFIG.md) - Security error handling
+- [CORS Configuration](./cors-configuration.md) - Security error handling
 - [Testing Guide](./TESTING_GUIDE.md) - Testing error scenarios
 
 ---

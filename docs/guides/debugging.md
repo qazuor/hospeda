@@ -1526,7 +1526,7 @@ const result = await accommodationService.create({
 
 - [Production Bug Investigation](../runbooks/production-bugs.md) - Production debugging
 - [Test-Informed Workflow](../testing/tdd-workflow.md) - Test-informed development
-- [Testing Strategy](./testing-strategy.md) - Testing guidelines
+- [Testing Strategy](../testing/strategy.md) - Testing guidelines
 - [Error Handling](./error-handling.md) - Error handling patterns
 - [Architecture Overview](../architecture/README.md) - System architecture
 

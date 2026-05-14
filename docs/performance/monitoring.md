@@ -1506,7 +1506,7 @@ function generateRecommendations(): string[] {
 
 ## Next Steps
 
-- [Performance Overview](./overview.md) - Introduction and targets
-- [Database Optimization](./database-optimization.md) - Query optimization and indexing
+- [Performance Overview](./README.md) - Introduction and targets
+- [Database Optimization](../../packages/db/docs/guides/optimization.md) - Query optimization and indexing
 - [Frontend Optimization](./frontend-optimization.md) - Bundle size and loading performance
 - [Caching Strategies](./caching.md) - Multi-layer caching implementation

@@ -1496,7 +1496,7 @@ logger.error('Payment failed', {
 
 - [Scoped Loggers](./scoped-loggers.md) - Category-based logging
 - [Monitoring Guide](./monitoring.md) - Integration with monitoring tools
-- [API Reference](../api/logger.md) - Complete API docs
+- [API Reference](../api/logger-reference.md) - Complete API docs
 
 ---
 

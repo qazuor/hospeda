@@ -1134,11 +1134,11 @@ import {
 
 ## Related Documentation
 
-- **[Usage Guide](../guides/usage-guide.md)** - Detailed usage patterns and examples
+- **[Quick Start](../quick-start.md)** - Practical usage patterns and examples
 - **[Usage Reference](./usage-reference.md)** - Complete API documentation
-- **[Integration Guide](../guides/integration-guide.md)** - Framework integration
-- **[Accessibility Guide](../guides/accessibility-guide.md)** - Accessibility best practices
-- **[Performance Guide](../guides/performance-guide.md)** - Optimization techniques
+- **[Naming Conventions](../guides/naming.md)** - Icon naming policy
+- **[Accessibility](../guides/accessibility.md)** - Accessibility best practices
+- **[Optimization](../guides/optimization.md)** - Performance optimization
 
 ## Icon Search Index
 
@@ -1493,4 +1493,4 @@ For quick searching, here are all 386 icons alphabetically:
 
 ---
 
-**Need help finding an icon?** Check the [Usage Guide](../guides/usage-guide.md) for patterns and examples, or browse by category above.
+**Need help finding an icon?** Check the [Quick Start](../quick-start.md) for patterns and examples, or browse by category above.

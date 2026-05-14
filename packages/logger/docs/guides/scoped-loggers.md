@@ -1710,9 +1710,8 @@ monitor.end('search', { resultCount: results.length });
 ## Related Documentation
 
 - [Quick Start](../quick-start.md) - Get started with logger
-- [API Reference](../api/logger.md) - Full API documentation
+- [API Reference](../api/logger-reference.md) - Full API documentation
 - [Formatting Guide](./formatting.md) - Log formatting options
-- [Configuration](../configuration.md) - Environment configuration
 
 ---
 

@@ -2106,7 +2106,7 @@ All methods automatically log queries and errors via the internal logger. Review
 - [Query Methods Guide](./query-methods.md) - Deep dive into querying
 - [Relations Guide](./relations.md) - Complete guide to relations
 - [Quick Start Guide](../quick-start.md) - Getting started
-- [Package CLAUDE.md](../CLAUDE.md) - Package overview
+- [Package CLAUDE.md](../../CLAUDE.md) - Package overview
 
 ---
 

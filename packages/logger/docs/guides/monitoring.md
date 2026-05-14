@@ -1289,8 +1289,7 @@ function logToDatadog(
 ## Related Documentation
 
 - [Structured Logging](./structured-logging.md) - Structured logging best practices
-- [Configuration](../configuration.md) - Logger configuration
-- [API Reference](../api/logger.md) - Complete API documentation
+- [API Reference](../api/logger-reference.md) - Complete API documentation
 
 ---
 

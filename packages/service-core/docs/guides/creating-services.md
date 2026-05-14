@@ -1158,4 +1158,4 @@ After implementing your service:
 - **[Lifecycle Hooks Guide](./lifecycle-hooks.md)** - Using before/after hooks
 - **[Custom Logic Guide](./custom-logic.md)** - Advanced business methods
 - **[Testing Guide](./testing.md)** - Comprehensive testing strategies
-- **[Examples](../examples/)** - Working code examples
+- Working code examples in `packages/service-core/src/examples/` (`basic-service.ts`, `custom-methods.ts`, `with-hooks.ts`, `complex-logic.ts`)

@@ -148,7 +148,7 @@ See [Architecture Documentation](architecture.md) for detailed explanation.
 
 ### Other Apps
 
-- [Web App Documentation](../../web/docs/README.md) - Public-facing website
+- [Web App Guidelines](../../web/CLAUDE.md) - Public-facing website
 - [Admin App Documentation](../../admin/docs/README.md) - Admin dashboard
 
 ### Shared Resources

@@ -873,13 +873,13 @@ Congratulations! 🎉 You now know the basics of working with `@repo/db`.
 #### Complete API Reference
 
 - **[BaseModel API](./api/BaseModel.md)** - All available methods
-- **[Query Building](./api/query-builder.md)** - Dynamic query construction
+- **[Query Methods](./api/query-methods.md)** - Dynamic query construction
 - **[Relations](./api/relations.md)** - Working with related entities
 
 #### Development Guides
 
 - **[Creating Models](./guides/creating-models.md)** - Detailed model patterns
-- **[Defining Schemas](./guides/defining-schemas.md)** - Schema best practices
+- **[Drizzle Schemas](./guides/drizzle-schemas.md)** - Schema best practices
 - **[Migrations](./guides/migrations.md)** - Managing schema changes
 - **[Testing Models](./guides/testing.md)** - Test strategies and patterns
 - **[Transactions](./guides/transactions.md)** - Advanced transaction patterns
@@ -887,8 +887,8 @@ Congratulations! 🎉 You now know the basics of working with `@repo/db`.
 #### Advanced Topics
 
 - **[Query Optimization](./guides/optimization.md)** - Performance tuning
-- **[Custom Queries](./guides/custom-queries.md)** - Beyond BaseModel
-- **[Error Handling](./guides/error-handling.md)** - Robust error patterns
+- **[Relations Guide](./guides/relations.md)** - Building queries across related tables
+- **[Soft Delete Patterns](./guides/soft-delete.md)** - Soft-delete semantics and recovery
 
 ### Common Patterns to Explore
 
@@ -938,8 +938,7 @@ const results = await db
 ### Get Help
 
 - **[Documentation Portal](./README.md)** - Complete docs
-- **[Troubleshooting Guide](./guides/troubleshooting.md)** - Common issues
-- **[Examples](./examples/README.md)** - More code samples
+- **[Examples](../examples/README.md)** - More code samples (runnable `.ts` files in `packages/db/examples/`)
 - **[CLAUDE.md](../CLAUDE.md)** - Package development guide
 
 ### Testing Resources

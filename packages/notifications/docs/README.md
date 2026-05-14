@@ -97,6 +97,6 @@ HOSPEDA_REDIS_URL=redis://localhost:6379         # Redis (optional, for retries)
 
 ## Related Resources
 
-- [Billing Documentation](../../../docs/billing/)
-- [@repo/db](../../db/docs/) .. Database schema for notification log
-- [@repo/logger](../../logger/docs/) .. Logging integration
+- [Billing Documentation](../../../docs/billing/README.md)
+- [@repo/db](../../db/docs/README.md) .. Database schema for notification log
+- [@repo/logger](../../logger/docs/README.md) .. Logging integration

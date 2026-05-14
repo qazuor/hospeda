@@ -584,5 +584,5 @@ This package is part of the Hospeda monorepo and follows the same license.
 
 1. Read the [Quick Start Guide](./quick-start.md) to get started
 2. Explore the [API Reference](./api/logger-reference.md) for detailed API documentation
-3. Check out the [Examples](./examples/) for real-world usage patterns
-4. Review the [Guides](./guides/) for advanced features and best practices
+3. Check out the [Basic Logging example](./examples/basic-logging.ts) for real-world `.ts` patterns (also `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts`)
+4. Review the topic guides: [scoped-loggers](./guides/scoped-loggers.md), [structured-logging](./guides/structured-logging.md), [formatting](./guides/formatting.md), [performance](./guides/performance.md), [monitoring](./guides/monitoring.md), [testing](./guides/testing.md)

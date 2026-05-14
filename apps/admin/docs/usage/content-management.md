@@ -1403,7 +1403,7 @@ Bad: photo.jpg
 
 **For developers:**
 
-- **[Content API](../../../api/docs/content.md)** - API endpoints
+- **[API Documentation](../../../api/docs/README.md)** - API endpoints
 - **[Architecture](../architecture.md)** - System design
 
 ---

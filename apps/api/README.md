@@ -99,29 +99,29 @@ CORS_ORIGIN=http://localhost:4321,http://localhost:3000
 
 ## Documentation
 
-📚 **Complete documentation available in [apps/api/docs/](./docs/)**
+📚 **Complete documentation available in [apps/api/docs/](./docs/README.md)**
 
 Topics covered in detailed docs:
 
 - **[Overview](./docs/README.md)**: Architecture, features, and getting started
-- **[Setup Guide](./docs/development/setup.md)**: Environment configuration and installation
-- **[API Reference](./docs/COMPLETE_API_GUIDE.md)**: Comprehensive endpoint documentation
+- **[Setup Guide](./docs/setup.md)**: Environment configuration and installation
+- **[Route Architecture](./docs/route-architecture.md)**: Three-tier endpoint structure (public, protected, admin)
 - **[Route Factories](./docs/development/route-factories.md)**: Creating type-safe routes
-- **[Authentication](./docs/AUTH_SYSTEM.md)**: Actor system and permissions
-- **[Testing](./docs/development/testing-guide.md)**: Testing strategies and patterns
+- **[Authentication](./docs/usage/authentication.md)**: Actor system and permissions
+- **[Testing](./docs/TESTING_GUIDE.md)**: Testing strategies and patterns
 - **[Deployment](../../docs/deployment/apps/api.md)**: Production setup and monitoring
 
 For cross-app documentation:
 
-- **[Getting Started](../../docs/getting-started/)**: Project setup and onboarding
-- **[Architecture](../../docs/architecture/)**: System design and patterns
-- **[Deployment](../../docs/deployment/)**: Deployment guides
+- **[Getting Started](../../docs/getting-started/README.md)**: Project setup and onboarding
+- **[Architecture](../../docs/architecture/README.md)**: System design and patterns
+- **[Deployment](../../docs/deployment/README.md)**: Deployment guides
 
 For package-level documentation:
 
-- **[Service Layer](../../packages/service-core/docs/)**: Business logic services
-- **[Database](../../packages/db/docs/)**: Models and database operations
-- **[Schemas](../../packages/schemas/docs/)**: Validation schemas
+- **[Service Layer](../../packages/service-core/docs/README.md)**: Business logic services
+- **[Database](../../packages/db/docs/README.md)**: Models and database operations
+- **[Schemas](../../packages/schemas/docs/README.md)**: Validation schemas
 
 ## Project Structure
 
@@ -139,8 +139,8 @@ src/
 
 ## Related Documentation
 
-- [Adding API Routes Guide](../../docs/guides/adding-api-routes.md)
-- [Authentication Guide](../../docs/guides/authentication.md)
+- [Creating Endpoints Guide](./docs/development/creating-endpoints.md)
+- [Authentication Guide](../../docs/security/authentication.md)
 
 ---
 

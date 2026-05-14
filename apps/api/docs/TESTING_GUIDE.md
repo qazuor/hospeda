@@ -1012,9 +1012,9 @@ export const logTestRequest = (request: any, response: any) => {
 
 ## 📚 Related Documentation
 
-- [Environment Variables](./ENVIRONMENT_VARIABLES.md) - Test environment configuration
-- [Route Factory System](./ROUTE_FACTORY_SYSTEM.md) - Testing route factories
-- [Security Configuration](./SECURITY_CONFIG.md) - Security testing
+- [Environment Variables](../../../docs/guides/environment-variables.md) - Test environment configuration
+- [Route Factories](./development/route-factories.md) - Testing route factories
+- [CORS Configuration](./cors-configuration.md) - Security testing
 - [Metrics System](./METRICS_SYSTEM.md) - Performance testing
 - [Error Handling](./ERROR_HANDLING.md) - Error testing strategies
 

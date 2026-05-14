@@ -166,7 +166,7 @@ calls.
 ## Reference
 
 - `pnpm env:check:registry` source: [`scripts/check-env-registry.sh`](../../scripts/check-env-registry.sh)
-- Registry: [`packages/config/src/env-registry.*.ts`](../../packages/config/src/)
+- Registry: `packages/config/src/env-registry.*.ts` (one file per app/package)
 - hops env commands: [`scripts/server-tools/README.md`](../../scripts/server-tools/README.md)
 - VPS deployment spec, Paso 17.3: [`docs/migration/vps-deployment-spec.md`](../migration/vps-deployment-spec.md)
 - CLAUDE.md root section on env vars: [`CLAUDE.md`](../../CLAUDE.md#environment-configuration)

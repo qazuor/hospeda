@@ -1093,8 +1093,8 @@ t(key);
 
 ## Related Documentation
 
-- [i18n Package README](../../packages/i18n/README.md) - Package documentation
-- [i18n Package CLAUDE.md](../../packages/i18n/CLAUDE.md) - Development guide
+- [i18n Package README](../../README.md) - Package documentation
+- [i18n Package CLAUDE.md](../../CLAUDE.md) - Development guide
 - [React Internationalization](https://react.dev/learn/scaling-up-with-reducer-and-context#moving-all-wiring-into-a-single-file) - React patterns
 - [Intl API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl) - Internationalization APIs
 

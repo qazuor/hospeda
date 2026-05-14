@@ -1052,4 +1052,4 @@ try {
 
 - [ServiceOutput API Reference](./ServiceOutput.md) - Result type documentation
 - [BaseCrudService API Reference](./BaseCrudService.md) - Service methods that use errors
-- [Service Guide](../guides/services.md) - How to implement services
+- [Creating Services Guide](../guides/creating-services.md) - How to implement services

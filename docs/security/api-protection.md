@@ -2605,7 +2605,7 @@ const schema = z.object({
 
 **Related Hospeda Documentation:**
 
-- [Security Overview](./overview.md)
+- [Security Overview](./README.md)
 - [Authentication](./authentication.md)
 - [Input Sanitization](./input-sanitization.md)
 - [OWASP Top 10](./owasp-top-10.md)

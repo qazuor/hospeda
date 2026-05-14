@@ -1198,4 +1198,4 @@ mockFn.mockImplementation((input) => {
 **Related Documentation**:
 
 - [Testing Strategy](./strategy.md)
-- [Testing Best Practices](../development/testing-best-practices.md)
+- [Testing Standards](../../.claude/docs/testing-standards.md)

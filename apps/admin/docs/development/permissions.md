@@ -21,7 +21,7 @@ The admin dashboard implements **Role-Based Access Control (RBAC)** to manage us
 
 **Prerequisites:**
 
-- Read [Authentication Guide](./authentication.md)
+- Read [Authentication Guide](../AUTH_SYSTEM.md)
 - Understanding of Better Auth authentication
 - Basic knowledge of TypeScript
 - Familiarity with React hooks
@@ -1062,7 +1062,7 @@ export function usePermissions() {
 
 ### Internal Resources
 
-- **[Authentication Guide](./authentication.md)** - Auth basics
+- **[Authentication Guide](../AUTH_SYSTEM.md)** - Auth basics
 - **[Protected Routes Guide](./protected-routes.md)** - Route protection
 - **[Architecture Overview](../architecture.md)** - System design
 

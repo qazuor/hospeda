@@ -1041,7 +1041,7 @@ See `packages/service-core/src/base/base.crud.read.ts` for the reference impleme
 
 ## Related Documentation
 
-- [Adding Services Guide](../../docs/guides/adding-services.md)
+- [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern, including the service layer
 - [Error Handling Guide](../../docs/guides/error-handling.md)
 - [Architecture Patterns](../../docs/architecture/patterns.md)
 

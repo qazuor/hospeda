@@ -1228,9 +1228,8 @@ class LoggerMetricsCollector {
 
 ## Related Documentation
 
-- [Configuration](../configuration.md) - Logger configuration options
 - [Scoped Loggers](./scoped-loggers.md) - Category-based logging
-- [Best Practices](../best-practices.md) - General best practices
+- [API Reference](../api/logger-reference.md) - Logger API documentation
 
 ---
 

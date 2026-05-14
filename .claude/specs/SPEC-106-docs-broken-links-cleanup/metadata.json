@@ -3,10 +3,11 @@
     "title": "Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)",
     "type": "chore",
     "complexity": "medium",
-    "status": "draft",
+    "status": "completed",
     "created": "2026-05-13T03:00:00Z",
+    "started": "2026-05-14T00:00:00Z",
     "approved": null,
-    "completed": null,
+    "completed": "2026-05-14T06:00:00Z",
     "planFileRef": null,
     "tags": ["docs", "ci", "tech-debt", "cleanup"]
 }

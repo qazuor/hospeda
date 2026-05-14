@@ -100,7 +100,7 @@ pnpm typecheck
 pnpm lint
 ```
 
-**Detailed Setup:** See [Development Setup Guide](../getting-started/setup.md)
+**Detailed Setup:** See [Local Development Setup](../guides/local-development-setup.md)
 
 ### Step 2: Find an Issue
 
@@ -297,7 +297,7 @@ We have detailed guides to help you contribute effectively:
 - **[Testing Documentation](../testing/README.md)** - Testing strategy
 - **[Security Documentation](../security/README.md)** - Security practices
 - **[Performance Documentation](../performance/README.md)** - Performance optimization
-- **[API Documentation](../api/README.md)** - API reference
+- **[API App Documentation](../../apps/api/docs/README.md)** - API reference
 
 ### Standards Reference
 
@@ -730,7 +730,7 @@ Now that you understand the basics, here's what to do next:
 
 ### 1. Set Up Your Environment
 
-Follow our [Development Setup Guide](../getting-started/setup.md) to get Hospeda running locally.
+Follow our [Local Development Setup](../guides/local-development-setup.md) to get Hospeda running locally.
 
 ### 2. Read the Core Guides
 

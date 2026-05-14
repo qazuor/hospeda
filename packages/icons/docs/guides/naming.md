@@ -1352,8 +1352,8 @@ Need: Icon showing booking is confirmed
 
 ### Resources
 
-- **Full catalog:** [Icons Catalog](../icons-catalog.md)
-- **Usage examples:** [Usage Reference](../usage-reference.md)
+- **Full catalog:** [Icons Catalog](../api/icons-catalog.md)
+- **Usage examples:** [Usage Reference](../api/usage-reference.md)
 - **Adding icons:** [Adding Icons Guide](./adding-icons.md)
 
 ---

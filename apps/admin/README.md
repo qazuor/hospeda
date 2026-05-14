@@ -97,16 +97,16 @@ VITE_APP_NAME=Hospeda Admin
 
 ## Documentation
 
-📚 **Complete documentation available in [apps/admin/docs/](./docs/)**
+📚 **Complete documentation available in [apps/admin/docs/](./docs/README.md)**
 
 Topics covered in detailed docs:
 
 - **[Overview](./docs/README.md)**: Architecture, features, and getting started
-- **[Setup Guide](./docs/development/setup.md)**: Environment and configuration
-- **[Architecture](./docs/development/architecture.md)**: TanStack Start and SSR patterns
+- **[Setup Guide](./docs/setup.md)**: Environment and configuration
+- **[Architecture](./docs/architecture.md)**: TanStack Start and SSR patterns
 - **[Routing](./docs/development/routing.md)**: File-based routing and protected routes
 - **[Components](./docs/development/components.md)**: Creating and styling components
-- **[Data Fetching](./docs/development/data-fetching.md)**: TanStack Query patterns
+- **[Data Fetching](./docs/development/queries.md)**: TanStack Query patterns
 - **[Forms](./docs/development/forms.md)**: TanStack Form with validation
 - **[Tables](./docs/development/tables.md)**: TanStack Table implementation
 - **[Authentication](./docs/AUTH_SYSTEM.md)**: Better Auth integration and RBAC
@@ -114,15 +114,15 @@ Topics covered in detailed docs:
 
 For cross-app documentation:
 
-- **[Getting Started](../../docs/getting-started/)**: Project setup and onboarding
-- **[Architecture](../../docs/architecture/)**: System design and patterns
-- **[Deployment](../../docs/deployment/)**: Deployment guides
+- **[Getting Started](../../docs/getting-started/README.md)**: Project setup and onboarding
+- **[Architecture](../../docs/architecture/README.md)**: System design and patterns
+- **[Deployment](../../docs/deployment/README.md)**: Deployment guides
 
 For shared packages:
 
-- **[Service Layer](../../packages/service-core/docs/)**: Business logic services
-- **[Database](../../packages/db/docs/)**: Models and database operations
-- **[Schemas](../../packages/schemas/docs/)**: Validation schemas
+- **[Service Layer](../../packages/service-core/docs/README.md)**: Business logic services
+- **[Database](../../packages/db/docs/README.md)**: Models and database operations
+- **[Schemas](../../packages/schemas/docs/README.md)**: Validation schemas
 
 ## Project Structure
 
@@ -148,7 +148,7 @@ src/
 
 ## Related Documentation
 
-- [Adding Admin Pages Guide](../../docs/guides/adding-admin-pages.md)
+- [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern that admin pages plug into
 
 ---
 

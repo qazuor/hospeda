@@ -766,4 +766,4 @@ const emailSchema = z.object({
 - **[Quick Start](../quick-start.md)** - Basic usage
 - **[API Reference](../api/config-reference.md)** - Complete API
 - **[Validation Guide](./validation.md)** - Validation patterns
-- **[Examples](../examples/)** - More examples
+- **Examples** — see `packages/config/src/sections/` for real configuration sections
