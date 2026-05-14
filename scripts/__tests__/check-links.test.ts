@@ -186,4 +186,78 @@ describe('extractInternalLinks', () => {
         expect(links[0]?.linkText).toBe('A');
         expect(links[1]?.linkText).toBe('B');
     });
+
+    it('skips links inside fenced code blocks (backticks)', () => {
+        const content = [
+            '[Real](/real.md)',
+            '```bash',
+            '[Fake](/fake.md)',
+            '```',
+            '[Also real](/also-real.md)'
+        ].join('\n');
+
+        const links = extractInternalLinks({
+            content,
+            sourceFile: '/repo/x.md',
+            projectRoot: FAKE_ROOT
+        });
+
+        const texts = links.map((l) => l.linkText);
+        expect(texts).toEqual(['Real', 'Also real']);
+    });
+
+    it('skips links inside tilde-fenced code blocks', () => {
+        const content = ['~~~markdown', '[Fake](/inside.md)', '~~~', '[Real](/outside.md)'].join(
+            '\n'
+        );
+
+        const links = extractInternalLinks({
+            content,
+            sourceFile: '/repo/x.md',
+            projectRoot: FAKE_ROOT
+        });
+
+        const texts = links.map((l) => l.linkText);
+        expect(texts).toEqual(['Real']);
+    });
+
+    it('treats consecutive code blocks correctly (each fence toggles state)', () => {
+        const content = [
+            '```',
+            '[A](/a.md)',
+            '```',
+            '[B](/b.md)',
+            '```',
+            '[C](/c.md)',
+            '```',
+            '[D](/d.md)'
+        ].join('\n');
+
+        const links = extractInternalLinks({
+            content,
+            sourceFile: '/repo/x.md',
+            projectRoot: FAKE_ROOT
+        });
+
+        const texts = links.map((l) => l.linkText);
+        expect(texts).toEqual(['B', 'D']);
+    });
+
+    it('handles code fences with info strings (```ts, ```bash)', () => {
+        const content = [
+            '```ts',
+            "const link = '[fake](/fake.md)';",
+            '```',
+            '[real](/real.md)'
+        ].join('\n');
+
+        const links = extractInternalLinks({
+            content,
+            sourceFile: '/repo/x.md',
+            projectRoot: FAKE_ROOT
+        });
+
+        const texts = links.map((l) => l.linkText);
+        expect(texts).toEqual(['real']);
+    });
 });

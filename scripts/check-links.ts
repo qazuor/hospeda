@@ -89,6 +89,16 @@ export function resolveAbsoluteLinkCandidates(input: {
  * @param input.sourceFile - Path to the source file
  * @returns Array of extracted links with their resolved paths
  */
+/**
+ * Test whether a line is the opening or closing fence of a fenced code block.
+ * Matches the standard CommonMark fence: a line whose first non-whitespace
+ * characters are three or more backticks or tildes. An optional info string
+ * may follow on the same line.
+ */
+function isCodeFence(line: string): boolean {
+    return /^\s*(```+|~~~+)/.test(line);
+}
+
 export function extractInternalLinks(input: {
     content: string;
     sourceFile: string;
@@ -106,8 +116,20 @@ export function extractInternalLinks(input: {
 
     const lines = content.split('\n');
 
+    // Track whether we are inside a fenced code block. Markdown spec says
+    // content inside fenced code blocks is rendered verbatim, so any
+    // `[text](path)` inside them is NOT a link — it's illustrative text.
+    let insideCodeFence = false;
+
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
+
+        if (isCodeFence(line)) {
+            insideCodeFence = !insideCodeFence;
+            continue;
+        }
+
+        if (insideCodeFence) continue;
 
         for (const match of line.matchAll(linkRegex)) {
             const linkText = match[1];
