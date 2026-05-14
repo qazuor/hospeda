@@ -49,7 +49,7 @@ export const newsletterCampaigns = pgTable(
 
         /**
          * Number of subscribers excluded by the soft-cap window (1 newsletter
-         * per subscriber per HOSPEDA_NEWSLETTER_SOFT_CAP_DAYS rolling days).
+         * per subscriber per HOSPEDA_NEWSLETTER_SOFTCAP_DAYS rolling days).
          */
         totalSoftcapped: integer('total_softcapped').notNull().default(0),
 

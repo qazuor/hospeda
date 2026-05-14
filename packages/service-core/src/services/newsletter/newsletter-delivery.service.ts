@@ -226,7 +226,7 @@ export interface NewsletterDeliveryServiceOptions {
     apiKey?: string;
     /**
      * Sender email address for outgoing campaign emails.
-     * Falls back to `process.env.HOSPEDA_EMAIL_FROM` or `noreply@hospeda.com.ar`.
+     * Falls back to `process.env.HOSPEDA_EMAIL_FROM_EMAIL` or `noreply@hospeda.com.ar`.
      */
     senderEmail?: string;
     /**
@@ -341,7 +341,7 @@ const DEFAULT_RENDER_CAMPAIGN: RenderCampaignEmailFn = ({ subject }) =>
  *     renderCampaignEmailFn: (input) => render(NewsletterCampaign(input)),
  *     buildCampaignReactElementFn: (input) => NewsletterCampaign(input),
  *     apiKey: env.HOSPEDA_EMAIL_API_KEY,
- *     senderEmail: env.HOSPEDA_EMAIL_FROM,
+ *     senderEmail: env.HOSPEDA_EMAIL_FROM_EMAIL,
  *     senderName: env.HOSPEDA_EMAIL_FROM_NAME,
  *     siteUrl: env.HOSPEDA_SITE_URL,
  *     hmacSecret: env.HOSPEDA_NEWSLETTER_HMAC_SECRET,
@@ -381,7 +381,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
         this.buildCampaignReactElementFn = options.buildCampaignReactElementFn;
         this.apiKey = options.apiKey ?? process.env.HOSPEDA_EMAIL_API_KEY ?? '';
         this.senderEmail =
-            options.senderEmail ?? process.env.HOSPEDA_EMAIL_FROM ?? 'noreply@hospeda.com.ar';
+            options.senderEmail ?? process.env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar';
         this.senderName = options.senderName ?? process.env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda';
         this.siteUrl = options.siteUrl ?? process.env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar';
         this.hmacSecret = options.hmacSecret ?? process.env.HOSPEDA_NEWSLETTER_HMAC_SECRET ?? '';
