@@ -1065,3 +1065,44 @@ export const contactApi = {
         });
     }
 };
+
+/**
+ * Response payload for the reset-password check endpoint (SPEC-118).
+ *
+ * Mirrors `ResetPasswordCheckResponse` exposed by `@repo/schemas` without
+ * importing it directly here — the web app's `endpoints.ts` keeps types
+ * local to avoid coupling pages to server-side schema modules.
+ */
+export type ResetPasswordCheckResult =
+    | { readonly valid: true }
+    | { readonly valid: false; readonly reason: 'expired' | 'invalid' };
+
+/**
+ * Authentication helper endpoints (public tier — no session required).
+ *
+ * Currently only the reset-password token check (SPEC-118). The bulk of the
+ * auth surface is consumed via `@/lib/auth-client` (Better Auth client SDK);
+ * this namespace covers the small set of Hospeda-specific auth helpers that
+ * live on `/api/v1/public/auth/*`.
+ */
+export const authApi = {
+    /**
+     * Check whether a reset-password token is still usable, without consuming
+     * it. Used by the SSR reset-password page to render an error state
+     * instead of an empty form when the link is dead.
+     *
+     * @param params.token - The opaque reset-password token from the URL.
+     * @returns `{ valid: true }` or `{ valid: false, reason }` on success;
+     *   the result is wrapped in `ApiResult` for network/HTTP errors.
+     */
+    checkResetPasswordToken({
+        token
+    }: {
+        readonly token: string;
+    }): Promise<ApiResult<ResetPasswordCheckResult>> {
+        return apiClient.get<ResetPasswordCheckResult>({
+            path: `${BASE}/auth/reset-password/check`,
+            params: { token }
+        });
+    }
+};

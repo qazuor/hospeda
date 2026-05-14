@@ -125,7 +125,18 @@
         },
         "resetPassword": {
             "title": "Reset Password",
-            "description": "Set a new password for your Hospeda account"
+            "description": "Set a new password for your Hospeda account",
+            "tokenError": {
+                "expired": {
+                    "title": "This link has expired",
+                    "description": "Reset links have a short lifespan for your security. Request a new one and try again."
+                },
+                "invalid": {
+                    "title": "This link is no longer valid",
+                    "description": "It may have already been used or modified. Request a new link to continue."
+                },
+                "requestNewLinkCta": "Request a new link"
+            }
         },
         "verifyEmail": {
             "title": "Verify Email",

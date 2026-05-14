@@ -263,11 +263,13 @@ Suggested fix: emit a `?error=oauth_cancelled` query string on the cancel redire
 
 When an account was created via OAuth (Google / Facebook only, no `credential` row) and the user later tries to sign up with email + password using the same email, Better Auth correctly rejects the signup with `User already exists` (security PASS). But the UX provides no path forward: the user cannot add a password to their existing OAuth account from any page. Closest matching scope is SPEC-113 (profile completion flow). If SPEC-113 does not already include this, scope it in as the "Add password to your account" subtask.
 
-### session-finding-34 — Reset-password page does not validate token at load (UX gap, security OK)
+### session-finding-34 — Reset-password page does not validate token at load (UX gap, security OK) — RESOLVED 2026-05-14
 
-**Tracked as:** **SPEC-118** — Reset-Password Page Validates Token at Load (its own spec, can ship independently of this worktree's PRs).
+**Tracked as:** **SPEC-118** — Reset-Password Page Token Validation at Load. **CLOSED** (implementation complete; merged to staging via PR #TBD).
 
-Visiting `/es/auth/reset-password/?token=<invalid-or-used>` always renders the "set new password" form. The server correctly returns `Invalid token` on submit, so a used or tampered token cannot actually reset the password — security is intact. The UX gap is that the user only learns the link is dead after typing a new password and submitting. Fix candidate: have the page do a lightweight token-validity check on load (HEAD / GET against `/api/auth/reset-password/verify` or equivalent) and show an inline error / "request a new link" CTA when the token is dead.
+Visiting `/es/auth/reset-password/?token=<invalid-or-used>` always renders the "set new password" form. The server correctly returns `Invalid token` on submit, so a used or tampered token cannot actually reset the password — security is intact. The UX gap is that the user only learns the link is dead after typing a new password and submitting.
+
+**Resolution (SPEC-118)**: page now SSR-validates the token via `GET /api/v1/public/auth/reset-password/check` BEFORE rendering and shows `ResetPasswordTokenError` (with a "Solicitar nuevo enlace" CTA) on `expired` or `invalid`. The 2-reason contract (`expired | invalid`) is documented in SPEC-118 Phase 0 — `used` / `tampered` / `unknown` collapse into a single `invalid` reason because Better Auth deletes the verifications row on consume and the three states cannot be told apart post-hoc. Smoke recipe updated in `apps/web/docs/auth-smoke-checklist.md` § T-018.
 
 ### session-finding-14-repro — `hops --target=staging` ignored on `env-set` and `db-restore --list`
 

@@ -394,6 +394,16 @@ export function createDbMock() {
             providerEventId: 'provider_event_id',
             metadata: 'metadata',
             createdAt: 'created_at'
+        },
+
+        // Better Auth verifications table stub (SPEC-118 reset-password check).
+        verifications: {
+            id: 'id',
+            identifier: 'identifier',
+            value: 'value',
+            expiresAt: 'expires_at',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
         }
     };
 }
