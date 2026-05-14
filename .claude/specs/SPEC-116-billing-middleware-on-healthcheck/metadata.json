@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-116",
+    "title": "Billing Middleware Runs on Healthcheck Path — Skip Unnecessary Work",
+    "type": "fix",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-05-14T08:30:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["performance", "middleware", "billing", "api", "healthcheck"]
+}
