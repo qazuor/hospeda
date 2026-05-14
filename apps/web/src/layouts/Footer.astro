@@ -236,7 +236,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     {t("footer.newsletterShortTitle", "Recibí novedades")}
                 </h3>
                 <p class="footer__newsletter-desc">
-                    {t("footer.newsletterShortDescription", "Novedades y ofertas en tu correo.")}
+                    {t("footer.newsletterShortDescription", "Recibí novedades, ofertas exclusivas y guías de viaje del Litoral en tu correo.")}
                 </p>
             </div>
             {/* SPEC-101 T-101-33: live double opt-in flow. The island
@@ -486,12 +486,20 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     .footer__newsletter-inner {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 1rem;
+        /* Centered compact block: bloque limitado y centrado en el footer.
+           En mobile va column (texto arriba / form abajo); el media query
+           desktop lo pasa a row (texto + form lado a lado con gap chico). */
+        max-width: 52rem;
+        margin-inline: auto;
+        text-align: center;
     }
 
     .footer__newsletter-text {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 0.25rem;
     }
 
@@ -812,18 +820,26 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             align-items: start;
         }
 
-        /* Newsletter strip: text on the left, form inline on the right */
+        /* Desktop: texto + form lado a lado dentro del bloque centrado.
+           El bloque sigue centrado en el footer (max-width + margin auto en
+           el default); acá solo lo pasamos a row con un gap chico para que
+           título/desc lean junto al input, sin un hueco grande entre ellos. */
         .footer__newsletter-inner {
             flex-direction: row;
             align-items: center;
-            justify-content: space-between;
-            gap: clamp(2rem, 5vw, 4rem);
+            gap: 2.25rem;
+            text-align: left;
+        }
+
+        .footer__newsletter-text {
+            align-items: flex-start;
+            flex: 0 0 auto;
+            max-width: 22rem;
         }
 
         .footer__newsletter {
             flex-direction: row;
             align-items: center;
-            min-width: min(28rem, 100%);
         }
 
         .footer__newsletter-btn {
