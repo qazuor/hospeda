@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 5,
+        "completed": 6,
         "inProgress": 0,
-        "pending": 9,
+        "pending": 8,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -254,11 +254,18 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 2,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["packages/db/**/*.md"],
+            "files": [
+                "packages/db/README.md",
+                "packages/db/CLAUDE.md",
+                "packages/db/examples/README.md",
+                "packages/db/docs/README.md",
+                "packages/db/docs/quick-start.md",
+                "packages/db/docs/api/BaseModel.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in packages/db/",
                 "Per-batch PR titled docs(db): repair internal links"
@@ -267,9 +274,20 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in packages/db/"
+                "tests": "broken count in packages/db/: 27 -> 0; total 188 -> 161"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T02:55:00.000Z",
+                "completed": "2026-05-14T03:10:00.000Z"
+            },
+            "findings": {
+                "phantomApiDocs": "packages/db/docs/api/ has only BaseModel.md, query-methods.md, relations.md. References to api/query-builder.md, api/client.md (2x), api/utils.md (3x), api/README.md never existed. Remapped query-builder -> query-methods; client/utils refs replaced with prose pointing at the actual source files (src/utils/enum-helpers.ts, src/utils/error-handler.ts) or the package CLAUDE.md; api/README.md -> direct enumeration of the three real api docs.",
+                "phantomGuides": "References to guides/installation.md, guides/basic-crud.md, guides/defining-schemas.md (2x), guides/custom-queries.md (2x), guides/error-handling.md (2x), guides/troubleshooting.md (2x), guides/README.md (2x) never existed. Real guides cover: creating-models, deployment, drizzle-schemas, migrations, optimization, production-migration-runbook, relations, soft-delete, testing, transactions. Remapped defining-schemas -> drizzle-schemas; installation+basic-crud folded into quick-start; troubleshooting -> production-migration-runbook + CLAUDE.md gotchas; error-handling+custom-queries removed (no replacement, replaced with prose).",
+                "examplesPath": "packages/db/docs/examples/README.md was referenced 3x but examples actually live at packages/db/examples/README.md (at package root, not under docs/). Fixed all three with the correct ../examples/README.md path.",
+                "wrongRelativeDepth": "packages/db/docs/api/BaseModel.md referenced ../CLAUDE.md (resolves to packages/db/docs/CLAUDE.md, doesn't exist) — fixed to ../../CLAUDE.md (package root).",
+                "miscellaneous": "docs/guides/database-migrations.md (project-level, never existed) -> packages/db/docs/guides/migrations.md (in-package canonical migrations guide). .claude/docs/standards/ (dir, no standards/ subdir) -> enumerated link to code-standards.md, api-design-standards.md, testing-standards.md."
+            }
         },
         {
             "id": "T-106-05",
