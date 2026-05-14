@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-113",
+    "title": "Profile completion flow — required intermediate step after first signup / OAuth",
+    "type": "feat",
+    "complexity": "medium-high",
+    "status": "draft",
+    "created": "2026-05-14T04:15:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["auth", "onboarding", "ux", "profile", "user-data", "pre-public-launch"]
+}

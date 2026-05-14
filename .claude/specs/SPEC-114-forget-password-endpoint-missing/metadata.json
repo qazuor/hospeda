@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-114",
+    "title": "Forget-password endpoint returns 404 on staging — Better Auth misconfig or build artifact stale",
+    "type": "fix",
+    "complexity": "small-medium",
+    "status": "draft",
+    "created": "2026-05-14T04:15:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["auth", "better-auth", "build", "bug", "pre-public-launch"]
+}
