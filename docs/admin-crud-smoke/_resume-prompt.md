@@ -1,57 +1,80 @@
 # Resume prompt — SPEC-117 (paste in next session)
 
-```
+```text
 Estoy retomando SPEC-117 (Admin Pages Stabilization) post-context-reset.
 
 Contexto + estado completo en estos 3 lugares (leelos en este orden):
 
-1. `memory/project_spec_117_in_flight.md` (memoria condensada)
-2. `.claude/specs/SPEC-117-admin-pages-stabilization/spec.md` Part 5 ("Implementation
-   progress (in-flight)") — la sección al final tiene la tabla de tasks completadas,
-   files modificados, qué está verificado y qué falta.
-3. `docs/admin-crud-smoke/_a1-diagnosis.md` — diagnóstico ejemplar del patrón A-1
-   que se replicó en T-002, T-003, T-010.
+1. `memory/project_spec_117_in_flight.md` (memoria condensada, la fuente
+   más práctica para arrancar)
+2. `.claude/specs/SPEC-117-admin-pages-stabilization/spec.md` Part 5
+   ("Implementation progress (in-flight)") — tabla de tasks completadas,
+   discoveries §1-§8, verification status, "Branch state" con los 10
+   commits y el shift arquitectónico de API-en-worktree
+3. Engram topic `spec/SPEC-117/checkpoint-2026-05-14` — recap de
+   decisiones técnicas + lecciones aprendidas
 
-Ambiente:
-- Worktree: `../hospeda-admin-pages-audit` branch `fix/admin-pages-audit`.
-- API local en :3001 corre desde main repo `/home/qazuor/projects/WEBS/hospeda/apps/api`.
-- Admin local en :3000 corre desde el worktree (yo te pido que lo levantes vos).
+Estado en una línea:
+- Worktree `../hospeda-admin-pages-audit` branch `fix/admin-pages-audit`,
+  **clean**, 10 commits atómicos
+- Phase 0 / Phase 1 / Phase 2 ✅; Phase 4 i18n: T-012 ✅, T-013 ✅;
+  **T-014 / T-015 / T-016 pendientes**
+
+Setup operativo (CAMBIÓ a media sesión — leer con atención):
+
+- API local en :3001 ahora corre desde el WORKTREE
+  (`~/projects/WEBS/hospeda-admin-pages-audit/apps/api`), no más desde
+  main repo. Workflow simplificado: editar en worktree, no hay mirror.
+- Admin local en :3000 corre desde el worktree (lifecycle a tu cargo).
 - DB postgres `localhost:5436` (`hospeda_user/hospeda_pass/hospeda_dev`).
-- Super-admin: `superadmin@hospeda.com` / `Audit2026!` (puede que necesite reset; ver memoria).
+- Super-admin: `superadmin@hospeda.com` / `Audit2026!` (Better Auth puede
+  forzar change-password — ver memoria para el SQL de reset).
+- Para editar `@repo/schemas` o `@repo/service-core`:
+  `pnpm turbo run build --filter='@repo/schemas' --filter='@repo/service-core'`
+  desde el worktree; Hono dev auto-recarga, no hace falta pedir restart.
+- Para editar `packages/i18n/src/locales/*/*.json`: **clear Vite cache
+  y reiniciar admin** — `rm -rf apps/admin/node_modules/.vite/deps && pnpm dev`.
+  Vite cachea `@repo/i18n` agresivamente.
 
-Workflow para cualquier fix de schema o service-core:
-1. Edit file in WORKTREE
-2. Edit MIRROR in main repo (porque API corre desde ahí)
-3. `pnpm turbo run build --filter='@repo/{schemas,service-core}'` en main repo
-4. Pedirme reiniciar el API en mi terminal (no podés hacerlo solo)
-5. Verificar via curl o desde el browser
+Lo primero que hay que hacer (próximas 3 tasks de Phase 4):
 
-Lo primero que hay que hacer:
+A. **T-014 (I-5)** — sweep `apps/admin/src/features/<entity>/config/<entity>.columns.ts`
+   files para reemplazar headers hardcoded en inglés ("Destination",
+   "Owner", "Attractions", etc.) por `t(...)` calls contra
+   `admin-entities` o `admin-tables`. Verificar visualmente en
+   `/accommodations` y `/destinations` (las 2 surfaces confirmadas).
 
-A. Verificar T-010 end-to-end (admin debe estar corriendo):
-   - `GET /api/v1/admin/accommodations/{id}` debe retornar 200.
-   - `/accommodations/{id}` admin detail page carga sin "Cargando…".
-   - Tabs `/{id}/amenities` y `/{id}/features` siguen funcionando (tienen su
-     propio endpoint, no afectados por el workaround).
-   Si sigue 500: pedíme el log del API server y aplicamos el siguiente schema fix.
+B. **T-015 (I-3)** — mover role names + descriptions de seed data a
+   i18n. Seed produce solo el enum value (`SUPER_ADMIN`); el admin UI
+   en `/access/roles` resuelve labels + descriptions vía
+   `admin-entities.roles.<KEY>.name|description|capabilities[]`.
+   Más grande que T-014 (toca seed + i18n + page).
 
-B. Revertir el TEMP debug en `apps/api/src/utils/response-helpers.ts` (main repo
-   solamente). Líneas que agregan los issues al error message — restaurar el throw
-   original `'Response payload does not match declared schema'`. O migrar a
-   `NODE_ENV === 'development'` gated.
+C. **T-016 (I-4)** — agregar `admin-entities.permissions.categories.<key>`
+   y resolver en `/access/permissions` page.
 
-C. Cerrar T-010 (marcar completed en TaskList si está abierta).
-
-Después seguimos con Implementation Phase 2 (C-1 / C-2 / C-3 / C-4 client-side
-crashes en billing pages + revalidation — todos comparten signature
-`undefined.reduce/map`, probablemente single fix).
+Después de Phase 4: Phase 3 (M-2 retry policy), Phase 5 (B-* billing
+503/429 + N-1/N-2 newsletter + M-1 plan-limit + A2 dev workflow),
+Phase 6 (D-* CRUD smoke continuations), Phase 7 (V-CRIT visuals), 8, 9.
 
 Reglas de estilo:
 - Hablo en rioplatense, vos también.
 - No commits hasta que yo diga "ok / commiteamos / dale".
-- Cuando edites schemas/service-core, edita en AMBOS repos (worktree + main repo)
-  porque el API live corre desde main repo.
+- Antes de tirar fix de schema/route, hacer build del package afectado
+  y verificar en el browser via chrome-devtools MCP.
 
-Arrancá leyendo los 3 archivos de contexto y dame un resumen breve del estado para
-confirmar que estamos alineados antes de seguir.
+Findings nuevos descubiertos en la sesión anterior (NO en el §4
+original del spec) que debés tener presente:
+- **I-6**: 11/12 `<entity>-consolidated.config.ts` hardcodean Spanish.
+  Solo `accommodation` fue fixeado. Los otros 11 son una sweep
+  follow-up (puede ir bundleado con T-014 si querés cerrar el
+  capítulo i18n entero).
+- Main repo `~/projects/WEBS/hospeda` tiene 17 stale mirror files
+  (sobras de cuando la API corría desde ahí). `git restore <files>`
+  es seguro — no hay nada único, todo está committeado en el worktree.
+
+Arrancá leyendo los 3 lugares de contexto + status del worktree
+(`git -C ~/projects/WEBS/hospeda-admin-pages-audit status` debería
+salir vacío). Después dame un resumen breve para confirmar
+alineación antes de empezar T-014.
 ```

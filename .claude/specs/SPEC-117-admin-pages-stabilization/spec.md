@@ -1402,6 +1402,9 @@ docs/admin-pages-audit-report.md                          NEW
 | **T-004** Fix A-3 / A-4 / A-5 | ✅ (closed by T-003 fix family) | `packages/schemas/src/entities/tag/tag.schema.ts` (deletedAt + deletedById `.nullish()`) |
 | **T-010** Fix A-6 (accommodations/{id}) | ✅ verified end-to-end 2026-05-14 (chrome devtools, browser-driven) | `packages/schemas/src/common/faq.schema.ts` (faq.category `.nullish()`), `packages/service-core/src/services/accommodation/accommodation.helpers.ts` (`flattenAccommodationJoinRelations` helper, NEW), `packages/service-core/src/services/accommodation/accommodation.service.ts` (call to flatten in `_afterGetByField`, **amenities + features REMOVED from `getDefaultGetByIdRelations`** as workaround for Drizzle nested-with bug) |
 | **T-011** Fix A-7 / A-8 (admin batch endpoints 500) | ✅ — uncovered during T-010 verification. Root cause: `*BatchResponseSchema = z.array(*Schema.nullable())` expected the full entity, but handlers return a partial object when the client passes `fields[]`. Fix: introduce `*BatchItemSchema = *Schema.partial().required({ id: true })` and use it in `*BatchResponseSchema`. Applied to 8 admin batch schemas + the event admin batch route (which previously had an inline `z.array(EventAdminSchema.nullable())`). | `packages/schemas/src/entities/{accommodation,amenity,attraction,destination,event,feature,post,user}/*.batch.schema.ts`, `apps/api/src/routes/event/admin/batch.ts` |
+| **Phase 2 closure** Fix C-1 / C-2 / C-3 / C-4 (client crashes on billing + revalidation) | ✅ verified 2026-05-14 across `/billing/addons`, `/billing/subscriptions`, `/revalidation`, `/billing/plans`. C-1/C-2/C-4 share root cause: `@repo/logger/src/index.ts` had a top-level `import 'dotenv/config'` that Vite dragged into the admin browser bundle via the billing → logger chain. Dotenv crashes on browser-shimmed Node modules. C-3 was a separate bug: three revalidation handlers returned `{ data: payload }` instead of `payload`, producing a double envelope after `createAdminRoute` wrapped the response. | `packages/logger/src/index.ts`, `apps/api/src/routes/revalidation/index.ts` (GET /config, PATCH /config/:id, GET /stats handlers + responseSchemas) |
+| **T-012** Fix I-1 (`*/new` placeholder leak) | ✅ verified 2026-05-14. Call sites were doing `\`${t('admin-entities.list.new')} ${entityName}\`` while the i18n key value already includes a `{entity}` placeholder ("Nuevo {entity}" / "New {entity}" / "Novo {entity}"). Aligned all call sites with the rest of the codebase's `.replace('{entity}', entityName)` pattern. | 11 `apps/admin/src/routes/_authed/<entity>/new.tsx` files + `apps/admin/src/routes/_authed/me/accommodations/index.tsx` (2 button labels hoisted into a constant) |
+| **T-013** Fix I-2 (detail page chrome in English) | ✅ verified 2026-05-14. Introduced `admin-common.entityPage` i18n namespace with localized strings for `viewTitle` / `editTitle` / `viewDescription` / `editDescription` (templates with `{entity}` placeholder) and actions `back` / `edit` / `view` / `cancel`. Replaced the hardcoded English literals in `EntityPageBase.tsx`. Also fixed the accommodation consolidated config which still hardcoded English `'Accommodation'` / `'Accommodations'`. | `apps/admin/src/components/entity-pages/EntityPageBase.tsx`, `apps/admin/src/features/accommodations/config/accommodation-consolidated.config.ts`, `packages/i18n/src/locales/{es,en,pt}/admin-common.json` |
 
 ### Discoveries during implementation
 
@@ -1443,54 +1446,75 @@ docs/admin-pages-audit-report.md                          NEW
    destination, event, feature, post, user) confirmed they share the same factory pattern
    and are all vulnerable. Closed as T-011 via `*BatchItemSchema = *Schema.partial().required({ id: true })`.
 
-### Files modified, not yet committed (BOTH repos)
+6. **Phase 2 C-* turned out to be TWO unrelated bugs, not one family**: the
+   `undefined.reduce`/`.map` signature was misleading. C-1 (`/billing/addons`), C-2
+   (`/billing/subscriptions`), and C-4 (`/billing/plans`) all crashed because the admin
+   bundle pulled `dotenv` in through the `@repo/billing → @repo/logger → dotenv/config`
+   chain. Vite's browser shims for Node modules cause dotenv to throw inside
+   `optionMatcher` while reducing an undefined `process.argv`. C-3 (`/revalidation`) was
+   completely unrelated: three revalidation admin handlers returned `{ data: payload }`,
+   producing a `{ success, data: { data: payload } }` double envelope that the admin's
+   one-level unwrap couldn't decode. Both fixes shipped in Phase 2 closure.
+
+7. **I-6 surfaced during T-013** (new finding, NOT in original §4): 11 of the 12
+   `<entity>-consolidated.config.ts` files hardcode their entity names in Spanish
+   (`entityName: 'Patrocinador'`, `'Característica'`, etc.) instead of resolving via
+   `t('admin-entities.entities.<x>.singular')`. The values are right for the default
+   locale but break completely on `en` and `pt`. Only `accommodation` was caught and
+   fixed here (because it was the visible English bleed in T-013). The remaining 11
+   should be cleaned up in a follow-up task once we exercise EN/PT rendering or do a
+   sweep on the consolidated configs. Affected files:
+   `sponsor`, `feature`, `post`, `event`, `eventOrganizer`, `amenity`, `attraction`,
+   `user`, `eventLocation`, `destination`, and `accommodation` (already fixed).
+
+8. **Vite + i18n HMR gotcha** (discovered during T-013): adding new keys to
+   `packages/i18n/src/locales/<locale>/<namespace>.json` does NOT reach the admin's
+   running bundle on its own — Vite pre-optimizes `@repo/i18n` as a dep and the static
+   JSON `import` declarations get baked into the optimized chunk. The reliable
+   workaround is to clear `apps/admin/node_modules/.vite/deps` and restart the admin
+   dev server. Same trick that was needed to recover from the dotenv crash in C-1/C-2.
+
+### Branch state — 2026-05-14
+
+Worktree `../hospeda-admin-pages-audit` is **clean** (no uncommitted
+files). All work landed as 10 atomic commits on branch
+`fix/admin-pages-audit`:
 
 ```
-# Worktree (../hospeda-admin-pages-audit) — these are the "real" changes for the PR:
-M  apps/admin/vite.config.ts                                                     (A1)
-M  apps/api/src/routes/event/admin/batch.ts                                      (T-011)
-M  packages/schemas/src/common/faq.schema.ts                                     (T-010)
-M  packages/schemas/src/entities/accommodation/accommodation.batch.schema.ts    (T-011)
-M  packages/schemas/src/entities/amenity/amenity.batch.schema.ts                (T-011)
-M  packages/schemas/src/entities/attraction/attraction.batch.schema.ts          (T-011)
-M  packages/schemas/src/entities/destination/destination.batch.schema.ts        (T-011)
-M  packages/schemas/src/entities/event/event.batch.schema.ts                    (T-011)
-M  packages/schemas/src/entities/feature/feature.batch.schema.ts                (T-011)
-M  packages/schemas/src/entities/post/post.access.schema.ts                      (T-003)
-M  packages/schemas/src/entities/post/post.batch.schema.ts                       (T-011)
-M  packages/schemas/src/entities/tag/post-tag.schema.ts                          (T-003)
-M  packages/schemas/src/entities/tag/tag.schema.ts                               (T-003)
-M  packages/schemas/src/entities/user/user.access.schema.ts                      (T-002)
-M  packages/schemas/src/entities/user/user.batch.schema.ts                       (T-011)
-M  packages/service-core/src/services/accommodation/accommodation.helpers.ts    (T-010)
-M  packages/service-core/src/services/accommodation/accommodation.service.ts    (T-010)
-M  packages/service-core/src/services/post/post.service.ts                       (T-003)
-?? apps/admin/src/lib/kysely-shim.mjs                                            (A1)
-?? .claude/specs/SPEC-117-admin-pages-stabilization/                             (this spec)
-?? docs/admin-crud-smoke/                                                        (T-024..T-031, T-026, T-027, T-028, _a1-diagnosis)
-?? docs/admin-pages-audit-report.md                                              (original audit)
-?? docs/admin-pages-audit-screenshots/                                           (T-041 baseline)
-
-# Main repo (/home/qazuor/projects/WEBS/hospeda) — applied here too because the dev API
-# runs from this repo. Now identical to worktree (TEMP debug was reverted 2026-05-14):
-M  packages/schemas/src/common/faq.schema.ts                                     (mirror)
-M  packages/schemas/src/entities/accommodation/accommodation.batch.schema.ts    (mirror)
-M  packages/schemas/src/entities/amenity/amenity.batch.schema.ts                (mirror)
-M  packages/schemas/src/entities/attraction/attraction.batch.schema.ts          (mirror)
-M  packages/schemas/src/entities/destination/destination.batch.schema.ts        (mirror)
-M  packages/schemas/src/entities/event/event.batch.schema.ts                    (mirror)
-M  packages/schemas/src/entities/feature/feature.batch.schema.ts                (mirror)
-M  packages/schemas/src/entities/post/post.access.schema.ts                      (mirror)
-M  packages/schemas/src/entities/post/post.batch.schema.ts                       (mirror)
-M  packages/schemas/src/entities/tag/post-tag.schema.ts                          (mirror)
-M  packages/schemas/src/entities/tag/tag.schema.ts                               (mirror)
-M  packages/schemas/src/entities/user/user.access.schema.ts                      (mirror)
-M  packages/schemas/src/entities/user/user.batch.schema.ts                       (mirror)
-M  apps/api/src/routes/event/admin/batch.ts                                      (mirror)
-M  packages/service-core/src/services/accommodation/accommodation.helpers.ts    (mirror)
-M  packages/service-core/src/services/accommodation/accommodation.service.ts    (mirror)
-M  packages/service-core/src/services/post/post.service.ts                       (mirror)
+b6e5625e0 fix(admin, i18n): localize entity detail/edit page chrome (SPEC-117 I-2)
+b23fa469b fix(admin): substitute {entity} placeholder in create-page titles (SPEC-117 I-1)
+706059505 fix(api): align revalidation admin handlers with response factory contract (SPEC-117 C-3)
+7219c457b fix(logger): remove dotenv side-effect from package entry (SPEC-117 C-1/C-2)
+cff5b0c2b fix(schemas, api): admin batch endpoints permit partial responses (SPEC-117 A-7/A-8)
+0b45806f5 fix(schemas, service-core): admin accommodations/{id} loads cleanly (SPEC-117 A-6)
+591d17bdf fix(schemas, service-core): admin post list with sponsor + post-tags (SPEC-117 A-2..A-5)
+0e4bb24e5 fix(schemas): accept null profile/settings on UserAdminSchema (SPEC-117 A-1)
+cb9b200fc chore(admin): stub kysely module to unblock Vite 8 + rolldown dev (SPEC-117)
+f6360fca6 chore(specs): register SPEC-117 admin pages stabilization + audit findings
 ```
+
+**Important architectural shift made mid-session**: the dev API stopped
+running from the main repo (`~/projects/WEBS/hospeda`, branch
+`staging`) and now runs from the SPEC-117 worktree itself
+(`~/projects/WEBS/hospeda-admin-pages-audit`, branch
+`fix/admin-pages-audit`). Required `pnpm turbo run build --filter='@repo/email'`
+in the worktree to unblock the API startup (the package's `dist/` was
+missing). Same applies to other internal packages whose `dist/` may be
+absent in the worktree — build them once if the API fails on a `@repo/*`
+module-not-found error.
+
+**No more mirroring**: previous notes (now obsolete) about copying
+edits from the worktree to the main repo no longer apply. Edit
+exclusively in the worktree; the API picks up `@repo/*` source via
+its workspace symlinks. Schema-only edits still need a
+`pnpm turbo run build --filter='@repo/schemas'` (or similar) in the
+worktree before the live API can validate against the new shape.
+
+**Main repo (`~/projects/WEBS/hospeda`) is no longer relevant** to this
+SPEC's day-to-day workflow. It may still hold stale mirrored edits
+from earlier in the session — those should be reverted via
+`git restore` if they cause confusion, but they're not loaded by any
+running process anymore.
 
 ### Verification status
 
@@ -1508,6 +1532,39 @@ M  packages/service-core/src/services/post/post.service.ts                      
 | `POST /api/v1/admin/destinations/batch` | ✅ verified 2026-05-14 — returns 200 with partial body |
 | `POST /api/v1/admin/users/batch` | ✅ verified 2026-05-14 — returns 200 with partial body |
 | `/accommodations/{id}` admin detail page (browser smoke) | ✅ verified 2026-05-14 — renders accommodation header, sections, resolved destination + owner names from batch enrichment |
+| `/billing/addons` admin page (browser smoke) | ✅ verified 2026-05-14 — no client crash, renders filters + "No hay add-ons comprados aún" message |
+| `/billing/subscriptions` admin page (browser smoke) | ✅ verified 2026-05-14 — no client crash; the API still returns 503 ("Billing service is not configured") but that's a server-side concern tracked in Phase 5 as B-1, not a Phase 2 regression |
+| `/revalidation` admin page (browser smoke) | ✅ verified 2026-05-14 — Configuración tab renders the table with 8 entity types (accommodation, destination, event, post, accommodation_review, destination_review, tag, amenity) and inline editors |
+| `/billing/plans` admin page (browser smoke) | ✅ verified 2026-05-14 — table renders 9 plans (Basic / Professional / Premium for Propietario / Complejo; Free / Plus / VIP for Turista) |
+| `/destinations/new` admin page (browser smoke) | ✅ verified 2026-05-14 — heading renders "Nuevo Destino" without `{entity}` literal leak |
+| `/accommodations/{id}` chrome localization (browser smoke) | ✅ verified 2026-05-14 — "Detalles de Alojamiento" + "Volver" + "Editar" all in Spanish |
+
+### Session state — pausing point (2026-05-14 ~23:30 UTC)
+
+10 commits land on branch `fix/admin-pages-audit` in worktree
+`../hospeda-admin-pages-audit`. Worktree status is clean; no
+uncommitted files. Phases done:
+
+- **Phase 0** (kysely shim) ✅
+- **Phase 1** (LIST 500s + accommodations/{id} + batch endpoints) ✅
+  — T-001..T-004, T-010, T-011
+- **Phase 2** (client crashes) ✅ — C-1/C-2/C-3/C-4 closed in two
+  surgical fixes (logger dotenv removal + revalidation handler envelope
+  cleanup)
+- **Phase 4** (i18n cleanup) 🟡 2/5 — T-012 + T-013 done; **T-014,
+  T-015, T-016 pending**
+
+Three tasks remain in Phase 4 before it closes:
+- **T-014** (I-5): sweep `<entity>.columns.ts` for hardcoded English
+  column headers ("Destination", "Owner", "Attractions" etc.)
+- **T-015** (I-3): move role names + descriptions out of seed data into
+  `admin-entities.roles.*` i18n keys; admin reads localized labels
+- **T-016** (I-4): add `admin-entities.permissions.categories.*` i18n
+  keys; resolve permission category labels via `t(...)` in
+  `/access/permissions` page
+
+After Phase 4 the remaining phases (3 / 5 / 6 / 7 / 8 / 9) are still
+fully pending — see §6 for the full plan.
 
 ### T-010 closure status (2026-05-14)
 
