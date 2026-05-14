@@ -758,7 +758,7 @@
             "title": "Docs CI \u2014 Baseline Cleanup (Broken Links + Validate-Examples Hang)",
             "type": "chore",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-106-docs-broken-links-cleanup"
         },
         {

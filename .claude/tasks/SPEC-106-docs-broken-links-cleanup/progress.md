@@ -1,6 +1,6 @@
 # SPEC-106: Docs CI Baseline Cleanup — Task Progress Dashboard
 
-**Spec status:** in-progress
+**Spec status:** completed
 **Started:** 2026-05-14
 **Branch:** `spec/SPEC-106-docs-broken-links-cleanup` (based off `origin/staging`)
 **Total tasks:** 14

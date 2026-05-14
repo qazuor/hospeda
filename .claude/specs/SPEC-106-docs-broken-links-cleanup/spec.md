@@ -3,9 +3,10 @@ spec-id: SPEC-106
 title: Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)
 type: chore
 complexity: medium
-status: in-progress
+status: completed
 created: 2026-05-13T03:00:00Z
 started: 2026-05-14T00:00:00Z
+completed: 2026-05-14T06:00:00Z
 effort_estimate_hours: 6-16
 tags: [docs, ci, tech-debt, cleanup]
 extracted_from: SPEC-101 (uncovered by the check-links infinite-loop fix in commit `960aeb5ba` + post-fix audit revealing `validate-examples.ts` also hangs)
