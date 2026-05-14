@@ -105,5 +105,5 @@ Translation files are organized by namespace. Each JSON file in `locales/{locale
 
 ## Related Resources
 
-- [Internationalization Guide](../../../docs/guides/internationalization.md)
+- [Usage Guide](./guides/usage.md) — Complete usage patterns for React, Astro, server-side
 - [@repo/auth-ui](../../auth-ui/docs/README.md) .. Uses i18n for auth translations

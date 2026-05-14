@@ -328,7 +328,8 @@ None - lightweight implementation using JSON files.
 
 ## Related Documentation
 
-- [Internationalization Guide](../../docs/guides/internationalization.md)
+- [Package Documentation](./docs/README.md) — Complete i18n guide
+- [Usage Guide](./docs/guides/usage.md)
 
 <claude-mem-context>
 # Recent Activity

@@ -23,7 +23,7 @@
 
 Guides that are specific to a single app have been moved to each app's own docs:
 
-- **Web**: [Adding Pages](../../apps/web/docs/guides/adding-pages.md), [Branding and Theming](../../apps/web/docs/guides/branding-and-theming.md)
+- **Web**: [Web App Guidelines](../../apps/web/CLAUDE.md), [Style Guide](../../apps/web/STYLE_GUIDE.md)
 - **Admin**: [Adding Admin Pages](../../apps/admin/docs/development/README.md)
 - **API**: [Adding API Routes](../../apps/api/docs/development/README.md)
 

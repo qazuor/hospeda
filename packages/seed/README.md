@@ -70,7 +70,7 @@ Complete documentation is available in the `/docs` folder:
 - **[Dependencies Guide](./docs/guides/dependencies.md)** - Managing entity relationships
 - **[Testing Guide](./docs/guides/testing.md)** - Testing seed scripts
 - **[Environments Guide](./docs/guides/environments.md)** - Environment-specific seeding
-- **[Examples](./docs/examples/)** - Working TypeScript examples
+- **Working examples** — see `src/seeders/` and the seed data JSON files under `src/data/<entity>/`
 
 ## Quick Examples
 

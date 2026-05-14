@@ -1063,7 +1063,7 @@ You now know how to:
 - **[Dependencies Guide](./dependencies.md)** - Deep dive into relationship management
 - **[Testing Guide](./testing.md)** - Comprehensive testing strategies
 - **[Environments Guide](./environments.md)** - Environment-specific seeding
-- **[Examples](../examples/)** - Working code examples
+- **Working examples** — see `packages/seed/src/seeders/`
 
 ---
 
