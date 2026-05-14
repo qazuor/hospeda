@@ -691,7 +691,7 @@ pnpm dev
 - **[Full Documentation](./README.md)** - Complete reference
 - **[API Reference](./api/config-reference.md)** - All functions and types
 - **[Environment Variables](./api/env-vars.md)** - Complete list
-- **[Examples](./examples/)** - More code examples
+- **Examples** — see `packages/config/src/sections/` for real configuration sections
 
 ## Support
 

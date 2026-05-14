@@ -2067,7 +2067,7 @@ HOSPEDA_API_URL=http://localhost:3001
 
 **Related Hospeda Documentation:**
 
-- [Security Overview](./overview.md)
+- [Security Overview](./README.md)
 - [API Protection](./api-protection.md)
 - [Input Sanitization](./input-sanitization.md)
 - [OWASP Top 10](./owasp-top-10.md)

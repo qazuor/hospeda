@@ -601,12 +601,12 @@ test('renders sign in form', () => {
 
 ## Related Packages
 
-- [@repo/i18n](../i18n) - Internationalization
-- [@repo/auth-ui](https://better-auth.com/docs/references/react/overview) - Better Auth React SDK
+- [@repo/i18n](../i18n/README.md) - Internationalization
+- [Better Auth React SDK](https://better-auth.com/docs/references/react/overview) - Upstream SDK
 
 ## Related Documentation
 
-- [Authentication Guide](../../docs/guides/authentication.md)
+- [Authentication Guide](../../docs/security/authentication.md)
 - [ADR-002: Better Auth over Clerk](../../docs/decisions/ADR-002-better-auth-over-clerk.md)
 
 ## Troubleshooting

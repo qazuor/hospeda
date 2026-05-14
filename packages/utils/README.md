@@ -575,9 +575,9 @@ const cancellationDeadline = addDaysToDate(checkIn, -2);
 
 ## Related Packages
 
-- [@repo/config](../config) - Environment configuration
-- [@repo/logger](../logger) - Logging utilities
-- [@repo/schemas](../schemas) - Zod validation schemas
+- [@repo/config](../config/README.md) - Environment configuration
+- [@repo/logger](../logger/README.md) - Logging utilities
+- [@repo/schemas](../schemas/README.md) - Zod validation schemas
 
 ## License
 

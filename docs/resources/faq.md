@@ -20,7 +20,7 @@ Quick answers to common questions for developers working on the Hospeda project.
 
 Clone the repository, install dependencies with `pnpm install`, set up your `.env.local` file with required environment variables (`HOSPEDA_DATABASE_URL`, Better Auth keys), run `pnpm db:migrate` to set up the database, and finally `pnpm dev` to start development servers.
 
-See [Setup Guide](../getting-started/setup.md) for detailed instructions.
+See [Local Development Setup](../guides/local-development-setup.md) for detailed instructions.
 
 ### What are the prerequisites?
 

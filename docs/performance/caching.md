@@ -1651,4 +1651,4 @@ console.log({
 
 - [Frontend Optimization](./frontend-optimization.md) - Bundle size, lazy loading, code splitting
 - [Performance Monitoring](./monitoring.md) - Metrics, alerts, dashboards
-- [Database Optimization](./database-optimization.md) - Indexes, queries, connection pooling
+- [Database Optimization](../../packages/db/docs/guides/optimization.md) - Indexes, queries, connection pooling

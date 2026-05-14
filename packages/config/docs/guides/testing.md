@@ -782,4 +782,4 @@ describe('API Configuration Types', () => {
 
 - [Configuration Validation](./validation.md)
 - [Environment Variables Reference](../api/env-vars.md)
-- [Testing Standards](../../../../.claude/docs/standards/testing-standards.md)
+- [Testing Standards](../../../../.claude/docs/testing-standards.md)
