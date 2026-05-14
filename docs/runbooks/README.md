@@ -507,15 +507,16 @@ Each runbook includes a changelog section:
 ### Architecture & Design
 
 - [Architecture Overview](../architecture/README.md)
-- [System Components](../architecture/components.md)
+- [System Patterns](../architecture/patterns.md)
 - [Data Flow](../architecture/data-flow.md)
-- [Infrastructure](../architecture/infrastructure.md)
+- [Tech Stack](../architecture/tech-stack.md)
+- [Monorepo Structure](../architecture/monorepo-structure.md)
 
 ### Development
 
-- [Development Setup](../development/setup.md)
-- [Testing Guide](../development/testing.md)
-- [Deployment Guide](../development/deployment.md)
+- [Local Development Setup](../guides/local-development-setup.md)
+- [Testing Standards](../../.claude/docs/testing-standards.md)
+- [Deployment Overview](../deployment/README.md)
 
 ### Operations
 
@@ -525,8 +526,7 @@ Each runbook includes a changelog section:
 
 ### Support
 
-- [Troubleshooting Guide](../troubleshooting/README.md)
-- [FAQ](../faq.md)
+- [Debugging Guide](../guides/debugging.md)
 
 ## Contributing
 
@@ -662,9 +662,9 @@ gh run view [run-id] --log
 **Hospeda Documentation**:
 
 - [Project README](../../README.md)
-- [Architecture Docs](../architecture/)
-- [Development Docs](../development/)
-- [API Docs](../api/)
+- [Architecture Docs](../architecture/README.md)
+- [Development Workflow](../../.claude/docs/development-workflow.md)
+- [API App Docs](../../apps/api/docs/README.md)
 
 **Tools**:
 
