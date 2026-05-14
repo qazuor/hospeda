@@ -135,7 +135,7 @@
     --text-body-xs: 0.8125rem;
     --text-meta: 0.8125rem;
     --text-caption: 0.75rem;
-    --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+    --text-tagline: clamp(1.25rem, 1rem + 1vw, 1.75rem);
     --text-nav: 0.875rem;
     --text-button: 1rem;
 
