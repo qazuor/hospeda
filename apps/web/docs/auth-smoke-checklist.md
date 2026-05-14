@@ -148,6 +148,7 @@ Track each full run as a row:
 |---|---|---|---|---|
 | 2026-05-13 | qazuor | Initial run | T-017 forget-password 404 → fixed via PR #1075; T-012 redirect to localhost → fixed via PR #1072 | Two pre-launch bugs surfaced and shipped during the run |
 | 2026-05-14 | qazuor + Playwright | Re-run after fixes | All automatable rows PASS; OAuth + cascade rows pending operator action | See SPEC-103 T-027 session tracker |
+| 2026-05-14 | qazuor | OAuth smokes operator pass | None blocker; T-024 partial (observability gap, see side-finding #32) | Closed T-013/T-014/T-016/T-018/T-020 PASS, T-024 PARTIAL. Surfaced + fixed mid-run: admin SPA broken by `node:crypto` leak from `@repo/utils` (PR #1077 + #1080); FB OAuth redirect URI missing on staging (whitelisted in FB Developer Console). New side-findings #31..#34 added to TODOs.md. |
 
 ## Cross-spec references
 
