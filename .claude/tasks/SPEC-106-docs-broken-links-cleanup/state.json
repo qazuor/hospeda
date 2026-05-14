@@ -5,9 +5,9 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "totalTasks": 14,
-        "completed": 9,
+        "completed": 10,
         "inProgress": 0,
-        "pending": 5,
+        "pending": 4,
         "deferred": 0,
         "blocked": 0,
         "executionOrder": [
@@ -420,11 +420,16 @@
             "phase": "phase1_link_cleanup",
             "layer": "docs",
             "complexity": 1,
-            "status": "pending",
+            "status": "completed",
             "dependsOn": [],
             "blocks": [],
             "tags": ["docs", "cleanup"],
-            "files": ["docs/runbooks/**/*.md"],
+            "files": [
+                "docs/runbooks/README.md",
+                "docs/runbooks/rollback.md",
+                "docs/runbooks/cloudinary-incidents.md",
+                "docs/runbooks/backup-recovery.md"
+            ],
             "acceptanceCriteria": [
                 "pnpm docs:check-links reports 0 broken links in docs/runbooks/",
                 "Per-batch PR titled docs(runbooks): repair internal links"
@@ -433,9 +438,19 @@
             "qualityGate": {
                 "lint": "pass",
                 "typecheck": "n/a",
-                "tests": "pnpm docs:check-links exits 0 in docs/runbooks/"
+                "tests": "broken count in docs/runbooks/: 14 -> 0; total 100 -> 86"
             },
-            "timestamps": { "created": "2026-05-14T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-05-14T00:00:00.000Z",
+                "started": "2026-05-14T04:20:00.000Z",
+                "completed": "2026-05-14T04:30:00.000Z"
+            },
+            "findings": {
+                "phantomDevDir": "docs/development/ never existed as a directory. References to development/setup.md, testing.md, deployment.md, migrations.md (5 total) — remapped to existing equivalents: docs/guides/local-development-setup.md, .claude/docs/testing-standards.md, docs/deployment/README.md, packages/db/docs/guides/migrations.md.",
+                "phantomArchDocs": "docs/architecture/ exists but has only overview/patterns/data-flow/tech-stack/monorepo-structure/entity-model-reference + README. References to architecture/components.md, infrastructure.md, database.md (4 total) — remapped to actual files (patterns.md, tech-stack.md, monorepo-structure.md, overview.md).",
+                "phantomSupport": "docs/troubleshooting/, docs/faq.md, docs/api/ never existed. Replaced with debugging guide (docs/guides/debugging.md) and apps/api/docs/README.md respectively.",
+                "archivedSpec": "cloudinary-incidents.md linked to .claude/specs/SPEC-078-cloudinary-image-management/spec.md — SPEC-078 was archived (engram + SPEC-078-GAPS notes confirm). Replaced the link with prose: 'design history lives in the archived SPEC-078'."
+            }
         },
         {
             "id": "T-106-09",
