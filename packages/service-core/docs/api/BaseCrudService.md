@@ -1722,5 +1722,5 @@ export class AccommodationService extends BaseCrudService<
 
 - [ServiceOutput API Reference](./ServiceOutput.md) - Result type and error handling
 - [Error Handling Guide](./errors.md) - Error codes and patterns
-- [Service Guide](../guides/services.md) - How to create services
-- [CLAUDE.md](../CLAUDE.md) - Complete usage examples
+- [Creating Services Guide](../guides/creating-services.md) - How to create services
+- [Package CLAUDE.md](../../CLAUDE.md) - Complete usage examples

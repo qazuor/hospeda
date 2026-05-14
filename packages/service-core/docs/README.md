@@ -30,10 +30,9 @@ The `@repo/service-core` package provides a standardized architecture for implem
 
 | Document | Description |
 |----------|-------------|
-| [BaseCrudService](./api/base-crud-service.md) | Base class API and all available methods |
-| [Result Types](./api/result-types.md) | ServiceOutput and error handling patterns |
-| [Service Context](./api/service-context.md) | Actor, permissions, and context management |
-| [Error Handling](./api/error-handling.md) | ServiceError codes and error patterns |
+| [BaseCrudService](./api/BaseCrudService.md) | Base class API and all available methods |
+| [ServiceOutput & Result Types](./api/ServiceOutput.md) | ServiceOutput and error handling patterns |
+| [Error Types](./api/errors.md) | ServiceError codes and error patterns |
 
 ### 📚 Development Guides
 
@@ -43,18 +42,20 @@ The `@repo/service-core` package provides a standardized architecture for implem
 | [Permission System](./guides/permissions.md) | Implementing permission checks |
 | [Lifecycle Hooks](./guides/lifecycle-hooks.md) | Using before/after hooks effectively |
 | [Custom Business Logic](./guides/custom-logic.md) | Adding methods beyond CRUD |
-| [Service Composition](./guides/service-composition.md) | Orchestrating multiple services |
+| [Advanced Patterns](./guides/advanced-patterns.md) | Service composition and orchestration |
 | [Testing Services](./guides/testing.md) | Comprehensive testing strategies |
+| [Performance](./guides/performance.md) | Query batching, caching, and load patterns |
 
-### 💡 Examples
+### 💡 Code Examples
 
-| Document | Description |
-|----------|-------------|
-| [Basic CRUD](./examples/basic-crud.md) | Simple create, read, update, delete operations |
-| [Custom Methods](./examples/custom-methods.md) | Adding business-specific methods |
-| [Service Composition](./examples/composition.md) | Using multiple services together |
-| [Permission Patterns](./examples/permissions.md) | Common permission check patterns |
-| [Testing Examples](./examples/testing.md) | Complete test suite examples |
+Runnable `.ts` examples live alongside the source in `packages/service-core/src/examples/`:
+
+| File | Description |
+|------|-------------|
+| `basic-service.ts` | Minimal CRUD service |
+| `custom-methods.ts` | Service with custom business methods |
+| `with-hooks.ts` | Service using lifecycle hooks |
+| `complex-logic.ts` | Service composition + multi-step orchestration |
 
 ## Installation
 
@@ -439,7 +440,7 @@ When adding new services:
 
 - **Issues**: [GitHub Issues](https://github.com/hospeda/hospeda/issues)
 - **Documentation**: This directory
-- **Examples**: [./examples/](./examples/)
+- **Examples**: `packages/service-core/src/examples/` (runnable `.ts` files)
 
 ---
 
@@ -447,4 +448,4 @@ When adding new services:
 
 - **New to service-core?** Start with the [Quick Start Guide](./quick-start.md)
 - **Building a service?** Check out [Creating Services Guide](./guides/creating-services.md)
-- **Need examples?** Browse the [Examples Directory](./examples/)
+- **Need examples?** Browse `packages/service-core/src/examples/` for runnable `.ts` samples.

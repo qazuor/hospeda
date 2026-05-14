@@ -738,4 +738,4 @@ async function createAccommodationWithRetry(
 
 - [BaseCrudService API Reference](./BaseCrudService.md) - Service methods that return ServiceOutput
 - [Error Handling Guide](./errors.md) - Detailed error code documentation
-- [Service Guide](../guides/services.md) - How to create and use services
+- [Creating Services Guide](../guides/creating-services.md) - How to create and use services

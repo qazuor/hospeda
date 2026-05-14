@@ -617,20 +617,23 @@ Congratulations! You've created your first service. Here's what to explore next:
 
 - **[Permission System Guide](./guides/permissions.md)** - Implement fine-grained permissions
 - **[Lifecycle Hooks Guide](./guides/lifecycle-hooks.md)** - Use before/after hooks effectively
-- **[Service Composition Guide](./guides/service-composition.md)** - Orchestrate multiple services
+- **[Advanced Patterns Guide](./guides/advanced-patterns.md)** - Service composition and orchestration
 - **[Testing Guide](./guides/testing.md)** - Write comprehensive tests
 
-### Examples
+### Code Examples
 
-- **[Basic CRUD Examples](./examples/basic-crud.md)** - More CRUD patterns
-- **[Custom Methods Examples](./examples/custom-methods.md)** - Advanced business logic
-- **[Permission Patterns](./examples/permissions.md)** - Common permission scenarios
+Runnable `.ts` examples live alongside the source code in `packages/service-core/src/examples/`:
+
+- `basic-service.ts` — minimal CRUD service
+- `custom-methods.ts` — services with custom business logic
+- `with-hooks.ts` — services using lifecycle hooks
+- `complex-logic.ts` — service composition + multi-step orchestration
 
 ### API Reference
 
-- **[BaseCrudService API](./api/base-crud-service.md)** - Complete API documentation
-- **[Result Types API](./api/result-types.md)** - Error handling patterns
-- **[Service Context API](./api/service-context.md)** - Actor and context details
+- **[BaseCrudService API](./api/BaseCrudService.md)** - Complete API documentation
+- **[ServiceOutput & Result Types](./api/ServiceOutput.md)** - Error handling patterns
+- **[Error Types](./api/errors.md)** - ServiceError codes and patterns
 
 ## Common Gotchas
 
@@ -729,7 +732,7 @@ if (!testResult.success) {
 Ready to dive deeper? Here are your next steps:
 
 1. **Read the [Full Documentation](./README.md)** - Comprehensive guide with advanced topics
-2. **Explore [Examples](./examples/)** - Real-world code examples
+2. **Explore the `.ts` examples** under `packages/service-core/src/examples/` - Real-world code samples
 3. **Review [Best Practices](./README.md#best-practices-top-10)** - Follow established patterns
 4. **Write Tests** - See [Testing Guide](./guides/testing.md) for strategies
 

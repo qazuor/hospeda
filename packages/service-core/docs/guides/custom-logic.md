@@ -689,4 +689,4 @@ See:
 
 - **[Testing Guide](./testing.md)** - Test custom methods
 - **[Advanced Patterns](./advanced-patterns.md)** - Advanced techniques
-- **[Examples](../examples/)** - Working code
+- Working code in `packages/service-core/src/examples/` (especially `custom-methods.ts` and `complex-logic.ts`)

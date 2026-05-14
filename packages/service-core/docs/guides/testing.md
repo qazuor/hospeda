@@ -500,5 +500,5 @@ pnpm test:coverage
 
 **See Also:**
 
-- [Examples](../examples/) - Working test examples
-- [Testing Standards](../../../../.claude/docs/standards/testing-standards.md)
+- Working test examples in `packages/service-core/src/examples/` (`basic-service.ts`, `with-hooks.ts`, etc.)
+- [Testing Standards](../../../../.claude/docs/testing-standards.md)
