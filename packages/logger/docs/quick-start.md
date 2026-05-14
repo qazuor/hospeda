@@ -664,7 +664,7 @@ Now that you've mastered the basics:
 1. **[API Reference](./api/logger-reference.md)** - Explore all available methods
 2. **[Scoped Loggers Guide](./guides/scoped-loggers.md)** - Advanced category usage
 3. **[Structured Logging Guide](./guides/structured-logging.md)** - Best practices for log structure
-4. **[Examples](./examples/)** - Real-world usage patterns
+4. **[Basic Logging Example](./examples/basic-logging.ts)** - Real-world `.ts` patterns (also `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts` in the same dir)
 5. **[Performance Guide](./guides/performance.md)** - Optimize logging for production
 
 ## Quick Reference
@@ -706,4 +706,4 @@ dbLogger.query({ table: 'users', action: 'SELECT' });
 
 **You're ready to start logging!** 🎉
 
-For questions or issues, refer to the [main documentation](./README.md) or check the [examples](./examples/).
+For questions or issues, refer to the [main documentation](./README.md) or check the [`.ts` examples](./examples/basic-logging.ts).

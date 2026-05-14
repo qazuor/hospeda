@@ -776,4 +776,4 @@ enableDebugLogging(30000);  // Enable for 30 seconds
 - [Logger API Reference](./logger-reference.md) - Complete API documentation
 - [Quick Start Guide](../quick-start.md) - Get started quickly
 - [Configuration Guide](../guides/formatting.md) - Formatting options
-- [Examples](../examples/) - Working code examples
+- [Basic Logging Example](../examples/basic-logging.ts) - Working `.ts` code (also `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts`)
