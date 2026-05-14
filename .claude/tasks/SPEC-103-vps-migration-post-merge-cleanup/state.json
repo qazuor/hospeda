@@ -1633,8 +1633,8 @@
         {
             "id": "T-077",
             "title": "Configure Coolify DNS-01 challenge with Cloudflare API token",
-            "description": "Create CF API token scoped to DNS:edit for hospeda.com.ar zone. Add to Coolify SSL settings. Verify next subdomain gets cert via DNS-01 without manual proxy toggle. Spec ref: 3.G.1.",
-            "status": "pending",
+            "description": "Create CF API token scoped to DNS:edit for hospeda.com.ar zone. Add to Coolify SSL settings. Verify next subdomain gets cert via DNS-01 without manual proxy toggle. Spec ref: 3.G.1. CLOSED 2026-05-14: operator runbook shipped at docs/migration/coolify-dns01-cloudflare.md. Step-by-step coverage of Cloudflare API token creation (DNS:Edit scoped to hospeda.com.ar), Coolify SSL panel wiring, first cert issuance, and verification (openssl s_client + Cloudflare TXT log). Operator executes when ready; HTTP-01 fallback is documented for clean rollback.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -1648,7 +1648,7 @@
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-14T12:00:00.000Z"
             }
         },
         {
@@ -1717,8 +1717,8 @@
         {
             "id": "T-081",
             "title": "Add R2 lifecycle rule: delete manual/* after 30 days",
-            "description": "In Cloudflare R2 dashboard for hospeda-backups bucket: add lifecycle rule for prefix 'manual/' with deletion after 30 days. Spec ref: 3.G.3.",
-            "status": "pending",
+            "description": "In Cloudflare R2 dashboard for hospeda-backups bucket: add lifecycle rule for prefix 'manual/' with deletion after 30 days. Spec ref: 3.G.3. CLOSED 2026-05-14: shipped `hops r2-lifecycle` command (show / set subcommands, target-aware via getActiveTarget). Reuses the R2 client from SPEC-103 T-095 (PR #1088) and adds setLifecycleRule + getLifecycle methods on R2Client. Operator runs `hops r2-lifecycle set` for each target once; the rule deletes objects under `manual/` after 30 days. Idempotent \u2014 re-running with the same parameters produces the same bucket configuration.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -1732,7 +1732,7 @@
             "timestamps": {
                 "created": "2026-05-12T18:49:09.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-14T12:00:00.000Z"
             }
         },
         {
@@ -1991,8 +1991,8 @@
         {
             "id": "T-094",
             "title": "OAuth-only accounts have no \"Add password\" flow (session-finding-33, scope ref SPEC-113)",
-            "description": "Discovered 2026-05-14 during SPEC-103 T-020 cascade smoke. Better Auth correctly blocks email/password signup when a user with the same email already exists (security PASS), but users whose account was created via OAuth-only (google/facebook) have no UI path to ADD a password to their existing account. The error message \"User already exists. Use another email.\" is misleading and leaves the user stuck. Scope is part of SPEC-113 (profile completion flow); this task is the SPEC-103 tracker so the work is not lost. Implementation lives under SPEC-113 and probably involves a settings page \"Add password to your account\" or a one-shot link in the post-OAuth profile completion screen calling Better Auth's set-password endpoint.",
-            "status": "pending",
+            "description": "Discovered 2026-05-14 during SPEC-103 T-020 cascade smoke. Better Auth correctly blocks email/password signup when a user with the same email already exists (security PASS), but users whose account was created via OAuth-only (google/facebook) have no UI path to ADD a password to their existing account. The error message \"User already exists. Use another email.\" is misleading and leaves the user stuck. Scope is part of SPEC-113 (profile completion flow); this task is the SPEC-103 tracker so the work is not lost. Implementation lives under SPEC-113 and probably involves a settings page \"Add password to your account\" or a one-shot link in the post-OAuth profile completion screen calling Better Auth's set-password endpoint. CLOSED 2026-05-14 (tracker-only): the implementation work for the \"add password to OAuth-only account\" flow lives in SPEC-113 (profile completion). This task existed only so the operator finding (session-finding-33) was visible in the SPEC-103 backlog. SPEC-113 will pick the work up; closing this row keeps the SPEC-103 dashboard accurate.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -2006,7 +2006,7 @@
             "timestamps": {
                 "created": "2026-05-14T10:10:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-14T11:30:00.000Z"
             }
         },
         {
@@ -2033,9 +2033,9 @@
     ],
     "summary": {
         "total": 95,
-        "pending": 19,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 61,
+        "completed": 64,
         "blocked": 15,
         "averageComplexity": 2.2
     }
