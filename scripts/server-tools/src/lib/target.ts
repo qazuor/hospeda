@@ -192,3 +192,61 @@ export function getDbCredentials(target: Target): DbCredentials {
         database: targetedDb ?? legacyDb ?? DB_CREDENTIAL_DEFAULTS[target].database
     };
 }
+
+/**
+ * Resolved Cloudflare R2 configuration for a given target. Each target
+ * (prod / staging) has its own bucket, its own access keys and may even
+ * live in a different R2 account.
+ *
+ * The four values come from these env vars in `.env.local`:
+ *
+ *   prod    — R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET
+ *             (unprefixed names kept for back-compat with the pre-split toolkit).
+ *   staging — R2_STAGING_ACCOUNT_ID / R2_STAGING_ACCESS_KEY_ID /
+ *             R2_STAGING_SECRET_ACCESS_KEY / R2_STAGING_BUCKET.
+ *
+ * The staging keys are intentionally distinct from the prod ones — the
+ * VPS operator file `/etc/hospeda-backup-staging.env` already uses a
+ * separate R2 account / credentials, and this struct mirrors that split
+ * so a leaked staging key cannot read or overwrite prod backups.
+ *
+ * @throws when any required env var for the requested target is missing.
+ */
+export interface R2Config {
+    readonly accountId: string;
+    readonly accessKeyId: string;
+    readonly secretAccessKey: string;
+    readonly bucket: string;
+}
+
+const R2_ENV_PREFIX: Readonly<Record<Target, string>> = {
+    prod: 'R2_',
+    staging: 'R2_STAGING_'
+};
+
+/**
+ * Resolve the R2 configuration for the given target. Reads four env vars
+ * sharing a target-specific prefix (`R2_*` for prod, `R2_STAGING_*` for
+ * staging). All four are required — there is no default for any of them
+ * because losing track of which R2 account a bucket lives in is a foot-gun
+ * we don't want to enable.
+ */
+export function getR2Config(target: Target): R2Config {
+    const prefix = R2_ENV_PREFIX[target];
+    const read = (suffix: string): string => {
+        const key = `${prefix}${suffix}`;
+        const value = get(key);
+        if (!value) {
+            throw new Error(
+                `${key} is not set in .env.local. Add the four ${prefix}* env vars (ACCOUNT_ID, ACCESS_KEY_ID, SECRET_ACCESS_KEY, BUCKET) for target '${target}'. The staging values typically mirror /etc/hospeda-backup-staging.env on the VPS.`
+            );
+        }
+        return value;
+    };
+    return {
+        accountId: read('ACCOUNT_ID'),
+        accessKeyId: read('ACCESS_KEY_ID'),
+        secretAccessKey: read('SECRET_ACCESS_KEY'),
+        bucket: read('BUCKET')
+    };
+}

@@ -121,7 +121,7 @@ export async function dbRestore(argv: ReadonlyArray<string>): Promise<void> {
     const db = credentials.database;
     const targetDb = parsed.targetDb ?? db;
 
-    const r2 = createR2Client();
+    const r2 = createR2Client(getActiveTarget());
 
     log.info(`Listing backups from s3://${r2.bucket}/...`);
     const all = await r2.list();
