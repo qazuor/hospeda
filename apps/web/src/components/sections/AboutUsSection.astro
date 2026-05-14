@@ -344,7 +344,17 @@ const { t } = createTranslations(locale);
         color: var(--core-foreground);
         margin: 0;
         text-wrap: balance;
-        max-width: 18ch;
+        max-width: 28ch;
+    }
+
+    /* Desktop only: let the title spill into the transparent area to
+       the top-left of the side traveler PNG so the heading wraps in
+       ~2 lines instead of stacking 4 narrow ones. The negative margin
+       does not affect the flex layout (side image stays put). */
+    @media (min-width: 1025px) {
+        .about-us__title {
+            margin-right: -120px;
+        }
     }
 
     .about-us__body {
