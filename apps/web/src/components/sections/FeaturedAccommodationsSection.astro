@@ -116,10 +116,21 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     height: 100%;
   }
   /* Type pills row spacing only — overflow + fade + arrows come from
-   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro). */
-  .accommodations__types {
+   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro).
+   *
+   * `:global()` is required because the <nav> that carries this class is
+   * rendered by ScrollableNav.astro, which has its own scoped style block.
+   * A locally-scoped `.accommodations__types` selector would compile to
+   * `.accommodations__types[data-astro-cid-XXX]` and never match the child
+   * component's element. */
+  :global(.accommodations__types) {
     justify-content: center;
     gap: 0.5rem;
-    margin-bottom: 2rem;
+    /* Extra breathing room below the pills: cards use `data-reveal="up"`
+     * with an ease-bounce curve that briefly overshoots their final
+     * position. With only 2rem the cards visually collided with the pills
+     * during the reveal. clamp() scales the gap from compact on mobile
+     * to comfortable on desktop. */
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
   }
 </style>
