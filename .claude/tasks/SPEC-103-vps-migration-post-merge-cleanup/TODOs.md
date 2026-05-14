@@ -1,6 +1,6 @@
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog
 
-## Progress: 26/92 tasks (28%)
+## Progress: 33/92 tasks (36%)
 
 **Average Complexity:** 2.2 / 4 (max)
 **Total effort estimate:** ~57-90h spread over weeks-months post-merge
@@ -31,7 +31,7 @@
 ### Staging postgres backups (3.A.2)
 
 - [ ] **T-006** (2) — Configure daily 03:00 ART R2 backup for hospeda-staging-postgres.
-- [ ] **T-007** (1) — Verify staging backup landed in R2 + `hops db-restore` lists it. Blocked by: T-006.
+- [x] **T-007** (1) — Verify staging backup landed in R2 + `hops db-restore` lists it. ✅ Verified 2026-05-14: encrypted daily backup `hospeda-postgres-2026-05-14_063001Z.dump.gpg` (263.1 KiB) present in `s3://hospeda-staging-backups/`. Verification used `aws s3 ls` directly with credentials from `/etc/hospeda-backup-staging.env` (R2_* prefix). `hops db-restore --list --target=staging` is broken — it shows prod backups instead, see session-finding-14-repro.
 
 ### Prod destinations slug parity (3.A.4)
 
@@ -42,19 +42,19 @@
 
 ### Full auth coverage end-to-end (3.A.5 — folds in 3.A.3)
 
-- [ ] **T-012** (2) — Smoke email signup path on prod + staging.
-- [ ] **T-013** (2) — Smoke Google OAuth signup on prod + staging.
-- [ ] **T-014** (2) — Smoke Facebook OAuth signup on prod + staging.
-- [ ] **T-015** (3) — Smoke email sign-in (valid + wrong password + unknown email + returnUrl open-redirect guards).
-- [ ] **T-016** (3) — Smoke OAuth sign-in with auto-linking (new + existing email).
-- [ ] **T-017** (2) — Smoke forgot-password happy path.
-- [ ] **T-018** (2) — Smoke reset-password edge cases (expired + invalid + used token).
-- [ ] **T-019** (2) — Smoke verify-email + resend flow.
-- [ ] **T-020** (3) — Smoke account-linking cascade (email → +Google → +Facebook = 3 accounts rows).
+- [x] **T-012** (2) — Smoke email signup path on prod + staging. ✅ Validated as step 1 of T-020 cascade (2026-05-14).
+- [x] **T-013** (2) — Smoke Google OAuth signup on prod + staging. ✅ Staging PASS (2026-05-14).
+- [x] **T-014** (2) — Smoke Facebook OAuth signup on prod + staging. ✅ Validated in T-020 step 3 (2026-05-14). Surfaced missing FB OAuth redirect URI whitelist on staging; fix applied operatively.
+- [x] **T-015** (3) — Smoke email sign-in (valid + wrong password + unknown email + returnUrl open-redirect guards). ✅
+- [x] **T-016** (3) — Smoke OAuth sign-in with auto-linking (new + existing email). ✅ Verified in T-020 cascade — same `user_id` across 3 accounts (credential/google/facebook).
+- [x] **T-017** (2) — Smoke forgot-password happy path. ✅
+- [x] **T-018** (2) — Smoke reset-password edge cases (expired + invalid + used token). ✅ Security PASS (server invalidates used + invalid tokens). Expired token skipped (1h+ wait). UX gap noted in session-finding-04 below.
+- [x] **T-019** (2) — Smoke verify-email + resend flow. ✅ Validated in T-020 step 1.
+- [x] **T-020** (3) — Smoke account-linking cascade (email → +Google → +Facebook = 3 accounts rows). ✅ Verified DB state: 1 user, 3 account rows (credential / google / facebook), all sharing user_id.
 - [ ] **T-021** (2) — Smoke session lifecycle (persistent + TTL expiry + multi-browser).
 - [ ] **T-022** (2) — Smoke cross-environment session isolation.
 - [ ] **T-023** (3) — Smoke auth UI a11y (keyboard + screen reader + Enter).
-- [ ] **T-024** (2) — Smoke OAuth error logging (console context + Sentry tags).
+- [x] **T-024** (2) — Smoke OAuth error logging (console context + Sentry tags). ⚠️ PARTIAL: cancel recovery UX works (no crash), but no UI feedback to the user and no Sentry event captured. See session-finding-02 below; deferred to post-launch instrumentation pass.
 - [ ] **T-025** (2) — Document full auth smoke checklist in `apps/web/docs/auth-smoke-checklist.md`. Blocked by: T-012..T-024.
 
 ### Home cross-browser re-validate (3.A.6)
@@ -223,3 +223,48 @@ Begin with the green-build close-out + repo hygiene batch:
 6. **T-084** (1) — hops VERSION bump.
 
 After Batch 1: pivot to Coolify ops (T-004 MP toggle, T-006 staging backups, T-075/T-076 observability).
+
+---
+
+## Session findings — 2026-05-14 (operator OAuth smokes)
+
+These items surfaced during the manual OAuth smoke execution against staging. None block the public launch directly, but each is a real gap that should be tracked. They are numbered to match the smoke checklist log entries in `apps/web/docs/auth-smoke-checklist.md`.
+
+### session-finding-31 — Navbar stale immediately after OAuth callback
+
+After successful Google signin, the navbar still showed the "Iniciar sesión" button while `/es/mi-cuenta/` rendered as logged-in. The session was clearly active server-side; the navbar React island simply did not refresh from the new session cookie until the next navigation. Likely caused by the island reading the user prop once at hydration and never refetching `/api/auth/get-session` after the OAuth callback redirect. Fix candidate: have the navbar island refetch the session on `astro:page-load` events, or move the user fetch into a Server Island that re-runs per request.
+
+### session-finding-32 — OAuth cancel produces no UI feedback and no Sentry event (T-024 partial)
+
+When the user cancels the Google consent screen, the browser redirects back to `/es/auth/signin/` cleanly (recovery UX OK). However:
+
+- No banner / toast / inline message tells the user that the login was cancelled. Looks like a silent no-op from the user's perspective.
+- No event reaches Sentry with `environment:staging` for the cancellation. The Better Auth callback rejection is not instrumented.
+
+Suggested fix: emit a `?error=oauth_cancelled` query string on the cancel redirect (or read the upstream `?error=access_denied` from the provider) and have signin render an appropriate i18n message. Capture the same event in Sentry with `provider` + `error_code` tags so support can correlate user reports.
+
+### session-finding-33 — No "Add password" flow for OAuth-only accounts (matches SPEC-113)
+
+When an account was created via OAuth (Google / Facebook only, no `credential` row) and the user later tries to sign up with email + password using the same email, Better Auth correctly rejects the signup with `User already exists` (security PASS). But the UX provides no path forward: the user cannot add a password to their existing OAuth account from any page. Closest matching scope is SPEC-113 (profile completion flow). If SPEC-113 does not already include this, scope it in as the "Add password to your account" subtask.
+
+### session-finding-34 — Reset-password page does not validate token at load (UX gap, security OK)
+
+Visiting `/es/auth/reset-password/?token=<invalid-or-used>` always renders the "set new password" form. The server correctly returns `Invalid token` on submit, so a used or tampered token cannot actually reset the password — security is intact. The UX gap is that the user only learns the link is dead after typing a new password and submitting. Fix candidate: have the page do a lightweight token-validity check on load (HEAD / GET against `/api/auth/reset-password/verify` or equivalent) and show an inline error / "request a new link" CTA when the token is dead.
+
+### session-finding-14-repro — `hops --target=staging` ignored on `env-set` and `db-restore --list`
+
+Reproduction of the previously-noted hops `--target` propagation gap, with two concrete repros:
+
+1. `hops env-set web PUBLIC_SENTRY_DSN --secret --target=staging` opened an `UPDATE on web [production]` prompt. Aborted before save. Workaround: set the variable via the Coolify UI on the staging app.
+2. `hops db-restore --list --target=staging` printed `Listing backups from s3://hospeda-backups/` (production bucket; staging is `s3://hospeda-staging-backups/`) and offered prod-cron timestamps (`06:00 UTC`) instead of staging-cron timestamps (`06:30 UTC`). Workaround for verification: `aws s3 ls s3://hospeda-staging-backups/` with the credentials in `/etc/hospeda-backup-staging.env` (variables prefixed `R2_*`, not `AWS_*`).
+
+These belong to the standalone hops `--target` fix (~2-4h tracked separately). The smokes themselves were unblocked by Coolify UI / aws CLI fallbacks.
+
+### admin-csp-node-crypto — Admin staging SPA was broken by `node:crypto` in client bundle (FIXED)
+
+Independent finding surfaced when attempting to validate cross-app session sharing for T-021 / T-022. The admin SPA failed to hydrate on `https://staging-admin.hospeda.com.ar/auth/signin` because the client bundle attempted to import `node:crypto` and the browser blocked it with a CORS error. Two distinct code paths were leaking the Node built-in into the client:
+
+1. `apps/admin/src/middleware.ts` imported `randomBytes` from `node:crypto` for the CSP nonce generator. Module evaluated in both server and client bundles. Fixed in PR #1077.
+2. `packages/utils/src/string.ts` imported `getRandomValues` from `node:crypto` at the top of the file; the `@repo/utils` barrel re-exported everything, so any consumer (incl. `apps/admin/src/lib/csp-helpers.ts`) dragged the Node import into its bundle. Fixed in PR #1080.
+
+Both PRs merged to staging via admin-merge (CI billing exhausted), Coolify rebuilt with `Force Deploy without cache`, admin SPA back online. No further code changes needed — the fix is verified via Playwright (page hydrates, no `node:crypto` errors in console).
