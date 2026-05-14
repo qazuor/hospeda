@@ -11,15 +11,6 @@
             "archived": true
         },
         {
-            "specId": "SPEC-077",
-            "title": "Accommodation Detail Page (Full Rebuild)",
-            "status": "draft",
-            "complexity": "high",
-            "path": "SPEC-077-accommodation-detail-page-rebuild",
-            "created": "2026-04-13T14:00:00.000Z",
-            "archived": true
-        },
-        {
             "specId": "SPEC-081",
             "title": "Service Return Type Safety with Relations",
             "status": "completed",
@@ -778,6 +769,16 @@
             "path": "SPEC-108-newsletter-mvp-followups",
             "completed": "2026-05-14T00:00:00.000Z",
             "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account."
+        },
+        {
+            "specId": "SPEC-114",
+            "title": "Forget-password endpoint returns 404 on staging — Better Auth misconfig or build artifact stale",
+            "type": "fix",
+            "complexity": "small-medium",
+            "status": "completed",
+            "path": "SPEC-114-forget-password-endpoint-missing",
+            "completed": "2026-05-14T04:33:00.000Z",
+            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
         }
     ]
 }
