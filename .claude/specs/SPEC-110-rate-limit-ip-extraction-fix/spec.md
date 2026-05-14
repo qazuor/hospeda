@@ -1,5 +1,5 @@
 ---
-spec-id: SPEC-106
+spec-id: SPEC-110
 title: Rate-Limiter IP Extraction Fix — prevent shared 'unknown' bucket
 type: fix
 complexity: medium
@@ -11,7 +11,7 @@ extracted_from: SPEC-103 T-086 redis verify finding
 priority: high (potential security issue, not yet exploited)
 ---
 
-# SPEC-106: Rate-Limiter IP Extraction Fix
+# SPEC-110: Rate-Limiter IP Extraction Fix (renumbered from SPEC-106 to avoid collision)
 
 ## Part 1 — Functional Specification
 
@@ -98,13 +98,13 @@ Each fix:
 
 | Task | Title | Status |
 |---|---|---|
-| T-106-01 | Phase 0: locate + document current rate-limiter impl | pending |
-| T-106-02 | Phase 1: reproduce `unknown` fallback locally with request matrix | pending, blocked by T-106-01 |
-| T-106-03 | Phase 2: implement fix (specific subtasks emerge after Phase 1) | pending, blocked by T-106-02 |
-| T-106-04 | Tests: unit + integration + load for new behavior | pending, blocked by T-106-03 |
-| T-106-05 | Deploy to staging + observability check (no `unknown` keys) | pending, blocked by T-106-04 |
-| T-106-06 | Promote to prod + 7-day monitoring | pending, blocked by T-106-05 |
-| T-106-07 | Document findings + final policy in `docs/security/rate-limiting.md` | pending, blocked by T-106-06 |
+| T-110-01 | Phase 0: locate + document current rate-limiter impl | pending |
+| T-110-02 | Phase 1: reproduce `unknown` fallback locally with request matrix | pending, blocked by T-110-01 |
+| T-110-03 | Phase 2: implement fix (specific subtasks emerge after Phase 1) | pending, blocked by T-110-02 |
+| T-110-04 | Tests: unit + integration + load for new behavior | pending, blocked by T-110-03 |
+| T-110-05 | Deploy to staging + observability check (no `unknown` keys) | pending, blocked by T-110-04 |
+| T-110-06 | Promote to prod + 7-day monitoring | pending, blocked by T-110-05 |
+| T-110-07 | Document findings + final policy in `docs/security/rate-limiting.md` | pending, blocked by T-110-06 |
 
 ---
 
@@ -139,7 +139,7 @@ Discovered during SPEC-103 T-086 redis verify (2026-05-13, ~04:40 UTC). Engram t
 
 ### Sequencing relative to SPEC-079
 
-SPEC-079 (Redis rate-limit backend) is the meta-spec covering rate-limit-via-redis. SPEC-106 fixes a specific bug surfaced by 079's deployment. If 079 ships any additional changes, they happen on top of 106's fix.
+SPEC-079 (Redis rate-limit backend) is the meta-spec covering rate-limit-via-redis. SPEC-110 fixes a specific bug surfaced by 079's deployment. If 079 ships any additional changes, they happen on top of 110's fix.
 
 ### When to start
 

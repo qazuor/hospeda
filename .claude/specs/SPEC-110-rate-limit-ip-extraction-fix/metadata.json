@@ -1,5 +1,5 @@
 {
-    "specId": "SPEC-106",
+    "specId": "SPEC-110",
     "title": "Rate-Limiter IP Extraction Fix — prevent shared 'unknown' bucket",
     "type": "fix",
     "complexity": "medium",
