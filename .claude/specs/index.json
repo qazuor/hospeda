@@ -702,15 +702,29 @@
             "archived": false
         },
         {
+            "specId": "SPEC-100",
+            "title": "API Transform Pipeline Type Safety",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-100-transform-type-safety",
+            "created": "2026-05-07T00:00:00.000Z",
+            "archived": false,
+            "effort_estimate_hours": "20-32",
+            "origin": "Deferred from SPEC-099 Phase 8 (S-10)"
+        },
+        {
             "specId": "SPEC-101",
             "title": "Newsletter MVP (email-only)",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-101-newsletter-mvp",
             "created": "2026-05-11T00:00:00.000Z",
+            "completed": "2026-05-14T00:00:00.000Z",
             "archived": false,
-            "dependencies": ["chore/vps-migration merged to main"]
+            "dependencies": ["chore/vps-migration merged to main"],
+            "completedNote": "Merged to staging in PR #1061 (2026-05-14) at 60/60 tasks. Post-merge fixes shipped: PR #1066 (Brevo webhook validation), PR #1068 (Redis maxRetriesPerRequest). Follow-ups tracked in SPEC-108."
         },
         {
             "specId": "SPEC-102",

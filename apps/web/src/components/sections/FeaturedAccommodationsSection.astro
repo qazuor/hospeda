@@ -23,6 +23,7 @@ import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { webLogger } from '@/lib/logger';
+import { revealDelay } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations and build internal URLs. */
@@ -98,7 +99,7 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     ) : (
       <div class="grid-cards accommodations__grid">
         {items.map((accommodation, i) => (
-          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 7) * 100}ms`}>
+          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${revealDelay({ index: i })}ms`}>
             <AccommodationCard data={accommodation} locale={locale} />
           </div>
         ))}
@@ -116,10 +117,21 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     height: 100%;
   }
   /* Type pills row spacing only — overflow + fade + arrows come from
-   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro). */
-  .accommodations__types {
+   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro).
+   *
+   * `:global()` is required because the <nav> that carries this class is
+   * rendered by ScrollableNav.astro, which has its own scoped style block.
+   * A locally-scoped `.accommodations__types` selector would compile to
+   * `.accommodations__types[data-astro-cid-XXX]` and never match the child
+   * component's element. */
+  :global(.accommodations__types) {
     justify-content: center;
     gap: 0.5rem;
-    margin-bottom: 2rem;
+    /* Extra breathing room below the pills: cards use `data-reveal="up"`
+     * with an ease-bounce curve that briefly overshoots their final
+     * position. With only 2rem the cards visually collided with the pills
+     * during the reveal. clamp() scales the gap from compact on mobile
+     * to comfortable on desktop. */
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
   }
 </style>

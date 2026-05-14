@@ -14,8 +14,10 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { MailIcon } from '@repo/icons';
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(lang);
@@ -49,49 +51,15 @@ const resubscribeHref = isAuthenticated
     description={pageDescription}
     noindex={true}
 >
-    <main class="newsletter-unsub">
-        <div class="newsletter-unsub__card">
-            <h1 class="newsletter-unsub__title">{pageTitle}</h1>
-            <p class="newsletter-unsub__description">{pageDescription}</p>
-
-            <a class="newsletter-unsub__resubscribe" href={resubscribeHref}>
-                {resubscribeLink}
-            </a>
-        </div>
-    </main>
+    <StatusPage
+        variant="info"
+        Icon={MailIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <a slot="footer" href={resubscribeHref}>
+            {resubscribeLink}
+        </a>
+    </StatusPage>
 </DefaultLayout>
-
-<style>
-    .newsletter-unsub {
-        max-width: 560px;
-        margin: 0 auto;
-        padding: var(--space-12) var(--space-4);
-    }
-
-    .newsletter-unsub__card {
-        background-color: var(--surface-elevated);
-        border-radius: var(--radius-lg);
-        padding: var(--space-8) var(--space-6);
-        text-align: center;
-    }
-
-    .newsletter-unsub__title {
-        margin: 0 0 var(--space-3);
-        font-family: var(--font-heading);
-        font-size: var(--text-h3);
-        line-height: 1.2;
-    }
-
-    .newsletter-unsub__description {
-        margin: 0 0 var(--space-6);
-        font-size: var(--text-body);
-        line-height: 1.5;
-    }
-
-    .newsletter-unsub__resubscribe {
-        display: inline-block;
-        font-size: var(--text-body-sm);
-        color: var(--primary);
-        text-decoration: underline;
-    }
-</style>

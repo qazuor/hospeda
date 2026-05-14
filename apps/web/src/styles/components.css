@@ -536,20 +536,20 @@
 /* === Scroll Reveal === */
 [data-reveal] {
     opacity: 0;
-    transition: opacity var(--duration-reveal) var(--ease-bounce), transform var(--duration-reveal)
-        var(--ease-bounce);
+    transition: opacity var(--duration-reveal) var(--ease-reveal), transform var(--duration-reveal)
+        var(--ease-reveal);
 }
 [data-reveal="up"] {
-    transform: translateY(40px);
+    transform: translateY(20px);
 }
 [data-reveal="left"] {
-    transform: translateX(-60px);
+    transform: translateX(-32px);
 }
 [data-reveal="right"] {
-    transform: translateX(60px);
+    transform: translateX(32px);
 }
 [data-reveal="scale"] {
-    transform: scale(0.9);
+    transform: scale(0.96);
 }
 [data-reveal].revealed {
     opacity: 1;

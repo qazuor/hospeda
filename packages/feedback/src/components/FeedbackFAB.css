@@ -42,6 +42,19 @@
     border: none;
     border-radius: var(--fb-radius-pill);
     height: 3.75rem;
+    /* min-width keeps the button at least circle-sized (60x60) even when
+       the label collapses to 0; the actual width is always the intrinsic
+       content + padding (i.e. width:auto implicitly). The previous setup
+       toggled width:3.75rem ↔ width:auto, but CSS cannot transition
+       between a length and the `auto` keyword — so on the first hover
+       frame the browser snapped to `auto` while padding/gap/label were
+       still at 0, shrinking the button to the icon's intrinsic ~24px for
+       one frame before the rest caught up. That one-frame shrink was
+       exactly the "se achica antes de expandirse" bug: the cursor briefly
+       fell outside the bounding box, dropped :hover, and the oscillation
+       began. Driving the geometry through padding/gap/max-width only —
+       all interpolable lengths — keeps the resize smooth and monotonic. */
+    min-width: 3.75rem;
     padding: 0 1.5rem 0 1.25rem;
     background-color: var(--fb-primary);
     color: var(--fb-primary-foreground);
@@ -51,14 +64,15 @@
     font-size: var(--fb-font-size-lg);
     font-weight: var(--fb-font-weight-semibold);
     letter-spacing: 0.01em;
-    /* Animate every property that changes on collapse/expand. */
+    /* `width` is intentionally omitted from the transition list — we never
+       set it explicitly anymore, so the browser recomputes it naturally
+       each frame as padding/gap/label-max-width animate. */
     transition:
         transform var(--fb-duration-normal) var(--fb-easing),
         background-color var(--fb-duration-fast) var(--fb-easing),
         box-shadow var(--fb-duration-fast) var(--fb-easing),
-        width var(--fb-duration-normal) var(--fb-easing),
-        padding var(--fb-duration-normal) var(--fb-easing),
-        gap var(--fb-duration-normal) var(--fb-easing);
+        padding var(--fb-duration-fast) var(--fb-easing),
+        gap var(--fb-duration-fast) var(--fb-easing);
 }
 
 /*
@@ -96,7 +110,9 @@
 }
 
 /* The label text. Lives inline with the icon when expanded, fades and
-   collapses in width when the pill auto-collapses to a circle. */
+   collapses in width when the pill auto-collapses to a circle. max-width
+   runs on --fb-duration-fast to stay in sync with the button's geometry
+   transitions and keep the expand feeling snappy. */
 .feedback-root .fabLabel {
     display: inline-block;
     line-height: 1;
@@ -104,7 +120,7 @@
     max-width: 12rem;
     opacity: 1;
     overflow: hidden;
-    transition: max-width var(--fb-duration-normal) var(--fb-easing), opacity
+    transition: max-width var(--fb-duration-fast) var(--fb-easing), opacity
         var(--fb-duration-fast) var(--fb-easing);
 }
 
@@ -113,11 +129,12 @@
 /* ------------------------------------------------------------------ */
 
 .feedback-root .fab.fabCollapsed {
-    /* Height stays the same — only width and padding shrink. */
+    /* Height stays the same — only padding/gap shrink and the label
+       collapses to 0. The button's width is left implicit so it falls back
+       to min-width (3.75rem on the base .fab rule), producing a perfect
+       60x60 circle without ever touching the `width` property. */
     padding: 0;
     gap: 0;
-    /* Width equals the height to land on a perfect circle. */
-    width: 3.75rem;
 }
 
 .feedback-root .fab.fabCollapsed .fabLabel {
@@ -127,10 +144,12 @@
 
 /* Hover / focus while collapsed — expand back to the labelled pill so the
    user can read the affordance. The underlying button retains the
-   collapsed class; the pseudo-class is layered on top. */
+   collapsed class; the pseudo-class is layered on top. No `width: auto`
+   here: restoring the padding/gap and re-expanding the label below is
+   enough to grow the button back to its full pill width, with every
+   property smoothly interpolating from 0. */
 .feedback-root .fab.fabCollapsed:hover,
 .feedback-root .fab.fabCollapsed:focus-visible {
-    width: auto;
     padding: 0 1.5rem 0 1.25rem;
     gap: 0.625rem;
 }
@@ -145,10 +164,17 @@
 /* Hover (any state) — slight lift + brand-hover background            */
 /* ------------------------------------------------------------------ */
 
+/* No translate on hover and the shadow's Y offset stays at 8px (same as the
+   base state). The previous version used translateY(-2px) AND jumped the
+   shadow Y offset from 8 to 16, both of which made the button look like it
+   "lifted" — fine visually, but the translate moved the hit-box out from
+   under the cursor on the bottom edge (causing hover oscillation) and the
+   shadow drop made it feel like the button shifted vertically when it
+   actually had not. Now only the blur and color intensity change, giving a
+   stronger glow with no perceived motion. */
 .feedback-root .fab:hover {
-    transform: translateY(-2px);
     background-color: var(--fb-primary-hover);
-    box-shadow: 0 16px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)), 0 0 0 4px
+    box-shadow: 0 8px 36px var(--fb-shadow-fab-color, rgba(0, 0, 0, 0.35)), 0 0 0 4px
         rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 

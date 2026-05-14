@@ -103,8 +103,14 @@ const iconSize = size === 'xs' ? 14 : 16;
 
     /* Interactive (anchor) variant: tap target, hover/focus affordance.
      * `display: inline-flex` + `min-height` only when actionable, so the
-     * decorative span variant keeps hugging its content. */
+     * decorative span variant keeps hugging its content.
+     *
+     * Default surface is the lighter --brand-primary so the filter chip
+     * row reads as quieter; hover/focus drops to --brand-primary-dark
+     * (the same shade the decorative card variant uses) for a clear
+     * "press me" affordance. */
     a.acc-type-badge {
+        background-color: oklch(from var(--brand-primary) calc(l + 0.1) c h);
         text-decoration: none;
         cursor: pointer;
         min-height: 32px;
@@ -118,7 +124,7 @@ const iconSize = size === 'xs' ? 14 : 16;
     }
     a.acc-type-badge:hover {
         transform: translateY(-1px);
-        background-color: oklch(from var(--brand-primary-dark) calc(l - 0.05) c h);
+        background-color: var(--brand-primary-dark);
         box-shadow:
             0 2px 4px oklch(0 0 0 / 0.1),
             0 4px 10px oklch(0 0 0 / 0.08);

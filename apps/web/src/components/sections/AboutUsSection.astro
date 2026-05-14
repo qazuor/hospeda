@@ -79,6 +79,7 @@ const { t } = createTranslations(locale);
                         loading="lazy"
                         width={231}
                         height={352}
+                        densities={[1, 2]}
                     />
                 </div>
 
@@ -88,7 +89,7 @@ const { t } = createTranslations(locale);
                     with the section background, giving a floating effect.
                 -->
                 <div class="about-us__photo-secondary">
-                    <Image src={choose12} alt="" loading="lazy" aria-hidden="true" width={135} height={195} />
+                    <Image src={choose12} alt="" loading="lazy" aria-hidden="true" width={135} height={195} densities={[1, 2]} />
                 </div>
 
                 <!--
@@ -96,7 +97,7 @@ const { t } = createTranslations(locale);
                     edge of the main photo. Positioned at left:91px top:111px before rotation.
                 -->
                 <span class="about-us__exp-badge" aria-hidden="true">
-                    {t("home.about.experienceBadge", "2 años de experiencia")}
+                    {t("home.about.experienceBadge", "Descubrí el Litoral")}
                 </span>
             </div>
 
@@ -142,6 +143,7 @@ const { t } = createTranslations(locale);
                     class="about-us__side-img"
                     width={347}
                     height={500}
+                    densities={[1, 2]}
                 />
             </div>
         </div>
@@ -344,7 +346,17 @@ const { t } = createTranslations(locale);
         color: var(--core-foreground);
         margin: 0;
         text-wrap: balance;
-        max-width: 18ch;
+        max-width: 28ch;
+    }
+
+    /* Desktop only: let the title spill into the transparent area to
+       the top-left of the side traveler PNG so the heading wraps in
+       ~2 lines instead of stacking 4 narrow ones. The negative margin
+       does not affect the flex layout (side image stays put). */
+    @media (min-width: 1025px) {
+        .about-us__title {
+            margin-right: -120px;
+        }
     }
 
     .about-us__body {

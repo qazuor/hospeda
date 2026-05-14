@@ -16,6 +16,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import { EmailIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -38,54 +40,16 @@ const signInLabel = t('auth-ui.pages.verifyEmailSent.signInLink', 'Ir a iniciar 
 const signInHref = buildUrl({ locale, path: 'auth/signin' });
 ---
 
-<AuthLayout locale={locale} title={title} description={description}>
-    <main class="auth-page" aria-labelledby="verify-email-sent-heading">
-        <section class="auth-page__card">
-            <h1 id="verify-email-sent-heading" class="auth-page__title">{heading}</h1>
-            <p class="auth-page__body">{body}</p>
-            <a href={signInHref} class="auth-page__link auth-page__link--strong">
-                {signInLabel}
-            </a>
-        </section>
-    </main>
+<AuthLayout locale={locale} title={title} description={description} bareSlot={true}>
+    <StatusPage
+        variant="info"
+        Icon={EmailIcon}
+        title={heading}
+        description={body}
+        hideBlob
+    >
+        <a slot="footer" href={signInHref}>
+            {signInLabel}
+        </a>
+    </StatusPage>
 </AuthLayout>
-
-<style>
-    .auth-page {
-        display: flex;
-        min-height: calc(100vh - var(--navbar-height, 5rem));
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-8, 2rem) var(--space-4, 1rem);
-    }
-
-    .auth-page__card {
-        width: 100%;
-        max-width: 28rem;
-        border-radius: var(--radius-card);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        padding: var(--space-8, 2rem);
-        box-shadow: var(--shadow-card);
-        text-align: center;
-    }
-
-    .auth-page__title {
-        font-size: var(--text-xl, 1.5rem);
-        font-weight: 600;
-        margin-bottom: var(--space-4, 1rem);
-        color: var(--core-foreground);
-    }
-
-    .auth-page__body {
-        color: var(--muted-foreground);
-        line-height: 1.6;
-        margin-bottom: var(--space-6, 1.5rem);
-    }
-
-    .auth-page__link--strong {
-        color: var(--primary);
-        font-weight: 500;
-        text-decoration: underline;
-    }
-</style>
