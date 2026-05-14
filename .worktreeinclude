@@ -17,3 +17,7 @@ apps/api/.env.test
 apps/web/.env.local
 apps/admin/.env.local
 apps/admin/.env.test
+
+# Docker compose env (used by `pnpm db:start` / `db:fresh-dev` / `db:seed`
+# — referenced as `--env-file docker/.env` in the root db:start script)
+docker/.env
