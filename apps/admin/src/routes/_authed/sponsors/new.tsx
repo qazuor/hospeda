@@ -31,10 +31,11 @@ function SponsorCreatePage() {
         basePath: '/sponsors',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Patrocinador creado',
+        successToastMessage: 'El patrocinador se creó exitosamente',
+        errorToastTitle: 'Error al crear el patrocinador',
+        errorMessage: 'No pudimos crear el patrocinador. Probá de nuevo.'
     };
 
     return (

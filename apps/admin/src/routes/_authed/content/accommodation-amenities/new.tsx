@@ -24,17 +24,21 @@ function AmenityCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'amenity',
-        title: t('admin-entities.list.new').replace('{entity}', entityName),
+        // 'Comodidad' is feminine — generic template produces 'Nuevo Comodidad'
+        // (SPEC-117 D-POSTS.3 family). Hardcode gendered title.
+        title: 'Nueva Comodidad',
         description: t('admin-entities.entities.amenity.description'),
         entityName,
         entityNamePlural,
         basePath: '/content/accommodation-amenities',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // Title + message must differ (D-TOAST.1) and gender must match
+        // (D-TOAST.2: 'Comodidad creada', not 'creado').
+        successToastTitle: 'Comodidad creada',
+        successToastMessage: 'La comodidad se creó exitosamente',
+        errorToastTitle: 'Error al crear la comodidad',
+        errorMessage: 'No pudimos crear la comodidad. Probá de nuevo.'
     };
 
     return (

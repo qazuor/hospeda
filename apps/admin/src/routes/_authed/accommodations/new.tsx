@@ -58,10 +58,11 @@ function AccommodationCreatePage() {
         basePath: '/accommodations',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Alojamiento creado',
+        successToastMessage: 'El alojamiento se creó exitosamente',
+        errorToastTitle: 'Error al crear el alojamiento',
+        errorMessage: 'No pudimos crear el alojamiento. Probá de nuevo.'
     };
 
     return (

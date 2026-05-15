@@ -31,10 +31,11 @@ function EventCreatePage() {
         basePath: '/events',
         submitLabel: `${t('admin-entities.form.title.create').replace('{entity}', entityName)}`,
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Evento creado',
+        successToastMessage: 'El evento se creó exitosamente',
+        errorToastTitle: 'Error al crear el evento',
+        errorMessage: 'No pudimos crear el evento. Probá de nuevo.'
     };
 
     return (
