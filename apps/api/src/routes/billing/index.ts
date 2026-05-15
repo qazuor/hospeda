@@ -37,6 +37,7 @@ import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { promoCodesRouter } from './promo-codes';
+import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
 
@@ -185,11 +186,17 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
+    // Mount custom subscription status polling routes (SPEC-126 D2).
+    // Sits on the same `/subscriptions` prefix as plan-change because both
+    // operate on local subscription rows; Hono routes by exact path so there
+    // is no conflict between the two routers.
+    router.route('/subscriptions', subscriptionStatusRouter);
+
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, and usage routes'
     );
 
     return router;
