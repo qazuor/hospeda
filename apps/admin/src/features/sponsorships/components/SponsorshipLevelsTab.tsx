@@ -168,7 +168,13 @@ export function SponsorshipLevelsTab() {
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
-                <Button>
+                {/* SPEC-117 D-SPONSORSHIP.1 (Option B scope): sponsorship levels are a curated catalog
+                    seeded server-side and intentionally not editable from the admin UI in this round.
+                    The admin POST /sponsorship-levels endpoint exists, but the dialog is out of scope. */}
+                <Button
+                    disabled
+                    title="Próximamente"
+                >
                     <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.level')}
                 </Button>

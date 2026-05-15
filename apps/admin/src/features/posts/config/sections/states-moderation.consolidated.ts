@@ -7,6 +7,27 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 
+// Spanish enum labels (SPEC-117 D-DROPDOWN.1 / D-POSTS.4).
+const VISIBILITY_LABELS: Record<string, string> = {
+    PUBLIC: 'Público',
+    PRIVATE: 'Privado',
+    RESTRICTED: 'Restringido',
+    HIDDEN: 'Oculto'
+};
+const LIFECYCLE_LABELS: Record<string, string> = {
+    DRAFT: 'Borrador',
+    ACTIVE: 'Activo',
+    INACTIVE: 'Inactivo',
+    ARCHIVED: 'Archivado',
+    DELETED: 'Eliminado'
+};
+const MODERATION_LABELS: Record<string, string> = {
+    PENDING: 'Pendiente',
+    APPROVED: 'Aprobado',
+    REJECTED: 'Rechazado',
+    UNDER_REVIEW: 'En revisión'
+};
+
 /**
  * Consolidated configuration for the States & Moderation section of post
  */
@@ -35,7 +56,7 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
             typeConfig: {
                 options: Object.values(VisibilityEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: VISIBILITY_LABELS[value] ?? value
                 }))
             }
         },
@@ -53,7 +74,7 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
             typeConfig: {
                 options: Object.values(LifecycleStatusEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: LIFECYCLE_LABELS[value] ?? value
                 }))
             }
         },
@@ -71,7 +92,7 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
             typeConfig: {
                 options: Object.values(ModerationStatusEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: MODERATION_LABELS[value] ?? value
                 }))
             }
         },

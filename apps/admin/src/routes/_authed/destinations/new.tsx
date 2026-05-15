@@ -24,17 +24,18 @@ function DestinationCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'destination',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.destination.description'),
         entityName,
         entityNamePlural,
         basePath: '/destinations',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Destino creado',
+        successToastMessage: 'El destino se creó exitosamente',
+        errorToastTitle: 'Error al crear el destino',
+        errorMessage: 'No pudimos crear el destino. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +43,8 @@ function DestinationCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={DestinationCreateInputSchema}
-                createConsolidatedConfig={createDestinationConsolidatedConfig}
+                createConsolidatedConfig={() => createDestinationConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

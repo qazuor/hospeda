@@ -47,10 +47,17 @@ export const PostBatchRequestSchema = z.object({
  * ];
  * ```
  */
+/**
+ * Batch item schema for post operations
+ * All fields are optional except `id` (the handler always emits it).
+ */
+export const PostBatchItemSchema = PostSchema.partial().required({ id: true });
+
 export const PostBatchResponseSchema = z.array(
-    PostSchema.nullable().describe('Post data or null if not found/accessible')
+    PostBatchItemSchema.nullable().describe('Post data or null if not found/accessible')
 );
 
 // Type exports for TypeScript usage
 export type PostBatchRequest = z.infer<typeof PostBatchRequestSchema>;
+export type PostBatchItem = z.infer<typeof PostBatchItemSchema>;
 export type PostBatchResponse = z.infer<typeof PostBatchResponseSchema>;

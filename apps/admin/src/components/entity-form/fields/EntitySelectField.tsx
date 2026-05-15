@@ -429,6 +429,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                             // biome-ignore lint/a11y/useSemanticElements: combobox role is required for the custom select popover pattern used by Shadcn UI
                             role="combobox"
                             aria-expanded={open}
+                            aria-required={required || undefined}
                             aria-describedby={cn(descriptionId, errorId)}
                             className={cn(
                                 'w-full justify-between',

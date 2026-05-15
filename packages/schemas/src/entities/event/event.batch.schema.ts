@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EventAdminSchema } from './event.access.schema';
 import { EventSchema } from './event.schema';
 
 /**
@@ -44,10 +45,27 @@ export const EventBatchRequestSchema = z.object({
  * ];
  * ```
  */
-export const EventBatchResponseSchema = z.array(EventSchema.nullable());
+/**
+ * Public batch item schema for event operations
+ * All fields are optional except `id` (the handler always emits it).
+ */
+export const EventBatchItemSchema = EventSchema.partial().required({ id: true });
+
+export const EventBatchResponseSchema = z.array(EventBatchItemSchema.nullable());
+
+/**
+ * Admin batch item schema for event operations
+ * Same partial shape over the admin projection (includes admin-only fields).
+ */
+export const EventAdminBatchItemSchema = EventAdminSchema.partial().required({ id: true });
+
+export const EventAdminBatchResponseSchema = z.array(EventAdminBatchItemSchema.nullable());
 
 /**
  * Type definitions for batch operations
  */
 export type EventBatchRequest = z.infer<typeof EventBatchRequestSchema>;
+export type EventBatchItem = z.infer<typeof EventBatchItemSchema>;
 export type EventBatchResponse = z.infer<typeof EventBatchResponseSchema>;
+export type EventAdminBatchItem = z.infer<typeof EventAdminBatchItemSchema>;
+export type EventAdminBatchResponse = z.infer<typeof EventAdminBatchResponseSchema>;

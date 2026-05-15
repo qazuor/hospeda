@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import {
     createBasicInfoConsolidatedSection,
     createContactConsolidatedSection,
@@ -21,9 +22,13 @@ export interface SponsorConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Sponsor entity
+ * Creates the complete consolidated configuration for the Sponsor entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createSponsorConsolidatedConfig = (): SponsorConsolidatedConfig => ({
+export const createSponsorConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): SponsorConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createContactConsolidatedSection(),
@@ -32,8 +37,8 @@ export const createSponsorConsolidatedConfig = (): SponsorConsolidatedConfig => 
     ],
     metadata: {
         entityType: 'sponsor',
-        entityName: 'Patrocinador',
-        entityNamePlural: 'Patrocinadores',
+        entityName: t('admin-entities.entities.sponsor.singular'),
+        entityNamePlural: t('admin-entities.entities.sponsor.plural'),
         baseRoute: '/sponsors'
     }
 });

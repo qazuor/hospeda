@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-117",
+    "title": "Admin Pages Stabilization",
+    "type": "remediation",
+    "complexity": "very-high",
+    "status": "draft",
+    "created": "2026-05-14T00:00:00.000Z",
+    "tags": [
+        "admin",
+        "api",
+        "schemas",
+        "i18n",
+        "billing",
+        "newsletter",
+        "react",
+        "ux",
+        "kysely",
+        "better-auth",
+        "crud",
+        "visual",
+        "style",
+        "console"
+    ],
+    "branch": "fix/admin-pages-audit",
+    "worktree": "../hospeda-admin-pages-audit",
+    "effort_estimate_hours": "56-80"
+}

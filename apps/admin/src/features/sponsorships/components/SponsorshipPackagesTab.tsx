@@ -8,6 +8,7 @@ import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { CreateSponsorshipPackageDialog } from '@/features/sponsorships/components/CreateSponsorshipPackageDialog';
 import {
     useSponsorshipPackagesQuery,
     useTogglePackageActiveMutation
@@ -25,6 +26,7 @@ export function SponsorshipPackagesTab() {
     const { t, locale } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
+    const [createOpen, setCreateOpen] = useState(false);
 
     const { data, isLoading, error } = useSponsorshipPackagesQuery({
         page,
@@ -136,11 +138,16 @@ export function SponsorshipPackagesTab() {
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
-                <Button>
+                <Button onClick={() => setCreateOpen(true)}>
                     <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.package')}
                 </Button>
             </div>
+
+            <CreateSponsorshipPackageDialog
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+            />
 
             <DataTable
                 columns={columns}

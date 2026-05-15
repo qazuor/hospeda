@@ -1,4 +1,4 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import type { EventOrganizer } from '../schemas/event-organizers.schemas';
@@ -6,11 +6,13 @@ import type { EventOrganizer } from '../schemas/event-organizers.schemas';
 /**
  * Creates column configuration for event organizers list
  */
-export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrganizer>[] =>
+export const createEventOrganizersColumns = (
+    t: ColumnTFunction
+): readonly ColumnConfig<EventOrganizer>[] =>
     [
         {
             id: 'name',
-            header: 'Name',
+            header: t('admin-entities.columns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.ENTITY,
@@ -21,7 +23,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'logo',
-            header: 'Logo',
+            header: t('admin-entities.columns.logo'),
             accessorKey: 'logo',
             enableSorting: false,
             columnType: ColumnType.IMAGE,
@@ -30,7 +32,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'email',
-            header: 'Email',
+            header: t('admin-entities.columns.email'),
             accessorKey: 'contactInfo.personalEmail',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -39,7 +41,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'phone',
-            header: 'Phone',
+            header: t('admin-entities.columns.phone'),
             accessorKey: 'contactInfo.mobilePhone',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -48,7 +50,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'website',
-            header: 'Website',
+            header: t('admin-entities.columns.website'),
             accessorKey: 'contactInfo.website',
             enableSorting: false,
             columnType: ColumnType.LINK,
@@ -64,7 +66,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'social',
-            header: 'Social Networks',
+            header: t('admin-entities.columns.socialNetworks'),
             accessorKey: 'socialNetworks',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
@@ -79,27 +81,33 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
                 if (social.linkedIn) networks.push('LinkedIn');
                 if (social.youtube) networks.push('YouTube');
 
-                return networks.length > 0 ? networks.join(', ') : 'None';
+                return networks.length > 0
+                    ? networks.join(', ')
+                    : t('admin-common.entityPage.none');
             },
             startVisibleOnTable: false,
             startVisibleOnGrid: false
         },
         {
             id: 'lifecycleState',
-            header: 'Status',
+            header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: LifecycleStatusEnum.ACTIVE, label: 'Active', color: BadgeColor.SUCCESS },
+                {
+                    value: LifecycleStatusEnum.ACTIVE,
+                    label: t('admin-entities.states.lifecycle.active'),
+                    color: BadgeColor.SUCCESS
+                },
                 {
                     value: LifecycleStatusEnum.DRAFT,
-                    label: 'Draft',
+                    label: t('admin-entities.states.lifecycle.draft'),
                     color: BadgeColor.WARNING
                 },
                 {
                     value: LifecycleStatusEnum.ARCHIVED,
-                    label: 'Archived',
+                    label: t('admin-entities.states.lifecycle.archived'),
                     color: BadgeColor.SECONDARY
                 }
             ],
@@ -108,7 +116,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         },
         {
             id: 'createdAt',
-            header: 'Created',
+            header: t('admin-entities.columns.createdAt'),
             accessorKey: 'createdAt',
             enableSorting: true,
             columnType: ColumnType.TIME_AGO,

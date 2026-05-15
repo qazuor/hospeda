@@ -18,87 +18,98 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
     fields: [
         {
             id: 'authorId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.USER_SELECT,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: 'Autor',
             description: 'Autor del artículo',
+            placeholder: 'Selecciona un autor',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un autor'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                showAvatar: true,
+                clearable: true
             }
         },
         {
             id: 'relatedDestinationId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.DESTINATION_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Destino Relacionado',
             description: 'Destino turístico relacionado',
+            placeholder: 'Selecciona un destino',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un destino'
+                searchMode: 'client',
+                minCharToSearch: 1,
+                showAvatar: false,
+                clearable: true
             }
         },
         {
             id: 'relatedAccommodationId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.ACCOMMODATION_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Alojamiento Relacionado',
             description: 'Alojamiento relacionado',
+            placeholder: 'Selecciona un alojamiento',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un alojamiento'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
         {
             id: 'relatedEventId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.EVENT_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Evento Relacionado',
             description: 'Evento relacionado',
+            placeholder: 'Selecciona un evento',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un evento'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
         {
             id: 'sponsorshipId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.POST_SPONSORSHIP_SELECT,
             required: false,
             modes: ['view', 'edit'],
             label: 'Patrocinio',
             description: 'Contrato de patrocinio asociado',
+            placeholder: 'Selecciona un patrocinio',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_SPONSORSHIP_MANAGE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un patrocinio'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         }
     ]

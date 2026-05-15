@@ -329,11 +329,11 @@ export const listRevalidationConfigRoute = createAdminRoute({
         'Returns all ISR revalidation configuration records (one per entity type). Requires REVALIDATION_CONFIG_VIEW permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_CONFIG_VIEW],
-    responseSchema: z.object({ data: z.array(RevalidationConfigSchema) }),
+    responseSchema: z.array(RevalidationConfigSchema),
     handler: async () => {
         const model = new RevalidationConfigModel();
         const { items } = await model.findAll({});
-        return { data: items };
+        return items;
     }
 });
 
@@ -355,7 +355,7 @@ export const updateRevalidationConfigRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.REVALIDATION_CONFIG_EDIT],
     requestParams: { id: z.string().uuid('Config ID must be a valid UUID') },
     requestBody: UpdateRevalidationConfigInputSchema,
-    responseSchema: z.object({ data: RevalidationConfigSchema }),
+    responseSchema: RevalidationConfigSchema,
     handler: async (c, params, body) => {
         const id = params.id as string;
         const model = new RevalidationConfigModel();
@@ -371,7 +371,7 @@ export const updateRevalidationConfigRoute = createAdminRoute({
             throw new Error(`Revalidation config with id '${id}' not found`);
         }
 
-        return { data: updated };
+        return updated;
     }
 });
 
@@ -441,11 +441,11 @@ export const getRevalidationStatsRoute = createAdminRoute({
         'Returns aggregated ISR revalidation statistics for the last 30 days, including success rates, average duration, and breakdowns by entity type and trigger. Requires REVALIDATION_CONFIG_VIEW permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_CONFIG_VIEW],
-    responseSchema: z.object({ data: RevalidationStatsSchema }),
+    responseSchema: RevalidationStatsSchema,
     handler: async () => {
         const statsService = new RevalidationStatsService();
         const stats = await statsService.getStats();
-        return { data: stats };
+        return stats;
     }
 });
 

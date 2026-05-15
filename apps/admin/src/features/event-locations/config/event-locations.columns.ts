@@ -1,4 +1,4 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import type { EventLocation } from '../schemas/event-locations.schemas';
@@ -6,11 +6,13 @@ import type { EventLocation } from '../schemas/event-locations.schemas';
 /**
  * Creates column configuration for event locations list
  */
-export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocation>[] =>
+export const createEventLocationsColumns = (
+    t: ColumnTFunction
+): readonly ColumnConfig<EventLocation>[] =>
     [
         {
             id: 'placeName',
-            header: 'Place Name',
+            header: t('admin-entities.columns.placeName'),
             accessorKey: 'placeName',
             enableSorting: true,
             columnType: ColumnType.ENTITY,
@@ -21,7 +23,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'address',
-            header: 'Address',
+            header: t('admin-entities.columns.address'),
             accessorKey: 'street',
             enableSorting: false,
             columnType: ColumnType.COMPOUND,
@@ -40,7 +42,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'city',
-            header: 'City',
+            header: t('admin-entities.columns.city'),
             accessorKey: 'city',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -49,7 +51,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'department',
-            header: 'Department',
+            header: t('admin-entities.columns.department'),
             accessorKey: 'department',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -58,7 +60,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'country',
-            header: 'Country',
+            header: t('admin-entities.columns.country'),
             accessorKey: 'country',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -67,7 +69,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'neighborhood',
-            header: 'Neighborhood',
+            header: t('admin-entities.columns.neighborhood'),
             accessorKey: 'neighborhood',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -76,7 +78,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'coordinates',
-            header: 'Coordinates',
+            header: t('admin-entities.columns.coordinates'),
             accessorKey: 'coordinates',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
@@ -84,27 +86,31 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
                 if (row.coordinates?.lat != null && row.coordinates?.long != null) {
                     return `${Number.parseFloat(row.coordinates.lat).toFixed(6)}, ${Number.parseFloat(row.coordinates.long).toFixed(6)}`;
                 }
-                return 'Not available';
+                return t('admin-common.entityPage.notAvailable');
             },
             startVisibleOnTable: false,
             startVisibleOnGrid: false
         },
         {
             id: 'lifecycleState',
-            header: 'Status',
+            header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: LifecycleStatusEnum.ACTIVE, label: 'Active', color: BadgeColor.SUCCESS },
+                {
+                    value: LifecycleStatusEnum.ACTIVE,
+                    label: t('admin-entities.states.lifecycle.active'),
+                    color: BadgeColor.SUCCESS
+                },
                 {
                     value: LifecycleStatusEnum.DRAFT,
-                    label: 'Draft',
+                    label: t('admin-entities.states.lifecycle.draft'),
                     color: BadgeColor.WARNING
                 },
                 {
                     value: LifecycleStatusEnum.ARCHIVED,
-                    label: 'Archived',
+                    label: t('admin-entities.states.lifecycle.archived'),
                     color: BadgeColor.SECONDARY
                 }
             ],
@@ -113,7 +119,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         },
         {
             id: 'createdAt',
-            header: 'Created',
+            header: t('admin-entities.columns.createdAt'),
             accessorKey: 'createdAt',
             enableSorting: true,
             columnType: ColumnType.TIME_AGO,

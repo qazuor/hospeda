@@ -2,6 +2,23 @@ import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/fo
 import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
+// Spanish enum labels (SPEC-117 D-DROPDOWN.1). Hardcoded ES until the
+// configs migrate to a `t` parameter signature; mirrors the rest of this
+// file which also hardcodes ES strings.
+const VISIBILITY_LABELS: Record<string, string> = {
+    PUBLIC: 'Público',
+    PRIVATE: 'Privado',
+    RESTRICTED: 'Restringido',
+    HIDDEN: 'Oculto'
+};
+const LIFECYCLE_LABELS: Record<string, string> = {
+    DRAFT: 'Borrador',
+    ACTIVE: 'Activo',
+    INACTIVE: 'Inactivo',
+    ARCHIVED: 'Archivado',
+    DELETED: 'Eliminado'
+};
+
 /**
  * Consolidated configuration for the States section of destination
  * NOTE: DestinationSchema has visibility (via BaseVisibilityFields) and lifecycleState,
@@ -32,7 +49,7 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
             typeConfig: {
                 options: Object.values(VisibilityEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: VISIBILITY_LABELS[value] ?? value
                 }))
             }
         },
@@ -50,7 +67,7 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
             typeConfig: {
                 options: Object.values(LifecycleStatusEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: LIFECYCLE_LABELS[value] ?? value
                 }))
             }
         }

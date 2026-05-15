@@ -26,9 +26,9 @@
             "description": "Gestiona usuarios y permisos"
         },
         "amenity": {
-            "singular": "Comodidad",
-            "plural": "Comodidades",
-            "description": "Gestiona comodidades de alojamientos"
+            "singular": "Amenidad",
+            "plural": "Amenidades",
+            "description": "Gestiona amenidades de alojamientos"
         },
         "feature": {
             "singular": "Característica",
@@ -116,7 +116,28 @@
         "organizer": "Organizador",
         "startDate": "Fecha de Inicio",
         "endDate": "Fecha de Fin",
-        "actions": "Acciones"
+        "actions": "Acciones",
+        "title": "Título",
+        "displayName": "Nombre Visible",
+        "fullName": "Nombre Completo",
+        "role": "Rol",
+        "authProvider": "Proveedor de Autenticación",
+        "builtIn": "Predefinido",
+        "department": "Departamento",
+        "neighborhood": "Barrio",
+        "placeName": "Nombre del Lugar",
+        "icon": "Icono",
+        "weight": "Peso",
+        "published": "Publicado",
+        "readingTime": "Tiempo de Lectura",
+        "sponsor": "Patrocinador",
+        "sponsorship": "Patrocinio",
+        "eventsCount": "Eventos",
+        "destinationsCount": "Destinos",
+        "postsCount": "Publicaciones",
+        "relatedAccommodation": "Rel. Alojamiento",
+        "relatedDestination": "Rel. Destino",
+        "relatedEvent": "Rel. Evento"
     },
     "actions": {
         "view": "Ver",
@@ -177,6 +198,7 @@
         "created": "{entity} creado exitosamente",
         "updated": "{entity} actualizado exitosamente",
         "deleted": "{entity} eliminado exitosamente",
+        "deletedFeminine": "{entity} eliminada exitosamente",
         "archived": "{entity} archivado exitosamente",
         "restored": "{entity} restaurado exitosamente",
         "published": "{entity} publicado exitosamente",
@@ -249,16 +271,20 @@
         "lifecycle": {
             "draft": "Borrador",
             "active": "Activo",
-            "archived": "Archivado"
+            "inactive": "Inactivo",
+            "archived": "Archivado",
+            "deleted": "Eliminado"
         },
         "moderation": {
             "pending": "Pendiente",
             "approved": "Aprobado",
-            "rejected": "Rechazado"
+            "rejected": "Rechazado",
+            "underReview": "En revisión"
         },
         "visibility": {
             "public": "Público",
             "private": "Privado",
+            "hidden": "Oculto",
             "restricted": "Restringido"
         },
         "publishStatus": {
@@ -281,6 +307,14 @@
             "motel": "Motel",
             "resort": "Resort"
         },
+        "amenity": {
+            "basic": "Básica",
+            "comfort": "Confort",
+            "luxury": "Lujo",
+            "technology": "Tecnología",
+            "recreation": "Recreación",
+            "business": "Negocios"
+        },
         "event": {
             "concert": "Concierto",
             "festival": "Festival",
@@ -289,7 +323,52 @@
             "workshop": "Taller",
             "sports": "Deportes",
             "theater": "Teatro",
+            "music": "Música",
+            "gastronomy": "Gastronomía",
+            "nature": "Naturaleza",
+            "culture": "Cultura",
             "other": "Otro"
+        },
+        "postCategory": {
+            "events": "Eventos",
+            "culture": "Cultura",
+            "gastronomy": "Gastronomía",
+            "nature": "Naturaleza",
+            "tourism": "Turismo",
+            "general": "General",
+            "sport": "Deporte",
+            "carnival": "Carnaval",
+            "nightlife": "Vida Nocturna",
+            "history": "Historia",
+            "traditions": "Tradiciones",
+            "wellness": "Bienestar",
+            "family": "Familia",
+            "tips": "Consejos",
+            "art": "Arte",
+            "beach": "Playa",
+            "rural": "Rural",
+            "festivals": "Festivales"
+        },
+        "sponsor": {
+            "postSponsor": "Auspiciante de Publicación",
+            "advertiser": "Anunciante",
+            "host": "Anfitrión"
+        },
+        "userRole": {
+            "superAdmin": "Super Admin",
+            "admin": "Administrador",
+            "editor": "Editor",
+            "host": "Anfitrión",
+            "user": "Usuario",
+            "guest": "Invitado",
+            "system": "Sistema"
+        },
+        "authProvider": {
+            "local": "Local",
+            "google": "Google",
+            "facebook": "Facebook",
+            "github": "GitHub",
+            "betterAuth": "Better Auth"
         }
     },
     "viewFields": {

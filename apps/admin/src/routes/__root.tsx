@@ -153,15 +153,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
                         gcTime: 30 * 60 * 1000, // 30 minutes - cache garbage collection time
                         retry: (failureCount, error) => {
-                            // Don't retry on 4xx errors (client errors)
+                            // Skip retries on any response that carries a status code.
+                            // 4xx (including 429 rate-limit) and 5xx will not succeed on
+                            // retry in this admin: 4xx is permanent per the request, and
+                            // most 5xx are schema-mismatch or misconfigured billing
+                            // service responses that retrying just amplifies (SPEC-117
+                            // M-2 — every API failure used to produce 4 visible network
+                            // entries). Only retry genuine network failures (no status).
                             if (error instanceof Error && 'status' in error) {
                                 const status = (error as { status: number }).status;
-                                if (status >= 400 && status < 500) {
+                                if (typeof status === 'number' && status >= 400) {
                                     return false;
                                 }
                             }
-                            // Retry up to 3 times for other errors
-                            return failureCount < 3;
+                            // Network errors / unknown shape: retry up to 2 times.
+                            return failureCount < 2;
                         },
                         refetchOnWindowFocus: false // Avoid unnecessary refetches
                     },

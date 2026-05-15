@@ -24,17 +24,21 @@ function PostCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'post',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        // 'Publicación' is feminine, so the generic 'Nuevo {entity}' template
+        // produces 'Nuevo Publicación' (SPEC-117 D-POSTS.3). Hardcode the
+        // gendered title here until i18n supports per-entity gendered keys.
+        title: 'Nueva Publicación',
         description: t('admin-entities.entities.post.description'),
         entityName,
         entityNamePlural,
         basePath: '/posts',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1/2 — title ≠ body and feminine gender.
+        successToastTitle: 'Publicación creada',
+        successToastMessage: 'La publicación se creó exitosamente',
+        errorToastTitle: 'Error al crear la publicación',
+        errorMessage: 'No pudimos crear la publicación. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +46,8 @@ function PostCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={PostCreateInputSchema}
-                createConsolidatedConfig={createPostConsolidatedConfig}
+                createConsolidatedConfig={() => createPostConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

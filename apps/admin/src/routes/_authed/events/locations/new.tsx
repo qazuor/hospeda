@@ -24,17 +24,19 @@ function EventLocationCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'event-location',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        // 'Ubicación' is feminine (SPEC-117 D-POSTS.3 family).
+        title: 'Nueva Ubicación',
         description: t('admin-entities.entities.eventLocation.description'),
         entityName,
         entityNamePlural,
         basePath: '/events/locations',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1/2 — title ≠ body and feminine gender.
+        successToastTitle: 'Ubicación creada',
+        successToastMessage: 'La ubicación se creó exitosamente',
+        errorToastTitle: 'Error al crear la ubicación',
+        errorMessage: 'No pudimos crear la ubicación. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +44,8 @@ function EventLocationCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={EventLocationCreateInputSchema}
-                createConsolidatedConfig={createEventLocationConsolidatedConfig}
+                createConsolidatedConfig={() => createEventLocationConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

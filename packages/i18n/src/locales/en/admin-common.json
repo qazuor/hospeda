@@ -246,5 +246,19 @@
         "srSuccess": "Form submitted successfully",
         "srFailed": "Form submission failed: {{error}}",
         "srHasErrors": "Form has {{count}} validation errors"
+    },
+    "entityPage": {
+        "viewTitle": "{entity}",
+        "editTitle": "Edit {entity}",
+        "viewDescription": "{entity} details",
+        "editDescription": "Modify {entity} details",
+        "notAvailable": "Not available",
+        "none": "None",
+        "actions": {
+            "back": "Back",
+            "edit": "Edit",
+            "view": "View",
+            "cancel": "Cancel"
+        }
     }
 }

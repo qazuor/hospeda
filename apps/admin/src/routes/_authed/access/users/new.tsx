@@ -24,17 +24,18 @@ function UserCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'user',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.user.description'),
         entityName,
         entityNamePlural,
         basePath: '/access/users',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Usuario creado',
+        successToastMessage: 'El usuario se creó exitosamente',
+        errorToastTitle: 'Error al crear el usuario',
+        errorMessage: 'No pudimos crear el usuario. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +43,8 @@ function UserCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={UserCreateInputSchema}
-                createConsolidatedConfig={createUserConsolidatedConfig}
+                createConsolidatedConfig={() => createUserConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

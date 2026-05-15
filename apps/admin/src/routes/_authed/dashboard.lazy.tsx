@@ -16,8 +16,10 @@ import {
     BarChartIcon,
     DestinationIcon,
     EventIcon,
+    MapIcon,
     PostIcon,
-    RefreshIcon
+    RefreshIcon,
+    UsersIcon
 } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, createLazyFileRoute } from '@tanstack/react-router';
@@ -57,6 +59,18 @@ function Dashboard() {
             titleKey: 'admin-dashboard.kpis.posts' as TranslationKey,
             icon: <PostIcon className="h-5 w-5" />,
             href: '/posts'
+        },
+        {
+            key: 'attractions',
+            titleKey: 'admin-dashboard.kpis.attractions' as TranslationKey,
+            icon: <MapIcon className="h-5 w-5" />,
+            href: '/content/destination-attractions'
+        },
+        {
+            key: 'users',
+            titleKey: 'admin-dashboard.kpis.users' as TranslationKey,
+            icon: <UsersIcon className="h-5 w-5" />,
+            href: '/access/users'
         }
     ];
 
@@ -80,7 +94,7 @@ function Dashboard() {
             }
         >
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {kpiConfig.map((kpi) => {
                     const entity = entities.find((e) => e.name === kpi.key);
                     return (
@@ -114,25 +128,6 @@ function Dashboard() {
                     icon={<ActivityIcon className="h-8 w-8" />}
                     className="min-h-[200px]"
                 />
-            </div>
-
-            {/* Additional stats row */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {entities
-                    .filter((e) => !kpiConfig.some((k) => k.key === e.name))
-                    .map((entity) => (
-                        <div
-                            key={entity.name}
-                            className="rounded-lg border p-4"
-                        >
-                            <p className="text-muted-foreground text-sm capitalize">
-                                {entity.name}
-                            </p>
-                            <p className="font-semibold text-2xl">
-                                {entity.isLoading ? '...' : entity.count}
-                            </p>
-                        </div>
-                    ))}
             </div>
         </SidebarPageLayout>
     );

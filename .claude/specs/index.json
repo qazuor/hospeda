@@ -1030,6 +1030,17 @@
             "branch": "spec/SPEC-113-profile-completion-flow",
             "absorbs": ["SPEC-103 T-094 (OAuth-only set-password flow)"],
             "discoveredDuring": "SPEC-103 T-012 + T-019 auth smoke (2026-05-14)"
+        },
+        {
+            "specId": "SPEC-129",
+            "title": "Security Audit — Dependency Vulnerabilities Remediation",
+            "type": "security",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-129-security-audit-vulnerabilities",
+            "created": "2026-05-15T17:50:00.000Z",
+            "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
+            "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
         }
     ]
 }

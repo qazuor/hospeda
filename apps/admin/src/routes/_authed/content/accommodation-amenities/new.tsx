@@ -24,17 +24,21 @@ function AmenityCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'amenity',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        // 'Amenidad' is feminine — generic template produces 'Nuevo Amenidad'
+        // (SPEC-117 D-POSTS.3 family). Hardcode gendered title.
+        title: 'Nueva Amenidad',
         description: t('admin-entities.entities.amenity.description'),
         entityName,
         entityNamePlural,
         basePath: '/content/accommodation-amenities',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // Title + message must differ (D-TOAST.1) and gender must match
+        // (D-TOAST.2: 'Amenidad creada', not 'creado').
+        successToastTitle: 'Amenidad creada',
+        successToastMessage: 'La amenidad se creó exitosamente',
+        errorToastTitle: 'Error al crear la amenidad',
+        errorMessage: 'No pudimos crear la amenidad. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +46,8 @@ function AmenityCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={AmenityCreateInputSchema}
-                createConsolidatedConfig={createAmenityConsolidatedConfig}
+                createConsolidatedConfig={() => createAmenityConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

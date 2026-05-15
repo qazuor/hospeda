@@ -36,23 +36,45 @@ export const UserBatchRequestSchema = z.object({
 });
 
 /**
+ * Public batch item schema. All fields are optional except `id`, which the
+ * handler always includes. Callers using `fields` get a partial; callers
+ * without get the full public projection.
+ */
+export const UserPublicBatchItemSchema = UserPublicSchema.partial().required({
+    id: true
+});
+
+/**
  * Public batch response schema for user operations
  * Returns an array of public user data or null for missing/inaccessible users.
  * Only exposes safe public fields (id, displayName, firstName, lastName, slug, avatarUrl, role).
  */
 export const UserPublicBatchResponseSchema = z.array(
-    UserPublicSchema.nullable().describe('Public user data or null if not found/accessible')
+    UserPublicBatchItemSchema.nullable().describe(
+        'Public user data or null if not found/accessible'
+    )
 );
+
+/**
+ * Admin batch item schema. All fields are optional except `id`, which the
+ * handler always emits. The handler best-effort copies selector fields
+ * (displayName, firstName, lastName) when present on the loaded user.
+ */
+export const UserBatchItemSchema = UserSchema.partial().required({
+    id: true
+});
 
 /**
  * Admin batch response schema for user operations
  * Returns full user data including sensitive fields. Only for admin endpoints.
  */
 export const UserBatchResponseSchema = z.array(
-    UserSchema.nullable().describe('User data or null if not found/accessible')
+    UserBatchItemSchema.nullable().describe('User data or null if not found/accessible')
 );
 
 // Type exports for TypeScript usage
 export type UserBatchRequest = z.infer<typeof UserBatchRequestSchema>;
+export type UserPublicBatchItem = z.infer<typeof UserPublicBatchItemSchema>;
 export type UserPublicBatchResponse = z.infer<typeof UserPublicBatchResponseSchema>;
+export type UserBatchItem = z.infer<typeof UserBatchItemSchema>;
 export type UserBatchResponse = z.infer<typeof UserBatchResponseSchema>;

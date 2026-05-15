@@ -54,8 +54,11 @@ export const UserProtectedSchema = UserPublicSchema.extend({
     youtubeUrl: z.string().url().optional(),
 
     // User-specific objects
-    profile: UserProfileSchema.optional(),
-    settings: UserSettingsSchema.optional(),
+    // Use .nullish() (not .optional()) because Drizzle returns `null` for empty JSONB columns,
+    // and Zod's .optional() rejects null. The SYSTEM user (and any future user without a
+    // populated profile/settings) has these as NULL in DB.
+    profile: UserProfileSchema.nullish(),
+    settings: UserSettingsSchema.nullish(),
 
     // Permissions (user can see their own permissions)
     permissions: z.array(PermissionEnumSchema).default([])
