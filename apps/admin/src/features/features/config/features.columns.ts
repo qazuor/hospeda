@@ -1,5 +1,11 @@
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { EditIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { Fragment, createElement } from 'react';
+import { useDeleteFeatureMutation } from '../hooks/useFeatureQuery';
 import type { Feature } from '../schemas/features.schemas';
 
 export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig<Feature>[] => [
@@ -94,5 +100,38 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         accessorKey: 'createdAt',
         enableSorting: true,
         columnType: ColumnType.TIME_AGO
+    },
+    {
+        // SPEC-117 D-CONTENT.1 — Row actions: Edit + Delete with confirmation.
+        id: 'actions',
+        header: t('admin-entities.columns.actions'),
+        accessorKey: 'id',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(
+                Fragment,
+                null,
+                createElement(
+                    Link,
+                    {
+                        to: '/content/accommodation-features/$id/edit' as never,
+                        params: { id: row.id } as never,
+                        className:
+                            'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+                        'aria-label': t('admin-entities.actions.edit')
+                    } as never,
+                    createElement(EditIcon, { size: 16 })
+                ),
+                createElement(DeleteRowButton, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabel: t('admin-entities.entities.feature.singular'),
+                    permission: PermissionEnum.FEATURE_DELETE,
+                    useDeleteMutation: useDeleteFeatureMutation,
+                    variant: 'icon',
+                    entityGender: 'f'
+                })
+            )
     }
 ];

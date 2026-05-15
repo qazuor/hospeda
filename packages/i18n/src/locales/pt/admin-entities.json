@@ -198,6 +198,7 @@
         "created": "{entity} criado com sucesso",
         "updated": "{entity} atualizado com sucesso",
         "deleted": "{entity} excluído com sucesso",
+        "deletedFeminine": "{entity} excluída com sucesso",
         "archived": "{entity} arquivado com sucesso",
         "restored": "{entity} restaurado com sucesso",
         "published": "{entity} publicado com sucesso",
