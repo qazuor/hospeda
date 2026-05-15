@@ -2038,5 +2038,7 @@
         "completed": 67,
         "blocked": 15,
         "averageComplexity": 2.2
-    }
+    },
+    "completedAt": "2026-05-14T00:00:00Z",
+    "closureNote": "67/95 closed. 6 extracted to other specs. 2 platform-blocked. 6 deferred long-term (incl. T-023 a11y smoke). See engram spec/hospeda/SPEC-103/status for full audit."
 }

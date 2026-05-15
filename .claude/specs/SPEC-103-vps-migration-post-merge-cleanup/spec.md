@@ -3,10 +3,18 @@ spec-id: SPEC-103
 title: VPS Migration Post-Merge Cleanup & Hardening Backlog
 type: chore
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-12T03:30:00Z
+completed: 2026-05-14T00:00:00Z
 effort_estimate_hours: 25-40
 tags: [vps, ops, hops, auth, oauth, tests, docs, post-merge, backlog]
+closureNote: |
+  67/95 tasks closed. The remaining 28 break down as:
+  - 6 extracted to dedicated specs (SPEC-079, SPEC-102, SPEC-104, SPEC-105, SPEC-109, SPEC-112)
+  - 2 blocked on platform: T-002, T-003 (GitHub branch protection on Free plan; agent-side enforcement in CLAUDE.md + settings.json)
+  - 6 deferred long-term: T-023 (Auth UI a11y smoke), T-072 (prod→staging sync script), T-082 (hops cron-edit V2), T-083 (hops SshRunner), T-087 (web-prod landing→app cutover), T-088 (quarterly engram cleanup)
+  - 14 tracker meta-tasks that close automatically when owning specs flip to completed
+  T-023 is the only originally-in-scope item with no formal owner — rides along with the next admin/web UI polish sprint. Audit trail in engram observation spec/hospeda/SPEC-103/status.
 ---
 
 # SPEC-103: VPS Migration Post-Merge Cleanup & Hardening Backlog

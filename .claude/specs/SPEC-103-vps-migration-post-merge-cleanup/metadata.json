@@ -3,10 +3,11 @@
     "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
     "type": "chore",
     "complexity": "medium",
-    "status": "in-progress",
+    "status": "completed",
     "created": "2026-05-12T03:30:00Z",
     "approved": "2026-05-12T18:49:09Z",
-    "completed": null,
+    "completed": "2026-05-14T00:00:00Z",
+    "completionRef": "67/95 closed. 6 extracted to SPEC-079/102/104/105/109/112. 2 blocked on platform (GitHub branch protection T-002/T-003 — Free plan limitation, agent-side enforcement in place). 6 deferred long-term (T-023 a11y smoke + T-072/T-082/T-083/T-087/T-088 — see spec section 3.E-H).",
     "planFileRef": null,
     "tags": ["vps", "ops", "hops", "auth", "oauth", "tests", "docs", "post-merge", "backlog"]
 }
