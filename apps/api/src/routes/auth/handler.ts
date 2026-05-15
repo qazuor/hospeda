@@ -14,6 +14,7 @@
  */
 
 import { getAuth } from '../../lib/auth';
+import { Sentry } from '../../lib/sentry';
 import {
     checkLockout,
     checkLockoutByKey,
@@ -470,12 +471,184 @@ app.post('/send-verification-email', async (c) => {
 });
 
 /**
- * Catch-all handler that delegates to Better Auth.
- * MUST come AFTER all specific route handlers above.
+ * Result of inspecting a Better Auth response for an OAuth callback failure.
+ *
+ * Returned by {@link extractOAuthErrorFromCallback} when the request was an
+ * OAuth callback (e.g. `/api/auth/callback/google`) AND Better Auth emitted
+ * a 302 redirect carrying `?error=<code>` on the Location header.
+ *
+ * @see SPEC-120
  */
-app.on(['GET', 'POST'], '/*', (c) => {
+export interface OAuthCallbackError {
+    /** Provider name extracted from the request path (e.g. `google`, `facebook`). */
+    readonly provider: string;
+    /**
+     * Sanitized error code — guaranteed to match `/^[a-z_]{1,64}$/`. Falls
+     * back to `'unknown'` when the provider sends an unexpected code so the
+     * value is safe to use as a Sentry tag and an i18n key suffix.
+     */
+    readonly errorCode: string;
+    /** Original `error` query value (before sanitization). */
+    readonly errorCodeRaw: string;
+    /** Optional free-form description (provider-supplied, never i18n-translated). */
+    readonly errorDescription: string | undefined;
+    /** Parsed Location URL the redirect points to (with original + sanitized params). */
+    readonly locationUrl: URL;
+    /** RAW query the provider sent to our callback (minus `state` noise). */
+    readonly providerRawQuery: Readonly<Record<string, string>>;
+    /** Query Better Auth re-emits on the Location header to the web app. */
+    readonly redirectQuery: Readonly<Record<string, string>>;
+}
+
+/**
+ * Inspects a request URL + Better Auth response to decide whether it's an
+ * OAuth callback failure that should be observed (Sentry + Location rewrite).
+ *
+ * Pure function — no side effects. Tested in isolation.
+ *
+ * @returns OAuthCallbackError when the response is a 302 from a `/callback/<provider>`
+ *          path carrying `?error=` in Location; null otherwise.
+ *
+ * @see SPEC-120 Phase 0 catalog for the exact query string contract.
+ */
+export function extractOAuthErrorFromCallback({
+    requestUrl,
+    response
+}: {
+    readonly requestUrl: URL;
+    readonly response: Response;
+}): OAuthCallbackError | null {
+    if (response.status !== 302) {
+        return null;
+    }
+
+    const callbackMatch = requestUrl.pathname.match(/\/callback\/([a-z]+)\/?$/);
+    if (!callbackMatch?.[1]) {
+        return null;
+    }
+    const provider = callbackMatch[1];
+
+    const location = response.headers.get('Location');
+    if (!location) {
+        return null;
+    }
+
+    let locationUrl: URL;
+    try {
+        locationUrl = new URL(location);
+    } catch {
+        return null;
+    }
+
+    const errorCodeRaw = locationUrl.searchParams.get('error');
+    if (!errorCodeRaw) {
+        return null;
+    }
+
+    const errorCode = /^[a-z_]{1,64}$/.test(errorCodeRaw) ? errorCodeRaw : 'unknown';
+    const errorDescription = locationUrl.searchParams.get('error_description') ?? undefined;
+
+    // Strip `state` — opaque random string, no debugging value, just noise in Sentry.
+    const providerRawQuery: Record<string, string> = {};
+    for (const [key, value] of requestUrl.searchParams.entries()) {
+        if (key === 'state') {
+            continue;
+        }
+        providerRawQuery[key] = value;
+    }
+
+    const redirectQuery: Record<string, string> = {};
+    for (const [key, value] of locationUrl.searchParams.entries()) {
+        redirectQuery[key] = value;
+    }
+
+    return {
+        provider,
+        errorCode,
+        errorCodeRaw,
+        errorDescription,
+        locationUrl,
+        providerRawQuery,
+        redirectQuery
+    };
+}
+
+/**
+ * Catch-all handler that delegates to Better Auth and observes OAuth failures.
+ * MUST come AFTER all specific route handlers above.
+ *
+ * For OAuth callback paths (`/callback/<provider>`) where Better Auth emits a
+ * 302 to the `errorCallbackURL` carrying `?error=<code>`, this wrapper:
+ *   1. Captures a Sentry event tagged with `provider` + `error_code` (level
+ *      `warning` for user-cancel, `error` for provider/system failures).
+ *   2. Rewrites the `Location` header to append `&provider=<name>` so the web
+ *      app can render a provider-aware banner without parsing the callback URL.
+ *
+ * Non-OAuth-error responses pass through unchanged.
+ *
+ * @see SPEC-120
+ */
+app.on(['GET', 'POST'], '/*', async (c) => {
     const auth = getAuth();
-    return auth.handler(c.req.raw);
+    const response = await auth.handler(c.req.raw);
+
+    const oauthError = extractOAuthErrorFromCallback({
+        requestUrl: new URL(c.req.url),
+        response
+    });
+
+    if (!oauthError) {
+        return response;
+    }
+
+    const {
+        provider,
+        errorCode,
+        errorCodeRaw,
+        errorDescription,
+        locationUrl,
+        providerRawQuery,
+        redirectQuery
+    } = oauthError;
+
+    // `access_denied` is user-cancel — expected, recoverable, low signal-to-noise as `error`.
+    // Everything else is a provider/system failure that operators should triage.
+    const level: 'warning' | 'error' = errorCode === 'access_denied' ? 'warning' : 'error';
+
+    Sentry.captureMessage(`OAuth ${provider} signin failed: ${errorCode}`, {
+        level,
+        tags: {
+            module: 'auth.oauth',
+            provider,
+            error_code: errorCode
+        },
+        extra: {
+            error_code_raw: errorCodeRaw,
+            error_description: errorDescription,
+            provider_raw_query: providerRawQuery,
+            redirect_query: redirectQuery,
+            redirect_location: locationUrl.toString(),
+            request_id: response.headers.get('x-request-id') ?? undefined,
+            user_agent: c.req.header('user-agent')
+        }
+    });
+
+    // Idempotent provider rewrite: skip if Better Auth (or a future version)
+    // already includes provider, so a re-deploy with this wrapper doesn't
+    // double-stamp the query.
+    if (locationUrl.searchParams.has('provider')) {
+        return response;
+    }
+
+    locationUrl.searchParams.set('provider', provider);
+    const newHeaders = new Headers(response.headers);
+    newHeaders.set('Location', locationUrl.toString());
+
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+    });
 });
 
 export { app as betterAuthHandler };
