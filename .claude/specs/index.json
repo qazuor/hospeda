@@ -1041,6 +1041,17 @@
             "created": "2026-05-15T17:50:00.000Z",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
             "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "Admin App — Visual + Functional Audit (~42 pages, 4 dimensions)",
+            "type": "audit",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-131-admin-app-visual-functional-audit",
+            "created": "2026-05-15T18:00:00Z",
+            "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15) — visual blind spot",
+            "tags": ["admin", "audit", "ux", "accessibility", "responsive", "performance", "visual"]
         }
     ]
 }

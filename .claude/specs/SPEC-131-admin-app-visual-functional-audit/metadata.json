@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-131",
+    "title": "Admin App — Visual + Functional Audit (~42 pages, 4 dimensions)",
+    "type": "audit",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-15T18:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["admin", "audit", "ux", "accessibility", "responsive", "performance", "visual"]
+}
