@@ -42,7 +42,8 @@ function FeatureCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={FeatureCreateInputSchema}
-                createConsolidatedConfig={createFeatureConsolidatedConfig}
+                createConsolidatedConfig={() => createFeatureConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

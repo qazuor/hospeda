@@ -42,7 +42,8 @@ function AttractionCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={AttractionCreateInputSchema}
-                createConsolidatedConfig={createAttractionConsolidatedConfig}
+                createConsolidatedConfig={() => createAttractionConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

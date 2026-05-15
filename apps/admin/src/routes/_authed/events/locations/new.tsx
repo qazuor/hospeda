@@ -42,7 +42,8 @@ function EventLocationCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={EventLocationCreateInputSchema}
-                createConsolidatedConfig={createEventLocationConsolidatedConfig}
+                createConsolidatedConfig={() => createEventLocationConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

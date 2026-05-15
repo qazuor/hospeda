@@ -42,7 +42,8 @@ function SponsorCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={PostSponsorCreateInputSchema}
-                createConsolidatedConfig={createSponsorConsolidatedConfig}
+                createConsolidatedConfig={() => createSponsorConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

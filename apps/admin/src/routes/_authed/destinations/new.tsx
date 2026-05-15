@@ -42,7 +42,8 @@ function DestinationCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={DestinationCreateInputSchema}
-                createConsolidatedConfig={createDestinationConsolidatedConfig}
+                createConsolidatedConfig={() => createDestinationConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

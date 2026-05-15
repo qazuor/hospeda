@@ -42,7 +42,8 @@ function PostCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={PostCreateInputSchema}
-                createConsolidatedConfig={createPostConsolidatedConfig}
+                createConsolidatedConfig={() => createPostConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

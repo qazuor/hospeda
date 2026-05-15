@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContactConsolidatedSection } from './sections/contact.consolidated';
 import { createRolePermissionsConsolidatedSection } from './sections/role-permissions.consolidated';
@@ -19,9 +20,13 @@ export interface UserConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the User entity
+ * Creates the complete consolidated configuration for the User entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createUserConsolidatedConfig = (): UserConsolidatedConfig => ({
+export const createUserConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): UserConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createContactConsolidatedSection(),
@@ -30,8 +35,8 @@ export const createUserConsolidatedConfig = (): UserConsolidatedConfig => ({
     ],
     metadata: {
         entityType: 'user',
-        entityName: 'Usuario',
-        entityNamePlural: 'Usuarios',
+        entityName: t('admin-entities.entities.user.singular'),
+        entityNamePlural: t('admin-entities.entities.user.plural'),
         baseRoute: '/access/users'
     }
 });

@@ -42,7 +42,8 @@ function AmenityCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={AmenityCreateInputSchema}
-                createConsolidatedConfig={createAmenityConsolidatedConfig}
+                createConsolidatedConfig={() => createAmenityConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

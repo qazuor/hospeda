@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import {
     createAddressConsolidatedSection,
     createBasicInfoConsolidatedSection,
@@ -20,9 +21,13 @@ export interface EventLocationConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Event Location entity
+ * Creates the complete consolidated configuration for the Event Location entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createEventLocationConsolidatedConfig = (): EventLocationConsolidatedConfig => ({
+export const createEventLocationConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): EventLocationConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createAddressConsolidatedSection(),
@@ -30,8 +35,8 @@ export const createEventLocationConsolidatedConfig = (): EventLocationConsolidat
     ],
     metadata: {
         entityType: 'event-location',
-        entityName: 'Ubicación de Evento',
-        entityNamePlural: 'Ubicaciones de Eventos',
+        entityName: t('admin-entities.entities.eventLocation.singular'),
+        entityNamePlural: t('admin-entities.entities.eventLocation.plural'),
         baseRoute: '/events/locations'
     }
 });
