@@ -168,8 +168,9 @@ export function SponsorshipLevelsTab() {
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
-                {/* SPEC-117 D-SPONSORSHIP.1 follow-up: admin POST /sponsorship-levels
-                    endpoint missing — wiring blocked on API work. Button hidden until then. */}
+                {/* SPEC-117 D-SPONSORSHIP.1 (Option B scope): sponsorship levels are a curated catalog
+                    seeded server-side and intentionally not editable from the admin UI in this round.
+                    The admin POST /sponsorship-levels endpoint exists, but the dialog is out of scope. */}
                 <Button
                     disabled
                     title="Próximamente"
