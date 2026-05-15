@@ -1619,19 +1619,94 @@ Worktree status is clean; no uncommitted files. Phases done:
   when the corresponding admin LIST + DETAIL endpoints are smoked in Phase 6 (D-* batch);
   reactive fixes there will be cheaper than a blind sweep now.
 
-### What still needs to happen overall (from §6 phase plan)
+### Phase 6 progress checkpoint — 2026-05-15 (16 fixes shipped)
 
-- **Phase 2** — Fix the 3 client-side crashes (C-1 billing/addons, C-2 billing/subscriptions,
-  C-3 revalidation, plus newly-discovered C-4 billing/plans). All 4 share the same shape
-  (`undefined.reduce()` / `.map()`); single fix likely closes all.
-- **Phase 3** — M-2 React Query retry policy.
-- **Phase 4** — i18n cleanup (I-1 placeholder leak, I-2 detail headers, I-3 roles, I-4 perms,
-  I-5 columns).
-- **Phase 5** — Billing 503/429 (B-1..B-5), N-1 newsletter sort param, N-2 newsletter
-  subscribers 503, M-1 plan-limit gate bypass for admin, A2 dev workflow.
-- **Phase 6** — D-* fixes (CRUD smoke findings: D-2.1 dot-notation form bug, D-4.1 destinationId
-  missing, D-CONTENT.1 delete UI absent, D-8.1 ghost-create on sponsors, D-TOAST.1/2, etc.).
-- **Phase 7** — V-CRIT + V-HIGH visual fixes (V-1 dashboard inconsistent cards, V-2 mobile
-  FAB obstruction, V-3 mobile filter labels, V-4 desktop FAB on textarea).
-- **Phase 8** — CE cleanup (mostly already covered by A/B/C; vite warnings documented).
-- **Phase 9** — Final verification + spec close.
+5 entity CRUD smokes were run during this session (users, posts, tags,
+accommodations, sponsorships/owner-promotions/newsletter-campaigns; see
+per-entity reports under `docs/admin-crud-smoke/`). 12 functional commits
+landed (newest first):
+
+```
+393bc3366 fix(admin): add Edit row action to users list (D-USERS.2)
+23e57bab4 fix(admin): a11y + hydration + i18n micro-fixes (D-ACCOM.2/3 + D-POSTS.2)
+d7c9f7280 fix(admin, i18n): native number input + amenity naming (D-DISPLAYWEIGHT.1 + D-NAMING.1)
+1e8ff48bf fix(admin): gender + toast text in entity create pages (D-POSTS.3 + D-TOAST.1/2)
+b0f0415aa fix(admin): localize enum dropdown labels (D-DROPDOWN.1 + D-USERS.3 + D-POSTS.4)
+a461c3cb3 fix(schemas, admin): accommodation create response + redirect (D-ACCOM.4 + D-ACCOM.5)
+5b9391eca fix(admin): add required destinationId to event-locations form (D-4.1)
+545e2e8ec fix(admin, schemas): unblock user edit + accommodation create (D-USERS.4 + D-ACCOM.1)
+e45d31ff3 fix(admin): map tag list filters to canonical search/status (D-TAGS.1)
+fb3db32b7 docs(admin): smoke reports for T-032..T-036
+c8bed6dbe fix(admin): use entity-select field types in posts + events relations (D-RELATIONS.1 partial)
+b9331a26d fix(admin): nested form fields accept input on create pages (D-2.1)
+```
+
+**Closed findings (16):** D-2.1, D-RELATIONS.1 (partial — 3 of 8 fields),
+D-TAGS.1, D-USERS.4, D-ACCOM.1, D-4.1, D-ACCOM.4, D-ACCOM.5, D-DROPDOWN.1,
+D-USERS.3, D-POSTS.4, D-POSTS.3, D-TOAST.1, D-TOAST.2, D-DISPLAYWEIGHT.1,
+D-NAMING.1, D-ACCOM.2, D-ACCOM.3, D-POSTS.2, D-USERS.2.
+
+### Phase 6 — work still pending (scope expanded by user 2026-05-15)
+
+The user explicitly waived the spec §5 default rule (in-scope = data
+integrity + lifecycle; out-of-scope = UX polish + missing features).
+**All findings below are now in-scope** and must ship in the same PR.
+
+1. **D-8.1 sponsor ghost-create** (bug, debug needed) —
+   `/sponsors/new` reports success + redirects to /sponsors/{uuid} but
+   row is NOT in DB. Last reproduction in chrome-devtools-mcp failed
+   with Navigation timeout. Suspect: `PostSponsorService.create` or an
+   `_afterCreate` hook that aborts the transaction silently. Files to
+   inspect: `packages/service-core/src/services/postSponsor/*`.
+
+2. **D-USERS.5 + D-CONTENT.1 (delete UI bundle)** — add Eliminar action
+   to /access/users + /content/accommodation-amenities + /content/
+   accommodation-features + /content/destination-attractions. Reuse
+   `AdminTagDeleteDialog.tsx` as template. ~1-2h.
+
+3. **D-RELATIONS.1 rest (5 entity-select components)** — create
+   AccommodationSelectField, EventSelectField, EventLocationSelectField,
+   EventOrganizerSelectField, SponsorshipSelectField. Mirror
+   UserSelectField / DestinationSelectField. Update FieldTypeEnum +
+   EntityFormSection switch + posts/events relations configs. ~2-3h.
+
+4. **D-SPONSORSHIP.1 (Create sponsorship dialog)** — `Crear patrocinio`
+   button on /billing/sponsorships is a no-op (no onClick, no mutation
+   hook). Implement dialog + form + mutation + i18n. Niveles + Paquetes
+   tabs may have the same issue. ~2-3h.
+
+5. **D-OWNERPROMO.1 + D-NEWSLETTER.1 (Create UI)** — list pages render
+   fine but neither has a Create button. Product decision needed: confirm
+   admin should create from these surfaces (owner-promotions may be
+   user-initiated by design). If yes: dialog + mutation + i18n. ~1-2h.
+
+6. **D-USERS.1 + D-POSTS.1 (operational, 30s)** — i18n keys already
+   exist in JSON; SSR cache is stale on /users + /posts + /permissions
+   because the TanStack Start SSR Node process keeps a flattened
+   `trans` map from a state pre-dating Phase 4 i18n changes. Fix is NOT
+   code: user must `Ctrl+C` admin dev → `rm -rf apps/admin/node_modules/.vite`
+   → `pnpm dev`. After restart, verify all pages render 0 `[MISSING:]`.
+
+### Out-of-scope (confirmed, NOT to be fixed in this spec)
+
+- **B-1..B-5 + N-2** — server-side billing/Brevo/BullMQ local-dev config
+  issues. M-2 retry-storm closure handles the client symptom.
+- **CE-6 + CE-8** — third-party dev-only console noise documented in
+  `apps/admin/CLAUDE.md` Common Gotchas.
+
+### Trade-offs accepted this session
+
+1. **Hardcoded Spanish enum labels (not i18n keys)** in 5 consolidated
+   form configs. Reason: configs don't accept a `t` parameter; threading
+   it through would be a wider refactor. Labels mirror the existing
+   `admin-entities.states.*` JSON entries verbatim.
+2. **Hardcoded ES toast strings** in 11 Create routes. Reason: 17 entities
+   × 4 strings = 68 i18n keys, vs ~11 hardcoded files. Pragmatic.
+3. **`.optional()` → `.nullish()`** in `accommodation.location.schema` and
+   `user.schema.authProviderUserId`. DB columns are nullable; the strict
+   response stripper rejected null until the schema also accepted it.
+4. **`useId()` instead of `crypto.randomUUID()`** in `Input.tsx`. SSR/
+   client-stable id; previous code caused hydration mismatch warnings on
+   every form with an `ImageField`.
+5. **Scope creep accepted by user.** §5 default rule overridden; all
+   missing features will ship in this spec / PR.
