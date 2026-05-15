@@ -3,10 +3,11 @@
     "title": "Accommodation Example Seeds Realism",
     "type": "improvement",
     "complexity": "medium",
-    "status": "approved",
+    "status": "completed",
     "created": "2026-05-14T00:00:00.000Z",
     "approved": "2026-05-14T00:00:00.000Z",
-    "completed": null,
+    "completed": "2026-05-14T00:00:00.000Z",
+    "completionRef": "PR #1093 — feat(seed): SPEC-119 accommodation example seeds realism (5 commits)",
     "planFileRef": null,
     "tags": ["seeds", "accommodation", "fixtures", "example-data", "pricing", "media"]
 }

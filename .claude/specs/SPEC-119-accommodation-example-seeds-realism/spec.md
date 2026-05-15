@@ -3,8 +3,10 @@ spec-id: SPEC-119
 title: Accommodation Example Seeds Realism
 type: improvement
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-14
+completed: 2026-05-14
+completionRef: PR #1093 — feat(seed): SPEC-119 accommodation example seeds realism
 tags:
   - seeds
   - accommodation

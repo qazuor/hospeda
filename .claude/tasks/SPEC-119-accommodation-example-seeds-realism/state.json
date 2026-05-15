@@ -5,12 +5,14 @@
     "created": "2026-05-14T00:00:00.000Z",
     "summary": {
         "total": 35,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 34,
+        "completed": 35,
         "blocked": 0,
         "averageComplexity": 2.37
     },
+    "completedAt": "2026-05-14T00:00:00.000Z",
+    "closureNote": "All 35 tasks completed. PR #1093 merged to staging at 2026-05-14T21:57:53Z. See engram spec/hospeda/SPEC-119/status.",
     "tasks": [
         {
             "id": "T-001",
@@ -740,7 +742,7 @@
             "id": "T-035",
             "title": "Open PR targeting staging with SPEC-119 reference",
             "description": "Open PR from `spec/SPEC-119-accommodation-example-seeds-realism` to `staging`. Link the spec. Confirm CI green. Spec ref: branch workflow in CLAUDE.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-033", "T-034"],
             "blocks": [],
@@ -754,8 +756,9 @@
             "timestamps": {
                 "created": "2026-05-14T00:00:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": "2026-05-14T21:57:53Z"
+            },
+            "completionRef": "PR #1093 merged to staging at 2026-05-14T21:57:53Z"
         }
     ]
 }

@@ -3,8 +3,10 @@ spec-id: SPEC-118
 title: Reset-Password Page Validates Token at Load — UX Hardening
 type: fix
 complexity: low
-status: draft
+status: completed
 created: 2026-05-14T10:05:00Z
+completed: 2026-05-14T00:00:00Z
+completionRef: commit dc5bc86de (PR #1098) — feat(auth): validate reset-password token at page load (SPEC-118)
 effort_estimate_hours: 2-4
 tags: [auth, ux, reset-password, better-auth]
 extracted_from: SPEC-103 operator OAuth smokes (session-finding-34) — 2026-05-14

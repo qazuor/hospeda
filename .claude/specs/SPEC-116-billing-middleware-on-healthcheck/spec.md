@@ -3,8 +3,10 @@ spec-id: SPEC-116
 title: Billing Middleware Runs on Healthcheck Path — Skip Unnecessary Work
 type: fix
 complexity: low
-status: draft
+status: completed
 created: 2026-05-14T08:30:00Z
+completed: 2026-05-14T00:00:00Z
+completionRef: commit 5680a9d32 — fix(api): skip billing customer lookup for guest actors (SPEC-116)
 effort_estimate_hours: 1-2
 tags: [performance, middleware, billing, api, healthcheck]
 extracted_from: SPEC-110 Phase 1 prod log inspection
