@@ -1,12 +1,14 @@
 # SPEC-092: End-to-End Test Suite for Pre-Beta Validation
 
-> **Status**: in-progress
+> **Status**: completed (with operational carve-out → SPEC-121)
 > **Priority**: P0 (blocker for beta launch)
 > **Complexity**: High
 > **Created**: 2026-04-26
-> **Last revised**: 2026-04-30
+> **Last revised**: 2026-05-14
+> **Completed**: 2026-05-14
 > **Type**: testing-infrastructure
 > **Breaking change**: No (additive)
+> **Closure note**: 94/99 tasks closed. All code work is done — 55 e2e test files in `apps/e2e/tests/` on origin/staging, CI workflows shipped. The 5 remaining items are operational (NOT code work) and have been carved out to **SPEC-121** (e2e-mp-secrets-and-nightly-reactivation): T-001/T-002 (MercadoPago sandbox account + GitHub Secrets), T-096/T-097 (nightly cron re-enable post-SPEC-103 + 7-night flake measurement + quarantine list), T-099 (close-out admin). See engram observation `spec/hospeda/SPEC-092/status` for full audit trail.
 
 ---
 

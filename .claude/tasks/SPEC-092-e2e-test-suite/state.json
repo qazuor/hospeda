@@ -2341,5 +2341,7 @@
             "2": 53,
             "3": 33
         }
-    }
+    },
+    "completedAt": "2026-05-14T00:00:00Z",
+    "closureNote": "94/99 closed. The 5 remaining are operational (NOT code) and have been carved out to SPEC-121-e2e-mp-secrets-and-nightly-reactivation. See engram spec/hospeda/SPEC-092/status."
 }

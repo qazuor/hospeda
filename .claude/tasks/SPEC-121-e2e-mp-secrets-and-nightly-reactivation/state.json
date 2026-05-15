@@ -1,0 +1,63 @@
+{
+    "version": "1.0",
+    "title": "E2E MercadoPago Secrets Bootstrap and Nightly Suite Reactivation",
+    "specRef": "SPEC-121",
+    "created": "2026-05-14T00:00:00Z",
+    "summary": {
+        "total": 5,
+        "pending": 5,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    },
+    "tasks": [
+        {
+            "id": "T-121-01",
+            "title": "Create MercadoPago sandbox account + seller test user",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "qazuor",
+            "ownerType": "manual",
+            "dependsOn": [],
+            "notes": "MP dashboard work. See engram gotcha_mercadopago_credentials. Test-user tokens cannot call /v1/customers (engram gotcha_mercadopago_test_credentials_architecture)."
+        },
+        {
+            "id": "T-121-02",
+            "title": "Configure MP credentials in GitHub Secrets",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "qazuor",
+            "ownerType": "manual",
+            "dependsOn": ["T-121-01"],
+            "notes": "Keys: MP_SANDBOX_PUBLIC_KEY, MP_SANDBOX_ACCESS_TOKEN, MP_SANDBOX_SELLER_USERNAME, MP_SANDBOX_SELLER_PASSWORD. Already referenced by .github/workflows/e2e-nightly.yml."
+        },
+        {
+            "id": "T-121-03",
+            "title": "Re-enable nightly cron in e2e-nightly.yml + verify first run passes",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-121-02"],
+            "notes": "Cron disabled 2026-05-12 since VPS migration. SPEC-103 is now closed; safe to re-enable."
+        },
+        {
+            "id": "T-121-04",
+            "title": "Collect 7 consecutive nightly runs with flake metrics",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-121-03"],
+            "notes": "Pass/fail/duration per test. Identify tests with > 2% flake rate."
+        },
+        {
+            "id": "T-121-05",
+            "title": "Document quarantine list in apps/e2e/README.md",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-121-04"],
+            "notes": "Explicit 'Quarantine' section listing > 2% flake tests with test.fixme(condition, reason) annotations."
+        }
+    ]
+}
