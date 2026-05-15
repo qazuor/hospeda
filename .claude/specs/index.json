@@ -779,6 +779,17 @@
             "path": "SPEC-114-forget-password-endpoint-missing",
             "completed": "2026-05-14T04:33:00.000Z",
             "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
+        },
+        {
+            "specId": "SPEC-129",
+            "title": "Security Audit — Dependency Vulnerabilities Remediation",
+            "type": "security",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-129-security-audit-vulnerabilities",
+            "created": "2026-05-15T17:50:00.000Z",
+            "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
+            "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
         }
     ]
 }

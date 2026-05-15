@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-129",
+    "title": "Security Audit — Dependency Vulnerabilities Remediation",
+    "type": "security",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-15T17:50:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
+}
