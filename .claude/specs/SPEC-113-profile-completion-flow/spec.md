@@ -169,10 +169,10 @@ For the few beta testers who signed up BEFORE this lands (including the test use
 | T-113-04 | Web: route + form + React island `ProfileCompletion.client.tsx` | 2 | completed |
 | T-113-05 | Web: route + form + React island `SetPassword.client.tsx` | 2 | completed |
 | T-113-06 | Web: middleware guard on protected routes (both flags) | 2 | completed |
-| T-113-07 | Admin: middleware guard (if applicable) | 3 | pending |
-| T-113-08 | Backfill script: profile_completed + set_password_prompted for grandfathered users | 4 | pending |
-| T-113-09 | UX polish + tests (both flows) | 5 | pending |
-| T-113-10 | Smoke validate end-to-end on staging (email signup path + Google OAuth path + FB OAuth path) | 5 | pending, blocked by 04..09 |
+| T-113-07 | Admin: middleware guard (if applicable) | 3 | not applicable (per §3.5: admin/super-admin users bypass via `isAdminBypassUser` in the web middleware; admin app users always sign in with credentials so the OAuth-only set-password path never triggers there) |
+| T-113-08 | Backfill script: profile_completed + set_password_prompted for grandfathered users | 4 | completed (folded into Phase 0 manual SQL `0025_users_profile_completion_flags.sql` — both backfill UPDATEs run idempotently via `apply-postgres-extras.sh`) |
+| T-113-09 | UX polish + tests (both flows) | 5 | completed (Phase 2 sub-agent shipped loading states, inline validation, skip-modal, toast on success; Phase 5 split `ProfileCompletion.client.tsx` to honor the 500-line file rule by extracting `ProfileCompletion.helpers.ts`; added 17 unit tests for the validation helpers + 27 tests already exist for middleware-helpers) |
+| T-113-10 | Smoke validate end-to-end on staging (email signup path + Google OAuth path + FB OAuth path) | 5 | pending — blocked by deploy. Validate after merge → staging deploy: (a) brand-new email signup → land on completar-perfil, (b) Google OAuth → completar-perfil → agregar-contrasena, (c) FB OAuth same as Google with skip path, (d) admin user signs in → goes straight to mi-cuenta. |
 
 ---
 

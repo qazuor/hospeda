@@ -15,6 +15,11 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useState } from 'react';
+import {
+    COUNTRY_CODES,
+    type ProfileCompletionFieldErrors,
+    validateProfileCompletionFields
+} from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,59 +32,6 @@ export interface ProfileCompletionProps {
     readonly apiUrl: string;
     /** Pre-filled display name from the session (OAuth provider or email signup). */
     readonly initialDisplayName?: string;
-}
-
-/** Validated field errors keyed by field name. */
-type FieldErrors = Partial<
-    Record<'displayName' | 'firstName' | 'phone' | 'locale' | 'terms', string>
->;
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Phone country code options (limited set). */
-const COUNTRY_CODES = [
-    { code: '+54', label: '🇦🇷 +54 (Argentina)' },
-    { code: '+55', label: '🇧🇷 +55 (Brasil)' },
-    { code: '+598', label: '🇺🇾 +598 (Uruguay)' },
-    { code: '+56', label: '🇨🇱 +56 (Chile)' },
-    { code: '+595', label: '🇵🇾 +595 (Paraguay)' },
-    { code: '+1', label: '🇺🇸 +1 (USA/Canada)' },
-    { code: '+34', label: '🇪🇸 +34 (España)' },
-    { code: '+52', label: '🇲🇽 +52 (México)' }
-] as const;
-
-/**
- * Validates form fields client-side.
- * Mirrors server-side validation in `CompleteProfileBodySchema` from `@repo/schemas`.
- */
-function validateFields({
-    displayName,
-    phone,
-    acceptedTerms
-}: {
-    displayName: string;
-    phone: string;
-    acceptedTerms: boolean;
-}): FieldErrors {
-    const errors: FieldErrors = {};
-
-    if (!displayName.trim()) {
-        errors.displayName = 'required';
-    } else if (displayName.trim().length < 2) {
-        errors.displayName = 'min';
-    } else if (displayName.trim().length > 50) {
-        errors.displayName = 'max';
-    }
-
-    if (phone.trim() && !/^\+\d{7,15}$/.test(phone.replace(/[\s\-().]/g, ''))) {
-        errors.phone = 'format';
-    }
-
-    if (!acceptedTerms) {
-        errors.terms = 'required';
-    }
-
-    return errors;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -109,7 +61,7 @@ export function ProfileCompletion({
     const [newsletter, setNewsletter] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-    const [errors, setErrors] = useState<FieldErrors>({});
+    const [errors, setErrors] = useState<ProfileCompletionFieldErrors>({});
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
@@ -124,7 +76,7 @@ export function ProfileCompletion({
     }
 
     /** Map Zod error key to the translated message. */
-    function errorMessage(field: keyof FieldErrors, variant: string): string {
+    function errorMessage(field: keyof ProfileCompletionFieldErrors, variant: string): string {
         const keyMap: Record<string, string> = {
             displayName_required: t(
                 'account.profileCompletion.errors.displayNameRequired',
@@ -157,7 +109,7 @@ export function ProfileCompletion({
         setGlobalError(null);
 
         // Client-side validation
-        const validationErrors = validateFields({
+        const validationErrors = validateProfileCompletionFields({
             displayName,
             phone: buildPhone() ?? '',
             acceptedTerms
