@@ -27,6 +27,14 @@ export interface TextFieldProps {
     required?: boolean;
     /** Additional CSS classes */
     className?: string;
+    /** HTML input type (default 'text'). Used by NUMBER, DATE, TIME fields. */
+    type?: string;
+    /** Optional native min attribute (used when type='number'). */
+    min?: number | string;
+    /** Optional native max attribute (used when type='number'). */
+    max?: number | string;
+    /** Optional native step attribute (used when type='number'). */
+    step?: number | string;
 }
 
 /**
@@ -46,6 +54,10 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
             disabled = false,
             required = false,
             className,
+            type = 'text',
+            min,
+            max,
+            step,
             ...props
         },
         ref
@@ -93,7 +105,10 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
                 <Input
                     ref={ref}
                     id={fieldId}
-                    type="text"
+                    type={type}
+                    min={min}
+                    max={max}
+                    step={step}
                     value={value}
                     onChange={handleChange}
                     onBlur={onBlur}

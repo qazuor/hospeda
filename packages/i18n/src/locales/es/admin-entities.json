@@ -26,9 +26,9 @@
             "description": "Gestiona usuarios y permisos"
         },
         "amenity": {
-            "singular": "Comodidad",
-            "plural": "Comodidades",
-            "description": "Gestiona comodidades de alojamientos"
+            "singular": "Amenidad",
+            "plural": "Amenidades",
+            "description": "Gestiona amenidades de alojamientos"
         },
         "feature": {
             "singular": "Característica",

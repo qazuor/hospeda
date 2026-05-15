@@ -284,11 +284,19 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
-                    case FieldTypeEnum.NUMBER:
-                        // Use TextField for numbers, converting string input to number on change
+                    case FieldTypeEnum.NUMBER: {
+                        // SPEC-117 D-DISPLAYWEIGHT.1 — pass native min/max/step
+                        // from typeConfig so browsers enforce numeric input.
+                        const numericConfig = field.typeConfig as
+                            | { min?: number; max?: number; step?: number }
+                            | undefined;
                         return (
                             <TextField
                                 {...fieldProps}
+                                type="number"
+                                min={numericConfig?.min}
+                                max={numericConfig?.max}
+                                step={numericConfig?.step}
                                 value={
                                     fieldValue === null || fieldValue === undefined
                                         ? ''
@@ -306,6 +314,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                 }}
                             />
                         );
+                    }
 
                     case FieldTypeEnum.DATE:
                         // Use TextField for dates for now
