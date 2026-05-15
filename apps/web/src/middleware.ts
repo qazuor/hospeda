@@ -19,16 +19,22 @@ import {
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
+    buildProfileCompletionRedirect,
     buildSentryReportUri,
+    buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
+    isAdminBypassUser,
     isAuthRoute,
     isBetaRoute,
+    isProfileCompletionRoute,
     isProtectedRoute,
     isServerIslandRoute,
     isSessionOptionalRoute,
+    isSetPasswordRoute,
     isStaticAssetRoute,
     parseNoindexHosts,
+    parseProfileStatus,
     parseSessionUser
 } from './lib/middleware-helpers';
 
@@ -130,6 +136,64 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (isProtectedRoute({ path }) && !user) {
             const loginUrl = buildLoginRedirect({ locale, currentUrl: path });
             return context.redirect(loginUrl);
+        }
+
+        // Step 7.5 (SPEC-113): Profile completion + set-password guard.
+        //
+        // Only runs on protected routes where we have a valid user.  Admin and
+        // super_admin roles skip the flow entirely (spec §3.5).  The two
+        // completion routes themselves are whitelisted so form submissions are
+        // never caught in a redirect loop.
+        if (isProtectedRoute({ path }) && user) {
+            // Fetch the completion flags in parallel with session (already done)
+            // — the status call is fast (two indexed DB lookups on the API side).
+            const cookieHeader = context.request.headers.get('cookie');
+            const profileStatus = await parseProfileStatus({ cookieHeader });
+
+            // profileStatus may be null on API errors — fail-open (allow through).
+            if (profileStatus) {
+                // Determine the actor's role.  The session returned by
+                // parseSessionUser does not include the role, so we rely on the
+                // profile status to carry it indirectly.  Instead, we need to
+                // get the role from the actor at runtime.  Since the /profile/status
+                // endpoint is already called and we trust the session, the simplest
+                // approach is: if the user is authenticated and the endpoint
+                // succeeded, we have the flags. We don't have the role here.
+                //
+                // Role bypass approach: we fetch it lazily from /api/v1/public/auth/me
+                // only when required (i.e. when a redirect would otherwise occur).
+                // This avoids an extra HTTP call on every request where flags pass.
+
+                const needsProfileCompletion =
+                    !profileStatus.profileCompleted &&
+                    !isProfileCompletionRoute({ path }) &&
+                    !isSetPasswordRoute({ path });
+
+                if (needsProfileCompletion) {
+                    // Check admin bypass before redirecting.
+                    const isBypass = await isAdminBypassUser({ cookieHeader });
+                    if (!isBypass) {
+                        const redirectUrl = buildProfileCompletionRedirect({ locale });
+                        return context.redirect(redirectUrl);
+                    }
+                } else {
+                    const needsSetPassword =
+                        profileStatus.profileCompleted &&
+                        profileStatus.hasOAuthAccount &&
+                        !profileStatus.hasCredentialAccount &&
+                        !profileStatus.setPasswordPrompted &&
+                        !isSetPasswordRoute({ path }) &&
+                        !isProfileCompletionRoute({ path });
+
+                    if (needsSetPassword) {
+                        const isBypass = await isAdminBypassUser({ cookieHeader });
+                        if (!isBypass) {
+                            const redirectUrl = buildSetPasswordRedirect({ locale });
+                            return context.redirect(redirectUrl);
+                        }
+                    }
+                }
+            }
         }
     } else {
         // Ensure locals.user is always defined so pages don't need to check for undefined.

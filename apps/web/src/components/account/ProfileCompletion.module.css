@@ -1,0 +1,231 @@
+/* ProfileCompletion.module.css */
+/* Scoped styles for the ProfileCompletion React island (SPEC-113 T-113-04). */
+/* ALL values use CSS custom properties from global.css. */
+
+/* ── Page wrapper ────────────────────────────────────────────────────────── */
+
+.wrapper {
+    max-width: 640px;
+    margin-inline: auto;
+    padding: var(--space-8, 2rem) var(--space-4, 1rem);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.header {
+    margin-bottom: var(--space-8, 2rem);
+    text-align: center;
+}
+
+.heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3, 12px);
+}
+
+.subheading {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Form card ───────────────────────────────────────────────────────────── */
+
+.card {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: var(--space-6, 24px);
+    box-shadow: var(--shadow-card);
+}
+
+/* ── Form ────────────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 20px);
+}
+
+/* ── Field ───────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.required {
+    color: var(--destructive, oklch(0.6 0.2 25));
+    margin-left: 2px;
+}
+
+.input,
+.select {
+    width: 100%;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background-color: var(--background);
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
+        var(--duration-normal, 0.4s) ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+}
+
+.inputError {
+    border-color: var(--destructive, oklch(0.6 0.2 25));
+}
+
+.inputError:focus {
+    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.15);
+}
+
+/* ── Phone row ───────────────────────────────────────────────────────────── */
+
+.phoneRow {
+    display: flex;
+    gap: var(--space-2, 8px);
+}
+
+.phoneCode {
+    flex: 0 0 7rem;
+}
+
+.phoneNumber {
+    flex: 1;
+}
+
+/* ── Error + hint ────────────────────────────────────────────────────────── */
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--destructive, oklch(0.6 0.2 25));
+    margin: 0;
+}
+
+.hint {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── Checkbox row ────────────────────────────────────────────────────────── */
+
+.checkboxRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 8px);
+    cursor: pointer;
+}
+
+.checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.checkboxLabel {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.checkboxLink {
+    color: var(--brand-primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ── Feedback banner ─────────────────────────────────────────────────────── */
+
+.feedbackBanner {
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+}
+
+.feedbackBannerError {
+    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
+    color: var(--destructive, oklch(0.6 0.2 25));
+    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+}
+
+/* ── Submit row ──────────────────────────────────────────────────────────── */
+
+.submitRow {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-2, 8px);
+}
+
+.submitBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-3, 12px) var(--space-6, 24px);
+    background-color: var(--brand-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.submitBtn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.submitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

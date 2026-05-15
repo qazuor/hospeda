@@ -49,3 +49,28 @@ export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];
 
 /** Type representing an auth route segment. */
 export type AuthSegment = (typeof AUTH_SEGMENTS)[number];
+
+// ---------------------------------------------------------------------------
+// SPEC-113: Profile completion flow routes
+// ---------------------------------------------------------------------------
+
+/**
+ * Sub-path of the profile completion form (under /{locale}/mi-cuenta/).
+ * Whitelisted in the middleware guard so the user can actually submit the form.
+ */
+export const PROFILE_COMPLETION_SEGMENT = 'completar-perfil' as const;
+
+/**
+ * Sub-path of the set-password form (under /{locale}/mi-cuenta/).
+ * Whitelisted in the middleware guard so the user can submit or skip.
+ */
+export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
+
+/**
+ * Role values that skip the profile completion + set-password checks.
+ * Admins and super-admins bypass the flow per spec §3.5.
+ */
+export const PROFILE_COMPLETION_BYPASS_ROLES = ['admin', 'super_admin'] as const;
+
+/** Type for roles that bypass profile completion. */
+export type ProfileCompletionBypassRole = (typeof PROFILE_COMPLETION_BYPASS_ROLES)[number];

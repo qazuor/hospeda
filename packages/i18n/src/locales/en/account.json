@@ -394,5 +394,66 @@
         "confirmCancelTitle": "¿Cancelar suscripción?",
         "confirmCancelYes": "Sí, cancelar",
         "confirmCancelNo": "No, quedarme"
+    },
+    "profileCompletion": {
+        "pageTitle": "Complete your profile",
+        "pageDescription": "Complete your information to start using Hospeda",
+        "heading": "Welcome to Hospeda!",
+        "subheading": "Before continuing, complete your profile so we can personalize your experience.",
+        "fields": {
+            "displayName": "Full name",
+            "displayNamePlaceholder": "Your name and surname",
+            "displayNameHint": "Minimum 2 characters.",
+            "firstName": "What should we call you?",
+            "firstNamePlaceholder": "Your nickname or first name",
+            "firstNameHint": "Optional. By default we use your first name.",
+            "phone": "Phone",
+            "phonePlaceholder": "+1 555 123-4567",
+            "phoneHint": "Optional. Include the country code.",
+            "locale": "Preferred language",
+            "localeEs": "Español",
+            "localeEn": "English",
+            "localePt": "Português",
+            "newsletter": "I want to receive news and promotions by email",
+            "terms": "I accept the",
+            "termsLink": "terms and conditions",
+            "termsRequired": "You must accept the terms to continue."
+        },
+        "submit": "Complete profile",
+        "submitting": "Saving...",
+        "errors": {
+            "displayNameRequired": "Full name is required.",
+            "displayNameMin": "Name must be at least 2 characters.",
+            "displayNameMax": "Name cannot exceed 50 characters.",
+            "phoneFormat": "Enter a valid phone number with country code.",
+            "termsRequired": "You must accept the terms to continue.",
+            "submitFailed": "Could not complete profile. Please try again."
+        }
+    },
+    "setPassword": {
+        "pageTitle": "Add password",
+        "pageDescription": "Add a password to sign in with email",
+        "heading": "Add a password",
+        "contextGoogle": "You signed up with Google. If you want, you can add a password to also sign in with email.",
+        "contextFacebook": "You signed up with Facebook. If you want, you can add a password to also sign in with email.",
+        "contextOAuth": "You signed up with a social account. If you want, you can add a password to also sign in with email.",
+        "fields": {
+            "password": "Password",
+            "passwordPlaceholder": "Minimum 8 characters",
+            "passwordHint": "Minimum 8 characters."
+        },
+        "submit": "Set password",
+        "submitting": "Saving...",
+        "skip": "Skip for now",
+        "skipModalTitle": "Skip for now?",
+        "skipModalBody": "You can set it later from your profile. Continue?",
+        "skipModalConfirm": "Yes, skip",
+        "skipModalCancel": "Cancel",
+        "successToast": "Password set successfully",
+        "errors": {
+            "passwordMin": "Password must be at least 8 characters.",
+            "submitFailed": "Could not set password. Please try again.",
+            "skipFailed": "Could not skip this step. Please try again."
+        }
     }
 }

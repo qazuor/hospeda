@@ -3,7 +3,7 @@ spec-id: SPEC-113
 title: Profile completion flow — required intermediate step after first signup / OAuth
 type: feat
 complexity: medium-high
-status: draft
+status: in-progress
 created: 2026-05-14T04:15:00Z
 effort_estimate_hours: 14-22
 tags: [auth, onboarding, ux, profile, user-data, pre-public-launch]
@@ -50,7 +50,7 @@ The user is redirected to `/es/mi-cuenta/completar-perfil/` (or similar route) w
 
 #### 3.2 Form fields (minimum viable)
 
-- **Full name** (required, persists to `users.name`). Pre-filled from OAuth provider if available.
+- **Full name** (required, persists to `users.displayName` — the `display_name` column. Better Auth maps its virtual `name` field to `displayName` via `user.fields.name = 'displayName'` in `apps/api/src/lib/auth.ts`). Pre-filled from OAuth provider if available.
 - **Display name / "Cómo querés que te llamemos"** (optional, separate field for casual addressing). Defaults to first word of full name.
 - **Phone** (optional, for host contact features later). With country-code dropdown defaulting to Argentina.
 - **Preferred locale** (optional, "es" | "en" | "pt" dropdown, defaults to URL locale at signup).
@@ -117,7 +117,7 @@ Add to `users` table:
 - `profile_completed boolean NOT NULL DEFAULT false` — flipped TRUE when the completion form is submitted (§3).
 - `set_password_prompted boolean NOT NULL DEFAULT false` — flipped TRUE when OAuth-only user has either submitted or skipped the set-password screen (§3.6).
 
-Backfill existing rows where `name IS NOT NULL AND name != ''` to `profile_completed = TRUE` so existing seeded users aren't blocked. Also backfill `set_password_prompted = TRUE` for any user that has a `credential` account row (they already have a password, no need to ever prompt).
+Backfill existing rows where `display_name IS NOT NULL AND display_name <> ''` to `profile_completed = TRUE` so existing seeded users aren't blocked. Also backfill `set_password_prompted = TRUE` for any user that has a `credential` account row (they already have a password, no need to ever prompt).
 
 #### Phase 1 — Backend (api)
 
@@ -145,7 +145,7 @@ Backfill existing rows where `name IS NOT NULL AND name != ''` to `profile_compl
 
 For the few beta testers who signed up BEFORE this lands (including the test users from SPEC-103 T-012):
 - Run a script:
-  - `UPDATE users SET profile_completed = TRUE WHERE name IS NOT NULL AND name != '';` — grandfathers anyone with a name already set.
+  - `UPDATE users SET profile_completed = TRUE WHERE display_name IS NOT NULL AND display_name <> '';` — grandfathers anyone with a display_name already set. (Note: Better Auth maps its `name` field to the `display_name` column via `user.fields.name = 'displayName'`.)
   - `UPDATE users SET set_password_prompted = TRUE WHERE id IN (SELECT user_id FROM account WHERE provider_id = 'credential');` — anyone with a password row never sees the set-password prompt.
 - Anyone without a name will be funneled into the form on next signin — acceptable.
 
@@ -163,12 +163,12 @@ For the few beta testers who signed up BEFORE this lands (including the test use
 
 | Task | Title | Phase | Status |
 |---|---|---|---|
-| T-113-01 | DB migration: add `users.profile_completed` + `users.set_password_prompted` columns | 0 | pending |
-| T-113-02 | Backend: POST /api/v1/protected/profile/complete endpoint | 1 | pending |
-| T-113-03 | Backend: POST /api/v1/protected/profile/set-password + skip-set-password endpoints | 1 | pending |
-| T-113-04 | Web: route + form + React island `ProfileCompletion.client.tsx` | 2 | pending |
-| T-113-05 | Web: route + form + React island `SetPassword.client.tsx` | 2 | pending |
-| T-113-06 | Web: middleware guard on protected routes (both flags) | 2 | pending |
+| T-113-01 | DB migration: add `users.profile_completed` + `users.set_password_prompted` columns | 0 | completed |
+| T-113-02 | Backend: POST /api/v1/protected/profile/complete endpoint | 1 | completed |
+| T-113-03 | Backend: POST /api/v1/protected/profile/set-password + skip-set-password endpoints | 1 | completed |
+| T-113-04 | Web: route + form + React island `ProfileCompletion.client.tsx` | 2 | completed |
+| T-113-05 | Web: route + form + React island `SetPassword.client.tsx` | 2 | completed |
+| T-113-06 | Web: middleware guard on protected routes (both flags) | 2 | completed |
 | T-113-07 | Admin: middleware guard (if applicable) | 3 | pending |
 | T-113-08 | Backfill script: profile_completed + set_password_prompted for grandfathered users | 4 | pending |
 | T-113-09 | UX polish + tests (both flows) | 5 | pending |
