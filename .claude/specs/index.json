@@ -73,7 +73,9 @@
             "completedAt": "2026-04-29T18:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T18:45:00.000Z",
-            "absorbs": ["SPEC-075"]
+            "absorbs": [
+                "SPEC-075"
+            ]
         },
         {
             "specId": "SPEC-024",
@@ -120,7 +122,10 @@
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
             "archived": false,
-            "dependsOn": ["SPEC-042", "SPEC-045"]
+            "dependsOn": [
+                "SPEC-042",
+                "SPEC-045"
+            ]
         },
         {
             "specId": "SPEC-061",
@@ -181,10 +186,14 @@
             "created": "2026-04-26T00:00:00.000Z",
             "completed": "2026-05-14T00:00:00Z",
             "completionRef": "94/99 closed. 5 operational items (MP secrets + nightly re-enable + flake measurement) carved out to SPEC-121.",
-            "archived": false,
-            "dependsOn": ["SPEC-085"],
+            "archived": true,
+            "dependsOn": [
+                "SPEC-085"
+            ],
             "atomizedAt": "2026-04-30T00:00:00.000Z",
-            "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG."
+            "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG.",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Closed at 94/99 — 5 operational items carved out to SPEC-121. Spec docs and task state removed; git history + engram spec/hospeda/SPEC-092/status are source of truth."
         },
         {
             "specId": "SPEC-093",
@@ -205,7 +214,10 @@
             "priority": "P2",
             "created": "2026-04-27T00:00:00.000Z",
             "archived": true,
-            "tags": ["deferred-post-beta", "superseded-by-SPEC-092"],
+            "tags": [
+                "deferred-post-beta",
+                "superseded-by-SPEC-092"
+            ],
             "archiveNote": "Premise invalidated by SPEC-092 refactor (PropertyForm.client.tsx removed, replaced by CreatePropertyMiniForm which delegates amenity assignment to admin panel). Re-evaluate post-beta if a real gap surfaces."
         },
         {
@@ -692,7 +704,10 @@
             "type": "feature",
             "complexity": "medium",
             "status": "completed",
-            "path": "SPEC-098-favorites-collections-mvp"
+            "path": "SPEC-098-favorites-collections-mvp",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Favorites & Collections MVP completed and shipped. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-099",
@@ -703,7 +718,9 @@
             "path": "SPEC-099-home-audit-remediation",
             "created": "2026-05-07T00:00:00.000Z",
             "completed": "2026-05-08T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Home page audit remediation completed and shipped 2026-05-08. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-100",
@@ -726,9 +743,13 @@
             "path": "SPEC-101-newsletter-mvp",
             "created": "2026-05-11T00:00:00.000Z",
             "completed": "2026-05-14T00:00:00.000Z",
-            "archived": false,
-            "dependencies": ["chore/vps-migration merged to main"],
-            "completedNote": "Merged to staging in PR #1061 (2026-05-14) at 60/60 tasks. Post-merge fixes shipped: PR #1066 (Brevo webhook validation), PR #1068 (Redis maxRetriesPerRequest). Follow-ups tracked in SPEC-108."
+            "archived": true,
+            "dependencies": [
+                "chore/vps-migration merged to main"
+            ],
+            "completedNote": "Merged to staging in PR #1061 (2026-05-14) at 60/60 tasks. Post-merge fixes shipped: PR #1066 (Brevo webhook validation), PR #1068 (Redis maxRetriesPerRequest). Follow-ups tracked in SPEC-108.",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Newsletter MVP (email-only) completed 2026-05-14 via PR #1061 and follow-ups. Spec docs and task state removed; git history + engram are source of truth."
         },
         {
             "specId": "SPEC-102",
@@ -743,8 +764,13 @@
             "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
             "type": "chore",
             "complexity": "medium",
-            "status": "in-progress",
-            "path": "SPEC-103-vps-migration-post-merge-cleanup"
+            "status": "completed",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "67/95 closed; 6 extracted; 2 platform-blocked; 6 deferred long-term",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "67/95 closed. 6 extracted to SPEC-079/102/104/105/109/112. 2 platform-blocked (T-002/T-003). 6 deferred long-term (T-023 a11y, T-072/T-082/T-083/T-087/T-088). Audit in engram spec/hospeda/SPEC-103/status."
         },
         {
             "specId": "SPEC-104",
@@ -768,7 +794,10 @@
             "type": "chore",
             "complexity": "medium",
             "status": "completed",
-            "path": "SPEC-106-docs-broken-links-cleanup"
+            "path": "SPEC-106-docs-broken-links-cleanup",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Docs CI baseline cleanup (broken links + validate-examples hang) completed and shipped. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-107",
@@ -786,7 +815,10 @@
             "status": "completed",
             "path": "SPEC-108-newsletter-mvp-followups",
             "completed": "2026-05-14T00:00:00.000Z",
-            "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account."
+            "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account.",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Newsletter MVP post-merge follow-ups completed 2026-05-14. Spec docs removed; git history is source of truth."
         },
         {
             "specId": "SPEC-114",
@@ -796,7 +828,10 @@
             "status": "completed",
             "path": "SPEC-114-forget-password-endpoint-missing",
             "completed": "2026-05-14T04:33:00.000Z",
-            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
+            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Forget-password endpoint 404 fix completed 2026-05-14 via commit f08583c5c (PR #1075). Spec docs removed; git history is source of truth."
         },
         {
             "specId": "SPEC-120",
@@ -817,7 +852,10 @@
             "path": "SPEC-115-brevo-webhook-endpoint-404",
             "created": "2026-05-14T08:30:00Z",
             "completed": "2026-05-14T00:00:00Z",
-            "completionRef": "commits 794d0b31f + b2d8d15c6 + d474760a8 (PR #1091) — fix(api): Brevo webhook URL-secret auth pattern"
+            "completionRef": "commits 794d0b31f + b2d8d15c6 + d474760a8 (PR #1091) — fix(api): Brevo webhook URL-secret auth pattern",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Brevo webhook endpoint completed 2026-05-14 via PR #1091 (URL-secret auth pattern). Spec docs removed; git history is source of truth. Pending only staging→main promotion + 24h prod observation (operational)."
         },
         {
             "specId": "SPEC-116",
@@ -828,7 +866,10 @@
             "path": "SPEC-116-billing-middleware-on-healthcheck",
             "created": "2026-05-14T08:30:00Z",
             "completed": "2026-05-14T00:00:00Z",
-            "completionRef": "commit 5680a9d32 — fix(api): skip billing customer lookup for guest actors (SPEC-116)"
+            "completionRef": "commit 5680a9d32 — fix(api): skip billing customer lookup for guest actors (SPEC-116)",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Billing middleware skip on healthcheck completed 2026-05-14 via commit 5680a9d32. Spec docs removed; git history is source of truth."
         },
         {
             "specId": "SPEC-117",
@@ -848,10 +889,13 @@
             "status": "completed",
             "path": "SPEC-118-reset-password-token-validation",
             "completed": "2026-05-14T00:00:00Z",
-            "completionRef": "commit dc5bc86de (PR #1098) — feat(auth): validate reset-password token at page load"
+            "completionRef": "commit dc5bc86de (PR #1098) — feat(auth): validate reset-password token at page load",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Reset-password token validation completed 2026-05-14 via commit dc5bc86de (PR #1098). Spec docs removed; git history is source of truth."
         },
         {
-            "archived": false,
+            "archived": true,
             "complexity": "medium",
             "created": "2026-05-14",
             "path": "SPEC-119-accommodation-example-seeds-realism",
@@ -859,7 +903,9 @@
             "status": "completed",
             "completed": "2026-05-14T00:00:00Z",
             "completionRef": "PR #1093 — feat(seed): SPEC-119 accommodation example seeds realism (5 commits)",
-            "title": "Accommodation Example Seeds Realism"
+            "title": "Accommodation Example Seeds Realism",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Accommodation example seeds realism completed 2026-05-14 via PR #1093. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-121",
@@ -870,7 +916,9 @@
             "path": "SPEC-121-e2e-mp-secrets-and-nightly-reactivation",
             "created": "2026-05-14T00:00:00Z",
             "extractedFrom": "SPEC-092",
-            "dependsOn": ["SPEC-103"],
+            "dependsOn": [
+                "SPEC-103"
+            ],
             "firstAllocatedViaEngramProtocol": true
         }
     ]
