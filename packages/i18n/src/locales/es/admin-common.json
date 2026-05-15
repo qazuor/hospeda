@@ -252,6 +252,8 @@
         "editTitle": "Editar {entity}",
         "viewDescription": "Detalles de {entity}",
         "editDescription": "Modificar detalles de {entity}",
+        "notAvailable": "No disponible",
+        "none": "Ninguna",
         "actions": {
             "back": "Volver",
             "edit": "Editar",

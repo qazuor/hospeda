@@ -7,9 +7,16 @@ import type {
     ListOrientation,
     WidgetRenderer
 } from '@/components/table/DataTable';
+import type { TranslationKey } from '@repo/i18n';
 import type { ReactNode } from 'react';
 import type { z } from 'zod';
 import type { FilterBarConfig } from './filters/filter-types';
+
+/**
+ * Translation function signature compatible with `useTranslations().t`.
+ * Used by column factories to resolve headers and badge labels via i18n keys.
+ */
+export type ColumnTFunction = (key: TranslationKey, params?: Record<string, unknown>) => string;
 
 /**
  * Configuration for search functionality
@@ -208,7 +215,7 @@ export type EntityConfig<TData = unknown> = {
     readonly layoutConfig: LayoutConfig;
 
     // Columns
-    readonly createColumns: () => readonly ColumnConfig<TData>[];
+    readonly createColumns: (t: ColumnTFunction) => readonly ColumnConfig<TData>[];
 };
 
 /**
