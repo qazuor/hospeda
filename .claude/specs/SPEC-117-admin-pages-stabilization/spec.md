@@ -1758,46 +1758,59 @@ c17a640de feat(admin): 5 entity-select components + factory (D-RELATIONS.1)
   flow ("Nueva campaña" CTA → `/newsletter/campaigns/new` → CampaignEditor
   with title/subject/audience/content fields). Pre-existing, no work needed.
 
-### Follow-ups discovered during D-SPONSORSHIP.1 implementation (NOT in scope)
+### Follow-ups discovered during D-SPONSORSHIP.1 implementation (ALL closed 2026-05-15)
 
-These pre-existing backend gaps surfaced while wiring the Create dialogs and
-are documented here for a future SPEC. None block this PR — the dialogs work
-around them.
+These pre-existing backend gaps surfaced while wiring the Create dialogs. The
+user opted to fix them in-PR after seeing the impact analysis. All five
+closed by the 4 commits listed below:
 
-1. **admin POST `/sponsorships` not mounted** — `apps/api/src/routes/sponsorship/admin/index.ts`
-   only mounts `adminListSponsorshipsRoute`. The CreateSponsorshipDialog
-   falls through to `POST /api/v1/protected/sponsorships` (which accepts the
-   same body) until the admin tier mounts a POST handler.
-2. **admin GET list missing on sponsorship-packages + sponsorship-levels** —
-   both `admin/index.ts` files only mount create/update/delete. The Packages
-   and Levels tabs show "Route not found" when opened because the underlying
-   `useSponsorshipPackagesQuery` / `useSponsorshipLevelsQuery` hit
-   `/api/v1/admin/sponsorship-*` GET endpoints that do not exist.
-3. **`sponsorships.slug` NOT NULL but schema is `.optional()`** — the
-   service does not auto-generate the slug; `SponsorshipCreateInputSchema`
-   marks it optional yet the DB column is `NOT NULL` with no default. The
-   dialog auto-generates `sp-{timestamp}` client-side as a safe default.
-4. **`sponsorship_levels.target_type` constraint mismatch** — level rows
-   carry a `target_type` (post/event); the server returns DATABASE_ERROR
-   if you pair an EVENT level with a POST sponsorship (or vice versa). The
-   dialog does not validate this client-side; a proper level Select that
-   filters by `targetType` is the correct fix.
-5. **`ApiSelect` uses legacy `limit` param** — `apps/admin/src/components/ui/ApiSelect.tsx`
-   appends `&limit=100` automatically, which admin routes reject (they use
-   `pageSize`). The dialog avoids ApiSelect for admin endpoints. Refactor
-   target: make `paramName` configurable (default `limit` for back-compat).
+```
+504034913 feat(service-core,admin): slug auto-gen + level/target validation (follow-ups #3 + #4)
+a8a40c9ac feat(api,admin): admin POST/PUT/DELETE for sponsorships (follow-up #1)
+d7a27c89a feat(api): admin GET list for sponsorship-packages + sponsorship-levels (follow-up #2)
+066ff6632 feat(admin): add paramName prop to ApiSelect for admin routes (follow-up #5)
+```
+
+1. **#1 admin POST `/sponsorships` not mounted** — ✅ shipped. Added
+   `create.ts` / `update.ts` / `delete.ts` admin handlers; admin index now
+   mounts the full LIST + POST + PUT + DELETE set. `CreateSponsorshipDialog`
+   targets `/admin/sponsorships` directly (no more `/protected` fallback).
+2. **#2 admin GET list missing on sponsorship-packages + sponsorship-levels**
+   — ✅ shipped. Two new `list.ts` admin handlers using the existing
+   `service.list()` pipeline + `SPONSORSHIP_VIEW` permission. The Packages
+   and Levels tabs no longer render "Route not found".
+3. **#3 `sponsorships.slug` NOT NULL but schema is `.optional()`** — ✅
+   shipped. New `SponsorshipService._beforeCreate` hook auto-generates the
+   slug as `${targetType}-${sponsorUserId.slice(0,8)}-${base36Timestamp}`
+   when not provided. Client workaround removed.
+4. **#4 `sponsorship_levels.target_type` constraint mismatch** — ✅ shipped.
+   The same `_beforeCreate` hook fetches the chosen level and rejects with
+   a clear 400 (`Level "X" applies to Y, not Z`) when targetType mismatches.
+   On the client, `CreateSponsorshipDialog` now renders a filtered Select of
+   levels (instead of UUID free-text) and clears the level when targetType
+   changes.
+5. **#5 `ApiSelect` uses legacy `limit` param** — ✅ shipped. Added optional
+   `paramName` prop (default `'limit'` for back-compat). Admin-tier callers
+   can pass `paramName='pageSize'`. No behavior change for existing call
+   sites.
+
+Verified end-to-end:
+- POST `/admin/sponsorships` with mismatched level → 400 with explicit copy
+- POST without slug → 201, slug like `post-980a7313-mp7628nj` persisted
+- Filtered Level Select shows only the 2 POST levels when targetType=post,
+  switches to 3 EVENT levels when targetType=event
 
 ### Additional trade-offs accepted in this round
 
 6. **DeleteRowButton accepts `useDeleteMutation` as a hook factory prop.**
    Rules of hooks remain satisfied because the prop reference is a top-level
    import (stable across renders). Avoids 4× duplicated wrappers.
-7. **CreateSponsorshipDialog `levelId` is a free-text UUID input** instead
-   of a Select. Reason: no admin GET list endpoint for sponsorship-levels
-   (follow-up #2 above). Will swap to a Select once the endpoint exists.
+7. ~~CreateSponsorshipDialog `levelId` is a free-text UUID input~~ — resolved
+   by follow-up #4. Now a Select filtered by targetType.
 8. **CreateSponsorshipPackageDialog client-side input field for slug** —
    server should auto-generate but currently does not. Manual override is
-   acceptable for an MVP.
+   acceptable for an MVP. (Package-side slug auto-gen not in scope this round;
+   separate follow-up.)
 9. **SponsorshipLevelsTab Create button disabled** instead of removed.
    Reason: code path stays in place so a future swap-in is a one-line
    change once the level/target-type constraint UX is designed.
