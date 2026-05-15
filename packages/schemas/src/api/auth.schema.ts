@@ -14,6 +14,16 @@ export const ActorSchema = z.object({
     id: z.string().describe('Actor unique identifier'),
     role: z.string().describe('Actor role (USER, ADMIN, GUEST, etc.)'),
     permissions: z.array(z.string()).describe('Array of permission strings'),
+    name: z
+        .string()
+        .optional()
+        .describe(
+            "Display name (mirrors users.display_name; absent for guests and system actors). Added in SPEC-113 so /auth/me can keep the navbar's actor.name in sync with the DB after a profile mutation."
+        ),
+    email: z
+        .string()
+        .optional()
+        .describe('Actor email (absent for guests and system actors). Added in SPEC-113.'),
     _isSystemActor: z
         .boolean()
         .optional()
