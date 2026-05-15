@@ -1,12 +1,17 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import {
+    AccommodationSelectField,
     CheckboxField,
     CurrencyField,
     // Specific entity select fields
     DestinationSelectField,
     EntitySelectField,
+    EventLocationSelectField,
+    EventOrganizerSelectField,
+    EventSelectField,
     GalleryField,
     ImageField,
+    PostSponsorshipSelectField,
     RichTextField,
     SelectField,
     SwitchField,
@@ -227,6 +232,46 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                     case FieldTypeEnum.USER_SELECT:
                         return (
                             <UserSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.ACCOMMODATION_SELECT:
+                        return (
+                            <AccommodationSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_SELECT:
+                        return (
+                            <EventSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_LOCATION_SELECT:
+                        return (
+                            <EventLocationSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_ORGANIZER_SELECT:
+                        return (
+                            <EventOrganizerSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.POST_SPONSORSHIP_SELECT:
+                        return (
+                            <PostSponsorshipSelectField
                                 {...fieldProps}
                                 value={fieldValue as string | string[]}
                             />

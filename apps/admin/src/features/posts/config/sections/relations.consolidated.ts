@@ -55,58 +55,61 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
                 clearable: true
             }
         },
-        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build AccommodationSelectField + switch
-        // FieldTypeEnum.ACCOMMODATION_SELECT here. Current FieldTypeEnum.SELECT with empty
-        // options renders an empty listbox — optional field, non-blocking, but unusable.
         {
             id: 'relatedAccommodationId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.ACCOMMODATION_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Alojamiento Relacionado',
             description: 'Alojamiento relacionado',
+            placeholder: 'Selecciona un alojamiento',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                options: [],
-                placeholder: 'Selecciona un alojamiento'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
-        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build EventSelectField + switch
-        // FieldTypeEnum.EVENT_SELECT here.
         {
             id: 'relatedEventId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.EVENT_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Evento Relacionado',
             description: 'Evento relacionado',
+            placeholder: 'Selecciona un evento',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
             typeConfig: {
-                options: [],
-                placeholder: 'Selecciona un evento'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
-        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build SponsorshipSelectField.
         {
             id: 'sponsorshipId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.POST_SPONSORSHIP_SELECT,
             required: false,
             modes: ['view', 'edit'],
             label: 'Patrocinio',
             description: 'Contrato de patrocinio asociado',
+            placeholder: 'Selecciona un patrocinio',
             permissions: {
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_SPONSORSHIP_MANAGE]
             },
             typeConfig: {
-                options: [],
-                placeholder: 'Selecciona un patrocinio'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         }
     ]

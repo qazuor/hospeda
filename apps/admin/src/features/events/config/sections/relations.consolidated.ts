@@ -16,39 +16,42 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
         edit: [PermissionEnum.EVENT_UPDATE]
     },
     fields: [
-        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build EventLocationSelectField + switch
-        // FieldTypeEnum.SELECT here for the proper async-loaded entity select.
         {
             id: 'locationId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.EVENT_LOCATION_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Ubicación',
             description: 'Lugar donde se realiza el evento',
+            placeholder: 'Selecciona una ubicación',
             permissions: {
                 view: [PermissionEnum.EVENT_VIEW_ALL],
                 edit: [PermissionEnum.EVENT_LOCATION_UPDATE]
             },
             typeConfig: {
-                options: [],
-                placeholder: 'Selecciona una ubicación'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
-        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build EventOrganizerSelectField.
         {
             id: 'organizerId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.EVENT_ORGANIZER_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Organizador',
             description: 'Organizador responsable del evento',
+            placeholder: 'Selecciona un organizador',
             permissions: {
                 view: [PermissionEnum.EVENT_VIEW_ALL],
                 edit: [PermissionEnum.EVENT_ORGANIZER_MANAGE]
             },
             typeConfig: {
-                options: [],
-                placeholder: 'Selecciona un organizador'
+                searchMode: 'server',
+                minCharToSearch: 2,
+                searchDebounce: 300,
+                clearable: true
             }
         },
         {
