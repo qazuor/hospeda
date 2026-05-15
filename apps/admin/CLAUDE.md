@@ -569,6 +569,37 @@ export function Button({ variant, size, className, ...props }) {
 - `@radix-ui/*` - Unstyled UI primitives
 - `tailwindcss` - Utility-first CSS
 
+## Common Gotchas
+
+### Accepted dev-only console noise
+
+The following warnings appear on every `pnpm dev` startup or page load and are **not defects** — they are upstream third-party recommendations / dev tooling artifacts that do not affect functionality. Do NOT spend time fixing them under this app (SPEC-117 CE-6, CE-8).
+
+- `vite-tsconfig-paths` plugin recommends removal in favor of Vite native support. Out of scope.
+- `optimizeDeps.rollupOptions` deprecation hint suggesting `optimizeDeps.rolldownOptions`. Out of scope.
+- `@vitejs/plugin-react` recommends switching to `@vitejs/plugin-react-oxc`. Out of scope.
+- `Open TanStack Devtools` floating button visible at the bottom-left of every page in dev. Cosmetic only — the button is gated by `env.NODE_ENV === 'development'` and never reaches production builds. Document, do not fix.
+
+### Vite + `@repo/i18n` SSR cache (hard reload required after JSON edits)
+
+When you edit any `packages/i18n/src/locales/<locale>/<namespace>.json`, the running TanStack Start SSR Node process keeps the **old** flattened `trans` map in memory — HMR only refreshes CSS / TS modules, not JSON imports baked into pre-bundled deps. Symptom: pages render `[MISSING: <key>]` even though the JSON on disk has the new key.
+
+Reliable recovery:
+
+```bash
+# In the terminal running `pnpm dev`:
+# Ctrl+C — NOT Ctrl+R / HMR
+lsof -i :3000   # must be empty before continuing
+rm -rf apps/admin/node_modules/.vite
+pnpm dev
+```
+
+A simple page reload in the browser is not enough; the process itself must restart so the i18n imports re-execute against the new JSON content.
+
+### Feedback FAB position is overridden in `styles.css`
+
+The `@repo/feedback` package raises the FAB to `bottom: 5.5rem` on mobile so it clears `apps/web`'s sticky controls + cookie banner. Admin has neither, so the default left the FAB floating mid-screen on mobile and overlapping textareas on desktop. The admin `apps/admin/src/styles.css` re-anchors the FAB (and its collapsed `minimizedDot` state) to a plain `bottom-right` offset on both viewports (SPEC-117 V-2 / V-4). If you change FAB positioning, do it there — do not edit the package CSS.
+
 ## Best Practices
 
 1. **Use nested folder routing** - `entity/index.tsx`, `entity/$id.tsx`, NOT flat `entity.tsx`, `entity.$id.tsx`
