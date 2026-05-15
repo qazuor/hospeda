@@ -1,6 +1,8 @@
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
-import { createElement } from 'react';
+import { EditIcon } from '@repo/icons';
+import { Link } from '@tanstack/react-router';
+import { Fragment, createElement } from 'react';
 import { ImpersonateButton } from '../components/ImpersonateButton';
 import type { User } from '../schemas/users.schemas';
 
@@ -223,6 +225,24 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: false,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) =>
-            createElement(ImpersonateButton, { userId: row.id, variant: 'icon' })
+            // SPEC-117 D-USERS.2 — add Edit row action alongside Impersonate.
+            // Cast bypasses TanStack Router's strict path-param overload typing;
+            // route is known to exist (apps/admin/src/routes/_authed/access/users/$id_.edit.tsx).
+            createElement(
+                Fragment,
+                null,
+                createElement(
+                    Link,
+                    {
+                        to: '/access/users/$id/edit' as never,
+                        params: { id: row.id } as never,
+                        className:
+                            'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+                        'aria-label': t('admin-entities.actions.edit')
+                    } as never,
+                    createElement(EditIcon, { size: 16 })
+                ),
+                createElement(ImpersonateButton, { userId: row.id, variant: 'icon' })
+            )
     }
 ];
