@@ -66,6 +66,12 @@ interface UserOption {
     email?: string;
 }
 
+interface LevelOption {
+    id: string;
+    name: string;
+    targetType: 'event' | 'post';
+}
+
 export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshipDialogProps) {
     const { addToast } = useToast();
     const mutation = useCreateSponsorshipMutation();
@@ -91,6 +97,27 @@ export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshi
 
     const userLabel = (u: UserOption) =>
         u.displayName || [u.firstName ?? '', u.lastName ?? ''].join(' ').trim() || u.email || u.id;
+
+    // Levels are filtered client-side by targetType so the admin cannot pair an
+    // EVENT level with a POST sponsorship (server-side guard exists too).
+    const levelsQuery = useQuery({
+        queryKey: ['sponsorship-dialog-levels'],
+        queryFn: async () => {
+            const r = await fetchApi<{
+                success: boolean;
+                data: { items: LevelOption[] };
+            }>({
+                path: '/api/v1/admin/sponsorship-levels?pageSize=100'
+            });
+            return r.data.data?.items ?? [];
+        },
+        enabled: open,
+        staleTime: 60_000
+    });
+
+    const filteredLevels = (levelsQuery.data ?? []).filter(
+        (l) => l.targetType === values.targetType
+    );
 
     const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
         setValues((prev) => ({ ...prev, [key]: value }));
@@ -124,12 +151,10 @@ export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshi
             levelId: values.levelId,
             targetType: values.targetType,
             targetId: values.targetId.trim(),
-            startsAt: new Date(values.startsAt).toISOString(),
-            // DB requires NOT NULL slug; the service doesn't auto-generate one
-            // (SPEC-117 follow-up). Generate a stable slug here as a safe default.
-            slug: values.slug.trim() || `sp-${Date.now().toString(36)}`
+            startsAt: new Date(values.startsAt).toISOString()
         };
         if (values.endsAt) payload.endsAt = new Date(values.endsAt).toISOString();
+        if (values.slug.trim()) payload.slug = values.slug.trim();
         if (values.linkUrl.trim()) payload.linkUrl = values.linkUrl.trim();
 
         try {
@@ -203,15 +228,33 @@ export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshi
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="cs-level">Nivel* (UUID)</Label>
-                        {/* SPEC-117 D-SPONSORSHIP.1 follow-up: no admin GET endpoint
-                            for /sponsorship-levels — once added, swap input for a Select. */}
-                        <Input
-                            id="cs-level"
+                        <Label htmlFor="cs-level">Nivel*</Label>
+                        <Select
                             value={values.levelId}
-                            onChange={(e) => setField('levelId', e.target.value)}
-                            placeholder="UUID del nivel"
-                        />
+                            onValueChange={(v) => setField('levelId', v)}
+                        >
+                            <SelectTrigger id="cs-level">
+                                <SelectValue
+                                    placeholder={
+                                        levelsQuery.isLoading
+                                            ? 'Cargando niveles...'
+                                            : filteredLevels.length === 0
+                                              ? `Sin niveles para ${values.targetType === 'event' ? 'eventos' : 'posts'}`
+                                              : 'Seleccioná un nivel'
+                                    }
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {filteredLevels.map((l) => (
+                                    <SelectItem
+                                        key={l.id}
+                                        value={l.id}
+                                    >
+                                        {l.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {errors.levelId && (
                             <p className="text-destructive text-sm">{errors.levelId}</p>
                         )}
@@ -222,7 +265,21 @@ export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshi
                             <Label htmlFor="cs-target-type">Tipo de contenido*</Label>
                             <Select
                                 value={values.targetType}
-                                onValueChange={(v) => setField('targetType', v as 'event' | 'post')}
+                                onValueChange={(v) => {
+                                    const next = v as 'event' | 'post';
+                                    // Reset levelId if it no longer matches the new targetType.
+                                    setValues((prev) => ({
+                                        ...prev,
+                                        targetType: next,
+                                        levelId: ''
+                                    }));
+                                    setErrors((prev) => {
+                                        const cleared = { ...prev };
+                                        cleared.targetType = undefined as never;
+                                        cleared.levelId = undefined as never;
+                                        return cleared;
+                                    });
+                                }}
                             >
                                 <SelectTrigger id="cs-target-type">
                                     <SelectValue />
