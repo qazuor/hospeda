@@ -37,6 +37,7 @@ import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { promoCodesRouter } from './promo-codes';
+import { startPaidRouter } from './start-paid';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
@@ -192,11 +193,14 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // is no conflict between the two routers.
     router.route('/subscriptions', subscriptionStatusRouter);
 
+    // Mount custom start-paid subscription route (SPEC-126 D1).
+    router.route('/subscriptions', startPaidRouter);
+
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, and usage routes'
     );
 
     return router;
