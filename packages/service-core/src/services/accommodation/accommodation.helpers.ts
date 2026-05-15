@@ -22,6 +22,8 @@ export function flattenAccommodationJoinRelations<T extends Accommodation | null
 ): T {
     if (!entity) return entity;
     const flattenJoin = <K extends string>(field: K, nestedKey: K) => {
+        // TYPE-WORKAROUND: Drizzle's `with`-clause join shape is opaque to TypeScript; the entity
+        // is treated as a generic record so we can read the join column by computed key name.
         const raw = (entity as unknown as Record<string, unknown>)[field];
         if (!Array.isArray(raw)) return;
         const flat = raw
@@ -33,6 +35,8 @@ export function flattenAccommodationJoinRelations<T extends Accommodation | null
                 return row ?? null;
             })
             .filter((item: unknown) => item !== null && item !== undefined);
+        // TYPE-WORKAROUND: same generic-record cast as above to write the flattened relation back
+        // into the entity at the same computed key, preserving the Accommodation reference identity.
         (entity as unknown as Record<string, unknown>)[field] = flat;
     };
     flattenJoin('amenities', 'amenity');
