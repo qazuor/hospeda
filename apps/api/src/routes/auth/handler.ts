@@ -574,28 +574,28 @@ export function extractOAuthErrorFromCallback({
 }
 
 /**
- * Catch-all handler that delegates to Better Auth and observes OAuth failures.
- * MUST come AFTER all specific route handlers above.
+ * Observes OAuth callback failures: emits a Sentry event when Better Auth's
+ * response is a 302 to `errorCallbackURL` carrying `?error=<code>`, and
+ * idempotently rewrites the `Location` header to inject `&provider=<name>`
+ * so the web app can render a provider-aware banner.
  *
- * For OAuth callback paths (`/callback/<provider>`) where Better Auth emits a
- * 302 to the `errorCallbackURL` carrying `?error=<code>`, this wrapper:
- *   1. Captures a Sentry event tagged with `provider` + `error_code` (level
- *      `warning` for user-cancel, `error` for provider/system failures).
- *   2. Rewrites the `Location` header to append `&provider=<name>` so the web
- *      app can render a provider-aware banner without parsing the callback URL.
- *
- * Non-OAuth-error responses pass through unchanged.
+ * Pure function over (request URL, user-agent, response) — no Hono dependency,
+ * so it can be unit-tested without spinning up the whole app. Returns the
+ * original response unchanged for the happy path (non-OAuth-error, non-302,
+ * non-callback path) — zero overhead in those cases.
  *
  * @see SPEC-120
  */
-app.on(['GET', 'POST'], '/*', async (c) => {
-    const auth = getAuth();
-    const response = await auth.handler(c.req.raw);
-
-    const oauthError = extractOAuthErrorFromCallback({
-        requestUrl: new URL(c.req.url),
-        response
-    });
+export function maybeObserveOAuthFailure({
+    requestUrl,
+    userAgent,
+    response
+}: {
+    readonly requestUrl: URL;
+    readonly userAgent: string | undefined;
+    readonly response: Response;
+}): Response {
+    const oauthError = extractOAuthErrorFromCallback({ requestUrl, response });
 
     if (!oauthError) {
         return response;
@@ -629,7 +629,7 @@ app.on(['GET', 'POST'], '/*', async (c) => {
             redirect_query: redirectQuery,
             redirect_location: locationUrl.toString(),
             request_id: response.headers.get('x-request-id') ?? undefined,
-            user_agent: c.req.header('user-agent')
+            user_agent: userAgent
         }
     });
 
@@ -648,6 +648,22 @@ app.on(['GET', 'POST'], '/*', async (c) => {
         status: response.status,
         statusText: response.statusText,
         headers: newHeaders
+    });
+}
+
+/**
+ * Catch-all handler that delegates to Better Auth and observes OAuth failures.
+ * MUST come AFTER all specific route handlers above.
+ *
+ * @see {@link maybeObserveOAuthFailure} for the observation logic.
+ */
+app.on(['GET', 'POST'], '/*', async (c) => {
+    const auth = getAuth();
+    const response = await auth.handler(c.req.raw);
+    return maybeObserveOAuthFailure({
+        requestUrl: new URL(c.req.url),
+        userAgent: c.req.header('user-agent'),
+        response
     });
 });
 
