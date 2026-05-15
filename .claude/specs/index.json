@@ -73,9 +73,7 @@
             "completedAt": "2026-04-29T18:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T18:45:00.000Z",
-            "absorbs": [
-                "SPEC-075"
-            ]
+            "absorbs": ["SPEC-075"]
         },
         {
             "specId": "SPEC-024",
@@ -122,10 +120,7 @@
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
             "archived": false,
-            "dependsOn": [
-                "SPEC-042",
-                "SPEC-045"
-            ]
+            "dependsOn": ["SPEC-042", "SPEC-045"]
         },
         {
             "specId": "SPEC-061",
@@ -187,9 +182,7 @@
             "completed": "2026-05-14T00:00:00Z",
             "completionRef": "94/99 closed. 5 operational items (MP secrets + nightly re-enable + flake measurement) carved out to SPEC-121.",
             "archived": true,
-            "dependsOn": [
-                "SPEC-085"
-            ],
+            "dependsOn": ["SPEC-085"],
             "atomizedAt": "2026-04-30T00:00:00.000Z",
             "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG.",
             "archivedAt": "2026-05-14T00:00:00Z",
@@ -214,10 +207,7 @@
             "priority": "P2",
             "created": "2026-04-27T00:00:00.000Z",
             "archived": true,
-            "tags": [
-                "deferred-post-beta",
-                "superseded-by-SPEC-092"
-            ],
+            "tags": ["deferred-post-beta", "superseded-by-SPEC-092"],
             "archiveNote": "Premise invalidated by SPEC-092 refactor (PropertyForm.client.tsx removed, replaced by CreatePropertyMiniForm which delegates amenity assignment to admin panel). Re-evaluate post-beta if a real gap surfaces."
         },
         {
@@ -744,9 +734,7 @@
             "created": "2026-05-11T00:00:00.000Z",
             "completed": "2026-05-14T00:00:00.000Z",
             "archived": true,
-            "dependencies": [
-                "chore/vps-migration merged to main"
-            ],
+            "dependencies": ["chore/vps-migration merged to main"],
             "completedNote": "Merged to staging in PR #1061 (2026-05-14) at 60/60 tasks. Post-merge fixes shipped: PR #1066 (Brevo webhook validation), PR #1068 (Redis maxRetriesPerRequest). Follow-ups tracked in SPEC-108.",
             "archivedAt": "2026-05-14T00:00:00Z",
             "archiveNote": "Newsletter MVP (email-only) completed 2026-05-14 via PR #1061 and follow-ups. Spec docs and task state removed; git history + engram are source of truth."
@@ -819,6 +807,17 @@
             "archived": true,
             "archivedAt": "2026-05-14T00:00:00Z",
             "archiveNote": "Newsletter MVP post-merge follow-ups completed 2026-05-14. Spec docs removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-109",
+            "title": "MercadoPago Production Readiness — full toggle, code hardening, homologation",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-109-mercadopago-production-readiness",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-109-mp-production",
+            "branch": "spec/SPEC-109-mercadopago-production-readiness",
+            "startedAt": "2026-05-15T00:00:00Z"
         },
         {
             "specId": "SPEC-114",
@@ -916,9 +915,7 @@
             "path": "SPEC-121-e2e-mp-secrets-and-nightly-reactivation",
             "created": "2026-05-14T00:00:00Z",
             "extractedFrom": "SPEC-092",
-            "dependsOn": [
-                "SPEC-103"
-            ],
+            "dependsOn": ["SPEC-103"],
             "firstAllocatedViaEngramProtocol": true
         }
     ]
