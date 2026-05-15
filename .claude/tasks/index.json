@@ -213,18 +213,22 @@
         {
             "specId": "SPEC-060-gaps",
             "title": "SPEC-060 Gap Remediation — All 56 Gaps",
-            "status": "in-progress",
-            "progress": "5/58",
+            "status": "completed",
+            "progress": "58/58",
             "path": "SPEC-060-gaps",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commits 9d81f1a87 + daa7c57f7) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-059",
             "title": "Service-Layer Transaction Support & Concurrency Safety",
-            "status": "in-progress",
-            "progress": "7/32",
+            "status": "completed",
+            "progress": "32/32",
             "path": "SPEC-059-service-layer-transaction-support",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commit d5f08de3a + aabd94a99) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-068",
