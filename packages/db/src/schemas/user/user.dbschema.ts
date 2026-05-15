@@ -110,6 +110,20 @@ export const users = pgTable(
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
+        /**
+         * SPEC-113: Whether the user has completed the post-signup profile
+         * completion form. New users default to FALSE and are funneled into
+         * `/[lang]/mi-cuenta/completar-perfil/` by middleware until they
+         * submit. Admin/SuperAdmin roles bypass the check (see spec §3.5).
+         */
+        profileCompleted: boolean('profile_completed').notNull().default(false),
+        /**
+         * SPEC-113 §3.6: One-shot flag tracking whether an OAuth-only user
+         * has been prompted to set a password. Flips TRUE when the user
+         * either submits the set-password form OR skips it. Backfilled to
+         * TRUE for any user that already has a `credential` account row.
+         */
+        setPasswordPrompted: boolean('set_password_prompted').notNull().default(false),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references((): AnyPgColumn => users.id, {

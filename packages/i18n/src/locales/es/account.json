@@ -394,5 +394,66 @@
         "confirmCancelTitle": "¿Cancelar suscripción?",
         "confirmCancelYes": "Sí, cancelar",
         "confirmCancelNo": "No, quedarme"
+    },
+    "profileCompletion": {
+        "pageTitle": "Completá tu perfil",
+        "pageDescription": "Completá tu información para empezar a usar Hospeda",
+        "heading": "¡Bienvenido a Hospeda!",
+        "subheading": "Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.",
+        "fields": {
+            "displayName": "Nombre completo",
+            "displayNamePlaceholder": "Tu nombre y apellido",
+            "displayNameHint": "Mínimo 2 caracteres.",
+            "firstName": "¿Cómo querés que te llamemos?",
+            "firstNamePlaceholder": "Tu apodo o nombre de pila",
+            "firstNameHint": "Opcional. Por defecto usamos tu primer nombre.",
+            "phone": "Teléfono",
+            "phonePlaceholder": "+54 9 11 1234-5678",
+            "phoneHint": "Opcional. Incluí el código de país.",
+            "locale": "Idioma preferido",
+            "localeEs": "Español",
+            "localeEn": "English",
+            "localePt": "Português",
+            "newsletter": "Quiero recibir novedades y promociones por email",
+            "terms": "Acepto los",
+            "termsLink": "términos y condiciones",
+            "termsRequired": "Tenés que aceptar los términos para continuar."
+        },
+        "submit": "Completar perfil",
+        "submitting": "Guardando...",
+        "errors": {
+            "displayNameRequired": "El nombre completo es obligatorio.",
+            "displayNameMin": "El nombre debe tener al menos 2 caracteres.",
+            "displayNameMax": "El nombre no puede superar los 50 caracteres.",
+            "phoneFormat": "Ingresá un número de teléfono válido con código de país.",
+            "termsRequired": "Tenés que aceptar los términos para continuar.",
+            "submitFailed": "No se pudo completar el perfil. Intentá nuevamente."
+        }
+    },
+    "setPassword": {
+        "pageTitle": "Agregar contraseña",
+        "pageDescription": "Agregá una contraseña para iniciar sesión con email",
+        "heading": "Agregá una contraseña",
+        "contextGoogle": "Te registraste con Google. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
+        "contextFacebook": "Te registraste con Facebook. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
+        "contextOAuth": "Te registraste con una cuenta social. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
+        "fields": {
+            "password": "Contraseña",
+            "passwordPlaceholder": "Mínimo 8 caracteres",
+            "passwordHint": "Mínimo 8 caracteres."
+        },
+        "submit": "Establecer contraseña",
+        "submitting": "Guardando...",
+        "skip": "Saltar por ahora",
+        "skipModalTitle": "¿Saltar por ahora?",
+        "skipModalBody": "Vas a poder establecerla más tarde desde tu perfil. ¿Continuar?",
+        "skipModalConfirm": "Sí, saltar",
+        "skipModalCancel": "Cancelar",
+        "successToast": "Contraseña establecida correctamente",
+        "errors": {
+            "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
+            "submitFailed": "No se pudo establecer la contraseña. Intentá nuevamente.",
+            "skipFailed": "No se pudo saltar el paso. Intentá nuevamente."
+        }
     }
 }

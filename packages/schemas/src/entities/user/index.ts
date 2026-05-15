@@ -28,3 +28,6 @@ export * from './user.settings.schema.js';
 
 // Access level schemas (public, protected, admin)
 export * from './user.access.schema.js';
+
+// Profile completion flow schemas (SPEC-113)
+export * from './user.profile-completion.schema.js';
