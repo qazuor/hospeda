@@ -3,8 +3,11 @@ spec-id: SPEC-120
 title: OAuth Cancel/Error Observability — UI Feedback and Sentry Capture
 type: feature
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-05-14T10:00:00Z
+started: 2026-05-15T00:00:00Z
+worktree: hospeda-spec-120-oauth-cancel-observability
+branch: spec/SPEC-120-oauth-cancel-observability
 renumbered_from: SPEC-117
 renumbered_reason: collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)
 effort_estimate_hours: 4-7

@@ -838,10 +838,13 @@
             "title": "OAuth Cancel/Error Observability — UI Feedback and Sentry Capture",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-120-oauth-cancel-observability",
             "renumberedFrom": "SPEC-117",
-            "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)"
+            "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-120-oauth-cancel-observability",
+            "branch": "spec/SPEC-120-oauth-cancel-observability",
+            "startedAt": "2026-05-15T00:00:00Z"
         },
         {
             "specId": "SPEC-115",
