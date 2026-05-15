@@ -169,6 +169,21 @@ export function createPromoCodeStorage(): QZPayPromoCodeStorage {
             await billingFetch(`/api/v1/protected/billing/promo-codes/${id}/redeem`, 'POST');
         },
 
+        /**
+         * NOTE: this HTTP adapter is the admin client. It does not have
+         * direct DB access and cannot enforce the atomic increment-with-limit
+         * check on its own. The admin path never actually consumes promo
+         * redemptions in production (that happens server-side from
+         * checkout/subscription flows, which use the drizzle storage adapter
+         * where atomicity is real). This implementation exists only to satisfy
+         * the `QZPayPromoCodeStorage` interface contract introduced in
+         * SPEC-123; calling it from admin should be considered a bug.
+         */
+        atomicIncrementRedemptions: async (id: string) => {
+            await billingFetch(`/api/v1/protected/billing/promo-codes/${id}/redeem`, 'POST');
+            return billingFetch<QZPayPromoCode>(`/api/v1/protected/billing/promo-codes/${id}`);
+        },
+
         list: async (options?: QZPayListOptions) => {
             const params = new URLSearchParams();
             if (options?.limit) params.append('limit', options.limit.toString());
