@@ -369,7 +369,7 @@ export async function createAddonCheckout(
                     },
                     auto_return: 'approved',
                     notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
-                    statement_descriptor: 'HOSPEDA',
+                    statement_descriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
                     expires: true,
                     expiration_date_from: new Date().toISOString(),
                     expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()

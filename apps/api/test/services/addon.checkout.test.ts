@@ -198,12 +198,14 @@ vi.mock('node:crypto', async () => {
 });
 
 // SPEC-109 Phase 1: env values consumed by createAddonCheckout for the MP call,
-// the checkout return URLs and the webhook notification URL.
+// the checkout return URLs, the webhook notification URL, and the statement
+// descriptor shown on the cardholder's bank statement.
 vi.mock('../../src/utils/env', () => ({
     env: {
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
         HOSPEDA_SITE_URL: 'https://hospeda.test',
-        HOSPEDA_API_URL: 'https://api.hospeda.test'
+        HOSPEDA_API_URL: 'https://api.hospeda.test',
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA'
     }
 }));
 
@@ -1022,6 +1024,18 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             const arg = getCreatedPreferenceArg();
             const refSuffix = arg.body.external_reference.replace(/^addon_extra-photos-20_/, '');
             expect(refSuffix).toBe(arg.requestOptions?.idempotencyKey);
+        });
+
+        it('uses the env-configured statement_descriptor (gap #7)', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            // The mocked env returns 'HOSPEDA' — the production default. If this
+            // changes via env override, the value on the bank statement updates
+            // without a code deploy.
+            expect(body.statement_descriptor).toBe('HOSPEDA');
         });
 
         it('generates a fresh UUID on each call (no shared state across checkouts)', async () => {

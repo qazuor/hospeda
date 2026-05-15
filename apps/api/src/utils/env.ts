@@ -350,6 +350,22 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .optional()
         .transform((v) => v !== 'false'),
+    /**
+     * Statement descriptor that appears on the cardholder's bank statement
+     * after a MercadoPago payment. MP rejects descriptors longer than 11
+     * characters and recommends uppercase ASCII (letters, digits, spaces) so
+     * the value renders consistently across issuers.
+     *
+     * Validated at startup. Tunable via env so the value can be adjusted
+     * during MP homologation without a code deploy.
+     */
+    HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: z
+        .string()
+        .regex(
+            /^[A-Z0-9 ]{1,11}$/,
+            'Statement descriptor must be 1-11 ASCII uppercase letters, digits or spaces'
+        )
+        .default('HOSPEDA'),
 
     /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the
