@@ -1043,7 +1043,39 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda2-spec-111-astro-server-islands-fix",
             "branch": "spec/SPEC-111-astro-server-islands-fix",
             "backfilledNote": "Orphan registration — spec dir existed since 2026-05-14 with status=draft, never recorded in index. Registered + flipped to in-progress on session start 2026-05-15.",
-            "tags": ["astro", "web", "server-islands", "build", "runtime", "investigation", "upstream-bug"]
+            "tags": [
+                "astro",
+                "web",
+                "server-islands",
+                "build",
+                "runtime",
+                "investigation",
+                "upstream-bug"
+            ]
+        },
+        {
+            "specId": "SPEC-130",
+            "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+            "type": "cleanup",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-130-deprecate-vercel-env-stubs",
+            "created": "2026-05-15T17:50:00Z",
+            "discoveredDuring": "SPEC-111 worktree setup (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["cleanup", "scripts", "env", "vercel", "deprecation", "monorepo"]
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+            "type": "fix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests",
+            "created": "2026-05-15T18:30:00Z",
+            "discoveredDuring": "SPEC-111 T-111-04 validation (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"]
         }
     ]
 }
