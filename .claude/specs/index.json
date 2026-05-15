@@ -4,11 +4,13 @@
         {
             "specId": "SPEC-059",
             "title": "Service-Layer Transaction Support & Concurrency Safety",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-059-service-layer-transaction-support",
             "created": "2026-04-13T00:00:00.000Z",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Closed at 32/32 (commit d5f08de3a). Spec docs removed in archive commit aabd94a99; index status field never flipped — drift fixed 2026-05-14."
         },
         {
             "specId": "SPEC-081",
@@ -172,11 +174,13 @@
         {
             "specId": "SPEC-092",
             "title": "End-to-End Test Suite for Pre-Beta Validation",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-092-e2e-test-suite",
             "priority": "P0",
             "created": "2026-04-26T00:00:00.000Z",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "94/99 closed. 5 operational items (MP secrets + nightly re-enable + flake measurement) carved out to SPEC-121.",
             "archived": false,
             "dependsOn": ["SPEC-085"],
             "atomizedAt": "2026-04-30T00:00:00.000Z",
@@ -805,12 +809,46 @@
             "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)"
         },
         {
+            "specId": "SPEC-115",
+            "title": "Brevo Webhook Endpoint Returns 404 — Configure or Implement",
+            "type": "fix",
+            "complexity": "low",
+            "status": "completed",
+            "path": "SPEC-115-brevo-webhook-endpoint-404",
+            "created": "2026-05-14T08:30:00Z",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commits 794d0b31f + b2d8d15c6 + d474760a8 (PR #1091) — fix(api): Brevo webhook URL-secret auth pattern"
+        },
+        {
+            "specId": "SPEC-116",
+            "title": "Billing Middleware Runs on Healthcheck Path — Skip Unnecessary Work",
+            "type": "fix",
+            "complexity": "low",
+            "status": "completed",
+            "path": "SPEC-116-billing-middleware-on-healthcheck",
+            "created": "2026-05-14T08:30:00Z",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commit 5680a9d32 — fix(api): skip billing customer lookup for guest actors (SPEC-116)"
+        },
+        {
+            "specId": "SPEC-117",
+            "title": "Admin Pages Stabilization",
+            "type": "fix",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-117-admin-pages-stabilization",
+            "created": "2026-05-14T10:00:00Z",
+            "notes": "Active in worktree fix/admin-pages-audit. Phase 0/1/2 closed; Phase 4 i18n 2/5 (T-012, T-013 done; T-014/T-015/T-016 pending). Another agent is working on this branch."
+        },
+        {
             "specId": "SPEC-118",
             "title": "Reset-Password Page Validates Token at Load — UX Hardening",
             "type": "fix",
             "complexity": "low",
-            "status": "draft",
-            "path": "SPEC-118-reset-password-token-validation"
+            "status": "completed",
+            "path": "SPEC-118-reset-password-token-validation",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commit dc5bc86de (PR #1098) — feat(auth): validate reset-password token at page load"
         },
         {
             "archived": false,
@@ -818,8 +856,22 @@
             "created": "2026-05-14",
             "path": "SPEC-119-accommodation-example-seeds-realism",
             "specId": "SPEC-119",
-            "status": "approved",
+            "status": "completed",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "PR #1093 — feat(seed): SPEC-119 accommodation example seeds realism (5 commits)",
             "title": "Accommodation Example Seeds Realism"
+        },
+        {
+            "specId": "SPEC-121",
+            "title": "E2E MercadoPago Secrets Bootstrap and Nightly Suite Reactivation",
+            "type": "ops",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-121-e2e-mp-secrets-and-nightly-reactivation",
+            "created": "2026-05-14T00:00:00Z",
+            "extractedFrom": "SPEC-092",
+            "dependsOn": ["SPEC-103"],
+            "firstAllocatedViaEngramProtocol": true
         }
     ]
 }
