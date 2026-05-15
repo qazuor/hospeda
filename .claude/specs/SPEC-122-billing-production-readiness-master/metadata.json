@@ -1,0 +1,24 @@
+{
+    "specId": "SPEC-122",
+    "title": "Production-Ready Billing — Master Plan",
+    "type": "epic",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "mercadopago",
+        "qzpay",
+        "subscriptions",
+        "preapproval",
+        "addons",
+        "promo-codes",
+        "master-plan"
+    ],
+    "children": ["SPEC-123", "SPEC-124", "SPEC-125", "SPEC-126", "SPEC-127", "SPEC-128"],
+    "dependsOn": ["SPEC-109"],
+    "firstAllocatedViaEngramProtocol": true
+}
