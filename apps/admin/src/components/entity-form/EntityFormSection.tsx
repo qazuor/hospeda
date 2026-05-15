@@ -126,15 +126,23 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
         // Dynamic import of field components based on type
         const renderField = (field: SectionConfig['fields'][0]) => {
-            // Support nested field access (e.g., 'contactInfo.personalEmail')
+            // Support both flat and nested storage for dotted field ids.
+            // Flat is the canonical write path (EntityCreateContent stores values
+            // by dotted key, e.g. values["location.country"]); nested is the
+            // fallback for hosts that keep a nested object tree (TanStack Form in
+            // EntityEditContent, where values.location.country is the live value).
             // biome-ignore lint/suspicious/noExplicitAny: Dynamic nested object access
             const getNestedValue = (obj: any, path: string): any => {
                 return path.split('.').reduce((current, key) => current?.[key], obj);
             };
 
-            const rawFieldValue = field.id.includes('.')
-                ? getNestedValue(values, field.id)
-                : values[field.id];
+            const readValue = (source: Record<string, unknown>, id: string): unknown => {
+                if (!id.includes('.')) return source[id];
+                if (id in source) return source[id];
+                return getNestedValue(source, id);
+            };
+
+            const rawFieldValue = readValue(values, field.id);
 
             // Coalesce null to empty string for text-based fields to avoid React warning:
             // "value prop on input should not be null"
@@ -151,9 +159,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             const fieldValue =
                 rawFieldValue === null && textFieldTypes.has(field.type) ? '' : rawFieldValue;
 
-            const fieldError = field.id.includes('.')
-                ? getNestedValue(errors, field.id)
-                : errors[field.id];
+            const fieldError = readValue(errors, field.id) as string | undefined;
             const hasError = Boolean(fieldError);
 
             // Field props for dynamic field component loading
