@@ -182,6 +182,21 @@ vi.mock('mercadopago', () => ({
     }))
 }));
 
+// SPEC-109 Phase 1: deterministic UUID for external_reference / idempotency key
+// assertions. The default returns a stable value; individual tests can override
+// via `mockRandomUUID.mockReturnValueOnce(...)`.
+const { mockRandomUUID } = vi.hoisted(() => ({
+    mockRandomUUID: vi.fn<() => string>(() => '11111111-2222-3333-4444-555555555555')
+}));
+
+vi.mock('node:crypto', async () => {
+    const actual = await vi.importActual<typeof import('node:crypto')>('node:crypto');
+    return {
+        ...actual,
+        randomUUID: mockRandomUUID
+    };
+});
+
 // SPEC-109 Phase 1: env values consumed by createAddonCheckout for the MP call,
 // the checkout return URLs and the webhook notification URL.
 vi.mock('../../src/utils/env', () => ({
@@ -786,6 +801,8 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             init_point: 'https://www.mercadopago.com.ar/checkout/test',
             sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/test'
         });
+        // Restore the default deterministic UUID after clearAllMocks.
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
     });
 
     afterEach(() => {
@@ -808,16 +825,29 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
         readonly statement_descriptor: string;
     }
 
+    /** Top-level shape of the argument forwarded to `Preference.create()`. */
+    interface AssertableCreateArg {
+        readonly body: AssertablePreferenceBody;
+        readonly requestOptions?: { readonly idempotencyKey?: string };
+    }
+
     /**
-     * Reads the preference body that the SDK was called with so individual
-     * tests can assert on `payer`, `items[].category_id`, etc.
+     * Reads the full argument that the SDK was called with (body +
+     * requestOptions). Individual tests assert on the sub-field they care
+     * about.
+     */
+    function getCreatedPreferenceArg(callIndex = 0): AssertableCreateArg {
+        expect(mockPreferenceCreate.mock.calls.length).toBeGreaterThan(callIndex);
+        return mockPreferenceCreate.mock.calls[callIndex]?.[0] as AssertableCreateArg;
+    }
+
+    /**
+     * Reads only the preference body that the SDK was called with so
+     * individual tests can assert on `payer`, `items[].category_id`, etc.
      */
     function getCreatedPreferenceBody(): AssertablePreferenceBody {
         expect(mockPreferenceCreate).toHaveBeenCalledOnce();
-        const arg = mockPreferenceCreate.mock.calls[0]?.[0] as {
-            body: AssertablePreferenceBody;
-        };
-        return arg.body;
+        return getCreatedPreferenceArg().body;
     }
 
     describe('payer fields (gaps #1, #2, #3)', () => {
@@ -934,6 +964,87 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             const body = getCreatedPreferenceBody();
             expect(body.items).toHaveLength(1);
             expect(body.items[0]?.category_id).toBe('services');
+        });
+    });
+
+    describe('UUID external_reference + X-Idempotency-Key (gaps #5, #6)', () => {
+        const customer = {
+            id: 'cust_abc',
+            email: 'guest@example.com',
+            metadata: { name: 'Juan Perez' }
+        };
+
+        it('embeds the generated UUID into external_reference with the addon_<slug>_ prefix', async () => {
+            mockRandomUUID.mockReturnValue('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(true);
+            const body = getCreatedPreferenceBody();
+            expect(body.external_reference).toBe(
+                'addon_extra-photos-20_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+            );
+        });
+
+        it('does NOT use Date.now() in external_reference (no all-digits suffix)', async () => {
+            // Regression guard for SPEC-109 gap #5. Date.now() returns a 13-digit
+            // integer; randomUUID() returns a 36-char hex+dash string. If the code
+            // ever reverts to Date.now() this assertion catches it.
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            const suffix = body.external_reference.replace(/^addon_extra-photos-20_/, '');
+            expect(suffix).not.toMatch(/^\d+$/);
+            expect(suffix).toMatch(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+            );
+        });
+
+        it('forwards the same UUID as the MP X-Idempotency-Key', async () => {
+            mockRandomUUID.mockReturnValue('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const arg = getCreatedPreferenceArg();
+            expect(arg.requestOptions?.idempotencyKey).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+        });
+
+        it('uses the SAME UUID for external_reference and idempotencyKey', async () => {
+            mockRandomUUID.mockReturnValue('99999999-8888-7777-6666-555555555555');
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const arg = getCreatedPreferenceArg();
+            const refSuffix = arg.body.external_reference.replace(/^addon_extra-photos-20_/, '');
+            expect(refSuffix).toBe(arg.requestOptions?.idempotencyKey);
+        });
+
+        it('generates a fresh UUID on each call (no shared state across checkouts)', async () => {
+            mockRandomUUID
+                .mockReturnValueOnce('first-uuid-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+                .mockReturnValueOnce('second-uuid-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+            await createAddonCheckout(billing, defaultInput);
+
+            const first = getCreatedPreferenceArg(0);
+            const second = getCreatedPreferenceArg(1);
+
+            expect(first.requestOptions?.idempotencyKey).toBe(
+                'first-uuid-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            );
+            expect(second.requestOptions?.idempotencyKey).toBe(
+                'second-uuid-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+            );
+            expect(first.requestOptions?.idempotencyKey).not.toBe(
+                second.requestOptions?.idempotencyKey
+            );
         });
     });
 });

@@ -7,6 +7,7 @@
  * @module services/addon.checkout
  */
 
+import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
@@ -36,20 +37,35 @@ import { PromoCodeService } from './promo-code.service';
  * This is a thin wrapper that centralizes raw SDK usage to a single place,
  * making future migration to the billing adapter straightforward.
  *
+ * The `idempotencyKey` is forwarded to MercadoPago via the `X-Idempotency-Key`
+ * header. MP guarantees that two calls made with the same key (within their
+ * dedup window) return the same preference, which makes retries safe and
+ * prevents duplicate preferences from double-clicks or transient network
+ * errors.
+ *
  * @param accessToken - MercadoPago API access token
  * @param preferenceData - Preference creation data
+ * @param idempotencyKey - UUID forwarded as MP's X-Idempotency-Key header
  * @returns Created preference object
  */
 async function createMercadoPagoPreference({
     accessToken,
-    preferenceData
+    preferenceData,
+    idempotencyKey
 }: {
     accessToken: string;
     preferenceData: PreferenceCreateData;
+    idempotencyKey: string;
 }) {
     const mpClient = new MercadoPagoConfig({ accessToken });
     const preferenceClient = new Preference(mpClient);
-    return preferenceClient.create(preferenceData);
+    return preferenceClient.create({
+        ...preferenceData,
+        requestOptions: {
+            ...preferenceData.requestOptions,
+            idempotencyKey
+        }
+    });
 }
 
 /**
@@ -270,7 +286,13 @@ export async function createAddonCheckout(
             };
         }
 
-        const orderId = `addon_${addon.slug}_${Date.now()}`;
+        // SPEC-109 fix #5/#6: use a UUID for the external_reference AND as the
+        // MP X-Idempotency-Key. A retry from the same logical checkout reuses
+        // the same UUID, so MP returns the existing preference instead of
+        // creating a duplicate. The `addon_<slug>_` prefix is kept for human
+        // traceability inside the MP dashboard.
+        const checkoutUuid = randomUUID();
+        const orderId = `addon_${addon.slug}_${checkoutUuid}`;
         const webUrl = env.HOSPEDA_SITE_URL;
         if (!webUrl) {
             return {
@@ -296,6 +318,7 @@ export async function createAddonCheckout(
 
         const preference = await createMercadoPagoPreference({
             accessToken: mpAccessToken,
+            idempotencyKey: checkoutUuid,
             preferenceData: {
                 body: {
                     items: [
