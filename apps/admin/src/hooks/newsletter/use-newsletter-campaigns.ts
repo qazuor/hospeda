@@ -112,7 +112,10 @@ function buildCampaignQueryString(filters: NewsletterCampaignListFilters): strin
     if (filters.campaignStatus) params.set('campaignStatus', filters.campaignStatus);
     if (filters.localeFilter) params.set('localeFilter', filters.localeFilter);
     if (filters.titleSearch) params.set('titleSearch', filters.titleSearch);
-    if (filters.sort) params.set('sort', filters.sort);
+    // AdminSearchBaseSchema.sort enforces the `field:direction` shape (regex
+    // /^[a-zA-Z_]+:(asc|desc)$/). The hook only exposes a direction, so we
+    // anchor it to createdAt here (SPEC-117 N-1).
+    if (filters.sort) params.set('sort', `createdAt:${filters.sort}`);
     return params.toString();
 }
 

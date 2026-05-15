@@ -571,6 +571,18 @@ export function Button({ variant, size, className, ...props }) {
 
 ## Common Gotchas
 
+### Fresh `pnpm install` requires a workspace build before `pnpm dev`
+
+`apps/admin/vite.config.ts` aliases 8 of the ~12 `@repo/*` workspace packages to their `src/` directories. The four packages NOT aliased — `@repo/feedback`, `@repo/auth-ui`, `@repo/billing`, `@repo/notifications` — resolve to their `dist/` outputs per their `exports` field. A fresh checkout has empty `dist/` directories, so SSR fails on the first request with `ERR_MODULE_NOT_FOUND: @repo/feedback/schemas` (or one of the other three) until the packages are built (SPEC-117 A2).
+
+If you see that error after a fresh `pnpm install`, run from the repo root:
+
+```bash
+pnpm turbo run build --filter='@repo/feedback' --filter='@repo/auth-ui' --filter='@repo/billing' --filter='@repo/notifications'
+```
+
+Workspace packages whose source can be consumed directly via the existing aliases (everything under `resolve.alias` in `vite.config.ts`) do NOT need to be pre-built — Vite picks them up from `src/` and hot-reloads on edit.
+
 ### Accepted dev-only console noise
 
 The following warnings appear on every `pnpm dev` startup or page load and are **not defects** — they are upstream third-party recommendations / dev tooling artifacts that do not affect functionality. Do NOT spend time fixing them under this app (SPEC-117 CE-6, CE-8).
