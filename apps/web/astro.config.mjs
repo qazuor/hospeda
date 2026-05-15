@@ -71,7 +71,8 @@ export default defineConfig({
     },
 
     server: {
-        port: 4321
+        port: Number(process.env.PORT) || 4321,
+        host: process.env.HOST || undefined
     },
     image: {
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
