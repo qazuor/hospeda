@@ -10,5 +10,5 @@ export * from './destination-api.utils';
 export * from './event-api.utils';
 export * from './event-location-api.utils';
 export * from './event-organizer-api.utils';
-export * from './sponsorship-api.utils';
+export * from './post-sponsorship-api.utils';
 export * from './user-api.utils';
