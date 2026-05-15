@@ -2,6 +2,21 @@ import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/fo
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 
+// Spanish enum labels (SPEC-117 D-USERS.3 / D-DROPDOWN.1).
+const VISIBILITY_LABELS: Record<string, string> = {
+    PUBLIC: 'Público',
+    PRIVATE: 'Privado',
+    RESTRICTED: 'Restringido',
+    HIDDEN: 'Oculto'
+};
+const LIFECYCLE_LABELS: Record<string, string> = {
+    DRAFT: 'Borrador',
+    ACTIVE: 'Activo',
+    INACTIVE: 'Inactivo',
+    ARCHIVED: 'Archivado',
+    DELETED: 'Eliminado'
+};
+
 /**
  * Consolidated configuration for the States section of user
  */
@@ -30,7 +45,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
             typeConfig: {
                 options: Object.values(VisibilityEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: VISIBILITY_LABELS[value] ?? value
                 }))
             }
         },
@@ -48,7 +63,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
             typeConfig: {
                 options: Object.values(LifecycleStatusEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: LIFECYCLE_LABELS[value] ?? value
                 }))
             }
         }
