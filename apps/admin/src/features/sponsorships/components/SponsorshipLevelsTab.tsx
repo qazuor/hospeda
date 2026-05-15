@@ -168,7 +168,12 @@ export function SponsorshipLevelsTab() {
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
-                <Button>
+                {/* SPEC-117 D-SPONSORSHIP.1 follow-up: admin POST /sponsorship-levels
+                    endpoint missing — wiring blocked on API work. Button hidden until then. */}
+                <Button
+                    disabled
+                    title="Próximamente"
+                >
                     <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.level')}
                 </Button>

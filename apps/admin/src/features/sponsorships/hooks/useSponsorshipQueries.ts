@@ -103,6 +103,37 @@ async function updateSponsorshipStatus(id: string, sponsorshipStatus: string) {
 }
 
 /**
+ * Create a sponsorship.
+ * SPEC-117 D-SPONSORSHIP.1 — wires the Create button on /billing/sponsorships.
+ *
+ * NOTE: admin-tier POST /sponsorships is not implemented yet (admin route only
+ * exposes LIST). The protected-tier endpoint accepts the same body and uses the
+ * same service.create, so admin clients fall through to /protected here as a
+ * pragmatic apaño until a dedicated /admin POST lands. Documented as follow-up.
+ */
+async function createSponsorship(data: Record<string, unknown>) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/sponsorships',
+        method: 'POST',
+        body: data
+    });
+    return result.data.data;
+}
+
+/**
+ * Create a sponsorship package.
+ * SPEC-117 D-SPONSORSHIP.1 — wires the Create button on /billing/sponsorships (Packages tab).
+ */
+async function createSponsorshipPackage(data: Record<string, unknown>) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/admin/sponsorship-packages',
+        method: 'POST',
+        body: data
+    });
+    return result.data.data;
+}
+
+/**
  * Toggle sponsorship level active status
  */
 async function toggleLevelActive(id: string, isActive: boolean) {
@@ -185,6 +216,34 @@ export const useToggleLevelActiveMutation = () => {
             toggleLevelActive(id, isActive),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: sponsorshipQueryKeys.levels.lists() });
+        }
+    });
+};
+
+/**
+ * Hook to create a sponsorship.
+ */
+export const useCreateSponsorshipMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: Record<string, unknown>) => createSponsorship(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: sponsorshipQueryKeys.sponsorships.lists() });
+        }
+    });
+};
+
+/**
+ * Hook to create a sponsorship package.
+ */
+export const useCreateSponsorshipPackageMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: Record<string, unknown>) => createSponsorshipPackage(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: sponsorshipQueryKeys.packages.lists() });
         }
     });
 };
