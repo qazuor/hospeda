@@ -103,17 +103,13 @@ async function updateSponsorshipStatus(id: string, sponsorshipStatus: string) {
 }
 
 /**
- * Create a sponsorship.
+ * Create a sponsorship via admin endpoint.
  * SPEC-117 D-SPONSORSHIP.1 — wires the Create button on /billing/sponsorships.
- *
- * NOTE: admin-tier POST /sponsorships is not implemented yet (admin route only
- * exposes LIST). The protected-tier endpoint accepts the same body and uses the
- * same service.create, so admin clients fall through to /protected here as a
- * pragmatic apaño until a dedicated /admin POST lands. Documented as follow-up.
+ * SPEC-117 follow-up #1 — admin POST /sponsorships now mounted.
  */
 async function createSponsorship(data: Record<string, unknown>) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/sponsorships',
+        path: '/api/v1/admin/sponsorships',
         method: 'POST',
         body: data
     });
