@@ -89,10 +89,12 @@ export const UserSchema = z.object({
     // Authentication fields
     authProvider: AuthProviderEnumSchema.optional(),
 
+    // Nullable in DB; an edit-mode form rehydrating from the API would otherwise
+    // fail Zod validation with `expected string, received null` (SPEC-117 D-USERS.4).
     authProviderUserId: z
         .string()
         .min(1, { message: 'zodError.user.authProviderUserId.min' })
-        .optional(),
+        .nullish(),
 
     // Personal information
     displayName: z
