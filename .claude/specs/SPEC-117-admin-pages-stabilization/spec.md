@@ -1710,3 +1710,94 @@ integrity + lifecycle; out-of-scope = UX polish + missing features).
    every form with an `ImageField`.
 5. **Scope creep accepted by user.** §5 default rule overridden; all
    missing features will ship in this spec / PR.
+
+### Phase 6 closure — 2026-05-15 (extended session, 3 follow-up commits)
+
+All 6 pending items from the previous checkpoint are now resolved. Three
+new feat commits landed on top of the prior 16 fixes:
+
+```
+441df05ac feat(admin): sponsorship + package create dialogs (D-SPONSORSHIP.1)
+c17a640de feat(admin): 5 entity-select components + factory (D-RELATIONS.1)
+876651bc7 feat(admin): delete row action with confirmation dialog (D-USERS.5 + D-CONTENT.1)
+```
+
+**Findings closed in this round (4 closed + 3 confirmed false positives):**
+
+- **D-USERS.5 + D-CONTENT.1** — new reusable `DeleteRowButton` (icon + full
+  variants) wired on 4 list pages and 4 detail page headers. Also introduces
+  `entityGender` prop + `admin-entities.messages.deletedFeminine` i18n key
+  (es/en/pt) so amenidad/característica/atracción render "eliminada" instead
+  of the masculine default.
+- **D-RELATIONS.1** — the remaining 5 entity-select wrappers are now
+  implemented via a `createSelectUtils` factory (search + loadByIds + loadAll,
+  with optional batch endpoint + N parallel `getById` fallback). New enum
+  entries: `EVENT_LOCATION_SELECT`, `EVENT_ORGANIZER_SELECT`,
+  `POST_SPONSORSHIP_SELECT` in `FieldTypeEnum`. `posts/relations.consolidated.ts`
+  and `events/relations.consolidated.ts` no longer carry the 5 TODO comments.
+- **D-SPONSORSHIP.1** — `Crear patrocinio` + `Crear paquete` buttons are
+  wired to two new MVP dialogs. The Niveles tab Create button is disabled
+  with a "Próximamente" tooltip (see follow-ups below). Verified end-to-end:
+  POST → 201, row persisted.
+- **D-USERS.1 + D-POSTS.1** — verified after admin dev restart: 0
+  `[MISSING:]` keys on /access/users, /posts, /access/permissions.
+
+**False positives confirmed and dismissed:**
+
+- **D-8.1 sponsor ghost-create** — could NOT reproduce. Full flow
+  (POST 201 → row in DB → detail page → list refresh) works end-to-end.
+  The previous session's report was a transient Navigation timeout in
+  chrome-devtools-mcp, not a real bug.
+- **D-OWNERPROMO.1** — owner-promotions Create button exists in code
+  (`owner-promotions.tsx:355`) wired to `PromotionFormDialog`, but is
+  intentionally gated by `EntitlementGate("create-promotions")` +
+  `LimitGate("max_active_promotions")`. By design: owner-promotions are
+  user-initiated by accommodation owners with an active subscription; the
+  admin page is for monitoring/management, not admin-initiated creation.
+- **D-NEWSLETTER.1** — `/newsletter/campaigns` already ships a full Create
+  flow ("Nueva campaña" CTA → `/newsletter/campaigns/new` → CampaignEditor
+  with title/subject/audience/content fields). Pre-existing, no work needed.
+
+### Follow-ups discovered during D-SPONSORSHIP.1 implementation (NOT in scope)
+
+These pre-existing backend gaps surfaced while wiring the Create dialogs and
+are documented here for a future SPEC. None block this PR — the dialogs work
+around them.
+
+1. **admin POST `/sponsorships` not mounted** — `apps/api/src/routes/sponsorship/admin/index.ts`
+   only mounts `adminListSponsorshipsRoute`. The CreateSponsorshipDialog
+   falls through to `POST /api/v1/protected/sponsorships` (which accepts the
+   same body) until the admin tier mounts a POST handler.
+2. **admin GET list missing on sponsorship-packages + sponsorship-levels** —
+   both `admin/index.ts` files only mount create/update/delete. The Packages
+   and Levels tabs show "Route not found" when opened because the underlying
+   `useSponsorshipPackagesQuery` / `useSponsorshipLevelsQuery` hit
+   `/api/v1/admin/sponsorship-*` GET endpoints that do not exist.
+3. **`sponsorships.slug` NOT NULL but schema is `.optional()`** — the
+   service does not auto-generate the slug; `SponsorshipCreateInputSchema`
+   marks it optional yet the DB column is `NOT NULL` with no default. The
+   dialog auto-generates `sp-{timestamp}` client-side as a safe default.
+4. **`sponsorship_levels.target_type` constraint mismatch** — level rows
+   carry a `target_type` (post/event); the server returns DATABASE_ERROR
+   if you pair an EVENT level with a POST sponsorship (or vice versa). The
+   dialog does not validate this client-side; a proper level Select that
+   filters by `targetType` is the correct fix.
+5. **`ApiSelect` uses legacy `limit` param** — `apps/admin/src/components/ui/ApiSelect.tsx`
+   appends `&limit=100` automatically, which admin routes reject (they use
+   `pageSize`). The dialog avoids ApiSelect for admin endpoints. Refactor
+   target: make `paramName` configurable (default `limit` for back-compat).
+
+### Additional trade-offs accepted in this round
+
+6. **DeleteRowButton accepts `useDeleteMutation` as a hook factory prop.**
+   Rules of hooks remain satisfied because the prop reference is a top-level
+   import (stable across renders). Avoids 4× duplicated wrappers.
+7. **CreateSponsorshipDialog `levelId` is a free-text UUID input** instead
+   of a Select. Reason: no admin GET list endpoint for sponsorship-levels
+   (follow-up #2 above). Will swap to a Select once the endpoint exists.
+8. **CreateSponsorshipPackageDialog client-side input field for slug** —
+   server should auto-generate but currently does not. Manual override is
+   acceptable for an MVP.
+9. **SponsorshipLevelsTab Create button disabled** instead of removed.
+   Reason: code path stays in place so a future swap-in is a one-line
+   change once the level/target-type constraint UX is designed.
