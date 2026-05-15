@@ -16,12 +16,13 @@ import { cn } from '@/lib/cn';
 import {
     type Toast,
     type ToastAction,
+    drainPendingToast,
     getToasts,
     removeToast,
     subscribe
 } from '@/store/toast-store';
 import { CloseIcon } from '@repo/icons';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import styles from './ToastViewport.module.css';
 
 const EMPTY_TOASTS: ReadonlyArray<Toast> = [];
@@ -126,6 +127,12 @@ function ToastItem({ toast }: { readonly toast: Toast }) {
  */
 export function ToastViewport() {
     const toasts = useSyncExternalStore(subscribe, getToasts, getServerSnapshot);
+
+    // Drain any toast persisted via `queueToastForNextPage` on a previous page.
+    // Runs once per mount (one effect call per page load).
+    useEffect(() => {
+        drainPendingToast();
+    }, []);
 
     if (toasts.length === 0) {
         return null;
