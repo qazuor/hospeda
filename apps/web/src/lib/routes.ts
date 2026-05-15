@@ -74,3 +74,18 @@ export const PROFILE_COMPLETION_BYPASS_ROLES = ['admin', 'super_admin'] as const
 
 /** Type for roles that bypass profile completion. */
 export type ProfileCompletionBypassRole = (typeof PROFILE_COMPLETION_BYPASS_ROLES)[number];
+
+/**
+ * Path segments that live under `SESSION_OPTIONAL_SEGMENTS` (auth NOT required
+ * at middleware level) but DO need to enforce the profile-completion guard
+ * when the visitor IS signed in.
+ *
+ * Spec §3.4 mandates that "any other protected route" funnels the user back
+ * to the completion form. Segments like `publicar` aren't in
+ * `PROTECTED_SEGMENTS` because anonymous visitors are allowed to land on
+ * them (the page itself shows a sign-in prompt), but a signed-in user with
+ * `profile_completed = FALSE` must still be bounced back to
+ * `completar-perfil`. Without this list, a user who closed the tab mid-form
+ * could sneak into the host onboarding flow.
+ */
+export const PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS = ['publicar'] as const;

@@ -14,6 +14,7 @@ import {
     generateCspNonce,
     isAuthRoute,
     isProfileCompletionBypassRole,
+    isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
     isServerIslandRoute,
@@ -298,6 +299,53 @@ describe('isSetPasswordRoute', () => {
 
     it('should return false for empty path', () => {
         expect(isSetPasswordRoute({ path: '' })).toBe(false);
+    });
+});
+
+describe('isProfileCompletionRequiredSessionOptionalRoute', () => {
+    it('returns true for /es/publicar/', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar/' })).toBe(
+            true
+        );
+    });
+
+    it('returns true for /es/publicar/nueva/', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar/nueva/' })
+        ).toBe(true);
+    });
+
+    it('returns true across locales', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/en/publicar/nueva/' })
+        ).toBe(true);
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/pt/publicar/nueva/' })
+        ).toBe(true);
+    });
+
+    it('returns false for other session-optional segments (e.g. alojamientos)', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(
+            false
+        );
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/feedback/' })).toBe(
+            false
+        );
+    });
+
+    it('returns false for protected routes (those go through isProtectedRoute)', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/mi-cuenta/' })).toBe(
+            false
+        );
+    });
+
+    it('returns false for public routes', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/' })).toBe(false);
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/' })).toBe(false);
+    });
+
+    it('returns false for empty path', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '' })).toBe(false);
     });
 });
 
