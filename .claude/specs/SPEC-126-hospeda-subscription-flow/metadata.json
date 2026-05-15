@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-126",
+    "title": "Hospeda subscription flow on top of qzpay (Phase D)",
+    "type": "feat",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "hospeda",
+        "billing",
+        "subscriptions",
+        "preapproval",
+        "trial-conversion",
+        "webhooks",
+        "plan-change"
+    ],
+    "parent": "SPEC-122",
+    "phase": "D",
+    "dependsOn": ["SPEC-124", "SPEC-125"],
+    "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
+    "firstAllocatedViaEngramProtocol": true
+}

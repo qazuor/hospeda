@@ -18,12 +18,14 @@
 import { Buffer } from 'node:buffer';
 import {
     DeleteObjectCommand,
+    GetBucketLifecycleConfigurationCommand,
     GetObjectCommand,
     ListObjectsV2Command,
+    PutBucketLifecycleConfigurationCommand,
     PutObjectCommand,
     S3Client
 } from '@aws-sdk/client-s3';
-import { required } from './env.ts';
+import { type Target, getR2Config } from './target.ts';
 
 /** Single object record returned by {@link R2Client.list}. */
 export interface R2Object {
@@ -145,18 +147,81 @@ export class R2Client {
             })
         );
     }
+
+    /**
+     * Replace the bucket's lifecycle configuration with a single rule that
+     * deletes objects under `prefix` after `expirationDays` days.
+     *
+     * Idempotent: existing rules on the bucket are REPLACED. R2 stores at
+     * most one lifecycle config per bucket so the PUT is destructive but
+     * predictable.
+     */
+    async setLifecycleRule(params: {
+        readonly ruleId: string;
+        readonly prefix: string;
+        readonly expirationDays: number;
+    }): Promise<void> {
+        await this.client.send(
+            new PutBucketLifecycleConfigurationCommand({
+                Bucket: this.bucket,
+                LifecycleConfiguration: {
+                    Rules: [
+                        {
+                            ID: params.ruleId,
+                            Status: 'Enabled',
+                            Filter: { Prefix: params.prefix },
+                            Expiration: { Days: params.expirationDays }
+                        }
+                    ]
+                }
+            })
+        );
+    }
+
+    /**
+     * Fetch the bucket's current lifecycle configuration. Returns
+     * `undefined` when the bucket has no lifecycle rules configured (R2
+     * returns a 404-equivalent for that case).
+     */
+    async getLifecycle(): Promise<
+        ReadonlyArray<{ id: string; prefix: string; expirationDays: number }> | undefined
+    > {
+        try {
+            const result = await this.client.send(
+                new GetBucketLifecycleConfigurationCommand({ Bucket: this.bucket })
+            );
+            return (result.Rules ?? []).map((r) => ({
+                id: r.ID ?? '(unnamed)',
+                prefix: r.Filter && 'Prefix' in r.Filter ? (r.Filter.Prefix ?? '') : '',
+                expirationDays: r.Expiration?.Days ?? -1
+            }));
+        } catch (err) {
+            const name = err instanceof Error ? err.name : '';
+            if (name === 'NoSuchLifecycleConfiguration') return undefined;
+            throw err;
+        }
+    }
 }
 
 /**
- * Build an R2Client from the toolkit's `.env.local` values. Throws with
- * a helpful message if any required variable is missing.
+ * Build an R2Client for the given target environment. Reads four env
+ * vars from `.env.local` whose name prefix matches the target
+ * (`R2_*` for prod, `R2_STAGING_*` for staging). Throws with a helpful
+ * message if any of them is missing.
+ *
+ * Target-aware so the same `hops` invocation can list / restore against
+ * the staging bucket without leaking prod credentials. Before this
+ * signature change the function was target-blind and always used the
+ * prod bucket, which made `hops db-restore --list --target=staging`
+ * surface production backups (SPEC-103 T-095 reproduction case 2).
  */
-export function createR2Client(): R2Client {
+export function createR2Client(target: Target): R2Client {
+    const config = getR2Config(target);
     return new R2Client({
-        accountId: required('R2_ACCOUNT_ID'),
-        accessKeyId: required('R2_ACCESS_KEY_ID'),
-        secretAccessKey: required('R2_SECRET_ACCESS_KEY'),
-        bucket: required('R2_BUCKET'),
+        accountId: config.accountId,
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+        bucket: config.bucket,
         region: 'auto'
     });
 }

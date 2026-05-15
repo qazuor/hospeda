@@ -19,7 +19,7 @@ import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { FavoriteIcon } from '@repo/icons';
-import { type FC, useEffect, useRef, useState } from 'react';
+import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
 import styles from './FavoriteButton.module.css';
 
 /**
@@ -362,7 +362,15 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         }
     };
 
-    const handleClick = (): void => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
+        // The favorite button is rendered inside a card-wide <a> wrapper in
+        // listings/cards. Without stopping propagation, the click bubbles up
+        // and the browser navigates to the entity's detail page, undoing the
+        // toggle the user just made. Stop propagation + prevent default keep
+        // the user on the current page while still letting our toggle run.
+        event.stopPropagation();
+        event.preventDefault();
+
         // Block interaction while the initial hydration check is in-flight.
         if (isHydrating) return;
 
@@ -399,11 +407,25 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 onClick={handleClick}
                 disabled={isPending || isHydrating}
             >
-                <FavoriteIcon
-                    size={variant === 'compact' ? 18 : 22}
-                    weight={isFavorited ? 'fill' : 'regular'}
+                <span
+                    className={styles.iconStack}
                     aria-hidden="true"
-                />
+                >
+                    <FavoriteIcon
+                        size={variant === 'compact' ? 18 : 22}
+                        weight={isFavorited ? 'fill' : 'regular'}
+                        aria-hidden="true"
+                    />
+                    {!isFavorited && (
+                        <span className={styles.iconFill}>
+                            <FavoriteIcon
+                                size={variant === 'compact' ? 18 : 22}
+                                weight="fill"
+                                aria-hidden="true"
+                            />
+                        </span>
+                    )}
+                </span>
                 {showCountPill && (
                     <span
                         className={styles.countPill}

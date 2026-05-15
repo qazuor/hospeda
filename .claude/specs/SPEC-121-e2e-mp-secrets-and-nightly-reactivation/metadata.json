@@ -1,0 +1,15 @@
+{
+    "specId": "SPEC-121",
+    "title": "E2E MercadoPago Secrets Bootstrap and Nightly Suite Reactivation",
+    "type": "ops",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-05-14T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["e2e", "ci", "mercadopago", "ops", "nightly", "carve-out"],
+    "extractedFrom": "SPEC-092 e2e-test-suite (operational items not code work)",
+    "dependsOn": ["SPEC-103"],
+    "firstAllocatedViaEngramProtocol": true
+}

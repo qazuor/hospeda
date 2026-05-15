@@ -29,6 +29,7 @@ import { health } from './commands/health.ts';
 import { logs } from './commands/logs.ts';
 import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
+import { r2Lifecycle } from './commands/r2-lifecycle.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
 import { setActiveTarget } from './lib/container-lookup.ts';
@@ -124,6 +125,12 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'prune',
         summary: 'docker system prune -f — free build cache + dangling images on demand.',
         run: prune
+    },
+    {
+        name: 'r2-lifecycle',
+        summary:
+            "Manage the R2 bucket's lifecycle rule (delete manual/* after N days). Target-aware.",
+        run: r2Lifecycle
     },
     {
         name: 'free-mem',

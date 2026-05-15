@@ -1,0 +1,361 @@
+---
+/**
+ * @file StatusPage.astro
+ * @description Standardized layout for feedback / status pages.
+ *
+ * Used by every page whose role is to show a single status message
+ * with an optional action: 404, 500, newsletter post-action pages,
+ * auth/verify-email-sent, and any future status-style screen.
+ *
+ * Standardizes:
+ *   - Max width (640px) and padding-block (clamp 5rem..10rem).
+ *   - Icon-wrap circle (120px) with the duotone icon (92px) inside.
+ *   - Title with handwritten underline under the last word.
+ *   - Decorative blob + three ambient dots in fixed positions, color
+ *     driven entirely by the `variant` prop.
+ *   - Optional slots in this order: illustration (replaces the
+ *     icon-wrap), extras (custom content between body and actions),
+ *     actions (primary call-to-action), footer (secondary link).
+ *
+ * Each page only declares its own variant + title + description and
+ * fills the slots it needs. The visual grammar is identical across
+ * all status pages.
+ */
+
+import type { EmailIcon } from '@repo/icons';
+
+interface Props {
+	/** Color palette and semantic role. Drives blob, dots, icon-wrap, and underline colors. */
+	readonly variant: 'success' | 'error' | 'warning' | 'info' | 'not-found';
+	/**
+	 * Duotone icon component to render inside the standard 120px icon-wrap.
+	 * Skip if you pass a custom illustration via the `illustration` slot.
+	 */
+	readonly Icon?: typeof EmailIcon | undefined;
+	/** Page title. The last word is automatically highlighted with a handwritten underline. */
+	readonly title: string;
+	/** Optional description paragraph rendered below the title. */
+	readonly description?: string | undefined;
+	/**
+	 * Hide the radial blob behind the content. Dots and underline still
+	 * show. Use when the surrounding layout already supplies a background
+	 * treatment, or when the page should feel quieter.
+	 */
+	readonly hideBlob?: boolean | undefined;
+}
+
+const { variant, Icon, title, description, hideBlob = false } = Astro.props;
+
+// Split the title to underline the last word.
+const titleWords = title.trim().split(/\s+/);
+const titleAccent = titleWords.pop() ?? title;
+const titleMain = titleWords.join(' ');
+
+const hasIllustration = Astro.slots.has('illustration');
+const hasExtras = Astro.slots.has('extras');
+const hasActions = Astro.slots.has('actions');
+const hasFooter = Astro.slots.has('footer');
+---
+
+<section class:list={['status-page', `status-page--${variant}`]}>
+	<div class="status-page__decoratives" aria-hidden="true">
+		{!hideBlob && <div class="status-page__blob"></div>}
+		<span class="status-page__dot status-page__dot--1"></span>
+		<span class="status-page__dot status-page__dot--2"></span>
+		<span class="status-page__dot status-page__dot--3"></span>
+	</div>
+
+	<div class="status-page__container">
+		{hasIllustration ? (
+			<div class="status-page__illustration" aria-hidden="true">
+				<slot name="illustration" />
+			</div>
+		) : Icon ? (
+			<div class="status-page__icon-wrap" aria-hidden="true">
+				<Icon size={92} weight="duotone" />
+			</div>
+		) : null}
+
+		<h1 class="status-page__title">
+			{titleMain && <>{titleMain}{' '}</>}
+			<span class="status-page__title-accent">
+				{titleAccent}
+				<svg
+					class="status-page__title-underline"
+					viewBox="0 0 200 18"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M 4 12 Q 50 2, 100 10 T 196 8"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						fill="none"
+					/>
+				</svg>
+			</span>
+		</h1>
+
+		{description && (
+			<p class="status-page__description">{description}</p>
+		)}
+
+		{hasExtras && (
+			<div class="status-page__extras">
+				<slot name="extras" />
+			</div>
+		)}
+
+		{hasActions && (
+			<div class="status-page__actions">
+				<slot name="actions" />
+			</div>
+		)}
+
+		{hasFooter && (
+			<div class="status-page__footer">
+				<slot name="footer" />
+			</div>
+		)}
+	</div>
+</section>
+
+<style>
+	/* ─── Wrapper ───────────────────────────────────────────────────────── */
+
+	.status-page {
+		position: relative;
+		max-width: 640px;
+		margin: 0 auto;
+		padding: clamp(5rem, 12vw, 10rem) var(--space-4, 1rem);
+		overflow: hidden;
+	}
+
+	/* ─── Decoratives (per-variant color via CSS custom prop) ───────────── */
+
+	.status-page__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.status-page__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(360px, 60vw, 720px);
+		height: clamp(360px, 60vw, 720px);
+		border-radius: 50%;
+		filter: blur(4px);
+		background: radial-gradient(
+			circle at 50% 50%,
+			var(--status-blob-from, oklch(from var(--brand-primary) l c h / 0.16)),
+			var(--status-blob-to, oklch(from var(--brand-primary) l c h / 0.05)) 55%,
+			transparent 75%
+		);
+	}
+
+	.status-page__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+
+	/* Three fixed positions across every status page for visual consistency. */
+	.status-page__dot--1 {
+		top: 14%;
+		left: 10%;
+		width: 12px;
+		height: 12px;
+		background-color: var(--status-dot-1, oklch(from var(--brand-primary) l c h / 0.28));
+	}
+	.status-page__dot--2 {
+		bottom: 18%;
+		right: 12%;
+		width: 9px;
+		height: 9px;
+		background-color: var(--status-dot-2, oklch(from var(--brand-accent) l c h / 0.3));
+	}
+	.status-page__dot--3 {
+		top: 32%;
+		right: 8%;
+		width: 8px;
+		height: 8px;
+		background-color: var(--status-dot-3, oklch(from var(--brand-primary) l c h / 0.2));
+	}
+
+	/* ─── Container & content ───────────────────────────────────────────── */
+
+	.status-page__container {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: var(--space-4, 1rem);
+	}
+
+	/* ─── Illustration & icon-wrap (mutually exclusive) ─────────────────── */
+
+	.status-page__illustration {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 120px;
+		height: 120px;
+		margin-bottom: var(--space-2, 0.5rem);
+	}
+
+	.status-page__icon-wrap {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 120px;
+		height: 120px;
+		margin-bottom: var(--space-2, 0.5rem);
+		border-radius: 50%;
+		background-color: var(--status-icon-bg, oklch(from var(--brand-primary) l c h / 0.12));
+		color: var(--status-icon-color, var(--brand-primary));
+		box-shadow: 0 8px 24px var(--status-icon-shadow, oklch(from var(--brand-primary) l c h / 0.18));
+	}
+
+	/* ─── Title with handwritten underline ──────────────────────────────── */
+
+	.status-page__title {
+		font-family: var(--font-heading);
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		font-weight: 700;
+		color: var(--core-foreground);
+		margin: 0;
+		line-height: 1.25;
+	}
+
+	.status-page__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.status-page__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		opacity: 0.75;
+		pointer-events: none;
+		color: var(--status-underline-color, var(--brand-accent));
+	}
+
+	/* ─── Description ───────────────────────────────────────────────────── */
+
+	.status-page__description {
+		font-family: var(--font-sans);
+		font-size: var(--text-body, 1rem);
+		color: var(--core-muted-foreground);
+		max-width: 50ch;
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/* ─── Slot containers ───────────────────────────────────────────────── */
+
+	.status-page__extras {
+		width: 100%;
+		max-width: 480px;
+	}
+
+	.status-page__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3, 0.75rem);
+		justify-content: center;
+		margin-top: var(--space-2, 0.5rem);
+	}
+
+	.status-page__footer {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.875rem);
+		color: var(--core-muted-foreground);
+	}
+
+	/* Default style for any anchor passed into the footer slot, so pages
+	   don't have to redeclare it. Uses :global() because slot content lives
+	   in the caller's scope. */
+	.status-page__footer :global(a) {
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.status-page__footer :global(a:hover),
+	.status-page__footer :global(a:focus-visible) {
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+
+	/* ─── Variant tokens ────────────────────────────────────────────────── */
+
+	.status-page--success {
+		--status-blob-from: oklch(0.65 0.18 145 / 0.18);
+		--status-blob-to: oklch(0.65 0.18 145 / 0.06);
+		--status-dot-1: oklch(0.65 0.18 145 / 0.3);
+		--status-dot-2: oklch(from var(--brand-accent) l c h / 0.3);
+		--status-dot-3: oklch(0.65 0.18 145 / 0.2);
+		--status-icon-bg: oklch(0.65 0.18 145 / 0.12);
+		--status-icon-color: oklch(0.55 0.18 145);
+		--status-icon-shadow: oklch(0.65 0.18 145 / 0.18);
+		--status-underline-color: oklch(0.55 0.18 145);
+	}
+
+	.status-page--error {
+		--status-blob-from: oklch(0.62 0.2 30 / 0.16);
+		--status-blob-to: oklch(0.62 0.2 30 / 0.05);
+		--status-dot-1: oklch(0.62 0.2 30 / 0.3);
+		--status-dot-2: oklch(from var(--brand-accent) l c h / 0.3);
+		--status-dot-3: oklch(0.62 0.2 30 / 0.2);
+		--status-icon-bg: oklch(0.62 0.2 30 / 0.12);
+		--status-icon-color: oklch(0.55 0.2 30);
+		--status-icon-shadow: oklch(0.62 0.2 30 / 0.18);
+		--status-underline-color: oklch(0.55 0.2 30);
+	}
+
+	.status-page--warning {
+		--status-blob-from: oklch(from var(--brand-accent) l c h / 0.18);
+		--status-blob-to: oklch(from var(--brand-accent) l c h / 0.06);
+		--status-dot-1: oklch(from var(--brand-accent) l c h / 0.3);
+		--status-dot-2: oklch(from var(--brand-primary) l c h / 0.3);
+		--status-dot-3: oklch(from var(--brand-accent) l c h / 0.2);
+		--status-icon-bg: oklch(from var(--brand-accent) l c h / 0.12);
+		--status-icon-color: var(--brand-accent);
+		--status-icon-shadow: oklch(from var(--brand-accent) l c h / 0.18);
+		--status-underline-color: var(--brand-primary);
+	}
+
+	.status-page--info {
+		--status-blob-from: oklch(from var(--brand-primary) l c h / 0.14);
+		--status-blob-to: oklch(from var(--brand-primary) l c h / 0.05);
+		--status-dot-1: oklch(from var(--brand-primary) l c h / 0.28);
+		--status-dot-2: oklch(from var(--brand-accent) l c h / 0.3);
+		--status-dot-3: oklch(from var(--brand-primary) l c h / 0.2);
+		--status-icon-bg: oklch(from var(--brand-primary) l c h / 0.12);
+		--status-icon-color: var(--brand-primary);
+		--status-icon-shadow: oklch(from var(--brand-primary) l c h / 0.18);
+		--status-underline-color: var(--brand-accent);
+	}
+
+	.status-page--not-found {
+		--status-blob-from: oklch(from var(--brand-primary) l c h / 0.16);
+		--status-blob-to: oklch(from var(--brand-primary) l c h / 0.05);
+		--status-dot-1: oklch(from var(--brand-primary) l c h / 0.28);
+		--status-dot-2: oklch(from var(--brand-accent) l c h / 0.3);
+		--status-dot-3: oklch(from var(--brand-primary) l c h / 0.2);
+		--status-icon-bg: oklch(from var(--brand-primary) l c h / 0.12);
+		--status-icon-color: var(--brand-primary);
+		--status-icon-shadow: oklch(from var(--brand-primary) l c h / 0.18);
+		--status-underline-color: var(--brand-accent);
+	}
+</style>

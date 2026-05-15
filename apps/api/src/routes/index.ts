@@ -81,6 +81,7 @@ import {
     newsletterPublicRoutes,
     newsletterRoutes
 } from './newsletter';
+import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -222,6 +223,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         app.route('/api/v1/protected/auth', protectedAuthRoutes);
         app.route('/api/v1/protected/users', protectedUserRoutes);
+
+        // Profile completion flow (SPEC-113)
+        app.route('/api/v1/protected/profile', protectedProfileRoutes);
         app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
         app.route(
             '/api/v1/protected/user-bookmark-collections',

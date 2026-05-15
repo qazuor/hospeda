@@ -32,6 +32,11 @@
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
     width: 100%;
+    /* Cap the form width on desktop. The parent footer row is flex with
+       space-between, so without this the form stretched edge-to-edge of
+       the right column. On mobile the parent column is narrower than
+       28rem so the form stays fluid. */
+    max-width: 28rem;
 }
 
 /* ---- Form ---- */
@@ -92,13 +97,11 @@
         var(--duration-fast, 150ms) ease;
 }
 
-/* When input has no lock badge (idle-auth, pending, error states) */
-.emailInput:not(:has(~ .lockBadge)) {
-    padding-left: var(--space-4, 1rem);
-}
-
-/* Workaround: the lock badge is a sibling of the input, not a child.
-   We reset the extra padding via a modifier placed on the wrapper. */
+/* The lock badge sits BEFORE the input in the DOM, so a `~ .lockBadge`
+   sibling selector on .emailInput never matches (general-sibling combinator
+   only looks forward). Use :has() on the shared wrapper to detect the
+   badge's presence and gate the extra padding from there. When there's no
+   badge we fall back to the normal padding. */
 .inputWrapper:not(:has(.lockBadge)) .emailInput {
     padding-left: var(--space-4, 1rem);
 }

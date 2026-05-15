@@ -445,12 +445,16 @@ export function toArticleCardProps({
     }
 
     const authorObj = item.author as Record<string, unknown> | undefined;
-    const authorName = String(
+    const resolvedAuthorName = String(
         item.authorName ||
             authorObj?.displayName ||
             [authorObj?.firstName, authorObj?.lastName].filter(Boolean).join(' ') ||
             ''
     );
+    // Fallback when the public posts endpoint does not JOIN the author table
+    // (tracked under the backend author-join spec). Keeps the UI complete and
+    // signals editorial ownership rather than leaving the byline empty.
+    const authorName = resolvedAuthorName || 'Equipo Hospeda';
     const authorAvatar = item.authorAvatar
         ? String(item.authorAvatar)
         : authorObj?.image

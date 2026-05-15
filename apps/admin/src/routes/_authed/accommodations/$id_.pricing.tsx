@@ -33,8 +33,8 @@ function AccommodationPricingPage() {
     const additionalFees = price?.additionalFees;
     const discounts = price?.discounts;
 
-    const formatPrice = (amount?: number, curr?: string) => {
-        if (amount === undefined) return 'N/A';
+    const formatPrice = (amount: number | null | undefined, curr?: string) => {
+        if (amount == null) return 'N/A';
         return formatCurrency({
             value: amount,
             locale,
@@ -83,7 +83,7 @@ function AccommodationPricingPage() {
                             />
                         ))}
                     </div>
-                ) : !price || basePrice === undefined ? (
+                ) : !price || basePrice == null ? (
                     <p className="text-muted-foreground">
                         {t('admin-pages.accommodations.pricing.noData')}
                     </p>

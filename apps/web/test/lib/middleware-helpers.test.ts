@@ -8,11 +8,17 @@ import {
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
+    buildProfileCompletionRedirect,
+    buildSetPasswordRedirect,
     extractLocaleFromPath,
     generateCspNonce,
     isAuthRoute,
+    isProfileCompletionBypassRole,
+    isProfileCompletionRequiredSessionOptionalRoute,
+    isProfileCompletionRoute,
     isProtectedRoute,
     isServerIslandRoute,
+    isSetPasswordRoute,
     isStaticAssetRoute
 } from '../../src/lib/middleware-helpers';
 
@@ -227,5 +233,194 @@ describe('buildCspHeader', () => {
         expect(styleSrc).toBeDefined();
         expect(styleSrc).toContain("'nonce-abc123'");
         expect(styleSrc).not.toContain('unsafe-inline');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-113: Profile completion guard helpers
+// ---------------------------------------------------------------------------
+
+describe('isProfileCompletionRoute', () => {
+    it('should return true for the completar-perfil route', () => {
+        expect(isProfileCompletionRoute({ path: '/es/mi-cuenta/completar-perfil/' })).toBe(true);
+    });
+
+    it('should return true for sub-paths under completar-perfil', () => {
+        expect(isProfileCompletionRoute({ path: '/es/mi-cuenta/completar-perfil/paso-2/' })).toBe(
+            true
+        );
+    });
+
+    it('should return true for all supported locales', () => {
+        expect(isProfileCompletionRoute({ path: '/en/mi-cuenta/completar-perfil/' })).toBe(true);
+        expect(isProfileCompletionRoute({ path: '/pt/mi-cuenta/completar-perfil/' })).toBe(true);
+    });
+
+    it('should return false for other mi-cuenta sub-routes', () => {
+        expect(isProfileCompletionRoute({ path: '/es/mi-cuenta/perfil/' })).toBe(false);
+        expect(isProfileCompletionRoute({ path: '/es/mi-cuenta/favoritos/' })).toBe(false);
+    });
+
+    it('should return false for the agregar-contrasena route', () => {
+        expect(isProfileCompletionRoute({ path: '/es/mi-cuenta/agregar-contrasena/' })).toBe(false);
+    });
+
+    it('should return false for public routes', () => {
+        expect(isProfileCompletionRoute({ path: '/es/alojamientos/' })).toBe(false);
+    });
+
+    it('should return false for empty path', () => {
+        expect(isProfileCompletionRoute({ path: '' })).toBe(false);
+    });
+});
+
+describe('isSetPasswordRoute', () => {
+    it('should return true for the agregar-contrasena route', () => {
+        expect(isSetPasswordRoute({ path: '/es/mi-cuenta/agregar-contrasena/' })).toBe(true);
+    });
+
+    it('should return true for all supported locales', () => {
+        expect(isSetPasswordRoute({ path: '/en/mi-cuenta/agregar-contrasena/' })).toBe(true);
+        expect(isSetPasswordRoute({ path: '/pt/mi-cuenta/agregar-contrasena/' })).toBe(true);
+    });
+
+    it('should return false for the completar-perfil route', () => {
+        expect(isSetPasswordRoute({ path: '/es/mi-cuenta/completar-perfil/' })).toBe(false);
+    });
+
+    it('should return false for other mi-cuenta sub-routes', () => {
+        expect(isSetPasswordRoute({ path: '/es/mi-cuenta/perfil/' })).toBe(false);
+        expect(isSetPasswordRoute({ path: '/es/mi-cuenta/' })).toBe(false);
+    });
+
+    it('should return false for public routes', () => {
+        expect(isSetPasswordRoute({ path: '/es/destinos/' })).toBe(false);
+    });
+
+    it('should return false for empty path', () => {
+        expect(isSetPasswordRoute({ path: '' })).toBe(false);
+    });
+});
+
+describe('isProfileCompletionRequiredSessionOptionalRoute', () => {
+    it('returns true for /es/publicar/', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar/' })).toBe(
+            true
+        );
+    });
+
+    it('returns true for /es/publicar/nueva/', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar/nueva/' })
+        ).toBe(true);
+    });
+
+    it('returns true across locales', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/en/publicar/nueva/' })
+        ).toBe(true);
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/pt/publicar/nueva/' })
+        ).toBe(true);
+    });
+
+    it('returns false for other session-optional segments (e.g. alojamientos)', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(
+            false
+        );
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/feedback/' })).toBe(
+            false
+        );
+    });
+
+    it('returns false for protected routes (those go through isProtectedRoute)', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/mi-cuenta/' })).toBe(
+            false
+        );
+    });
+
+    it('returns false for public routes', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/' })).toBe(false);
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/' })).toBe(false);
+    });
+
+    it('returns false for empty path', () => {
+        expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '' })).toBe(false);
+    });
+});
+
+describe('isProfileCompletionBypassRole', () => {
+    it('should return true for admin role', () => {
+        expect(isProfileCompletionBypassRole({ role: 'admin' })).toBe(true);
+    });
+
+    it('should return true for super_admin role', () => {
+        expect(isProfileCompletionBypassRole({ role: 'super_admin' })).toBe(true);
+    });
+
+    it('should return false for regular user role', () => {
+        expect(isProfileCompletionBypassRole({ role: 'user' })).toBe(false);
+    });
+
+    it('should return false for host role', () => {
+        expect(isProfileCompletionBypassRole({ role: 'host' })).toBe(false);
+    });
+
+    it('should return false for empty role string', () => {
+        expect(isProfileCompletionBypassRole({ role: '' })).toBe(false);
+    });
+
+    it('should be case-sensitive (Admin with capital A is not a bypass)', () => {
+        expect(isProfileCompletionBypassRole({ role: 'Admin' })).toBe(false);
+    });
+});
+
+describe('buildProfileCompletionRedirect', () => {
+    it('should build correct URL for es locale', () => {
+        expect(buildProfileCompletionRedirect({ locale: 'es' })).toBe(
+            '/es/mi-cuenta/completar-perfil/'
+        );
+    });
+
+    it('should build correct URL for en locale', () => {
+        expect(buildProfileCompletionRedirect({ locale: 'en' })).toBe(
+            '/en/mi-cuenta/completar-perfil/'
+        );
+    });
+
+    it('should build correct URL for pt locale', () => {
+        expect(buildProfileCompletionRedirect({ locale: 'pt' })).toBe(
+            '/pt/mi-cuenta/completar-perfil/'
+        );
+    });
+
+    it('should always end with a trailing slash', () => {
+        const url = buildProfileCompletionRedirect({ locale: 'es' });
+        expect(url.endsWith('/')).toBe(true);
+    });
+});
+
+describe('buildSetPasswordRedirect', () => {
+    it('should build correct URL for es locale', () => {
+        expect(buildSetPasswordRedirect({ locale: 'es' })).toBe(
+            '/es/mi-cuenta/agregar-contrasena/'
+        );
+    });
+
+    it('should build correct URL for en locale', () => {
+        expect(buildSetPasswordRedirect({ locale: 'en' })).toBe(
+            '/en/mi-cuenta/agregar-contrasena/'
+        );
+    });
+
+    it('should build correct URL for pt locale', () => {
+        expect(buildSetPasswordRedirect({ locale: 'pt' })).toBe(
+            '/pt/mi-cuenta/agregar-contrasena/'
+        );
+    });
+
+    it('should always end with a trailing slash', () => {
+        const url = buildSetPasswordRedirect({ locale: 'es' });
+        expect(url.endsWith('/')).toBe(true);
     });
 });

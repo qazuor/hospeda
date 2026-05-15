@@ -4,11 +4,13 @@
         {
             "specId": "SPEC-059",
             "title": "Service-Layer Transaction Support & Concurrency Safety",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-059-service-layer-transaction-support",
             "created": "2026-04-13T00:00:00.000Z",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Closed at 32/32 (commit d5f08de3a). Spec docs removed in archive commit aabd94a99; index status field never flipped — drift fixed 2026-05-14."
         },
         {
             "specId": "SPEC-081",
@@ -32,7 +34,7 @@
         },
         {
             "specId": "SPEC-090",
-            "title": "Env-Var Schema SSOT \u2014 Eliminate the Manual Key-Mirror in Cross-Validation",
+            "title": "Env-Var Schema SSOT — Eliminate the Manual Key-Mirror in Cross-Validation",
             "status": "completed",
             "complexity": "medium",
             "path": "SPEC-090-env-schema-ssot",
@@ -130,7 +132,7 @@
             "created": "2026-04-01T00:00:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T19:30:00.000Z",
-            "archiveNote": "Phase A shipped: vitest.config.integration.ts (globalSetup + maxForks 3), global-setup.ts (create/drop hospeda_integration_test, drizzle-kit push, apply-postgres-extras), helpers.ts (withTestTransaction/withCleanSlate/closeTestPool/getTestDb/testData), tx-propagation.test.ts (10 core tests), CI Postgres service container, root + db package scripts, turbo pipeline, CLAUDE.md docs. 26/26 integration tests pass against real PG. Phase B (model-tx-propagation.test.ts) and Phase C (service-tx via SPEC-059 Phase 4) deferred \u2014 Phase B now unblocked since SPEC-058/060 merged; Phase C still gated on SPEC-059. Test 6 uses tags table (not users) to bypass a pre-existing enum-vs-text comparison bug in the delete_entity_bookmarks trigger (manual migration 0014) that's unrelated to SPEC-061."
+            "archiveNote": "Phase A shipped: vitest.config.integration.ts (globalSetup + maxForks 3), global-setup.ts (create/drop hospeda_integration_test, drizzle-kit push, apply-postgres-extras), helpers.ts (withTestTransaction/withCleanSlate/closeTestPool/getTestDb/testData), tx-propagation.test.ts (10 core tests), CI Postgres service container, root + db package scripts, turbo pipeline, CLAUDE.md docs. 26/26 integration tests pass against real PG. Phase B (model-tx-propagation.test.ts) and Phase C (service-tx via SPEC-059 Phase 4) deferred — Phase B now unblocked since SPEC-058/060 merged; Phase C still gated on SPEC-059. Test 6 uses tags table (not users) to bypass a pre-existing enum-vs-text comparison bug in the delete_entity_bookmarks trigger (manual migration 0014) that's unrelated to SPEC-061."
         },
         {
             "specId": "SPEC-080",
@@ -172,15 +174,19 @@
         {
             "specId": "SPEC-092",
             "title": "End-to-End Test Suite for Pre-Beta Validation",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-092-e2e-test-suite",
             "priority": "P0",
             "created": "2026-04-26T00:00:00.000Z",
-            "archived": false,
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "94/99 closed. 5 operational items (MP secrets + nightly re-enable + flake measurement) carved out to SPEC-121.",
+            "archived": true,
             "dependsOn": ["SPEC-085"],
             "atomizedAt": "2026-04-30T00:00:00.000Z",
-            "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG."
+            "atomizationNote": "99 tasks across 9 phases, complexity ceiling 3. 37 E2E + 7 integration + 3 CI scripts + 4 docs. See state.json for DAG.",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Closed at 94/99 — 5 operational items carved out to SPEC-121. Spec docs and task state removed; git history + engram spec/hospeda/SPEC-092/status are source of truth."
         },
         {
             "specId": "SPEC-093",
@@ -688,7 +694,10 @@
             "type": "feature",
             "complexity": "medium",
             "status": "completed",
-            "path": "SPEC-098-favorites-collections-mvp"
+            "path": "SPEC-098-favorites-collections-mvp",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Favorites & Collections MVP completed and shipped. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-099",
@@ -699,18 +708,36 @@
             "path": "SPEC-099-home-audit-remediation",
             "created": "2026-05-07T00:00:00.000Z",
             "completed": "2026-05-08T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Home page audit remediation completed and shipped 2026-05-08. Spec docs and task state removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-100",
+            "title": "API Transform Pipeline Type Safety",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-100-transform-type-safety",
+            "created": "2026-05-07T00:00:00.000Z",
+            "archived": false,
+            "effort_estimate_hours": "20-32",
+            "origin": "Deferred from SPEC-099 Phase 8 (S-10)"
         },
         {
             "specId": "SPEC-101",
             "title": "Newsletter MVP (email-only)",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-101-newsletter-mvp",
             "created": "2026-05-11T00:00:00.000Z",
-            "archived": false,
-            "dependencies": ["chore/vps-migration merged to main"]
+            "completed": "2026-05-14T00:00:00.000Z",
+            "archived": true,
+            "dependencies": ["chore/vps-migration merged to main"],
+            "completedNote": "Merged to staging in PR #1061 (2026-05-14) at 60/60 tasks. Post-merge fixes shipped: PR #1066 (Brevo webhook validation), PR #1068 (Redis maxRetriesPerRequest). Follow-ups tracked in SPEC-108.",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Newsletter MVP (email-only) completed 2026-05-14 via PR #1061 and follow-ups. Spec docs and task state removed; git history + engram are source of truth."
         },
         {
             "specId": "SPEC-102",
@@ -725,8 +752,13 @@
             "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
             "type": "chore",
             "complexity": "medium",
-            "status": "in-progress",
-            "path": "SPEC-103-vps-migration-post-merge-cleanup"
+            "status": "completed",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "67/95 closed; 6 extracted; 2 platform-blocked; 6 deferred long-term",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "67/95 closed. 6 extracted to SPEC-079/102/104/105/109/112. 2 platform-blocked (T-002/T-003). 6 deferred long-term (T-023 a11y, T-072/T-082/T-083/T-087/T-088). Audit in engram spec/hospeda/SPEC-103/status."
         },
         {
             "specId": "SPEC-104",
@@ -746,11 +778,14 @@
         },
         {
             "specId": "SPEC-106",
-            "title": "Docs CI \u2014 Baseline Cleanup (Broken Links + Validate-Examples Hang)",
+            "title": "Docs CI — Baseline Cleanup (Broken Links + Validate-Examples Hang)",
             "type": "chore",
             "complexity": "medium",
             "status": "completed",
-            "path": "SPEC-106-docs-broken-links-cleanup"
+            "path": "SPEC-106-docs-broken-links-cleanup",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Docs CI baseline cleanup (broken links + validate-examples hang) completed and shipped. Spec docs and task state removed; git history is source of truth."
         },
         {
             "specId": "SPEC-107",
@@ -762,13 +797,27 @@
         },
         {
             "specId": "SPEC-108",
-            "title": "Newsletter MVP \u2014 Post-Merge Follow-Ups",
+            "title": "Newsletter MVP — Post-Merge Follow-Ups",
             "type": "chore",
             "complexity": "medium",
             "status": "completed",
             "path": "SPEC-108-newsletter-mvp-followups",
             "completed": "2026-05-14T00:00:00.000Z",
-            "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account."
+            "completedNote": "All 3 tasks shipped to staging via PR #1071 (T-108-03 CI flake fix, T-108-01 async @react-email/render, T-108-02 admin notification on failed>0) + smoke nivel-2 (real Brevo) via PR #1073. Local validation: 9/9 db integration, 126/126 service-core newsletter, 92/92 api newsletter, smoke nivel-1 (render diff) + nivel-2 (Brevo end-to-end) PASS. CI was bypassed via admin-override due to GitHub Actions billing block on the account.",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Newsletter MVP post-merge follow-ups completed 2026-05-14. Spec docs removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-109",
+            "title": "MercadoPago Production Readiness — full toggle, code hardening, homologation",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-109-mercadopago-production-readiness",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-109-mp-production",
+            "branch": "spec/SPEC-109-mercadopago-production-readiness",
+            "startedAt": "2026-05-15T00:00:00Z"
         },
         {
             "specId": "SPEC-114",
@@ -778,7 +827,209 @@
             "status": "completed",
             "path": "SPEC-114-forget-password-endpoint-missing",
             "completed": "2026-05-14T04:33:00.000Z",
-            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)"
+            "completionRef": "commit f08583c5c (PR #1075) — fix(auth): use better-auth /request-password-reset path (was /forget-password)",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Forget-password endpoint 404 fix completed 2026-05-14 via commit f08583c5c (PR #1075). Spec docs removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-120",
+            "title": "OAuth Cancel/Error Observability — UI Feedback and Sentry Capture",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-120-oauth-cancel-observability",
+            "renumberedFrom": "SPEC-117",
+            "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)",
+            "startedAt": "2026-05-15T00:00:00Z",
+            "completedAt": "2026-05-15T05:30:00Z",
+            "completionRef": "PR #1100 (merge commit 09d68c8fde2149691e75f056600dbca3b3f2b670 into staging) — manual smoke PASS by qazuor against staging post-deploy"
+        },
+        {
+            "specId": "SPEC-115",
+            "title": "Brevo Webhook Endpoint Returns 404 — Configure or Implement",
+            "type": "fix",
+            "complexity": "low",
+            "status": "completed",
+            "path": "SPEC-115-brevo-webhook-endpoint-404",
+            "created": "2026-05-14T08:30:00Z",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commits 794d0b31f + b2d8d15c6 + d474760a8 (PR #1091) — fix(api): Brevo webhook URL-secret auth pattern",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Brevo webhook endpoint completed 2026-05-14 via PR #1091 (URL-secret auth pattern). Spec docs removed; git history is source of truth. Pending only staging→main promotion + 24h prod observation (operational)."
+        },
+        {
+            "specId": "SPEC-116",
+            "title": "Billing Middleware Runs on Healthcheck Path — Skip Unnecessary Work",
+            "type": "fix",
+            "complexity": "low",
+            "status": "completed",
+            "path": "SPEC-116-billing-middleware-on-healthcheck",
+            "created": "2026-05-14T08:30:00Z",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commit 5680a9d32 — fix(api): skip billing customer lookup for guest actors (SPEC-116)",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Billing middleware skip on healthcheck completed 2026-05-14 via commit 5680a9d32. Spec docs removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-117",
+            "title": "Admin Pages Stabilization",
+            "type": "fix",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-117-admin-pages-stabilization",
+            "created": "2026-05-14T10:00:00Z",
+            "notes": "Active in worktree fix/admin-pages-audit. Phase 0/1/2 closed; Phase 4 i18n 2/5 (T-012, T-013 done; T-014/T-015/T-016 pending). Another agent is working on this branch."
+        },
+        {
+            "specId": "SPEC-118",
+            "title": "Reset-Password Page Validates Token at Load — UX Hardening",
+            "type": "fix",
+            "complexity": "low",
+            "status": "completed",
+            "path": "SPEC-118-reset-password-token-validation",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "commit dc5bc86de (PR #1098) — feat(auth): validate reset-password token at page load",
+            "archived": true,
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Reset-password token validation completed 2026-05-14 via commit dc5bc86de (PR #1098). Spec docs removed; git history is source of truth."
+        },
+        {
+            "archived": true,
+            "complexity": "medium",
+            "created": "2026-05-14",
+            "path": "SPEC-119-accommodation-example-seeds-realism",
+            "specId": "SPEC-119",
+            "status": "completed",
+            "completed": "2026-05-14T00:00:00Z",
+            "completionRef": "PR #1093 — feat(seed): SPEC-119 accommodation example seeds realism (5 commits)",
+            "title": "Accommodation Example Seeds Realism",
+            "archivedAt": "2026-05-14T00:00:00Z",
+            "archiveNote": "Accommodation example seeds realism completed 2026-05-14 via PR #1093. Spec docs and task state removed; git history is source of truth."
+        },
+        {
+            "specId": "SPEC-121",
+            "title": "E2E MercadoPago Secrets Bootstrap and Nightly Suite Reactivation",
+            "type": "ops",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-121-e2e-mp-secrets-and-nightly-reactivation",
+            "created": "2026-05-14T00:00:00Z",
+            "extractedFrom": "SPEC-092",
+            "dependsOn": ["SPEC-103"],
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-122",
+            "title": "Production-Ready Billing — Master Plan",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-122-billing-production-readiness-master",
+            "created": "2026-05-15T00:00:00Z",
+            "children": ["SPEC-123", "SPEC-124", "SPEC-125", "SPEC-126", "SPEC-127", "SPEC-128"],
+            "dependsOn": ["SPEC-109"],
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-123",
+            "title": "qzpay foundation fixes (Phase A)",
+            "type": "fix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-123-qzpay-foundation-fixes",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "A",
+            "dependsOn": [],
+            "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-124",
+            "title": "qzpay subscription preapproval wire-up (Phase B)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-124-qzpay-subscription-preapproval-wire-up",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "B",
+            "dependsOn": ["SPEC-123"],
+            "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-125",
+            "title": "qzpay checkout adapter parity with Hospeda Phase 1 (Phase C)",
+            "type": "feat",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-125-qzpay-checkout-adapter-parity",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "C",
+            "dependsOn": [],
+            "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-126",
+            "title": "Hospeda subscription flow on top of qzpay (Phase D)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-126-hospeda-subscription-flow",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "D",
+            "dependsOn": ["SPEC-124", "SPEC-125"],
+            "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-127",
+            "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
+            "type": "refactor",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "E",
+            "dependsOn": ["SPEC-125"],
+            "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-128",
+            "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-128-billing-cleanup-and-smoke",
+            "created": "2026-05-15T00:00:00Z",
+            "parent": "SPEC-122",
+            "phase": "F+G",
+            "dependsOn": ["SPEC-126", "SPEC-127"],
+            "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
+            "firstAllocatedViaEngramProtocol": true
+        },
+        {
+            "specId": "SPEC-113",
+            "title": "Profile completion flow — required intermediate step after first signup / OAuth",
+            "type": "feat",
+            "complexity": "medium-high",
+            "status": "in-progress",
+            "path": "SPEC-113-profile-completion-flow",
+            "created": "2026-05-14T04:15:00Z",
+            "startedAt": "2026-05-15T06:00:00Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-113-profile-completion-flow",
+            "branch": "spec/SPEC-113-profile-completion-flow",
+            "absorbs": ["SPEC-103 T-094 (OAuth-only set-password flow)"],
+            "discoveredDuring": "SPEC-103 T-012 + T-019 auth smoke (2026-05-14)"
         },
         {
             "specId": "SPEC-129",

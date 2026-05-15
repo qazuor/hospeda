@@ -70,7 +70,12 @@
     --hospeda-sky-light: oklch(0.88 0.06 259);
     --hospeda-river: oklch(0.63 0.19 259);
     --hospeda-forest: oklch(0.5 0.14 155);
-    --hospeda-sand: oklch(0.93 0.03 85);
+    /* Warm terra/clay tone. Previous value oklch(0.93 0.03 85) was so close to
+       white that pills using this token at 0.15 alpha rendered as invisible
+       ghosts over the card background. Lowered lightness + bumped chroma so
+       category badges (HISTORY / TRADITIONS / ART) and accommodation pills
+       that reference it stay readable. */
+    --hospeda-sand: oklch(0.7 0.12 75);
 
     /* --- Social proof avatar gradient stops --- */
     --avatar-1-from: oklch(0.25 0.08 255);
@@ -135,7 +140,7 @@
     --text-body-xs: 0.8125rem;
     --text-meta: 0.8125rem;
     --text-caption: 0.75rem;
-    --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+    --text-tagline: clamp(1.25rem, 1rem + 1vw, 1.75rem);
     --text-nav: 0.875rem;
     --text-button: 1rem;
 
@@ -154,8 +159,9 @@
     --duration-fast: 0.2s;
     --duration-normal: 0.4s;
     --duration-slow: 0.5s;
-    --duration-reveal: 1s;
+    --duration-reveal: 450ms;
     --ease-bounce: cubic-bezier(0.1, 0, 0.3, 1);
+    --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
 
     /* --- Z-index --- */
     --z-content: 10;

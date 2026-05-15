@@ -19,6 +19,7 @@ import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
+import { revealDelay } from '@/lib/reveal-stagger';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -105,7 +106,7 @@ const isSparse = posts.length < 2;
                             <div
                                 class="articles__secondary-item"
                                 data-reveal="up"
-                                style={`transition-delay: ${(i + 1) * 100}ms`}
+                                style={`transition-delay: ${revealDelay({ index: i + 1 })}ms`}
                             >
                                 <ArticleCard data={post} locale={locale} />
                             </div>

@@ -17,8 +17,10 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { AlertCircleIcon } from '@repo/icons';
 
 const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(lang);
@@ -63,76 +65,36 @@ const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
     description={pageDescription}
     noindex={true}
 >
-    <main class="newsletter-error">
-        <div class="newsletter-error__card">
-            <span class="newsletter-error__icon" aria-hidden="true">!</span>
-            <h1 class="newsletter-error__title">{pageTitle}</h1>
-            <p class="newsletter-error__description">{pageDescription}</p>
-
-            {reason === 'token_expired' && (
-                <>
-                    {isAuthenticated ? (
-                        <form
-                            method="post"
-                            action="/api/v1/protected/newsletter/resend-verification"
-                            class="newsletter-error__resend"
-                        >
-                            <button class="newsletter-error__button" type="submit">
-                                {resendLabel}
-                            </button>
-                        </form>
-                    ) : (
-                        <a class="newsletter-error__button" href={signInHref}>
+    <StatusPage
+        variant="error"
+        Icon={AlertCircleIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        {reason === 'token_expired' && (
+            <Fragment slot="actions">
+                {isAuthenticated ? (
+                    <form
+                        method="post"
+                        action="/api/v1/protected/newsletter/resend-verification"
+                        class="newsletter-error__resend"
+                    >
+                        <button class="newsletter-error__button" type="submit">
                             {resendLabel}
-                        </a>
-                    )}
-                </>
-            )}
-        </div>
-    </main>
+                        </button>
+                    </form>
+                ) : (
+                    <a class="newsletter-error__button" href={signInHref}>
+                        {resendLabel}
+                    </a>
+                )}
+            </Fragment>
+        )}
+    </StatusPage>
 </DefaultLayout>
 
 <style>
-    .newsletter-error {
-        max-width: 560px;
-        margin: 0 auto;
-        padding: var(--space-12) var(--space-4);
-    }
-
-    .newsletter-error__card {
-        background-color: var(--surface-elevated);
-        border-radius: var(--radius-lg);
-        padding: var(--space-8) var(--space-6);
-        text-align: center;
-    }
-
-    .newsletter-error__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 56px;
-        height: 56px;
-        margin-bottom: var(--space-4);
-        border-radius: 50%;
-        background-color: var(--surface-warm);
-        color: var(--surface-warm-foreground);
-        font-size: 28px;
-        font-weight: 700;
-    }
-
-    .newsletter-error__title {
-        margin: 0 0 var(--space-3);
-        font-family: var(--font-heading);
-        font-size: var(--text-h3);
-        line-height: 1.2;
-    }
-
-    .newsletter-error__description {
-        margin: 0 0 var(--space-6);
-        font-size: var(--text-body);
-        line-height: 1.5;
-    }
-
     .newsletter-error__resend {
         margin: 0;
     }
@@ -141,12 +103,12 @@ const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: var(--space-2) var(--space-5);
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
         border: none;
-        border-radius: var(--radius-button);
-        background-color: var(--primary);
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-primary);
         color: var(--primary-foreground);
-        font-size: var(--text-button);
+        font-size: var(--text-button, 0.9375rem);
         font-weight: 600;
         text-decoration: none;
         cursor: pointer;

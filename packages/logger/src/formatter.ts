@@ -144,6 +144,24 @@ export function redactSensitiveData(value: unknown, key?: string): unknown {
         return redacted;
     }
 
+    // Handle Error instances explicitly — their fields (name, message, stack,
+    // cause) are non-enumerable, so they would survive the generic object
+    // branch below as `{}` after JSON.stringify, hiding the actual failure.
+    // Extract them by hand so downstream serialization shows the useful info.
+    if (value instanceof Error) {
+        const errorObj: Record<string, unknown> = {
+            name: value.name,
+            message: redactSensitiveData(value.message) as string
+        };
+        if (value.stack) {
+            errorObj.stack = redactSensitiveData(value.stack) as string;
+        }
+        if ('cause' in value && value.cause !== undefined) {
+            errorObj.cause = redactSensitiveData(value.cause);
+        }
+        return errorObj;
+    }
+
     // Handle arrays
     if (Array.isArray(value)) {
         return value.map((item) => redactSensitiveData(item));
@@ -334,8 +352,14 @@ export function formatValue(
         }
 
         if (expandLevels === 0) {
-            // Don't expand at all
-            return '[Object]';
+            // Don't expand visually — serialize compactly (one line, no indent)
+            // so the operator still sees the content. Returning a literal
+            // '[Object]' hides information at the worst possible moment.
+            try {
+                return JSON.stringify(redactedValue);
+            } catch {
+                return Object.prototype.toString.call(redactedValue);
+            }
         }
         // Expand to specified level
         const seen = new WeakSet();
@@ -357,7 +381,13 @@ export function formatValue(
             seen.add(obj as object);
 
             if (level <= 0) {
-                return '[Object]';
+                // Depth budget exhausted — serialize compactly instead of
+                // hiding the content behind '[Object]'.
+                try {
+                    return JSON.stringify(obj);
+                } catch {
+                    return Object.prototype.toString.call(obj);
+                }
             }
 
             if (Array.isArray(obj)) {

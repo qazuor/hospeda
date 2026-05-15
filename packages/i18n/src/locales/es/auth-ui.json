@@ -22,7 +22,19 @@
             "accountNotFound": "Cuenta no encontrada",
             "tooManyAttempts": "Demasiados intentos. Inténtalo más tarde",
             "networkError": "Error de conexión. Verifica tu internet",
-            "unknownError": "Error desconocido. Inténtalo de nuevo"
+            "unknownError": "Error desconocido. Inténtalo de nuevo",
+            "oauth": {
+                "access_denied": "Cancelaste el inicio de sesión con {{provider}}. Intentá de nuevo o usá otro método.",
+                "redirect_uri_mismatch": "Hay un problema de configuración con {{provider}}. Por favor, contactanos.",
+                "invalid_request": "La solicitud a {{provider}} es inválida. Intentá de nuevo en unos minutos.",
+                "unauthorized_client": "Nuestra aplicación no está autorizada en {{provider}}. Por favor, contactanos.",
+                "unsupported_response_type": "Hay un problema técnico con {{provider}}. Por favor, contactanos.",
+                "invalid_scope": "Los permisos solicitados a {{provider}} no son válidos. Por favor, contactanos.",
+                "server_error": "{{provider}} está teniendo problemas. Intentá de nuevo en unos minutos.",
+                "temporarily_unavailable": "{{provider}} no está disponible en este momento. Intentá de nuevo en unos minutos.",
+                "oauth_state_mismatch": "Tu sesión expiró durante el inicio de sesión. Intentá de nuevo.",
+                "unknown": "No pudimos completar el inicio de sesión con {{provider}}. Intentá de nuevo más tarde."
+            }
         }
     },
     "signUp": {
@@ -125,7 +137,18 @@
         },
         "resetPassword": {
             "title": "Restablecer contraseña",
-            "description": "Establece una nueva contraseña para tu cuenta de Hospeda"
+            "description": "Establece una nueva contraseña para tu cuenta de Hospeda",
+            "tokenError": {
+                "expired": {
+                    "title": "Este enlace expiró",
+                    "description": "Los enlaces de restablecimiento tienen una vigencia limitada por seguridad. Solicitá uno nuevo y volvé a intentarlo."
+                },
+                "invalid": {
+                    "title": "Este enlace ya no es válido",
+                    "description": "Es posible que ya lo hayas usado o que haya sido modificado. Solicitá uno nuevo para continuar."
+                },
+                "requestNewLinkCta": "Solicitar nuevo enlace"
+            }
         },
         "verifyEmail": {
             "title": "Verificar email",

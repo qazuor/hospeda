@@ -22,8 +22,34 @@
         "twitter": "https://twitter.com/nidosilvestrecountryhouse"
     },
     "price": {
-        "price": 20000,
-        "currency": "ARS"
+        "price": 112500,
+        "currency": "ARS",
+        "additionalFees": {
+            "luggageStorage": {
+                "price": 1000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "cleaning": {
+                "price": 11000,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "tax": {
+                "price": 14,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 17,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -35,40 +61,70 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-            "caption": "Casa rústica en la naturaleza",
-            "description": "Vista exterior de Nido Silvestre Country House",
+            "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
+            "caption": "Galería de la casa quinta",
+            "description": "Galería techada con vista al parque de la propiedad",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la casa rústica",
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Parrilla y patio",
+                "description": "Sector de parrilla y patio para reuniones al aire libre",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
-                "caption": "Interior",
-                "description": "Espacio integrado de living y cocina",
+                "url": "https://images.pexels.com/photos/13280780/pexels-photo-13280780.jpeg",
+                "caption": "Casa quinta tranquila",
+                "description": "Casa rural en paisaje natural con vegetación abundante alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio simple",
+                "url": "https://images.pexels.com/photos/17648544/pexels-photo-17648544.jpeg",
+                "caption": "Casa quinta con campos",
+                "description": "Casa rural pintoresca con techo a dos aguas rodeada de campos verdes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla rústica",
-                "description": "Área de parrilla exterior",
+                "url": "https://images.pexels.com/photos/32150698/pexels-photo-32150698.jpeg",
+                "caption": "Casa rural soleada",
+                "description": "Casa rural pintoresca rodeada de vegetación en día soleado de verano",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
-                "caption": "Entorno natural",
-                "description": "Paisaje rural con vegetación nativa",
+                "url": "https://images.pexels.com/photos/36675535/pexels-photo-36675535.jpeg",
+                "caption": "Casa rural con verde",
+                "description": "Casa rural rústica con vegetación frondosa alrededor en día nublado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/27056345/pexels-photo-27056345.jpeg",
+                "caption": "Casa de campo con flores",
+                "description": "Casa rural en paisaje campestre con camino sinuoso y flores silvestres",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17249891/pexels-photo-17249891.jpeg",
+                "caption": "Casa rural pintoresca",
+                "description": "Casa rural con arquitectura rústica en campo soleado y vegetación verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/9811331/pexels-photo-9811331.jpeg",
+                "caption": "Casa de madera rural",
+                "description": "Casa rural de madera rodeada de vegetación abundante en verano",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33623258/pexels-photo-33623258.jpeg",
+                "caption": "Casa quinta con campo",
+                "description": "Casa de campo con tierras alrededor y vista despejada al horizonte",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living de la casa quinta",
+                "description": "Sala de estar con TV y sillones cómodos para días de descanso",
                 "moderationState": "APPROVED"
             }
         ]

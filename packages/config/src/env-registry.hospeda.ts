@@ -428,6 +428,22 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Tracking ID opcional que Mercado Pago da a partners de integración certificados (developers/agencias que completaron la certificación de MP). Dejalo VACÍO (default) salvo que hayas completado la certificación y te hayan asignado uno.'
     },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR',
+        description: "Statement descriptor shown on the cardholder's bank statement",
+        descriptionEs: 'Descriptor que aparece en el resumen de la tarjeta del cliente',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'HOSPEDA',
+        exampleValue: 'HOSPEDA',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Free-text label, 1-11 ASCII uppercase chars (letters, digits, spaces). MP rejects anything longer or with lowercase / non-ASCII. Defaults to "HOSPEDA"; override only if MP homologation feedback requests it.',
+        howToObtainEs:
+            'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
+    },
 
     // -------------------------------------------------------------------------
     // Email

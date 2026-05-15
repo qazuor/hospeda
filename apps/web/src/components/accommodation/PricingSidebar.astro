@@ -42,25 +42,64 @@ const capacity = typeof extraInfo?.capacity === 'number' ? extraInfo.capacity : 
 const minNights = typeof extraInfo?.minNights === 'number' ? extraInfo.minNights : null;
 const maxNights = typeof extraInfo?.maxNights === 'number' ? extraInfo.maxNights : null;
 
-// Pre-process fees in frontmatter to avoid `as` casts in template
-interface FeeEntry { readonly key: string; readonly amount: number }
-interface DiscountEntry { readonly key: string; readonly pct: number }
+// Pre-process fees and discounts in frontmatter. Both follow AccommodationPriceSchema:
+// each entry has { price, currency, isPercent?, isPerStay?, isPerNight?, ... } and the
+// container map also carries an optional `others: Array<{name, ...}>` for custom entries.
+interface FeeEntry {
+  readonly key: string;
+  readonly amount: number;
+  readonly isPercent: boolean;
+  readonly customName?: string;
+}
+interface DiscountEntry {
+  readonly key: string;
+  readonly pct: number;
+  readonly customName?: string;
+}
+
+const isFeeRecord = (v: unknown): v is Record<string, unknown> =>
+  v !== null && typeof v === 'object';
 
 const feeEntries: FeeEntry[] = [];
 if (fees) {
   for (const [key, val] of Object.entries(fees)) {
-    if (!val || typeof val !== 'object') continue;
-    const feeObj = val as Record<string, unknown>;
-    const amount = feeObj.amount as number | undefined;
-    if (amount) feeEntries.push({ key, amount });
+    if (key === 'others') {
+      if (Array.isArray(val)) {
+        for (const other of val) {
+          if (!isFeeRecord(other)) continue;
+          const amount = typeof other.price === 'number' ? other.price : undefined;
+          const name = typeof other.name === 'string' ? other.name : undefined;
+          if (amount && name) {
+            feeEntries.push({ key: name, amount, isPercent: other.isPercent === true, customName: name });
+          }
+        }
+      }
+      continue;
+    }
+    if (!isFeeRecord(val)) continue;
+    const amount = typeof val.price === 'number' ? val.price : undefined;
+    if (amount) feeEntries.push({ key, amount, isPercent: val.isPercent === true });
   }
 }
 
 const discountEntries: DiscountEntry[] = [];
 if (discounts) {
   for (const [key, val] of Object.entries(discounts)) {
-    if (!val) continue;
-    const pct = typeof val === 'number' ? val : (val as Record<string, unknown>)?.percentage;
+    if (key === 'others') {
+      if (Array.isArray(val)) {
+        for (const other of val) {
+          if (!isFeeRecord(other)) continue;
+          const pct = typeof other.price === 'number' ? other.price : undefined;
+          const name = typeof other.name === 'string' ? other.name : undefined;
+          if (typeof pct === 'number' && pct > 0 && name) {
+            discountEntries.push({ key: name, pct, customName: name });
+          }
+        }
+      }
+      continue;
+    }
+    if (!isFeeRecord(val)) continue;
+    const pct = typeof val.price === 'number' ? val.price : undefined;
     if (typeof pct === 'number' && pct > 0) discountEntries.push({ key, pct });
   }
 }
@@ -70,9 +109,9 @@ const hasDiscounts = discountEntries.length > 0;
 ---
 
 <div class="pricing-sidebar">
-  {hasPrice ? (
+  {hasPrice && price?.price != null ? (
     <div class="pricing-sidebar__price-block">
-      <span class="pricing-sidebar__amount">{formatPrice(price!.price!)}</span>
+      <span class="pricing-sidebar__amount">{formatPrice(price.price)}</span>
       <span class="pricing-sidebar__period">{t('accommodations.detail.pricing.perNightLabel')}</span>
     </div>
   ) : (
@@ -116,10 +155,10 @@ const hasDiscounts = discountEntries.length > 0;
         {t('accommodations.detail.pricing.viewBreakdown')}
       </summary>
       <div class="pricing-sidebar__breakdown-content">
-        {feeEntries.map(({ key, amount }) => (
+        {feeEntries.map(({ key, amount, isPercent }) => (
           <div class="pricing-sidebar__fee-row">
             <span class="pricing-sidebar__fee-name">{key}</span>
-            <span class="pricing-sidebar__fee-amount">{formatPrice(amount)}</span>
+            <span class="pricing-sidebar__fee-amount">{isPercent ? `${amount}%` : formatPrice(amount)}</span>
           </div>
         ))}
         {discountEntries.map(({ key, pct }) => (

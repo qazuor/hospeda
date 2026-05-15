@@ -16,6 +16,10 @@ let activeObserver: IntersectionObserver | null = null;
  * Disconnects any previously active observer before creating a new one,
  * preventing memory leaks across View Transition navigations.
  *
+ * Elements already inside the viewport at init time are marked revealed
+ * synchronously (no animation) so above-the-fold content does not flash
+ * in on page load.
+ *
  * Respects `prefers-reduced-motion`: if the user has requested reduced motion,
  * all [data-reveal] elements are immediately marked as .revealed without
  * animation.
@@ -51,10 +55,17 @@ export function initScrollReveal(): void {
                 }
             }
         },
-        { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+        { threshold: 0, rootMargin: '0px 0px -10% 0px' }
     );
 
+    const viewportHeight = window.innerHeight;
     for (const el of document.querySelectorAll('[data-reveal]')) {
+        const rect = el.getBoundingClientRect();
+        // Already in (or above) the viewport on load — reveal instantly, skip animation.
+        if (rect.top < viewportHeight && rect.bottom > 0) {
+            el.classList.add('revealed');
+            continue;
+        }
         activeObserver.observe(el);
     }
 }

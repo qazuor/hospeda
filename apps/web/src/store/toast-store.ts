@@ -120,3 +120,63 @@ export function subscribe(listener: () => void): () => void {
         listeners.delete(listener);
     };
 }
+
+/**
+ * sessionStorage key used by {@link queueToastForNextPage} /
+ * {@link drainPendingToast} to persist a toast across a hard navigation
+ * (`window.location.href = ...`), which wipes module state otherwise.
+ */
+const PENDING_TOAST_STORAGE_KEY = 'hospeda.pendingToast';
+
+/**
+ * Persist a toast in sessionStorage so it surfaces on the NEXT page load
+ * instead of the current one. Use this when calling `addToast` immediately
+ * before a hard navigation, where the current page would unmount before
+ * the user can see the toast.
+ *
+ * Drained automatically by `ToastViewport` via {@link drainPendingToast}.
+ *
+ * @param params - Same shape as {@link addToast} (without `id`).
+ */
+export function queueToastForNextPage(params: Omit<Toast, 'id'>): void {
+    if (typeof sessionStorage === 'undefined') {
+        return;
+    }
+    try {
+        sessionStorage.setItem(PENDING_TOAST_STORAGE_KEY, JSON.stringify(params));
+    } catch {
+        // sessionStorage may throw in private mode or when full — fail silently.
+    }
+}
+
+/**
+ * Read and remove any toast queued by {@link queueToastForNextPage}, then
+ * emit it through the regular toast store. Called once on `ToastViewport`
+ * mount.
+ */
+export function drainPendingToast(): void {
+    if (typeof sessionStorage === 'undefined') {
+        return;
+    }
+    let raw: string | null = null;
+    try {
+        raw = sessionStorage.getItem(PENDING_TOAST_STORAGE_KEY);
+        if (raw !== null) {
+            sessionStorage.removeItem(PENDING_TOAST_STORAGE_KEY);
+        }
+    } catch {
+        // sessionStorage may throw — nothing to drain.
+        return;
+    }
+    if (raw === null) {
+        return;
+    }
+    try {
+        const params = JSON.parse(raw) as Omit<Toast, 'id'>;
+        if (params && typeof params.message === 'string' && typeof params.type === 'string') {
+            addToast(params);
+        }
+    } catch {
+        // Malformed JSON — drop silently.
+    }
+}

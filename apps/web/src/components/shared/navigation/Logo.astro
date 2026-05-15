@@ -4,18 +4,19 @@
  * @description Site logo component. Renders the Hospeda brand logo as an
  * image wrapped in an anchor tag linking to the homepage.
  *
- * Two image assets are used to support light/dark variants:
- * - `dark`  variant → `/assets/images/logo-1.png`   (dark logo for light backgrounds)
- * - `light` variant → `/assets/images/logo-light-footer.png` (light logo for dark backgrounds)
+ * Both variants currently share the same source asset; `variant=light` is
+ * kept for API compatibility with existing callers and so a separate light
+ * asset can be wired in later without changing call sites.
  *
- * Size mappings (Tailwind height classes):
- * - `sm` → h-8  (32px)
- * - `md` → h-10 (40px)
- * - `lg` → h-14 (56px)
+ * Size mappings:
+ * - `sm` → 2rem   (32px)
+ * - `md` → 2.5rem (40px)
+ * - `lg` → 3.5rem (56px)
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import logoSrc from '@/assets/images/logo.webp';
 
 interface Props {
 	/** Controls which logo asset is rendered. Use `light` on dark backgrounds. */
@@ -29,7 +30,6 @@ interface Props {
 }
 
 const {
-	variant = 'dark',
 	size = 'md',
 	class: className,
 	locale = 'es',
@@ -44,14 +44,7 @@ const sizeValues: Record<NonNullable<Props['size']>, string> = {
 	lg: '3.5rem',
 } as const;
 
-/** Map variant tokens to the corresponding public asset paths. */
-const srcMap: Record<NonNullable<Props['variant']>, string> = {
-	dark: '/assets/images/logo-1.png',
-	light: '/assets/images/logo-light-footer.png',
-} as const;
-
 const heightValue = sizeValues[size];
-const src = srcMap[variant];
 ---
 
 <a
@@ -60,7 +53,9 @@ const src = srcMap[variant];
 	class:list={['logo', className]}
 >
 	<img
-		src={src}
+		src={logoSrc.src}
+		width={logoSrc.width}
+		height={logoSrc.height}
 		alt="Hospeda"
 		class="logo__image"
 		style={`height: ${heightValue};`}

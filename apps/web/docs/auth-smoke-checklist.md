@@ -71,10 +71,13 @@ Internal lockout-protected wrappers live at `apps/api/src/routes/auth/handler.ts
 
 #### T-018 — Reset password edge cases
 
+Since SPEC-118 (PR #TBD) the reset-password page SSR-validates the token on first render and shows an error state **before** the form is rendered. The contract collapses three indistinguishable cases (used / tampered / unknown) into a single `invalid` reason; only `expired` is distinguishable.
+
 - [ ] **Happy path**: click reset link, fill new password, submit. Expected: redirect to signin (or auto-signin). Signin with the NEW password works.
-- [ ] **Expired token**: wait > Better Auth token TTL (1 hour by default unless overridden) and click the same link. Expected: error "token expired or invalid".
-- [ ] **Used token**: after happy-path completion, click the SAME reset link a second time. Expected: error "token already used".
-- [ ] **Invalid token**: hand-modify the token in the URL (delete or alter chars), submit. Expected: error.
+- [ ] **Expired token**: wait > Better Auth token TTL (1 hour by default unless overridden) and click the same link. Expected: page renders `ResetPasswordTokenError` with title "Este enlace expiró" and a "Solicitar nuevo enlace" CTA. **No password input is shown.**
+- [ ] **Used token**: after happy-path completion, click the SAME reset link a second time. Expected: page renders `ResetPasswordTokenError` with title "Este enlace ya no es válido" and the same CTA. **No password input is shown.** (Distinct from "expired" wording.)
+- [ ] **Invalid token**: hand-modify the token in the URL (delete or alter chars). Expected: same error state as "Used token" — title "Este enlace ya no es válido" + CTA. (See SPEC-118 Phase 0: indistinguishable from used.)
+- [ ] **Missing token**: visit `/es/auth/reset-password/` without any `?token=` query. Expected: same `invalid` error state, no fetch to the API check endpoint (skipped at SSR).
 
 ### OAuth (T-013, T-014, T-016)
 
@@ -128,8 +131,36 @@ Same as T-013 with the Facebook button. Verify `accounts.provider = "facebook"` 
 
 ### OAuth error logging (T-024)
 
-- [ ] Trigger an OAuth flow but click "Cancel" on the consent screen. Expected: redirect back to signin with an error message AND the underlying error is logged to Sentry with the correct environment tag (`HOSPEDA_SENTRY_ENVIRONMENT=staging` after SPEC-103 T-076).
-- [ ] In Sentry, filter by `environment:staging` and verify the event has the OAuth error context (provider, error code).
+> Re-run this row after deploying SPEC-120 (OAuth Cancel/Error Observability). Pre-SPEC-120 this row was PARTIAL: the redirect worked but no UI feedback and no Sentry event. Post-SPEC-120 it must be full PASS.
+
+**Setup** (each test run):
+
+1. Sign out of Hospeda staging (or open in private window).
+2. Revoke the Hospeda grant on the provider you are about to test:
+   - Google: `https://myaccount.google.com/permissions` → Hospeda → Remove access.
+   - Facebook: `https://www.facebook.com/settings?tab=applications` → Hospeda → Remove.
+3. Open DevTools → Network tab, tick **"Preserve log"**. Open Console tab too.
+4. Open Sentry in another tab filtered to `environment:staging`, narrow to the last 10 minutes.
+
+**Google cancel**:
+
+- [ ] Navigate to `https://staging.hospeda.com.ar/es/auth/signin/`. Click "Continuar con Google". On the Google consent screen, click **Cancelar**.
+- [ ] Verify: browser lands back on `/es/auth/signin/`. A banner is visible above the form reading "**Cancelaste el inicio de sesión con Google. Intentá de nuevo o usá otro método.**" (or the matching locale).
+- [ ] Verify URL **after hydration** is exactly `https://staging.hospeda.com.ar/es/auth/signin/` (no `?error=`, no `#_=_`). Reload the page → banner does NOT reappear.
+- [ ] Browser console shows `[OAuth] access_denied: (no description)`.
+- [ ] Sentry has a new event titled `OAuth google signin failed: access_denied` with level `warning`, tags `module:auth.oauth`, `provider:google`, `error_code:access_denied`, `environment:staging`.
+
+**Facebook cancel**:
+
+- [ ] Same flow as above with "Continuar con Facebook" → **Cancel** on the consent dialog.
+- [ ] Banner text reflects Facebook: "**Cancelaste el inicio de sesión con Facebook. Intentá de nuevo o usá otro método.**".
+- [ ] URL after hydration is clean (no `?error=`, no `#_=_` — Facebook adds the trailing hash, the cleanup must strip it).
+- [ ] Browser console shows `[OAuth] access_denied: Permissions error`.
+- [ ] Sentry event titled `OAuth facebook signin failed: access_denied`, level `warning`, tags as above with `provider:facebook`. The Sentry event's `extra.provider_raw_query` includes `error_code:200`, `error_reason:user_denied`, `error_description:Permissions error`.
+
+**Locale check** (optional):
+
+- [ ] Repeat one provider cancel from `/en/auth/signin/` and `/pt/auth/signin/` — banner text reflects the active locale.
 
 ## Known issues and limitations
 
@@ -148,6 +179,7 @@ Track each full run as a row:
 |---|---|---|---|---|
 | 2026-05-13 | qazuor | Initial run | T-017 forget-password 404 → fixed via PR #1075; T-012 redirect to localhost → fixed via PR #1072 | Two pre-launch bugs surfaced and shipped during the run |
 | 2026-05-14 | qazuor + Playwright | Re-run after fixes | All automatable rows PASS; OAuth + cascade rows pending operator action | See SPEC-103 T-027 session tracker |
+| 2026-05-14 | qazuor | OAuth smokes operator pass | None blocker; T-024 partial (observability gap, see side-finding #32) | Closed T-013/T-014/T-016/T-018/T-020 PASS, T-024 PARTIAL. Surfaced + fixed mid-run: admin SPA broken by `node:crypto` leak from `@repo/utils` (PR #1077 + #1080); FB OAuth redirect URI missing on staging (whitelisted in FB Developer Console). New side-findings #31..#34 added to TODOs.md. |
 
 ## Cross-spec references
 

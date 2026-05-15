@@ -112,9 +112,10 @@ export function AccommodationsListingMap({
                     slug: card.slug,
                     name: card.name,
                     thumbnailUrl: card.featuredImage.url,
-                    priceLabel: card.price
-                        ? `${card.price.amount} ${card.price.currency}`
-                        : undefined,
+                    priceLabel:
+                        card.price?.amount != null && card.price?.currency
+                            ? `${card.price.amount} ${card.price.currency}`
+                            : undefined,
                     typeLabel: typeLabels?.[card.type] ?? card.type,
                     cityName: card.cityName,
                     summary: card.summary,

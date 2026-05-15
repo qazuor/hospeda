@@ -8,6 +8,7 @@
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { SearchIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -31,39 +32,55 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---
 
 <ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')} noindex={true}>
-	<!-- Illustrated icon -->
-	<div class="err500-illustration" aria-hidden="true">
-		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<circle cx="60" cy="60" r="54" stroke="var(--primary, #3b82f6)" stroke-width="1.5" opacity="0.12" />
-			<circle cx="60" cy="60" r="40" stroke="var(--primary, #3b82f6)" stroke-width="1.5" opacity="0.08" />
+	<StatusPage
+		variant="not-found"
+		title={t('error.404.heading')}
+		description={t('error.404.message')}
+		hideBlob
+	>
+		<svg
+			slot="illustration"
+			width="120"
+			height="120"
+			viewBox="0 0 120 120"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<circle cx="60" cy="60" r="54" stroke="var(--brand-primary)" stroke-width="1.5" opacity="0.12" />
+			<circle cx="60" cy="60" r="40" stroke="var(--brand-primary)" stroke-width="1.5" opacity="0.08" />
 			<!-- Magnifying glass -->
-			<circle cx="54" cy="54" r="16" stroke="var(--primary, #3b82f6)" stroke-width="2.5" fill="oklch(from var(--primary, #3b82f6) l c h / 0.06)" />
-			<line x1="65" y1="65" x2="78" y2="78" stroke="var(--primary, #3b82f6)" stroke-width="2.5" stroke-linecap="round" />
+			<circle cx="54" cy="54" r="16" stroke="var(--brand-primary)" stroke-width="2.5" fill="oklch(from var(--brand-primary) l c h / 0.06)" />
+			<line x1="65" y1="65" x2="78" y2="78" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" />
 			<!-- Question mark inside lens -->
-			<text x="54" y="59" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="var(--primary, #3b82f6)" opacity="0.6">?</text>
+			<text x="54" y="59" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="var(--brand-primary)" opacity="0.6">?</text>
 			<!-- Small decorative dots -->
-			<circle cx="60" cy="26" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
-			<circle cx="60" cy="94" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
-			<circle cx="26" cy="60" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
-			<circle cx="94" cy="60" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
+			<circle cx="60" cy="26" r="3" fill="var(--brand-primary)" opacity="0.15" />
+			<circle cx="60" cy="94" r="3" fill="var(--brand-primary)" opacity="0.15" />
+			<circle cx="26" cy="60" r="3" fill="var(--brand-primary)" opacity="0.15" />
+			<circle cx="94" cy="60" r="3" fill="var(--brand-primary)" opacity="0.15" />
 		</svg>
-	</div>
 
-	<div class="err500-code" aria-hidden="true">404</div>
-
-	<h1 class="err500-title">{t('error.404.heading')}</h1>
-	<p class="err500-message">{t('error.404.message')}</p>
-
-	<div class="err500-actions">
-		<GradientButton href={searchUrl} label="Buscar" variant="primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			href={searchUrl}
+			label="Buscar"
+			variant="primary"
+			shape="rounded"
+		>
 			<SearchIcon slot="leading" size={18} />
 		</GradientButton>
-		<GradientButton href={feedbackWithParams} label="Reportar enlace roto" variant="outline-primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			href={feedbackWithParams}
+			label="Reportar enlace roto"
+			variant="outline-primary"
+			shape="rounded"
+		>
 			<ChatIcon slot="leading" size={18} />
 		</GradientButton>
-	</div>
 
-	<a href={homeUrl} class="err500-home-link">
-		{t('error.404.goHome')}
-	</a>
+		<a slot="footer" href={homeUrl}>
+			{t('error.404.goHome')}
+		</a>
+	</StatusPage>
 </ErrorLayout>

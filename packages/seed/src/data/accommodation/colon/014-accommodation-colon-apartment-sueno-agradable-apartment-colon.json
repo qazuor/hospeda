@@ -18,7 +18,7 @@
         "website": "https://suenoagradableapartment.com.ar"
     },
     "price": {
-        "price": 11000,
+        "price": 53000,
         "currency": "ARS"
     },
     "location": {
@@ -33,28 +33,46 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-            "caption": "Interior del apartamento",
-            "description": "Vista del área de estar y cocina",
+            "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+            "caption": "Cocina del departamento",
+            "description": "Cocina blanca modular con detalles en madera y luz natural",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-                "caption": "Ambiente principal",
-                "description": "Espacio de living y cocina",
+                "url": "https://images.pexels.com/photos/32750273/pexels-photo-32750273.jpeg",
+                "caption": "Apartamento con vista a la ciudad",
+                "description": "Piso alto con ventanal panorámico y vista urbana del Litoral",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio con cama matrimonial",
+                "url": "https://images.pexels.com/photos/9494898/pexels-photo-9494898.jpeg",
+                "caption": "Living amplio",
+                "description": "Sala espaciosa del apartamento con sillón grande y mobiliario actual",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina compacta equipada",
+                "url": "https://images.pexels.com/photos/6077368/pexels-photo-6077368.jpeg",
+                "caption": "Ambiente luminoso",
+                "description": "Sala amplia con grandes ventanas y mucha luz natural durante el día",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7031708/pexels-photo-7031708.jpeg",
+                "caption": "Living con TV",
+                "description": "Sala acogedora con sillón mullido y TV en pared del apartamento",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/30765736/pexels-photo-30765736.jpeg",
+                "caption": "Living con balcón ajardinado",
+                "description": "Apartamento moderno con balcón con plantas y vista al exterior",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/11296215/pexels-photo-11296215.jpeg",
+                "caption": "Living con iluminación cálida",
+                "description": "Sala de estar amplia con sillones, mesa baja y lámparas de pie",
                 "moderationState": "APPROVED"
             }
         ]

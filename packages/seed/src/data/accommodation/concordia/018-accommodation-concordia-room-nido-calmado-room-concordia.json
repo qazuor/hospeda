@@ -20,10 +20,6 @@
         "instagram": "https://instagram.com/nidocalmadoroomok",
         "twitter": "https://twitter.com/nidocalmadoroomok"
     },
-    "price": {
-        "price": 5500,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-31.3898",
@@ -34,28 +30,64 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
-            "caption": "Interior de la habitación",
-            "description": "Vista de la habitación privada",
+            "url": "https://images.pexels.com/photos/6580369/pexels-photo-6580369.jpeg",
+            "caption": "Habitación serena",
+            "description": "Dormitorio con iluminación elegante y almohadones acogedores",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
-                "caption": "Habitación",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/6782578/pexels-photo-6782578.jpeg",
+                "caption": "Cama con almohadones",
+                "description": "Habitación luminosa con almohadones y manta sobre la cama",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
-                "caption": "Baño",
-                "description": "Baño compartido",
+                "url": "https://images.pexels.com/photos/3144580/pexels-photo-3144580.jpeg",
+                "caption": "Dormitorio elegante",
+                "description": "Habitación de diseño con iluminación tenue y ropa de cama prolija",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
-                "caption": "Espacio común",
-                "description": "Área con heladera y microondas",
+                "url": "https://images.pexels.com/photos/8089081/pexels-photo-8089081.jpeg",
+                "caption": "Dormitorio minimalista",
+                "description": "Habitación sobria con cama mullida y mobiliario contemporáneo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8089073/pexels-photo-8089073.jpeg",
+                "caption": "Habitación con TV",
+                "description": "Dormitorio moderno con cama gris y TV en la pared",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35236655/pexels-photo-35236655.jpeg",
+                "caption": "Habitación con escritorio",
+                "description": "Dormitorio moderno con escritorio de madera y placard en habitación amplia",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6862448/pexels-photo-6862448.jpeg",
+                "caption": "Habitación cálida",
+                "description": "Dormitorio acogedor con cama de madera y luz suave",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/31538818/pexels-photo-31538818.jpeg",
+                "caption": "Dormitorio cálido",
+                "description": "Habitación acogedora con luz cálida en ambiente sereno para descansar",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/14580423/pexels-photo-14580423.jpeg",
+                "caption": "Habitación con almohadones",
+                "description": "Dormitorio acogedor con almohadones y obras de arte sobre la pared",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35430054/pexels-photo-35430054.jpeg",
+                "caption": "Dormitorio con madera",
+                "description": "Habitación acogedora con mobiliario de madera y luz cálida",
                 "moderationState": "APPROVED"
             }
         ]

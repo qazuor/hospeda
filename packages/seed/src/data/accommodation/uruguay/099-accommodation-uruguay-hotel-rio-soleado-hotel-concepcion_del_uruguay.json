@@ -23,8 +23,15 @@
         "twitter": "https://twitter.com/riosoleado"
     },
     "price": {
-        "price": 21000,
-        "currency": "ARS"
+        "price": 102000,
+        "currency": "ARS",
+        "discounts": {
+            "monthly": {
+                "price": 20,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,40 +43,70 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
-            "caption": "Fachada del hotel",
-            "description": "Vista exterior del Rio Soleado Hotel",
+            "url": "https://images.pexels.com/photos/28102352/pexels-photo-28102352.jpeg",
+            "caption": "Lobby con sillones",
+            "description": "Sillones en el lobby moderno del hotel para descansar y esperar",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
+                "url": "https://images.pexels.com/photos/35103156/pexels-photo-35103156.jpeg",
+                "caption": "Habitación acogedora",
+                "description": "Habitación del hotel de diseño moderno con detalles acogedores",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación",
-                "description": "Habitación doble",
+                "url": "https://images.pexels.com/photos/36354489/pexels-photo-36354489.jpeg",
+                "caption": "Lobby moderno",
+                "description": "Lobby del hotel con diseño moderno, mobiliario sobrio y luz cálida",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "url": "https://images.pexels.com/photos/28962539/pexels-photo-28962539.jpeg",
                 "caption": "Habitación con vista",
-                "description": "Habitación con vista parcial al río",
+                "description": "Habitación moderna con ventanal panorámico y vista a la ciudad",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
+                "caption": "Lobby del hotel",
+                "description": "Lobby amplio con arquitectura clásica y techo abovedado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34559240/pexels-photo-34559240.jpeg",
+                "caption": "Habitación de lujo",
+                "description": "Habitación amplia con diseño contemporáneo y mobiliario premium",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6474588/pexels-photo-6474588.jpeg",
+                "caption": "Lobby decorado",
+                "description": "Lobby del hotel con decoración elegante y luces tenues por la noche",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/29649745/pexels-photo-29649745.jpeg",
+                "caption": "Lobby con araña",
+                "description": "Lobby elegante del hotel con araña de cristal y mobiliario clásico",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5378699/pexels-photo-5378699.jpeg",
+                "caption": "Pareja en el lobby",
+                "description": "Pareja caminando por un lobby lujoso del hotel con detalles elegantes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Fachada del hotel",
+                "description": "Frente del hotel con entrada principal y cartelería",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Área de desayuno",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/2104881/pexels-photo-2104881.jpeg",
-                "caption": "Terraza",
-                "description": "Terraza con solárium",
+                "caption": "Lobby bar",
+                "description": "Bar elegante del hotel con iluminación tenue y ambiente sofisticado",
                 "moderationState": "APPROVED"
             }
         ]
