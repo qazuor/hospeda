@@ -12,9 +12,10 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
+import { queueToastForNextPage } from '@/store/toast-store';
 import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH } from '@repo/schemas';
 import { useState } from 'react';
 import styles from './SetPassword.module.css';
@@ -121,13 +122,22 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 return;
             }
 
-            addToast({
+            // Persist the toast across the hard navigation — the current
+            // page tree unmounts on `window.location.href`, so calling
+            // `addToast` here would never render. `queueToastForNextPage`
+            // stashes the toast in sessionStorage and `ToastViewport` drains
+            // it on the next page's mount.
+            queueToastForNextPage({
                 type: 'success',
                 message: t(
                     'account.setPassword.successToast',
                     'Contraseña establecida correctamente'
                 )
             });
+
+            // Refresh the Better Auth session cookie cache so the next page
+            // sees the newly linked credential account immediately.
+            await refreshBetterAuthSession();
 
             window.location.href = `/${locale}/mi-cuenta/`;
         } catch {
@@ -174,6 +184,11 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 );
                 return;
             }
+
+            // Refresh the session cookie cache so the next page reflects the
+            // updated set_password_prompted flag (prevents middleware from
+            // re-redirecting back to this screen if it stays in cache).
+            await refreshBetterAuthSession();
 
             window.location.href = `/${locale}/mi-cuenta/`;
         } catch {

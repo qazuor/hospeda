@@ -182,6 +182,32 @@ ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch
 
 `main` is the validated baseline; `staging` is the integration line. Never branch features from `main`, never PR features into `main`. The only exception is a production hotfix (branch from `main`, fix, PR to `main`, then back-merge `main` → `staging`).
 
+#### Post-merge: a merged PR is DONE — new work needs a new branch + new PR
+
+When a PR is merged, GitHub closes it. Pushing additional commits to the same branch DOES NOT reopen the PR — those commits become orphans living on a branch with no review surface. This is silent — git accepts the push, you only notice later when the work isn't anywhere.
+
+**Rules to prevent orphan commits:**
+
+1. Before pushing to any branch that has had a PR opened against it, ALWAYS check whether the PR is still open:
+
+   ```bash
+   GITHUB_TOKEN= gh pr list --head <branch-name> --state all --json number,state,title
+   ```
+
+   If the PR is `MERGED` or `CLOSED`, the branch is done. Pushing more commits to it goes nowhere.
+
+2. If you discover a bug or follow-up after the original PR merged, treat it as new work:
+
+   ```bash
+   git fetch origin staging
+   git checkout -b fix/SPEC-NNN-<followup-slug> origin/staging
+   # cherry-pick or re-author the fix here
+   git push -u origin fix/SPEC-NNN-<followup-slug>
+   GITHUB_TOKEN= gh pr create --base staging --head fix/SPEC-NNN-<followup-slug> ...
+   ```
+
+3. Claude operating rule: BEFORE running `git push` on a branch you previously opened a PR from, run `gh pr list --head <branch>` and verify state. If `MERGED`/`CLOSED`, STOP and tell the user "the PR is closed — I need to cut a new branch for this follow-up". Never silently push to a closed-PR branch and assume the user will notice.
+
 ### Biome Lint Gotchas
 
 Common biome errors that block commits:

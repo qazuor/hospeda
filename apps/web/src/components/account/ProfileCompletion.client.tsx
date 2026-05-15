@@ -12,6 +12,7 @@
  * Hydration: caller MUST use `client:load` (the form must be interactive on first paint).
  */
 
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useState } from 'react';
@@ -162,6 +163,11 @@ export function ProfileCompletion({
             const result = (await response.json()) as {
                 data?: { profileCompleted?: boolean; requiresSetPassword?: boolean };
             };
+
+            // Force Better Auth to refresh the session cookie cache so the
+            // navbar on the next page reflects the new display_name (otherwise
+            // it stays empty until the cookie cache TTL expires).
+            await refreshBetterAuthSession();
 
             if (result.data?.requiresSetPassword) {
                 window.location.href = `/${locale}/mi-cuenta/agregar-contrasena/`;

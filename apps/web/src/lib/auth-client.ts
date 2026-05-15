@@ -187,5 +187,32 @@ export async function verifyEmail({
     }
 }
 
+/**
+ * Force Better Auth to bypass its cookie cache and re-fetch the user record
+ * from the database, then update the session cookie with the fresh snapshot.
+ *
+ * Call this from the client after a mutation that changes a field surfaced in
+ * the session (notably `display_name`, mapped to Better Auth's virtual `name`)
+ * BEFORE doing a hard navigation. Without this, the next page renders with
+ * the stale cached snapshot (default cookie cache: 5 minutes), so eg. the
+ * navbar shows an empty name even though the DB already has the new value.
+ *
+ * Best-effort: any network or auth error is swallowed — the caller proceeds
+ * with the redirect either way (the cache will refresh organically within
+ * the cookie cache TTL).
+ */
+export async function refreshBetterAuthSession(): Promise<void> {
+    const baseURL = getAuthBaseUrl();
+    try {
+        await fetch(`${baseURL}/api/auth/get-session?disableCookieCache=true`, {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store'
+        });
+    } catch {
+        // Best-effort: swallow.
+    }
+}
+
 /** Inferred session type from the Better Auth server config */
 export type Session = typeof authClient.$Infer.Session;
