@@ -809,6 +809,17 @@
             "archiveNote": "Newsletter MVP post-merge follow-ups completed 2026-05-14. Spec docs removed; git history is source of truth."
         },
         {
+            "specId": "SPEC-109",
+            "title": "MercadoPago Production Readiness — full toggle, code hardening, homologation",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-109-mercadopago-production-readiness",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-109-mp-production",
+            "branch": "spec/SPEC-109-mercadopago-production-readiness",
+            "startedAt": "2026-05-15T00:00:00Z"
+        },
+        {
             "specId": "SPEC-114",
             "title": "Forget-password endpoint returns 404 on staging — Better Auth misconfig or build artifact stale",
             "type": "fix",

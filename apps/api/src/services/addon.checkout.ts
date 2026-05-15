@@ -7,6 +7,7 @@
  * @module services/addon.checkout
  */
 
+import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
@@ -36,20 +37,107 @@ import { PromoCodeService } from './promo-code.service';
  * This is a thin wrapper that centralizes raw SDK usage to a single place,
  * making future migration to the billing adapter straightforward.
  *
+ * The `idempotencyKey` is forwarded to MercadoPago via the `X-Idempotency-Key`
+ * header. MP guarantees that two calls made with the same key (within their
+ * dedup window) return the same preference, which makes retries safe and
+ * prevents duplicate preferences from double-clicks or transient network
+ * errors.
+ *
  * @param accessToken - MercadoPago API access token
  * @param preferenceData - Preference creation data
+ * @param idempotencyKey - UUID forwarded as MP's X-Idempotency-Key header
  * @returns Created preference object
  */
 async function createMercadoPagoPreference({
     accessToken,
-    preferenceData
+    preferenceData,
+    idempotencyKey
 }: {
     accessToken: string;
     preferenceData: PreferenceCreateData;
+    idempotencyKey: string;
 }) {
     const mpClient = new MercadoPagoConfig({ accessToken });
     const preferenceClient = new Preference(mpClient);
-    return preferenceClient.create(preferenceData);
+    return preferenceClient.create({
+        ...preferenceData,
+        requestOptions: {
+            ...preferenceData.requestOptions,
+            idempotencyKey
+        }
+    });
+}
+
+/**
+ * MercadoPago category id for digital services / SaaS subscriptions.
+ *
+ * Set on every `items[].category_id`. MP's fraud engine uses this to model
+ * approval rate; populating it (instead of leaving it blank) is one of the
+ * 14 mandatory items in MP's quality checklist.
+ */
+const MP_ITEM_CATEGORY_ID = 'services';
+
+/**
+ * Payer fields required by MercadoPago Checkout Pro for quality compliance.
+ *
+ * MP rejects empty strings on `payer.last_name`, so callers must always
+ * supply a non-empty value (a single space is acceptable as a fallback).
+ */
+interface MercadoPagoPayerInfo {
+    readonly email: string;
+    readonly first_name: string;
+    readonly last_name: string;
+}
+
+/**
+ * Derive `payer` fields for a MercadoPago preference from a billing customer.
+ *
+ * MercadoPago Checkout Pro's quality checklist requires `payer.email`,
+ * `payer.first_name`, and `payer.last_name` to be populated. We source them
+ * from the QZPay billing customer:
+ *
+ * - `email` comes directly from `customer.email`.
+ * - `first_name` and `last_name` are split from `customer.metadata.name` on
+ *   the first space. When `metadata.name` is missing or empty, we fall back
+ *   to the local-part of the email for `first_name` and a single space for
+ *   `last_name` (MP rejects empty strings).
+ *
+ * @param customer - Billing customer with `email` and optional `metadata.name`
+ * @returns Payer info ready to embed in the preference body
+ */
+function extractPayerInfo(customer: {
+    readonly email: string;
+    readonly metadata?: Record<string, unknown> | null;
+}): MercadoPagoPayerInfo {
+    const rawName =
+        typeof customer.metadata?.name === 'string' ? customer.metadata.name.trim() : '';
+    const emailLocalPart = customer.email.split('@')[0] || customer.email;
+
+    if (rawName.length === 0) {
+        return {
+            email: customer.email,
+            first_name: emailLocalPart,
+            last_name: ' '
+        };
+    }
+
+    const firstSpaceIdx = rawName.indexOf(' ');
+    if (firstSpaceIdx === -1) {
+        return {
+            email: customer.email,
+            first_name: rawName,
+            last_name: ' '
+        };
+    }
+
+    const firstName = rawName.slice(0, firstSpaceIdx);
+    const lastName = rawName.slice(firstSpaceIdx + 1).trim() || ' ';
+
+    return {
+        email: customer.email,
+        first_name: firstName,
+        last_name: lastName
+    };
 }
 
 /**
@@ -198,7 +286,13 @@ export async function createAddonCheckout(
             };
         }
 
-        const orderId = `addon_${addon.slug}_${Date.now()}`;
+        // SPEC-109 fix #5/#6: use a UUID for the external_reference AND as the
+        // MP X-Idempotency-Key. A retry from the same logical checkout reuses
+        // the same UUID, so MP returns the existing preference instead of
+        // creating a duplicate. The `addon_<slug>_` prefix is kept for human
+        // traceability inside the MP dashboard.
+        const checkoutUuid = randomUUID();
+        const orderId = `addon_${addon.slug}_${checkoutUuid}`;
         const webUrl = env.HOSPEDA_SITE_URL;
         if (!webUrl) {
             return {
@@ -220,8 +314,11 @@ export async function createAddonCheckout(
             };
         }
 
+        const payer = extractPayerInfo(customer);
+
         const preference = await createMercadoPagoPreference({
             accessToken: mpAccessToken,
+            idempotencyKey: checkoutUuid,
             preferenceData: {
                 body: {
                     items: [
@@ -229,12 +326,14 @@ export async function createAddonCheckout(
                             id: addon.slug,
                             title: addon.name,
                             description: addon.description,
+                            category_id: MP_ITEM_CATEGORY_ID,
                             quantity: 1,
                             // Convert centavos to whole ARS units (MercadoPago expects ARS, not cents)
                             unit_price: finalPrice / 100,
                             currency_id: 'ARS'
                         }
                     ],
+                    payer,
                     /**
                      * Metadata is intentionally sent in both snake_case and camelCase formats
                      * for backward compatibility.
@@ -270,7 +369,7 @@ export async function createAddonCheckout(
                     },
                     auto_return: 'approved',
                     notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
-                    statement_descriptor: 'HOSPEDA',
+                    statement_descriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
                     expires: true,
                     expiration_date_from: new Date().toISOString(),
                     expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()
