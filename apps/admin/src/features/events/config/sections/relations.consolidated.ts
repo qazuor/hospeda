@@ -16,6 +16,8 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
         edit: [PermissionEnum.EVENT_UPDATE]
     },
     fields: [
+        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build EventLocationSelectField + switch
+        // FieldTypeEnum.SELECT here for the proper async-loaded entity select.
         {
             id: 'locationId',
             type: FieldTypeEnum.SELECT,
@@ -28,11 +30,11 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
                 edit: [PermissionEnum.EVENT_LOCATION_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
                 options: [],
                 placeholder: 'Selecciona una ubicación'
             }
         },
+        // TODO(SPEC-117 D-RELATIONS.1 follow-up): build EventOrganizerSelectField.
         {
             id: 'organizerId',
             type: FieldTypeEnum.SELECT,
@@ -45,26 +47,27 @@ export const createRelationsConsolidatedSection = (): ConsolidatedSectionConfig 
                 edit: [PermissionEnum.EVENT_ORGANIZER_MANAGE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
                 options: [],
                 placeholder: 'Selecciona un organizador'
             }
         },
         {
             id: 'destinationId',
-            type: FieldTypeEnum.SELECT,
+            type: FieldTypeEnum.DESTINATION_SELECT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Destino',
             description: 'Destino turístico asociado al evento',
+            placeholder: 'Selecciona un destino',
             permissions: {
                 view: [PermissionEnum.EVENT_VIEW_ALL],
                 edit: [PermissionEnum.EVENT_UPDATE]
             },
             typeConfig: {
-                // Options will be loaded dynamically
-                options: [],
-                placeholder: 'Selecciona un destino'
+                searchMode: 'client',
+                minCharToSearch: 1,
+                showAvatar: false,
+                clearable: true
             }
         }
     ]
