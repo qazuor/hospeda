@@ -22,7 +22,19 @@
             "accountNotFound": "Conta não encontrada",
             "tooManyAttempts": "Muitas tentativas. Tente novamente mais tarde",
             "networkError": "Erro de conexão. Verifique sua internet",
-            "unknownError": "Erro desconhecido. Tente novamente"
+            "unknownError": "Erro desconhecido. Tente novamente",
+            "oauth": {
+                "access_denied": "Você cancelou o login com {{provider}}. Tente novamente ou use outro método.",
+                "redirect_uri_mismatch": "Há um problema de configuração com {{provider}}. Por favor, entre em contato.",
+                "invalid_request": "A solicitação para {{provider}} é inválida. Tente novamente em alguns minutos.",
+                "unauthorized_client": "Nosso aplicativo não está autorizado em {{provider}}. Por favor, entre em contato.",
+                "unsupported_response_type": "Há um problema técnico com {{provider}}. Por favor, entre em contato.",
+                "invalid_scope": "As permissões solicitadas a {{provider}} não são válidas. Por favor, entre em contato.",
+                "server_error": "{{provider}} está com problemas. Tente novamente em alguns minutos.",
+                "temporarily_unavailable": "{{provider}} não está disponível no momento. Tente novamente em alguns minutos.",
+                "oauth_state_mismatch": "Sua sessão expirou durante o login. Tente novamente.",
+                "unknown": "Não foi possível completar o login com {{provider}}. Tente novamente mais tarde."
+            }
         }
     },
     "signUp": {
