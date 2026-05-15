@@ -61,10 +61,12 @@ async function fetchPostTagsList(filters: PostTagListFilters) {
     const params = new URLSearchParams();
     if (filters.page) params.set('page', String(filters.page));
     if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
-    if (filters.search) params.set('search', filters.search);
-    if (filters.lifecycleState) params.set('lifecycleState', filters.lifecycleState);
+    // Map name → search and lifecycleState → status to the canonical admin
+    // search params (TagAdminSearchSchema → AdminSearchBaseSchema).
+    const searchValue = filters.search ?? filters.name;
+    if (searchValue) params.set('search', searchValue);
+    if (filters.lifecycleState) params.set('status', filters.lifecycleState);
     if (filters.color) params.set('color', filters.color);
-    if (filters.name) params.set('name', filters.name);
 
     const query = params.toString();
     const path = `/api/v1/admin/posts/tags${query ? `?${query}` : ''}`;
