@@ -382,7 +382,108 @@
             "keyCapabilities": "Key Capabilities:",
             "accessSuffix": "Access",
             "infoNote": "Note",
-            "infoNoteDesc": "Individual permission details are managed through the Permissions page. Users can be assigned to roles from the User Management section."
+            "infoNoteDesc": "Individual permission details are managed through the Permissions page. Users can be assigned to roles from the User Management section.",
+            "levels": {
+                "critical": "Critical",
+                "high": "High",
+                "medium": "Medium",
+                "low": "Low"
+            },
+            "catalog": {
+                "SUPER_ADMIN": {
+                    "name": "Super Admin",
+                    "description": "Full system access with all permissions including system-level actions",
+                    "capabilities": {
+                        "cap1": "Complete system control",
+                        "cap2": "User and role management",
+                        "cap3": "System configuration",
+                        "cap4": "Audit log access",
+                        "cap5": "All content management"
+                    }
+                },
+                "ADMIN": {
+                    "name": "Admin",
+                    "description": "Manages platform content, users, and most administrative functions",
+                    "capabilities": {
+                        "cap1": "Content moderation",
+                        "cap2": "User management",
+                        "cap3": "Accommodation approval",
+                        "cap4": "Event management",
+                        "cap5": "Analytics access"
+                    }
+                },
+                "CLIENT_MANAGER": {
+                    "name": "Client Manager",
+                    "description": "Manages client accounts, billing, subscriptions, and business analytics",
+                    "capabilities": {
+                        "cap1": "Client account management",
+                        "cap2": "Subscription management",
+                        "cap3": "Billing and invoicing",
+                        "cap4": "Payment processing",
+                        "cap5": "Business analytics"
+                    }
+                },
+                "EDITOR": {
+                    "name": "Editor",
+                    "description": "Creates and edits events, posts, and editorial content",
+                    "capabilities": {
+                        "cap1": "Create events",
+                        "cap2": "Edit posts",
+                        "cap3": "Publish content",
+                        "cap4": "Manage media",
+                        "cap5": "Content scheduling"
+                    }
+                },
+                "HOST": {
+                    "name": "Host",
+                    "description": "Accommodation owner who manages their own listings",
+                    "capabilities": {
+                        "cap1": "Manage own accommodations",
+                        "cap2": "Update availability",
+                        "cap3": "Upload photos",
+                        "cap4": "Respond to reviews",
+                        "cap5": "View booking analytics"
+                    }
+                },
+                "USER": {
+                    "name": "User",
+                    "description": "Registered user of the public portal with basic interaction capabilities",
+                    "capabilities": {
+                        "cap1": "View content",
+                        "cap2": "Create reviews",
+                        "cap3": "Save favorites",
+                        "cap4": "Update profile",
+                        "cap5": "Contact hosts"
+                    }
+                },
+                "SPONSOR": {
+                    "name": "Sponsor",
+                    "description": "External business sponsor with access to sponsorship management and analytics",
+                    "capabilities": {
+                        "cap1": "Manage sponsorships",
+                        "cap2": "View sponsorship analytics",
+                        "cap3": "View invoices"
+                    }
+                },
+                "GUEST": {
+                    "name": "Guest",
+                    "description": "Public visitor without authentication, limited to viewing public content",
+                    "capabilities": {
+                        "cap1": "View public content",
+                        "cap2": "Browse accommodations",
+                        "cap3": "Search destinations",
+                        "cap4": "View events",
+                        "cap5": "Access public information"
+                    }
+                },
+                "SYSTEM": {
+                    "name": "System",
+                    "description": "Reserved non-loginable account used as assignedById for automated tag assignments (seeds, cron jobs, webhooks). Not visible in UI.",
+                    "capabilities": {
+                        "cap1": "Used internally for automated operations only"
+                    }
+                }
+            }
         },
         "users": {
             "loadingData": "Loading user data...",

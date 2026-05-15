@@ -382,7 +382,108 @@
             "keyCapabilities": "Capacidades Principais:",
             "accessSuffix": "Acesso",
             "infoNote": "Nota",
-            "infoNoteDesc": "Os detalhes de permissões individuais são gerenciados por meio da página de Permissões. Os usuários podem ser atribuídos a funções na seção de Gerenciamento de Usuários."
+            "infoNoteDesc": "Os detalhes de permissões individuais são gerenciados por meio da página de Permissões. Os usuários podem ser atribuídos a funções na seção de Gerenciamento de Usuários.",
+            "levels": {
+                "critical": "Crítico",
+                "high": "Alto",
+                "medium": "Médio",
+                "low": "Baixo"
+            },
+            "catalog": {
+                "SUPER_ADMIN": {
+                    "name": "Super Admin",
+                    "description": "Acesso total ao sistema com todas as permissões, incluindo ações em nível de sistema",
+                    "capabilities": {
+                        "cap1": "Controle total do sistema",
+                        "cap2": "Gerenciamento de usuários e funções",
+                        "cap3": "Configuração do sistema",
+                        "cap4": "Acesso ao log de auditoria",
+                        "cap5": "Gerenciamento completo de conteúdo"
+                    }
+                },
+                "ADMIN": {
+                    "name": "Administrador",
+                    "description": "Gerencia o conteúdo da plataforma, usuários e a maioria das funções administrativas",
+                    "capabilities": {
+                        "cap1": "Moderação de conteúdo",
+                        "cap2": "Gerenciamento de usuários",
+                        "cap3": "Aprovação de hospedagens",
+                        "cap4": "Gerenciamento de eventos",
+                        "cap5": "Acesso a análises"
+                    }
+                },
+                "CLIENT_MANAGER": {
+                    "name": "Gerente de Clientes",
+                    "description": "Gerencia contas de clientes, faturamento, assinaturas e análises de negócios",
+                    "capabilities": {
+                        "cap1": "Gerenciamento de contas de cliente",
+                        "cap2": "Gerenciamento de assinaturas",
+                        "cap3": "Faturamento e faturas",
+                        "cap4": "Processamento de pagamentos",
+                        "cap5": "Análises de negócios"
+                    }
+                },
+                "EDITOR": {
+                    "name": "Editor",
+                    "description": "Cria e edita eventos, publicações e conteúdo editorial",
+                    "capabilities": {
+                        "cap1": "Criar eventos",
+                        "cap2": "Editar publicações",
+                        "cap3": "Publicar conteúdo",
+                        "cap4": "Gerenciar mídia",
+                        "cap5": "Agendar conteúdo"
+                    }
+                },
+                "HOST": {
+                    "name": "Anfitrião",
+                    "description": "Proprietário de hospedagem que gerencia seus próprios anúncios",
+                    "capabilities": {
+                        "cap1": "Gerenciar suas hospedagens",
+                        "cap2": "Atualizar disponibilidade",
+                        "cap3": "Enviar fotos",
+                        "cap4": "Responder avaliações",
+                        "cap5": "Ver análises de reservas"
+                    }
+                },
+                "USER": {
+                    "name": "Usuário",
+                    "description": "Usuário registrado do portal público com capacidades básicas de interação",
+                    "capabilities": {
+                        "cap1": "Ver conteúdo",
+                        "cap2": "Criar avaliações",
+                        "cap3": "Salvar favoritos",
+                        "cap4": "Atualizar perfil",
+                        "cap5": "Contatar anfitriões"
+                    }
+                },
+                "SPONSOR": {
+                    "name": "Patrocinador",
+                    "description": "Empresa externa com acesso a gerenciamento e análises de patrocínios",
+                    "capabilities": {
+                        "cap1": "Gerenciar patrocínios",
+                        "cap2": "Ver análises de patrocínios",
+                        "cap3": "Ver faturas"
+                    }
+                },
+                "GUEST": {
+                    "name": "Convidado",
+                    "description": "Visitante público sem autenticação, limitado a ver conteúdo público",
+                    "capabilities": {
+                        "cap1": "Ver conteúdo público",
+                        "cap2": "Navegar hospedagens",
+                        "cap3": "Buscar destinos",
+                        "cap4": "Ver eventos",
+                        "cap5": "Acessar informações públicas"
+                    }
+                },
+                "SYSTEM": {
+                    "name": "Sistema",
+                    "description": "Conta não logável reservada para atribuições automáticas (seeds, cron jobs, webhooks). Não visível na UI.",
+                    "capabilities": {
+                        "cap1": "Usado internamente apenas para operações automatizadas"
+                    }
+                }
+            }
         },
         "users": {
             "loadingData": "Carregando dados do usuário...",
