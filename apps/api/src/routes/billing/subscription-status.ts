@@ -83,20 +83,61 @@ function deriveActivatedAt(status: SubscriptionStatusEnum, subscription: unknown
 }
 
 /**
- * Narrow an unknown status string into the `SubscriptionStatusEnum` union.
+ * Vocabulary alignment between qzpay-core's subscription status union and
+ * Hospeda's `SubscriptionStatusEnum`.
  *
- * Returns `null` when the upstream value is not a known status — callers
- * surface that as a 500 because a sub stored with an unknown status is a
- * data-integrity bug that must be inspected manually.
+ * The DB column ends up holding either:
+ * - qzpay-vocabulary values when the row is written by qzpay-core (the
+ *   `mode: 'paid'` create flow, plan changes, etc.) — `canceled` (1 L),
+ *   `incomplete`, `incomplete_expired`, `unpaid`, ...
+ * - Hospeda-vocabulary values when the row is updated by the webhook
+ *   handler in `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts`,
+ *   which deliberately maps to `SubscriptionStatusEnum` before persisting
+ *   (`cancelled` with 2 L's, `expired`, ...).
+ *
+ * The polling endpoint must accept both vocabularies and always surface a
+ * Hospeda-vocabulary value to the front, so callers do not need to know
+ * which writer last touched the row.
+ *
+ * `unpaid` is intentionally mapped to `PAST_DUE` because Hospeda does not
+ * model an `unpaid` state separately — for the user-facing flow, an unpaid
+ * recurring charge IS the past-due experience.
  */
-function asSubscriptionStatus(value: unknown): SubscriptionStatusEnum | null {
+const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum> = {
+    active: SubscriptionStatusEnum.ACTIVE,
+    trialing: SubscriptionStatusEnum.TRIALING,
+    past_due: SubscriptionStatusEnum.PAST_DUE,
+    paused: SubscriptionStatusEnum.PAUSED,
+    canceled: SubscriptionStatusEnum.CANCELLED,
+    unpaid: SubscriptionStatusEnum.PAST_DUE,
+    incomplete: SubscriptionStatusEnum.PENDING_PROVIDER,
+    incomplete_expired: SubscriptionStatusEnum.ABANDONED
+};
+
+/**
+ * Map a raw subscription status (qzpay vocabulary or already-Hospeda
+ * vocabulary) into the `SubscriptionStatusEnum` returned by the polling
+ * response.
+ *
+ * Returns `null` when the input is neither a known qzpay status nor a
+ * known Hospeda enum value — callers surface that as a 500 because a
+ * sub stored with an unknown status is a data-integrity bug that must
+ * be inspected manually.
+ */
+function mapSubscriptionStatus(value: unknown): SubscriptionStatusEnum | null {
     if (typeof value !== 'string') {
         return null;
     }
 
-    const known = Object.values(SubscriptionStatusEnum) as string[];
+    const mapped = QZPAY_TO_HOSPEDA_STATUS[value];
 
-    return known.includes(value) ? (value as SubscriptionStatusEnum) : null;
+    if (mapped !== undefined) {
+        return mapped;
+    }
+
+    const hospedaValues = Object.values(SubscriptionStatusEnum) as string[];
+
+    return hospedaValues.includes(value) ? (value as SubscriptionStatusEnum) : null;
 }
 
 /**
@@ -167,7 +208,7 @@ export const handleGetSubscriptionStatus = async (
         });
     }
 
-    const status = asSubscriptionStatus(subscription.status);
+    const status = mapSubscriptionStatus(subscription.status);
 
     if (status === null) {
         apiLogger.error(

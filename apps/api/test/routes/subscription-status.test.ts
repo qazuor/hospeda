@@ -321,6 +321,87 @@ describe('handleGetSubscriptionStatus', () => {
         });
     });
 
+    // -------------------------------------------------------------------
+    // qzpay-vocabulary → Hospeda enum mapping (subs written by qzpay-core
+    // arrive with the qzpay vocabulary; we map them at the boundary so the
+    // front always sees Hospeda values).
+    // -------------------------------------------------------------------
+
+    it('maps qzpay "incomplete" to PENDING_PROVIDER', async () => {
+        mockBilling(
+            createBillingMock({
+                id: LOCAL_SUB_ID,
+                customerId: OWNER_CUSTOMER_ID,
+                status: 'incomplete'
+            })
+        );
+
+        const ctx = createMockContext();
+        const result = await handleGetSubscriptionStatus(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);
+    });
+
+    it('maps qzpay "incomplete_expired" to ABANDONED', async () => {
+        mockBilling(
+            createBillingMock({
+                id: LOCAL_SUB_ID,
+                customerId: OWNER_CUSTOMER_ID,
+                status: 'incomplete_expired'
+            })
+        );
+
+        const ctx = createMockContext();
+        const result = await handleGetSubscriptionStatus(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result.status).toBe(SubscriptionStatusEnum.ABANDONED);
+    });
+
+    it('maps qzpay single-L "canceled" to Hospeda double-L CANCELLED', async () => {
+        mockBilling(
+            createBillingMock({
+                id: LOCAL_SUB_ID,
+                customerId: OWNER_CUSTOMER_ID,
+                status: 'canceled'
+            })
+        );
+
+        const ctx = createMockContext();
+        const result = await handleGetSubscriptionStatus(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result.status).toBe(SubscriptionStatusEnum.CANCELLED);
+    });
+
+    it('also accepts already-Hospeda "cancelled" (idempotent re-mapping)', async () => {
+        mockBilling(
+            createBillingMock({
+                id: LOCAL_SUB_ID,
+                customerId: OWNER_CUSTOMER_ID,
+                status: 'cancelled'
+            })
+        );
+
+        const ctx = createMockContext();
+        const result = await handleGetSubscriptionStatus(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result.status).toBe(SubscriptionStatusEnum.CANCELLED);
+    });
+
+    it('maps qzpay "unpaid" to Hospeda PAST_DUE', async () => {
+        mockBilling(
+            createBillingMock({
+                id: LOCAL_SUB_ID,
+                customerId: OWNER_CUSTOMER_ID,
+                status: 'unpaid'
+            })
+        );
+
+        const ctx = createMockContext();
+        const result = await handleGetSubscriptionStatus(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result.status).toBe(SubscriptionStatusEnum.PAST_DUE);
+    });
+
     it('ignores non-mercadopago entries in providerSubscriptionIds', async () => {
         mockBilling(
             createBillingMock({
