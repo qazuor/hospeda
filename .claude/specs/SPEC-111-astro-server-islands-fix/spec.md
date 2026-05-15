@@ -3,8 +3,9 @@ spec-id: SPEC-111
 title: Astro server islands runtime crash — manifest.serverIslandMap.get is not a function
 type: fix
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-05-14T01:35:00Z
+startedAt: 2026-05-15T00:00:00Z
 effort_estimate_hours: 3-8
 tags: [astro, web, server-islands, build, runtime, investigation, upstream-bug]
 extracted_from: SPEC-103 T-026 cross-browser smoke (2026-05-13)

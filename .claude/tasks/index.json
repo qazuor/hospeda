@@ -361,6 +361,13 @@
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
             "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-111",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "status": "in-progress",
+            "progress": "0/9",
+            "path": "SPEC-111-astro-server-islands-fix"
         }
     ],
     "standalone": {
