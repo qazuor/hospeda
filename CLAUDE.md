@@ -351,6 +351,28 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 - When a spec is first worked on, update its status from `draft` → `in-progress`
 - If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications
 
+### Index Sync Rules (CRITICAL — read every session that touches specs/tasks)
+
+There are TWO index files that must stay in sync:
+
+- `.claude/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
+- `.claude/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
+
+The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
+
+**Rules:**
+
+1. **When you archive a spec** (flip `status` to `completed` + `archived: true` in `specs/index.json`), you MUST in the same change flip the matching entry in `tasks/index.json`:
+   - `status` → `completed`
+   - `progress` → full (e.g. `99/99` not `94/99`)
+   - `archived: true`
+   - `archivedAt: <ISO date>`
+   - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
+2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
+3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
+4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.claude/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
+5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .claude/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
+
 ### Spec Files Location
 
 - Specifications: `.claude/specs/SPEC-NNN-slug/spec.md`
