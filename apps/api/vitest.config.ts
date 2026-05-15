@@ -63,6 +63,18 @@ export default defineConfig({
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
             '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
+            '@repo/email': resolve(__dirname, '../../packages/email/src'),
+            // Subpath aliases for @repo/feedback must be listed before the base alias
+            // so Vite matches the more specific path first.
+            '@repo/feedback/schemas': resolve(
+                __dirname,
+                '../../packages/feedback/src/schemas/index.ts'
+            ),
+            '@repo/feedback': resolve(__dirname, '../../packages/feedback/src'),
+            // Subpath aliases for @repo/media must be listed before the base alias
+            // so Vite matches the more specific path first.
+            '@repo/media/server': resolve(__dirname, '../../packages/media/src/server/index.ts'),
+            '@repo/media': resolve(__dirname, '../../packages/media/src'),
             // Workaround for pnpm hoisting issue: the better-auth instance installed in
             // apps/api/node_modules does not carry @better-auth/core as a local sub-dependency.
             // Alias it explicitly to the canonical pnpm store location so Vite can resolve it.
