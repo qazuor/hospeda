@@ -131,8 +131,36 @@ Same as T-013 with the Facebook button. Verify `accounts.provider = "facebook"` 
 
 ### OAuth error logging (T-024)
 
-- [ ] Trigger an OAuth flow but click "Cancel" on the consent screen. Expected: redirect back to signin with an error message AND the underlying error is logged to Sentry with the correct environment tag (`HOSPEDA_SENTRY_ENVIRONMENT=staging` after SPEC-103 T-076).
-- [ ] In Sentry, filter by `environment:staging` and verify the event has the OAuth error context (provider, error code).
+> Re-run this row after deploying SPEC-120 (OAuth Cancel/Error Observability). Pre-SPEC-120 this row was PARTIAL: the redirect worked but no UI feedback and no Sentry event. Post-SPEC-120 it must be full PASS.
+
+**Setup** (each test run):
+
+1. Sign out of Hospeda staging (or open in private window).
+2. Revoke the Hospeda grant on the provider you are about to test:
+   - Google: `https://myaccount.google.com/permissions` → Hospeda → Remove access.
+   - Facebook: `https://www.facebook.com/settings?tab=applications` → Hospeda → Remove.
+3. Open DevTools → Network tab, tick **"Preserve log"**. Open Console tab too.
+4. Open Sentry in another tab filtered to `environment:staging`, narrow to the last 10 minutes.
+
+**Google cancel**:
+
+- [ ] Navigate to `https://staging.hospeda.com.ar/es/auth/signin/`. Click "Continuar con Google". On the Google consent screen, click **Cancelar**.
+- [ ] Verify: browser lands back on `/es/auth/signin/`. A banner is visible above the form reading "**Cancelaste el inicio de sesión con Google. Intentá de nuevo o usá otro método.**" (or the matching locale).
+- [ ] Verify URL **after hydration** is exactly `https://staging.hospeda.com.ar/es/auth/signin/` (no `?error=`, no `#_=_`). Reload the page → banner does NOT reappear.
+- [ ] Browser console shows `[OAuth] access_denied: (no description)`.
+- [ ] Sentry has a new event titled `OAuth google signin failed: access_denied` with level `warning`, tags `module:auth.oauth`, `provider:google`, `error_code:access_denied`, `environment:staging`.
+
+**Facebook cancel**:
+
+- [ ] Same flow as above with "Continuar con Facebook" → **Cancel** on the consent dialog.
+- [ ] Banner text reflects Facebook: "**Cancelaste el inicio de sesión con Facebook. Intentá de nuevo o usá otro método.**".
+- [ ] URL after hydration is clean (no `?error=`, no `#_=_` — Facebook adds the trailing hash, the cleanup must strip it).
+- [ ] Browser console shows `[OAuth] access_denied: Permissions error`.
+- [ ] Sentry event titled `OAuth facebook signin failed: access_denied`, level `warning`, tags as above with `provider:facebook`. The Sentry event's `extra.provider_raw_query` includes `error_code:200`, `error_reason:user_denied`, `error_description:Permissions error`.
+
+**Locale check** (optional):
+
+- [ ] Repeat one provider cancel from `/en/auth/signin/` and `/pt/auth/signin/` — banner text reflects the active locale.
 
 ## Known issues and limitations
 

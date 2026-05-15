@@ -60,6 +60,41 @@ const isSafeRelativePath =
 const returnPath = isSafeRelativePath ? rawReturn : buildUrl({ locale, path: 'mi-cuenta' });
 const redirectTo = new URL(returnPath, Astro.url.origin).href;
 
+// SPEC-120: pick up OAuth failure signal from the API redirect.
+//
+// Better Auth `^1.4.18` redirects to errorCallbackURL with `?error=<code>`
+// (and optionally `&error_description=...`) when the OAuth flow fails — user
+// cancel, provider rejection, or any RFC 6749 §4.1.2.1 error. The API wrapper
+// also injects `&provider=<name>` so the banner can name the provider.
+//
+// We validate each value with a strict allowlist regex before forwarding to
+// the island: these come straight from a user-controlled redirect chain and
+// flow into both i18n key lookups and console.warn output. An unexpected
+// `error` code falls back to `'unknown'` (the i18n catch-all key).
+const rawErrorCode = Astro.url.searchParams.get('error');
+const oauthErrorCode = rawErrorCode
+    ? /^[a-z_]{1,64}$/.test(rawErrorCode)
+        ? rawErrorCode
+        : 'unknown'
+    : undefined;
+
+const rawErrorDescription = Astro.url.searchParams.get('error_description');
+const oauthErrorDescription = rawErrorDescription
+    ? rawErrorDescription.slice(0, 200)
+    : undefined;
+
+const rawProvider = Astro.url.searchParams.get('provider');
+const oauthProvider =
+    rawProvider && /^[a-z]{1,32}$/.test(rawProvider) ? rawProvider : undefined;
+
+const initialOAuthError = oauthErrorCode
+    ? {
+          code: oauthErrorCode,
+          description: oauthErrorDescription,
+          provider: oauthProvider
+      }
+    : undefined;
+
 // Localized secondary link labels via i18n
 const noAccountLabel = t('auth-ui.signIn.dontHaveAccount', "Don't have an account?");
 const signUpLabel = t('auth-ui.signIn.signUpLink', 'Sign Up');
@@ -80,7 +115,13 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
     </div>
 
     <div class="auth-page-content">
-            <SignIn client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
+            <SignIn
+                client:load
+                locale={locale}
+                redirectTo={redirectTo}
+                showOAuth={true}
+                initialOAuthError={initialOAuthError}
+            />
 
             <div class="auth-page__links">
                 <a
