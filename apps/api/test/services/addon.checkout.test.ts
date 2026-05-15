@@ -1,21 +1,21 @@
 /**
- * Tests for confirmAddonPurchase - T-013
+ * Tests for addon.checkout services:
  *
- * Verifies:
- * - purchaseId is captured from the DB insert `.returning()` result and forwarded
- *   to `entitlementService.applyAddonEntitlements({ ..., purchaseId })`
- * - Postgres unique constraint violation (code '23505') is handled gracefully
- *   with a dedicated ADDON_ALREADY_ACTIVE error code (not an unhandled throw)
- * - Insert failure without a constraint code re-throws and is caught by outer handler
+ * - `createAddonCheckout` — SPEC-109 Phase 1: verifies the MercadoPago preference
+ *   payload includes the quality-checklist fields (`payer.email`, `payer.first_name`,
+ *   `payer.last_name`, `items[].category_id`) required for production approval.
+ *
+ * - `confirmAddonPurchase` — T-013: verifies purchaseId propagation, unique
+ *   constraint handling, subscription re-check, and pre-condition guards.
  *
  * @module test/services/addon.checkout.test
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import type { ConfirmPurchaseInput } from '@repo/service-core';
+import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
-import { confirmAddonPurchase } from '../../src/services/addon.checkout';
+import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 
 // ---------------------------------------------------------------------------
 // Hoisted mock setup
@@ -160,6 +160,45 @@ vi.mock('../../src/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+// SPEC-109 Phase 1: capture the MercadoPago preference body to assert on the
+// quality-checklist fields (`payer`, `items[].category_id`) without making a
+// real HTTP call.
+const { mockPreferenceCreate } = vi.hoisted(() => ({
+    mockPreferenceCreate: vi.fn().mockResolvedValue({
+        id: 'pref_test_123',
+        init_point: 'https://www.mercadopago.com.ar/checkout/test',
+        sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/test'
+    })
+}));
+
+vi.mock('mercadopago', () => ({
+    MercadoPagoConfig: vi.fn().mockImplementation((opts: { accessToken: string }) => ({
+        accessToken: opts.accessToken
+    })),
+    Preference: vi.fn().mockImplementation(() => ({
+        create: mockPreferenceCreate
+    }))
+}));
+
+// SPEC-109 Phase 1: env values consumed by createAddonCheckout for the MP call,
+// the checkout return URLs and the webhook notification URL.
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
+        HOSPEDA_SITE_URL: 'https://hospeda.test',
+        HOSPEDA_API_URL: 'https://api.hospeda.test'
+    }
+}));
+
+// PromoCodeService is constructed inside createAddonCheckout. Stub it so the
+// happy path skips real DB lookups.
+vi.mock('../../src/services/promo-code.service', () => ({
+    PromoCodeService: vi.fn().mockImplementation(() => ({
+        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
+        getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+    }))
 }));
 
 // ---------------------------------------------------------------------------
@@ -700,6 +739,201 @@ describe('confirmAddonPurchase', () => {
             // Assert: trialing counts as valid active subscription
             expect(result.success).toBe(true);
             expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-109 Phase 1 — createAddonCheckout: MP quality fields
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a billing mock that returns a configurable customer and an active
+ * subscription. Used to exercise `createAddonCheckout` without hitting QZPay.
+ */
+function createBillingForCheckout({
+    customer,
+    subscription = { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+}: {
+    customer: {
+        id: string;
+        email: string;
+        metadata?: Record<string, unknown> | null;
+    };
+    subscription?: { id: string; status: string; planId: string };
+}): QZPayBilling {
+    return {
+        customers: {
+            get: vi.fn().mockResolvedValue(customer)
+        },
+        subscriptions: {
+            getByCustomerId: vi.fn().mockResolvedValue([subscription])
+        }
+    } as unknown as QZPayBilling;
+}
+
+describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPreferenceCreate.mockResolvedValue({
+            id: 'pref_test_123',
+            init_point: 'https://www.mercadopago.com.ar/checkout/test',
+            sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/test'
+        });
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Shape of the preference body asserted on by SPEC-109 Phase 1 tests. */
+    interface AssertablePreferenceBody {
+        readonly items: ReadonlyArray<{
+            readonly category_id?: string;
+            readonly title: string;
+            readonly quantity: number;
+        }>;
+        readonly payer: {
+            readonly email: string;
+            readonly first_name: string;
+            readonly last_name: string;
+        };
+        readonly external_reference: string;
+        readonly statement_descriptor: string;
+    }
+
+    /**
+     * Reads the preference body that the SDK was called with so individual
+     * tests can assert on `payer`, `items[].category_id`, etc.
+     */
+    function getCreatedPreferenceBody(): AssertablePreferenceBody {
+        expect(mockPreferenceCreate).toHaveBeenCalledOnce();
+        const arg = mockPreferenceCreate.mock.calls[0]?.[0] as {
+            body: AssertablePreferenceBody;
+        };
+        return arg.body;
+    }
+
+    describe('payer fields (gaps #1, #2, #3)', () => {
+        it('populates payer.email from customer.email', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(true);
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.email).toBe('guest@example.com');
+        });
+
+        it('splits metadata.name on the first space into first_name / last_name', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'juan@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.first_name).toBe('Juan');
+            expect(body.payer.last_name).toBe('Perez');
+        });
+
+        it('keeps the full surname when metadata.name has multiple spaces', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'maria@example.com',
+                    metadata: { name: 'Maria de los Angeles Gonzalez' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.first_name).toBe('Maria');
+            expect(body.payer.last_name).toBe('de los Angeles Gonzalez');
+        });
+
+        it('falls back to the email local-part when metadata.name is missing', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'anon.user@example.com',
+                    metadata: null
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.first_name).toBe('anon.user');
+            // MercadoPago rejects empty last_name; fallback is a single space.
+            expect(body.payer.last_name).toBe(' ');
+        });
+
+        it('uses a single-space last_name when metadata.name has no space', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'cher@example.com',
+                    metadata: { name: 'Cher' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.first_name).toBe('Cher');
+            expect(body.payer.last_name).toBe(' ');
+        });
+
+        it('falls back to email local-part when metadata.name is an empty string', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'blank@example.com',
+                    metadata: { name: '   ' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.payer.first_name).toBe('blank');
+            expect(body.payer.last_name).toBe(' ');
+        });
+    });
+
+    describe('items.category_id (gap #4)', () => {
+        it("sets every item's category_id to 'services'", async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const body = getCreatedPreferenceBody();
+            expect(body.items).toHaveLength(1);
+            expect(body.items[0]?.category_id).toBe('services');
         });
     });
 });
