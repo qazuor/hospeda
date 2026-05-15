@@ -1405,6 +1405,14 @@ docs/admin-pages-audit-report.md                          NEW
 | **Phase 2 closure** Fix C-1 / C-2 / C-3 / C-4 (client crashes on billing + revalidation) | ✅ verified 2026-05-14 across `/billing/addons`, `/billing/subscriptions`, `/revalidation`, `/billing/plans`. C-1/C-2/C-4 share root cause: `@repo/logger/src/index.ts` had a top-level `import 'dotenv/config'` that Vite dragged into the admin browser bundle via the billing → logger chain. Dotenv crashes on browser-shimmed Node modules. C-3 was a separate bug: three revalidation handlers returned `{ data: payload }` instead of `payload`, producing a double envelope after `createAdminRoute` wrapped the response. | `packages/logger/src/index.ts`, `apps/api/src/routes/revalidation/index.ts` (GET /config, PATCH /config/:id, GET /stats handlers + responseSchemas) |
 | **T-012** Fix I-1 (`*/new` placeholder leak) | ✅ verified 2026-05-14. Call sites were doing `\`${t('admin-entities.list.new')} ${entityName}\`` while the i18n key value already includes a `{entity}` placeholder ("Nuevo {entity}" / "New {entity}" / "Novo {entity}"). Aligned all call sites with the rest of the codebase's `.replace('{entity}', entityName)` pattern. | 11 `apps/admin/src/routes/_authed/<entity>/new.tsx` files + `apps/admin/src/routes/_authed/me/accommodations/index.tsx` (2 button labels hoisted into a constant) |
 | **T-013** Fix I-2 (detail page chrome in English) | ✅ verified 2026-05-14. Introduced `admin-common.entityPage` i18n namespace with localized strings for `viewTitle` / `editTitle` / `viewDescription` / `editDescription` (templates with `{entity}` placeholder) and actions `back` / `edit` / `view` / `cancel`. Replaced the hardcoded English literals in `EntityPageBase.tsx`. Also fixed the accommodation consolidated config which still hardcoded English `'Accommodation'` / `'Accommodations'`. | `apps/admin/src/components/entity-pages/EntityPageBase.tsx`, `apps/admin/src/features/accommodations/config/accommodation-consolidated.config.ts`, `packages/i18n/src/locales/{es,en,pt}/admin-common.json` |
+| **T-014** Fix I-5 (column headers + badge labels in English) | ✅ verified 2026-05-15 across `/accommodations`, `/destinations`, `/posts`, `/access/users`. Reworked `entity-list` contract: `EntityConfig.createColumns` now receives `t` from `useTranslations()` and returns the column list resolved against `admin-entities.*` keys. `createEntityColumnsFactory` takes `t` and resolves header/badge defaults via i18n. `VISIBILITY_BADGE_OPTIONS` / `LIFECYCLE_STATE_BADGE_OPTIONS` / `MODERATION_STATE_BADGE_OPTIONS` constants replaced with `get*BadgeOptions(t)` functions. i18n: 21 new column keys, 4 missing state keys (lifecycle.inactive/deleted, moderation.underReview, visibility.hidden), new type blocks (amenity / postCategory / sponsor / userRole / authProvider), event types extended (culture/music/gastronomy/nature), `admin-common.entityPage.notAvailable` + `.none`. All 11 `<entity>.columns.ts` rewritten. | `apps/admin/src/components/entity-list/{EntityListPage,columns.factory,columns.factory.types,index,types}.ts`, 11 `apps/admin/src/features/*/config/*.columns.ts`, `packages/i18n/src/locales/{es,en,pt}/admin-{common,entities}.json` |
+| **T-015** Fix I-3 (roles catalog in English) | ✅ verified 2026-05-15. The /access/roles page had role names, descriptions, capabilities and level labels hardcoded in English inside `routes/_authed/access/roles.tsx`. Now reads from `admin-pages.access.roles.*` keys; the route keeps only the visual tokens (icon + level enum). `capabilities` shipped as an object keyed `cap1..cap5` (the package flatten layer in `i18n/src/config.ts` drops arrays during translation-table construction); the page loops `cap1..cap5` and stops on the `[MISSING:]` sentinel. | `apps/admin/src/routes/_authed/access/roles.tsx`, `packages/i18n/src/locales/{es,en,pt}/admin-pages.json` |
+| **T-016** Fix I-4 (permission categories in English) | ✅ verified 2026-05-15. /access/permissions used a local `formatCategoryName()` that built English titles from PermissionCategoryEnum via underscore-split + title-case. Now reads from `admin-pages.access.permissions.categories.*` (57 entries, one per enum variant). | `apps/admin/src/routes/_authed/access/permissions.tsx`, `packages/i18n/src/locales/{es,en,pt}/admin-pages.json` |
+| **I-6** (follow-up from T-013) — entity names hardcoded in 10 consolidated configs | ✅ verified 2026-05-15. 10 of the 12 `<entity>-consolidated.config.ts` files hardcoded `entityName` / `entityNamePlural` in Spanish. Each factory now receives `t` and resolves names via `admin-entities.entities.<entity>.*`. 10 hooks (`useXPage`) thread `t` into the factory; 10 new.tsx routes wrap with closure `() => createX(t)` and pass `configDeps={[t]}`. | 10 `apps/admin/src/features/*/config/*-consolidated.config.ts`, 10 `apps/admin/src/features/*/hooks/useXPage.ts`, 10 `apps/admin/src/routes/_authed/.../new.tsx` |
+| **M-2** Fix React Query retry policy (Phase 3) | ✅ verified 2026-05-15 on `/billing/subscriptions` (1× 503 visible, no 429 retry storm). Policy now skips retries on any errored response with a numeric status (4xx including 429, all 5xx) since none succeed on retry in this admin. Only genuine network failures retry, budget dropped from 3 to 2. Closes the retry-storm symptom shared by A-* + B-* + N-2 — server-side root causes for B-* and N-2 remain (local config) but the visible amplification is gone. | `apps/admin/src/routes/__root.tsx` |
+| **V-1 / V-2 / V-4 / V-8** Visual polish (Phase 7) | ✅ verified 2026-05-15. V-1: dashboard `Attractions` + `Users` cards consolidated into the main `kpiConfig` array (6 cards, grid `lg:grid-cols-3`); added `attractions` / `users` i18n keys + icons. V-2 / V-4: FAB anchored to bottom-right via override in `apps/admin/src/styles.css` (was floating mid-screen on mobile / overlapping textareas on desktop because the package raises it to 5.5rem for apps/web's cookie banner). V-8: `--destructive-foreground` was the same red as `--destructive`, making destructive badges illegible (visible on /access/roles Super Admin "Crítico" badge); fixed to the same light value used by `--primary-foreground`, and `--destructive` lifted in dark mode for contrast. | `apps/admin/src/routes/_authed/dashboard.lazy.tsx`, `apps/admin/src/styles.css`, `packages/i18n/src/locales/{es,en,pt}/admin-dashboard.json` |
+| **N-1 / M-1 / A2** Phase 5 client-side findings | ✅ N-1: campaign list hook sent `sort=desc` but `AdminSearchBaseSchema.sort` enforces `field:direction` regex — anchored sort param to `createdAt:<dir>`. M-1: `/accommodations/new` blocked SUPER_ADMIN with plan-limit gate; added `PLAN_LIMIT_BYPASS_ROLES` (SUPER_ADMIN / ADMIN / CLIENT_MANAGER) and the route now skips `LimitGate` entirely for those roles. A2: documented the workspace pre-build prerequisite (4 of the ~12 `@repo/*` packages need their build output before `pnpm dev`) under Common Gotchas in `apps/admin/CLAUDE.md`. Server-side root causes for B-1..B-5 and N-2 remain out of scope (local billing / Brevo / BullMQ config); the client retry-storm symptom is already closed via M-2. | `apps/admin/src/hooks/newsletter/use-newsletter-campaigns.ts`, `apps/admin/src/routes/_authed/accommodations/new.tsx`, `apps/admin/CLAUDE.md` |
+| **CE-6 / CE-8** Phase 8 docs (accepted dev-only noise) | ✅ CE-1..CE-5 are duplicates of A-* / B-* / C-* / D-* / N-* (covered by their respective fix commits). CE-7 observed clean. CE-6 (Vite plugin deprecation warnings) + CE-8 (TanStack Devtools button visible in dev) documented as accepted noise under Common Gotchas in `apps/admin/CLAUDE.md`. Also documented two app-level gotchas that bit us repeatedly: the `@repo/i18n` SSR cache (full `Ctrl+C` + fresh `pnpm dev` required after JSON edits) and the Feedback FAB override location. | `apps/admin/CLAUDE.md` |
 
 ### Discoveries during implementation
 
@@ -1474,13 +1482,22 @@ docs/admin-pages-audit-report.md                          NEW
    workaround is to clear `apps/admin/node_modules/.vite/deps` and restart the admin
    dev server. Same trick that was needed to recover from the dotenv crash in C-1/C-2.
 
-### Branch state — 2026-05-14
+### Branch state — 2026-05-15
 
 Worktree `../hospeda-admin-pages-audit` is **clean** (no uncommitted
-files). All work landed as 10 atomic commits on branch
-`fix/admin-pages-audit`:
+files). All work landed as 19 atomic commits + 1 docs checkpoint on
+branch `fix/admin-pages-audit`:
 
 ```
+4eacf7563 fix(admin): newsletter sort, admin plan-limit bypass, A2 docs (SPEC-117 P5)
+78667f3ba docs(admin): accepted dev-only console noise + gotchas (SPEC-117 P8)
+49f712091 fix(admin): visual polish — KPI cards, FAB position, destructive contrast (SPEC-117 P7)
+4fb3db78f fix(admin, i18n): localize entityName in consolidated configs (SPEC-117 I-6)
+8d3d54551 fix(admin, i18n): localize permission categories on access page (SPEC-117 I-4)
+d9431272a fix(admin, i18n): localize roles catalog page (SPEC-117 I-3)
+f2d5eea9e fix(admin, i18n): localize entity list column headers and badge labels (SPEC-117 I-5)
+76231b270 fix(admin): skip retries on any errored API response (SPEC-117 M-2)
+cbb2fa197 docs(specs): spec-117 session checkpoint after phase 4 partial closure
 b6e5625e0 fix(admin, i18n): localize entity detail/edit page chrome (SPEC-117 I-2)
 b23fa469b fix(admin): substitute {entity} placeholder in create-page titles (SPEC-117 I-1)
 706059505 fix(api): align revalidation admin handlers with response factory contract (SPEC-117 C-3)
@@ -1539,11 +1556,11 @@ running process anymore.
 | `/destinations/new` admin page (browser smoke) | ✅ verified 2026-05-14 — heading renders "Nuevo Destino" without `{entity}` literal leak |
 | `/accommodations/{id}` chrome localization (browser smoke) | ✅ verified 2026-05-14 — "Detalles de Alojamiento" + "Volver" + "Editar" all in Spanish |
 
-### Session state — pausing point (2026-05-14 ~23:30 UTC)
+### Session state — pausing point (2026-05-15)
 
-10 commits land on branch `fix/admin-pages-audit` in worktree
-`../hospeda-admin-pages-audit`. Worktree status is clean; no
-uncommitted files. Phases done:
+19 functional commits + 2 docs checkpoints land on branch
+`fix/admin-pages-audit` in worktree `../hospeda-admin-pages-audit`.
+Worktree status is clean; no uncommitted files. Phases done:
 
 - **Phase 0** (kysely shim) ✅
 - **Phase 1** (LIST 500s + accommodations/{id} + batch endpoints) ✅
@@ -1551,20 +1568,40 @@ uncommitted files. Phases done:
 - **Phase 2** (client crashes) ✅ — C-1/C-2/C-3/C-4 closed in two
   surgical fixes (logger dotenv removal + revalidation handler envelope
   cleanup)
-- **Phase 4** (i18n cleanup) 🟡 2/5 — T-012 + T-013 done; **T-014,
-  T-015, T-016 pending**
+- **Phase 3** (React Query retry policy) ✅ — M-2 closed. Skip retries
+  on any errored response with a numeric status (4xx including 429, all
+  5xx). Visible amplification of A-* + B-* + N-2 failures gone.
+- **Phase 4** (i18n cleanup) ✅ 5/5 — T-012 + T-013 + T-014 + T-015 +
+  T-016 done. Bonus follow-up I-6 (consolidated configs entity-name
+  leak in EN/PT) also closed.
+- **Phase 5** (billing / newsletter / dev workflow) ✅ client-side
+  portion done — N-1 (newsletter sort param), M-1 (admin plan-limit
+  bypass), A2 (workspace build prerequisite docs). B-1..B-5 + N-2
+  server-side root causes are local-dev-only and out of scope; the
+  client retry-storm symptom is closed via M-2.
+- **Phase 7** (V-CRIT + V-HIGH visual) ✅ — V-1 (dashboard KPI cards
+  consolidated to a single uniform `<KpiCard>` grid, Attractions/Users
+  localized with proper icons), V-2 + V-4 (FAB anchored to bottom-right
+  via override in `apps/admin/src/styles.css`), V-8 (newly discovered:
+  `--destructive-foreground` was the same red as `--destructive`,
+  making the variant illegible — fixed with light foreground +
+  contrast-friendly dark-mode value).
+- **Phase 8** (CE cleanup) ✅ — CE-1..CE-5 covered by sibling fix
+  families. CE-6 (Vite dev-only deprecation warnings) + CE-8 (TanStack
+  Devtools button) documented as accepted noise in
+  `apps/admin/CLAUDE.md`. Also documented the `@repo/i18n` SSR cache
+  gotcha (HMR doesn't refresh JSON imports; full `Ctrl+C` + fresh
+  `pnpm dev` required after JSON edits) and the Feedback FAB override
+  location.
 
-Three tasks remain in Phase 4 before it closes:
-- **T-014** (I-5): sweep `<entity>.columns.ts` for hardcoded English
-  column headers ("Destination", "Owner", "Attractions" etc.)
-- **T-015** (I-3): move role names + descriptions out of seed data into
-  `admin-entities.roles.*` i18n keys; admin reads localized labels
-- **T-016** (I-4): add `admin-entities.permissions.categories.*` i18n
-  keys; resolve permission category labels via `t(...)` in
-  `/access/permissions` page
+**Pending phases:**
 
-After Phase 4 the remaining phases (3 / 5 / 6 / 7 / 8 / 9) are still
-fully pending — see §6 for the full plan.
+- **Phase 6** (D-* CRUD smoke findings) — requires per-entity smoke
+  testing to discover defects; deferred to a dedicated session.
+- **Phase 9** (final verification + spec closeout) — partially done
+  with this checkpoint; remaining: full pre-merge sweep on a fresh
+  worktree, prepare PR description, decide whether to keep B-* / N-2
+  server-side root causes inside this spec or split them out.
 
 ### T-010 closure status (2026-05-14)
 
