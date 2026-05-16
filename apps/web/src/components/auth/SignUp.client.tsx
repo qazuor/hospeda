@@ -5,6 +5,10 @@
  * Standalone component — no dependency on @repo/auth-ui.
  * Calls auth-client.ts directly, styled with CSS Modules + web2 design tokens.
  * Validates password length client-side before submitting.
+ *
+ * The `name` field has been intentionally removed (SPEC-113). Name collection
+ * happens in the post-signup profile completion form, where users provide
+ * structured firstName + lastName instead of a single free-text name.
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
@@ -40,7 +44,10 @@ export interface SignUpProps {
 }
 
 /**
- * Sign-up form with name, email, password and optional OAuth providers.
+ * Sign-up form with email, password and optional OAuth providers.
+ *
+ * The `name` field is intentionally omitted — name is collected later in the
+ * profile completion form (SPEC-113) as structured firstName + lastName.
  *
  * Validates password length (min 8 chars) before calling the API.
  * After a successful registration it redirects via `window.location.replace`.
@@ -53,7 +60,6 @@ export interface SignUpProps {
 export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }: SignUpProps) {
     const { t } = createTranslations(locale);
 
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +83,11 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
         setIsLoading(true);
 
         try {
-            const result = await signUp.email({ email, password, name });
+            // Sign up WITHOUT a `name` field — Better Auth's required `name`
+            // is satisfied with an empty string here; the profile completion
+            // form (SPEC-113) collects firstName + lastName and updates the
+            // user's display_name afterwards.
+            const result = await signUp.email({ email, password, name: '' });
 
             if (result.error) {
                 setError(
@@ -172,7 +182,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
                 <div className={styles.skeletonField} />
                 <div className={styles.skeletonField} />
-                <div className={styles.skeletonField} />
                 <div className={styles.skeletonButton} />
             </div>
         );
@@ -193,27 +202,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     {error}
                 </div>
             )}
-
-            <div className={styles.field}>
-                <label
-                    htmlFor="signup-name"
-                    className={styles.label}
-                >
-                    {t('auth.signUp.name', 'Nombre completo')}
-                </label>
-                <input
-                    id="signup-name"
-                    type="text"
-                    className={styles.input}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t('auth.signUp.namePlaceholder', 'Tu nombre')}
-                    required
-                    autoComplete="name"
-                    aria-required="true"
-                    disabled={isLoading}
-                />
-            </div>
 
             <div className={styles.field}>
                 <label
