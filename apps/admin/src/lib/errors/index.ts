@@ -63,7 +63,8 @@ export {
     setToastFunction,
     showErrorToast,
     showSuccessToast,
-    showInfoToast
+    showInfoToast,
+    getFriendlyErrorInfo
 } from './toast-error';
 
 // API validation error parser (GAP-032)

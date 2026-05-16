@@ -79,9 +79,19 @@ export interface ShowErrorToastInput {
 }
 
 /**
- * Get user-friendly error message based on error type
+ * Resolve any thrown value to a user-friendly `{ title, description }` pair,
+ * translated to the active locale via `admin-common.toastErrors.*` keys.
+ *
+ * Used internally by `showErrorToast` and exported for inline error display
+ * (e.g. error states inside a page Card instead of a toast).
+ *
+ * @param error - The thrown value (ApiError, Error, string, or unknown)
+ * @param action - Optional action context (e.g. "saving the plan")
  */
-function getErrorMessage(error: unknown, action?: string): { title: string; description: string } {
+export function getFriendlyErrorInfo(
+    error: unknown,
+    action?: string
+): { title: string; description: string } {
     const actionContext = action ? ` while ${action}` : '';
 
     // Handle abort errors (user cancelled)
@@ -190,9 +200,22 @@ function getApiErrorMessage(
                 description: tt('api.tooManyRequests')
             };
 
-        case 500:
         case 502:
+            // Upstream returned an invalid response (e.g. frontend Zod parse
+            // failures we surface as 502 to distinguish from real 5xx).
+            return {
+                title: tt('generic.title'),
+                description: tt('api.invalidResponse')
+            };
+
         case 503:
+            // Service explicitly unavailable / not configured.
+            return {
+                title: tt('generic.title'),
+                description: tt('api.serviceUnavailable')
+            };
+
+        case 500:
         case 504:
             return {
                 title: tt('generic.title'),
@@ -255,7 +278,7 @@ export function showErrorToast(input: ShowErrorToastInput): void {
     }
 
     // Get appropriate message
-    const { title, description } = getErrorMessage(error, action);
+    const { title, description } = getFriendlyErrorInfo(error, action);
 
     // Show toast
     if (globalToast) {
