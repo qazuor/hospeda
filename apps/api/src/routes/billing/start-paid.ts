@@ -1,26 +1,19 @@
 /**
  * Start-Paid Subscription Route (SPEC-126 D1)
  *
- * Entry point for the paid subscription flow. Creates a local subscription
- * in a pending state, provisions the provider-hosted checkout, and returns
- * the redirect URL plus a TTL after which the abandoned-pending cron will
- * flip the row to `abandoned`.
+ * Entry point for the paid subscription flow. The route is a thin HTTP
+ * layer: it validates context (billing enabled, billing customer present)
+ * and request body, rejects unsupported branches, then delegates to
+ * {@link initiatePaidMonthlySubscription} which encapsulates all the
+ * qzpay-facing logic.
  *
  * Routes:
  * - POST /api/v1/protected/billing/subscriptions/start-paid
  *
  * Branch matrix:
- * - `billingInterval: 'monthly'` → MercadoPago preapproval via
- *   `billing.subscriptions.create({ mode: 'paid' })` (SPEC-124 wiring).
- * - `billingInterval: 'annual'` → MercadoPago Checkout Pro one-time
- *   payment for the full annual amount. Implemented in a follow-up commit
- *   (SPEC-126 D1 annual); rejected with HTTP 501 here so the contract is
- *   stable from day one.
- *
- * Promo codes:
- * Accepted in the request body for API stability, but rejected with HTTP
- * 501 because the only meaningful type for monthly recurring is
- * `free_trial_days_extension`, which is added later in this spec (D9).
+ * - `billingInterval: 'monthly'` -> service delegation.
+ * - `billingInterval: 'annual'` -> HTTP 501 (D1 annual follow-up).
+ * - `promoCode` present -> HTTP 501 (D9 follow-up).
  *
  * @module routes/billing/start-paid
  */
@@ -33,31 +26,25 @@ import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
+import {
+    SubscriptionCheckoutError,
+    initiatePaidMonthlySubscription
+} from '../../services/subscription-checkout.service';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 /**
- * Time-to-live applied to a pending-provider subscription before the
- * `abandoned-pending-subs` cron (SPEC-126 D6) flips it to `abandoned`.
- *
- * 30 minutes is enough for a user to complete a typical MP checkout
- * round-trip and short enough to keep zombie rows out of the system.
+ * MercadoPago `back_url` for the preapproval. MP requires a non-empty
+ * `back_url` at create time; the actual checkout URL the user is
+ * redirected to is `providerInitPoint` so this placeholder is harmless.
+ * A follow-up could rewrite it post-create to embed the local sub UUID,
+ * but the front already gets the UUID from the response and uses
+ * `?ref=<localId>` on its own return page.
  */
-const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
-
-/**
- * Public path the user is redirected to after authorizing the recurring
- * charge in MercadoPago. Built once at module load because both URLs
- * come from validated env vars and never change at runtime.
- *
- * The `ref` query parameter carries the local subscription UUID so the
- * return page can poll the status endpoint without depending on the URL
- * fragment MercadoPago tacks on.
- */
-function buildPaymentMethodReturnUrl(localSubscriptionId: string): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return?ref=${encodeURIComponent(localSubscriptionId)}`;
+function buildPaymentMethodReturnUrl(): string {
+    return `${env.HOSPEDA_SITE_URL}/billing/return`;
 }
 
 /**
@@ -70,58 +57,38 @@ function buildNotificationUrl(): string {
 }
 
 /**
- * Resolve a plan by its slug (Hospeda treats `QZPayPlan.name` as the slug,
- * mirroring `trial.service.ts:124`).
- *
- * Returns `null` if no plan matches. Active-only plans are not enforced
- * here because the route's 404 should mention "plan not found", and the
- * billing admin owns plan activation state separately.
+ * Map a `SubscriptionCheckoutError` from the service layer to an HTTP
+ * exception. Keeping this mapping at the route boundary keeps the
+ * service framework-agnostic.
  */
-async function resolvePlanBySlug(
-    billing: NonNullable<ReturnType<typeof getQZPayBilling>>,
-    planSlug: string
-) {
-    const plansResult = await billing.plans.list();
-    return plansResult.data.find((p) => p.name === planSlug) ?? null;
-}
-
-/**
- * Resolve the monthly price of a plan. qzpay-core uses `'month'` with
- * `intervalCount: 1` for monthly; the multi-month variants (quarterly,
- * semi_annual) have the same `'month'` interval but different counts
- * and are reserved for plan-change flows.
- */
-interface PriceShape {
-    id: string;
-    billingInterval: string;
-    intervalCount: number;
-    active: boolean;
-}
-
-function findMonthlyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | null {
-    return (
-        prices.find((p) => p.active && p.billingInterval === 'month' && p.intervalCount === 1) ??
-        null
-    );
+function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
+    switch (err.code) {
+        case 'PLAN_NOT_FOUND':
+        case 'NO_MONTHLY_PRICE':
+            return new HTTPException(404, { message: err.message });
+        case 'MISSING_INIT_POINT':
+            return new HTTPException(500, { message: err.message });
+        default: {
+            // Defensive: the union should be exhaustive, but TS doesn't
+            // enforce that downstream consumers add new codes here. Fall
+            // back to a generic 500 with the original message.
+            const exhaustive: never = err.code;
+            void exhaustive;
+            return new HTTPException(500, { message: err.message });
+        }
+    }
 }
 
 /**
  * Handler for the start-paid endpoint.
  *
- * Extracted from the route definition so it can be unit-tested directly
- * with a synthetic Hono context. The annual branch and promo-code
- * branches return HTTP 501 here; they are filled in by follow-up
- * commits in SPEC-126.
- *
  * Errors:
  * - 400 when the caller has no billing customer on session.
- * - 404 when the plan slug is unknown or has no monthly price.
- * - 422 when the resolved plan name does not match the requested slug
- *   (defense-in-depth — `plans.list().find()` already filters on name).
- * - 500 when qzpay returns a sub without a `providerInitPoint` (the
- *   payment adapter is misconfigured — surface loudly).
- * - 501 when `billingInterval === 'annual'` (SPEC-126 D1 annual is a
- *   follow-up) or `promoCode` is provided (SPEC-126 D9 is a follow-up).
+ * - 404 when the plan slug is unknown or has no active monthly price.
+ * - 500 when the qzpay create call returns no init point (adapter bug),
+ *   or when any other unexpected error bubbles out.
+ * - 501 when `billingInterval === 'annual'` (D1 annual follow-up) or
+ *   `promoCode` is provided (D9 follow-up).
  * - 503 when billing is not configured.
  */
 export const handleStartPaidSubscription = async (
@@ -170,80 +137,41 @@ export const handleStartPaidSubscription = async (
         });
     }
 
-    const plan = await resolvePlanBySlug(billing, body.planSlug);
-
-    if (!plan) {
-        throw new HTTPException(404, {
-            message: `Plan '${body.planSlug}' not found`
-        });
-    }
-
-    const monthlyPrice = findMonthlyPrice(plan.prices);
-
-    if (!monthlyPrice) {
-        throw new HTTPException(404, {
-            message: `Plan '${body.planSlug}' has no active monthly price`
-        });
-    }
-
     try {
-        const subscription = await billing.subscriptions.create({
+        const result = await initiatePaidMonthlySubscription({
             customerId: billingCustomerId,
-            planId: plan.id,
-            priceId: monthlyPrice.id,
-            mode: 'paid',
-            billingInterval: 'monthly',
-            paymentMethodReturnUrl: buildPaymentMethodReturnUrl(''),
-            notificationUrl: buildNotificationUrl(),
-            metadata: {
-                source: 'start-paid-monthly',
-                createdBy: 'subscription-flow'
+            planSlug: body.planSlug,
+            billing,
+            urls: {
+                paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                notificationUrl: buildNotificationUrl()
             }
         });
 
-        const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
-
-        if (!checkoutUrl) {
-            apiLogger.error(
-                {
-                    localSubscriptionId: subscription.id,
-                    customerId: billingCustomerId,
-                    planId: plan.id
-                },
-                'Paid subscription created without providerInitPoint — payment adapter misconfigured'
-            );
-
-            throw new HTTPException(500, {
-                message: 'Payment provider did not return a checkout URL'
-            });
-        }
-
-        // Rewrite the return URL now that we know the local sub id. The qzpay
-        // create call needs *some* return URL up front (MP rejects empty
-        // back_url), but the final URL must carry the local UUID so the front
-        // can poll the status endpoint. The placeholder is harmless: the user
-        // is redirected via `checkoutUrl`, not via `paymentMethodReturnUrl`.
-        const returnUrl = buildPaymentMethodReturnUrl(subscription.id);
-
         apiLogger.info(
             {
-                localSubscriptionId: subscription.id,
+                localSubscriptionId: result.localSubscriptionId,
                 customerId: billingCustomerId,
-                planId: plan.id,
-                planSlug: body.planSlug,
-                returnUrl
+                planSlug: body.planSlug
             },
             'Paid subscription initiated, awaiting provider authorization'
         );
 
-        const expiresAt = new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString();
-
-        return {
-            checkoutUrl,
-            localSubscriptionId: subscription.id,
-            expiresAt
-        };
+        return result;
     } catch (error) {
+        if (error instanceof SubscriptionCheckoutError) {
+            if (error.code === 'MISSING_INIT_POINT') {
+                apiLogger.error(
+                    {
+                        customerId: billingCustomerId,
+                        planSlug: body.planSlug
+                    },
+                    'Paid subscription created without providerInitPoint -- payment adapter misconfigured'
+                );
+            }
+            throw mapServiceErrorToHttp(error);
+        }
+
         if (error instanceof HTTPException) {
             throw error;
         }
