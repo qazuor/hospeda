@@ -15,6 +15,7 @@
 
 // Import job definitions
 export { trialExpiryJob } from './trial-expiry.js';
+export { trialPreEndNotifJob } from './trial-pre-end-notif.job.js';
 export { webhookRetryJob } from './webhook-retry.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { addonExpiryJob } from './addon-expiry.job.js';

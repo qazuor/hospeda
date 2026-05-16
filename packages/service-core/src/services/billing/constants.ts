@@ -50,7 +50,20 @@ export const BILLING_EVENT_TYPES = {
      *
      * @see SPEC-064 T-047
      */
-    ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
+    ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED',
+    /**
+     * Fired when the D-3 (three days remaining) trial-ending reminder email is
+     * dispatched. Acts as the per-subscription dedup guard for the
+     * `trial-pre-end-notif` cron (SPEC-126 D5) so a single trial does not
+     * receive the same variant on consecutive daily runs.
+     */
+    TRIAL_PRE_END_NOTIF_D3: 'TRIAL_PRE_END_NOTIF_D3',
+    /**
+     * Fired when the D-1 (one day remaining) trial-ending reminder email is
+     * dispatched. The D-1 variant is independent from D-3 — a trial gets both
+     * reminders, but never the same variant twice (SPEC-126 D5).
+     */
+    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1'
 } as const;
 
 /**
