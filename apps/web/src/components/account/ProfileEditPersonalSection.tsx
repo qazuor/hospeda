@@ -192,16 +192,29 @@ export function ProfileEditPersonalSection({
                         value={birthDate}
                         onChange={(e) => onBirthDateChange(e.target.value)}
                         max={todayIso}
-                        aria-describedby={fieldErrors.birthDate ? 'birthDate-error' : undefined}
+                        // The native date picker uses the user's OS / browser
+                        // locale to decide the display format. Hinting es-AR
+                        // nudges Chromium-based browsers towards dd/mm/yyyy.
+                        lang="es-AR"
+                        aria-describedby={
+                            fieldErrors.birthDate ? 'birthDate-error' : 'birthDate-hint'
+                        }
                         disabled={submitting}
                     />
-                    {fieldErrors.birthDate && (
+                    {fieldErrors.birthDate ? (
                         <p
                             id="birthDate-error"
                             className={styles.errorMsg}
                             role="alert"
                         >
                             {fieldErrors.birthDate}
+                        </p>
+                    ) : (
+                        <p
+                            id="birthDate-hint"
+                            className={styles.hint}
+                        >
+                            {t('account.editProfile.fields.birthDateHint', 'Formato: dd/mm/yyyy.')}
                         </p>
                     )}
                 </div>
