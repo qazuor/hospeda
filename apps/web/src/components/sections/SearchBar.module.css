@@ -488,6 +488,15 @@
     display: none;
 }
 
+/* === Mobile backdrop ===
+ * Dim layer behind the bottom-sheet panel. Rendered only when a panel is
+ * active. Hidden on desktop where panels behave as popovers and a backdrop
+ * would block the rest of the bar from being clicked while open.
+ */
+.backdrop {
+    display: none;
+}
+
 /* === Mobile (<=900px) === */
 @media (max-width: 900px) {
     .inner {
@@ -525,6 +534,8 @@
         bottom: 0;
         left: 0;
         right: 0;
+        /* Sit above the backdrop (95) and the sticky header (--z-nav: 50). */
+        z-index: 100;
         border-radius: 16px 16px 0 0;
         max-height: 80vh;
         min-width: 0;
@@ -532,6 +543,36 @@
         padding-top: 0;
         display: flex;
         flex-direction: column;
+    }
+
+    .backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        /* Above the sticky header (--z-nav: 50) and below the panel (100). */
+        z-index: 95;
+        background: oklch(from var(--core-foreground) l c h / 0.5);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        animation: backdropIn 0.2s ease-out;
+    }
+
+    @keyframes backdropIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .backdrop {
+            animation: none;
+        }
     }
 
     /*

@@ -512,6 +512,19 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </button>
             </div>
 
+            {/* Mobile backdrop — dims the page behind the bottom-sheet panel.
+                Clicking it closes the active panel (mirrors the click-outside
+                handler). Hidden on viewports >900px where panels are popovers. */}
+            {activePanel !== null && (
+                <button
+                    type="button"
+                    className={styles.backdrop}
+                    onClick={closePanel}
+                    aria-label={t('home.searchBar.closePanel', 'Cerrar panel')}
+                    tabIndex={-1}
+                />
+            )}
+
             {/* Panels (rendered below the bar) */}
 
             {/* Destination panel */}
