@@ -36,10 +36,12 @@ export function PageTabs({ tabs, basePath, className }: PageTabsProps) {
                 'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent mb-6 overflow-x-auto border-b',
                 className
             )}
-            role="tablist"
-            aria-label="Page sections"
         >
-            <nav className="flex min-w-max gap-4">
+            <div
+                role="tablist"
+                aria-label={t('admin-nav.tabs.pageSections')}
+                className="flex min-w-max gap-4"
+            >
                 {tabs.map((tab) => {
                     const displayLabel = tab.labelKey
                         ? t(tab.labelKey as TranslationKey)
@@ -58,7 +60,7 @@ export function PageTabs({ tabs, basePath, className }: PageTabsProps) {
                         />
                     );
                 })}
-            </nav>
+            </div>
         </div>
     );
 }

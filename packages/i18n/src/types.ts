@@ -2432,6 +2432,7 @@ export type TranslationKey =
     | 'admin-nav.breadcrumbs.breadcrumb'
     | 'admin-nav.sidebar.closeMenu'
     | 'admin-nav.sidebar.navigation'
+    | 'admin-nav.tabs.pageSections'
     | 'admin-nav.topbar.admin'
     | 'admin-nav.topbar.notifications'
     | 'admin-nav.topbar.profile'
