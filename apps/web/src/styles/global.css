@@ -336,6 +336,19 @@ svg {
     max-width: 100%;
 }
 
+/* --- Animation utilities --- */
+/*
+ * Initial collapsed/hidden state for reveal animations. Apply this class
+ * instead of inline width and opacity attributes so the page does not emit
+ * style-src-attr-violating attributes during SSR (SPEC-046 GAP-046-09a).
+ * Runtime scripts that animate the element override these via DOM API
+ * with higher specificity, so behavior is unchanged.
+ */
+.is-reveal-initial {
+    width: 0%;
+    opacity: 0;
+}
+
 /* --- Accessibility utilities --- */
 .sr-only {
     position: absolute;

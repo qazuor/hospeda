@@ -296,22 +296,27 @@
             "id": "T-009",
             "title": "Refactor reveal-animation start state (width:0%; opacity:0) to a CSS class",
             "description": "Replace inline `style=\"width: 0%; opacity: 0\"` (or any similar reveal-animation initial state) with a CSS class like `.is-reveal-initial { width: 0%; opacity: 0; }` defined in global.css. Update each component that previously emitted this inline style to apply the class instead. Acceptance: rg shows zero remaining `style=\"width: 0%; opacity: 0\"` patterns.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Add .is-reveal-initial CSS class in global.css", "completed": false },
-                { "title": "Refactor each call site to use the class", "completed": false },
-                { "title": "Verify rg post-change", "completed": false }
+                { "title": "Add .is-reveal-initial CSS class in global.css", "completed": true },
+                { "title": "Refactor each call site to use the class", "completed": true },
+                { "title": "Verify rg post-change", "completed": true }
             ],
             "tags": ["refactor", "css", "gap-09a"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null,
+                "notes": "Single call site (NavigationProgress.astro:20 per inventory-09a.md). Class .is-reveal-initial agregada en global.css junto a la .sr-only existente (mismo pattern de utility class). Div ahora usa class='nav-progress is-reveal-initial'. Smoke test dev mode confirmó 0 inline 'style=\"width: 0%\"' attrs reales en el HTML servido. NOTA known issue (out of scope T-009): el script de este componente sigue mutando element.style.X = Y en runtime (líneas 32-33, 41, 54, 57, 60) — esto también triggea style-src-attr violations pero es un refactor de comportamiento (necesita Web Animations API o CSS custom prop scheme), separado del scope GAP-046-09a. Documentado como follow-up."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T20:35:00.000Z",
+                "completed": "2026-05-16T20:45:00.000Z"
             }
         },
         {
@@ -498,9 +503,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     }
