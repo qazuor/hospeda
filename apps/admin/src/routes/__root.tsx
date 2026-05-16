@@ -2,8 +2,15 @@ import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, type QZPayProviderProps, QZPayThemeProvider } from '@qazuor/qzpay-react';
 import { TanstackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import {
+    HeadContent,
+    Link,
+    Outlet,
+    Scripts,
+    createRootRoute,
+    useRouterState
+} from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
@@ -117,7 +124,44 @@ function NotFoundComponent() {
     );
 }
 
+const BASE_TITLE = 'Hospeda Admin';
+
+/**
+ * Maps the first path segment of an admin route to a human-readable section
+ * label used to compose the document title. Keeps lookup O(1) and avoids
+ * coupling the title to the i18n bundle (the admin app currently runs in a
+ * single static locale, so this stays in sync with admin-menu.json by value).
+ */
+const SECTION_LABELS: Record<string, string> = {
+    dashboard: 'Panel de Control',
+    accommodations: 'Alojamientos',
+    destinations: 'Destinos',
+    events: 'Eventos',
+    posts: 'Publicaciones',
+    access: 'Acceso',
+    content: 'Contenido',
+    billing: 'Facturación',
+    sponsors: 'Patrocinadores',
+    settings: 'Configuración',
+    tags: 'Etiquetas',
+    analytics: 'Analíticas',
+    notifications: 'Notificaciones',
+    newsletter: 'Newsletter',
+    conversations: 'Conversaciones',
+    auth: 'Autenticación',
+    dev: 'Dev'
+};
+
+const titleForPath = (pathname: string): string => {
+    const segment = pathname.split('/').filter(Boolean)[0];
+    const label = segment ? SECTION_LABELS[segment] : undefined;
+    return label ? `${label} · ${BASE_TITLE}` : BASE_TITLE;
+};
+
 export const Route = createRootRoute({
+    head: () => ({
+        meta: [{ title: BASE_TITLE }]
+    }),
     component: () => {
         return (
             <RootDocument>
@@ -127,6 +171,23 @@ export const Route = createRootRoute({
     },
     notFoundComponent: NotFoundComponent
 });
+
+/**
+ * Keeps `document.title` aligned with the active route so each admin page
+ * surfaces a distinct, descriptive title to screen readers and browser tabs
+ * (fixes SPEC-136 F-003 across all 105 routes without per-route head wiring).
+ */
+function DocumentTitle() {
+    const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.title = titleForPath(pathname);
+        }
+    }, [pathname]);
+
+    return null;
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
     // Lazy section registration: ensures the `sections` array is fully
@@ -198,7 +259,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
 
     return (
-        <html lang="en">
+        <html lang={env.VITE_DEFAULT_LOCALE}>
             <head>
                 <HeadContent />
                 <link
@@ -207,6 +268,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 />
             </head>
             <body>
+                <DocumentTitle />
                 <QZPayProvider billing={billing}>
                     <QZPayThemeProvider theme={adminQzpayTheme}>
                         <QueryClientProvider client={queryClient}>
