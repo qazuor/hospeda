@@ -224,4 +224,97 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(false);
         });
     });
+
+    // ─── SPEC-113 polish: extended profile fields ────────────────────────────
+    describe('extended fields (SPEC-113 polish)', () => {
+        it('accepts a valid ISO birthDate', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                birthDate: '1990-05-12'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts empty string to clear birthDate', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, birthDate: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects a malformed birthDate', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                birthDate: '12-05-1990'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts a valid website URL', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                website: 'https://mipagina.com'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects an invalid website URL', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                website: 'not-a-url'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts a 2-100 char occupation', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                occupation: 'Frontend Engineer'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects an occupation shorter than 2 chars', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                occupation: 'a'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts empty string for occupation (clearing it)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, occupation: '' });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts valid social network URLs', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                facebookUrl: 'https://facebook.com/maria',
+                instagramUrl: 'https://instagram.com/maria',
+                twitterUrl: 'https://x.com/maria',
+                linkedinUrl: 'https://linkedin.com/in/maria',
+                youtubeUrl: 'https://youtube.com/@maria'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects an invalid social network URL', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                facebookUrl: 'maria-on-facebook'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts postal address fields when provided', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                addressLine1: 'Av. Corrientes 1234',
+                city: 'Buenos Aires',
+                province: 'CABA',
+                country: 'Argentina',
+                postalCode: 'C1043'
+            });
+            expect(result.success).toBe(true);
+        });
+    });
 });
