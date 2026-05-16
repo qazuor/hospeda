@@ -3,10 +3,14 @@
  * @description React island for the post-signup profile completion form (SPEC-113).
  *
  * Orchestrator: owns ALL state and handlers, then delegates rendering to
- * three pure subcomponents:
- *   - ProfileCompletionBasicFields   (avatar, name, displayName, birthDate)
- *   - ProfileCompletionContactFields (phone, locale, newsletter, terms)
- *   - ProfileCompletionMoreDetails   (collapsible: bio, website, occupation, socials, location)
+ * four pure subcomponents (in render order):
+ *   1. ProfileCompletionBasicFields   (avatar, name, displayName, birthDate)
+ *   2. ProfileCompletionContactFields (phone, locale)
+ *   3. ProfileCompletionMoreDetails   (collapsible: bio, website, occupation, socials, location)
+ *   4. ProfileCompletionConsentFields (newsletter opt-in, terms acceptance)
+ *
+ * Consent fields are kept at the END of the form so the user makes those
+ * decisions after providing all profile data.
  *
  * On success, redirects to the set-password screen if `requiresSetPassword === true`,
  * otherwise to `/[lang]/mi-cuenta/`.
@@ -27,6 +31,7 @@ import {
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
+import { ProfileCompletionConsentFields } from './ProfileCompletionConsentFields';
 import { ProfileCompletionContactFields } from './ProfileCompletionContactFields';
 import { ProfileCompletionMoreDetails } from './ProfileCompletionMoreDetails';
 
@@ -109,7 +114,9 @@ export function ProfileCompletion({
     const [phoneCode, setPhoneCode] = useState('+54');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedLocale, setSelectedLocale] = useState<SupportedLocale>(locale);
-    const [newsletter, setNewsletter] = useState(false);
+    // Newsletter defaults to TRUE — pre-checked so the user opts OUT explicitly.
+    // The terms checkbox stays unchecked: acceptance must be an explicit action.
+    const [newsletter, setNewsletter] = useState(true);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     // ── "Más detalles" section ────────────────────────────────────────────────
@@ -347,6 +354,18 @@ export function ProfileCompletion({
                         derivedDisplayName={derivedDisplayName}
                     />
 
+                    <ProfileCompletionContactFields
+                        phoneCode={phoneCode}
+                        phoneNumber={phoneNumber}
+                        selectedLocale={selectedLocale}
+                        errors={errors}
+                        submitting={submitting}
+                        t={t}
+                        onPhoneCodeChange={setPhoneCode}
+                        onPhoneNumberChange={setPhoneNumber}
+                        onLocaleChange={setSelectedLocale}
+                    />
+
                     <ProfileCompletionMoreDetails
                         detailsOpen={detailsOpen}
                         bio={bio}
@@ -369,19 +388,13 @@ export function ProfileCompletion({
                         onLocationCityChange={setLocationCity}
                     />
 
-                    <ProfileCompletionContactFields
+                    <ProfileCompletionConsentFields
                         locale={locale}
-                        phoneCode={phoneCode}
-                        phoneNumber={phoneNumber}
-                        selectedLocale={selectedLocale}
                         newsletter={newsletter}
                         acceptedTerms={acceptedTerms}
                         errors={errors}
                         submitting={submitting}
                         t={t}
-                        onPhoneCodeChange={setPhoneCode}
-                        onPhoneNumberChange={setPhoneNumber}
-                        onLocaleChange={setSelectedLocale}
                         onNewsletterChange={setNewsletter}
                         onAcceptedTermsChange={setAcceptedTerms}
                     />
