@@ -149,9 +149,12 @@ describe('UserService.completeProfile — new fields (SPEC-113 polish round)', (
             acceptedTerms: true
         });
 
-        // Assert
+        // Assert — service converts the ISO date string (from <input type="date">)
+        // into a Date object before passing to the model, since the DB column
+        // is timestamp and Drizzle expects a Date instance.
         const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
-        expect(updateCall?.birthDate).toBe('1990-05-15');
+        expect(updateCall?.birthDate).toBeInstanceOf(Date);
+        expect((updateCall?.birthDate as Date).toISOString()).toBe('1990-05-15T00:00:00.000Z');
     });
 
     it('does not set birthDate field when not provided', async () => {
@@ -369,7 +372,8 @@ describe('UserService.completeProfile — new fields (SPEC-113 polish round)', (
         expect(updateCall?.firstName).toBe('Maria');
         expect(updateCall?.lastName).toBe('Fernanda');
         expect(updateCall?.displayName).toBe('MaFer');
-        expect(updateCall?.birthDate).toBe('1990-05-15');
+        expect(updateCall?.birthDate).toBeInstanceOf(Date);
+        expect((updateCall?.birthDate as Date).toISOString()).toBe('1990-05-15T00:00:00.000Z');
         expect(updateCall?.image).toBe('https://cdn.example.com/avatar.jpg');
         expect(updateCall?.profile?.bio).toBe('Desarrolladora apasionada.');
         expect(updateCall?.profile?.website).toBe('https://mariafernanda.dev');
