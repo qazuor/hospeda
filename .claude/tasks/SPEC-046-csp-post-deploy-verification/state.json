@@ -8,23 +8,37 @@
             "id": "T-001",
             "title": "Scaffold csp-nonce-injector Astro integration package",
             "description": "Create the directory and skeleton files for the Astro integration that will inject the per-request CSP nonce into <style> and <script> tags Astro emits without one. Path: apps/web/integrations/csp-nonce-injector/. Files: index.ts (default export of the Astro integration with name + hooks), README.md (one-paragraph purpose). No logic yet — just the integration shell exporting an empty `astro:build:done` and `astro:server:setup` placeholder. No tests yet (logic lands in T-002). Acceptance: pnpm typecheck passes, package imports correctly from astro.config.mjs even with no logic.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
-                { "title": "Create apps/web/integrations/csp-nonce-injector/ directory", "completed": false },
-                { "title": "Add index.ts exporting an Astro integration with name='csp-nonce-injector'", "completed": false },
-                { "title": "Add README.md explaining the purpose and Path A architecture", "completed": false },
-                { "title": "Confirm typecheck passes from apps/web", "completed": false }
+                {
+                    "title": "Create apps/web/integrations/csp-nonce-injector/ directory",
+                    "completed": true
+                },
+                {
+                    "title": "Add index.ts exporting an Astro integration with name='csp-nonce-injector'",
+                    "completed": true
+                },
+                {
+                    "title": "Add README.md explaining the purpose and Path A architecture",
+                    "completed": true
+                },
+                { "title": "Confirm typecheck passes from apps/web", "completed": true }
             ],
             "tags": ["integration", "scaffolding", "gap-09b", "gap-13"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null,
+                "notes": "New file integrations/csp-nonce-injector/index.ts types clean and lints clean (biome). Apps/web typecheck baseline has 4 pre-existing errors in src/components/ui/ToastViewport.client.tsx (Icon type drift in @repo/icons, same on origin/staging at 509b111c5). Not introduced by T-001. tsconfig.json include extended to cover integrations/**/*.ts so future tasks (T-002/T-003) get real typecheck coverage on the integration."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:00:00.000Z",
+                "completed": "2026-05-16T19:05:00.000Z"
             }
         },
         {
@@ -36,10 +50,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
-                { "title": "Choose HTML parser dependency (parse5 vs htmlparser2) and document why", "completed": false },
-                { "title": "Implement injectNonce({ html, nonce }) using the chosen parser", "completed": false },
-                { "title": "Handle skip cases: existing nonce, <noscript> content", "completed": false },
-                { "title": "Ensure external <script src=...> tags also receive the nonce", "completed": false },
+                {
+                    "title": "Choose HTML parser dependency (parse5 vs htmlparser2) and document why",
+                    "completed": false
+                },
+                {
+                    "title": "Implement injectNonce({ html, nonce }) using the chosen parser",
+                    "completed": false
+                },
+                {
+                    "title": "Handle skip cases: existing nonce, <noscript> content",
+                    "completed": false
+                },
+                {
+                    "title": "Ensure external <script src=...> tags also receive the nonce",
+                    "completed": false
+                },
                 { "title": "Export from index.ts", "completed": false }
             ],
             "tags": ["integration", "html-parser", "gap-09b", "gap-13"],
@@ -60,11 +86,20 @@
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-005", "T-014"],
             "subtasks": [
-                { "title": "Identify the correct Astro 6 hook for per-response HTML transformation", "completed": false },
+                {
+                    "title": "Identify the correct Astro 6 hook for per-response HTML transformation",
+                    "completed": false
+                },
                 { "title": "Wire the hook to read context.locals.cspNonce", "completed": false },
                 { "title": "Call injectNonce() and replace the response body", "completed": false },
-                { "title": "Add inline comment explaining why this hook was chosen", "completed": false },
-                { "title": "Manual check: view-source shows matching nonce on a freshly loaded page", "completed": false }
+                {
+                    "title": "Add inline comment explaining why this hook was chosen",
+                    "completed": false
+                },
+                {
+                    "title": "Manual check: view-source shows matching nonce on a freshly loaded page",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "astro-config", "middleware", "gap-09b", "gap-13"],
             "phase": "integration",
@@ -84,10 +119,19 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Create test file at apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts", "completed": false },
-                { "title": "Write fixtures (10 cases listed above) as string constants", "completed": false },
+                {
+                    "title": "Create test file at apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write fixtures (10 cases listed above) as string constants",
+                    "completed": false
+                },
                 { "title": "Implement assertions following AAA pattern", "completed": false },
-                { "title": "Verify pnpm test passes with full branch coverage on injectNonce", "completed": false }
+                {
+                    "title": "Verify pnpm test passes with full branch coverage on injectNonce",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "vitest", "gap-09b", "gap-13"],
             "phase": "testing",
@@ -107,10 +151,19 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Pick approach: live preview server vs dist/ static inspection", "completed": false },
-                { "title": "Write the test in apps/web/test/integration/csp-nonce-emission.test.ts", "completed": false },
+                {
+                    "title": "Pick approach: live preview server vs dist/ static inspection",
+                    "completed": false
+                },
+                {
+                    "title": "Write the test in apps/web/test/integration/csp-nonce-emission.test.ts",
+                    "completed": false
+                },
                 { "title": "Assert nonce match between header and inline tag", "completed": false },
-                { "title": "Verify the test runs in CI (or document if it must be opt-in)", "completed": false }
+                {
+                    "title": "Verify the test runs in CI (or document if it must be opt-in)",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "integration-test", "gap-09b", "gap-13"],
             "phase": "testing",
@@ -130,8 +183,14 @@
             "blockedBy": [],
             "blocks": ["T-007", "T-008", "T-009"],
             "subtasks": [
-                { "title": "Run rg with -g '*.astro' -g '*.tsx' for each pattern", "completed": false },
-                { "title": "Classify each hit into stagger / css-var / animation-state", "completed": false },
+                {
+                    "title": "Run rg with -g '*.astro' -g '*.tsx' for each pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Classify each hit into stagger / css-var / animation-state",
+                    "completed": false
+                },
                 { "title": "Write inventory-09a.md with the table", "completed": false },
                 { "title": "Spot-check 3 entries against source", "completed": false }
             ],
@@ -153,10 +212,19 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Add CSS rules for data-stagger-index 0-6 in global.css", "completed": false },
-                { "title": "Update all .astro files from inventory to use data-stagger-index", "completed": false },
+                {
+                    "title": "Add CSS rules for data-stagger-index 0-6 in global.css",
+                    "completed": false
+                },
+                {
+                    "title": "Update all .astro files from inventory to use data-stagger-index",
+                    "completed": false
+                },
                 { "title": "Update reveal-stagger.ts doc and any helper", "completed": false },
-                { "title": "Run rg post-change to confirm zero remaining matches", "completed": false }
+                {
+                    "title": "Run rg post-change to confirm zero remaining matches",
+                    "completed": false
+                }
             ],
             "tags": ["refactor", "css", "gap-09a"],
             "phase": "core",
@@ -176,10 +244,19 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Enumerate the distinct values per CSS var across the inventory", "completed": false },
-                { "title": "Create css-var-themes.css with the data-attr -> CSS map", "completed": false },
+                {
+                    "title": "Enumerate the distinct values per CSS var across the inventory",
+                    "completed": false
+                },
+                {
+                    "title": "Create css-var-themes.css with the data-attr -> CSS map",
+                    "completed": false
+                },
                 { "title": "Refactor each call site to use the data-attr", "completed": false },
-                { "title": "Document exceptions (if any) and list them in the spec or in a follow-up", "completed": false }
+                {
+                    "title": "Document exceptions (if any) and list them in the spec or in a follow-up",
+                    "completed": false
+                }
             ],
             "tags": ["refactor", "css", "design-tokens", "gap-09a"],
             "phase": "core",
@@ -223,7 +300,10 @@
             "subtasks": [
                 { "title": "Locate buildCspHeader() function", "completed": false },
                 { "title": "Append frame-src 'none' directive", "completed": false },
-                { "title": "Manual smoke check: response header contains frame-src 'none'", "completed": false }
+                {
+                    "title": "Manual smoke check: response header contains frame-src 'none'",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "middleware", "gap-12"],
             "phase": "core",
@@ -266,7 +346,10 @@
             "blocks": ["T-013"],
             "subtasks": [
                 { "title": "Write cf-analytics-disable-plan.md", "completed": false },
-                { "title": "Coordinate with SPEC-140 owner (PR comment or message)", "completed": false },
+                {
+                    "title": "Coordinate with SPEC-140 owner (PR comment or message)",
+                    "completed": false
+                },
                 { "title": "Get go-ahead recorded in the plan doc", "completed": false }
             ],
             "tags": ["coordination", "docs", "gap-11", "spec-140"],
@@ -287,10 +370,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Disable Web Analytics in CF dashboard for hospeda.com.ar", "completed": false },
-                { "title": "Disable Web Analytics in CF dashboard for staging.hospeda.com.ar", "completed": false },
-                { "title": "Verify beacon disappears from page network traffic", "completed": false },
-                { "title": "Record timestamp + verification in disable-plan.md", "completed": false }
+                {
+                    "title": "Disable Web Analytics in CF dashboard for hospeda.com.ar",
+                    "completed": false
+                },
+                {
+                    "title": "Disable Web Analytics in CF dashboard for staging.hospeda.com.ar",
+                    "completed": false
+                },
+                {
+                    "title": "Verify beacon disappears from page network traffic",
+                    "completed": false
+                },
+                {
+                    "title": "Record timestamp + verification in disable-plan.md",
+                    "completed": false
+                }
             ],
             "tags": ["ops", "cloudflare", "manual", "gap-11"],
             "phase": "cleanup",
@@ -311,11 +406,20 @@
             "blocks": [],
             "subtasks": [
                 { "title": "Open Firefox DevTools, enable Persist Logs", "completed": false },
-                { "title": "Navigate home, listing, detail, auth forms, signup", "completed": false },
-                { "title": "Filter console for Content-Security-Policy / Cross-Origin", "completed": false },
+                {
+                    "title": "Navigate home, listing, detail, auth forms, signup",
+                    "completed": false
+                },
+                {
+                    "title": "Filter console for Content-Security-Policy / Cross-Origin",
+                    "completed": false
+                },
                 { "title": "Verify all 6 assertions (a-f) from description", "completed": false },
                 { "title": "Write verification report markdown file", "completed": false },
-                { "title": "If violations persist, open follow-up gap and document", "completed": false }
+                {
+                    "title": "If violations persist, open follow-up gap and document",
+                    "completed": false
+                }
             ],
             "tags": ["verification", "staging", "manual"],
             "phase": "testing",
@@ -335,8 +439,14 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Confirm staging test account is available (block if not)", "completed": false },
-                { "title": "Crawl /mi-cuenta/favoritos, /mi-cuenta/colecciones, /mi-cuenta/historial with Persist Logs", "completed": false },
+                {
+                    "title": "Confirm staging test account is available (block if not)",
+                    "completed": false
+                },
+                {
+                    "title": "Crawl /mi-cuenta/favoritos, /mi-cuenta/colecciones, /mi-cuenta/historial with Persist Logs",
+                    "completed": false
+                },
                 { "title": "Crawl billing entry point if reachable from web", "completed": false },
                 { "title": "Write verification-authenticated markdown report", "completed": false },
                 { "title": "Update §1C.8 / §7 item 20 in spec accordingly", "completed": false }
@@ -353,9 +463,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.5
     }
