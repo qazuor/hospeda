@@ -335,6 +335,7 @@ export function ProfileCompletion({
                 >
                     <ProfileCompletionBasicFields
                         locale={locale}
+                        apiUrl={apiUrl}
                         firstName={firstName}
                         lastName={lastName}
                         displayNameValue={

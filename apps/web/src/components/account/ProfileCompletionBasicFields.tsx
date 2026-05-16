@@ -13,6 +13,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
+import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,8 @@ import styles from './ProfileCompletion.module.css';
 export interface ProfileCompletionBasicFieldsProps {
     /** Active locale (passed to build date max via ISO string). */
     readonly locale: SupportedLocale;
+    /** API base URL — forwarded to the avatar picker. */
+    readonly apiUrl: string;
     /** Current first name value. */
     readonly firstName: string;
     /** Current last name value. */
@@ -66,6 +69,7 @@ export interface ProfileCompletionBasicFieldsProps {
  * @param props - Component props (see {@link ProfileCompletionBasicFieldsProps})
  */
 export function ProfileCompletionBasicFields({
+    apiUrl,
     firstName,
     lastName,
     displayNameValue,
@@ -105,24 +109,12 @@ export function ProfileCompletionBasicFields({
                     <p className={styles.avatarHint}>
                         {t('account.profileCompletion.avatar.hint', 'Tu foto de perfil')}
                     </p>
-                    <label
-                        className={styles.avatarChangeBtn}
-                        htmlFor="pc-avatar-upload"
-                    >
-                        {t('account.profileCompletion.avatar.change', 'Cambiar foto')}
-                        <input
-                            id="pc-avatar-upload"
-                            type="url"
-                            className={styles.srOnly}
-                            value={imageUrl}
-                            onChange={(e) => onImageUrlChange(e.target.value)}
-                            aria-label={t(
-                                'account.profileCompletion.avatar.urlLabel',
-                                'URL de avatar'
-                            )}
-                            disabled={submitting}
-                        />
-                    </label>
+                    <ProfileCompletionAvatarPicker
+                        apiUrl={apiUrl}
+                        disabled={submitting}
+                        t={t}
+                        onUploaded={onImageUrlChange}
+                    />
                 </div>
             </div>
 
