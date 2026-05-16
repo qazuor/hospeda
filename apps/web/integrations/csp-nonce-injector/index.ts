@@ -12,6 +12,8 @@
 
 import type { AstroIntegration } from 'astro';
 
+export { injectNonce } from './inject-nonce';
+
 /**
  * Creates the csp-nonce-injector Astro integration.
  *

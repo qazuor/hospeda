@@ -45,36 +45,41 @@
             "id": "T-002",
             "title": "Implement HTML walker that stamps nonce on unguarded <style> and <script> tags",
             "description": "Inside apps/web/integrations/csp-nonce-injector/, implement the core function `injectNonce({ html, nonce })` that returns the HTML with `nonce=\"${nonce}\"` added to every <style> and <script> tag that does not already have a nonce attribute. Use a streaming HTML parser (parse5 or htmlparser2) — NOT raw regex — because raw regex is fragile to script contents that include <style> strings. Skip rules: (a) tags that already have nonce=, (b) <script> tags inside <noscript>, (c) external <script src=...> tags — those also need nonce, do NOT skip them (strict-dynamic requires it). Export the function from index.ts. No tests in this task (covered in T-004). Reference: research/astro-csp-options.md §6 deliverable T-046-NONCE-INTEGRATION.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
                 {
                     "title": "Choose HTML parser dependency (parse5 vs htmlparser2) and document why",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement injectNonce({ html, nonce }) using the chosen parser",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle skip cases: existing nonce, <noscript> content",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ensure external <script src=...> tags also receive the nonce",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Export from index.ts", "completed": false }
+                { "title": "Export from index.ts", "completed": true }
             ],
             "tags": ["integration", "html-parser", "gap-09b", "gap-13"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null,
+                "notes": "Parser elegido: parse5. Razón: ya es runtime dep transitiva de apps/web vía astro -> @astrojs/markdown-remark -> hast-util-from-html. Cero peso extra en bundle, cero deps nuevas que mantener, versión bendecida por Astro. Performance gap (5-8ms vs 1-2ms de htmlparser2) es irrelevante a la escala de Hospeda (3-5% de overhead sobre 50-200ms request budget). Agregado parse5 como dep explícita en apps/web/package.json para no depender de cadena transitiva. injectNonce vive en inject-nonce.ts (separado del shell index.ts para que T-004 lo importe limpio). RO-RO pattern: recibe {html, nonce}, retorna {html}. Skip rules implementadas: existing nonce attr (any value), <noscript> descendants. External <script src=...> sí recibe nonce (requerimiento de strict-dynamic). Empty input / empty nonce → no-op."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:10:00.000Z",
+                "completed": "2026-05-16T19:25:00.000Z"
             }
         },
         {
@@ -463,9 +468,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.5
     }
