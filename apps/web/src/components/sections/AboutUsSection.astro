@@ -446,16 +446,56 @@ const { t } = createTranslations(locale);
             text-align: center;
         }
 
+        /* Keep the traveler image flush against the section's bottom edge —
+           desktop achieves this via align-self: stretch + justify-content:
+           flex-end on the flex row, so the image already sits at the bottom
+           of the row (which equals the bottom of the section since
+           padding-block is 0). On mobile the layout becomes a column and the
+           original padding-block: 2rem pushed the image up. Drop it.
+           Also break out of the container's horizontal padding via the
+           `calc(50% - 50vw)` full-bleed trick so the image spans edge to
+           edge of the viewport. */
         .about-us__side {
-            width: 100%;
-            max-width: 347px;
-            padding-block: 2rem;
+            width: 100vw;
+            max-width: 100vw;
+            margin-inline: calc(50% - 50vw);
+            padding-block: 0;
         }
 
-        /* Hide decoratives that use pixel-exact positioning */
-        .about-us__exp-badge,
-        .about-us__airplane {
-            display: none;
+        .about-us__side-img {
+            width: 100%;
+            max-width: none;
+        }
+
+        /* Re-anchor the experience badge and the three airplane decoratives
+           to the centered main photo. Desktop uses pixel-exact left offsets
+           that assume the photo sits at `left: 111px` inside a 432px-wide
+           collage; on mobile the photo is centered with translateX(-50%),
+           so we restate every offset as `calc(50% ± Npx)` relative to that
+           centerline. Distances match the desktop relationships: badge sits
+           ~20px left of the photo's left edge with its bottom near y=390
+           (photo bottom). */
+        .about-us__exp-badge {
+            top: 305px;
+            left: calc(50% - 136px);
+        }
+
+        .about-us__airplane--1 {
+            top: 25px;
+            left: calc(50% - 165px);
+            width: 130px;
+        }
+
+        .about-us__airplane--2 {
+            top: 100px;
+            left: calc(50% - 80px);
+            width: 100px;
+        }
+
+        .about-us__airplane--3 {
+            top: 25px;
+            left: calc(50% + 80px);
+            width: 70px;
         }
     }
 </style>
