@@ -483,6 +483,17 @@ const adminPanelUrl = getAdminUrl();
             font-size: 12px;
             padding-inline: 0.75rem;
         }
+
+        /* On the hero page in mobile the photo bleeds up behind the navbar,
+           so leaving the header fully transparent makes the logo + buttons
+           sit on potentially busy imagery. Re-introduce a translucent
+           surface plus blur so the controls stay readable while still
+           letting the photo show through. */
+        .header--hero {
+            background-color: oklch(from var(--core-card) l c h / 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
     }
 
 </style>
