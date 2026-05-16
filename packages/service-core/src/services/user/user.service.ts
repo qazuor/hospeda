@@ -832,7 +832,17 @@ export class UserService extends BaseCrudService<
                     ? { ...existingSocial, ...socialNetworks }
                     : existingSocial;
 
-                const patch: Partial<User> = {
+                // The JSONB columns (socialNetworks, location) and the
+                // string-vs-Date birthDate are intentionally permissive at
+                // runtime — Drizzle stores whatever the column accepts. We
+                // cast to Partial<User> at the model.update boundary because
+                // the Zod-derived User type tightens each JSONB field to its
+                // full schema (SocialNetwork, FullLocationType) while we
+                // accept partial onboarding subsets here.
+                // birthDate is converted to Date since the column is typed
+                // as timestamp and Drizzle expects a Date, not the ISO
+                // string the HTTP body carries.
+                const patch = {
                     firstName: firstName.trim(),
                     lastName: lastName.trim(),
                     displayName: resolvedDisplayName,
@@ -843,10 +853,10 @@ export class UserService extends BaseCrudService<
                     ...(Object.keys(resolvedSocialNetworks).length > 0 && {
                         socialNetworks: resolvedSocialNetworks
                     }),
-                    ...(birthDate !== undefined && { birthDate }),
+                    ...(birthDate !== undefined && { birthDate: new Date(birthDate) }),
                     ...(imageUrl !== undefined && { image: imageUrl }),
                     ...(location !== undefined && { location })
-                };
+                } as Partial<User>;
 
                 const updated = await this.model.update({ id: userId }, patch, execCtx?.tx);
 

@@ -140,6 +140,13 @@ export const UserSchema = z.object({
     role: RoleEnumSchema,
     permissions: z.array(PermissionEnumSchema).default([]),
 
+    // SPEC-113: post-signup onboarding flags. Mirror the
+    // `users.profile_completed` + `users.set_password_prompted` columns added
+    // in Phase 0. Optional with default `false` so existing fixtures and
+    // create/update inputs that don't mention them keep working.
+    profileCompleted: z.boolean().default(false).optional(),
+    setPasswordPrompted: z.boolean().default(false).optional(),
+
     // User-specific nested objects
     profile: UserProfileSchema.nullish(),
     settings: UserSettingsSchema.optional(),

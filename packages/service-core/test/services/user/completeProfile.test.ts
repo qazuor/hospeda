@@ -96,6 +96,8 @@ describe('UserService.completeProfile', () => {
         // Act
         const result = await service.completeProfile(actor, {
             userId,
+            firstName: 'New',
+            lastName: 'Name',
             displayName: 'New Name',
             acceptedTerms: true
         });
@@ -120,6 +122,8 @@ describe('UserService.completeProfile', () => {
         // Act
         const result = await service.completeProfile(actor, {
             userId,
+            firstName: 'OAuth',
+            lastName: 'User',
             displayName: 'OAuth User',
             acceptedTerms: true
         });
@@ -129,42 +133,46 @@ describe('UserService.completeProfile', () => {
         expect(result.data?.requiresSetPassword).toBe(true);
     });
 
-    it('should derive firstName from first word of displayName when not provided', async () => {
+    it('should auto-derive displayName from firstName + lastName when not provided', async () => {
         // Arrange
         const user = getUser({ id: userId });
         asMock(userModelMock.findById).mockResolvedValue(user);
         asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
         mockAccountQuery([{ providerId: 'credential' }]);
 
-        // Act
+        // Act — no displayName provided
         await service.completeProfile(actor, {
             userId,
-            displayName: 'Maria Fernanda',
+            firstName: 'Maria',
+            lastName: 'Fernanda',
             acceptedTerms: true
         });
 
-        // Assert — firstName should be first word of displayName
+        // Assert — server derives `${firstName} ${lastName}`.trim()
         const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
+        expect(updateCall?.displayName).toBe('Maria Fernanda');
         expect(updateCall?.firstName).toBe('Maria');
+        expect(updateCall?.lastName).toBe('Fernanda');
     });
 
-    it('should use provided firstName over the derived one', async () => {
+    it('should use provided displayName over the auto-derived one', async () => {
         // Arrange
         const user = getUser({ id: userId });
         asMock(userModelMock.findById).mockResolvedValue(user);
         asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
         mockAccountQuery([{ providerId: 'credential' }]);
 
-        // Act
+        // Act — explicit displayName overrides the firstName+lastName derivation
         await service.completeProfile(actor, {
             userId,
-            displayName: 'Full Name',
-            firstName: 'Nombre',
+            firstName: 'Maria',
+            lastName: 'Fernanda',
+            displayName: 'Mafer',
             acceptedTerms: true
         });
 
         const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
-        expect(updateCall?.firstName).toBe('Nombre');
+        expect(updateCall?.displayName).toBe('Mafer');
     });
 
     it('should persist phone into contactInfo.mobilePhone', async () => {
@@ -177,7 +185,8 @@ describe('UserService.completeProfile', () => {
         // Act
         await service.completeProfile(actor, {
             userId,
-            displayName: 'Test User',
+            firstName: 'Test',
+            lastName: 'User',
             phone: '+5493415551234',
             acceptedTerms: true
         });
@@ -196,7 +205,8 @@ describe('UserService.completeProfile', () => {
         // Act
         await service.completeProfile(actor, {
             userId,
-            displayName: 'Test User',
+            firstName: 'Test',
+            lastName: 'User',
             locale: 'pt',
             acceptedTerms: true
         });
@@ -210,7 +220,8 @@ describe('UserService.completeProfile', () => {
         const otherUserId = getMockId('user', 'other-user') as string;
         const result = await service.completeProfile(actor, {
             userId: otherUserId,
-            displayName: 'Hacker',
+            firstName: 'Hacker',
+            lastName: 'McAttack',
             acceptedTerms: true
         });
         expectForbiddenError(result);
@@ -223,7 +234,8 @@ describe('UserService.completeProfile', () => {
         // Act
         const result = await service.completeProfile(actor, {
             userId,
-            displayName: 'Ghost',
+            firstName: 'Ghost',
+            lastName: 'User',
             acceptedTerms: true
         });
         expectNotFoundError(result);
@@ -238,7 +250,8 @@ describe('UserService.completeProfile', () => {
         // Act
         const result = await service.completeProfile(actor, {
             userId,
-            displayName: 'Name',
+            firstName: 'Some',
+            lastName: 'User',
             acceptedTerms: true
         });
         expectInternalError(result);
@@ -247,7 +260,8 @@ describe('UserService.completeProfile', () => {
     it('should return UNAUTHORIZED when actor is undefined', async () => {
         const result = await service.completeProfile(undefined as unknown as Actor, {
             userId,
-            displayName: 'Name',
+            firstName: 'Some',
+            lastName: 'User',
             acceptedTerms: true
         });
         expectUnauthorizedError(result);
