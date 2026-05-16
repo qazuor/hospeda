@@ -1,0 +1,362 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-046",
+    "title": "CSP Post-Deployment Verification",
+    "created": "2026-05-16T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scaffold csp-nonce-injector Astro integration package",
+            "description": "Create the directory and skeleton files for the Astro integration that will inject the per-request CSP nonce into <style> and <script> tags Astro emits without one. Path: apps/web/integrations/csp-nonce-injector/. Files: index.ts (default export of the Astro integration with name + hooks), README.md (one-paragraph purpose). No logic yet — just the integration shell exporting an empty `astro:build:done` and `astro:server:setup` placeholder. No tests yet (logic lands in T-002). Acceptance: pnpm typecheck passes, package imports correctly from astro.config.mjs even with no logic.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Create apps/web/integrations/csp-nonce-injector/ directory", "completed": false },
+                { "title": "Add index.ts exporting an Astro integration with name='csp-nonce-injector'", "completed": false },
+                { "title": "Add README.md explaining the purpose and Path A architecture", "completed": false },
+                { "title": "Confirm typecheck passes from apps/web", "completed": false }
+            ],
+            "tags": ["integration", "scaffolding", "gap-09b", "gap-13"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement HTML walker that stamps nonce on unguarded <style> and <script> tags",
+            "description": "Inside apps/web/integrations/csp-nonce-injector/, implement the core function `injectNonce({ html, nonce })` that returns the HTML with `nonce=\"${nonce}\"` added to every <style> and <script> tag that does not already have a nonce attribute. Use a streaming HTML parser (parse5 or htmlparser2) — NOT raw regex — because raw regex is fragile to script contents that include <style> strings. Skip rules: (a) tags that already have nonce=, (b) <script> tags inside <noscript>, (c) external <script src=...> tags — those also need nonce, do NOT skip them (strict-dynamic requires it). Export the function from index.ts. No tests in this task (covered in T-004). Reference: research/astro-csp-options.md §6 deliverable T-046-NONCE-INTEGRATION.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                { "title": "Choose HTML parser dependency (parse5 vs htmlparser2) and document why", "completed": false },
+                { "title": "Implement injectNonce({ html, nonce }) using the chosen parser", "completed": false },
+                { "title": "Handle skip cases: existing nonce, <noscript> content", "completed": false },
+                { "title": "Ensure external <script src=...> tags also receive the nonce", "completed": false },
+                { "title": "Export from index.ts", "completed": false }
+            ],
+            "tags": ["integration", "html-parser", "gap-09b", "gap-13"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Wire integration into astro.config.mjs and thread cspNonce from middleware",
+            "description": "Add the csp-nonce-injector integration to apps/web/astro.config.mjs `integrations:` array. The integration must register an HTML transformation hook (Astro's `astro:server:setup` or `astro:html-rendered` if available in Astro 6) that reads the per-request nonce from context.locals.cspNonce (already set by middleware) and calls injectNonce(). Ensure the integration runs AFTER Astro has rendered the page but BEFORE the response is sent. Document the hook used in a code comment. Acceptance: in dev mode, view-source of any page shows nonce attributes on <style> and <script> tags matching the CSP header value.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-005", "T-014"],
+            "subtasks": [
+                { "title": "Identify the correct Astro 6 hook for per-response HTML transformation", "completed": false },
+                { "title": "Wire the hook to read context.locals.cspNonce", "completed": false },
+                { "title": "Call injectNonce() and replace the response body", "completed": false },
+                { "title": "Add inline comment explaining why this hook was chosen", "completed": false },
+                { "title": "Manual check: view-source shows matching nonce on a freshly loaded page", "completed": false }
+            ],
+            "tags": ["integration", "astro-config", "middleware", "gap-09b", "gap-13"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Unit tests for injectNonce HTML walker",
+            "description": "Add vitest tests in apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts covering: (1) plain <script>...</script> receives nonce, (2) <script src=\"...\"> receives nonce, (3) <script nonce=\"existing\"> is untouched, (4) <style>...</style> receives nonce, (5) <style nonce=\"existing\"> untouched, (6) <noscript><script>...</script></noscript> is NOT modified, (7) script content containing the literal text '<style>' is not corrupted, (8) malformed HTML (unclosed tags) does not throw, (9) empty input returns empty output, (10) nonce string with special chars (=, +, /) is escaped if needed. AAA pattern. Use fixtures stored as string constants. Coverage target: 100% of injectNonce branches.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Create test file at apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts", "completed": false },
+                { "title": "Write fixtures (10 cases listed above) as string constants", "completed": false },
+                { "title": "Implement assertions following AAA pattern", "completed": false },
+                { "title": "Verify pnpm test passes with full branch coverage on injectNonce", "completed": false }
+            ],
+            "tags": ["testing", "vitest", "gap-09b", "gap-13"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Integration smoke test: build + preview, assert nonce on emitted HTML",
+            "description": "Add an integration-level smoke test (apps/web/test/integration/csp-nonce-emission.test.ts) that runs `pnpm build` against a minimal fixture page (or against an existing page if feasible), starts `pnpm preview` programmatically, fetches a page, and asserts that every <style> and <script> in the response body has a nonce attribute matching the Content-Security-Policy-Report-Only header's nonce. If the test environment can't easily run preview, fall back to inspecting the built HTML in `dist/` directly. Document the chosen approach. Acceptance: zero <style>/<script> tags without nonce in the test fixture.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Pick approach: live preview server vs dist/ static inspection", "completed": false },
+                { "title": "Write the test in apps/web/test/integration/csp-nonce-emission.test.ts", "completed": false },
+                { "title": "Assert nonce match between header and inline tag", "completed": false },
+                { "title": "Verify the test runs in CI (or document if it must be opt-in)", "completed": false }
+            ],
+            "tags": ["testing", "integration-test", "gap-09b", "gap-13"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Catalogue files using inline style=\"transition-delay / CSS vars\" patterns",
+            "description": "Survey apps/web/src/ for every occurrence of inline `style=` containing transition-delay, --corner-bg, --brand-accent, --wave-header-padding-top, width:0% or opacity:0. Use rg with explicit globs `-g '*.astro' -g '*.tsx'` (ripgrep does NOT search .astro by default — important). Produce a markdown table in `.claude/tasks/SPEC-046-csp-post-deploy-verification/inventory-09a.md` listing file path, line, pattern, and target refactor strategy (stagger / css-var / animation-state). This task produces ONLY the inventory — no refactor here. Acceptance: inventory file exists and is verified by spot-checking 3 entries against the actual files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                { "title": "Run rg with -g '*.astro' -g '*.tsx' for each pattern", "completed": false },
+                { "title": "Classify each hit into stagger / css-var / animation-state", "completed": false },
+                { "title": "Write inventory-09a.md with the table", "completed": false },
+                { "title": "Spot-check 3 entries against source", "completed": false }
+            ],
+            "tags": ["discovery", "audit", "gap-09a"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Refactor stagger pattern: style={transition-delay} -> data-stagger-index + CSS",
+            "description": "For every file in inventory-09a.md classified as 'stagger', replace `<div data-reveal=\"...\" style={`transition-delay: ${i*100}ms`}>` with `<div data-reveal=\"...\" data-stagger-index={Math.min(i, 6)}>`. Add a CSS rule in apps/web/src/styles/global.css (or a new partial) covering indices 0-6: `[data-stagger-index=\"0\"] { transition-delay: 0ms; } [data-stagger-index=\"1\"] { transition-delay: 100ms; } ...`. Verify reveal-stagger.ts (apps/web/src/lib/reveal-stagger.ts) does not break — it currently emits the same inline style; update its doc example to the new pattern. Test: existing reveal-stagger tests must still pass; if there are none, add a snapshot test of the helper. Acceptance: zero `style={\\`transition-delay` patterns remain in apps/web/src/.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Add CSS rules for data-stagger-index 0-6 in global.css", "completed": false },
+                { "title": "Update all .astro files from inventory to use data-stagger-index", "completed": false },
+                { "title": "Update reveal-stagger.ts doc and any helper", "completed": false },
+                { "title": "Run rg post-change to confirm zero remaining matches", "completed": false }
+            ],
+            "tags": ["refactor", "css", "gap-09a"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Refactor inline CSS-var patterns to data-attrs + CSS variable map",
+            "description": "For inventory entries classified as 'css-var' (e.g. style=\"--corner-bg: var(--hospeda-forest)\", style=\"--brand-accent: ...\", style=\"--wave-header-padding-top: 3rem\"), replace each with a finite-set data-attr + a CSS map. Example: `style=\"--corner-bg: var(--hospeda-forest)\"` becomes `data-corner-theme=\"forest\"` plus CSS `[data-corner-theme=\"forest\"] { --corner-bg: var(--hospeda-forest); }`. Document the finite token set in apps/web/src/styles/css-var-themes.css (or similar). If a value is genuinely per-instance and not enumerable (e.g. user-controlled color), call it out and consider keeping inline + adding to GAP-046-09a-known-exceptions list. Acceptance: rg shows zero remaining inline `style=\"--` patterns outside the documented exceptions.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Enumerate the distinct values per CSS var across the inventory", "completed": false },
+                { "title": "Create css-var-themes.css with the data-attr -> CSS map", "completed": false },
+                { "title": "Refactor each call site to use the data-attr", "completed": false },
+                { "title": "Document exceptions (if any) and list them in the spec or in a follow-up", "completed": false }
+            ],
+            "tags": ["refactor", "css", "design-tokens", "gap-09a"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Refactor reveal-animation start state (width:0%; opacity:0) to a CSS class",
+            "description": "Replace inline `style=\"width: 0%; opacity: 0\"` (or any similar reveal-animation initial state) with a CSS class like `.is-reveal-initial { width: 0%; opacity: 0; }` defined in global.css. Update each component that previously emitted this inline style to apply the class instead. Acceptance: rg shows zero remaining `style=\"width: 0%; opacity: 0\"` patterns.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Add .is-reveal-initial CSS class in global.css", "completed": false },
+                { "title": "Refactor each call site to use the class", "completed": false },
+                { "title": "Verify rg post-change", "completed": false }
+            ],
+            "tags": ["refactor", "css", "gap-09a"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add frame-src 'none' to buildCspHeader() (GAP-046-12)",
+            "description": "Update apps/web/src/lib/middleware-helpers.ts (or wherever buildCspHeader() lives — verify path first) to append `frame-src 'none'` to the directives string. Locate by `rg 'buildCspHeader' apps/web/src/`. Add the directive in the canonical alphabetical/grouping order used by the existing function. Acceptance: a fresh page response on web includes `frame-src 'none'` in the Content-Security-Policy-Report-Only header.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Locate buildCspHeader() function", "completed": false },
+                { "title": "Append frame-src 'none' directive", "completed": false },
+                { "title": "Manual smoke check: response header contains frame-src 'none'", "completed": false }
+            ],
+            "tags": ["csp", "middleware", "gap-12"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Test that CSP header includes frame-src 'none'",
+            "description": "Add or extend an existing test (likely apps/web/test/middleware.test.ts or a CSP-specific test file) asserting that the buildCspHeader() output string contains the substring `frame-src 'none'`. AAA pattern. Acceptance: pnpm test passes with the new assertion.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Locate or create the appropriate test file", "completed": false },
+                { "title": "Write the assertion", "completed": false },
+                { "title": "Verify pnpm test passes", "completed": false }
+            ],
+            "tags": ["testing", "csp", "gap-12"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Coordinate Cloudflare Web Analytics disable timing with SPEC-140 (Umami)",
+            "description": "Document the disable timing of Cloudflare Web Analytics relative to SPEC-140 (self-hosted Umami) rollout. Add a section to .claude/specs/SPEC-046-csp-post-deploy-verification/research/cf-analytics-disable-plan.md describing: (1) current state (CF Web Analytics enabled for hospeda.com.ar and staging), (2) target state (disabled, Umami serves analytics), (3) decision on overlap window (recommend: enable Umami first, run both for 1 week, then disable CF). Notify the SPEC-140 owner (could be self) via PR comment or message that CF disable is pending their go-ahead. This task produces ONLY the plan; the actual disable lives in T-013.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Write cf-analytics-disable-plan.md", "completed": false },
+                { "title": "Coordinate with SPEC-140 owner (PR comment or message)", "completed": false },
+                { "title": "Get go-ahead recorded in the plan doc", "completed": false }
+            ],
+            "tags": ["coordination", "docs", "gap-11", "spec-140"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Disable Cloudflare Web Analytics in CF dashboard (manual ops)",
+            "description": "Manual ops task: log into Cloudflare dashboard, navigate to Web Analytics, disable Web Analytics for both hospeda.com.ar and staging.hospeda.com.ar. After disable, verify in browser that `static.cloudflareinsights.com/beacon.min.js` is no longer injected into the HTML output. Document the action in the disable-plan doc from T-012 with timestamp and verification. Acceptance: a fresh page load on staging.hospeda.com.ar/es/alojamientos/ shows zero requests to static.cloudflareinsights.com in DevTools Network panel.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Disable Web Analytics in CF dashboard for hospeda.com.ar", "completed": false },
+                { "title": "Disable Web Analytics in CF dashboard for staging.hospeda.com.ar", "completed": false },
+                { "title": "Verify beacon disappears from page network traffic", "completed": false },
+                { "title": "Record timestamp + verification in disable-plan.md", "completed": false }
+            ],
+            "tags": ["ops", "cloudflare", "manual", "gap-11"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Re-crawl staging with Persist Logs post-deploy and verify",
+            "description": "After T-003/T-007/T-008/T-009/T-011/T-013 are deployed to staging, repeat the audit method from spec §1C: open Firefox DevTools Console with 'Persist Logs' enabled, navigate staging.hospeda.com.ar covering home, listing, detail, auth forms, signup. Capture all CSP violation messages. Assert: (a) zero style-src-attr violations from the patterns documented in §1C.2, (b) zero style-src-elem violations from Astro-emitted <style> blocks (§1C.3), (c) zero script-src-elem violations from inline scripts (§1C.7), (d) zero cascading /_astro/*.js blocks (§11.2 should now disappear), (e) zero requests to static.cloudflareinsights.com (§1C.5), (f) Content-Security-Policy-Report-Only header includes `frame-src 'none'` (§1C.6). Write the report to .claude/specs/SPEC-046-csp-post-deploy-verification/verification-2026-MM-DD.md. If any violation persists, file a follow-up gap and block this task.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-005", "T-007", "T-008", "T-009", "T-011", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Open Firefox DevTools, enable Persist Logs", "completed": false },
+                { "title": "Navigate home, listing, detail, auth forms, signup", "completed": false },
+                { "title": "Filter console for Content-Security-Policy / Cross-Origin", "completed": false },
+                { "title": "Verify all 6 assertions (a-f) from description", "completed": false },
+                { "title": "Write verification report markdown file", "completed": false },
+                { "title": "If violations persist, open follow-up gap and document", "completed": false }
+            ],
+            "tags": ["verification", "staging", "manual"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Crawl authenticated /mi-cuenta/* and billing pages (optional, requires staging test account)",
+            "description": "Once a staging test account is provisioned (separate from this spec — track as a follow-up if missing), repeat the Persist-Logs crawl on /mi-cuenta/* and billing entry points. Document any new violation types as additional GAP-046-NN entries (e.g. if MercadoPago Brick triggers new violations not yet catalogued). If no new violation types appear, close the §1C.8 coverage status as fully complete and remove the 'pending test account' caveat from §7 item 20. Acceptance: a markdown report at .claude/specs/SPEC-046-csp-post-deploy-verification/verification-authenticated-2026-MM-DD.md. If no staging account is feasible in reasonable timeline, document that decision and explicitly accept the residual coverage risk before Phase 2.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm staging test account is available (block if not)", "completed": false },
+                { "title": "Crawl /mi-cuenta/favoritos, /mi-cuenta/colecciones, /mi-cuenta/historial with Persist Logs", "completed": false },
+                { "title": "Crawl billing entry point if reachable from web", "completed": false },
+                { "title": "Write verification-authenticated markdown report", "completed": false },
+                { "title": "Update §1C.8 / §7 item 20 in spec accordingly", "completed": false }
+            ],
+            "tags": ["verification", "authenticated", "manual", "optional"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    }
+}

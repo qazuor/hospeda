@@ -88,7 +88,7 @@
         },
         {
             "specId": "SPEC-020-GAPS",
-            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
+            "title": "SPEC-020 Deployment Readiness \u2014 Gaps Remediation",
             "status": "obsolete",
             "progress": "0/17",
             "path": "SPEC-020-gaps-remediation",
@@ -124,7 +124,7 @@
         },
         {
             "specId": "SPEC-043-GAPS",
-            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+            "title": "SPEC-043 Addon Lifecycle Events \u2014 Gaps Remediation",
             "status": "completed",
             "progress": "65/65",
             "path": "SPEC-043-gaps-remediation",
@@ -144,7 +144,7 @@
         },
         {
             "specId": "SPEC-034-GAPS",
-            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
+            "title": "SPEC-034 ISR Revalidation \u2014 Gaps Remediation",
             "status": "obsolete",
             "progress": "0/28",
             "path": "SPEC-034-gaps-remediation",
@@ -233,11 +233,13 @@
             "completedAt": "2026-04-29T18:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T18:45:00.000Z",
-            "absorbs": ["SPEC-075"]
+            "absorbs": [
+                "SPEC-075"
+            ]
         },
         {
             "specId": "SPEC-060-gaps",
-            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
+            "title": "SPEC-060 Gap Remediation \u2014 All 56 Gaps",
             "status": "completed",
             "progress": "58/58",
             "path": "SPEC-060-gaps",
@@ -301,7 +303,7 @@
         },
         {
             "specId": "SPEC-064",
-            "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
+            "title": "Billing Transaction Safety \u2014 Advisory Locks and Atomic Operations",
             "status": "completed",
             "progress": "35/35",
             "path": "SPEC-064-billing-transaction-safety",
@@ -333,7 +335,7 @@
             "path": "SPEC-092-e2e-test-suite",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 — bumped to full since spec is closed."
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 \u2014 bumped to full since spec is closed."
         },
         {
             "specId": "SPEC-098",
@@ -350,7 +352,7 @@
             "path": "SPEC-103-vps-migration-post-merge-cleanup",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 — bumped to full since spec is closed."
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 \u2014 bumped to full since spec is closed."
         },
         {
             "specId": "SPEC-119",
@@ -364,7 +366,7 @@
         },
         {
             "specId": "SPEC-111",
-            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "title": "Astro server islands runtime crash \u2014 manifest.serverIslandMap.get is not a function",
             "status": "in-progress",
             "progress": "0/9",
             "path": "SPEC-111-astro-server-islands-fix"
@@ -396,6 +398,13 @@
             "status": "draft",
             "progress": "0/5",
             "path": "SPEC-133-evaluate-astro-env"
+        },
+        {
+            "specId": "SPEC-046",
+            "title": "CSP Post-Deployment Verification",
+            "status": "pending",
+            "progress": "0/15",
+            "path": "SPEC-046-csp-post-deploy-verification"
         }
     ],
     "standalone": {

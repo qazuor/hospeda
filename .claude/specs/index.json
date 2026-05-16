@@ -114,13 +114,16 @@
         {
             "specId": "SPEC-046",
             "title": "CSP Post-Deployment Verification",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "medium",
             "path": "SPEC-046-csp-post-deploy-verification",
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
             "archived": false,
-            "dependsOn": ["SPEC-042", "SPEC-045"]
+            "dependsOn": ["SPEC-042", "SPEC-045"],
+            "worktree": "/home/qazuor/projects/WEBS/hospeda2-spec-046-csp-post-deploy-verification",
+            "branch": "spec/SPEC-046-csp-post-deploy-verification",
+            "progressNote": "Code-side baseline shipped via SPEC-042/047. Extended 2026-05-16 with section 1C cataloguing real staging violations from full-site crawl (home, listing, detail, auth, signup) under Astro ClientRouter SPA: GAP-046-09a (inline style attrs to CSS classes refactor), GAP-046-09b (Astro inline style blocks need nonce propagation), GAP-046-11 (Cloudflare Web Analytics disable, replaced by SPEC-140 Umami), GAP-046-12 (web frame-src to 'none'), GAP-046-13 (inline scripts missing nonce — Astro nonce propagation). GAP-046-10 (suspected Zod runtime dynamic-code evaluation) verified absent and dropped. Section 11 added documenting expected Report-Only warnings ('self' ignored under strict-dynamic, /_astro/*.js cascading blocks). Authenticated /mi-cuenta/* and billing entry points still need a staging test account before Phase 2. Tasks not generated yet."
         },
         {
             "specId": "SPEC-061",
