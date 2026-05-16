@@ -248,9 +248,20 @@ export function ProfileCompletionBasicFields({
                     onChange={(e) => onBirthDateChange(e.target.value)}
                     max={new Date().toISOString().split('T')[0]}
                     disabled={submitting}
+                    // The native date picker uses the user's OS / browser
+                    // locale to decide the display format. Hinting es-AR
+                    // nudges Chromium-based browsers towards dd/mm/yyyy.
+                    lang="es-AR"
+                    aria-describedby="pc-birthDate-hint"
                 />
-                <p className={styles.hint}>
-                    {t('account.profileCompletion.fields.birthDateHint', 'Opcional.')}
+                <p
+                    id="pc-birthDate-hint"
+                    className={styles.hint}
+                >
+                    {t(
+                        'account.profileCompletion.fields.birthDateHint',
+                        'Opcional. Formato: dd/mm/yyyy.'
+                    )}
                 </p>
             </div>
         </>
