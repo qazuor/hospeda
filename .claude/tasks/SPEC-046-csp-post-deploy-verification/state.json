@@ -308,47 +308,57 @@
             "id": "T-010",
             "title": "Add frame-src 'none' to buildCspHeader() (GAP-046-12)",
             "description": "Update apps/web/src/lib/middleware-helpers.ts (or wherever buildCspHeader() lives — verify path first) to append `frame-src 'none'` to the directives string. Locate by `rg 'buildCspHeader' apps/web/src/`. Add the directive in the canonical alphabetical/grouping order used by the existing function. Acceptance: a fresh page response on web includes `frame-src 'none'` in the Content-Security-Policy-Report-Only header.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Locate buildCspHeader() function", "completed": false },
-                { "title": "Append frame-src 'none' directive", "completed": false },
+                { "title": "Locate buildCspHeader() function", "completed": true },
+                { "title": "Append frame-src 'none' directive", "completed": true },
                 {
                     "title": "Manual smoke check: response header contains frame-src 'none'",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["csp", "middleware", "gap-12"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Insertado en apps/web/src/lib/middleware-helpers.ts línea 458 (entre form-action y frame-ancestors) — agrupa visualmente las dos directivas frame-* lockdown. Smoke check del header en dev confirmado durante T-003: el header de localhost:4322/es/ ya incluye 'frame-src 'none''."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:55:00.000Z",
+                "completed": "2026-05-16T19:57:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Test that CSP header includes frame-src 'none'",
             "description": "Add or extend an existing test (likely apps/web/test/middleware.test.ts or a CSP-specific test file) asserting that the buildCspHeader() output string contains the substring `frame-src 'none'`. AAA pattern. Acceptance: pnpm test passes with the new assertion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Locate or create the appropriate test file", "completed": false },
-                { "title": "Write the assertion", "completed": false },
-                { "title": "Verify pnpm test passes", "completed": false }
+                { "title": "Locate or create the appropriate test file", "completed": true },
+                { "title": "Write the assertion", "completed": true },
+                { "title": "Verify pnpm test passes", "completed": true }
             ],
             "tags": ["testing", "csp", "gap-12"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Test agregado al describe('buildCspHeader') existente en apps/web/test/lib/middleware-helpers.test.ts. Asserción usa el patrón ya establecido en el file: split('; ').find((d) => d.startsWith('frame-src ')) + toBe('frame-src 'none''). 71/71 tests verde (era 70 +1 nuevo)."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:55:00.000Z",
+                "completed": "2026-05-16T19:57:00.000Z"
             }
         },
         {
@@ -478,9 +488,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 11,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5
     }
