@@ -68,6 +68,20 @@
             "resendCode": "Resend code",
             "changeEmail": "Change email"
         },
+        "strength": {
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong"
+        },
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "rules": {
+            "length": "At least 8 characters",
+            "upper": "At least one uppercase letter",
+            "lower": "At least one lowercase letter",
+            "digit": "At least one number",
+            "special": "At least one special character"
+        },
         "errors": {
             "emailRequired": "Email address is required",
             "passwordRequired": "Password is required",
@@ -77,7 +91,7 @@
             "passwordTooShort": "Password must be at least 8 characters",
             "passwordsDoNotMatch": "Passwords do not match",
             "emailAlreadyExists": "An account with this email already exists",
-            "weakPassword": "Password is too weak",
+            "weakPassword": "Password does not meet security requirements",
             "networkError": "Connection error. Check your internet",
             "unknownError": "Unknown error. Please try again"
         }

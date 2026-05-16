@@ -400,16 +400,26 @@
         "pageDescription": "Completá tu información para empezar a usar Hospeda",
         "heading": "¡Bienvenido a Hospeda!",
         "subheading": "Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.",
+        "avatar": {
+            "alt": "Avatar",
+            "hint": "Tu foto de perfil",
+            "change": "Cambiar foto",
+            "urlLabel": "URL de avatar"
+        },
         "fields": {
-            "displayName": "Nombre completo",
-            "displayNamePlaceholder": "Tu nombre y apellido",
-            "displayNameHint": "Mínimo 2 caracteres.",
-            "firstName": "¿Cómo querés que te llamemos?",
-            "firstNamePlaceholder": "Tu apodo o nombre de pila",
-            "firstNameHint": "Opcional. Por defecto usamos tu primer nombre.",
+            "firstName": "Nombre",
+            "firstNamePlaceholder": "Tu nombre",
+            "lastName": "Apellido",
+            "lastNamePlaceholder": "Tu apellido",
+            "displayName": "¿Cómo querés que te llamemos?",
+            "displayNamePlaceholder": "Nombre Apellido",
+            "displayNameHelper": "Auto-derivado de tu nombre y apellido, podés editarlo.",
+            "birthDate": "Fecha de nacimiento",
+            "birthDateHint": "Opcional.",
             "phone": "Teléfono",
-            "phonePlaceholder": "+54 9 11 1234-5678",
+            "phonePlaceholder": "9 11 1234-5678",
             "phoneHint": "Opcional. Incluí el código de país.",
+            "phoneCodeLabel": "Código de país",
             "locale": "Idioma preferido",
             "localeEs": "Español",
             "localeEn": "English",
@@ -417,16 +427,41 @@
             "newsletter": "Quiero recibir novedades y promociones por email",
             "terms": "Acepto los",
             "termsLink": "términos y condiciones",
-            "termsRequired": "Tenés que aceptar los términos para continuar."
+            "bio": "Bio",
+            "bioPlaceholder": "Contanos un poco sobre vos (10-300 caracteres)",
+            "website": "Sitio web",
+            "occupation": "Ocupación",
+            "occupationPlaceholder": "Tu trabajo o profesión",
+            "socialNetworks": "Redes sociales",
+            "location": "Ubicación",
+            "locationCountry": "País",
+            "locationCountryDefault": "— Seleccioná —",
+            "locationRegion": "Provincia / Estado",
+            "locationRegionPlaceholder": "Entre Ríos",
+            "locationCity": "Ciudad",
+            "locationCityPlaceholder": "Concepción del Uruguay"
+        },
+        "moreDetails": {
+            "toggle": "Más detalles",
+            "optional": "opcional"
         },
         "submit": "Completar perfil",
         "submitting": "Guardando...",
         "errors": {
+            "firstNameRequired": "El nombre es obligatorio.",
+            "firstNameMax": "El nombre no puede superar los 50 caracteres.",
+            "lastNameRequired": "El apellido es obligatorio.",
+            "lastNameMax": "El apellido no puede superar los 50 caracteres.",
             "displayNameRequired": "El nombre completo es obligatorio.",
             "displayNameMin": "El nombre debe tener al menos 2 caracteres.",
             "displayNameMax": "El nombre no puede superar los 50 caracteres.",
             "phoneFormat": "Ingresá un número de teléfono válido con código de país.",
             "termsRequired": "Tenés que aceptar los términos para continuar.",
+            "bioMin": "La bio debe tener al menos 10 caracteres.",
+            "bioMax": "La bio no puede superar los 300 caracteres.",
+            "websiteUrl": "Ingresá una URL válida (ej: https://mipagina.com).",
+            "occupationMin": "La ocupación debe tener al menos 2 caracteres.",
+            "occupationMax": "La ocupación no puede superar los 100 caracteres.",
             "submitFailed": "No se pudo completar el perfil. Intentá nuevamente."
         }
     },
@@ -440,7 +475,14 @@
         "fields": {
             "password": "Contraseña",
             "passwordPlaceholder": "Mínimo 8 caracteres",
-            "passwordHint": "Mínimo 8 caracteres."
+            "passwordHint": "Mínimo 8 caracteres.",
+            "confirmPassword": "Confirmá la contraseña",
+            "confirmPasswordPlaceholder": "Repetí la contraseña"
+        },
+        "strength": {
+            "weak": "Débil",
+            "medium": "Media",
+            "strong": "Fuerte"
         },
         "submit": "Establecer contraseña",
         "submitting": "Guardando...",
@@ -452,6 +494,8 @@
         "successToast": "Contraseña establecida correctamente",
         "errors": {
             "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
+            "passwordWeak": "La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, números y un carácter especial.",
+            "confirmMismatch": "Las contraseñas no coinciden.",
             "submitFailed": "No se pudo establecer la contraseña. Intentá nuevamente.",
             "skipFailed": "No se pudo saltar el paso. Intentá nuevamente."
         }
