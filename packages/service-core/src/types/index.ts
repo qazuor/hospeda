@@ -85,6 +85,15 @@ export type Actor = {
      * {@link Actor.name}.
      */
     email?: string;
+    /**
+     * Avatar URL of the actor — mirrors `users.image`. Better Auth
+     * auto-populates this from the OAuth provider on signin (Google `picture`
+     * claim, Facebook profile photo). Optional because users without an
+     * uploaded avatar, guests, and system actors don't have one. Exposed in
+     * `/auth/me` so the web navbar avatar stays in sync without a separate
+     * fetch (SPEC-113 follow-up; same rationale as {@link Actor.name}).
+     */
+    image?: string;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
 };
