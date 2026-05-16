@@ -304,4 +304,113 @@ describe('initiatePaidMonthlySubscription', () => {
         expect(err.code).toBe('PLAN_NOT_FOUND');
         expect(err.message).toBe('Plan x not found');
     });
+
+    // -----------------------------------------------------------------------
+    // SPEC-126 D9: free-trial extension promo handling
+    // -----------------------------------------------------------------------
+
+    it('forwards freeTrialDays to qzpay when FREEMONTH is supplied', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: URLS,
+            promoCode: 'FREEMONTH'
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.freeTrialDays).toBe(30);
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.promoCode).toBe('FREEMONTH');
+    });
+
+    it('does NOT set freeTrialDays when no promo code is supplied', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: URLS
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.freeTrialDays).toBeUndefined();
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.promoCode).toBeUndefined();
+    });
+
+    it('treats the promo code case-insensitively (lowercase resolves)', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: URLS,
+            promoCode: 'freemonth'
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.freeTrialDays).toBe(30);
+    });
+
+    it('throws INVALID_PROMO_CODE for unknown codes', async () => {
+        const billing = createBillingMock();
+
+        await expect(
+            initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: URLS,
+                promoCode: 'NOT_REAL'
+            })
+        ).rejects.toMatchObject({
+            name: 'SubscriptionCheckoutError',
+            code: 'INVALID_PROMO_CODE'
+        });
+
+        // qzpay was NOT called — fast-fail before the create.
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('throws INVALID_PROMO_CODE for discount-type codes (only free-trial extensions allowed)', async () => {
+        // BIENVENIDO30 is a discount-type promo in the config; the service
+        // must reject it for monthly recurring per master plan Decision 4.
+        const billing = createBillingMock();
+
+        await expect(
+            initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: URLS,
+                promoCode: 'BIENVENIDO30'
+            })
+        ).rejects.toMatchObject({ code: 'INVALID_PROMO_CODE' });
+    });
+
+    it('ignores empty-string promo codes (treated as no promo)', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: URLS,
+            promoCode: ''
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.freeTrialDays).toBeUndefined();
+    });
 });

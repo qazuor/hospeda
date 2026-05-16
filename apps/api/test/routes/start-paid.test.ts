@@ -5,7 +5,8 @@
  * - Happy path for monthly: plan resolution, price selection, qzpay
  *   create invocation with `mode: 'paid'`, response shape.
  * - Annual branch rejection (501, follow-up commit).
- * - Promo code rejection (501, D9 follow-up).
+ * - Promo code FREEMONTH success (D9 — forwarded to service).
+ * - Unknown promo code rejection (422, surfaced from service).
  * - 404 for unknown plan slug.
  * - 404 for plan without monthly price.
  * - 400/503 short-circuits.
@@ -339,7 +340,24 @@ describe('handleStartPaidSubscription (monthly)', () => {
         ).rejects.toMatchObject({ status: 501 });
     });
 
-    it('returns 501 when a promo code is supplied (D9 follow-up)', async () => {
+    it('accepts the FREEMONTH promo and forwards freeTrialDays to qzpay (D9)', async () => {
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly',
+            promoCode: 'FREEMONTH'
+        });
+
+        const callArg = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(callArg.freeTrialDays).toBe(30);
+        const metadata = callArg.metadata as Record<string, unknown>;
+        expect(metadata.promoCode).toBe('FREEMONTH');
+    });
+
+    it('returns 422 when an unknown promo code is supplied (INVALID_PROMO_CODE)', async () => {
         mockBilling(createBillingMock());
 
         const ctx = createMockContext();
@@ -347,9 +365,9 @@ describe('handleStartPaidSubscription (monthly)', () => {
             handleStartPaidSubscription(ctx as never, {
                 planSlug: 'owner-premium',
                 billingInterval: 'monthly',
-                promoCode: 'FREEMONTH'
+                promoCode: 'NOT_A_REAL_CODE'
             })
-        ).rejects.toMatchObject({ status: 501 });
+        ).rejects.toMatchObject({ status: 422 });
     });
 
     it('returns 503 when billing is disabled', async () => {
@@ -404,7 +422,12 @@ describe('handleStartPaidSubscription (monthly)', () => {
         ).rejects.toMatchObject({ status: 500 });
     });
 
-    it('rejects promo codes BEFORE looking up the plan (short-circuit)', async () => {
+    it('rejects an invalid promo code BEFORE creating the subscription', async () => {
+        // The service resolves the promo code before calling qzpay so an
+        // invalid code does not leave a half-created subscription behind.
+        // For an UNKNOWN code, qzpay.subscriptions.create must not be hit;
+        // billing.plans.list may still be called depending on the order of
+        // checks in the service (currently promo is checked first).
         const billing = createBillingMock();
         mockBilling(billing);
 
@@ -413,12 +436,10 @@ describe('handleStartPaidSubscription (monthly)', () => {
             handleStartPaidSubscription(ctx as never, {
                 planSlug: 'owner-premium',
                 billingInterval: 'monthly',
-                promoCode: 'FREEMONTH'
+                promoCode: 'NOT_A_REAL_CODE'
             })
-        ).rejects.toMatchObject({ status: 501 });
+        ).rejects.toMatchObject({ status: 422 });
 
-        // Confirm no qzpay calls happened.
-        expect(billing.plans.list).not.toHaveBeenCalled();
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 });

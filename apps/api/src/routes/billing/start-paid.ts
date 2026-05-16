@@ -13,7 +13,9 @@
  * Branch matrix:
  * - `billingInterval: 'monthly'` -> service delegation.
  * - `billingInterval: 'annual'` -> HTTP 501 (D1 annual follow-up).
- * - `promoCode` present -> HTTP 501 (D9 follow-up).
+ * - `promoCode` present -> forwarded to the service, which honors only
+ *   `free_trial_extension`-type promos (SPEC-126 D9). Unknown or
+ *   discount-type codes surface as HTTP 422.
  *
  * @module routes/billing/start-paid
  */
@@ -66,6 +68,8 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
         case 'PLAN_NOT_FOUND':
         case 'NO_MONTHLY_PRICE':
             return new HTTPException(404, { message: err.message });
+        case 'INVALID_PROMO_CODE':
+            return new HTTPException(422, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });
         default: {
@@ -85,10 +89,10 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
  * Errors:
  * - 400 when the caller has no billing customer on session.
  * - 404 when the plan slug is unknown or has no active monthly price.
+ * - 422 when the promo code is not a valid `free_trial_extension` (D9).
  * - 500 when the qzpay create call returns no init point (adapter bug),
  *   or when any other unexpected error bubbles out.
- * - 501 when `billingInterval === 'annual'` (D1 annual follow-up) or
- *   `promoCode` is provided (D9 follow-up).
+ * - 501 when `billingInterval === 'annual'` (D1 annual follow-up).
  * - 503 when billing is not configured.
  */
 export const handleStartPaidSubscription = async (
@@ -123,13 +127,6 @@ export const handleStartPaidSubscription = async (
         });
     }
 
-    if (body.promoCode !== undefined) {
-        throw new HTTPException(501, {
-            message:
-                'Promo codes for paid subscriptions are not yet supported (SPEC-126 D9 follow-up)'
-        });
-    }
-
     if (body.billingInterval === 'annual') {
         throw new HTTPException(501, {
             message:
@@ -145,7 +142,8 @@ export const handleStartPaidSubscription = async (
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
                 notificationUrl: buildNotificationUrl()
-            }
+            },
+            promoCode: body.promoCode
         });
 
         apiLogger.info(

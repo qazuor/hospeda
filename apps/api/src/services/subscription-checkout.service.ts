@@ -21,6 +21,7 @@
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import { resolveFreeTrialExtensionPromo } from '@repo/billing';
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -38,7 +39,8 @@ export const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
 export type SubscriptionCheckoutErrorCode =
     | 'PLAN_NOT_FOUND'
     | 'NO_MONTHLY_PRICE'
-    | 'MISSING_INIT_POINT';
+    | 'MISSING_INIT_POINT'
+    | 'INVALID_PROMO_CODE';
 
 /**
  * Domain-level error thrown by {@link initiatePaidMonthlySubscription}.
@@ -108,6 +110,15 @@ export interface InitiatePaidMonthlySubscriptionInput {
         /** Override webhook destination for this preapproval. */
         readonly notificationUrl: string;
     };
+    /**
+     * Optional promo code (SPEC-126 D9). Currently only
+     * `type: 'free_trial_extension'` promos are honored — they translate
+     * to `freeTrialDays` on the qzpay subscription create input. An
+     * unknown or non-extension code surfaces as
+     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, which the route
+     * maps to HTTP 422.
+     */
+    readonly promoCode?: string;
 }
 
 /**
@@ -136,7 +147,23 @@ export interface InitiatePaidMonthlySubscriptionResult {
 export async function initiatePaidMonthlySubscription(
     input: InitiatePaidMonthlySubscriptionInput
 ): Promise<InitiatePaidMonthlySubscriptionResult> {
-    const { customerId, planSlug, billing, urls } = input;
+    const { customerId, planSlug, billing, urls, promoCode } = input;
+
+    // Resolve the promo code BEFORE the qzpay call so an invalid code does
+    // not leave a half-created subscription behind. For monthly subs, the
+    // only honored type is `free_trial_extension` (SPEC-126 D9 + master
+    // plan Decision 4); discount-type promos must be rejected here.
+    let freeTrialDays: number | undefined;
+    if (promoCode !== undefined && promoCode.length > 0) {
+        const resolved = resolveFreeTrialExtensionPromo(promoCode);
+        if (!resolved) {
+            throw new SubscriptionCheckoutError(
+                'INVALID_PROMO_CODE',
+                `Promo code '${promoCode}' is not a valid free-trial extension`
+            );
+        }
+        freeTrialDays = resolved.extraTrialDays;
+    }
 
     const plan = await resolvePlanBySlug(billing, planSlug);
 
@@ -161,9 +188,14 @@ export async function initiatePaidMonthlySubscription(
         billingInterval: 'monthly',
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
+        // SPEC-126 D9: extra free-trial days are forwarded to the MP
+        // preapproval so the first recurring charge is delayed by N days.
+        // Omitted when no qualifying promo code was supplied.
+        ...(freeTrialDays !== undefined ? { freeTrialDays } : {}),
         metadata: {
             source: 'start-paid-monthly',
-            createdBy: 'subscription-flow'
+            createdBy: 'subscription-flow',
+            ...(promoCode !== undefined ? { promoCode } : {})
         }
     });
 
