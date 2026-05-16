@@ -1076,6 +1076,46 @@
             "discoveredDuring": "SPEC-111 T-111-04 validation (2026-05-15)",
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"]
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "type": "cleanup",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-132-zod-4-cross-package-migration",
+            "created": "2026-05-15T22:00:00Z",
+            "discoveredDuring": "SPEC-111 Astro 6 impact analysis (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "cleanup",
+                "zod",
+                "schemas",
+                "service-core",
+                "validation",
+                "follow-up",
+                "spec-111"
+            ]
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "type": "evaluation",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-133-evaluate-astro-env",
+            "created": "2026-05-15T22:00:00Z",
+            "discoveredDuring": "SPEC-111 Astro 6 impact analysis (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "evaluation",
+                "astro",
+                "env",
+                "schema",
+                "architecture",
+                "follow-up",
+                "spec-111"
+            ]
         }
     ]
 }

@@ -382,6 +382,20 @@
             "status": "draft",
             "progress": "0/6",
             "path": "SPEC-131-plan-purchase-button-async-state-tests"
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-132-zod-4-cross-package-migration"
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "status": "draft",
+            "progress": "0/5",
+            "path": "SPEC-133-evaluate-astro-env"
         }
     ],
     "standalone": {
