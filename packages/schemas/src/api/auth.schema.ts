@@ -24,6 +24,12 @@ export const ActorSchema = z.object({
         .string()
         .optional()
         .describe('Actor email (absent for guests and system actors). Added in SPEC-113.'),
+    image: z
+        .string()
+        .optional()
+        .describe(
+            'Actor avatar URL (mirrors users.image — Better Auth auto-populates this from the Google `picture` claim or the Facebook profile photo on OAuth signin). Absent for users without an uploaded avatar, guests, and system actors. Added in SPEC-113 follow-up so /auth/me can keep the navbar avatar in sync after profile mutations, matching the existing actor.name/email semantics.'
+        ),
     _isSystemActor: z
         .boolean()
         .optional()

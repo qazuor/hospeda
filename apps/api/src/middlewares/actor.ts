@@ -131,12 +131,16 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
                 // Better Auth maps its virtual `name` field to `display_name`
                 // (see apps/api/src/lib/auth.ts: user.fields.name = 'displayName')
-                // and exposes it on the session user object as `.name`. We
-                // forward both name and email onto the actor so /auth/me can
-                // surface them to the web UserMenu without a separate fetch
-                // (SPEC-113 — keeps the navbar in sync after profile mutations).
+                // and exposes it on the session user object as `.name`. The
+                // `image` field is auto-populated by Better Auth on OAuth
+                // signin (Google `picture` claim, Facebook profile photo) and
+                // mirrors `users.image`. We forward name, email, and image
+                // onto the actor so /auth/me can surface them to the web
+                // UserMenu without a separate fetch (SPEC-113 — keeps the
+                // navbar name + avatar in sync after profile mutations).
                 const userName = typeof user.name === 'string' ? user.name : undefined;
                 const userEmail = typeof user.email === 'string' ? user.email : undefined;
+                const userImage = typeof user.image === 'string' ? user.image : undefined;
 
                 // SUPER_ADMIN gets all permissions without a DB lookup
                 if (userRole === RoleEnum.SUPER_ADMIN) {
@@ -145,7 +149,8 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         role: RoleEnum.SUPER_ADMIN,
                         permissions: Object.values(PermissionEnum),
                         name: userName,
-                        email: userEmail
+                        email: userEmail,
+                        image: userImage
                     };
                 } else {
                     // Resolve permissions from role_permission table (cached)
@@ -164,7 +169,8 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         role: userRole,
                         permissions: allPermissions,
                         name: userName,
-                        email: userEmail
+                        email: userEmail,
+                        image: userImage
                     };
                 }
 
