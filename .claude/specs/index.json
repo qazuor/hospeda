@@ -1181,6 +1181,18 @@
             "branch": "spec/SPEC-135-admin-mobile-responsive",
             "parent": "SPEC-134",
             "tags": ["admin", "responsive", "mobile"]
+        },
+        {
+            "specId": "SPEC-140",
+            "title": "Self-hosted Analytics Stack (Umami)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-140-analytics-stack-umami",
+            "created": "2026-05-16T05:00:00Z",
+            "discoveredDuring": "2026-05-16 staging console audit (broken CF Web Analytics beacon)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["analytics", "infra", "coolify", "web", "monitoring"]
         }
     ]
 }
