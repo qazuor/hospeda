@@ -6,7 +6,7 @@
  * @rendering SSG (static, no dynamic data needed)
  */
 
-import BaseLayout from '@/layouts/BaseLayout.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -29,7 +29,7 @@ const requestAccessUrl = buildUrl({ locale, path: 'guest/messages/request-access
 const pageTitle = t('conversations.form.verifyExpiredTitle');
 ---
 
-<BaseLayout locale={locale} title={pageTitle} description={t('conversations.form.verifyExpiredBody')}>
+<DefaultLayout locale={locale} title={pageTitle} description={t('conversations.form.verifyExpiredBody')}>
     <section class="verify-expired section">
         <div class="verify-expired__container section__container">
             <h1 class="verify-expired__title">{pageTitle}</h1>
@@ -39,7 +39,7 @@ const pageTitle = t('conversations.form.verifyExpiredTitle');
             </a>
         </div>
     </section>
-</BaseLayout>
+</DefaultLayout>
 
 <style>
     .verify-expired {
