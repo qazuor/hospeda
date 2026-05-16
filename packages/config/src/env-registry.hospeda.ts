@@ -1099,6 +1099,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
     },
+    {
+        name: 'SENTRY_AUTH_TOKEN',
+        description: 'Sentry auth token used at build time to upload source maps (web, admin, api)',
+        descriptionEs:
+            'Token de autenticación de Sentry usado en build-time para subir source maps (web, admin, api)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sntrys_xxxxxxxxxxxxxxxxxxxx',
+        apps: ['web', 'admin', 'api'],
+        category: 'monitoring',
+        helpUrl: 'https://docs.sentry.io/account/auth-tokens/',
+        howToObtain:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro (web), @sentry/vite-plugin (admin), and @sentry/esbuild-plugin (api) at build time to upload source maps so production stack traces are symbolicated. Build skips upload silently if missing. Org slug `qazuor` and per-app project slugs (`hospeda-web`, `hospeda-admin`, `hospeda-api`) are hardcoded in each app build config — the same org-scoped token works for all three.',
+        howToObtainEs:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
@@ -1246,5 +1263,41 @@ export const HOSPEDA_ENV_VARS = [
             'Locale used when no preference is set (e.g. "es" for Argentina). Must be one of HOSPEDA_SUPPORTED_LOCALES.',
         howToObtainEs:
             'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
+    },
+    {
+        name: 'HOSPEDA_NOINDEX_HOSTS',
+        description:
+            'Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.',
+        descriptionEs:
+            'Lista de hostnames separados por coma que deben recibir una policy restrictiva de robots (Disallow: /) y el header X-Robots-Tag: noindex, nofollow. Sirve para mantener los hostnames de staging fuera de los buscadores.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'staging.hospeda.com.ar',
+        exampleValue: 'staging.hospeda.com.ar,beta.hospeda.com.ar',
+        apps: ['web'],
+        category: 'features',
+        howToObtain:
+            'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
+        howToObtainEs:
+            'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
+    },
+    {
+        name: 'PUBLIC_ENABLE_LOGGING',
+        description:
+            'Opt-in flag for client-side console logging in non-dev builds. Dev builds always log regardless of this flag.',
+        descriptionEs:
+            'Flag opt-in para habilitar logging en consola del cliente en builds que no son de dev. Los builds de dev siempre loguean sin importar el valor de este flag.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'true',
+        apps: ['web'],
+        category: 'debugging',
+        howToObtain:
+            'Set to "true" in preview or staging to enable verbose client logs while debugging. Keep unset (defaults to false) in production to avoid noisy consoles.',
+        howToObtainEs:
+            'Poné "true" en preview o staging para habilitar logs verbosos del cliente mientras debuggeás. Dejá sin setear (default false) en producción así no se llena la consola.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

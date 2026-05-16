@@ -144,7 +144,7 @@ export function getRevalidationSecret(): string | undefined {
  */
 export function isLoggingEnabled(): boolean {
     if (import.meta.env.DEV === true) return true;
-    return import.meta.env.PUBLIC_ENABLE_LOGGING === 'true';
+    return getEnv().PUBLIC_ENABLE_LOGGING === 'true';
 }
 
 /**
@@ -158,4 +158,18 @@ export function isLoggingEnabled(): boolean {
  */
 export function isFeedbackEnabled(): boolean {
     return getEnv().PUBLIC_FEEDBACK_ENABLED === true;
+}
+
+/**
+ * Get the raw `HOSPEDA_NOINDEX_HOSTS` env var value.
+ *
+ * Server-only. Returns the comma-separated string as configured, or undefined
+ * when unset. Callers normalize the value via `parseNoindexHosts()` in
+ * `src/lib/middleware-helpers.ts` to obtain a deduped lowercase host list
+ * (defaults to `staging.hospeda.com.ar` when undefined).
+ *
+ * @returns The raw env var value, or undefined when unset
+ */
+export function getNoindexHosts(): string | undefined {
+    return getEnv().HOSPEDA_NOINDEX_HOSTS;
 }

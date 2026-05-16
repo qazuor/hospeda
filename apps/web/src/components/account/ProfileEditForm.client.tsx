@@ -119,22 +119,6 @@ async function uploadAvatarFile({
 }
 
 /**
- * Add `key: value` to the payload only when `value` is non-empty after
- * trimming. Empty strings are passed through as `''` so the API can
- * clear a previously-set value.
- */
-function setIfChanged(
-    payload: Record<string, unknown>,
-    key: string,
-    value: string,
-    original: string | null | undefined
-): void {
-    const trimmed = value.trim();
-    if (trimmed === (original ?? '').trim()) return;
-    payload[key] = trimmed;
-}
-
-/**
  * Drop keys whose value is `undefined`. `ProfileEditSchema` is a
  * `z.strictObject`, so unknown keys cause validation failures — but a
  * field literally set to `undefined` still counts as a present key in
@@ -323,29 +307,101 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             // Build payload — required fields always; optional fields only
             // when they differ from the initial value (avoids clobbering
             // server state with stale empty strings).
+            //
+            // SPEC-113 follow-up: the User entity in the DB stores several
+            // groups of fields inside JSONB columns instead of as separate
+            // top-level columns. The form surface uses flat field names
+            // (phone, country, facebookUrl, …) for UX reasons; the PATCH
+            // payload has to nest them so the API actually persists them.
+            //
+            //   - phone        → contactInfo.mobilePhone
+            //   - website      → profile.website (and contactInfo.website)
+            //   - bio/occupation → profile.{bio, occupation}
+            //   - country/province/city/addressLine1/postalCode → location.*
+            //   - facebookUrl/instagramUrl/… → socialNetworks.{facebook, …}
             const payload: Record<string, unknown> = {
                 displayName: parsed.data.displayName,
                 firstName: parsed.data.firstName,
                 lastName: parsed.data.lastName
             };
-            if (parsed.data.bio !== undefined) payload.bio = parsed.data.bio;
             if (finalAvatarUrl !== undefined) payload.image = finalAvatarUrl;
-            if (parsed.data.phone !== undefined) payload.phone = parsed.data.phone;
             if (parsed.data.birthDate !== undefined) {
                 payload.birthDate = parsed.data.birthDate;
             }
-            setIfChanged(payload, 'website', website, initialUser.website ?? '');
-            setIfChanged(payload, 'occupation', occupation, initialUser.profile?.occupation ?? '');
-            setIfChanged(payload, 'facebookUrl', facebookUrl, initialUser.facebookUrl ?? '');
-            setIfChanged(payload, 'instagramUrl', instagramUrl, initialUser.instagramUrl ?? '');
-            setIfChanged(payload, 'twitterUrl', twitterUrl, initialUser.twitterUrl ?? '');
-            setIfChanged(payload, 'linkedinUrl', linkedinUrl, initialUser.linkedinUrl ?? '');
-            setIfChanged(payload, 'youtubeUrl', youtubeUrl, initialUser.youtubeUrl ?? '');
-            setIfChanged(payload, 'addressLine1', addressLine1, initialUser.addressLine1 ?? '');
-            setIfChanged(payload, 'city', city, initialUser.city ?? '');
-            setIfChanged(payload, 'province', province, initialUser.province ?? '');
-            setIfChanged(payload, 'country', country, initialUser.country ?? '');
-            setIfChanged(payload, 'postalCode', postalCode, initialUser.postalCode ?? '');
+
+            // ── profile JSONB (bio, website, occupation) ──────────────────
+            // Send the FULL profile block whenever any of its fields
+            // changed, so the API receives a self-consistent JSONB value
+            // regardless of whether it shallow-merges or replaces.
+            const bioTrim = bio.trim();
+            const websiteTrim = website.trim();
+            const occupationTrim = occupation.trim();
+            const originalWebsite = (
+                initialUser.website ??
+                initialUser.profile?.website ??
+                ''
+            ).trim();
+            const profileChanged =
+                bioTrim !== (initialUser.profile?.bio ?? '').trim() ||
+                websiteTrim !== originalWebsite ||
+                occupationTrim !== (initialUser.profile?.occupation ?? '').trim();
+            if (profileChanged) {
+                const profilePatch: Record<string, string> = {};
+                if (bioTrim.length > 0) profilePatch.bio = bioTrim;
+                if (websiteTrim.length > 0) profilePatch.website = websiteTrim;
+                if (occupationTrim.length > 0) profilePatch.occupation = occupationTrim;
+                payload.profile = profilePatch;
+            }
+
+            // ── contactInfo JSONB (mobilePhone) ───────────────────────────
+            if (phone.trim() !== (initialUser.phone ?? '').trim()) {
+                // Phone in DB is required-when-present per ContactInfoSchema,
+                // so we omit the key entirely on clear; otherwise we set
+                // contactInfo.mobilePhone to the new value.
+                if (phone.trim().length > 0) {
+                    payload.contactInfo = { mobilePhone: phone.trim() };
+                }
+            }
+
+            // ── socialNetworks JSONB ──────────────────────────────────────
+            const socialPatch: Record<string, string> = {};
+            const socialMap: ReadonlyArray<{
+                form: string;
+                jsonKey: 'facebook' | 'instagram' | 'twitter' | 'linkedIn' | 'youtube';
+                original: string | null | undefined;
+            }> = [
+                { form: facebookUrl, jsonKey: 'facebook', original: initialUser.facebookUrl },
+                { form: instagramUrl, jsonKey: 'instagram', original: initialUser.instagramUrl },
+                { form: twitterUrl, jsonKey: 'twitter', original: initialUser.twitterUrl },
+                { form: linkedinUrl, jsonKey: 'linkedIn', original: initialUser.linkedinUrl },
+                { form: youtubeUrl, jsonKey: 'youtube', original: initialUser.youtubeUrl }
+            ];
+            let socialChanged = false;
+            for (const { form, jsonKey, original } of socialMap) {
+                const trimmed = form.trim();
+                if (trimmed !== (original ?? '').trim()) socialChanged = true;
+                if (trimmed.length > 0) socialPatch[jsonKey] = trimmed;
+            }
+            if (socialChanged) {
+                payload.socialNetworks = socialPatch;
+            }
+
+            // ── location JSONB ────────────────────────────────────────────
+            const locationPatch: Record<string, string> = {};
+            const locationChanged =
+                country.trim() !== (initialUser.country ?? '').trim() ||
+                province.trim() !== (initialUser.province ?? '').trim() ||
+                city.trim() !== (initialUser.city ?? '').trim() ||
+                addressLine1.trim() !== (initialUser.addressLine1 ?? '').trim() ||
+                postalCode.trim() !== (initialUser.postalCode ?? '').trim();
+            if (country.trim().length > 0) locationPatch.country = country.trim();
+            if (province.trim().length > 0) locationPatch.region = province.trim();
+            if (city.trim().length > 0) locationPatch.city = city.trim();
+            if (addressLine1.trim().length > 0) locationPatch.addressLine1 = addressLine1.trim();
+            if (postalCode.trim().length > 0) locationPatch.postalCode = postalCode.trim();
+            if (locationChanged) {
+                payload.location = locationPatch;
+            }
 
             const res = await fetch(`${base}/api/v1/protected/users/${initialUser.id}`, {
                 method: 'PATCH',

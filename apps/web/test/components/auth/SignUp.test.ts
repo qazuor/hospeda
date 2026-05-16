@@ -61,4 +61,47 @@ describe('SignUp.client.tsx', () => {
             expect(src).toContain("name: ''");
         });
     });
+
+    /**
+     * SPEC-113 follow-up: signup password input now uses the shared
+     * PasswordField component, which renders a confirm field, a
+     * strength meter, and a rule checklist.
+     */
+    describe('password fields (SPEC-113 follow-up)', () => {
+        it('imports the shared PasswordField component', () => {
+            expect(src).toContain('PasswordField');
+            expect(src).toContain("from '@/components/ui/PasswordField.client'");
+        });
+
+        it('renders the password field with the strength meter and rule checklist', () => {
+            expect(src).toMatch(/<PasswordField[\s\S]*id="signup-password"[\s\S]*showStrength/);
+            expect(src).toMatch(
+                /<PasswordField[\s\S]*id="signup-password"[\s\S]*showRuleChecklist/
+            );
+        });
+
+        it('renders a confirm password field', () => {
+            expect(src).toContain('id="signup-confirm-password"');
+            expect(src).toContain('setConfirmPassword');
+        });
+
+        it('imports StrongPasswordRegex from @repo/schemas', () => {
+            expect(src).toContain("import { StrongPasswordRegex } from '@repo/schemas'");
+        });
+
+        it('checks the password against StrongPasswordRegex before submit', () => {
+            expect(src).toContain('StrongPasswordRegex.test(password)');
+        });
+
+        it('checks that password and confirmPassword match before submit', () => {
+            expect(src).toContain('password !== confirmPassword');
+        });
+
+        it('passes a rules block (length / upper / lower / digit / special) to the PasswordField i18n', () => {
+            expect(src).toContain('rules:');
+            for (const key of ['length:', 'upper:', 'lower:', 'digit:', 'special:']) {
+                expect(src).toContain(key);
+            }
+        });
+    });
 });

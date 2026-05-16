@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-140",
+    "title": "Self-hosted Analytics Stack (Umami)",
+    "type": "feat",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-16T05:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["analytics", "infra", "coolify", "web", "monitoring"]
+}

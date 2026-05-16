@@ -179,8 +179,8 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
         });
     });
 
-    describe('submit payload', () => {
-        it('includes birthDate in the PATCH body when populated', async () => {
+    describe('submit payload (JSONB shape)', () => {
+        it('includes birthDate as a top-level field when populated', async () => {
             renderForm();
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -194,10 +194,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
             expect(body.birthDate).toBe('1990-04-22');
         });
 
-        it('omits a field from the payload when it matches the original value', async () => {
-            // Submit without changing anything except displayName — the
-            // social URLs should NOT appear in the PATCH body because
-            // they're unchanged.
+        it('omits social and location keys when nothing changed', async () => {
             renderForm();
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -208,12 +205,12 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 RequestInit
             ];
             const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
-            expect(body.facebookUrl).toBeUndefined();
-            expect(body.instagramUrl).toBeUndefined();
-            expect(body.country).toBeUndefined();
+            expect(body.socialNetworks).toBeUndefined();
+            expect(body.location).toBeUndefined();
+            expect(body.contactInfo).toBeUndefined();
         });
 
-        it('includes a changed field with its new value', async () => {
+        it('nests city change inside the location JSONB key', async () => {
             renderForm();
             const cityInput = document.getElementById('city') as HTMLInputElement;
             fireEvent.change(cityInput, { target: { value: 'Rosario' } });
@@ -226,7 +223,85 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 RequestInit
             ];
             const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
-            expect(body.city).toBe('Rosario');
+            const location = body.location as Record<string, string>;
+            expect(location).toBeDefined();
+            expect(location.city).toBe('Rosario');
+            // The other location fields are still sent because the
+            // payload rebuilds the full JSONB block on any change.
+            expect(location.country).toBe('Argentina');
+        });
+
+        it('maps province ↔ region when the location block is rebuilt', async () => {
+            renderForm();
+            const provinceInput = document.getElementById('province') as HTMLInputElement;
+            fireEvent.change(provinceInput, { target: { value: 'Santa Fe' } });
+            fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+            await waitFor(() => {
+                expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+            });
+            const body = JSON.parse(
+                String(
+                    (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1].body as string
+                )
+            ) as Record<string, unknown>;
+            const location = body.location as Record<string, string>;
+            expect(location.region).toBe('Santa Fe');
+            expect(location).not.toHaveProperty('province');
+        });
+
+        it('nests social URL change inside the socialNetworks JSONB key', async () => {
+            renderForm();
+            const fb = document.getElementById('facebookUrl') as HTMLInputElement;
+            fireEvent.change(fb, { target: { value: 'https://facebook.com/changed' } });
+            fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+            await waitFor(() => {
+                expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+            });
+            const body = JSON.parse(
+                String(
+                    (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1].body as string
+                )
+            ) as Record<string, unknown>;
+            const social = body.socialNetworks as Record<string, string>;
+            expect(social).toBeDefined();
+            expect(social.facebook).toBe('https://facebook.com/changed');
+            expect(social.instagram).toBe('https://instagram.com/juan');
+            // Schema key is `linkedIn`, not `linkedinUrl`.
+            expect(social.linkedIn).toBe('https://linkedin.com/in/juan');
+        });
+
+        it('puts phone changes inside contactInfo.mobilePhone', async () => {
+            renderForm();
+            const phoneInput = document.getElementById('phone') as HTMLInputElement;
+            fireEvent.change(phoneInput, { target: { value: '+5491100000000' } });
+            fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+            await waitFor(() => {
+                expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+            });
+            const body = JSON.parse(
+                String(
+                    (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1].body as string
+                )
+            ) as Record<string, unknown>;
+            expect(body.phone).toBeUndefined();
+            expect(body.contactInfo).toEqual({ mobilePhone: '+5491100000000' });
+        });
+
+        it('puts bio/website/occupation inside the profile JSONB key on change', async () => {
+            renderForm();
+            const occupation = document.getElementById('occupation') as HTMLInputElement;
+            fireEvent.change(occupation, { target: { value: 'Senior Engineer' } });
+            fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+            await waitFor(() => {
+                expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+            });
+            const body = JSON.parse(
+                String(
+                    (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1].body as string
+                )
+            ) as Record<string, unknown>;
+            const profile = body.profile as Record<string, string>;
+            expect(profile.occupation).toBe('Senior Engineer');
         });
     });
 

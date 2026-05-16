@@ -15,6 +15,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { getApiUrl, getNoindexHosts } from './lib/env';
 import {
     buildCspHeader,
     buildLocaleRedirect,
@@ -45,9 +46,7 @@ import {
  * by `pages/robots.txt.ts`; `parseNoindexHosts` is the single source of
  * truth so the two mechanisms can never drift.
  */
-const NOINDEX_HOSTS = parseNoindexHosts(
-    import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined
-);
+const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
  * Main middleware handler for all requests in the web2 application.
@@ -99,7 +98,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
             const directives = buildCspHeader({
                 nonce: cspNonce,
-                apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
+                apiUrl: getApiUrl(),
                 sentryReportUri
             });
             betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);
@@ -124,8 +123,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 6: Parse the session only for routes that actually need it.
     // Calling the auth API on every request would be wasteful; public pages
     // don't need the user object at all.
+    //
+    // `context.isPrerendered` (Astro 5+) is true when the route being rendered
+    // is statically prerendered. On prerendered pages there is no real request,
+    // so accessing `request.headers` triggers an Astro 6 warning and there is
+    // no session to parse anyway. Skip session work for those pages and treat
+    // the visitor as anonymous — client islands will hydrate and fetch their
+    // own session via `/api/v1/public/auth/me` when needed.
     const needsSession =
-        isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path });
+        !context.isPrerendered &&
+        (isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path }));
 
     if (needsSession) {
         const user = await parseSessionUser({
@@ -244,9 +251,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // to keep search engines out while we share the real app on a subdomain
     // before the official launch.
     if (NOINDEX_HOSTS.length > 0) {
-        const requestHost = (
-            context.request.headers.get('host') ?? context.url.hostname
-        ).toLowerCase();
+        const requestHost = context.url.hostname.toLowerCase();
         if (NOINDEX_HOSTS.includes(requestHost)) {
             response.headers.set('X-Robots-Tag', 'noindex, nofollow');
         }

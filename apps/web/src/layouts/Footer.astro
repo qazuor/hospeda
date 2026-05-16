@@ -24,6 +24,7 @@ import { Image } from "astro:assets";
 import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
+import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -43,9 +44,9 @@ const locals = Astro.locals as { user?: { id: string; email: string } | null };
 const isAuthenticated = Boolean(locals.user);
 const userEmail = locals.user?.email;
 
-// Public API base URL the island fetches against. Falls back to the same
-// host so dev/preview environments without the public var still load.
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? Astro.url.origin;
+// Public API base URL the island fetches against. Validated at startup
+// by serverEnvSchema, so getApiUrl() never throws here.
+const apiUrl = getApiUrl();
 
 const currentYear = new Date().getFullYear();
 

@@ -65,6 +65,28 @@ describe('mi-cuenta/editar/index.astro (SPEC-113 polish)', () => {
         }
     });
 
+    it('reads phone from contactInfo.mobilePhone (JSONB fallback)', () => {
+        expect(source).toContain('contactInfo?.mobilePhone');
+    });
+
+    it('reads social URLs from socialNetworks JSONB (short keys)', () => {
+        expect(source).toContain('socialNetworks?.facebook');
+        expect(source).toContain('socialNetworks?.instagram');
+        expect(source).toContain('socialNetworks?.twitter');
+        expect(source).toContain('socialNetworks?.linkedIn');
+        expect(source).toContain('socialNetworks?.youtube');
+    });
+
+    it('reads address fields from the location JSONB (and maps region → province)', () => {
+        expect(source).toContain('location?.country');
+        expect(source).toContain('location?.region');
+        expect(source).toContain('location?.city');
+    });
+
+    it('reads website from profile.website (or contactInfo.website)', () => {
+        expect(source).toContain('profile?.website');
+    });
+
     it('normalizes birthDate to YYYY-MM-DD before forwarding', () => {
         expect(source).toMatch(/slice\(\s*0\s*,\s*10\s*\)/);
     });

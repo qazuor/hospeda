@@ -194,6 +194,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ScrollToTop locale={locale} />
 		<CookieConsentBanner
 			client:idle
+			transition:persist="cookie-consent-banner"
 			locale={locale}
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
