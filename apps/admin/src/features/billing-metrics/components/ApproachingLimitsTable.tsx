@@ -107,6 +107,7 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
                                 </div>
                                 <Progress
                                     value={customer.percentage}
+                                    label={customer.limitName}
                                     className={
                                         customer.percentage >= 95
                                             ? '[&>div]:bg-destructive'

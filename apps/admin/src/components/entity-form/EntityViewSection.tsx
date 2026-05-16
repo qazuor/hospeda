@@ -462,7 +462,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
                             {title && (
-                                <h3
+                                <h2
                                     className={cn(
                                         'font-semibold leading-none tracking-tight',
                                         mode === 'card' && 'text-lg',
@@ -471,7 +471,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                                     )}
                                 >
                                     {title}
-                                </h3>
+                                </h2>
                             )}
 
                             {/* Section Actions */}

@@ -131,9 +131,9 @@ function BillingPlansPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.plans.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.plans.description')}
                         </p>
@@ -184,9 +184,9 @@ function BillingPlansPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.plans.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.plans.description')}
                         </p>
@@ -262,6 +262,7 @@ function PlansTable({
             <div className="flex items-center justify-between gap-4">
                 <div className="flex gap-2">
                     <select
+                        aria-label={t('admin-billing.plans.allCategories')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={categoryFilter}
                         onChange={(e) => onCategoryFilterChange(e.target.value as PlanCategory)}

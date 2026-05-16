@@ -359,7 +359,7 @@ export const DataTable = <TData,>({
                 silently truncated (SPEC-135 F-021). */}
             <div className="overflow-x-auto rounded-md border">
                 <table className="w-full min-w-max table-auto text-left text-sm lg:min-w-0">
-                    <thead className="bg-muted text-muted-foreground">
+                    <thead className="bg-muted text-foreground">
                         {table.getHeaderGroups().map((hg) => (
                             <tr key={hg.id}>
                                 {hg.headers.map((header) => {

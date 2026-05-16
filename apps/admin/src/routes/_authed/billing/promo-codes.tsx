@@ -188,9 +188,9 @@ function BillingPromoCodesPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.promoCodes.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.promoCodes.description')}
                         </p>
@@ -220,9 +220,9 @@ function BillingPromoCodesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.promoCodes.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.promoCodes.description')}
                         </p>

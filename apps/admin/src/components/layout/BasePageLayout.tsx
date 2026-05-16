@@ -23,7 +23,11 @@ export const BasePageLayout = ({
     return (
         <section className={`space-y-4 p-6${className ? ` ${className}` : ''}`}>
             <header className="flex items-center justify-between">
-                <h1 className="font-semibold text-2xl">{title}</h1>
+                {title ? (
+                    <h1 className="font-semibold text-2xl">{title}</h1>
+                ) : (
+                    <div className="h-8" aria-hidden="true" />
+                )}
                 <div className="flex items-center gap-2">{actions}</div>
             </header>
             <Breadcrumbs entityContext={entityContext} />
