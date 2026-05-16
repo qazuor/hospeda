@@ -285,7 +285,106 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             );
         }
 
-        // 12. Map to response format
+        // 12. Propagate the new amount to the MercadoPago preapproval (SPEC-126 D7).
+        //
+        // qzpay-core's billing.subscriptions.changePlan() updates local DB state
+        // and computes proration, but does NOT call paymentAdapter.subscriptions.update()
+        // to push the new amount into the provider preapproval. Without this push,
+        // the next MP recurring charge would still bill the OLD plan price, and
+        // the next subscription_preapproval.updated webhook would reconcile the
+        // local state back to the old amount (subscription-logic.ts:316 syncs
+        // planId on incoming webhooks).
+        //
+        // The push is best-effort: a failure is logged + audited but does NOT
+        // fail the route, because the local change already succeeded and the
+        // webhook reconciliation path will eventually fix the drift in either
+        // direction.
+        //
+        // Limitations intentionally deferred to a follow-up:
+        //   - Upgrade prorated-delta one-time charge (would require raw MP
+        //     SDK + a new payment webhook completion handler, same gap as
+        //     SPEC-126 D1 annual).
+        //   - Downgrade "apply at next period end" scheduling (would require
+        //     a scheduledPlanChange field + a new daily cron).
+        const mpSubscriptionId = activeSubscription.providerSubscriptionIds?.mercadopago;
+        if (mpSubscriptionId) {
+            const paymentAdapter = billing.getPaymentAdapter();
+            if (paymentAdapter) {
+                try {
+                    // qzpay's transactionAmount expects MAJOR units (e.g. ARS),
+                    // but qzpay-stored prices are in centavos. Convert here so the
+                    // adapter forwards the right number to MP `auto_recurring.transaction_amount`.
+                    const transactionAmount = targetPrice.unitAmount / 100;
+                    await paymentAdapter.subscriptions.update(mpSubscriptionId, {
+                        planId: newPlanId,
+                        transactionAmount
+                    });
+                    apiLogger.info(
+                        {
+                            subscriptionId: result.subscription.id,
+                            mpSubscriptionId,
+                            oldPlanId,
+                            newPlanId,
+                            transactionAmount
+                        },
+                        'Propagated plan change to MercadoPago preapproval'
+                    );
+                } catch (mpError) {
+                    const mpMessage = mpError instanceof Error ? mpError.message : String(mpError);
+                    apiLogger.error(
+                        {
+                            subscriptionId: result.subscription.id,
+                            mpSubscriptionId,
+                            oldPlanId,
+                            newPlanId,
+                            error: mpMessage
+                        },
+                        'Failed to propagate plan change to MercadoPago; local change persisted, will reconcile via webhook'
+                    );
+                    // Audit so ops can spot the drift quickly. Wrapped in its
+                    // own try/catch so an audit failure cannot bubble up and
+                    // 500 the route — the local change already succeeded.
+                    try {
+                        const db = getDb();
+                        await db.insert(billingSubscriptionEvents).values({
+                            subscriptionId: result.subscription.id,
+                            eventType: BILLING_EVENT_TYPES.PLAN_CHANGE_MP_PROPAGATION_FAILED,
+                            triggerSource: 'plan-change-route',
+                            metadata: {
+                                mpSubscriptionId,
+                                oldPlanId,
+                                newPlanId,
+                                error: mpMessage,
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+                    } catch (auditError) {
+                        apiLogger.error(
+                            {
+                                subscriptionId: result.subscription.id,
+                                error:
+                                    auditError instanceof Error
+                                        ? auditError.message
+                                        : String(auditError)
+                            },
+                            'Failed to record PLAN_CHANGE_MP_PROPAGATION_FAILED audit event'
+                        );
+                    }
+                }
+            } else {
+                apiLogger.warn(
+                    {
+                        subscriptionId: result.subscription.id,
+                        mpSubscriptionId,
+                        oldPlanId,
+                        newPlanId
+                    },
+                    'Payment adapter not available; plan change applied locally but not propagated to MercadoPago'
+                );
+            }
+        }
+
+        // 13. Map to response format
         const response: {
             subscriptionId: string;
             previousPlanId: string;

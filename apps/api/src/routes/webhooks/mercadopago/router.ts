@@ -50,7 +50,8 @@ import { apiLogger } from '../../../utils/logger';
 import { handleDisputeOpened } from './dispute-handler';
 import { handleWebhookError, handleWebhookEvent } from './event-handler';
 import { handlePaymentCreated, handlePaymentUpdated } from './payment-handler';
-import { handleSubscriptionUpdated } from './subscription-handler';
+import { handleSubscriptionPreapprovalEvent } from './subscription-handler';
+import { handleSubscriptionAuthorizedPayment } from './subscription-payment-handler';
 import { getWebhookDependencies } from './utils';
 
 /**
@@ -92,7 +93,24 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             handlers: {
                 'payment.created': handlePaymentCreated,
                 'payment.updated': handlePaymentUpdated,
-                'subscription_preapproval.updated': handleSubscriptionUpdated,
+                // SPEC-126 D3: subscription_preapproval.created is the event MP
+                // fires immediately after the user authorizes a recurring
+                // charge in the MP-hosted checkout. It transitions the local
+                // sub from incomplete/pending_provider to active. The
+                // existing processSubscriptionUpdated logic already maps MP
+                // `authorized` -> qzpay `active` and applies the status update,
+                // so both .created and .updated point at the same handler.
+                'subscription_preapproval.created': handleSubscriptionPreapprovalEvent,
+                'subscription_preapproval.updated': handleSubscriptionPreapprovalEvent,
+                // SPEC-126 D4: subscription_authorized_payment events fire
+                // when MP schedules / executes a recurring charge against a
+                // preapproval. The current handler is acknowledge-only (logs
+                // + dedup), with full payment recording deferred to a
+                // follow-up because the IPN payload does not carry the
+                // preapproval link and qzpay-core lacks a public helper to
+                // fetch the authorized-payment object.
+                'subscription_authorized_payment.created': handleSubscriptionAuthorizedPayment,
+                'subscription_authorized_payment.updated': handleSubscriptionAuthorizedPayment,
                 chargebacks: handleDisputeOpened,
                 'payment.dispute': handleDisputeOpened
             },

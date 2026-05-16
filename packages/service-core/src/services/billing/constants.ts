@@ -21,6 +21,14 @@ export const BILLING_EVENT_TYPES = {
     ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING',
     /** Marks QZPay plan change succeeded but local transaction failed (Phase 3 OP-2) */
     PLAN_CHANGE_LOCAL_FAILED: 'PLAN_CHANGE_LOCAL_FAILED',
+    /**
+     * Fired when a plan change applied successfully to the local DB but the
+     * push to MercadoPago `auto_recurring.transaction_amount` failed
+     * (SPEC-126 D7). The webhook reconciliation path is expected to recover
+     * the drift on the next MP event; this event lets ops spot the
+     * intermediate inconsistency.
+     */
+    PLAN_CHANGE_MP_PROPAGATION_FAILED: 'PLAN_CHANGE_MP_PROPAGATION_FAILED',
     /** Fired when an addon reaches its configured expiry date */
     ADDON_EXPIRED: 'ADDON_EXPIRED',
     /** Fired when addon usage limits are recalculated (e.g. after a plan change or add-on upgrade) */
@@ -50,7 +58,20 @@ export const BILLING_EVENT_TYPES = {
      *
      * @see SPEC-064 T-047
      */
-    ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
+    ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED',
+    /**
+     * Fired when the D-3 (three days remaining) trial-ending reminder email is
+     * dispatched. Acts as the per-subscription dedup guard for the
+     * `trial-pre-end-notif` cron (SPEC-126 D5) so a single trial does not
+     * receive the same variant on consecutive daily runs.
+     */
+    TRIAL_PRE_END_NOTIF_D3: 'TRIAL_PRE_END_NOTIF_D3',
+    /**
+     * Fired when the D-1 (one day remaining) trial-ending reminder email is
+     * dispatched. The D-1 variant is independent from D-3 — a trial gets both
+     * reminders, but never the same variant twice (SPEC-126 D5).
+     */
+    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1'
 } as const;
 
 /**
