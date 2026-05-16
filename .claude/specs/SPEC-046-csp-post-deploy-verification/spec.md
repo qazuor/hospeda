@@ -119,11 +119,11 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 | Gap ID | Directive | Source / Symptom | Recommended Action | Decision |
 |---|---|---|---|---|
 | GAP-046-09a | `style-src-attr` | Inline `style=""` attrs on React islands (transition-delay, CSS vars, animation start state) | Refactor to CSS classes + `data-*` attrs | **A** — approved |
-| GAP-046-09b | `style-src-elem` | Inline `<style>` blocks (~24 per page) emitted by Astro `experimental.csp` with hash that nonce overrides | Propagate request nonce to Astro `<style>` tags | **A** — approved |
+| GAP-046-09b | `style-src-elem` | Inline `<style>` blocks (~24 per page) emitted by Astro without the request nonce (middleware sets nonce in header only) | Inject nonce into Astro-emitted `<style>` tags via middleware/integration (see [`research/astro-csp-options.md`](research/astro-csp-options.md) Path A) | **A** — approved |
 | GAP-046-10 | `script-src` (`'unsafe-eval'`) | Zod client-side schemas were suspected to use `eval`. **Verified absent** in full-site crawl 2026-05-16 (Astro `ClientRouter` SPA navigation across home, listing, detail, auth forms, signup — zero `'unsafe-eval'` or `script-src` violations citing `eval`/`data:`/`blob:`). | n/a | **Dropped** — verified absent |
 | GAP-046-11 | (external) | `static.cloudflareinsights.com/beacon.min.js` blocked by CORS + sha512 integrity mismatch | Disable Cloudflare Web Analytics in CF dashboard (Umami SPEC-140 replaces it) | **A** — approved |
 | GAP-046-12 | `frame-src` (missing) | Web `middleware.ts` does not declare `frame-src`. No iframes today. | Add `frame-src 'none'` | **B** — approved |
-| GAP-046-13 | `script-src-elem` | Inline `<script>` blocks in HTML tail (lines 835-840) without nonce — Astro hydration scripts | Verify and repair Astro `experimental.csp` nonce propagation to inline scripts | **A** — approved |
+| GAP-046-13 | `script-src-elem` | Inline `<script>` blocks in HTML tail (lines 835-840) without nonce — Astro hydration scripts | Inject nonce into Astro-emitted inline `<script>` tags via the same middleware/integration as 09b | **A** — approved |
 
 ### 1C.2 GAP-046-09a — Inline `style=""` attributes on React islands
 
@@ -170,15 +170,18 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 
 **Root cause hypothesis**: this is the dual-policy artifact tracked as GAP-042-03. Astro `experimental.csp` emits per-block style hashes in its CSP meta tag; per CSP Level 2+, when **any** hash or nonce is present in `style-src`, browsers ignore `'unsafe-inline'` and require a matching hash/nonce. The HTTP header carries a nonce that does not match these blocks because Astro generates them at build time with no awareness of the per-request nonce.
 
-**Options considered**:
+**Options considered (refined after Astro 6 research, see [`research/astro-csp-options.md`](research/astro-csp-options.md))**:
+
+The original "Astro experimental.csp nonce" option (previously listed as A) does NOT exist. Astro 6 `security.csp` is **hash-based only** and is **incompatible with `<ClientRouter />`** which the web app uses today. The viable options are:
 
 | # | Option | Pros | Cons |
 |---|--------|------|------|
-| **A** | Configure Astro `experimental.csp` (or its successor) to **emit the request nonce** on `<style>` tags instead of hashes. Disable hash emission for styles. | Solves the root cause. CSP3 + nonce works as intended. No `'unsafe-hashes'`. No header growth. | Depends on Astro support: needs investigation of current `styleDirective` / `experimental.csp.styleDirective` API in installed Astro version. Astro Issue #14798 (style hash opt-out) is still open upstream — fallback to option B may be required. |
-| B | Move scoped `<style>` blocks to external CSS modules / `.css` files imported by the component. Astro bundles them as external stylesheets covered by `'self'`. | External stylesheets do not need nonce/hash. Clean policy. | Loses Astro's automatic scoping on inline `<style>`. More files. Some dynamic-content styles cannot move out (rare). |
-| C | Add `'unsafe-inline'` to `style-src` | Trivial. CSP3 ignores `'unsafe-inline'` when a nonce/hash is present, so on conformant browsers this is a no-op fallback. | If the nonce propagation ever breaks, the fallback opens the entire `style-src` directive. Counter to the goal of SPEC-046 (hardening). |
+| **A** | **Inject nonce into Astro-emitted `<style>` tags from middleware / Astro integration** (post-render HTML rewrite). Keep middleware as single CSP source. See research doc Path A. | ClientRouter keeps working. Single CSP source (header). Per-request nonce rotation. `report-uri` keeps working. Compatible with `'strict-dynamic'`. | We own a small HTML-rewriting integration. <1 ms perf hit per response (to be benchmarked). |
+| B | Move scoped `<style>` blocks to external CSS modules / `.css` files imported by the component. Astro bundles them as external stylesheets covered by `'self'`. | External stylesheets need no nonce/hash. | Loses Astro's automatic scoping on inline `<style>`. More files. Mass refactor across components. |
+| C | Migrate to Astro 6 `security.csp` (hash-based) and drop `<ClientRouter />` for the native View Transitions API. See research doc Path B. | Official supported path. Astro maintains hashes. | **Big-ticket**: ClientRouter migration is a substantial rework. Hashes do not rotate per request. Dev-mode loses CSP coverage. Out of scope for SPEC-046; consider as Post-Phase-2 roadmap. |
+| D | Add `'unsafe-inline'` to `style-src` | Trivial. CSP3 ignores `'unsafe-inline'` when a nonce/hash is present on conformant browsers. | If nonce propagation ever breaks, fallback opens the entire `style-src` directive. Counter to the goal of SPEC-046 (hardening). |
 
-**Decision**: **A — Astro nonce on `<style>` blocks**. Approved 2026-05-16. If implementation reveals Astro cannot propagate the nonce in the current version, fall back to **B (external CSS modules)** for the affected components. **C is rejected**.
+**Decision**: **A — middleware/integration nonce injection**. Approved 2026-05-16 after research. **B retained as fallback for components that prove difficult to nonce-stamp** (e.g. content emitted before middleware runs, if any). **C tracked as Post-Phase-2 roadmap entry**, not a Phase 2 prerequisite. **D rejected**.
 
 ### 1C.4 GAP-046-10 — Runtime dynamic-code evaluation in client-side Zod (DROPPED — verified absent)
 
@@ -243,15 +246,18 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 
 **Root cause hypothesis**: lines 835-840 are where Astro injects hydration / `client:*` directives as inline `<script>` blocks. Either (a) Astro `experimental.csp` is not propagating the request nonce to these blocks, or (b) these blocks are emitted before the nonce-injection middleware runs. Without a matching nonce, `'strict-dynamic'` does not trust them, so any external chunk they import (the `/_astro/*.js` chunks) is also blocked — which is exactly the secondary symptom documented in §11A.
 
-**Options considered**:
+**Options considered (refined after Astro 6 research, see [`research/astro-csp-options.md`](research/astro-csp-options.md))**:
+
+The original "verify Astro nonce propagation" option assumed Astro had a built-in mechanism to attach the request nonce to its inline `<script>` tags. **It does not.** Astro 6 `security.csp` is hash-based and is incompatible with `<ClientRouter />` (in use today). The viable options are:
 
 | # | Option | Pros | Cons |
 |---|--------|------|------|
-| **A** | Verify and repair Astro `experimental.csp` nonce propagation to inline scripts. Audit `apps/web/astro.config.mjs` and Astro version, ensure middleware injects the nonce both into the HTTP header and into the emitted inline `<script>` tags. | Solves the root cause. Compatible with `'strict-dynamic'`. Fixes the cascading `/_astro/*.js` blocks too. | Possible upstream Astro bug; requires investigation before scope is known. |
-| B | Migrate `<script is:inline>` to external `<script src="...">` so Astro bundles them as chunks loaded under `'self'` + `'strict-dynamic'`. | Structural fix. | Critical scripts (FOUC prevention, dark-mode pre-paint) MUST run inline before CSS paints — they cannot be migrated. |
-| C | Hash allowlist (add each sha256 to `script-src`) | No code changes. | Fragile: any rebuild changes the hashes. Header grows. Does not scale to multi-page apps. |
+| **A** | **Inject nonce into Astro-emitted inline `<script>` tags from middleware / Astro integration** (post-render HTML rewrite). Same mechanism as GAP-046-09b option A — one integration covers both directives. | Compatible with `'strict-dynamic'`. **Fixes the cascading `/_astro/*.js` blocks too** (once inline scripts carry the nonce, the chunks they import are transitively trusted). Single CSP source (header). | We own the HTML-rewriting integration. |
+| B | Migrate `<script is:inline>` blocks to external `<script src="...">` so Astro bundles them as chunks loaded under `'self'` + `'strict-dynamic'`. | Structural fix. | Critical scripts (FOUC prevention, dark-mode pre-paint, etc.) MUST run inline before CSS paints — they cannot be migrated. Hydration scripts are likely also non-migrable. |
+| C | Migrate to Astro 6 `security.csp` (hash-based) and drop `<ClientRouter />` for the native View Transitions API. | Official supported path. | Same big-ticket migration cost described for GAP-046-09b option C. Out of scope for SPEC-046. |
+| D | Hash allowlist (add each sha256 to `script-src`) | No code changes. | Fragile: every rebuild changes the hashes. Header grows. Does not scale across pages. |
 
-**Decision**: **A — repair Astro nonce propagation**. Approved 2026-05-16. Where investigation shows specific inline scripts genuinely cannot receive a nonce (none expected, but possible), fall back to **B (migrate to external)** for non-critical scripts. **C is rejected**.
+**Decision**: **A — middleware/integration nonce injection** (same integration as GAP-046-09b). Approved 2026-05-16 after research. **B retained for non-critical scripts** that prove unstampable, if any. **C tracked as Post-Phase-2 roadmap**. **D rejected**.
 
 ### 1C.8 Coverage Status
 
@@ -526,6 +532,7 @@ Once Phase 2 (enforcement) is stable in production, these improvements should be
 | MEDIUM | Restrict `img-src` to specific CDN domains | GAP-042-27 | Current `img-src` uses broad wildcards. Replace with specific CDN domains (e.g., `res.cloudinary.com`, `images.unsplash.com`) once all image sources are cataloged. |
 | LOW | Eliminate `'unsafe-inline'` from web `script-src` | GAP-042-05 | Migrate `is:inline` scripts in `BaseLayout.astro` to hashed or ES module scripts. Enables full hash-based integrity for all scripts. |
 | LOW | Remove `'unsafe-eval'` from admin `script-src` | GAP-042-04 | Contingent on MercadoPago antifraud verification (Section 5). If `security.js` does not use `eval()`, remove immediately. |
+| LOW | Migrate to Astro 6 native `security.csp` + drop `<ClientRouter />` | n/a | Long-horizon. Trades per-request nonce rotation for per-build hashes maintained by Astro. Requires migrating from Astro `<ClientRouter />` to the browser-native View Transition API (Astro's CSP feature is incompatible with ClientRouter). See [`research/astro-csp-options.md`](research/astro-csp-options.md) Path B. Surfaced 2026-05-16 during SPEC-046 paso 4 research. |
 
 ---
 
