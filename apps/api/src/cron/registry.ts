@@ -5,6 +5,7 @@
  */
 
 import {
+    abandonedPendingSubsJob,
     addonExpiryJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
@@ -48,7 +49,8 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
-    trialPreEndNotifJob
+    trialPreEndNotifJob,
+    abandonedPendingSubsJob
 ];
 
 /**
