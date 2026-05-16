@@ -22,6 +22,14 @@
 import { getImage, Image } from "astro:assets";
 import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
+// Side-effect import of the mobile menu's CSS module. The menu lives inside
+// a server:defer island, and ClientRouter occasionally re-renders the island
+// after a back navigation without re-injecting the module's stylesheet —
+// leaving the menu's raw markup pushed into page flow on the home. Importing
+// the module here (a component that ships on every page) forces Astro/Vite
+// to include the CSS in every page's <head>, so the styles are always
+// present regardless of how the island is hydrated.
+import "@/components/shared/navigation/MobileMenu.module.css";
 import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
 import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
 import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitcher.client";
