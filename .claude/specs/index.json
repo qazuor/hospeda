@@ -1047,14 +1047,69 @@
             "title": "Admin App — Visual + Functional Audit (~42 pages, 4 dimensions)",
             "type": "audit",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-131-admin-app-visual-functional-audit",
             "created": "2026-05-15T18:00:00Z",
             "startedAt": "2026-05-15T22:00:00Z",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-131-admin-app-visual-functional-audit",
             "branch": "spec/SPEC-131-admin-app-visual-functional-audit",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15) — visual blind spot",
-            "tags": ["admin", "audit", "ux", "accessibility", "responsive", "performance", "visual"]
+            "tags": [
+                "admin",
+                "audit",
+                "ux",
+                "accessibility",
+                "responsive",
+                "performance",
+                "visual"
+            ],
+            "completedAt": "2026-05-16T01:30:00Z",
+            "completionRef": "audits/spec-131/findings.md (31 findings catalogued)"
+        },
+        {
+            "specId": "SPEC-134",
+            "title": "Admin Audit Remediation — Master",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-134-admin-audit-remediation",
+            "created": "2026-05-16T01:30:00Z",
+            "extractedFrom": "SPEC-131 audit findings",
+            "tags": ["admin", "remediation", "epic", "master"],
+            "children": ["SPEC-135", "SPEC-136", "SPEC-137"]
+        },
+        {
+            "specId": "SPEC-135",
+            "title": "Admin Mobile Responsive Remediation",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-135-admin-mobile-responsive-remediation",
+            "created": "2026-05-16T01:30:00Z",
+            "parent": "SPEC-134",
+            "tags": ["admin", "responsive", "mobile"]
+        },
+        {
+            "specId": "SPEC-136",
+            "title": "Admin A11y Compliance (WCAG 2.1 AA)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-136-admin-a11y-compliance",
+            "created": "2026-05-16T01:30:00Z",
+            "parent": "SPEC-134",
+            "tags": ["admin", "accessibility", "wcag"]
+        },
+        {
+            "specId": "SPEC-137",
+            "title": "Admin i18n + Polish + Routing fixes",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-137-admin-i18n-polish-routing",
+            "created": "2026-05-16T01:30:00Z",
+            "parent": "SPEC-134",
+            "tags": ["admin", "i18n", "polish", "routing"]
         }
     ]
 }

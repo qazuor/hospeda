@@ -4,6 +4,22 @@
     "overrides": [
         {
             "include": [
+                ".claude/specs/SPEC-134-admin-audit-remediation/audit-baseline/_scripts/**"
+            ],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsoleLog": "off"
+                    },
+                    "style": {
+                        "noNonNullAssertion": "off",
+                        "useTemplate": "off"
+                    }
+                }
+            }
+        },
+        {
+            "include": [
                 "apps/web/src/components/sections/SearchBar.client.tsx",
                 "apps/web/src/components/sections/DestinationsIsland.client.tsx",
                 "apps/web/src/components/shared/MobileMenu.client.tsx"

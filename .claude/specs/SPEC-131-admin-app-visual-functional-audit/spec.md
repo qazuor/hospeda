@@ -1,14 +1,24 @@
 ---
 spec-id: SPEC-131
-title: Admin App — Visual + Functional Audit (~42 pages, 4 dimensions)
+title: Admin App — Visual + Functional Audit (110 pages, hybrid coverage)
 type: audit
 complexity: high
-status: draft
+status: completed
 created: 2026-05-15T18:00:00Z
+completed: 2026-05-16T01:30:00Z
 effort_estimate_hours: 16-32
+actual_effort_hours: ~7
 tags: [admin, audit, ux, accessibility, responsive, performance, visual]
 extracted_from: SPEC-117 PR #1106 audit (2026-05-15) — visual blind spot
 priority: medium
+deliverable: .claude/specs/SPEC-134-admin-audit-remediation/audit-baseline/findings.md (31 findings, 1 blocker, 7 high, 9 medium, 3 low + a11y axe cluster)
+remediation: SPEC-134 (master) + SPEC-135 (mobile) + SPEC-136 (a11y) + SPEC-137 (i18n+polish)
+scope_adjustments:
+  - Page count was 110 leaf routes (inventory revised from ~42 estimated)
+  - Phase 4 Lighthouse skipped per operator decision 2026-05-15
+  - Phase 2 interactive-state capture deferred (visual review subagent extracted high-value findings without it)
+  - Phase 3 manual keyboard nav skipped (axe-core automated retained, full 105 pages)
+  - Tablet 768px viewport cut (desktop 1280 + mobile 375 only)
 ---
 
 # SPEC-131: Admin App — Visual + Functional Audit
