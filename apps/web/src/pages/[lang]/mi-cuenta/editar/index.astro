@@ -5,12 +5,21 @@
  * @route /{lang}/mi-cuenta/editar/
  * @rendering SSR
  *
- * Loads the full protected user (including SPEC-113 polish fields:
+ * Loads the full protected user (including the SPEC-113 polish fields:
  * birthDate, website, occupation, social networks, postal address, and
  * the `profile` JSONB blob) by calling `GET /api/v1/protected/users/:id`
  * server-side. Falls back to the Better Auth session shape when the API
- * call fails so the page still renders and the user can update what they
- * can see.
+ * call fails so the page still renders.
+ *
+ * SPEC-113 follow-up: the canonical storage for several profile fields
+ * is the JSONB columns on the `users` table — NOT the top-level columns
+ * the response schema advertises. We read each field from JSONB and fall
+ * back to the (typically empty) top-level shape so existing data shows up:
+ *
+ *   - `phone`         ← `data.contactInfo?.mobilePhone`
+ *   - `website`       ← `data.profile?.website` (or `data.contactInfo?.website`)
+ *   - `country/...`   ← `data.location?.{country, region, city}`
+ *   - `facebookUrl/…` ← `data.socialNetworks?.{facebook, instagram, …}`
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -83,6 +92,22 @@ try {
 		};
 		const data = body?.data;
 		if (data && typeof data === 'object') {
+			// Helper — coerce unknown JSONB column to a flat record.
+			const asRecord = (value: unknown): Record<string, unknown> | null =>
+				value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+
+			const contactInfo = asRecord(data.contactInfo);
+			const socialNetworks = asRecord(data.socialNetworks);
+			const location = asRecord(data.location);
+			const profile = asRecord(data.profile);
+
+			// Helper — read a top-level field first, then a JSONB fallback.
+			const pickString = (top: unknown, jsonbValue: unknown): string | null => {
+				if (typeof top === 'string' && top.length > 0) return top;
+				if (typeof jsonbValue === 'string' && jsonbValue.length > 0) return jsonbValue;
+				return null;
+			};
+
 			// Normalize birthDate to YYYY-MM-DD so it slots straight into a
 			// native <input type="date">. The API returns either an ISO
 			// timestamp (string) or a Date — coerce both safely.
@@ -97,28 +122,41 @@ try {
 			initialUser = {
 				...fallbackUser,
 				id: (data.id as string) ?? user.id,
-				displayName: (data.displayName as string | null) ?? user.name ?? null,
-				firstName: (data.firstName as string | null) ?? null,
-				lastName: (data.lastName as string | null) ?? null,
+				displayName: pickString(data.displayName, null) ?? user.name ?? null,
+				firstName: pickString(data.firstName, null),
+				lastName: pickString(data.lastName, null),
 				avatarUrl:
-					(data.avatarUrl as string | null) ??
-					(data.image as string | null) ??
-					user.image ??
-					null,
-				phone: (data.phone as string | null) ?? null,
+					pickString(data.avatarUrl, null) ?? pickString(data.image, null) ?? user.image ?? null,
+
+				// Contact — `phone` lives in contactInfo.mobilePhone (JSONB).
+				phone: pickString(data.phone, contactInfo?.mobilePhone),
+
 				birthDate,
-				profile: (data.profile as typeof fallbackUser.profile) ?? null,
-				website: (data.website as string | null) ?? null,
-				facebookUrl: (data.facebookUrl as string | null) ?? null,
-				instagramUrl: (data.instagramUrl as string | null) ?? null,
-				twitterUrl: (data.twitterUrl as string | null) ?? null,
-				linkedinUrl: (data.linkedinUrl as string | null) ?? null,
-				youtubeUrl: (data.youtubeUrl as string | null) ?? null,
-				addressLine1: (data.addressLine1 as string | null) ?? null,
-				city: (data.city as string | null) ?? null,
-				province: (data.province as string | null) ?? null,
-				country: (data.country as string | null) ?? null,
-				postalCode: (data.postalCode as string | null) ?? null
+				profile: profile as typeof fallbackUser.profile,
+
+				// Website may be in `profile.website` (collected during the
+				// profile completion form) or in `contactInfo.website`.
+				website: pickString(
+					data.website,
+					profile?.website ?? contactInfo?.website
+				),
+
+				// Socials live in the `socialNetworks` JSONB column with
+				// short keys (facebook / instagram / …). The form surface
+				// uses the longer "<network>Url" naming.
+				facebookUrl: pickString(data.facebookUrl, socialNetworks?.facebook),
+				instagramUrl: pickString(data.instagramUrl, socialNetworks?.instagram),
+				twitterUrl: pickString(data.twitterUrl, socialNetworks?.twitter),
+				linkedinUrl: pickString(data.linkedinUrl, socialNetworks?.linkedIn),
+				youtubeUrl: pickString(data.youtubeUrl, socialNetworks?.youtube),
+
+				// Postal address lives in the `location` JSONB column with
+				// keys { country, region, city, ... }. Map `region` ↔ `province`.
+				addressLine1: pickString(data.addressLine1, location?.addressLine1),
+				city: pickString(data.city, location?.city),
+				province: pickString(data.province, location?.region),
+				country: pickString(data.country, location?.country),
+				postalCode: pickString(data.postalCode, location?.postalCode)
 			};
 		}
 	}
