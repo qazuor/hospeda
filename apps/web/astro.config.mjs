@@ -63,7 +63,12 @@ export default defineConfig({
     output: 'server',
     trailingSlash: 'always',
     adapter: node({
-        mode: 'standalone'
+        mode: 'standalone',
+        // Astro 6 + @astrojs/node 10: serve response headers (including
+        // security headers attached in middleware) for prerendered pages too,
+        // not only SSR-rendered pages. Previously the middleware-attached
+        // CSP / X-Robots-Tag did not reach cached static responses.
+        staticHeaders: true
     }),
 
     prefetch: {
@@ -110,6 +115,36 @@ export default defineConfig({
                     '/beta/'
                 ];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
+            },
+            // Inject hreflang alternates for each entry so search engines know
+            // the three locales (es/en/pt) are translations of the same page.
+            // Improves international SEO for the Argentina-Litoral market.
+            // Skips XML paths (e.g. customPages-injected sitemap-of-sitemaps)
+            // since hreflang on a sitemap file is not meaningful.
+            serialize(item) {
+                const siteUrl = HOSPEDA_SITE_URL.replace(/\/$/, '');
+                const url = new URL(item.url);
+                if (url.pathname.endsWith('.xml')) {
+                    return item;
+                }
+                const localeMatch = url.pathname.match(/^\/(en|pt)(\/|$)/);
+                const pathWithoutLocale = localeMatch
+                    ? url.pathname.replace(/^\/(en|pt)/, '')
+                    : url.pathname;
+                const normalizedPath = pathWithoutLocale === '' ? '/' : pathWithoutLocale;
+                const links = [
+                    { lang: 'es', url: `${siteUrl}${normalizedPath}` },
+                    {
+                        lang: 'en',
+                        url: `${siteUrl}/en${normalizedPath === '/' ? '/' : normalizedPath}`
+                    },
+                    {
+                        lang: 'pt',
+                        url: `${siteUrl}/pt${normalizedPath === '/' ? '/' : normalizedPath}`
+                    },
+                    { lang: 'x-default', url: `${siteUrl}${normalizedPath}` }
+                ];
+                return { ...item, links };
             },
             // Include the dynamic sitemap (published entities × 3 locales) so
             // sitemap-index.xml lists it alongside the statically-generated sitemap.
