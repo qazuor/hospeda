@@ -140,6 +140,7 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
 
                     <Progress
                         value={overallProgress.completionPercentage}
+                        label={t('ui.navigation.formProgress')}
                         className="mb-2"
                     />
 

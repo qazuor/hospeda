@@ -7,6 +7,11 @@ import type React from 'react';
 export interface ProgressProps {
     /** Progress value (0-100) */
     value: number;
+    /**
+     * Accessible label announced by screen readers (WCAG 2.1 AA — required so
+     * future call sites cannot omit it; see SPEC-136 F-017).
+     */
+    label: string;
     /** Additional CSS classes */
     className?: string;
     /** Size variant */
@@ -20,12 +25,13 @@ export interface ProgressProps {
  *
  * @example
  * ```tsx
- * <Progress value={75} className="w-full" />
- * <Progress value={100} variant="success" size="lg" />
+ * <Progress value={75} label="Cargando datos" className="w-full" />
+ * <Progress value={100} label="Subida completada" variant="success" size="lg" />
  * ```
  */
 export const Progress: React.FC<ProgressProps> = ({
     value,
+    label,
     className,
     size = 'md',
     variant = 'default'
@@ -55,6 +61,7 @@ export const Progress: React.FC<ProgressProps> = ({
             )}
             role="progressbar"
             tabIndex={0}
+            aria-label={label}
             aria-valuenow={clampedValue}
             aria-valuemin={0}
             aria-valuemax={100}

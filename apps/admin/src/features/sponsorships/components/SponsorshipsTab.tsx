@@ -217,6 +217,7 @@ export function SponsorshipsTab() {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex gap-2">
                     <select
+                        aria-label={t('admin-billing.sponsorships.filters.allStatuses')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.sponsorshipStatus || 'all'}
                         onChange={(e) =>
@@ -245,6 +246,7 @@ export function SponsorshipsTab() {
                     </select>
 
                     <select
+                        aria-label={t('admin-billing.sponsorships.filters.allTypes')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.targetType || 'all'}
                         onChange={(e) =>
