@@ -22,6 +22,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     PENDING_PROVIDER_TTL_MS,
     SubscriptionCheckoutError,
+    initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription
 } from '../../src/services/subscription-checkout.service';
 
@@ -412,5 +413,332 @@ describe('initiatePaidMonthlySubscription', () => {
 
         const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call.freeTrialDays).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// initiatePaidAnnualSubscription (SPEC-141 D1)
+// ---------------------------------------------------------------------------
+
+const ANNUAL_URLS = {
+    successUrl: 'https://hospeda.test/billing/return?ref=local',
+    cancelUrl: 'https://hospeda.test/billing/return?ref=local&cancelled=1',
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+};
+
+interface CustomerFixture {
+    id: string;
+    email: string;
+    name: string | null;
+    livemode: boolean;
+}
+
+const CUSTOMER_FIXTURE: CustomerFixture = {
+    id: CUSTOMER_ID,
+    email: 'host@hospeda.test',
+    name: 'Maria Rodriguez',
+    livemode: false
+};
+
+const ANNUAL_PRICE_WITH_AMOUNT = {
+    id: ANNUAL_PRICE_ID,
+    billingInterval: 'year' as const,
+    intervalCount: 1,
+    active: true,
+    unitAmount: 35_000_000
+};
+
+function createAnnualBillingMock(
+    opts: {
+        plans?: Array<{ id: string; name: string; prices: unknown[] }>;
+        customer?: CustomerFixture | null;
+        checkoutResult?: {
+            id?: string;
+            providerInitPoint?: string;
+            providerSandboxInitPoint?: string;
+        } | null;
+    } = {}
+) {
+    const plans = opts.plans ?? [
+        {
+            id: PLAN_ID,
+            name: 'owner-premium',
+            prices: [ANNUAL_PRICE_WITH_AMOUNT]
+        }
+    ];
+    const customer = opts.customer === undefined ? CUSTOMER_FIXTURE : opts.customer;
+    const checkoutResult =
+        opts.checkoutResult === undefined
+            ? { id: 'checkout-1', providerInitPoint: 'https://mp.test/checkout/annual-abc' }
+            : opts.checkoutResult;
+
+    return {
+        plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
+        customers: { get: vi.fn().mockResolvedValue(customer) },
+        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) }
+    };
+}
+
+function makeStubDb() {
+    const insertCalls: Array<{ table: unknown; values: Record<string, unknown> }> = [];
+    const stub = {
+        insert(table: unknown) {
+            return {
+                values(values: Record<string, unknown>) {
+                    insertCalls.push({ table, values });
+                    return Promise.resolve(undefined);
+                }
+            };
+        }
+    };
+    return {
+        stub: stub as unknown as Parameters<typeof initiatePaidAnnualSubscription>[0]['db'],
+        insertCalls
+    };
+}
+
+describe('initiatePaidAnnualSubscription', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns checkoutUrl, localSubscriptionId, and expiresAt on success', async () => {
+        const billing = createAnnualBillingMock();
+        const { stub, insertCalls } = makeStubDb();
+        const before = Date.now();
+
+        const result = await initiatePaidAnnualSubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: ANNUAL_URLS,
+            db: stub
+        });
+
+        const after = Date.now();
+
+        expect(result.checkoutUrl).toBe('https://mp.test/checkout/annual-abc');
+        expect(typeof result.localSubscriptionId).toBe('string');
+        expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/i);
+
+        const expiresAtMs = new Date(result.expiresAt).getTime();
+        expect(expiresAtMs).toBeGreaterThanOrEqual(before + PENDING_PROVIDER_TTL_MS - 2000);
+        expect(expiresAtMs).toBeLessThanOrEqual(after + PENDING_PROVIDER_TTL_MS + 2000);
+
+        // Local sub row inserted with annual lifecycle fields.
+        expect(insertCalls).toHaveLength(1);
+        const subRow = insertCalls[0]?.values as Record<string, unknown>;
+        expect(subRow.customerId).toBe(CUSTOMER_ID);
+        expect(subRow.planId).toBe(PLAN_ID);
+        expect(subRow.billingInterval).toBe('year');
+        expect(subRow.intervalCount).toBe(1);
+        expect(subRow.status).toBe('pending_provider');
+        expect(subRow.livemode).toBe(false);
+        const subStart = subRow.currentPeriodStart as Date;
+        const subEnd = subRow.currentPeriodEnd as Date;
+        expect(subEnd.getTime() - subStart.getTime()).toBe(365 * 24 * 60 * 60 * 1000);
+        const metadata = subRow.metadata as Record<string, unknown>;
+        expect(metadata.source).toBe('start-paid-annual');
+        expect(metadata.billingInterval).toBe('annual');
+        expect(metadata.planSlug).toBe('owner-premium');
+        expect(metadata.annualPriceId).toBe(ANNUAL_PRICE_ID);
+    });
+
+    it('invokes billing.checkout.create with one-time payment mode and correct line item', async () => {
+        const billing = createAnnualBillingMock();
+        const { stub } = makeStubDb();
+
+        await initiatePaidAnnualSubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: ANNUAL_URLS,
+            db: stub
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.mode).toBe('payment');
+        const lineItems = call.lineItems as Array<Record<string, unknown>>;
+        expect(lineItems).toHaveLength(1);
+        expect(lineItems[0]).toMatchObject({
+            unitAmount: 35_000_000,
+            currency: 'ARS',
+            quantity: 1,
+            categoryId: 'services'
+        });
+        expect((lineItems[0]?.title as string).toLowerCase()).toContain('annual');
+        expect(call.successUrl).toBe(ANNUAL_URLS.successUrl);
+        expect(call.cancelUrl).toBe(ANNUAL_URLS.cancelUrl);
+        expect(call.customerId).toBe(CUSTOMER_ID);
+        expect(call.customerEmail).toBe(CUSTOMER_FIXTURE.email);
+        expect(call.customerName).toBe('Maria Rodriguez');
+        expect(call.payerFirstName).toBe('Maria');
+        expect(call.payerLastName).toBe('Rodriguez');
+        expect(call.notificationUrl).toBe(ANNUAL_URLS.notificationUrl);
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.billingInterval).toBe('annual');
+        expect(metadata.planSlug).toBe('owner-premium');
+        expect(typeof metadata.annualSubscriptionId).toBe('string');
+        expect(call.idempotencyKey).toBe(metadata.annualSubscriptionId);
+    });
+
+    it('falls back to sandbox init point when providerInitPoint is missing', async () => {
+        const billing = createAnnualBillingMock({
+            checkoutResult: {
+                id: 'checkout-2',
+                providerSandboxInitPoint: 'https://sandbox.mp.test/annual-xyz'
+            }
+        });
+        const { stub } = makeStubDb();
+
+        const result = await initiatePaidAnnualSubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: ANNUAL_URLS,
+            db: stub
+        });
+
+        expect(result.checkoutUrl).toBe('https://sandbox.mp.test/annual-xyz');
+    });
+
+    it('forwards statementDescriptor when provided', async () => {
+        const billing = createAnnualBillingMock();
+        const { stub } = makeStubDb();
+
+        await initiatePaidAnnualSubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: ANNUAL_URLS,
+            statementDescriptor: 'HOSPEDA',
+            db: stub
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.statementDescriptor).toBe('HOSPEDA');
+    });
+
+    it('omits payerFirstName/payerLastName when customer has no name', async () => {
+        const billing = createAnnualBillingMock({
+            customer: { ...CUSTOMER_FIXTURE, name: null }
+        });
+        const { stub } = makeStubDb();
+
+        await initiatePaidAnnualSubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: ANNUAL_URLS,
+            db: stub
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.customerName).toBeUndefined();
+        expect(call.payerFirstName).toBeUndefined();
+        expect(call.payerLastName).toBeUndefined();
+    });
+
+    it('throws PLAN_NOT_FOUND when the slug is unknown', async () => {
+        const billing = createAnnualBillingMock({ plans: [] });
+        const { stub } = makeStubDb();
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'does-not-exist',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: ANNUAL_URLS,
+                db: stub
+            })
+        ).rejects.toMatchObject({ code: 'PLAN_NOT_FOUND' });
+    });
+
+    it('throws NO_ANNUAL_PRICE when the plan has no active annual price', async () => {
+        const billing = createAnnualBillingMock({
+            plans: [
+                {
+                    id: PLAN_ID,
+                    name: 'owner-premium',
+                    prices: [MONTHLY_PRICE] // only monthly, no annual
+                }
+            ]
+        });
+        const { stub } = makeStubDb();
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: ANNUAL_URLS,
+                db: stub
+            })
+        ).rejects.toMatchObject({ code: 'NO_ANNUAL_PRICE' });
+    });
+
+    it('skips inactive annual prices', async () => {
+        const billing = createAnnualBillingMock({
+            plans: [
+                {
+                    id: PLAN_ID,
+                    name: 'owner-premium',
+                    prices: [{ ...ANNUAL_PRICE_WITH_AMOUNT, active: false }]
+                }
+            ]
+        });
+        const { stub } = makeStubDb();
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: ANNUAL_URLS,
+                db: stub
+            })
+        ).rejects.toMatchObject({ code: 'NO_ANNUAL_PRICE' });
+    });
+
+    it('throws CUSTOMER_NOT_FOUND when billing.customers.get returns null', async () => {
+        const billing = createAnnualBillingMock({ customer: null });
+        const { stub } = makeStubDb();
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: ANNUAL_URLS,
+                db: stub
+            })
+        ).rejects.toMatchObject({ code: 'CUSTOMER_NOT_FOUND' });
+    });
+
+    it('throws MISSING_INIT_POINT when checkout returns no URLs', async () => {
+        const billing = createAnnualBillingMock({
+            checkoutResult: { id: 'checkout-empty' }
+        });
+        const { stub } = makeStubDb();
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: ANNUAL_URLS,
+                db: stub
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_INIT_POINT' });
     });
 });

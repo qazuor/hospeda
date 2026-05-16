@@ -67,6 +67,8 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
     switch (err.code) {
         case 'PLAN_NOT_FOUND':
         case 'NO_MONTHLY_PRICE':
+        case 'NO_ANNUAL_PRICE':
+        case 'CUSTOMER_NOT_FOUND':
             return new HTTPException(404, { message: err.message });
         case 'INVALID_PROMO_CODE':
             return new HTTPException(422, { message: err.message });
