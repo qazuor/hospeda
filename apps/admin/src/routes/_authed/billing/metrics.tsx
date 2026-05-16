@@ -75,7 +75,7 @@ function BillingMetricsPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.metrics.title')}</h2>
+                    <h1 className="mb-2 font-bold text-2xl">{t('admin-billing.metrics.title')}</h1>
                     <p className="text-muted-foreground">
                         {t('admin-billing.metrics.description')}
                     </p>

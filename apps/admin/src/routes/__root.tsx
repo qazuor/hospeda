@@ -290,23 +290,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         </QueryClientProvider>
                     </QZPayThemeProvider>
                 </QZPayProvider>
-                <FeedbackErrorBoundary
-                    appSource="admin"
-                    apiUrl={env.VITE_API_URL}
-                    feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
-                    deployVersion={env.VITE_APP_VERSION}
-                >
-                    <FeedbackFAB
-                        apiUrl={env.VITE_API_URL}
+                {import.meta.env.VITE_FEEDBACK_ENABLED !== 'false' && (
+                    <FeedbackErrorBoundary
                         appSource="admin"
+                        apiUrl={env.VITE_API_URL}
+                        feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
                         deployVersion={env.VITE_APP_VERSION}
-                        userId={session?.user.id}
-                        userEmail={session?.user.email}
-                        userName={session?.user.name}
-                        getSentryEventId={getSentryEventId}
-                        onSentryFeedback={handleSentryFeedback}
-                    />
-                </FeedbackErrorBoundary>
+                    >
+                        <FeedbackFAB
+                            apiUrl={env.VITE_API_URL}
+                            appSource="admin"
+                            deployVersion={env.VITE_APP_VERSION}
+                            userId={session?.user.id}
+                            userEmail={session?.user.email}
+                            userName={session?.user.name}
+                            getSentryEventId={getSentryEventId}
+                            onSentryFeedback={handleSentryFeedback}
+                        />
+                    </FeedbackErrorBoundary>
+                )}
                 {env.NODE_ENV === 'development' && <TanstackDevtools />}
                 <Scripts />
             </body>

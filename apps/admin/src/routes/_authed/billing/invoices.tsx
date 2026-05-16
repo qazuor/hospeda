@@ -136,7 +136,7 @@ function BillingInvoicesPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.invoices.title')}</h2>
+                    <h1 className="mb-2 font-bold text-2xl">{t('admin-billing.invoices.title')}</h1>
                     <p className="text-muted-foreground">
                         {t('admin-billing.invoices.description')}
                     </p>
