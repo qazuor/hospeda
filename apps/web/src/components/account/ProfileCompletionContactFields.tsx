@@ -2,8 +2,10 @@
  * @file ProfileCompletionContactFields.tsx
  * @description Pure presentational subcomponent for the ProfileCompletion island.
  *
- * Renders: phone (country code + number), locale dropdown, newsletter
- * opt-in, and terms acceptance checkboxes.
+ * Renders the contact fields: phone (country code + number) and locale
+ * preference. Newsletter opt-in and terms acceptance were moved to
+ * {@link ./ProfileCompletionConsentFields} so the consent block sits at
+ * the END of the form (SPEC-113 polish).
  *
  * All state lives in `ProfileCompletion.client.tsx`. This component is
  * a pure controlled presentation layer.
@@ -19,18 +21,12 @@ import styles from './ProfileCompletion.module.css';
 
 /** Props for the contact-fields subcomponent. */
 export interface ProfileCompletionContactFieldsProps {
-    /** Active locale — used for the terms link URL. */
-    readonly locale: SupportedLocale;
     /** Selected phone country code (e.g. '+54'). */
     readonly phoneCode: string;
     /** Phone number (without country code). */
     readonly phoneNumber: string;
     /** Currently selected locale preference. */
     readonly selectedLocale: SupportedLocale;
-    /** Whether newsletter opt-in is checked. */
-    readonly newsletter: boolean;
-    /** Whether terms checkbox is checked. */
-    readonly acceptedTerms: boolean;
     /** Field-level errors from the parent. */
     readonly errors: ProfileCompletionFieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
@@ -43,38 +39,30 @@ export interface ProfileCompletionContactFieldsProps {
     readonly onPhoneNumberChange: (value: string) => void;
     /** Handler for locale selection change. */
     readonly onLocaleChange: (value: SupportedLocale) => void;
-    /** Handler for newsletter checkbox change. */
-    readonly onNewsletterChange: (checked: boolean) => void;
-    /** Handler for terms checkbox change. */
-    readonly onAcceptedTermsChange: (checked: boolean) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
- * Contact and preference fields subcomponent.
+ * Contact fields subcomponent.
  *
- * Renders phone, locale, newsletter, and terms fields as controlled inputs.
- * Error messages are rendered as passed-in strings (the parent maps i18n keys
- * to translated messages before passing them down via `errors`).
+ * Renders phone (country code + number) and locale preference as
+ * controlled inputs. Error messages are rendered as passed-in strings
+ * (the parent maps i18n keys to translated messages before passing them
+ * down via `errors`).
  *
  * @param props - Component props (see {@link ProfileCompletionContactFieldsProps})
  */
 export function ProfileCompletionContactFields({
-    locale,
     phoneCode,
     phoneNumber,
     selectedLocale,
-    newsletter,
-    acceptedTerms,
     errors,
     submitting,
     t,
     onPhoneCodeChange,
     onPhoneNumberChange,
-    onLocaleChange,
-    onNewsletterChange,
-    onAcceptedTermsChange
+    onLocaleChange
 }: ProfileCompletionContactFieldsProps) {
     return (
         <>
@@ -172,61 +160,6 @@ export function ProfileCompletionContactFields({
                         {t('account.profileCompletion.fields.localePt', 'Português')}
                     </option>
                 </select>
-            </div>
-
-            {/* ── Newsletter opt-in ─────────────────────────────────── */}
-            <label className={styles.checkboxRow}>
-                <input
-                    type="checkbox"
-                    className={styles.checkbox}
-                    checked={newsletter}
-                    onChange={(e) => onNewsletterChange(e.target.checked)}
-                    disabled={submitting}
-                />
-                <span className={styles.checkboxLabel}>
-                    {t(
-                        'account.profileCompletion.fields.newsletter',
-                        'Quiero recibir novedades y promociones por email'
-                    )}
-                </span>
-            </label>
-
-            {/* ── Terms acceptance ──────────────────────────────────── */}
-            <div className={styles.field}>
-                <label className={styles.checkboxRow}>
-                    <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={acceptedTerms}
-                        onChange={(e) => onAcceptedTermsChange(e.target.checked)}
-                        aria-required="true"
-                        aria-describedby={errors.terms ? 'pc-terms-error' : undefined}
-                        disabled={submitting}
-                    />
-                    <span className={styles.checkboxLabel}>
-                        {t('account.profileCompletion.fields.terms', 'Acepto los')}{' '}
-                        <a
-                            href={`/${locale}/legal/terminos/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.checkboxLink}
-                        >
-                            {t(
-                                'account.profileCompletion.fields.termsLink',
-                                'términos y condiciones'
-                            )}
-                        </a>
-                    </span>
-                </label>
-                {errors.terms && (
-                    <p
-                        id="pc-terms-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {errors.terms}
-                    </p>
-                )}
             </div>
         </>
     );
