@@ -198,29 +198,34 @@
             "id": "T-006",
             "title": "Catalogue files using inline style=\"transition-delay / CSS vars\" patterns",
             "description": "Survey apps/web/src/ for every occurrence of inline `style=` containing transition-delay, --corner-bg, --brand-accent, --wave-header-padding-top, width:0% or opacity:0. Use rg with explicit globs `-g '*.astro' -g '*.tsx'` (ripgrep does NOT search .astro by default — important). Produce a markdown table in `.claude/tasks/SPEC-046-csp-post-deploy-verification/inventory-09a.md` listing file path, line, pattern, and target refactor strategy (stagger / css-var / animation-state). This task produces ONLY the inventory — no refactor here. Acceptance: inventory file exists and is verified by spot-checking 3 entries against the actual files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007", "T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Run rg with -g '*.astro' -g '*.tsx' for each pattern",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Classify each hit into stagger / css-var / animation-state",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Write inventory-09a.md with the table", "completed": false },
-                { "title": "Spot-check 3 entries against source", "completed": false }
+                { "title": "Write inventory-09a.md with the table", "completed": true },
+                { "title": "Spot-check 3 entries against source", "completed": true }
             ],
             "tags": ["discovery", "audit", "gap-09a"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null,
+                "notes": "Inventory en .claude/tasks/SPEC-046-csp-post-deploy-verification/inventory-09a.md. Totales por bucket: stagger 35 entries (25 files), css-var 4 entries (4 files) + 1 candidate exception, animation-state 1 entry (1 file). 40 entries in-scope. 3 spot-checks verificados contra source (CategoryTiles:61, AccommodationCard:106, NavigationProgress:20). Descubrimientos extra: --brand-accent NO existe en el código (pattern del spec list que ya no aplica); 2 inline styles fuera del scope GAP-046-09a documentados como out-of-scope (UserFavoritesList margin + SearchBar opacity 0.5); stagger steps no son uniformes (60/80/100ms) — T-007 va a necesitar soportar los 3 o estandarizar. ripgrep no instalado en worktree; usé grep -rnE --include='*.astro' --include='*.tsx' que es equivalente para esta búsqueda."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T20:15:00.000Z",
+                "completed": "2026-05-16T20:30:00.000Z"
             }
         },
         {
@@ -493,9 +498,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5
     }
