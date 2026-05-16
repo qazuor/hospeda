@@ -9,15 +9,21 @@
  * @module routes/webhooks/mercadopago/payment-logic
  */
 
-import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
-import { eq, getDb } from '@repo/db';
+import { and, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonService } from '../../../services/addon.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
-import { extractAddonFromReference, extractAddonMetadata, extractPaymentInfo } from './utils';
+import {
+    extractAddonFromReference,
+    extractAddonMetadata,
+    extractAnnualSubscriptionMetadata,
+    extractPaymentInfo
+} from './utils';
 
 /** Input for processing a payment.updated event */
 interface ProcessPaymentUpdatedInput {
@@ -33,6 +39,148 @@ interface ProcessPaymentUpdatedInput {
 interface ProcessPaymentUpdatedResult {
     readonly success: boolean;
     readonly addonConfirmed: boolean;
+    /** True when this event activated an annual subscription (SPEC-141 D1). */
+    readonly annualSubscriptionConfirmed?: boolean;
+}
+
+/**
+ * MP payment statuses that indicate the charge cleared successfully and
+ * the linked annual subscription should be activated.
+ */
+const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
+
+/**
+ * Activate an annual local subscription after the linked MP one-time
+ * payment cleared (SPEC-141 D1).
+ *
+ * Idempotent: a subsequent webhook for the same payment finds the
+ * subscription already in `active` status and returns without
+ * re-recording anything. Errors are swallowed (logged) so a single
+ * noisy event cannot block the webhook bucket — MP will retry.
+ */
+async function confirmAnnualSubscription(input: {
+    readonly annualSubscriptionId: string;
+    readonly providerPaymentId: string;
+    readonly amount: number;
+    readonly currency: string;
+    readonly billing: QZPayBilling;
+    readonly source: string;
+}): Promise<{ confirmed: boolean }> {
+    const { annualSubscriptionId, providerPaymentId, amount, currency, billing, source } = input;
+
+    const db = getDb();
+    const rows = await db
+        .select({
+            id: billingSubscriptions.id,
+            customerId: billingSubscriptions.customerId,
+            status: billingSubscriptions.status
+        })
+        .from(billingSubscriptions)
+        .where(
+            and(
+                eq(billingSubscriptions.id, annualSubscriptionId),
+                isNull(billingSubscriptions.deletedAt)
+            )
+        )
+        .limit(1);
+
+    const sub = rows[0];
+    if (!sub) {
+        apiLogger.warn(
+            { annualSubscriptionId, providerPaymentId, source },
+            'Annual subscription confirmation: local subscription not found — payment ignored'
+        );
+        return { confirmed: false };
+    }
+
+    if (sub.status === SubscriptionStatusEnum.ACTIVE) {
+        apiLogger.info(
+            { annualSubscriptionId, providerPaymentId, source },
+            'Annual subscription confirmation: subscription already active — idempotent skip'
+        );
+        return { confirmed: false };
+    }
+
+    if (sub.status !== SubscriptionStatusEnum.PENDING_PROVIDER) {
+        apiLogger.warn(
+            {
+                annualSubscriptionId,
+                providerPaymentId,
+                source,
+                currentStatus: sub.status
+            },
+            'Annual subscription confirmation: subscription is not pending_provider — payment ignored'
+        );
+        return { confirmed: false };
+    }
+
+    // Dedupe at the payment level too: if a row with this MP payment id
+    // already exists, skip the record() to avoid double-inserts when MP
+    // resends `payment.updated` for the same charge.
+    const existingPayment = await db
+        .select({ id: billingSubscriptions.id })
+        .from(sql`billing_payments`)
+        .where(sql`provider_payment_ids->>'mercadopago' = ${providerPaymentId}`)
+        .limit(1);
+
+    if (existingPayment.length === 0) {
+        const amountInCentavos = Math.round(amount * 100);
+        try {
+            await billing.payments.record({
+                id: crypto.randomUUID(),
+                customerId: sub.customerId,
+                amount: amountInCentavos,
+                currency: currency as QZPayCurrency,
+                status: 'succeeded' as QZPayPaymentStatus,
+                provider: 'mercadopago',
+                providerPaymentId,
+                subscriptionId: sub.id,
+                metadata: {
+                    flow: 'annual-upfront',
+                    annualSubscriptionId
+                }
+            });
+        } catch (recordErr) {
+            apiLogger.error(
+                {
+                    annualSubscriptionId,
+                    providerPaymentId,
+                    source,
+                    error: recordErr instanceof Error ? recordErr.message : String(recordErr)
+                },
+                'Annual subscription confirmation: failed to record billing_payments row — continuing with status flip'
+            );
+        }
+    } else {
+        apiLogger.debug(
+            { annualSubscriptionId, providerPaymentId, source },
+            'Annual subscription confirmation: payment already recorded — skipping record'
+        );
+    }
+
+    // Flip the local subscription status from pending_provider to active.
+    // billing.subscriptions.update() does not accept 'pending_provider' as
+    // an input status (qzpay enum is narrower than Hospeda's), so we
+    // update the row directly via Drizzle — matches the pattern used
+    // by subscription-logic.ts for the monthly preapproval lifecycle.
+    await db
+        .update(billingSubscriptions)
+        .set({ status: SubscriptionStatusEnum.ACTIVE, updatedAt: new Date() })
+        .where(eq(billingSubscriptions.id, sub.id));
+
+    apiLogger.info(
+        {
+            annualSubscriptionId,
+            providerPaymentId,
+            customerId: sub.customerId,
+            amount,
+            currency,
+            source
+        },
+        'Annual subscription activated by MP payment confirmation'
+    );
+
+    return { confirmed: true };
 }
 
 /**
@@ -88,6 +236,46 @@ export async function processPaymentUpdated({
                 failureReason,
                 billing
             );
+        }
+    }
+
+    // SPEC-141 D1: annual subscription confirmation. The metadata
+    // carries `annualSubscriptionId` set by initiatePaidAnnualSubscription;
+    // we look it up here BEFORE the addon dispatch since both flows go
+    // through the same payment.updated event but are mutually exclusive
+    // (annual checkout never carries addonSlug metadata and vice versa).
+    const annualSubscriptionId = extractAnnualSubscriptionMetadata(data.metadata);
+
+    if (annualSubscriptionId && paymentInfo && MP_APPROVED_STATUSES.has(paymentInfo.status)) {
+        const providerPaymentId =
+            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+        if (providerPaymentId) {
+            try {
+                const result = await confirmAnnualSubscription({
+                    annualSubscriptionId,
+                    providerPaymentId,
+                    amount: paymentInfo.amount,
+                    currency: paymentInfo.currency,
+                    billing,
+                    source
+                });
+                return {
+                    success: true,
+                    addonConfirmed: false,
+                    annualSubscriptionConfirmed: result.confirmed
+                };
+            } catch (annualErr) {
+                apiLogger.error(
+                    {
+                        annualSubscriptionId,
+                        source,
+                        error: annualErr instanceof Error ? annualErr.message : String(annualErr)
+                    },
+                    'Annual subscription confirmation: unexpected error — event acknowledged'
+                );
+                return { success: false, addonConfirmed: false };
+            }
         }
     }
 

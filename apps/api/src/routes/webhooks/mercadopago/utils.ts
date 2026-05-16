@@ -290,6 +290,30 @@ export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
 }
 
 /**
+ * Extract annual-subscription metadata from a payment event.
+ *
+ * The annual subscription flow (SPEC-141 D1) embeds the local
+ * subscription UUID in the MP checkout's metadata as
+ * `annualSubscriptionId`. When the payment.updated webhook fires for
+ * an `approved`/`accredited` charge, the handler dispatches to the
+ * annual-confirmation path by this metadata key (mirrors how
+ * `addonSlug` + `customerId` dispatches to add-on confirmation).
+ *
+ * @param metadata - Payment metadata object
+ * @returns The local subscription UUID if found, null otherwise.
+ */
+export function extractAnnualSubscriptionMetadata(metadata: unknown): string | null {
+    if (!metadata || typeof metadata !== 'object') {
+        return null;
+    }
+    const meta = metadata as Record<string, unknown>;
+    if (typeof meta.annualSubscriptionId === 'string' && meta.annualSubscriptionId.length > 0) {
+        return meta.annualSubscriptionId;
+    }
+    return null;
+}
+
+/**
  * Check if external_reference follows add-on pattern (addon_SLUG_TIMESTAMP).
  *
  * @param externalReference - External reference string
