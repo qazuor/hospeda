@@ -64,10 +64,10 @@ export default defineConfig({
     trailingSlash: 'always',
     adapter: node({
         mode: 'standalone',
-        // Astro 6 + @astrojs/node 10: serve response headers (including
-        // security headers attached in middleware) for prerendered pages too,
-        // not only SSR-rendered pages. Previously the middleware-attached
-        // CSP / X-Robots-Tag did not reach cached static responses.
+        // Astro 6 + @astrojs/node 10: serve response headers (including any
+        // attached by middleware) for prerendered pages too. Pays off once
+        // CSP migrates from middleware response.headers.set() to native
+        // security.csp (follow-up SPEC).
         staticHeaders: true
     }),
 

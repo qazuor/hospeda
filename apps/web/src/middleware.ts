@@ -232,9 +232,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // to keep search engines out while we share the real app on a subdomain
     // before the official launch.
     if (NOINDEX_HOSTS.length > 0) {
-        const requestHost = (
-            context.request.headers.get('host') ?? context.url.hostname
-        ).toLowerCase();
+        const requestHost = context.url.hostname.toLowerCase();
         if (NOINDEX_HOSTS.includes(requestHost)) {
             response.headers.set('X-Robots-Tag', 'noindex, nofollow');
         }
