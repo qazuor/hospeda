@@ -122,8 +122,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 6: Parse the session only for routes that actually need it.
     // Calling the auth API on every request would be wasteful; public pages
     // don't need the user object at all.
+    //
+    // `context.isPrerendered` (Astro 5+) is true when the route being rendered
+    // is statically prerendered. On prerendered pages there is no real request,
+    // so accessing `request.headers` triggers an Astro 6 warning and there is
+    // no session to parse anyway. Skip session work for those pages and treat
+    // the visitor as anonymous — client islands will hydrate and fetch their
+    // own session via `/api/v1/public/auth/me` when needed.
     const needsSession =
-        isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path });
+        !context.isPrerendered &&
+        (isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path }));
 
     if (needsSession) {
         const user = await parseSessionUser({
