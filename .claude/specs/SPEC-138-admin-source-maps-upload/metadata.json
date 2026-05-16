@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-138",
+    "title": "Upload admin source maps to Sentry on build",
+    "type": "fix",
+    "complexity": "small",
+    "status": "in-progress",
+    "created": "2026-05-16T04:30:00Z",
+    "startedAt": "2026-05-16T04:45:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["admin", "sentry", "source-maps", "monitoring", "follow-up", "spec-111"]
+}

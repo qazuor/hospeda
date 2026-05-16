@@ -6,6 +6,7 @@
  * rather than being hardcoded here so they have a single source of truth.
  */
 
+import * as Sentry from '@sentry/astro';
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
 import {
@@ -356,34 +357,54 @@ export async function parseSessionUser({
 
     const apiUrl = getMiddlewareApiUrl();
 
-    try {
-        const response = await fetch(`${apiUrl}/api/auth/get-session`, {
-            headers: {
-                cookie: cookieHeader
+    // Instrument the Better Auth round-trip so we can measure p50/p95 in
+    // Sentry and decide whether server-side session caching (SPEC-111 §4.3
+    // candidate) is worth the architectural cost. Span is a no-op when
+    // Sentry is not initialized (PUBLIC_SENTRY_DSN unset).
+    return Sentry.startSpan(
+        {
+            name: 'web.middleware.parseSessionUser',
+            op: 'http.client',
+            attributes: {
+                'http.url': `${apiUrl}/api/auth/get-session`,
+                'http.method': 'GET'
             }
-        });
+        },
+        async (span) => {
+            try {
+                const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+                    headers: {
+                        cookie: cookieHeader
+                    }
+                });
 
-        if (!response.ok) {
-            return null;
+                span?.setAttribute('http.response.status_code', response.status);
+
+                if (!response.ok) {
+                    return null;
+                }
+
+                const data = (await response.json()) as {
+                    user?: { id?: string; name?: string; email?: string };
+                };
+
+                if (!data?.user?.id || !data?.user?.email) {
+                    return null;
+                }
+
+                return {
+                    id: data.user.id,
+                    name: data.user.name || '',
+                    email: data.user.email
+                };
+            } catch {
+                span?.setStatus({ code: 2, message: 'internal_error' });
+                webLogger.warn('[middleware] Failed to validate session against Better Auth API');
+
+                return null;
+            }
         }
-
-        const data = (await response.json()) as {
-            user?: { id?: string; name?: string; email?: string };
-        };
-
-        if (!data?.user?.id || !data?.user?.email) {
-            return null;
-        }
-
-        return {
-            id: data.user.id,
-            name: data.user.name || '',
-            email: data.user.email
-        };
-    } catch {
-        webLogger.warn('[middleware] Failed to validate session against Better Auth API');
-        return null;
-    }
+    );
 }
 
 /**

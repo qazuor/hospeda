@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-132",
+    "title": "Migrate shared packages to Zod 4 top-level format validators",
+    "type": "cleanup",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-15T22:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["cleanup", "zod", "schemas", "service-core", "validation", "follow-up", "spec-111"]
+}

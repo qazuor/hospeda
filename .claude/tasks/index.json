@@ -361,6 +361,41 @@
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
             "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-111",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "status": "in-progress",
+            "progress": "0/9",
+            "path": "SPEC-111-astro-server-islands-fix"
+        },
+        {
+            "specId": "SPEC-130",
+            "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+            "status": "draft",
+            "progress": "0/5",
+            "path": "SPEC-130-deprecate-vercel-env-stubs"
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests"
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-132-zod-4-cross-package-migration"
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "status": "draft",
+            "progress": "0/5",
+            "path": "SPEC-133-evaluate-astro-env"
         }
     ],
     "standalone": {

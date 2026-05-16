@@ -22,6 +22,7 @@
  *   - `facebookUrl/…` ← `data.socialNetworks?.{facebook, instagram, …}`
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
@@ -37,7 +38,7 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.editProfile.title', 'Editar perfil');
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiUrl = getApiUrl();
 
 /**
  * Build an empty fallback user shape. Used when the API call fails so

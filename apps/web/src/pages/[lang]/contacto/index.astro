@@ -6,6 +6,7 @@
  * @rendering SSG (prerender)
  */
 
+import { getSiteUrl } from '@/lib/env';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { ContactForm } from '@/components/ContactForm.client';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
@@ -115,7 +116,7 @@ const socialLinks = [
 ];
 
 // ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const contactPageJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'ContactPage',

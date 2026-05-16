@@ -1036,6 +1036,116 @@
             "discoveredDuring": "SPEC-103 T-012 + T-019 auth smoke (2026-05-14)"
         },
         {
+            "specId": "SPEC-111",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "type": "fix",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-111-astro-server-islands-fix",
+            "created": "2026-05-14T01:35:00Z",
+            "startedAt": "2026-05-15T00:00:00Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda2-spec-111-astro-server-islands-fix",
+            "branch": "spec/SPEC-111-astro-server-islands-fix",
+            "backfilledNote": "Orphan registration — spec dir existed since 2026-05-14 with status=draft, never recorded in index. Registered + flipped to in-progress on session start 2026-05-15.",
+            "tags": [
+                "astro",
+                "web",
+                "server-islands",
+                "build",
+                "runtime",
+                "investigation",
+                "upstream-bug"
+            ]
+        },
+        {
+            "specId": "SPEC-130",
+            "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+            "type": "cleanup",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-130-deprecate-vercel-env-stubs",
+            "created": "2026-05-15T17:50:00Z",
+            "discoveredDuring": "SPEC-111 worktree setup (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["cleanup", "scripts", "env", "vercel", "deprecation", "monorepo"]
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+            "type": "fix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests",
+            "created": "2026-05-15T18:30:00Z",
+            "discoveredDuring": "SPEC-111 T-111-04 validation (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"]
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "type": "cleanup",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-132-zod-4-cross-package-migration",
+            "created": "2026-05-15T22:00:00Z",
+            "discoveredDuring": "SPEC-111 Astro 6 impact analysis (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "cleanup",
+                "zod",
+                "schemas",
+                "service-core",
+                "validation",
+                "follow-up",
+                "spec-111"
+            ]
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "type": "evaluation",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-133-evaluate-astro-env",
+            "created": "2026-05-15T22:00:00Z",
+            "discoveredDuring": "SPEC-111 Astro 6 impact analysis (2026-05-15)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "evaluation",
+                "astro",
+                "env",
+                "schema",
+                "architecture",
+                "follow-up",
+                "spec-111"
+            ]
+        },
+        {
+            "specId": "SPEC-138",
+            "title": "Upload admin source maps to Sentry on build",
+            "type": "fix",
+            "complexity": "small",
+            "status": "in-progress",
+            "path": "SPEC-138-admin-source-maps-upload",
+            "created": "2026-05-16T04:30:00Z",
+            "discoveredDuring": "SPEC-111 Sentry config audit (2026-05-16)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["admin", "sentry", "source-maps", "monitoring", "follow-up", "spec-111"]
+        },
+        {
+            "specId": "SPEC-139",
+            "title": "Upload API source maps to Sentry on build",
+            "type": "fix",
+            "complexity": "small",
+            "status": "in-progress",
+            "path": "SPEC-139-api-source-maps-upload",
+            "created": "2026-05-16T04:35:00Z",
+            "discoveredDuring": "SPEC-111 Sentry config audit (2026-05-16)",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["api", "sentry", "source-maps", "monitoring", "tsup", "follow-up", "spec-111"]
+        },
+        {
             "specId": "SPEC-129",
             "title": "Security Audit — Dependency Vulnerabilities Remediation",
             "type": "security",

@@ -16,6 +16,7 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -33,7 +34,7 @@ if (!user) {
 }
 
 const t = createT(locale);
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiUrl = getApiUrl();
 
 const title = t('account.profileCompletion.pageTitle', 'Completá tu perfil');
 const description = t(

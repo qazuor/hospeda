@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-133",
+    "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+    "type": "evaluation",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-15T22:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["evaluation", "astro", "env", "schema", "architecture", "follow-up", "spec-111"]
+}
