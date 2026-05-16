@@ -194,7 +194,15 @@ export const useCreateAccommodationMutation = () => {
                 method: 'POST',
                 body: data
             });
-            return response.data as AccommodationCore;
+            // The API returns: { success, data: AccommodationCore, metadata }.
+            // Unwrap the envelope so callers receive the entity directly with
+            // a real `id` (SPEC-117 D-ACCOM.5 — redirect to /accommodations/undefined).
+            const apiResponse = response.data as {
+                success: boolean;
+                data: AccommodationCore;
+                metadata: unknown;
+            };
+            return apiResponse.data;
         },
         onSuccess: (newAccommodation) => {
             // Invalidate lists to show the new accommodation

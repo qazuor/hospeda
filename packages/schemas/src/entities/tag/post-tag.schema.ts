@@ -35,12 +35,13 @@ export const PostTagSchema = z.object({
     }),
     createdById: UserIdSchema.nullable(),
     updatedById: UserIdSchema.nullable(),
+    // Use .nullish() (not .optional()) because Drizzle returns `null` for unset audit columns.
     deletedAt: z.coerce
         .date({
             message: 'zodError.common.deletedAt.required'
         })
-        .optional(),
-    deletedById: UserIdSchema.optional(),
+        .nullish(),
+    deletedById: UserIdSchema.nullish(),
 
     // Lifecycle
     lifecycleState: LifecycleStatusEnumSchema,

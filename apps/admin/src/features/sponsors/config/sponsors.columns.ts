@@ -1,4 +1,4 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import type { Sponsor } from '../schemas/sponsors.schemas';
@@ -6,11 +6,11 @@ import type { Sponsor } from '../schemas/sponsors.schemas';
 /**
  * Creates column configuration for sponsors list
  */
-export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
+export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig<Sponsor>[] =>
     [
         {
             id: 'name',
-            header: 'Name',
+            header: t('admin-entities.columns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.ENTITY,
@@ -21,20 +21,24 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'type',
-            header: 'Type',
+            header: t('admin-entities.columns.type'),
             accessorKey: 'type',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
                     value: ClientTypeEnum.POST_SPONSOR,
-                    label: 'Post Sponsor',
+                    label: t('admin-entities.types.sponsor.postSponsor'),
                     color: BadgeColor.BLUE
                 },
-                { value: ClientTypeEnum.ADVERTISER, label: 'Advertiser', color: BadgeColor.GREEN },
+                {
+                    value: ClientTypeEnum.ADVERTISER,
+                    label: t('admin-entities.types.sponsor.advertiser'),
+                    color: BadgeColor.GREEN
+                },
                 {
                     value: ClientTypeEnum.HOST,
-                    label: 'Host',
+                    label: t('admin-entities.types.sponsor.host'),
                     color: BadgeColor.PURPLE
                 }
             ],
@@ -43,7 +47,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'description',
-            header: 'Description',
+            header: t('admin-entities.columns.description'),
             accessorKey: 'description',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -52,7 +56,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'email',
-            header: 'Email',
+            header: t('admin-entities.columns.email'),
             accessorKey: 'contact.email',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -61,7 +65,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'phone',
-            header: 'Phone',
+            header: t('admin-entities.columns.phone'),
             accessorKey: 'contact.phone',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -70,7 +74,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'website',
-            header: 'Website',
+            header: t('admin-entities.columns.website'),
             accessorKey: 'contact.website',
             enableSorting: false,
             columnType: ColumnType.LINK,
@@ -86,20 +90,24 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'lifecycleState',
-            header: 'Status',
+            header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: LifecycleStatusEnum.ACTIVE, label: 'Active', color: BadgeColor.SUCCESS },
+                {
+                    value: LifecycleStatusEnum.ACTIVE,
+                    label: t('admin-entities.states.lifecycle.active'),
+                    color: BadgeColor.SUCCESS
+                },
                 {
                     value: LifecycleStatusEnum.DRAFT,
-                    label: 'Draft',
+                    label: t('admin-entities.states.lifecycle.draft'),
                     color: BadgeColor.WARNING
                 },
                 {
                     value: LifecycleStatusEnum.ARCHIVED,
-                    label: 'Archived',
+                    label: t('admin-entities.states.lifecycle.archived'),
                     color: BadgeColor.SECONDARY
                 }
             ],
@@ -108,7 +116,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
         },
         {
             id: 'createdAt',
-            header: 'Created',
+            header: t('admin-entities.columns.createdAt'),
             accessorKey: 'createdAt',
             enableSorting: true,
             columnType: ColumnType.TIME_AGO,

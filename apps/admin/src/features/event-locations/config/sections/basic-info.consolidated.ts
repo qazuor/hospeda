@@ -50,6 +50,28 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                 minLength: 2,
                 pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
             }
+        },
+        // Required by the EventLocation create schema. Without this field
+        // POST /admin/event-locations rejected with VALIDATION_ERROR on
+        // destinationId (SPEC-117 D-4.1).
+        {
+            id: 'destinationId',
+            type: FieldTypeEnum.DESTINATION_SELECT,
+            required: true,
+            modes: ['view', 'edit', 'create'],
+            label: 'Destino',
+            description: 'Destino turístico donde se ubica este lugar',
+            placeholder: 'Selecciona un destino',
+            permissions: {
+                view: [PermissionEnum.EVENT_LOCATION_VIEW],
+                edit: [PermissionEnum.EVENT_LOCATION_UPDATE]
+            },
+            typeConfig: {
+                searchMode: 'client',
+                minCharToSearch: 1,
+                showAvatar: false,
+                clearable: true
+            }
         }
     ]
 });

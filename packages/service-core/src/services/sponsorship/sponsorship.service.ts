@@ -1,13 +1,16 @@
-import { SponsorshipModel } from '@repo/db';
+import { SponsorshipLevelModel, SponsorshipModel } from '@repo/db';
 import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
+    ServiceErrorCode,
     SponsorshipAdminSearchSchema,
     SponsorshipCreateInputSchema,
     SponsorshipSearchSchema,
     SponsorshipUpdateInputSchema
 } from '@repo/schemas';
+import { toSlug } from '@repo/utils';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { ServiceError } from '../../types';
 import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import {
     checkCanAdminList,
@@ -39,6 +42,7 @@ export class SponsorshipService extends BaseCrudService<
     static readonly ENTITY_NAME = 'sponsorship';
     protected readonly entityName = SponsorshipService.ENTITY_NAME;
     protected readonly model: SponsorshipModel;
+    protected readonly levelModel: SponsorshipLevelModel;
 
     protected readonly createSchema = SponsorshipCreateInputSchema;
     protected readonly updateSchema = SponsorshipUpdateInputSchema;
@@ -56,10 +60,59 @@ export class SponsorshipService extends BaseCrudService<
         return ['slug', 'couponCode'];
     }
 
-    constructor(ctx: ServiceConfig & { model?: SponsorshipModel }) {
+    constructor(
+        ctx: ServiceConfig & { model?: SponsorshipModel; levelModel?: SponsorshipLevelModel }
+    ) {
         super(ctx, SponsorshipService.ENTITY_NAME);
         this.model = ctx.model ?? new SponsorshipModel();
+        this.levelModel = ctx.levelModel ?? new SponsorshipLevelModel();
         this.adminSearchSchema = SponsorshipAdminSearchSchema;
+    }
+
+    /**
+     * Lifecycle hook: runs after `_canCreate` and before persistence.
+     *
+     * SPEC-117 follow-up #3 — auto-generate `slug` from sponsor + target when
+     * not provided. The DB column is NOT NULL; the create schema marks slug
+     * optional, so the gap was filled by callers (admin dialog, web flow) on
+     * their own. This hook closes the gap server-side.
+     *
+     * SPEC-117 follow-up #4 — validate that the chosen level's `target_type`
+     * matches the sponsorship's `targetType`. Without this, the DB FK accepts
+     * any combination and Postgres returns an opaque DATABASE_ERROR when a
+     * downstream constraint trips (or worse, the row persists with mismatched
+     * semantics). Surface a clear 400 instead.
+     */
+    protected async _beforeCreate(
+        data: SponsorshipCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<Sponsorship>> {
+        const updates: Partial<Sponsorship> = {};
+
+        if (data.levelId) {
+            const level = await this.levelModel.findById(data.levelId);
+            if (!level) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Sponsorship level ${data.levelId} does not exist`
+                );
+            }
+            if (level.targetType !== data.targetType) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Level "${level.name}" applies to ${level.targetType}, not ${data.targetType}. Choose a matching level.`
+                );
+            }
+        }
+
+        if (!data.slug || data.slug.trim().length === 0) {
+            const base = `${data.targetType ?? 'sponsorship'}-${data.sponsorUserId?.slice(0, 8) ?? ''}`;
+            const suffix = Date.now().toString(36);
+            updates.slug = `${toSlug(base) || 'sponsorship'}-${suffix}`;
+        }
+
+        return updates;
     }
 
     /**

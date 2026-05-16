@@ -187,5 +187,60 @@ export async function verifyEmail({
     }
 }
 
+/**
+ * sessionStorage key used by `UserMenu.client.tsx` to cache the `/auth/me`
+ * snapshot for 60 seconds. Mirrored here so `refreshBetterAuthSession` can
+ * clear it without importing the React component module (which would pull
+ * in @repo/icons and other client-only dependencies into anywhere this
+ * helper is used).
+ *
+ * KEEP IN SYNC with `AUTH_ME_CACHE_KEY` in
+ * `apps/web/src/components/shared/navigation/UserMenu.client.tsx`.
+ */
+const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+
+/**
+ * Force Better Auth to bypass its cookie cache and re-fetch the user record
+ * from the database, then update the session cookie with the fresh snapshot.
+ *
+ * Also clears the UserMenu's 60-second sessionStorage cache of `/auth/me` so
+ * the navbar doesn't paint from the stale snapshot during the brief window
+ * between hydration and the background `/auth/me` re-fetch.
+ *
+ * Call this from the client after a mutation that changes a field surfaced in
+ * the session (notably `display_name`, mapped to Better Auth's virtual `name`)
+ * BEFORE doing a hard navigation. Without this, the next page renders with
+ * the stale cached snapshot — the navbar appears correct from SSR for ~one
+ * frame, then UserMenu's `useEffect` reads the cached empty snapshot and the
+ * name flickers away.
+ *
+ * Best-effort: any network or auth error is swallowed — the caller proceeds
+ * with the redirect either way (the cache will refresh organically within
+ * the cookie cache TTL).
+ */
+export async function refreshBetterAuthSession(): Promise<void> {
+    // Clear the navbar's session-cache snapshot synchronously first so even if
+    // the fetch below fails / is slow, the UserMenu doesn't render the stale
+    // cached state.
+    if (typeof sessionStorage !== 'undefined') {
+        try {
+            sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+        } catch {
+            // sessionStorage may throw in private mode — ignore.
+        }
+    }
+
+    const baseURL = getAuthBaseUrl();
+    try {
+        await fetch(`${baseURL}/api/auth/get-session?disableCookieCache=true`, {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store'
+        });
+    } catch {
+        // Best-effort: swallow.
+    }
+}
+
 /** Inferred session type from the Better Auth server config */
 export type Session = typeof authClient.$Infer.Session;

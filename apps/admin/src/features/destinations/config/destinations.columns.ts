@@ -1,14 +1,16 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
 import type { Destination } from '../schemas/destinations.schemas';
 
 /**
  * Column configuration for destinations list
  */
-export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[] => [
+export const createDestinationsColumns = (
+    t: ColumnTFunction
+): readonly ColumnConfig<Destination>[] => [
     {
         id: 'name',
-        header: 'Name',
+        header: t('admin-entities.columns.name'),
         accessorKey: 'name',
         enableSorting: true,
         columnType: ColumnType.ENTITY,
@@ -23,14 +25,14 @@ export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[
     },
     {
         id: 'accommodationsCount',
-        header: 'Accommodations',
+        header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationsCount',
         enableSorting: true,
         columnType: ColumnType.NUMBER
     },
     {
         id: 'featuredImage',
-        header: 'Featured Image',
+        header: t('admin-entities.columns.featuredImage'),
         accessorKey: 'media.featuredImage',
         enableSorting: false,
         columnType: ColumnType.IMAGE,
@@ -39,7 +41,7 @@ export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[
     },
     {
         id: 'gallery',
-        header: 'Gallery',
+        header: t('admin-entities.columns.gallery'),
         accessorKey: 'media.gallery',
         enableSorting: false,
         columnType: ColumnType.GALLERY,
@@ -48,7 +50,7 @@ export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[
     },
     {
         id: 'attractions',
-        header: 'Attractions',
+        header: t('admin-entities.columns.attractions'),
         accessorKey: 'attractions',
         enableSorting: false,
         columnType: ColumnType.LIST,
@@ -57,70 +59,114 @@ export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[
     },
     {
         id: 'averageRating',
-        header: 'Rating',
+        header: t('admin-entities.columns.rating'),
         accessorKey: 'averageRating',
         enableSorting: true,
         columnType: ColumnType.NUMBER
     },
     {
         id: 'reviewsCount',
-        header: 'Reviews',
+        header: t('admin-entities.columns.reviewsCount'),
         accessorKey: 'reviewsCount',
         enableSorting: true,
         columnType: ColumnType.NUMBER
     },
     {
         id: 'isFeatured',
-        header: 'Featured',
+        header: t('admin-entities.columns.featured'),
         accessorKey: 'isFeatured',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },
     {
         id: 'visibility',
-        header: 'Visibility',
+        header: t('admin-entities.columns.visibility'),
         accessorKey: 'visibility',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         badgeOptions: [
-            { value: 'PUBLIC', label: 'Public', color: BadgeColor.PURPLE },
-            { value: 'PRIVATE', label: 'Private', color: BadgeColor.CYAN },
-            { value: 'HIDDEN', label: 'Hidden', color: BadgeColor.PINK }
+            {
+                value: 'PUBLIC',
+                label: t('admin-entities.states.visibility.public'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'PRIVATE',
+                label: t('admin-entities.states.visibility.private'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'HIDDEN',
+                label: t('admin-entities.states.visibility.hidden'),
+                color: BadgeColor.PINK
+            }
         ]
     },
     {
         id: 'lifecycleState',
-        header: 'Status',
+        header: t('admin-entities.columns.status'),
         accessorKey: 'lifecycleState',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         startVisibleOnTable: false,
         startVisibleOnGrid: true,
         badgeOptions: [
-            { value: 'ACTIVE', label: 'Active', color: BadgeColor.CYAN },
-            { value: 'INACTIVE', label: 'Inactive', color: BadgeColor.PURPLE },
-            { value: 'ARCHIVED', label: 'Archived', color: BadgeColor.PINK },
-            { value: 'DELETED', label: 'Deleted', color: BadgeColor.GREEN }
+            {
+                value: 'ACTIVE',
+                label: t('admin-entities.states.lifecycle.active'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'INACTIVE',
+                label: t('admin-entities.states.lifecycle.inactive'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'ARCHIVED',
+                label: t('admin-entities.states.lifecycle.archived'),
+                color: BadgeColor.PINK
+            },
+            {
+                value: 'DELETED',
+                label: t('admin-entities.states.lifecycle.deleted'),
+                color: BadgeColor.GREEN
+            }
         ]
     },
     {
         id: 'moderationState',
-        header: 'Moderation',
+        header: t('admin-entities.columns.moderation'),
         accessorKey: 'moderationState',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         startVisibleOnTable: false,
         startVisibleOnGrid: false,
         badgeOptions: [
-            { value: 'PENDING', label: 'Pending', color: BadgeColor.PINK },
-            { value: 'APPROVED', label: 'Approved', color: BadgeColor.CYAN },
-            { value: 'REJECTED', label: 'Rejected', color: BadgeColor.PURPLE },
-            { value: 'UNDER_REVIEW', label: 'Under Review', color: BadgeColor.GREEN }
+            {
+                value: 'PENDING',
+                label: t('admin-entities.states.moderation.pending'),
+                color: BadgeColor.PINK
+            },
+            {
+                value: 'APPROVED',
+                label: t('admin-entities.states.moderation.approved'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'REJECTED',
+                label: t('admin-entities.states.moderation.rejected'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'UNDER_REVIEW',
+                label: t('admin-entities.states.moderation.underReview'),
+                color: BadgeColor.GREEN
+            }
         ]
     },
     {
         id: 'createdAt',
-        header: 'Created',
+        header: t('admin-entities.columns.createdAt'),
         accessorKey: 'createdAt',
         enableSorting: true,
         columnType: ColumnType.TIME_AGO

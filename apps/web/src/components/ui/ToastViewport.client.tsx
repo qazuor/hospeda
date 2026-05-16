@@ -16,13 +16,25 @@ import { cn } from '@/lib/cn';
 import {
     type Toast,
     type ToastAction,
+    drainPendingToast,
     getToasts,
     removeToast,
     subscribe
 } from '@/store/toast-store';
-import { CloseIcon } from '@repo/icons';
-import { useSyncExternalStore } from 'react';
+import { AlertTriangleIcon, CheckCircleIcon, CloseIcon, InfoIcon, XCircleIcon } from '@repo/icons';
+import { type ComponentType, useEffect, useSyncExternalStore } from 'react';
 import styles from './ToastViewport.module.css';
+
+/**
+ * Icon shown to the left of the toast message per variant. Gives the user a
+ * clear visual cue beyond the (subtle) border accent.
+ */
+const VARIANT_ICON: Record<Toast['type'], ComponentType<{ size: number; weight: string }>> = {
+    success: CheckCircleIcon,
+    error: XCircleIcon,
+    warning: AlertTriangleIcon,
+    info: InfoIcon
+};
 
 const EMPTY_TOASTS: ReadonlyArray<Toast> = [];
 
@@ -72,6 +84,7 @@ function ToastActionLink({
 
 function ToastItem({ toast }: { readonly toast: Toast }) {
     const dismiss = () => removeToast(toast.id);
+    const Icon = VARIANT_ICON[toast.type];
 
     return (
         <div
@@ -79,6 +92,15 @@ function ToastItem({ toast }: { readonly toast: Toast }) {
             className={cn(styles.toast, styles[`toast--${toast.type}`])}
             data-toast-type={toast.type}
         >
+            <span
+                className={styles.icon}
+                aria-hidden="true"
+            >
+                <Icon
+                    size={20}
+                    weight="fill"
+                />
+            </span>
             <p className={styles.message}>{toast.message}</p>
 
             {(toast.action || toast.secondaryAction) && (
@@ -126,6 +148,12 @@ function ToastItem({ toast }: { readonly toast: Toast }) {
  */
 export function ToastViewport() {
     const toasts = useSyncExternalStore(subscribe, getToasts, getServerSnapshot);
+
+    // Drain any toast persisted via `queueToastForNextPage` on a previous page.
+    // Runs once per mount (one effect call per page load).
+    useEffect(() => {
+        drainPendingToast();
+    }, []);
 
     if (toasts.length === 0) {
         return null;

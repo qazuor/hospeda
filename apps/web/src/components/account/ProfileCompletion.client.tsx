@@ -1,26 +1,39 @@
 /**
  * @file ProfileCompletion.client.tsx
- * @description React island for the post-signup profile completion form (SPEC-113 T-113-04).
+ * @description React island for the post-signup profile completion form (SPEC-113).
  *
- * Collects baseline profile data (full name, optional casual name, optional phone,
- * optional locale preference, optional newsletter opt-in, required terms acceptance)
- * and posts to POST /api/v1/protected/profile/complete.
+ * Orchestrator: owns ALL state and handlers, then delegates rendering to
+ * four pure subcomponents (in render order):
+ *   1. ProfileCompletionBasicFields   (avatar, name, displayName, birthDate)
+ *   2. ProfileCompletionContactFields (phone, locale)
+ *   3. ProfileCompletionMoreDetails   (collapsible: bio, website, occupation, socials, location)
+ *   4. ProfileCompletionConsentFields (newsletter opt-in, terms acceptance)
+ *
+ * Consent fields are kept at the END of the form so the user makes those
+ * decisions after providing all profile data.
  *
  * On success, redirects to the set-password screen if `requiresSetPassword === true`,
  * otherwise to `/[lang]/mi-cuenta/`.
  *
- * Hydration: caller MUST use `client:load` (the form must be interactive on first paint).
+ * Hydration: caller MUST use `client:load`.
  */
 
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useState } from 'react';
 import {
-    COUNTRY_CODES,
     type ProfileCompletionFieldErrors,
+    type ProfileCompletionPayload,
+    type SocialPlatform,
+    computeDisplayName,
     validateProfileCompletionFields
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
+import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
+import { ProfileCompletionConsentFields } from './ProfileCompletionConsentFields';
+import { ProfileCompletionContactFields } from './ProfileCompletionContactFields';
+import { ProfileCompletionMoreDetails } from './ProfileCompletionMoreDetails';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,8 +43,17 @@ export interface ProfileCompletionProps {
     readonly locale: SupportedLocale;
     /** API base URL (PUBLIC_API_URL from env). */
     readonly apiUrl: string;
-    /** Pre-filled display name from the session (OAuth provider or email signup). */
+    /**
+     * Pre-filled display name from the session (OAuth provider or email signup).
+     * @deprecated Use initialFirstName + initialLastName when available.
+     */
     readonly initialDisplayName?: string;
+    /** Pre-filled first name from the OAuth provider profile. */
+    readonly initialFirstName?: string;
+    /** Pre-filled last name from the OAuth provider profile. */
+    readonly initialLastName?: string;
+    /** OAuth avatar URL from the provider (users.image). */
+    readonly initialAvatarUrl?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -42,24 +64,75 @@ export interface ProfileCompletionProps {
  * Renders a form that collects baseline profile data for first-time users.
  * Posts to the profile completion endpoint and redirects based on the response.
  *
- * @param props - Component props
+ * @param props - Component props (see {@link ProfileCompletionProps})
  */
 export function ProfileCompletion({
     locale,
     apiUrl,
-    initialDisplayName = ''
+    initialDisplayName = '',
+    initialFirstName = '',
+    initialLastName = '',
+    initialAvatarUrl
 }: ProfileCompletionProps) {
     const { t } = createTranslations(locale);
 
-    // ── Form state ────────────────────────────────────────────────────────────
+    // ── Required fields ───────────────────────────────────────────────────────
 
-    const [displayName, setDisplayName] = useState(initialDisplayName);
-    const [firstName, setFirstName] = useState('');
+    const [firstName, setFirstName] = useState(initialFirstName);
+    const [lastName, setLastName] = useState(initialLastName);
+
+    const [displayNameOverride, setDisplayNameOverride] = useState(
+        initialDisplayName && !initialFirstName ? initialDisplayName : ''
+    );
+    const [displayNameTouched, setDisplayNameTouched] = useState(false);
+
+    const derivedDisplayName = computeDisplayName({
+        firstName,
+        lastName,
+        override: displayNameTouched ? displayNameOverride : ''
+    });
+
+    function handleDisplayNameChange(value: string): void {
+        setDisplayNameOverride(value);
+        setDisplayNameTouched(true);
+    }
+
+    function handleFirstNameChange(value: string): void {
+        setFirstName(value);
+        if (!displayNameTouched) setDisplayNameOverride('');
+    }
+
+    function handleLastNameChange(value: string): void {
+        setLastName(value);
+        if (!displayNameTouched) setDisplayNameOverride('');
+    }
+
+    // ── Optional fields ───────────────────────────────────────────────────────
+
+    const [birthDate, setBirthDate] = useState('');
+    const [imageUrl, setImageUrl] = useState(initialAvatarUrl ?? '');
     const [phoneCode, setPhoneCode] = useState('+54');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedLocale, setSelectedLocale] = useState<SupportedLocale>(locale);
-    const [newsletter, setNewsletter] = useState(false);
+    // Newsletter defaults to TRUE — pre-checked so the user opts OUT explicitly.
+    // The terms checkbox stays unchecked: acceptance must be an explicit action.
+    const [newsletter, setNewsletter] = useState(true);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+    // ── "Más detalles" section ────────────────────────────────────────────────
+
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [bio, setBio] = useState('');
+    const [website, setWebsite] = useState('');
+    const [occupation, setOccupation] = useState('');
+    const [socialNetworks, setSocialNetworks] = useState<Partial<Record<SocialPlatform, string>>>(
+        {}
+    );
+    const [locationCountry, setLocationCountry] = useState('');
+    const [locationRegion, setLocationRegion] = useState('');
+    const [locationCity, setLocationCity] = useState('');
+
+    // ── Form meta state ───────────────────────────────────────────────────────
 
     const [errors, setErrors] = useState<ProfileCompletionFieldErrors>({});
     const [globalError, setGlobalError] = useState<string | null>(null);
@@ -67,28 +140,34 @@ export function ProfileCompletion({
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Build E.164-compatible phone string. Empty if no phone number entered. */
+    /** Build E.164-compatible phone string. */
     function buildPhone(): string | undefined {
         const trimmed = phoneNumber.trim();
         if (!trimmed) return undefined;
-        const digits = trimmed.replace(/[\s\-().]/g, '');
-        return `${phoneCode}${digits}`;
+        return `${phoneCode}${trimmed.replace(/[\s\-().]/g, '')}`;
     }
 
-    /** Map Zod error key to the translated message. */
-    function errorMessage(field: keyof ProfileCompletionFieldErrors, variant: string): string {
-        const keyMap: Record<string, string> = {
-            displayName_required: t(
-                'account.profileCompletion.errors.displayNameRequired',
-                'El nombre completo es obligatorio.'
+    /**
+     * Map raw validation error tokens to translated messages, returning an
+     * errors object with human-readable strings for subcomponent rendering.
+     */
+    function translateErrors(raw: ProfileCompletionFieldErrors): ProfileCompletionFieldErrors {
+        const map: Record<string, string> = {
+            firstName_required: t(
+                'account.profileCompletion.errors.firstNameRequired',
+                'El nombre es obligatorio.'
             ),
-            displayName_min: t(
-                'account.profileCompletion.errors.displayNameMin',
-                'El nombre debe tener al menos 2 caracteres.'
-            ),
-            displayName_max: t(
-                'account.profileCompletion.errors.displayNameMax',
+            firstName_max: t(
+                'account.profileCompletion.errors.firstNameMax',
                 'El nombre no puede superar los 50 caracteres.'
+            ),
+            lastName_required: t(
+                'account.profileCompletion.errors.lastNameRequired',
+                'El apellido es obligatorio.'
+            ),
+            lastName_max: t(
+                'account.profileCompletion.errors.lastNameMax',
+                'El apellido no puede superar los 50 caracteres.'
             ),
             phone_format: t(
                 'account.profileCompletion.errors.phoneFormat',
@@ -97,9 +176,37 @@ export function ProfileCompletion({
             terms_required: t(
                 'account.profileCompletion.errors.termsRequired',
                 'Tenés que aceptar los términos para continuar.'
+            ),
+            bio_min: t(
+                'account.profileCompletion.errors.bioMin',
+                'La bio debe tener al menos 10 caracteres.'
+            ),
+            bio_max: t(
+                'account.profileCompletion.errors.bioMax',
+                'La bio no puede superar los 300 caracteres.'
+            ),
+            website_url: t(
+                'account.profileCompletion.errors.websiteUrl',
+                'Ingresá una URL válida (ej: https://mipagina.com).'
+            ),
+            occupation_min: t(
+                'account.profileCompletion.errors.occupationMin',
+                'La ocupación debe tener al menos 2 caracteres.'
+            ),
+            occupation_max: t(
+                'account.profileCompletion.errors.occupationMax',
+                'La ocupación no puede superar los 100 caracteres.'
             )
         };
-        return keyMap[`${field}_${variant}`] ?? `${field}: ${variant}`;
+
+        const translated: ProfileCompletionFieldErrors = {};
+        for (const [field, token] of Object.entries(raw) as [
+            keyof ProfileCompletionFieldErrors,
+            string
+        ][]) {
+            translated[field] = map[`${field}_${token}`] ?? `${field}: ${token}`;
+        }
+        return translated;
     }
 
     // ── Submit ────────────────────────────────────────────────────────────────
@@ -108,15 +215,22 @@ export function ProfileCompletion({
         event.preventDefault();
         setGlobalError(null);
 
-        // Client-side validation
-        const validationErrors = validateProfileCompletionFields({
-            displayName,
-            phone: buildPhone() ?? '',
-            acceptedTerms
+        const phone = buildPhone() ?? '';
+        const rawErrors = validateProfileCompletionFields({
+            firstName,
+            lastName,
+            phone,
+            acceptedTerms,
+            bio: bio || undefined,
+            website: website || undefined,
+            occupation: occupation || undefined
         });
 
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
+        if (Object.keys(rawErrors).length > 0) {
+            setErrors(translateErrors(rawErrors));
+            if (rawErrors.bio || rawErrors.website || rawErrors.occupation) {
+                setDetailsOpen(true);
+            }
             return;
         }
 
@@ -124,19 +238,28 @@ export function ProfileCompletion({
         setSubmitting(true);
 
         try {
-            const body: Record<string, unknown> = {
-                displayName: displayName.trim(),
-                acceptedTerms: true
+            const body: ProfileCompletionPayload = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                displayName: derivedDisplayName,
+                acceptedTerms: true,
+                ...(birthDate && { birthDate }),
+                ...(imageUrl && imageUrl !== initialAvatarUrl && { imageUrl }),
+                ...(phone && { phone }),
+                locale: selectedLocale,
+                newsletterOptIn: newsletter,
+                ...(bio.trim() && { bio: bio.trim() }),
+                ...(website.trim() && { website: website.trim() }),
+                ...(occupation.trim() && { occupation: occupation.trim() }),
+                ...(Object.keys(socialNetworks).length > 0 && { socialNetworks }),
+                ...(locationCountry && {
+                    location: {
+                        country: locationCountry,
+                        ...(locationRegion.trim() && { region: locationRegion.trim() }),
+                        ...(locationCity.trim() && { city: locationCity.trim() })
+                    }
+                })
             };
-
-            const trimmedFirstName = firstName.trim();
-            if (trimmedFirstName) body.firstName = trimmedFirstName;
-
-            const phone = buildPhone();
-            if (phone) body.phone = phone;
-
-            body.locale = selectedLocale;
-            body.newsletterOptIn = newsletter;
 
             const response = await fetch(`${apiUrl}/api/v1/protected/profile/complete`, {
                 method: 'POST',
@@ -163,6 +286,8 @@ export function ProfileCompletion({
                 data?: { profileCompleted?: boolean; requiresSetPassword?: boolean };
             };
 
+            await refreshBetterAuthSession();
+
             if (result.data?.requiresSetPassword) {
                 window.location.href = `/${locale}/mi-cuenta/agregar-contrasena/`;
             } else {
@@ -180,6 +305,12 @@ export function ProfileCompletion({
         }
     }
 
+    // ── Social network handler ────────────────────────────────────────────────
+
+    function handleSocialNetworkChange(platform: SocialPlatform, value: string): void {
+        setSocialNetworks((prev) => ({ ...prev, [platform]: value || undefined }));
+    }
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
@@ -191,7 +322,7 @@ export function ProfileCompletion({
                 <p className={styles.subheading}>
                     {t(
                         'account.profileCompletion.subheading',
-                        'Antes de continuar, completá tu perfil.'
+                        'Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.'
                     )}
                 </p>
             </div>
@@ -202,240 +333,74 @@ export function ProfileCompletion({
                     onSubmit={handleSubmit}
                     noValidate
                 >
-                    {/* Full name */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-displayName"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.displayName', 'Nombre completo')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                {' *'}
-                            </span>
-                        </label>
-                        <input
-                            id="pc-displayName"
-                            type="text"
-                            className={
-                                errors.displayName
-                                    ? `${styles.input} ${styles.inputError}`
-                                    : styles.input
-                            }
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            placeholder={t(
-                                'account.profileCompletion.fields.displayNamePlaceholder',
-                                'Tu nombre y apellido'
-                            )}
-                            aria-required="true"
-                            aria-describedby={
-                                errors.displayName ? 'pc-displayName-error' : undefined
-                            }
-                            autoComplete="name"
-                            disabled={submitting}
-                        />
-                        {errors.displayName ? (
-                            <p
-                                id="pc-displayName-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errorMessage('displayName', errors.displayName)}
-                            </p>
-                        ) : (
-                            <p className={styles.hint}>
-                                {t(
-                                    'account.profileCompletion.fields.displayNameHint',
-                                    'Mínimo 2 caracteres.'
-                                )}
-                            </p>
-                        )}
-                    </div>
+                    <ProfileCompletionBasicFields
+                        locale={locale}
+                        apiUrl={apiUrl}
+                        firstName={firstName}
+                        lastName={lastName}
+                        displayNameValue={
+                            displayNameTouched ? displayNameOverride : derivedDisplayName
+                        }
+                        birthDate={birthDate}
+                        imageUrl={imageUrl}
+                        initialAvatarUrl={initialAvatarUrl}
+                        errors={errors}
+                        submitting={submitting}
+                        t={t}
+                        onFirstNameChange={handleFirstNameChange}
+                        onLastNameChange={handleLastNameChange}
+                        onDisplayNameChange={handleDisplayNameChange}
+                        onBirthDateChange={setBirthDate}
+                        onImageUrlChange={setImageUrl}
+                        derivedDisplayName={derivedDisplayName}
+                    />
 
-                    {/* Casual name */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-firstName"
-                            className={styles.label}
-                        >
-                            {t(
-                                'account.profileCompletion.fields.firstName',
-                                '¿Cómo querés que te llamemos?'
-                            )}
-                        </label>
-                        <input
-                            id="pc-firstName"
-                            type="text"
-                            className={styles.input}
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            placeholder={t(
-                                'account.profileCompletion.fields.firstNamePlaceholder',
-                                'Tu apodo o nombre de pila'
-                            )}
-                            autoComplete="given-name"
-                            disabled={submitting}
-                        />
-                        <p className={styles.hint}>
-                            {t(
-                                'account.profileCompletion.fields.firstNameHint',
-                                'Opcional. Por defecto usamos tu primer nombre.'
-                            )}
-                        </p>
-                    </div>
+                    <ProfileCompletionContactFields
+                        phoneCode={phoneCode}
+                        phoneNumber={phoneNumber}
+                        selectedLocale={selectedLocale}
+                        errors={errors}
+                        submitting={submitting}
+                        t={t}
+                        onPhoneCodeChange={setPhoneCode}
+                        onPhoneNumberChange={setPhoneNumber}
+                        onLocaleChange={setSelectedLocale}
+                    />
 
-                    {/* Phone */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-phone"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.phone', 'Teléfono')}
-                        </label>
-                        <div className={styles.phoneRow}>
-                            <select
-                                id="pc-phoneCode"
-                                className={`${styles.select} ${styles.phoneCode}`}
-                                value={phoneCode}
-                                onChange={(e) => setPhoneCode(e.target.value)}
-                                disabled={submitting}
-                                aria-label="Código de país"
-                            >
-                                {COUNTRY_CODES.map((cc) => (
-                                    <option
-                                        key={cc.code}
-                                        value={cc.code}
-                                    >
-                                        {cc.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <input
-                                id="pc-phone"
-                                type="tel"
-                                className={
-                                    errors.phone
-                                        ? `${styles.input} ${styles.inputError} ${styles.phoneNumber}`
-                                        : `${styles.input} ${styles.phoneNumber}`
-                                }
-                                value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                placeholder={t(
-                                    'account.profileCompletion.fields.phonePlaceholder',
-                                    '9 11 1234-5678'
-                                )}
-                                aria-describedby={errors.phone ? 'pc-phone-error' : 'pc-phone-hint'}
-                                autoComplete="tel-national"
-                                disabled={submitting}
-                            />
-                        </div>
-                        {errors.phone ? (
-                            <p
-                                id="pc-phone-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errorMessage('phone', errors.phone)}
-                            </p>
-                        ) : (
-                            <p
-                                id="pc-phone-hint"
-                                className={styles.hint}
-                            >
-                                {t(
-                                    'account.profileCompletion.fields.phoneHint',
-                                    'Opcional. Incluí el código de país.'
-                                )}
-                            </p>
-                        )}
-                    </div>
+                    <ProfileCompletionMoreDetails
+                        detailsOpen={detailsOpen}
+                        bio={bio}
+                        website={website}
+                        occupation={occupation}
+                        socialNetworks={socialNetworks}
+                        locationCountry={locationCountry}
+                        locationRegion={locationRegion}
+                        locationCity={locationCity}
+                        errors={errors}
+                        submitting={submitting}
+                        t={t}
+                        onDetailsToggle={() => setDetailsOpen((v) => !v)}
+                        onBioChange={setBio}
+                        onWebsiteChange={setWebsite}
+                        onOccupationChange={setOccupation}
+                        onSocialNetworkChange={handleSocialNetworkChange}
+                        onLocationCountryChange={setLocationCountry}
+                        onLocationRegionChange={setLocationRegion}
+                        onLocationCityChange={setLocationCity}
+                    />
 
-                    {/* Preferred locale */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-locale"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.locale', 'Idioma preferido')}
-                        </label>
-                        <select
-                            id="pc-locale"
-                            className={styles.select}
-                            value={selectedLocale}
-                            onChange={(e) => setSelectedLocale(e.target.value as SupportedLocale)}
-                            disabled={submitting}
-                        >
-                            <option value="es">
-                                {t('account.profileCompletion.fields.localeEs', 'Español')}
-                            </option>
-                            <option value="en">
-                                {t('account.profileCompletion.fields.localeEn', 'English')}
-                            </option>
-                            <option value="pt">
-                                {t('account.profileCompletion.fields.localePt', 'Português')}
-                            </option>
-                        </select>
-                    </div>
+                    <ProfileCompletionConsentFields
+                        locale={locale}
+                        newsletter={newsletter}
+                        acceptedTerms={acceptedTerms}
+                        errors={errors}
+                        submitting={submitting}
+                        t={t}
+                        onNewsletterChange={setNewsletter}
+                        onAcceptedTermsChange={setAcceptedTerms}
+                    />
 
-                    {/* Newsletter opt-in */}
-                    <label className={styles.checkboxRow}>
-                        <input
-                            type="checkbox"
-                            className={styles.checkbox}
-                            checked={newsletter}
-                            onChange={(e) => setNewsletter(e.target.checked)}
-                            disabled={submitting}
-                        />
-                        <span className={styles.checkboxLabel}>
-                            {t(
-                                'account.profileCompletion.fields.newsletter',
-                                'Quiero recibir novedades y promociones por email'
-                            )}
-                        </span>
-                    </label>
-
-                    {/* Terms acceptance */}
-                    <div className={styles.field}>
-                        <label className={styles.checkboxRow}>
-                            <input
-                                type="checkbox"
-                                className={styles.checkbox}
-                                checked={acceptedTerms}
-                                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                                aria-required="true"
-                                aria-describedby={errors.terms ? 'pc-terms-error' : undefined}
-                                disabled={submitting}
-                            />
-                            <span className={styles.checkboxLabel}>
-                                {t('account.profileCompletion.fields.terms', 'Acepto los')}{' '}
-                                <a
-                                    href={`/${locale}/legal/terminos/`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={styles.checkboxLink}
-                                >
-                                    {t(
-                                        'account.profileCompletion.fields.termsLink',
-                                        'términos y condiciones'
-                                    )}
-                                </a>
-                            </span>
-                        </label>
-                        {errors.terms && (
-                            <p
-                                id="pc-terms-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errorMessage('terms', errors.terms)}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Global error banner */}
+                    {/* ── Global error banner ────────────────────────────── */}
                     {globalError && (
                         <div
                             className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
@@ -445,7 +410,7 @@ export function ProfileCompletion({
                         </div>
                     )}
 
-                    {/* Submit */}
+                    {/* ── Submit ─────────────────────────────────────────── */}
                     <div className={styles.submitRow}>
                         <button
                             type="submit"

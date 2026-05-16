@@ -4,6 +4,13 @@
  * @description Account editProfile page.
  * @route /{lang}/mi-cuenta/editar/
  * @rendering SSR
+ *
+ * Loads the full protected user (including SPEC-113 polish fields:
+ * birthDate, website, occupation, social networks, postal address, and
+ * the `profile` JSONB blob) by calling `GET /api/v1/protected/users/:id`
+ * server-side. Falls back to the Better Auth session shape when the API
+ * call fails so the page still renders and the user can update what they
+ * can see.
  */
 
 import { getApiUrl } from '@/lib/env';
@@ -24,16 +31,106 @@ const { t } = createTranslations(locale);
 const title = t('account.pages.editProfile.title', 'Editar perfil');
 const apiUrl = getApiUrl();
 
-/** Shape passed to ProfileEditForm. Better Auth sessions expose name/image/email. */
-const initialUser = {
+/**
+ * Build an empty fallback user shape. Used when the API call fails so
+ * the form still renders something the user can save (the PATCH will
+ * succeed even if the GET didn't — they're independent).
+ */
+const fallbackUser = {
 	id: user.id,
 	displayName: user.name ?? null,
-	firstName: user.name?.split(' ')[0] ?? null,
-	lastName: user.name?.split(' ').slice(1).join(' ') || null,
+	firstName: null as string | null,
+	lastName: null as string | null,
 	avatarUrl: user.image ?? null,
-	phone: null,
-	profile: null,
+	phone: null as string | null,
+	birthDate: null as string | null,
+	profile: null as {
+		bio?: string | null;
+		website?: string | null;
+		occupation?: string | null;
+	} | null,
+	website: null as string | null,
+	facebookUrl: null as string | null,
+	instagramUrl: null as string | null,
+	twitterUrl: null as string | null,
+	linkedinUrl: null as string | null,
+	youtubeUrl: null as string | null,
+	addressLine1: null as string | null,
+	city: null as string | null,
+	province: null as string | null,
+	country: null as string | null,
+	postalCode: null as string | null
 };
+
+let initialUser = fallbackUser;
+
+try {
+	// Forward the incoming Cookie header so Better Auth picks up the
+	// session on the API side. Without this the call comes through as
+	// anonymous and the protected endpoint returns 401.
+	const cookieHeader = Astro.request.headers.get('cookie') ?? '';
+	const response = await fetch(`${apiUrl}/api/v1/protected/users/${user.id}`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+			...(cookieHeader ? { Cookie: cookieHeader } : {})
+		}
+	});
+
+	if (response.ok) {
+		const body = (await response.json()) as {
+			success?: boolean;
+			data?: Record<string, unknown> | null;
+		};
+		const data = body?.data;
+		if (data && typeof data === 'object') {
+			// Normalize birthDate to YYYY-MM-DD so it slots straight into a
+			// native <input type="date">. The API returns either an ISO
+			// timestamp (string) or a Date — coerce both safely.
+			let birthDate: string | null = null;
+			const rawBirth = data.birthDate;
+			if (typeof rawBirth === 'string' && rawBirth.length > 0) {
+				birthDate = rawBirth.slice(0, 10);
+			} else if (rawBirth instanceof Date) {
+				birthDate = rawBirth.toISOString().slice(0, 10);
+			}
+
+			initialUser = {
+				...fallbackUser,
+				id: (data.id as string) ?? user.id,
+				displayName: (data.displayName as string | null) ?? user.name ?? null,
+				firstName: (data.firstName as string | null) ?? null,
+				lastName: (data.lastName as string | null) ?? null,
+				avatarUrl:
+					(data.avatarUrl as string | null) ??
+					(data.image as string | null) ??
+					user.image ??
+					null,
+				phone: (data.phone as string | null) ?? null,
+				birthDate,
+				profile: (data.profile as typeof fallbackUser.profile) ?? null,
+				website: (data.website as string | null) ?? null,
+				facebookUrl: (data.facebookUrl as string | null) ?? null,
+				instagramUrl: (data.instagramUrl as string | null) ?? null,
+				twitterUrl: (data.twitterUrl as string | null) ?? null,
+				linkedinUrl: (data.linkedinUrl as string | null) ?? null,
+				youtubeUrl: (data.youtubeUrl as string | null) ?? null,
+				addressLine1: (data.addressLine1 as string | null) ?? null,
+				city: (data.city as string | null) ?? null,
+				province: (data.province as string | null) ?? null,
+				country: (data.country as string | null) ?? null,
+				postalCode: (data.postalCode as string | null) ?? null
+			};
+		}
+	}
+	// Non-OK responses fall through to fallbackUser silently — the form
+	// can still POST a PATCH and surface a meaningful error if the user
+	// is genuinely unauthorized.
+} catch {
+	// Network error — same fallback. Page should not 500 because the
+	// edit endpoint is GET-degraded; the PATCH path is the source of
+	// truth.
+}
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">

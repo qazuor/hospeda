@@ -1,12 +1,17 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import {
+    AccommodationSelectField,
     CheckboxField,
     CurrencyField,
     // Specific entity select fields
     DestinationSelectField,
     EntitySelectField,
+    EventLocationSelectField,
+    EventOrganizerSelectField,
+    EventSelectField,
     GalleryField,
     ImageField,
+    PostSponsorshipSelectField,
     RichTextField,
     SelectField,
     SwitchField,
@@ -126,15 +131,23 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
         // Dynamic import of field components based on type
         const renderField = (field: SectionConfig['fields'][0]) => {
-            // Support nested field access (e.g., 'contactInfo.personalEmail')
+            // Support both flat and nested storage for dotted field ids.
+            // Flat is the canonical write path (EntityCreateContent stores values
+            // by dotted key, e.g. values["location.country"]); nested is the
+            // fallback for hosts that keep a nested object tree (TanStack Form in
+            // EntityEditContent, where values.location.country is the live value).
             // biome-ignore lint/suspicious/noExplicitAny: Dynamic nested object access
             const getNestedValue = (obj: any, path: string): any => {
                 return path.split('.').reduce((current, key) => current?.[key], obj);
             };
 
-            const rawFieldValue = field.id.includes('.')
-                ? getNestedValue(values, field.id)
-                : values[field.id];
+            const readValue = (source: Record<string, unknown>, id: string): unknown => {
+                if (!id.includes('.')) return source[id];
+                if (id in source) return source[id];
+                return getNestedValue(source, id);
+            };
+
+            const rawFieldValue = readValue(values, field.id);
 
             // Coalesce null to empty string for text-based fields to avoid React warning:
             // "value prop on input should not be null"
@@ -151,9 +164,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             const fieldValue =
                 rawFieldValue === null && textFieldTypes.has(field.type) ? '' : rawFieldValue;
 
-            const fieldError = field.id.includes('.')
-                ? getNestedValue(errors, field.id)
-                : errors[field.id];
+            const fieldError = readValue(errors, field.id) as string | undefined;
             const hasError = Boolean(fieldError);
 
             // Field props for dynamic field component loading
@@ -226,6 +237,46 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
+                    case FieldTypeEnum.ACCOMMODATION_SELECT:
+                        return (
+                            <AccommodationSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_SELECT:
+                        return (
+                            <EventSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_LOCATION_SELECT:
+                        return (
+                            <EventLocationSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.EVENT_ORGANIZER_SELECT:
+                        return (
+                            <EventOrganizerSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.POST_SPONSORSHIP_SELECT:
+                        return (
+                            <PostSponsorshipSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
                     case FieldTypeEnum.CURRENCY:
                         return (
                             <CurrencyField
@@ -278,11 +329,19 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
-                    case FieldTypeEnum.NUMBER:
-                        // Use TextField for numbers, converting string input to number on change
+                    case FieldTypeEnum.NUMBER: {
+                        // SPEC-117 D-DISPLAYWEIGHT.1 — pass native min/max/step
+                        // from typeConfig so browsers enforce numeric input.
+                        const numericConfig = field.typeConfig as
+                            | { min?: number; max?: number; step?: number }
+                            | undefined;
                         return (
                             <TextField
                                 {...fieldProps}
+                                type="number"
+                                min={numericConfig?.min}
+                                max={numericConfig?.max}
+                                step={numericConfig?.step}
                                 value={
                                     fieldValue === null || fieldValue === undefined
                                         ? ''
@@ -300,6 +359,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                 }}
                             />
                         );
+                    }
 
                     case FieldTypeEnum.DATE:
                         // Use TextField for dates for now

@@ -13,6 +13,7 @@ import {
     AUTH_SEGMENTS,
     BETA_PREFIX,
     PROFILE_COMPLETION_BYPASS_ROLES,
+    PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
     PROTECTED_SEGMENTS,
     SESSION_OPTIONAL_SEGMENTS,
@@ -142,6 +143,37 @@ export function isSessionOptionalRoute({ path }: { path: string }): boolean {
     }
 
     return (SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(segments[1] ?? '');
+}
+
+/**
+ * Checks if a URL path is a session-optional route that ALSO requires the
+ * profile-completion guard to fire when the visitor is signed in (SPEC-113).
+ *
+ * Distinct from `isSessionOptionalRoute` so guests still pass through these
+ * routes unhindered, but authenticated users with `profile_completed = false`
+ * get bounced to `completar-perfil/` exactly like they would from a fully
+ * protected route. See `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`
+ * for the segment list.
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is in the completion-required session-optional list
+ */
+export function isProfileCompletionRequiredSessionOptionalRoute({
+    path
+}: {
+    readonly path: string;
+}): boolean {
+    if (!path) {
+        return false;
+    }
+    const trimmedPath = path.startsWith('/') ? path.slice(1) : path;
+    const segments = trimmedPath.split('/');
+    if (segments.length < 2) {
+        return false;
+    }
+    return (PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(
+        segments[1] ?? ''
+    );
 }
 
 /**

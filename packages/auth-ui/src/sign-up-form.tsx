@@ -2,7 +2,8 @@
  * Sign-up form component for Better Auth.
  *
  * Provides email/password registration and OAuth (Google, Facebook) buttons.
- * Accepts auth client methods as props for decoupled usage.
+ * The `name` field has been intentionally removed — name collection now happens
+ * in the post-signup profile completion form (SPEC-113).
  *
  * @module sign-up-form
  */
@@ -10,6 +11,8 @@
 import React, { useState } from 'react';
 import { useAuthTranslations } from './hooks/use-auth-translations';
 import { authLogger } from './logger';
+import { PasswordField } from './password-field';
+import type { PasswordFieldI18n } from './password-field';
 import type { SignInMethods, SignUpMethods } from './types';
 
 /**
@@ -29,7 +32,8 @@ export interface SignUpFormProps {
 }
 
 /**
- * SignUpForm renders email/password registration with optional OAuth buttons
+ * SignUpForm renders email/password registration with optional OAuth buttons.
+ * The name field has been removed — name is collected in profile completion.
  */
 export const SignUpForm = ({
     signUp,
@@ -39,9 +43,10 @@ export const SignUpForm = ({
     showOAuth = true
 }: SignUpFormProps) => {
     const { t } = useAuthTranslations();
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isClientReady, setIsClientReady] = useState(false);
@@ -49,6 +54,35 @@ export const SignUpForm = ({
     React.useEffect(() => {
         setIsClientReady(true);
     }, []);
+
+    /** i18n bundle for PasswordField. */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('auth-ui.signUp.showPassword'),
+        hidePassword: t('auth-ui.signUp.hidePassword'),
+        strength: {
+            weak: t('auth-ui.signUp.strength.weak'),
+            medium: t('auth-ui.signUp.strength.medium'),
+            strong: t('auth-ui.signUp.strength.strong')
+        },
+        rules: {
+            length: t('auth-ui.signUp.rules.length'),
+            upper: t('auth-ui.signUp.rules.upper'),
+            lower: t('auth-ui.signUp.rules.lower'),
+            digit: t('auth-ui.signUp.rules.digit'),
+            special: t('auth-ui.signUp.rules.special')
+        }
+    };
+
+    /** i18n bundle for confirm PasswordField (no strength meter). */
+    const confirmI18n: PasswordFieldI18n = {
+        showPassword: t('auth-ui.signUp.showPassword'),
+        hidePassword: t('auth-ui.signUp.hidePassword'),
+        strength: {
+            weak: '',
+            medium: '',
+            strong: ''
+        }
+    };
 
     if (!isClientReady) {
         return (
@@ -69,7 +103,6 @@ export const SignUpForm = ({
                 <div className="flex flex-col gap-3">
                     <div className="h-10 rounded border bg-gray-50" />
                     <div className="h-10 rounded border bg-gray-50" />
-                    <div className="h-10 rounded border bg-gray-50" />
                     <div className="h-10 rounded bg-gray-200" />
                 </div>
             </div>
@@ -79,9 +112,18 @@ export const SignUpForm = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        setConfirmError(null);
+
+        // Confirm-password check before submitting.
+        if (password !== confirmPassword) {
+            setConfirmError(t('auth-ui.signUp.errors.passwordsDoNotMatch'));
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const result = await signUp.email({ email, password, name });
+            // Signup WITHOUT `name` — the profile completion form collects it.
+            const result = await signUp.email({ email, password, name: '' });
             if (result.error) {
                 setError(result.error.message || 'Sign up failed');
                 return;
@@ -201,24 +243,7 @@ export const SignUpForm = ({
                 onSubmit={handleSubmit}
                 className="flex flex-col gap-4"
             >
-                <div className="space-y-1">
-                    <label
-                        htmlFor="signup-name"
-                        className="block font-medium text-gray-700 text-sm"
-                    >
-                        {t('auth-ui.signUp.name')}
-                    </label>
-                    <input
-                        id="signup-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={t('auth-ui.signUp.namePlaceholder')}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-4 text-sm transition-colors placeholder:text-gray-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                        required
-                        autoComplete="name"
-                    />
-                </div>
+                {/* Email */}
                 <div className="space-y-1">
                     <label
                         htmlFor="signup-email"
@@ -237,25 +262,37 @@ export const SignUpForm = ({
                         autoComplete="email"
                     />
                 </div>
-                <div className="space-y-1">
-                    <label
-                        htmlFor="signup-password"
-                        className="block font-medium text-gray-700 text-sm"
-                    >
-                        {t('auth-ui.signUp.password')}
-                    </label>
-                    <input
-                        id="signup-password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder={t('auth-ui.signUp.passwordPlaceholder')}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-4 text-sm transition-colors placeholder:text-gray-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                        required
-                        minLength={8}
-                        autoComplete="new-password"
-                    />
-                </div>
+
+                {/* Password with strength meter */}
+                <PasswordField
+                    id="signup-password"
+                    label={t('auth-ui.signUp.password')}
+                    value={password}
+                    onChange={setPassword}
+                    placeholder={t('auth-ui.signUp.passwordPlaceholder')}
+                    autoComplete="new-password"
+                    required
+                    showStrength
+                    showRuleChecklist
+                    i18n={passwordI18n}
+                />
+
+                {/* Confirm password */}
+                <PasswordField
+                    id="signup-confirm-password"
+                    label={t('auth-ui.signUp.confirmPassword')}
+                    value={confirmPassword}
+                    onChange={(v) => {
+                        setConfirmPassword(v);
+                        if (confirmError) setConfirmError(null);
+                    }}
+                    placeholder={t('auth-ui.signUp.confirmPasswordPlaceholder')}
+                    autoComplete="new-password"
+                    required
+                    error={confirmError ?? undefined}
+                    i18n={confirmI18n}
+                />
+
                 <button
                     type="submit"
                     disabled={isLoading}
@@ -305,6 +342,7 @@ export const SignUpForm = ({
                         t('auth-ui.signUp.signUpButton')
                     )}
                 </button>
+
                 {error && (
                     <div
                         className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-600 text-sm"

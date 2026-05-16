@@ -71,6 +71,29 @@ export type Actor = {
     permissions: readonly PermissionEnum[];
     /** Entitlements granted to the actor (VIP access, premium features, etc.) */
     entitlements?: Set<string>;
+    /**
+     * Display name of the actor — mirrors `users.display_name` (Better Auth
+     * maps its virtual `name` field to that column). Optional because guest /
+     * system actors don't have one. Exposed in `/api/v1/public/auth/me` so
+     * the web UserMenu can keep the navbar in sync after a profile mutation
+     * without a separate `/users/:id` round-trip (SPEC-113).
+     */
+    name?: string;
+    /**
+     * Email of the actor. Optional for guests / system actors. Mirrors
+     * `users.email` and is exposed in `/auth/me` for the same reason as
+     * {@link Actor.name}.
+     */
+    email?: string;
+    /**
+     * Avatar URL of the actor — mirrors `users.image`. Better Auth
+     * auto-populates this from the OAuth provider on signin (Google `picture`
+     * claim, Facebook profile photo). Optional because users without an
+     * uploaded avatar, guests, and system actors don't have one. Exposed in
+     * `/auth/me` so the web navbar avatar stays in sync without a separate
+     * fetch (SPEC-113 follow-up; same rationale as {@link Actor.name}).
+     */
+    image?: string;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
 };

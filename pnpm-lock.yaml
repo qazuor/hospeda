@@ -31,6 +31,8 @@ overrides:
   undici: '>=7.24.0 <8'
   vite@^6.0.0: '>=6.4.2'
   vite@^7.0.0: '>=7.3.2'
+  vite@^8.0.0: ^8.0.13
+  '@sentry/vite-plugin': '>=5.3.0'
   markdown-it: '>=14.1.1'
   diff: '>=8.0.3'
   defu: '>=6.1.5'
@@ -152,11 +154,11 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: ^1.2.0
-        version: 1.2.1
+        specifier: ^1.4.0
+        version: 1.4.0
       '@qazuor/qzpay-react':
-        specifier: ^1.1.0
-        version: 1.1.0(react@19.1.1)
+        specifier: ^1.1.3
+        version: 1.1.3(react@19.1.1)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -336,8 +338,8 @@ importers:
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@sentry/vite-plugin':
-        specifier: ^5.1.1
-        version: 5.1.1(rollup@4.59.0)
+        specifier: '>=5.3.0'
+        version: 5.3.0(rollup@4.59.0)
       '@testing-library/dom':
         specifier: 10.4.0
         version: 10.4.0
@@ -402,14 +404,14 @@ importers:
         specifier: ^75.0.0
         version: 75.0.0(graphql@16.12.0)
       '@qazuor/qzpay-core':
-        specifier: ^1.2.0
-        version: 1.2.1
+        specifier: ^1.4.0
+        version: 1.4.0
       '@qazuor/qzpay-hono':
-        specifier: ^1.1.1
-        version: 1.1.1(hono@4.12.16)(zod@4.3.6)
+        specifier: ^1.1.4
+        version: 1.1.4(hono@4.12.16)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^1.1.0
-        version: 1.1.0(mercadopago@2.12.0)
+        specifier: ^1.3.0
+        version: 1.3.0(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^0.0.30
         version: 0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -828,11 +830,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.2.0
-        version: 1.2.1
+        specifier: ^1.4.0
+        version: 1.4.0
       '@qazuor/qzpay-mercadopago':
-        specifier: ^1.1.0
-        version: 1.1.0(mercadopago@2.12.0)
+        specifier: ^1.3.0
+        version: 1.3.0(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -896,11 +898,11 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.2.0
-        version: 1.2.1
+        specifier: ^1.4.0
+        version: 1.4.0
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.3.0
-        version: 1.3.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
+        specifier: ^1.5.0
+        version: 1.5.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -1420,8 +1422,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.2.0
-        version: 1.2.1
+        specifier: ^1.4.0
+        version: 1.4.0
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -3211,41 +3213,33 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.8
 
-  '@qazuor/qzpay-core@1.1.0':
-    resolution: {integrity: sha512-7FxPFPZaK57o6Hragxb7mGp4bcmwjvD9GoM5myPP+BEkGiZNH9kCnxdwVf9nEtVeP0kIt3fscnK3F/fScYTY9w==}
+  '@qazuor/qzpay-core@1.4.0':
+    resolution: {integrity: sha512-nWUEhTK9ld9Ps8w0mfNgtNrqGsCBhIG/2D7SVEjvJK3tz6A1RDqIS6hxdEj3YioHl8r9b1SuhaqFxiDgcuoAgw==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-core@1.2.0':
-    resolution: {integrity: sha512-Y2X0jelTXwQph5cOgCitf1IRbFG06YXKjl9A/GQppQokngG8miw071yUyL9c+Noj5pByvhtqWzJ+yBmloP8GEA==}
-    engines: {node: '>=22'}
-
-  '@qazuor/qzpay-core@1.2.1':
-    resolution: {integrity: sha512-LNvizA+nCWOVpdan7usVmRN+WLP31SZD535oTGMFELU+gD7gbcTCMaFRFaK2tuB5EfPah9uS0pbOFDUOIHXkJw==}
-    engines: {node: '>=22'}
-
-  '@qazuor/qzpay-drizzle@1.3.0':
-    resolution: {integrity: sha512-jOnIoGX++h1pKquuvwols8Fcx6tUBVpm68gr+h8Ivs3RV0okHxdTzFx5CVr8D+zv0GjVqHFWOtNk6hVO10O0bQ==}
+  '@qazuor/qzpay-drizzle@1.5.0':
+    resolution: {integrity: sha512-/GvKw0Yl/agrsS/cJQekd403DxiFGkJJYtZdrbaIIXMYpSf2DaXrB2n9/YEf2sGRJ02LgZDZsX4vFD6Z/6TM1g==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-hono@1.1.1':
-    resolution: {integrity: sha512-PDZa6NPh15uMrhAYYt8j94Su1XXWhwMLXy/lyLcW+0nibPhF7H81YVuMMo6T1u5Bspj3CFSmzgqevjYehdKn7g==}
+  '@qazuor/qzpay-hono@1.1.4':
+    resolution: {integrity: sha512-Ql08Dfqy0JxLMPTBF8ZLZxB70Px2GxqmNPVj46B4n7gZp8GrENbyrxJXNiyA4G7yL1inDwLrsrlSvOzX/vPylw==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-mercadopago@1.1.0':
-    resolution: {integrity: sha512-a2Rac7OqbAfffdeIESxb2dHr2RJO3a55LTgpnTv5GUF9JvKRoKRiS0kuB6zpPZvp/K4sSKhJwFdjprFah1rIJQ==}
+  '@qazuor/qzpay-mercadopago@1.3.0':
+    resolution: {integrity: sha512-7FXqUCeR6z5hhvikmvauWj2a4fAoXSNggktmIKiHww+43pDD2FHbTtiMGvYQ8Q11E5pA7WQC5U4Ip2C9ArPmlA==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
 
-  '@qazuor/qzpay-react@1.1.0':
-    resolution: {integrity: sha512-+ry97xvTyay16fOsVg0ODwKRURaiQ8u+c5OsiFm2lAOKHL8oPef6dFoFR1RqNnhQ01u8eIe3EH5TymVdDh+zwg==}
+  '@qazuor/qzpay-react@1.1.3':
+    resolution: {integrity: sha512-xi537G2F9mM5PMnom5yvo1cuSyzDiRSI+C9PdONX8rP9pO+gfHIAb9JY+VR4wMzcFlHgre+1ni45/ou6h/oo7g==}
     engines: {node: '>=22'}
     peerDependencies:
       react: 19.1.1
@@ -4397,10 +4391,6 @@ packages:
     peerDependencies:
       astro: '>=3.x || >=4.0.0-beta || >=5.x'
 
-  '@sentry/babel-plugin-component-annotate@5.1.1':
-    resolution: {integrity: sha512-x2wEpBHwsTyTF2rWsLKJlzrRF1TTIGOfX+ngdE+Yd5DBkoS58HwQv824QOviPGQRla4/ypISqAXzjdDPL/zalg==}
-    engines: {node: '>= 18'}
-
   '@sentry/babel-plugin-component-annotate@5.3.0':
     resolution: {integrity: sha512-p4q8gn8wcFqZGP/s2MnJCAAd8fTikaU6A0mM97RDHQgStcrYiaS0Sc5zUNfb1V+UOLPuvdEdL6MwyxfzjYJQTA==}
     engines: {node: '>= 18'}
@@ -4412,10 +4402,6 @@ packages:
   '@sentry/browser@10.40.0':
     resolution: {integrity: sha512-nCt3FKUMFad0C6xl5wCK0Jz+qT4Vev4fv6HJRn0YoNRRDQCfsUVxAz7pNyyiPNGM/WCDp9wJpGJsRvbBRd2anw==}
     engines: {node: '>=18'}
-
-  '@sentry/bundler-plugin-core@5.1.1':
-    resolution: {integrity: sha512-F+itpwR9DyQR7gEkrXd2tigREPTvtF5lC8qu6e4anxXYRTui1+dVR0fXNwjpyAZMhIesLfXRN7WY7ggdj7hi0Q==}
-    engines: {node: '>= 18'}
 
   '@sentry/bundler-plugin-core@5.3.0':
     resolution: {integrity: sha512-L5T60sWdAI3qWwdg3Ptwek/0TY59PERrxyqp4XMUkroayQvGd9r5dIW9Q1kSeXX9iJ442nXbFZKAOyCKV4Z13Q==}
@@ -4567,14 +4553,17 @@ packages:
     peerDependencies:
       react: 19.1.1
 
-  '@sentry/rollup-plugin@5.1.1':
-    resolution: {integrity: sha512-1d5NkdRR6aKWBP7czkY8sFFWiKnfmfRpQOj+m9bJTsyTjbMiEQJst6315w5pCVlRItPhBqpAraqAhutZFgvyVg==}
+  '@sentry/rollup-plugin@5.3.0':
+    resolution: {integrity: sha512-hgPGPYdQJ/G1cGYOxAb7d4z3V+/k/E5/P/5TFPEEBLuIbFFk+JG0CISUDJdzXJjO382Lb99PBJuXGbueBmO79w==}
     engines: {node: '>= 18'}
     peerDependencies:
       rollup: '>=4.59.0'
+    peerDependenciesMeta:
+      rollup:
+        optional: true
 
-  '@sentry/vite-plugin@5.1.1':
-    resolution: {integrity: sha512-i6NWUDi2SDikfSUeMJvJTRdwEKYSfTd+mvBO2Ja51S1YK+hnickBuDfD+RvPerIXLuyRu3GamgNPbNqgCGUg/Q==}
+  '@sentry/vite-plugin@5.3.0':
+    resolution: {integrity: sha512-qcoSzo4n2MulVQ70UUPLq6dTleb2a2HwL2wuwvAgWhPChrYTuk6A6mDg6aQb9fairPAwFPiU9PzOANpoDJcz1A==}
     engines: {node: '>= 18'}
 
   '@shikijs/core@3.23.0':
@@ -11994,35 +11983,31 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@qazuor/qzpay-core@1.1.0': {}
+  '@qazuor/qzpay-core@1.4.0': {}
 
-  '@qazuor/qzpay-core@1.2.0': {}
-
-  '@qazuor/qzpay-core@1.2.1': {}
-
-  '@qazuor/qzpay-drizzle@1.3.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
+  '@qazuor/qzpay-drizzle@1.5.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
     dependencies:
-      '@qazuor/qzpay-core': 1.2.1
+      '@qazuor/qzpay-core': 1.4.0
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(zod@4.4.3)
       postgres: 3.4.8
       zod: 4.4.3
 
-  '@qazuor/qzpay-hono@1.1.1(hono@4.12.16)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.1.4(hono@4.12.16)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
-      '@qazuor/qzpay-core': 1.2.0
+      '@qazuor/qzpay-core': 1.4.0
       hono: 4.12.16
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@1.1.0(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@1.3.0(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 1.1.0
+      '@qazuor/qzpay-core': 1.4.0
       mercadopago: 2.12.0
 
-  '@qazuor/qzpay-react@1.1.0(react@19.1.1)':
+  '@qazuor/qzpay-react@1.1.3(react@19.1.1)':
     dependencies:
-      '@qazuor/qzpay-core': 1.1.0
+      '@qazuor/qzpay-core': 1.4.0
       react: 19.1.1
 
   '@radix-ui/number@1.1.1': {}
@@ -13017,14 +13002,12 @@ snapshots:
       '@sentry/browser': 10.40.0
       '@sentry/core': 10.40.0
       '@sentry/node': 10.40.0
-      '@sentry/vite-plugin': 5.1.1(rollup@4.59.0)
+      '@sentry/vite-plugin': 5.3.0(rollup@4.59.0)
       astro: 6.3.3(@netlify/blobs@9.1.2)(@types/node@25.3.3)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.1)(jiti@2.6.1)(rollup@4.59.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.4)
     transitivePeerDependencies:
       - encoding
       - rollup
       - supports-color
-
-  '@sentry/babel-plugin-component-annotate@5.1.1': {}
 
   '@sentry/babel-plugin-component-annotate@5.3.0': {}
 
@@ -13043,19 +13026,6 @@ snapshots:
       '@sentry-internal/replay': 10.40.0
       '@sentry-internal/replay-canvas': 10.40.0
       '@sentry/core': 10.40.0
-
-  '@sentry/bundler-plugin-core@5.1.1':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@sentry/babel-plugin-component-annotate': 5.1.1
-      '@sentry/cli': 2.58.5
-      dotenv: 16.6.1
-      find-up: 5.0.0
-      glob: 13.0.6
-      magic-string: 0.30.21
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   '@sentry/bundler-plugin-core@5.3.0':
     dependencies:
@@ -13269,19 +13239,20 @@ snapshots:
       '@sentry/core': 10.36.0
       react: 19.1.1
 
-  '@sentry/rollup-plugin@5.1.1(rollup@4.59.0)':
+  '@sentry/rollup-plugin@5.3.0(rollup@4.59.0)':
     dependencies:
-      '@sentry/bundler-plugin-core': 5.1.1
+      '@sentry/bundler-plugin-core': 5.3.0
       magic-string: 0.30.21
+    optionalDependencies:
       rollup: 4.59.0
     transitivePeerDependencies:
       - encoding
       - supports-color
 
-  '@sentry/vite-plugin@5.1.1(rollup@4.59.0)':
+  '@sentry/vite-plugin@5.3.0(rollup@4.59.0)':
     dependencies:
-      '@sentry/bundler-plugin-core': 5.1.1
-      '@sentry/rollup-plugin': 5.1.1(rollup@4.59.0)
+      '@sentry/bundler-plugin-core': 5.3.0
+      '@sentry/rollup-plugin': 5.3.0(rollup@4.59.0)
     transitivePeerDependencies:
       - encoding
       - rollup

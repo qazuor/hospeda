@@ -764,7 +764,25 @@ export class UserService extends BaseCrudService<
             input: { ...input, actor },
             schema: CompleteProfileBodySchema.extend({ userId: UserSchema.shape.id }),
             ctx,
-            execute: async ({ userId, displayName, firstName, phone, locale }, actor, execCtx) => {
+            execute: async (
+                {
+                    userId,
+                    firstName,
+                    lastName,
+                    displayName,
+                    birthDate,
+                    imageUrl,
+                    phone,
+                    locale,
+                    bio,
+                    website,
+                    occupation,
+                    socialNetworks,
+                    location
+                },
+                actor,
+                execCtx
+            ) => {
                 // Self-only guard — actor may only complete their own profile.
                 if (actor.id !== userId) {
                     throw new ServiceError(
@@ -778,8 +796,10 @@ export class UserService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
 
-                // Build patch object for the user row.
-                const resolvedFirstName = firstName ?? displayName.split(' ')[0] ?? displayName;
+                // Derive display name server-side when client did not override it.
+                // Defense-in-depth: do not trust the client to always send the derived value.
+                const resolvedDisplayName =
+                    displayName?.trim() || `${firstName.trim()} ${lastName.trim()}`.trim();
 
                 // Merge phone into existing contactInfo (shallow merge).
                 const existingContactInfo = (existing.contactInfo as Record<string, unknown>) ?? {};
@@ -793,17 +813,52 @@ export class UserService extends BaseCrudService<
                     ? { ...existingSettings, languageWeb: locale }
                     : existingSettings;
 
-                const updated = await this.model.update(
-                    { id: userId },
-                    {
-                        displayName,
-                        firstName: resolvedFirstName,
-                        contactInfo: Object.keys(contactInfo).length > 0 ? contactInfo : undefined,
-                        settings: Object.keys(settings).length > 0 ? settings : undefined,
-                        profileCompleted: true
-                    } as Partial<User>,
-                    execCtx?.tx
-                );
+                // Merge bio/website/occupation into existing profile JSONB (shallow merge).
+                const existingProfile = (existing.profile as Record<string, unknown>) ?? {};
+                const hasProfileFields =
+                    bio !== undefined || website !== undefined || occupation !== undefined;
+                const profile = hasProfileFields
+                    ? {
+                          ...existingProfile,
+                          ...(bio !== undefined && { bio }),
+                          ...(website !== undefined && { website }),
+                          ...(occupation !== undefined && { occupation })
+                      }
+                    : existingProfile;
+
+                // Merge social networks into existing JSONB (shallow merge).
+                const existingSocial = (existing.socialNetworks as Record<string, unknown>) ?? {};
+                const resolvedSocialNetworks = socialNetworks
+                    ? { ...existingSocial, ...socialNetworks }
+                    : existingSocial;
+
+                // The JSONB columns (socialNetworks, location) and the
+                // string-vs-Date birthDate are intentionally permissive at
+                // runtime — Drizzle stores whatever the column accepts. We
+                // cast to Partial<User> at the model.update boundary because
+                // the Zod-derived User type tightens each JSONB field to its
+                // full schema (SocialNetwork, FullLocationType) while we
+                // accept partial onboarding subsets here.
+                // birthDate is converted to Date since the column is typed
+                // as timestamp and Drizzle expects a Date, not the ISO
+                // string the HTTP body carries.
+                const patch = {
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    displayName: resolvedDisplayName,
+                    profileCompleted: true,
+                    ...(Object.keys(contactInfo).length > 0 && { contactInfo }),
+                    ...(Object.keys(settings).length > 0 && { settings }),
+                    ...(Object.keys(profile).length > 0 && { profile }),
+                    ...(Object.keys(resolvedSocialNetworks).length > 0 && {
+                        socialNetworks: resolvedSocialNetworks
+                    }),
+                    ...(birthDate !== undefined && { birthDate: new Date(birthDate) }),
+                    ...(imageUrl !== undefined && { image: imageUrl }),
+                    ...(location !== undefined && { location })
+                } as Partial<User>;
+
+                const updated = await this.model.update({ id: userId }, patch, execCtx?.tx);
 
                 if (!updated) {
                     throw new ServiceError(

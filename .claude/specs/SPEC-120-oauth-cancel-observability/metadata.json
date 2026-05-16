@@ -10,13 +10,6 @@
     "approved": null,
     "completed": null,
     "planFileRef": null,
-    "tags": [
-        "auth",
-        "oauth",
-        "observability",
-        "ux",
-        "sentry",
-        "i18n"
-    ],
+    "tags": ["auth", "oauth", "observability", "ux", "sentry", "i18n"],
     "startedAt": "2026-05-15T00:00:00Z"
 }

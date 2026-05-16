@@ -68,6 +68,20 @@
             "resendCode": "Reenviar código",
             "changeEmail": "Cambiar correo"
         },
+        "strength": {
+            "weak": "Débil",
+            "medium": "Media",
+            "strong": "Fuerte"
+        },
+        "showPassword": "Mostrar contraseña",
+        "hidePassword": "Ocultar contraseña",
+        "rules": {
+            "length": "Al menos 8 caracteres",
+            "upper": "Al menos una mayúscula",
+            "lower": "Al menos una minúscula",
+            "digit": "Al menos un número",
+            "special": "Al menos un carácter especial"
+        },
         "errors": {
             "emailRequired": "El correo electrónico es requerido",
             "passwordRequired": "La contraseña es requerida",
@@ -77,7 +91,7 @@
             "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
             "passwordsDoNotMatch": "Las contraseñas no coinciden",
             "emailAlreadyExists": "Ya existe una cuenta con este correo",
-            "weakPassword": "La contraseña es muy débil",
+            "weakPassword": "La contraseña no cumple los requisitos de seguridad",
             "networkError": "Error de conexión. Verifica tu internet",
             "unknownError": "Error desconocido. Inténtalo de nuevo"
         }

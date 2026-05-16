@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import {
     createBasicInfoConsolidatedSection,
     createContactConsolidatedSection,
@@ -21,9 +22,13 @@ export interface EventOrganizerConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Event Organizer entity
+ * Creates the complete consolidated configuration for the Event Organizer entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createEventOrganizerConsolidatedConfig = (): EventOrganizerConsolidatedConfig => ({
+export const createEventOrganizerConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): EventOrganizerConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createContactConsolidatedSection(),
@@ -32,8 +37,8 @@ export const createEventOrganizerConsolidatedConfig = (): EventOrganizerConsolid
     ],
     metadata: {
         entityType: 'event-organizer',
-        entityName: 'Organizador de Eventos',
-        entityNamePlural: 'Organizadores de Eventos',
+        entityName: t('admin-entities.entities.eventOrganizer.singular'),
+        entityNamePlural: t('admin-entities.entities.eventOrganizer.plural'),
         baseRoute: '/events/organizers'
     }
 });

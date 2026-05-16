@@ -12,11 +12,14 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
-import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH } from '@repo/schemas';
+import { queueToastForNextPage } from '@/store/toast-store';
+import { PROFILE_COMPLETION_MIN_PASSWORD_LENGTH, StrongPasswordRegex } from '@repo/schemas';
 import { useState } from 'react';
+import { PasswordField } from '../ui/PasswordField.client';
+import type { PasswordFieldI18n } from '../ui/PasswordField.client';
 import styles from './SetPassword.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,10 +45,11 @@ export interface SetPasswordProps {
 /**
  * Set-password form island for OAuth-only users.
  *
- * Presents a password input and two CTAs: set a password or skip.
+ * Presents password + confirm-password fields (via `PasswordField`) with
+ * show/hide toggles and a strength bar. Two CTAs: set a password or skip.
  * The skip path shows a confirmation modal before calling the skip endpoint.
  *
- * @param props - Component props
+ * @param props - Component props (see {@link SetPasswordProps})
  */
 export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPasswordProps) {
     const { t } = createTranslations(locale);
@@ -53,11 +57,35 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
     // ── Form state ────────────────────────────────────────────────────────────
 
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [confirmError, setConfirmError] = useState<string | null>(null);
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [showSkipModal, setShowSkipModal] = useState(false);
     const [skipping, setSkipping] = useState(false);
+
+    // ── i18n for PasswordField ────────────────────────────────────────────────
+
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('account.setPassword.showPassword', 'Mostrar contraseña'),
+        hidePassword: t('account.setPassword.hidePassword', 'Ocultar contraseña'),
+        strength: {
+            weak: t('account.setPassword.passwordStrength.weak', 'Débil'),
+            medium: t('account.setPassword.passwordStrength.medium', 'Media'),
+            strong: t('account.setPassword.passwordStrength.strong', 'Fuerte')
+        },
+        rules: {
+            length: t('account.setPassword.rules.length', 'Mínimo 8 caracteres'),
+            upper: t('account.setPassword.rules.upper', 'Al menos 1 mayúscula'),
+            lower: t('account.setPassword.rules.lower', 'Al menos 1 minúscula'),
+            digit: t('account.setPassword.rules.digit', 'Al menos 1 número'),
+            special: t(
+                'account.setPassword.rules.special',
+                'Al menos 1 carácter especial (@$!%*?&)'
+            )
+        }
+    };
 
     // ── Context message ───────────────────────────────────────────────────────
 
@@ -86,6 +114,7 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
         event.preventDefault();
         setGlobalError(null);
         setPasswordError(null);
+        setConfirmError(null);
 
         if (password.length < PROFILE_COMPLETION_MIN_PASSWORD_LENGTH) {
             setPasswordError(
@@ -93,6 +122,23 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                     'account.setPassword.errors.passwordMin',
                     'La contraseña debe tener al menos 8 caracteres.'
                 )
+            );
+            return;
+        }
+
+        if (!StrongPasswordRegex.test(password)) {
+            setPasswordError(
+                t(
+                    'account.setPassword.errors.passwordWeak',
+                    'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+                )
+            );
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setConfirmError(
+                t('account.setPassword.errors.passwordsMismatch', 'Las contraseñas no coinciden.')
             );
             return;
         }
@@ -121,13 +167,15 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 return;
             }
 
-            addToast({
+            queueToastForNextPage({
                 type: 'success',
                 message: t(
                     'account.setPassword.successToast',
                     'Contraseña establecida correctamente'
                 )
             });
+
+            await refreshBetterAuthSession();
 
             window.location.href = `/${locale}/mi-cuenta/`;
         } catch {
@@ -175,6 +223,8 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 return;
             }
 
+            await refreshBetterAuthSession();
+
             window.location.href = `/${locale}/mi-cuenta/`;
         } catch {
             setShowSkipModal(false);
@@ -207,60 +257,51 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                     noValidate
                 >
                     {/* Password field */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="sp-password"
-                            className={styles.label}
-                        >
-                            {t('account.setPassword.fields.password', 'Contraseña')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                {' *'}
-                            </span>
-                        </label>
-                        <input
-                            id="sp-password"
-                            type="password"
-                            className={
-                                passwordError
-                                    ? `${styles.input} ${styles.inputError}`
-                                    : styles.input
-                            }
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder={t(
-                                'account.setPassword.fields.passwordPlaceholder',
-                                'Mínimo 8 caracteres'
-                            )}
-                            aria-required="true"
-                            aria-describedby={
-                                passwordError ? 'sp-password-error' : 'sp-password-hint'
-                            }
-                            autoComplete="new-password"
-                            disabled={submitting || skipping}
-                        />
-                        {passwordError ? (
-                            <p
-                                id="sp-password-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {passwordError}
-                            </p>
-                        ) : (
-                            <p
-                                id="sp-password-hint"
-                                className={styles.hint}
-                            >
-                                {t(
-                                    'account.setPassword.fields.passwordHint',
-                                    'Mínimo 8 caracteres.'
-                                )}
-                            </p>
+                    <PasswordField
+                        id="sp-password"
+                        label={t('account.setPassword.fields.password', 'Contraseña')}
+                        value={password}
+                        onChange={(v) => {
+                            setPassword(v);
+                            if (passwordError) setPasswordError(null);
+                        }}
+                        placeholder={t(
+                            'account.setPassword.fields.passwordPlaceholder',
+                            'Mínimo 8 caracteres'
                         )}
-                    </div>
+                        autoComplete="new-password"
+                        required
+                        disabled={submitting || skipping}
+                        showStrength
+                        showRuleChecklist
+                        error={passwordError ?? undefined}
+                        hint={t('account.setPassword.fields.passwordHint', 'Mínimo 8 caracteres.')}
+                        i18n={passwordI18n}
+                    />
+
+                    {/* Confirm password field */}
+                    <PasswordField
+                        id="sp-confirm-password"
+                        label={t(
+                            'account.setPassword.fields.confirmPassword',
+                            'Confirmar contraseña'
+                        )}
+                        value={confirmPassword}
+                        onChange={(v) => {
+                            setConfirmPassword(v);
+                            if (confirmError) setConfirmError(null);
+                        }}
+                        placeholder={t(
+                            'account.setPassword.fields.confirmPasswordPlaceholder',
+                            'Repetí tu contraseña'
+                        )}
+                        autoComplete="new-password"
+                        required
+                        disabled={submitting || skipping}
+                        showStrength={false}
+                        error={confirmError ?? undefined}
+                        i18n={passwordI18n}
+                    />
 
                     {/* Global error banner */}
                     {globalError && (

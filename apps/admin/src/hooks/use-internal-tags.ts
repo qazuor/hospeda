@@ -62,10 +62,13 @@ async function fetchInternalTagsList(filters: InternalTagListFilters) {
     const params = new URLSearchParams();
     if (filters.page) params.set('page', String(filters.page));
     if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
-    if (filters.search) params.set('search', filters.search);
-    if (filters.lifecycleState) params.set('lifecycleState', filters.lifecycleState);
+    // Map name → search and lifecycleState → status to the canonical admin
+    // search params. TagAdminSearchSchema (extends AdminSearchBaseSchema)
+    // accepts search/status, not name/lifecycleState.
+    const searchValue = filters.search ?? filters.name;
+    if (searchValue) params.set('search', searchValue);
+    if (filters.lifecycleState) params.set('status', filters.lifecycleState);
     if (filters.color) params.set('color', filters.color);
-    if (filters.name) params.set('name', filters.name);
 
     const query = params.toString();
     const path = `/api/v1/admin/tags/internal${query ? `?${query}` : ''}`;

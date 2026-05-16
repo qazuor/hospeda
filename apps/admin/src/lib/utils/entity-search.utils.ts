@@ -385,6 +385,44 @@ export const entitySearchConfigs: Record<EntityTypeEnum, EntitySearchConfig> = {
         filters: {
             status: 'published'
         }
+    },
+
+    [EntityTypeEnum.ACCOMMODATION]: {
+        entityType: EntityTypeEnum.ACCOMMODATION,
+        searchFields: ['name', 'slug', 'summary'],
+        limit: 15,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        filters: {
+            status: 'active'
+        }
+    },
+
+    [EntityTypeEnum.EVENT_LOCATION]: {
+        entityType: EntityTypeEnum.EVENT_LOCATION,
+        searchFields: ['name', 'city'],
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        filters: {}
+    },
+
+    [EntityTypeEnum.EVENT_ORGANIZER]: {
+        entityType: EntityTypeEnum.EVENT_ORGANIZER,
+        searchFields: ['name', 'description'],
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        filters: {}
+    },
+
+    [EntityTypeEnum.POST_SPONSORSHIP]: {
+        entityType: EntityTypeEnum.POST_SPONSORSHIP,
+        searchFields: ['message', 'description'],
+        limit: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        filters: {}
     }
 };
 
@@ -425,6 +463,26 @@ export const entityLoadConfigs: Record<EntityTypeEnum, EntityLoadConfig> = {
     [EntityTypeEnum.POST]: {
         entityType: EntityTypeEnum.POST,
         includeFields: ['id', 'title', 'slug', 'summary', 'publishedAt', 'status']
+    },
+
+    [EntityTypeEnum.ACCOMMODATION]: {
+        entityType: EntityTypeEnum.ACCOMMODATION,
+        includeFields: ['id', 'name', 'slug', 'summary', 'status']
+    },
+
+    [EntityTypeEnum.EVENT_LOCATION]: {
+        entityType: EntityTypeEnum.EVENT_LOCATION,
+        includeFields: ['id', 'name', 'city']
+    },
+
+    [EntityTypeEnum.EVENT_ORGANIZER]: {
+        entityType: EntityTypeEnum.EVENT_ORGANIZER,
+        includeFields: ['id', 'name', 'description']
+    },
+
+    [EntityTypeEnum.POST_SPONSORSHIP]: {
+        entityType: EntityTypeEnum.POST_SPONSORSHIP,
+        includeFields: ['id', 'message', 'description', 'sponsor']
     }
 };
 

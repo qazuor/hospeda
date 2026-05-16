@@ -74,6 +74,18 @@ const getFallbackText = (key: string, params?: Record<string, string | number>):
         'auth-ui.signUp.loading': 'Creando cuenta...',
         'auth-ui.signUp.alreadyHaveAccount': '¿Ya tienes cuenta?',
         'auth-ui.signUp.signInLink': 'Inicia sesión aquí',
+        'auth-ui.signUp.confirmPasswordPlaceholder': 'Repetí tu contraseña',
+        'auth-ui.signUp.showPassword': 'Mostrar contraseña',
+        'auth-ui.signUp.hidePassword': 'Ocultar contraseña',
+        'auth-ui.signUp.strength.weak': 'Débil',
+        'auth-ui.signUp.strength.medium': 'Media',
+        'auth-ui.signUp.strength.strong': 'Fuerte',
+        'auth-ui.signUp.rules.length': 'Mínimo 8 caracteres',
+        'auth-ui.signUp.rules.upper': 'Al menos una mayúscula',
+        'auth-ui.signUp.rules.lower': 'Al menos una minúscula',
+        'auth-ui.signUp.rules.digit': 'Al menos un número',
+        'auth-ui.signUp.rules.special': 'Al menos un carácter especial (@$!%*?&)',
+        'auth-ui.signUp.errors.passwordsDoNotMatch': 'Las contraseñas no coinciden',
 
         // User Menu
         'auth-ui.userMenu.welcome': 'Bienvenido',

@@ -5,6 +5,7 @@
  */
 
 import {
+    abandonedPendingSubsJob,
     addonExpiryJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
@@ -21,6 +22,7 @@ import {
     pageRevalidationJob,
     searchIndexRefreshJob,
     trialExpiryJob,
+    trialPreEndNotifJob,
     webhookRetryJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -46,7 +48,9 @@ export const cronJobs: CronJobDefinition[] = [
     conversationNotificationJob,
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
-    newsletterCloseCampaignsJob
+    newsletterCloseCampaignsJob,
+    trialPreEndNotifJob,
+    abandonedPendingSubsJob
 ];
 
 /**

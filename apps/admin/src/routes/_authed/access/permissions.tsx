@@ -19,17 +19,6 @@ export const Route = createFileRoute('/_authed/access/permissions')({
     component: PermissionsPage
 });
 
-/**
- * Format category name from enum value
- * ACCOMMODATION_REVIEW -> Accommodation Review
- */
-function formatCategoryName(category: string): string {
-    return category
-        .split('_')
-        .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-        .join(' ');
-}
-
 // Internal group keys (not displayed directly, translated in render)
 const GROUP_KEYS = {
     CONTENT_MANAGEMENT: 'Content Management',
@@ -273,7 +262,9 @@ function PermissionsPage() {
                                                 >
                                                     <span className="text-primary">•</span>
                                                     <span className="font-medium">
-                                                        {formatCategoryName(category)}
+                                                        {t(
+                                                            `admin-pages.access.permissions.categories.${category}` as TranslationKey
+                                                        )}
                                                     </span>
                                                 </div>
                                             ))}

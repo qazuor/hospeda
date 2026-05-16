@@ -159,7 +159,17 @@ const TEXTS = {
 // /auth/me fetch with sessionStorage cache
 // ---------------------------------------------------------------------------
 
-const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+/**
+ * sessionStorage key used by UserMenu to cache the `/auth/me` snapshot.
+ * Exported so other modules (notably `refreshBetterAuthSession()` in
+ * `lib/auth-client.ts`) can invalidate the cache after operations that
+ * change the user record — e.g. submitting the SPEC-113 profile
+ * completion form. Without invalidation, the UserMenu paints from the
+ * stale snapshot for up to {@link AUTH_ME_CACHE_TTL_MS} after the change,
+ * which is what made the navbar look empty after first-time profile
+ * completion.
+ */
+export const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
 const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
 
 interface AuthMeSnapshot {
@@ -208,6 +218,7 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
                 id?: string;
                 name?: string;
                 email?: string;
+                image?: string;
                 permissions?: ReadonlyArray<string>;
             };
             isAuthenticated?: boolean;
@@ -224,7 +235,16 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
                 ? {
                       id: actor.id,
                       name: actor.name ?? '',
-                      email: actor.email ?? ''
+                      email: actor.email ?? '',
+                      // Map actor.image → avatarUrl so the navbar avatar
+                      // stays in sync after the post-mount /auth/me refresh
+                      // (otherwise OAuth users would flicker from the
+                      // SSR-provided picture back to initials after ~1s,
+                      // mirroring the name flicker fixed in PR #1111).
+                      avatarUrl:
+                          typeof actor.image === 'string' && actor.image.length > 0
+                              ? actor.image
+                              : undefined
                   }
                 : null,
         permissions: actor?.permissions ?? [],

@@ -6,7 +6,7 @@
 
 import { BadgeColor } from '@/components/table/DataTable';
 import type { EntityType } from '@/components/table/DataTable';
-import type { LinkHandler } from './types';
+import type { ColumnTFunction, LinkHandler } from './types';
 
 /**
  * Badge option configuration
@@ -66,32 +66,90 @@ export type BadgeColumnOptions = {
 };
 
 /**
- * Common visibility badge options
+ * Common visibility badge options (localized).
+ *
+ * Resolves labels through `admin-entities.states.visibility.*` keys.
  */
-export const VISIBILITY_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'PUBLIC', label: 'Public', color: BadgeColor.PURPLE },
-    { value: 'PRIVATE', label: 'Private', color: BadgeColor.CYAN },
-    { value: 'HIDDEN', label: 'Hidden', color: BadgeColor.PINK },
-    { value: 'RESTRICTED', label: 'Restricted', color: BadgeColor.ORANGE }
+export const getVisibilityBadgeOptions = (t: ColumnTFunction): readonly BadgeOption[] => [
+    {
+        value: 'PUBLIC',
+        label: t('admin-entities.states.visibility.public'),
+        color: BadgeColor.PURPLE
+    },
+    {
+        value: 'PRIVATE',
+        label: t('admin-entities.states.visibility.private'),
+        color: BadgeColor.CYAN
+    },
+    {
+        value: 'HIDDEN',
+        label: t('admin-entities.states.visibility.hidden'),
+        color: BadgeColor.PINK
+    },
+    {
+        value: 'RESTRICTED',
+        label: t('admin-entities.states.visibility.restricted'),
+        color: BadgeColor.ORANGE
+    }
 ];
 
 /**
- * Common lifecycle state badge options
+ * Common lifecycle state badge options (localized).
+ *
+ * Resolves labels through `admin-entities.states.lifecycle.*` keys.
  */
-export const LIFECYCLE_STATE_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'DRAFT', label: 'Draft', color: BadgeColor.GRAY },
-    { value: 'ACTIVE', label: 'Active', color: BadgeColor.GREEN },
-    { value: 'INACTIVE', label: 'Inactive', color: BadgeColor.YELLOW },
-    { value: 'ARCHIVED', label: 'Archived', color: BadgeColor.ORANGE },
-    { value: 'DELETED', label: 'Deleted', color: BadgeColor.RED }
+export const getLifecycleStateBadgeOptions = (t: ColumnTFunction): readonly BadgeOption[] => [
+    {
+        value: 'DRAFT',
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: 'ACTIVE',
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'INACTIVE',
+        label: t('admin-entities.states.lifecycle.inactive'),
+        color: BadgeColor.YELLOW
+    },
+    {
+        value: 'ARCHIVED',
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    },
+    {
+        value: 'DELETED',
+        label: t('admin-entities.states.lifecycle.deleted'),
+        color: BadgeColor.RED
+    }
 ];
 
 /**
- * Common moderation state badge options
+ * Common moderation state badge options (localized).
+ *
+ * Resolves labels through `admin-entities.states.moderation.*` keys.
  */
-export const MODERATION_STATE_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'PENDING', label: 'Pending', color: BadgeColor.YELLOW },
-    { value: 'APPROVED', label: 'Approved', color: BadgeColor.GREEN },
-    { value: 'REJECTED', label: 'Rejected', color: BadgeColor.RED },
-    { value: 'UNDER_REVIEW', label: 'Under Review', color: BadgeColor.BLUE }
+export const getModerationStateBadgeOptions = (t: ColumnTFunction): readonly BadgeOption[] => [
+    {
+        value: 'PENDING',
+        label: t('admin-entities.states.moderation.pending'),
+        color: BadgeColor.YELLOW
+    },
+    {
+        value: 'APPROVED',
+        label: t('admin-entities.states.moderation.approved'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'REJECTED',
+        label: t('admin-entities.states.moderation.rejected'),
+        color: BadgeColor.RED
+    },
+    {
+        value: 'UNDER_REVIEW',
+        label: t('admin-entities.states.moderation.underReview'),
+        color: BadgeColor.BLUE
+    }
 ];

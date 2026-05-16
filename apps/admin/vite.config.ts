@@ -163,17 +163,28 @@ export default defineConfig({
             : [])
     ],
     resolve: {
-        alias: {
-            '@': resolve(__dirname, './src'),
-            '@repo/schemas': resolve(__dirname, '../../packages/schemas/src'),
-            '@repo/db': resolve(__dirname, '../../packages/db/src'),
-            '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
-            '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
-            '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/icons': resolve(__dirname, '../../packages/icons/src'),
-            '@repo/i18n': resolve(__dirname, '../../packages/i18n/src')
-        },
+        alias: [
+            // Exact-match shim for `kysely` (NOT `kysely/migration`, NOT `kysely/dist/...`).
+            // better-auth 1.4.18 imports DEFAULT_MIGRATION_TABLE / DEFAULT_MIGRATION_LOCK_TABLE
+            // from "kysely" but kysely 0.29 only exports those from "kysely/migration" now,
+            // which crashes optimizeDeps. The shim re-exports the package + adds the constants.
+            { find: /^kysely$/, replacement: resolve(__dirname, './src/lib/kysely-shim.mjs') },
+            { find: '@', replacement: resolve(__dirname, './src') },
+            {
+                find: '@repo/schemas',
+                replacement: resolve(__dirname, '../../packages/schemas/src')
+            },
+            { find: '@repo/db', replacement: resolve(__dirname, '../../packages/db/src') },
+            { find: '@repo/logger', replacement: resolve(__dirname, '../../packages/logger/src') },
+            { find: '@repo/utils', replacement: resolve(__dirname, '../../packages/utils/src') },
+            { find: '@repo/config', replacement: resolve(__dirname, '../../packages/config/src') },
+            {
+                find: '@repo/service-core',
+                replacement: resolve(__dirname, '../../packages/service-core/src')
+            },
+            { find: '@repo/icons', replacement: resolve(__dirname, '../../packages/icons/src') },
+            { find: '@repo/i18n', replacement: resolve(__dirname, '../../packages/i18n/src') }
+        ],
         dedupe: ['react', 'react-dom']
     },
     optimizeDeps: {

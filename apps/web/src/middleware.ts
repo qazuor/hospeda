@@ -28,6 +28,7 @@ import {
     isAdminBypassUser,
     isAuthRoute,
     isBetaRoute,
+    isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
     isServerIslandRoute,
@@ -147,11 +148,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         // Step 7.5 (SPEC-113): Profile completion + set-password guard.
         //
-        // Only runs on protected routes where we have a valid user.  Admin and
-        // super_admin roles skip the flow entirely (spec §3.5).  The two
-        // completion routes themselves are whitelisted so form submissions are
-        // never caught in a redirect loop.
-        if (isProtectedRoute({ path }) && user) {
+        // Runs on protected routes with a valid user, plus on the subset of
+        // session-optional routes listed in
+        // `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS` (e.g.
+        // `/publicar/*`). Guests on those routes still pass through normally
+        // — only signed-in users with incomplete profiles get bounced.
+        //
+        // Admin and super_admin roles skip the flow entirely (spec §3.5).  The
+        // two completion routes themselves are whitelisted so form submissions
+        // are never caught in a redirect loop.
+        const guardApplies =
+            user &&
+            (isProtectedRoute({ path }) ||
+                isProfileCompletionRequiredSessionOptionalRoute({ path }));
+
+        if (guardApplies) {
             // Fetch the completion flags in parallel with session (already done)
             // — the status call is fast (two indexed DB lookups on the API side).
             const cookieHeader = context.request.headers.get('cookie');

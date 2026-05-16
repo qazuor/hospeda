@@ -1140,6 +1140,17 @@
             "discoveredDuring": "SPEC-111 Sentry config audit (2026-05-16)",
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["api", "sentry", "source-maps", "monitoring", "tsup", "follow-up", "spec-111"]
+        },
+        {
+            "specId": "SPEC-129",
+            "title": "Security Audit — Dependency Vulnerabilities Remediation",
+            "type": "security",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-129-security-audit-vulnerabilities",
+            "created": "2026-05-15T17:50:00.000Z",
+            "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
+            "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
         }
     ]
 }

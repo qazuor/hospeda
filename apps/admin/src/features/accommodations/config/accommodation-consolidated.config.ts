@@ -31,10 +31,10 @@ export const createAccommodationConsolidatedConfig = (
             createStatisticsConsolidatedSection(t)
         ],
         metadata: {
-            title: 'Accommodation',
-            description: 'Manage accommodation details',
-            entityName: 'Accommodation',
-            entityNamePlural: 'Accommodations'
+            title: t('admin-entities.entities.accommodation.singular'),
+            description: t('admin-entities.entities.accommodation.description'),
+            entityName: t('admin-entities.entities.accommodation.singular'),
+            entityNamePlural: t('admin-entities.entities.accommodation.plural')
         }
     };
 };

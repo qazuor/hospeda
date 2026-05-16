@@ -89,10 +89,12 @@ export const UserSchema = z.object({
     // Authentication fields
     authProvider: AuthProviderEnumSchema.optional(),
 
+    // Nullable in DB; an edit-mode form rehydrating from the API would otherwise
+    // fail Zod validation with `expected string, received null` (SPEC-117 D-USERS.4).
     authProviderUserId: z
         .string()
         .min(1, { message: 'zodError.user.authProviderUserId.min' })
-        .optional(),
+        .nullish(),
 
     // Personal information
     displayName: z
@@ -137,6 +139,13 @@ export const UserSchema = z.object({
     // Role and permissions
     role: RoleEnumSchema,
     permissions: z.array(PermissionEnumSchema).default([]),
+
+    // SPEC-113: post-signup onboarding flags. Mirror the
+    // `users.profile_completed` + `users.set_password_prompted` columns added
+    // in Phase 0. Optional with default `false` so existing fixtures and
+    // create/update inputs that don't mention them keep working.
+    profileCompleted: z.boolean().default(false).optional(),
+    setPasswordPrompted: z.boolean().default(false).optional(),
 
     // User-specific nested objects
     profile: UserProfileSchema.nullish(),

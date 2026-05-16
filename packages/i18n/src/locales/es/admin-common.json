@@ -246,5 +246,19 @@
         "srSuccess": "Formulario enviado exitosamente",
         "srFailed": "Error al enviar el formulario: {{error}}",
         "srHasErrors": "El formulario tiene {{count}} errores de validación"
+    },
+    "entityPage": {
+        "viewTitle": "{entity}",
+        "editTitle": "Editar {entity}",
+        "viewDescription": "Detalles de {entity}",
+        "editDescription": "Modificar detalles de {entity}",
+        "notAvailable": "No disponible",
+        "none": "Ninguna",
+        "actions": {
+            "back": "Volver",
+            "edit": "Editar",
+            "view": "Ver",
+            "cancel": "Cancelar"
+        }
     }
 }
