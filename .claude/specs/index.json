@@ -1071,6 +1071,18 @@
             "branch": "spec/SPEC-136-admin-a11y-compliance",
             "parent": "SPEC-134",
             "tags": ["admin", "accessibility", "wcag"]
+        },
+        {
+            "specId": "SPEC-141",
+            "title": "Admin design-token contrast remediation",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-141-admin-design-token-contrast",
+            "created": "2026-05-16T13:00:00Z",
+            "extractedFrom": "SPEC-136 post-fix axe verification",
+            "parent": "SPEC-134",
+            "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
         }
     ]
 }
