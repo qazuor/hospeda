@@ -52,6 +52,18 @@ This is the spec where Hospeda goes from "we have addons + trial" to "we have a 
 - Front-end (Astro/React) pages — separate UI spec (mention in operator pre-reqs).
 - Coolify env vars + prod toggle (SPEC-109 Phases 3-7, runs after SPEC-122 closes).
 - MP dashboard configuration (operator pre-requisite of master spec).
+- **D1 annual (one-time annual payment via MP Checkout Pro)** — deferred to a
+  post-SPEC-126 follow-up. Two gaps surfaced during implementation: (a)
+  qzpay-core@1.4.0 does not expose a public `billing.checkout` surface (the
+  checkout adapter sits behind `getPaymentAdapter().checkout` and requires
+  `providerPriceIds[]` which do not apply to dynamically-computed annual
+  amounts), and (b) the spec does not cover a webhook handler for the annual
+  one-time `payment.created` → sub activation flow (D3 is monthly-only, D4
+  is recurring-only). The `/start-paid` endpoint currently rejects
+  `billingInterval: 'annual'` with HTTP 501 so the API contract is stable
+  and clients can detect the unsupported case explicitly. Master plan
+  Decision 2 marked annual as "MVP scope"; this deferral leaves recurring
+  monthly as the only paid path until the follow-up lands.
 
 ## Implementation details
 
