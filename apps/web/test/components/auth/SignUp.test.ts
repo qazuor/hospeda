@@ -38,4 +38,27 @@ describe('SignUp.client.tsx', () => {
             expect(src).not.toContain('aria-label="Cargando');
         });
     });
+
+    /**
+     * SPEC-113: name collection moved to the profile completion form.
+     * The signup form must NOT render or send a free-text name input.
+     */
+    describe('name field removal (SPEC-113)', () => {
+        it('should not render a name input', () => {
+            expect(src).not.toContain('id="signup-name"');
+        });
+
+        it('should not have a name useState hook', () => {
+            expect(src).not.toMatch(/useState\(['"]['"]\)\s*;[\s\S]{0,40}setName/);
+            expect(src).not.toMatch(/const\s+\[\s*name\s*,\s*setName\s*\]/);
+        });
+
+        it('should not bind to setName', () => {
+            expect(src).not.toContain('setName(');
+        });
+
+        it('should pass an empty name string to signUp.email', () => {
+            expect(src).toContain("name: ''");
+        });
+    });
 });
