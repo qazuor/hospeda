@@ -17,6 +17,7 @@
 
 import type { QZPayStorageAdapter } from '@qazuor/qzpay-core';
 
+import { createCheckoutStorage } from './checkout-storage';
 import { createCustomerStorage } from './customer-storage';
 import {
     createInvoiceStorage,
@@ -72,6 +73,7 @@ export function createHttpBillingAdapter(_config: HttpAdapterConfig): QZPayStora
         entitlements: createEntitlementStorage(),
         limits: createLimitStorage(),
         addons: createAddOnStorage(),
+        checkouts: createCheckoutStorage(),
 
         /**
          * Transaction wrapper.
