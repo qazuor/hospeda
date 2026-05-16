@@ -84,35 +84,40 @@
         },
         {
             "id": "T-003",
-            "title": "Wire integration into astro.config.mjs and thread cspNonce from middleware",
-            "description": "Add the csp-nonce-injector integration to apps/web/astro.config.mjs `integrations:` array. The integration must register an HTML transformation hook (Astro's `astro:server:setup` or `astro:html-rendered` if available in Astro 6) that reads the per-request nonce from context.locals.cspNonce (already set by middleware) and calls injectNonce(). Ensure the integration runs AFTER Astro has rendered the page but BEFORE the response is sent. Document the hook used in a code comment. Acceptance: in dev mode, view-source of any page shows nonce attributes on <style> and <script> tags matching the CSP header value.",
-            "status": "pending",
+            "title": "Wire injectNonce from middleware (Astro 6 has no per-request HTML hook)",
+            "description": "Originally scoped as 'add the integration to astro.config.mjs and register an HTML transformation hook'. After verifying Astro 6 docs via context7, NO per-request HTML rewrite hook exists (astro:server:setup is dev-only Vite wiring, astro:build:* are build-time, astro:config:* are config-time, astro:route:setup is route registration). The plan pivoted to Path A1 from research/astro-csp-options.md §3 with the parse5 walker (the original A1 objection was 'regex fragility' which no longer applies). Wiring: apps/web/src/middleware.ts imports injectNonce from ../integrations/csp-nonce-injector and applies it on text/html responses after `next()` in both the beta-route block and the main HTML block, BEFORE setting the CSP header so the policy and the body see the same nonce. The cspNonceInjector() AstroIntegration factory was removed (Option 1 / YAGNI) — the dir stays as the walker module home. astro.config.mjs untouched.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-005", "T-014"],
             "subtasks": [
                 {
                     "title": "Identify the correct Astro 6 hook for per-response HTML transformation",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Wire the hook to read context.locals.cspNonce", "completed": false },
-                { "title": "Call injectNonce() and replace the response body", "completed": false },
+                { "title": "Wire the hook to read context.locals.cspNonce", "completed": true },
+                { "title": "Call injectNonce() and replace the response body", "completed": true },
                 {
                     "title": "Add inline comment explaining why this hook was chosen",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Manual check: view-source shows matching nonce on a freshly loaded page",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "astro-config", "middleware", "gap-09b", "gap-13"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Smoke test dev mode (localhost:4322/es/, 2026-05-16): CSP header nonce = f3CRRCumD4DG4Dro2orDRQ==. 131 <script>/<style> opening tags en el body. 130 stamped con el nonce correcto (matching header). 1 sin nonce: <style> dentro de <noscript> — correctamente skippeado por el walker (skip rule del spec test #6). Cero tags huérfanos fuera de noscript. 82 unit/integration tests verde (12 walker + 70 middleware-helpers). Astro 6 NO expone `astro:html-rendered` (verificado via context7). Wiring vive en middleware.ts pre-CSP-header, post-next(). Content-Length droppeado en el rebuild de Response porque cambia el body size, Node recomputa al send."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:35:00.000Z",
+                "completed": "2026-05-16T19:50:00.000Z"
             }
         },
         {
@@ -473,9 +478,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.5
     }
