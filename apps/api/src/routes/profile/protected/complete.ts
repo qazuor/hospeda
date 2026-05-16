@@ -38,11 +38,26 @@ export interface CompleteProfileUserService {
         actor: ReturnType<typeof getActorFromContext>,
         input: {
             userId: string;
-            displayName: string;
-            firstName?: string;
+            firstName: string;
+            lastName: string;
+            displayName?: string;
+            birthDate?: string;
+            imageUrl?: string;
             phone?: string;
             locale?: 'es' | 'en' | 'pt';
             newsletterOptIn?: boolean;
+            bio?: string;
+            website?: string;
+            occupation?: string;
+            socialNetworks?: {
+                facebook?: string;
+                instagram?: string;
+                twitter?: string;
+                linkedIn?: string;
+                tiktok?: string;
+                youtube?: string;
+            };
+            location?: { country: string; region?: string; city?: string };
             acceptedTerms: true;
         }
     ) => Promise<{
@@ -107,11 +122,19 @@ export const completeProfileHandler = async (
     // 1. Persist profile fields and flip profileCompleted = true.
     const profileResult = await userSvc.completeProfile(actor, {
         userId: actor.id,
-        displayName: body.displayName,
         firstName: body.firstName,
+        lastName: body.lastName,
+        displayName: body.displayName,
+        birthDate: body.birthDate,
+        imageUrl: body.imageUrl,
         phone: body.phone,
         locale: body.locale,
         newsletterOptIn: body.newsletterOptIn,
+        bio: body.bio,
+        website: body.website,
+        occupation: body.occupation,
+        socialNetworks: body.socialNetworks,
+        location: body.location,
         acceptedTerms: body.acceptedTerms
     });
 
