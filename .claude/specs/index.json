@@ -1155,6 +1155,32 @@
             "created": "2026-05-15T17:50:00.000Z",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
             "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
+        },
+        {
+            "specId": "SPEC-134",
+            "title": "Admin Audit Remediation — Master",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-134-admin-audit-remediation",
+            "created": "2026-05-16T01:30:00Z",
+            "extractedFrom": "SPEC-131 audit findings",
+            "tags": ["admin", "remediation", "epic", "master"],
+            "children": ["SPEC-135", "SPEC-136", "SPEC-137"]
+        },
+        {
+            "specId": "SPEC-135",
+            "title": "Admin Mobile Responsive Remediation",
+            "type": "feature",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-135-admin-mobile-responsive-remediation",
+            "created": "2026-05-16T01:30:00Z",
+            "startedAt": "2026-05-16T06:30:00Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-135-admin-mobile-responsive",
+            "branch": "spec/SPEC-135-admin-mobile-responsive",
+            "parent": "SPEC-134",
+            "tags": ["admin", "responsive", "mobile"]
         }
     ]
 }

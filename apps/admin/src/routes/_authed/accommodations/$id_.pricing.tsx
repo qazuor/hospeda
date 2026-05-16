@@ -4,9 +4,9 @@
  * Displays and manages pricing for a specific accommodation.
  */
 
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatCurrency } from '@repo/i18n';
@@ -64,12 +64,10 @@ function AccommodationPricingPage() {
     };
 
     return (
-        <div className="space-y-4">
-            <PageTabs
-                tabs={accommodationTabs}
-                basePath={`/accommodations/${id}`}
-            />
-
+        <AccommodationSubTabLayout
+            accommodationId={id}
+            entityName={accommodation?.name}
+        >
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.pricing')}</h2>
 
@@ -263,6 +261,6 @@ function AccommodationPricingPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </AccommodationSubTabLayout>
     );
 }

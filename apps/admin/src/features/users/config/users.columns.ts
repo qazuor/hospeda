@@ -26,11 +26,16 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         })
     },
     {
+        // SPEC-135 F-030: fullName duplicates the displayName entity column on
+        // mobile (same first+last name text rendered twice). Keep it available
+        // via the column toggle but hide by default so mobile shows email/role
+        // among the first surviving columns instead of two redundant names.
         id: 'fullName',
         header: t('admin-entities.columns.fullName'),
         accessorKey: 'firstName',
         enableSorting: false,
         columnType: ColumnType.COMPOUND,
+        startVisibleOnTable: false,
         compoundOptions: {
             columns: [
                 { id: 'firstName', accessorKey: 'firstName', columnType: ColumnType.STRING },
@@ -41,11 +46,14 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         }
     },
     {
+        // SPEC-135 F-030: slug is low signal next to email/role on mobile.
+        // Hide by default; users can re-enable from the column toggle.
         id: 'slug',
         header: t('admin-entities.columns.slug'),
         accessorKey: 'slug',
         enableSorting: true,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.STRING,
+        startVisibleOnTable: false
     },
     {
         id: 'role',
