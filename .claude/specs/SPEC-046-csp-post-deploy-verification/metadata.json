@@ -1,13 +1,13 @@
 {
     "specId": "SPEC-046",
     "title": "CSP Post-Deployment Verification",
-    "status": "draft",
+    "status": "in-progress",
     "created": "2026-03-16",
-    "revised": "2026-03-16",
+    "revised": "2026-05-16",
     "priority": "HIGH",
-    "complexity": "low",
+    "complexity": "medium",
     "type": "security",
     "tags": ["security", "csp", "verification", "sentry", "mercadopago", "web", "admin"],
     "origin": "SPEC-042 (post-deploy verification items)",
-    "dependsOn": ["SPEC-042"]
+    "dependsOn": ["SPEC-042", "SPEC-045"]
 }
