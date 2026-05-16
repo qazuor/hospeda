@@ -83,6 +83,7 @@ Refer to `../SPEC-134-admin-audit-remediation/audit-baseline/findings.md` for fu
 - F-019 (empty h1) follow-up: if it turns out to be load-timing noise, document as accepted; if real, include in this spec
 - Color contrast on icons / decorative elements (axe doesn't flag those at AA, but if visual audit raises them in re-run, file follow-up)
 - Manual keyboard navigation pass — explicitly skipped from the audit per 2026-05-15 decision; can be re-added as SPEC-138 if needed
+- **Badge / muted-text contrast follow-up (added 2026-05-16 during post-fix verification)**: the re-run sweep flagged 47 nodes across 8 pages with `color-contrast` failures on `bg-muted text-muted-foreground` badges (e.g. "Sistema", "Otro", "Tradiciones" tag types), `text-muted-foreground text-xs` form helpers ("0/4 campos completos"), and destructive-color buttons on muted-tinted backgrounds (`bg-destructive/5 text-destructive`). These are global design-token contrast issues, NOT the F-014 DataTable sort-header issue this spec targets, and changing them touches the shared design language. **Filed as follow-up** — recommend a dedicated SPEC for design-token contrast across `@repo/tailwind-config` so the change is auditable, applied uniformly, and reviewed by design before merge. The 47 nodes do not block SPEC-136 acceptance since they were present in the SPEC-131 baseline and are not in the named findings (F-003..F-019).
 
 ## 5. Risks
 
