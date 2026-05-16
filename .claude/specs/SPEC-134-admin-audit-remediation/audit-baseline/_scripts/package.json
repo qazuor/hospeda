@@ -1,0 +1,15 @@
+{
+    "name": "spec-131-audit-scripts",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "inventory": "bun md-to-json.ts",
+        "sweep": "bun sweep.ts",
+        "sweep:dry": "DRY_RUN=1 bun sweep.ts"
+    },
+    "dependencies": {
+        "@axe-core/playwright": "^4.10.2",
+        "playwright": "^1.50.0"
+    }
+}
