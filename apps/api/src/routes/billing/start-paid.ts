@@ -11,11 +11,13 @@
  * - POST /api/v1/protected/billing/subscriptions/start-paid
  *
  * Branch matrix:
- * - `billingInterval: 'monthly'` -> service delegation.
- * - `billingInterval: 'annual'` -> HTTP 501 (D1 annual follow-up).
- * - `promoCode` present -> forwarded to the service, which honors only
- *   `free_trial_extension`-type promos (SPEC-126 D9). Unknown or
- *   discount-type codes surface as HTTP 422.
+ * - `billingInterval: 'monthly'` -> {@link initiatePaidMonthlySubscription}
+ *   (preapproval/recurring via MP).
+ * - `billingInterval: 'annual'` -> {@link initiatePaidAnnualSubscription}
+ *   (one-time upfront charge via MP Checkout, SPEC-141 D1).
+ * - `promoCode` present (monthly only) -> forwarded to the service,
+ *   which honors only `free_trial_extension`-type promos (SPEC-126 D9).
+ *   Unknown or discount-type codes surface as HTTP 422.
  *
  * @module routes/billing/start-paid
  */
@@ -30,6 +32,7 @@ import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
 import {
     SubscriptionCheckoutError,
+    initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription
 } from '../../services/subscription-checkout.service';
 import { createRouter } from '../../utils/create-app';
@@ -56,6 +59,23 @@ function buildPaymentMethodReturnUrl(): string {
  */
 function buildNotificationUrl(): string {
     return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
+}
+
+/**
+ * MP Checkout return URLs for the annual one-time flow.
+ *
+ * The front-end receives `localSubscriptionId` in the response body
+ * and persists it in sessionStorage BEFORE redirecting to MP, so the
+ * URLs themselves don't need to carry the id. `cancelled=1` lets the
+ * UI render an "abandoned checkout" message instead of the
+ * success-pending spinner.
+ */
+function buildAnnualSuccessUrl(): string {
+    return `${env.HOSPEDA_SITE_URL}/billing/return`;
+}
+
+function buildAnnualCancelUrl(): string {
+    return `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`;
 }
 
 /**
@@ -90,11 +110,12 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
  *
  * Errors:
  * - 400 when the caller has no billing customer on session.
- * - 404 when the plan slug is unknown or has no active monthly price.
+ * - 404 when the plan slug is unknown, has no active price for the
+ *   requested interval, or (annual only) the resolved customer cannot
+ *   be loaded.
  * - 422 when the promo code is not a valid `free_trial_extension` (D9).
  * - 500 when the qzpay create call returns no init point (adapter bug),
  *   or when any other unexpected error bubbles out.
- * - 501 when `billingInterval === 'annual'` (D1 annual follow-up).
  * - 503 when billing is not configured.
  */
 export const handleStartPaidSubscription = async (
@@ -129,30 +150,37 @@ export const handleStartPaidSubscription = async (
         });
     }
 
-    if (body.billingInterval === 'annual') {
-        throw new HTTPException(501, {
-            message:
-                'Annual paid subscriptions are not yet supported (SPEC-126 D1 annual follow-up)'
-        });
-    }
-
     try {
-        const result = await initiatePaidMonthlySubscription({
-            customerId: billingCustomerId,
-            planSlug: body.planSlug,
-            billing,
-            urls: {
-                paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
-                notificationUrl: buildNotificationUrl()
-            },
-            promoCode: body.promoCode
-        });
+        const result =
+            body.billingInterval === 'annual'
+                ? await initiatePaidAnnualSubscription({
+                      customerId: billingCustomerId,
+                      planSlug: body.planSlug,
+                      billing,
+                      urls: {
+                          successUrl: buildAnnualSuccessUrl(),
+                          cancelUrl: buildAnnualCancelUrl(),
+                          notificationUrl: buildNotificationUrl()
+                      },
+                      statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                  })
+                : await initiatePaidMonthlySubscription({
+                      customerId: billingCustomerId,
+                      planSlug: body.planSlug,
+                      billing,
+                      urls: {
+                          paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                          notificationUrl: buildNotificationUrl()
+                      },
+                      promoCode: body.promoCode
+                  });
 
         apiLogger.info(
             {
                 localSubscriptionId: result.localSubscriptionId,
                 customerId: billingCustomerId,
-                planSlug: body.planSlug
+                planSlug: body.planSlug,
+                billingInterval: body.billingInterval
             },
             'Paid subscription initiated, awaiting provider authorization'
         );
