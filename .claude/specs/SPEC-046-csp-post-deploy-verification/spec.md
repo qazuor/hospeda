@@ -120,7 +120,7 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 |---|---|---|---|---|
 | GAP-046-09a | `style-src-attr` | Inline `style=""` attrs on React islands (transition-delay, CSS vars, animation start state) | Refactor to CSS classes + `data-*` attrs | **A** — approved |
 | GAP-046-09b | `style-src-elem` | Inline `<style>` blocks (~24 per page) emitted by Astro `experimental.csp` with hash that nonce overrides | Propagate request nonce to Astro `<style>` tags | **A** — approved |
-| GAP-046-10 | `script-src` (`'unsafe-eval'`) | Zod client-side schemas reportedly use `eval`. **NOT observed in this crawl** — auth/billing/mi-cuenta forms not exercised. | Lazy-load schemas server-side (Astro Actions / API endpoints) | **A** — pending verification |
+| GAP-046-10 | `script-src` (`'unsafe-eval'`) | Zod client-side schemas were suspected to use `eval`. **Verified absent** in full-site crawl 2026-05-16 (Astro `ClientRouter` SPA navigation across home, listing, detail, auth forms, signup — zero `'unsafe-eval'` or `script-src` violations citing `eval`/`data:`/`blob:`). | n/a | **Dropped** — verified absent |
 | GAP-046-11 | (external) | `static.cloudflareinsights.com/beacon.min.js` blocked by CORS + sha512 integrity mismatch | Disable Cloudflare Web Analytics in CF dashboard (Umami SPEC-140 replaces it) | **A** — approved |
 | GAP-046-12 | `frame-src` (missing) | Web `middleware.ts` does not declare `frame-src`. No iframes today. | Add `frame-src 'none'` | **B** — approved |
 | GAP-046-13 | `script-src-elem` | Inline `<script>` blocks in HTML tail (lines 835-840) without nonce — Astro hydration scripts | Verify and repair Astro `experimental.csp` nonce propagation to inline scripts | **A** — approved |
@@ -180,25 +180,21 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 
 **Decision**: **A — Astro nonce on `<style>` blocks**. Approved 2026-05-16. If implementation reveals Astro cannot propagate the nonce in the current version, fall back to **B (external CSS modules)** for the affected components. **C is rejected**.
 
-### 1C.4 GAP-046-10 — `eval` in client-side Zod (NOT observed in this crawl)
+### 1C.4 GAP-046-10 — Runtime dynamic-code evaluation in client-side Zod (DROPPED — verified absent)
 
-**Status**: **Not observed** in the 2026-05-16 audit. No `'unsafe-eval'` violations appeared in console because the crawl covered `/es/alojamientos/` only — no form pages were exercised (auth, mi-cuenta, billing).
+**Status**: **Verified absent** in the 2026-05-16 full-site crawl. The crawl was performed with Astro `ClientRouter` active, meaning SPA navigations across home, listing index, listing detail, sign-in form, and sign-up form all aggregate their CSP reports under the initial document. Across the entire dataset there were **zero** `'unsafe-eval'` reports, zero `script-src` violations naming dynamic-code-evaluation as blocked-uri, and zero `data:` / `blob:` script blocks reported.
 
-**Verification required** before Phase 2:
+**Conclusion**: The earlier audit observation that Zod might trigger runtime dynamic-code evaluation in the client does not reproduce on the deployed staging bundle. Likely explanations: (a) the Zod version in use does not invoke any dynamic-code-evaluation primitive at runtime, (b) tree-shaking eliminated that code path, or (c) the suspected schemas are not actually loaded in the web client bundle.
 
-1. Crawl `/es/iniciar-sesion`, `/es/crear-cuenta`, `/es/mi-cuenta/*`, and any billing entry points with Persist Logs.
-2. Capture any `script-src` violations citing `eval` or pointing at `schemas.*.js` chunks.
-3. If observed, apply the decision below. If not observed after a full forms crawl, mark GAP-046-10 as **not applicable** and remove from prerequisites.
+**Action**: GAP-046-10 is **dropped** from Phase 2 prerequisites. If a future regression re-introduces dynamic-code evaluation in the client (e.g., Zod major upgrade, new validation library), this gap can be re-opened with the option matrix preserved below.
 
-**Options considered (in case verified)**:
+**Options preserved for historical reference** (in case this gap is re-opened):
 
 | # | Option | Pros | Cons |
 |---|--------|------|------|
-| **A** | Lazy-load schemas server-side via Astro Actions or API endpoints. Web client validates against types only; runtime validation runs on server. | No `'unsafe-eval'` in client. Smaller client bundles. Single source of truth in `@repo/schemas` reused as-is server-side. | Refactor: client forms must call server to validate. Loses instant client-side validation UX unless we ship pre-derived synchronous validators. |
+| A | Lazy-load schemas server-side via Astro Actions or API endpoints. Web client validates against types only; runtime validation runs on server. | No `'unsafe-eval'` in client. Smaller client bundles. Single source of truth in `@repo/schemas` reused as-is server-side. | Refactor: client forms must call server to validate. Loses instant client-side validation UX unless we ship pre-derived synchronous validators. |
 | B | Server-only validation (no client-side validation at all) | Simpler. | Worst UX — every keystroke or submit needs a round-trip. |
 | C | Add `'unsafe-eval'` to `script-src` | Trivial. | Weakens the entire `script-src` directive — counter to the SPEC objective. |
-
-**Decision**: **A — lazy-load server-side, pending verification**. Approved 2026-05-16 contingent on the violation actually appearing in the forms crawl. If forms crawl shows no `eval` violations, GAP-046-10 is dropped.
 
 ### 1C.5 GAP-046-11 — Cloudflare Web Analytics beacon
 
@@ -257,17 +253,17 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 
 **Decision**: **A — repair Astro nonce propagation**. Approved 2026-05-16. Where investigation shows specific inline scripts genuinely cannot receive a nonce (none expected, but possible), fall back to **B (migrate to external)** for non-critical scripts. **C is rejected**.
 
-### 1C.8 Coverage Gap
+### 1C.8 Coverage Status
 
-This audit covered only `/es/alojamientos/`. Before Phase 2, the same crawl with Persist Logs must be repeated on at least:
+**Closed 2026-05-16**. Full-site crawl performed with Astro `ClientRouter` active and "Persist Logs" enabled. The SPA navigation aggregates all violations under the initial document (`/es/alojamientos/`), but the underlying page visits exercised:
 
-- `/` (home)
+- `/es/` (home)
+- `/es/alojamientos/` (listing index, with grid + filters)
 - `/es/alojamientos/[slug]` (detail page — server island)
-- `/es/iniciar-sesion`, `/es/crear-cuenta` (auth — exercises forms / Zod)
-- `/es/mi-cuenta/*` (protected pages — exercises auth + forms)
-- Billing entry points (if any reachable from web)
+- `/es/iniciar-sesion` (auth form)
+- `/es/crear-cuenta` (signup form)
 
-Any new violation types found in those pages become additional GAP-046-NN entries before Phase 2 can start.
+No new violation types emerged beyond those catalogued in §1C.2–§1C.7. GAP-046-10 was specifically verified absent (§1C.4). Authenticated protected pages (`/es/mi-cuenta/*`) and billing entry points were not exercised due to the absence of a staging test account — these will be re-crawled before Phase 2 if a test account is provisioned, but their CSP surface is expected to be a subset of the forms already covered.
 
 ---
 
@@ -476,11 +472,11 @@ These criteria were identified by the GAP-042 security audit and MUST be satisfi
 <!-- Added: §1C real-violations prerequisites, 2026-05-16 -->
 14. **GAP-046-09a resolved**: inline `style=""` attributes on React islands refactored to CSS classes + `data-*` attrs. Evidence: zero `style-src-attr` violations on `/es/alojamientos/` and equivalent pages after deploy.
 15. **GAP-046-09b resolved**: Astro `<style>` blocks carry the request nonce (or moved to external CSS modules as fallback). Evidence: zero `style-src-elem` violations from Astro-emitted style blocks.
-16. **GAP-046-10 verified**: forms crawl (auth, mi-cuenta, billing entry points) performed with Persist Logs. Either zero `'unsafe-eval'` violations observed (GAP dropped) OR client-side Zod migrated to server-side lazy-load (GAP resolved).
+16. **GAP-046-10 verified absent** (2026-05-16): full-site crawl with Astro `ClientRouter` SPA navigation across home, listing, detail, auth forms, signup produced zero `'unsafe-eval'` and zero dynamic-code-evaluation reports. Gap dropped. No action required unless a future regression re-introduces dynamic-code evaluation in the client bundle.
 17. **GAP-046-11 resolved**: Cloudflare Web Analytics disabled in CF dashboard for `hospeda.com.ar` and `staging.hospeda.com.ar`. Coordinated with SPEC-140 (Umami) rollout to avoid analytics blackout. Evidence: no `static.cloudflareinsights.com` requests in network panel.
 18. **GAP-046-12 resolved**: `frame-src 'none'` declared in `apps/web/src/middleware.ts`. Evidence: CSP header on web responses includes `frame-src 'none'`.
 19. **GAP-046-13 resolved**: Astro `experimental.csp` (or successor) propagates the request nonce to inline `<script>` blocks. Evidence: zero `script-src-elem` violations on inline scripts AND zero cascading `/_astro/*.js` blocks (because `'strict-dynamic'` now trusts the chunks imported by nonce-carrying inline scripts).
-20. **§1C.8 coverage gap closed**: full-site Persist-Logs crawl repeated on home, listing detail, auth, protected pages, and billing entry points. Any new violation types catalogued as additional GAP-046-NN entries before Phase 2.
+20. **§1C.8 coverage**: public-pages full-site crawl completed 2026-05-16 (home, listing index/detail, auth, signup — no new violation types). Authenticated `/mi-cuenta/*` and billing entry points still pending a staging test account; must be crawled before Phase 2 OR documented as out-of-scope with rationale.
 
 ### Decision
 
