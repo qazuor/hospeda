@@ -15,6 +15,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { getNoindexHosts } from './lib/env';
 import {
     buildCspHeader,
     buildLocaleRedirect,
@@ -44,9 +45,7 @@ import {
  * by `pages/robots.txt.ts`; `parseNoindexHosts` is the single source of
  * truth so the two mechanisms can never drift.
  */
-const NOINDEX_HOSTS = parseNoindexHosts(
-    import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined
-);
+const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
  * Main middleware handler for all requests in the web2 application.

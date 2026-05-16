@@ -1246,5 +1246,41 @@ export const HOSPEDA_ENV_VARS = [
             'Locale used when no preference is set (e.g. "es" for Argentina). Must be one of HOSPEDA_SUPPORTED_LOCALES.',
         howToObtainEs:
             'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
+    },
+    {
+        name: 'HOSPEDA_NOINDEX_HOSTS',
+        description:
+            'Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.',
+        descriptionEs:
+            'Lista de hostnames separados por coma que deben recibir una policy restrictiva de robots (Disallow: /) y el header X-Robots-Tag: noindex, nofollow. Sirve para mantener los hostnames de staging fuera de los buscadores.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'staging.hospeda.com.ar',
+        exampleValue: 'staging.hospeda.com.ar,beta.hospeda.com.ar',
+        apps: ['web'],
+        category: 'features',
+        howToObtain:
+            'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
+        howToObtainEs:
+            'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
+    },
+    {
+        name: 'PUBLIC_ENABLE_LOGGING',
+        description:
+            'Opt-in flag for client-side console logging in non-dev builds. Dev builds always log regardless of this flag.',
+        descriptionEs:
+            'Flag opt-in para habilitar logging en consola del cliente en builds que no son de dev. Los builds de dev siempre loguean sin importar el valor de este flag.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'true',
+        apps: ['web'],
+        category: 'debugging',
+        howToObtain:
+            'Set to "true" in preview or staging to enable verbose client logs while debugging. Keep unset (defaults to false) in production to avoid noisy consoles.',
+        howToObtainEs:
+            'Poné "true" en preview o staging para habilitar logs verbosos del cliente mientras debuggeás. Dejá sin setear (default false) en producción así no se llena la consola.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
