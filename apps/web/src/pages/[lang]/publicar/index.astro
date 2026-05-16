@@ -91,7 +91,16 @@ const faqJsonLd = {
 				</p>
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
-				<HostLandingCta client:load locale={locale} />
+				<!--
+					client:only is required (not client:load) because Better Auth's
+					useSession() reaches into request context internally and triggers
+					Astro 6's "Astro.request.headers was used on prerendered page"
+					false-positive warning during SSR. client:only skips SSR entirely
+					and hydrates on the browser, which is the right model for an
+					auth-aware CTA anyway (the unauth fallback href is the safe SSG
+					default, and useSession only needs to resolve client-side).
+				-->
+				<HostLandingCta client:only="react" locale={locale} />
 			</div>
 			<div class="publicar-hero__image" data-reveal="scale" aria-hidden="true">
 				<div class="publicar-hero__image-placeholder"></div>
