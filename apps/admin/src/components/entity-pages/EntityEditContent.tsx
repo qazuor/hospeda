@@ -1,5 +1,6 @@
 import { EntityFormSection, useEntityForm } from '@/components/entity-form';
 import type { FieldMediaHandlers } from '@/components/entity-form/EntityFormSection';
+import { FormSidebarLayout } from '@/components/entity-form/layouts';
 import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
@@ -148,10 +149,11 @@ export const EntityEditContent = ({
                 />
             </div>
 
-            {/* Main content with navigation sidebar */}
-            <div className="flex gap-6">
-                {/* Navigation Sidebar */}
-                <div className="w-80 flex-shrink-0">
+            {/* Main content with responsive navigation sidebar
+                (accordion on mobile, fixed column on desktop) */}
+            <FormSidebarLayout
+                defaultMobileOpen={Object.keys(errors || {}).length > 0}
+                sidebar={
                     <SmartNavigation
                         sections={sectionProgress}
                         overallProgress={overallProgress}
@@ -162,88 +164,85 @@ export const EntityEditContent = ({
                         showProgress
                         showDetails
                     />
-                </div>
+                }
+            >
+                {/* Performance metrics (development only - hidden by default) */}
+                {import.meta.env.DEV && env.VITE_DEBUG_LAZY_SECTIONS && (
+                    <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
+                        Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
+                        sections loaded
+                    </div>
+                )}
 
-                {/* Content Area */}
-                <div className="min-w-0 flex-1">
-                    {/* Performance metrics (development only - hidden by default) */}
-                    {import.meta.env.DEV && env.VITE_DEBUG_LAZY_SECTIONS && (
-                        <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
-                            Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
-                            sections loaded
-                        </div>
-                    )}
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSave();
+                    }}
+                >
+                    <div className="space-y-8">
+                        {sections.map((section, index) => {
+                            // Use custom render function if provided
+                            if (renderSection) {
+                                return renderSection(section, index);
+                            }
 
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSave();
-                        }}
-                    >
-                        <div className="space-y-8">
-                            {sections.map((section, index) => {
-                                // Use custom render function if provided
-                                if (renderSection) {
-                                    return renderSection(section, index);
-                                }
+                            // Determine if this section should be lazy loaded
+                            const isLazy = shouldLazyLoad(section.id);
 
-                                // Determine if this section should be lazy loaded
-                                const isLazy = shouldLazyLoad(section.id);
+                            // Default rendering with lazy loading wrapper
+                            const sectionContent = (
+                                <EntityFormSection
+                                    key={section.id || `section-${index}`}
+                                    config={section}
+                                    values={values}
+                                    errors={errors}
+                                    onFieldChange={setFieldValue}
+                                    onFieldBlur={(fieldId) => {
+                                        adminLogger.log('Field blurred:', fieldId);
+                                    }}
+                                    disabled={isSaving}
+                                    entityData={values}
+                                    userPermissions={userPermissions}
+                                    fieldHandlers={fieldHandlers}
+                                />
+                            );
 
-                                // Default rendering with lazy loading wrapper
-                                const sectionContent = (
-                                    <EntityFormSection
+                            if (isLazy) {
+                                return (
+                                    <LazySectionWrapper
                                         key={section.id || `section-${index}`}
-                                        config={section}
-                                        values={values}
-                                        errors={errors}
-                                        onFieldChange={setFieldValue}
-                                        onFieldBlur={(fieldId) => {
-                                            adminLogger.log('Field blurred:', fieldId);
-                                        }}
-                                        disabled={isSaving}
-                                        entityData={values}
-                                        userPermissions={userPermissions}
-                                        fieldHandlers={fieldHandlers}
-                                    />
+                                        sectionId={section.id}
+                                        preloadAdjacent={true}
+                                        rootMargin="100px"
+                                        threshold={0.1}
+                                        className="min-h-[200px]"
+                                    >
+                                        {sectionContent}
+                                    </LazySectionWrapper>
                                 );
+                            }
 
-                                if (isLazy) {
-                                    return (
-                                        <LazySectionWrapper
-                                            key={section.id || `section-${index}`}
-                                            sectionId={section.id}
-                                            preloadAdjacent={true}
-                                            rootMargin="100px"
-                                            threshold={0.1}
-                                            className="min-h-[200px]"
-                                        >
-                                            {sectionContent}
-                                        </LazySectionWrapper>
-                                    );
-                                }
+                            return sectionContent;
+                        })}
+                    </div>
 
-                                return sectionContent;
-                            })}
-                        </div>
-
-                        <div className="mt-6 flex justify-end gap-3 border-t pt-6">
-                            <Button
-                                type="submit"
-                                disabled={isSaving || !overallProgress.readyForSubmission}
-                                className={overallProgress.readyForSubmission ? '' : 'opacity-50'}
-                            >
-                                {isSaving ? t('error.form.saving') : t('error.form.save-changes')}
-                                {!overallProgress.readyForSubmission && (
-                                    <span className="ml-2 text-xs">
-                                        ({overallProgress.completionPercentage}%)
-                                    </span>
-                                )}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    <div className="mt-6 flex justify-end gap-3 border-t pt-6">
+                        <Button
+                            type="submit"
+                            disabled={isSaving || !overallProgress.readyForSubmission}
+                            className={overallProgress.readyForSubmission ? '' : 'opacity-50'}
+                        >
+                            {isSaving ? t('error.form.saving') : t('error.form.save-changes')}
+                            {!overallProgress.readyForSubmission && (
+                                <span className="ml-2 text-xs">
+                                    ({overallProgress.completionPercentage}%)
+                                </span>
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </FormSidebarLayout>
         </div>
     );
 };
