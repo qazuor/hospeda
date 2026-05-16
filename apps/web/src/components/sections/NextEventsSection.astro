@@ -24,6 +24,7 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
 import { revealDelay } from '@/lib/reveal-stagger';
 
@@ -84,32 +85,46 @@ const bottomEvents = remainingEvents.slice(2, 5);
         <EventIcon size={48} weight="duotone" />
       </EmptyState>
     ) : (
-      <div class="events__bento">
+      <>
+        <div class="events__bento">
 
-        <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
-        <div class="events__grid-top">
-          <div class="events__grid-featured" data-reveal="left">
-            <EventCardFeatured data={featuredEvent} locale={locale} />
-          </div>
-          {topEvents.map((event, i) => (
-            <div data-reveal="right" style={`transition-delay: ${revealDelay({ index: i + 1 })}ms`}>
-              <EventCardHorizontal data={event} locale={locale} />
+          <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
+          <div class="events__grid-top">
+            <div class="events__grid-featured" data-reveal="left">
+              <EventCardFeatured data={featuredEvent} locale={locale} />
             </div>
-          ))}
-        </div>
-
-        <!-- Bottom row: up to 3 horizontal cards in a 3-column grid -->
-        {bottomEvents.length > 0 && (
-          <div class="events__grid-bottom">
-            {bottomEvents.map((event, i) => (
-              <div data-reveal="up" style={`transition-delay: ${revealDelay({ index: i + 3 })}ms`}>
+            {topEvents.map((event, i) => (
+              <div data-reveal="right" style={`transition-delay: ${revealDelay({ index: i + 1 })}ms`}>
                 <EventCardHorizontal data={event} locale={locale} />
               </div>
             ))}
           </div>
-        )}
 
-      </div>
+          <!-- Bottom row: up to 3 horizontal cards in a 3-column grid -->
+          {bottomEvents.length > 0 && (
+            <div class="events__grid-bottom">
+              {bottomEvents.map((event, i) => (
+                <div data-reveal="up" style={`transition-delay: ${revealDelay({ index: i + 3 })}ms`}>
+                  <EventCardHorizontal data={event} locale={locale} />
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+        <!-- Mobile-only "see all" CTA below the grid so users don't have to
+             scroll back up to the SectionHeader action. -->
+        <div class="events__see-all-mobile">
+          <GradientButton
+            href={buildUrl({ locale, path: '/eventos/' })}
+            label={t('home.upcomingEvents.viewAll')}
+            variant="outline-primary"
+            size="sm"
+            icon="true"
+          />
+        </div>
+      </>
     )}
 
   </div>
@@ -187,4 +202,16 @@ const bottomEvents = remainingEvents.slice(2, 5);
   }
 
   /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
+
+  .events__see-all-mobile {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .events__see-all-mobile {
+      display: flex;
+      justify-content: center;
+      margin-top: var(--space-card-gap, 2rem);
+    }
+  }
 </style>

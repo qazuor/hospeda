@@ -22,6 +22,7 @@ import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadg
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
 import { revealDelay } from '@/lib/reveal-stagger';
 
@@ -97,13 +98,28 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
         <AccommodationIcon size={48} weight="duotone" />
       </EmptyState>
     ) : (
-      <div class="grid-cards accommodations__grid">
-        {items.map((accommodation, i) => (
-          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${revealDelay({ index: i })}ms`}>
-            <AccommodationCard data={accommodation} locale={locale} />
-          </div>
-        ))}
-      </div>
+      <>
+        <div class="grid-cards accommodations__grid">
+          {items.map((accommodation, i) => (
+            <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${revealDelay({ index: i })}ms`}>
+              <AccommodationCard data={accommodation} locale={locale} />
+            </div>
+          ))}
+        </div>
+
+        <!-- Mobile-only "see all" CTA below the grid so users don't have to
+             scroll back up to the SectionHeader action. Hidden on tablet+
+             where the top action is one short scroll away. -->
+        <div class="accommodations__see-all-mobile">
+          <GradientButton
+            href={seeAllHref}
+            label={seeAllLabel}
+            variant="outline-primary"
+            size="sm"
+            icon="true"
+          />
+        </div>
+      </>
     )}
 
   </div>
@@ -133,5 +149,17 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
      * during the reveal. clamp() scales the gap from compact on mobile
      * to comfortable on desktop. */
     margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .accommodations__see-all-mobile {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .accommodations__see-all-mobile {
+      display: flex;
+      justify-content: center;
+      margin-top: var(--space-card-gap, 2rem);
+    }
   }
 </style>
