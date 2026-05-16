@@ -51,6 +51,13 @@ const AdminEnvSchema = z.object({
         .default('false')
         .transform((val) => val === 'true')
         .describe('Enable TanStack Router DevTools'),
+    VITE_FEEDBACK_ENABLED: z
+        .string()
+        .default('true')
+        .transform((val) => val !== 'false')
+        .describe(
+            'Render the feedback FAB (Reportar problema). Set to "false" to hide it (useful for screenshot audits).'
+        ),
 
     // UI Configuration
     VITE_DEFAULT_PAGE_SIZE: z
@@ -152,6 +159,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_ENABLE_DEVTOOLS: import.meta.env.VITE_ENABLE_DEVTOOLS || 'false',
             VITE_ENABLE_QUERY_DEVTOOLS: import.meta.env.VITE_ENABLE_QUERY_DEVTOOLS || 'false',
             VITE_ENABLE_ROUTER_DEVTOOLS: import.meta.env.VITE_ENABLE_ROUTER_DEVTOOLS || 'false',
+            VITE_FEEDBACK_ENABLED: import.meta.env.VITE_FEEDBACK_ENABLED || 'true',
             VITE_DEFAULT_PAGE_SIZE: import.meta.env.VITE_DEFAULT_PAGE_SIZE || '25',
             VITE_MAX_PAGE_SIZE: import.meta.env.VITE_MAX_PAGE_SIZE || '100',
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
