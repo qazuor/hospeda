@@ -7,6 +7,7 @@
  * Used by: mi-cuenta dashboard, edit profile, favorites, reviews, subscription, preferences.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -28,7 +29,7 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
 
 const resolvedTitle = title ?? t('account.title', 'Mi cuenta');

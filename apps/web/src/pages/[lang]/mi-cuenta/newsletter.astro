@@ -12,6 +12,7 @@
  * side, hidden when PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL is unset).
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
 import { NewsletterPreferences } from '@/components/newsletter/NewsletterPreferences.client';
@@ -37,7 +38,7 @@ if (!user) {
 const { t } = createTranslations(locale);
 const pageTitle = t('account.newsletter.title', 'Newsletter');
 
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? Astro.url.origin;
+const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={pageTitle} activeSection="preferencias">

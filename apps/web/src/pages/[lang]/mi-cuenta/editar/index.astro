@@ -6,6 +6,7 @@
  * @rendering SSR
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
@@ -21,7 +22,7 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.editProfile.title', 'Editar perfil');
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiUrl = getApiUrl();
 
 /** Shape passed to ProfileEditForm. Better Auth sessions expose name/image/email. */
 const initialUser = {

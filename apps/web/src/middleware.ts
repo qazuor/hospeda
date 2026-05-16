@@ -15,7 +15,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { getNoindexHosts } from './lib/env';
+import { getApiUrl, getNoindexHosts } from './lib/env';
 import {
     buildCspHeader,
     buildLocaleRedirect,
@@ -97,7 +97,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
             const directives = buildCspHeader({
                 nonce: cspNonce,
-                apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
+                apiUrl: getApiUrl(),
                 sentryReportUri
             });
             betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);

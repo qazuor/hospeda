@@ -6,6 +6,7 @@
  * @rendering SSR
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { UserReviewsList } from '@/components/account/UserReviewsList.client';
 import { createTranslations } from '@/lib/i18n';
@@ -21,7 +22,7 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.reviews.title', 'Mis reseñas');
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="resenas">

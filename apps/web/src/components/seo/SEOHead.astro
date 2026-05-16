@@ -5,6 +5,7 @@
  * Renders essential meta tags, Open Graph tags, Twitter Card tags, and hreflang links.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
 import { BRAND_NAME, TITLE_SEPARATOR } from '@/lib/constants';
 
@@ -58,7 +59,7 @@ const ptUrl = generateAlternateUrl('pt');
 const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
 
 // Default OG image via dynamic generation endpoint — ensures every page has a social preview
-const siteBase = import.meta.env.SITE ?? 'https://hospeda.com.ar';
+const siteBase = getSiteUrl();
 const ogImageUrl = image ?? `${siteBase}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`;
 ---
 
