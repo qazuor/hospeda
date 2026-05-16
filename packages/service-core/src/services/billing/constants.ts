@@ -21,6 +21,14 @@ export const BILLING_EVENT_TYPES = {
     ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING',
     /** Marks QZPay plan change succeeded but local transaction failed (Phase 3 OP-2) */
     PLAN_CHANGE_LOCAL_FAILED: 'PLAN_CHANGE_LOCAL_FAILED',
+    /**
+     * Fired when a plan change applied successfully to the local DB but the
+     * push to MercadoPago `auto_recurring.transaction_amount` failed
+     * (SPEC-126 D7). The webhook reconciliation path is expected to recover
+     * the drift on the next MP event; this event lets ops spot the
+     * intermediate inconsistency.
+     */
+    PLAN_CHANGE_MP_PROPAGATION_FAILED: 'PLAN_CHANGE_MP_PROPAGATION_FAILED',
     /** Fired when an addon reaches its configured expiry date */
     ADDON_EXPIRED: 'ADDON_EXPIRED',
     /** Fired when addon usage limits are recalculated (e.g. after a plan change or add-on upgrade) */
