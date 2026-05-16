@@ -68,10 +68,19 @@ The blocker shipped in qzpay 1.5.0 (`billing.checkout` public service) and Hospe
 - **Promo codes on monthly recurring beyond `free_trial` extension**. Decision 4 of SPEC-122 — out of MVP.
 - **Multi-currency**. ARS only.
 
+### Out of scope (deferred to a post-SPEC-141 follow-up)
+
+The original D1 scope listed expiry reminders + a renewal flow alongside the annual checkout. Both were intentionally split into a separate follow-up after the annual checkout shipped:
+
+- **D-7 / D-1 reminder emails** before annual expiry. Needs the lifecycle cron to grow a new check for annual subs (different cadence than monthly preapproval reminders) plus two new notification templates. Tracked as `SPEC-141-followup/annual-reminders`.
+- **Renewal flow at expiry** (re-checkout for next 365d cycle). Likely reuses `initiatePaidAnnualSubscription` directly from a renewal endpoint, but needs UI work + a notification path + an opt-out toggle. Tracked as `SPEC-141-followup/annual-renewal`.
+
+Splitting now keeps Fase 2 ship-ready without holding D7 upgrade/downgrade (Fases 3 + 4) behind email work that doesn't unblock them.
+
 ## Acceptance criteria
 
-- [ ] User can start an annual subscription from the plan picker. Redirects to MP Checkout Pro. After payment, returns to `/billing/return` with polling. Local sub reflects `interval: 'year'` and `endDate: +365d`.
-- [ ] `D-7` and `D-1` reminder emails fire before annual subscription expiry.
+- [x] User can start an annual subscription from the plan picker. Redirects to MP Checkout Pro. After payment, returns to `/billing/return` with polling. Local sub reflects `interval: 'year'` and `endDate: +365d`. _(D1 checkout flow shipped: seed bug fixed (`billing_prices` now populated from `ALL_PLANS`); `initiatePaidAnnualSubscription` service inserts local sub + creates MP `billing.checkout({ mode: 'payment' })`; `start-paid` route wires the annual branch; `payment.updated` webhook activates the sub on `approved`/`accredited`. Commits `532e8875e`..`4b4938386`.)_
+- [ ] `D-7` and `D-1` reminder emails fire before annual subscription expiry. _(Deferred to a post-SPEC-141 follow-up — see "Out of scope (deferred)" below.)_
 - [x] MP webhook `subscription_authorized_payment.created` produces a `billing_payments` row with the correct `subscriptionId`, `amount`, `currency`, and MP payment ID. Retrying the webhook is idempotent. _(D4 shipped: helper `apps/api/src/utils/mp-authorized-payment.ts` + handler refactor `subscription-payment-handler.ts`. Commits `b6f95c0fe`..`20e13fe57`.)_
 - [ ] Upgrade: user changes plan to a more expensive one mid-period. They are redirected to MP for the delta charge. After payment, the preapproval next-cycle amount is updated and the local sub reflects the new plan.
 - [ ] Downgrade: user changes plan to a cheaper one. NO charge happens immediately. The local sub records the scheduled change. At period end, the preapproval is updated and the local sub plan flips.
