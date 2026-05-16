@@ -1,5 +1,6 @@
 /* --- Component styles (must precede all non-import statements per CSS spec) --- */
 @import "./components.css";
+@import "./css-var-themes.css";
 
 /* ==========================================================================
    Hospeda Web2 — Global Styles

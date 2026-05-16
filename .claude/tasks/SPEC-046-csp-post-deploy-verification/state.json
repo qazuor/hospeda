@@ -264,32 +264,37 @@
             "id": "T-008",
             "title": "Refactor inline CSS-var patterns to data-attrs + CSS variable map",
             "description": "For inventory entries classified as 'css-var' (e.g. style=\"--corner-bg: var(--hospeda-forest)\", style=\"--brand-accent: ...\", style=\"--wave-header-padding-top: 3rem\"), replace each with a finite-set data-attr + a CSS map. Example: `style=\"--corner-bg: var(--hospeda-forest)\"` becomes `data-corner-theme=\"forest\"` plus CSS `[data-corner-theme=\"forest\"] { --corner-bg: var(--hospeda-forest); }`. Document the finite token set in apps/web/src/styles/css-var-themes.css (or similar). If a value is genuinely per-instance and not enumerable (e.g. user-controlled color), call it out and consider keeping inline + adding to GAP-046-09a-known-exceptions list. Acceptance: rg shows zero remaining inline `style=\"--` patterns outside the documented exceptions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Enumerate the distinct values per CSS var across the inventory",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create css-var-themes.css with the data-attr -> CSS map",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Refactor each call site to use the data-attr", "completed": false },
+                { "title": "Refactor each call site to use the data-attr", "completed": true },
                 {
                     "title": "Document exceptions (if any) and list them in the spec or in a follow-up",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["refactor", "css", "design-tokens", "gap-09a"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "css-var-themes.css con 3 maps: data-event-category (12 valores con alias cultural/culture), data-post-category (18 valores UPPERCASE), data-wave-padding (listing/detail). Importado desde global.css. Refactor de 7 inline style attrs en 4 files (4 css-var declarations originales + 3 direct-property attrs descubiertos en AccommodationCard:115 y EventCardFeatured:129/192 — inventory actualizado con sección 'Post-T-006 discoveries'). Estrategia mixta: data-attr para enum-driven (ArticleCard, EventCardFeatured, WaveHeader), bake into scoped CSS para constantes (AccommodationCard badges). WaveHeader prop tipado: string -> 'listing' | 'detail'. Layouts actualizados. Smoke dev mode: 0 inline declarations en home/posts/events + data-attrs presentes. Full suite: 2461 passed | 7 failed baseline (sin cambio) | 22 skipped. lib/colors.ts sigue existiendo y se usa por Badge component (ArticleCard line 136 pasa categoryColor a <Badge>) — refactor parcial, no completo de la dependencia."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T20:50:00.000Z",
+                "completed": "2026-05-16T21:30:00.000Z"
             }
         },
         {
@@ -503,9 +508,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.5
     }

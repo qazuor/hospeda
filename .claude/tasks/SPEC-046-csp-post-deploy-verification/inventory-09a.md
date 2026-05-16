@@ -112,6 +112,20 @@ Three entries verified against the actual source code (T-006 subtask):
 2. **`components/shared/cards/AccommodationCard.astro:106`** — confirmed: `style={\`--corner-bg: ${newColors.bg}; --corner-text: ${newColors.text};\`}` on `.acc-card__status-corner`.
 3. **`components/shared/navigation/NavigationProgress.astro:20`** — confirmed: `style="width: 0%; opacity: 0;"` on `<div id="nav-progress" class="nav-progress">`.
 
+## Post-T-006 discoveries (during T-008)
+
+Two patterns were missed by the initial grep filter because they do not literally contain `--xxx` in the inline `style=`:
+
+| File | Line | Pattern (NOT in T-006 inventory) | Why missed |
+|---|------|---|---|
+| `components/shared/cards/AccommodationCard.astro` | 115 | `style={\`background-color: ${featuredColors.bg}; color: ${featuredColors.text};\`}` (featured badge) | Direct interpolated property values, no `--xxx` literal. Same constant-color pattern as line 106; refactored alongside it in T-008 by baking values into the scoped `.acc-card__featured-badge` rule. |
+| `components/shared/cards/EventCardFeatured.astro` | 129 | `style={\`background: linear-gradient(135deg, ${categoryColor.bg}, ${categoryColor.border});\`}` (image fallback gradient) | Same: direct interpolation, no `--xxx`. Same `data.category` enum drives it; folded into the data-event-category refactor in T-008. |
+| `components/shared/cards/EventCardFeatured.astro` | 192 | `style={\`background-color: ${categoryColor.text};\`}` (date block bg) | Same: direct interpolation. Folded into the data-event-category refactor in T-008. |
+
+**Lesson for future audits**: an inline `style=` with `${...}` interpolation is a candidate for `style-src-attr` violation regardless of whether the value is a CSS custom property declaration or a direct property. The pattern to grep is `style=.*\$\{` (handles both shapes).
+
+T-008 ended up touching **7 inline style attrs across 4 files** (4 css-var declarations from the original inventory + 3 direct-property attrs surfaced during the refactor), all replaced with either data-attr maps (event/post/wave) or baked-in constants (accommodation badges).
+
 ## Hand-off
 
 The follow-up tasks can run in parallel after this inventory lands:
