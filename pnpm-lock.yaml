@@ -335,6 +335,9 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@sentry/vite-plugin':
+        specifier: ^5.1.1
+        version: 5.1.1(rollup@4.59.0)
       '@testing-library/dom':
         specifier: 10.4.0
         version: 10.4.0
@@ -526,6 +529,9 @@ importers:
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
+      '@sentry/esbuild-plugin':
+        specifier: ^5.1.1
+        version: 5.3.0
       '@types/bcryptjs':
         specifier: ^3.0.0
         version: 3.0.0
@@ -4395,6 +4401,10 @@ packages:
     resolution: {integrity: sha512-x2wEpBHwsTyTF2rWsLKJlzrRF1TTIGOfX+ngdE+Yd5DBkoS58HwQv824QOviPGQRla4/ypISqAXzjdDPL/zalg==}
     engines: {node: '>= 18'}
 
+  '@sentry/babel-plugin-component-annotate@5.3.0':
+    resolution: {integrity: sha512-p4q8gn8wcFqZGP/s2MnJCAAd8fTikaU6A0mM97RDHQgStcrYiaS0Sc5zUNfb1V+UOLPuvdEdL6MwyxfzjYJQTA==}
+    engines: {node: '>= 18'}
+
   '@sentry/browser@10.36.0':
     resolution: {integrity: sha512-yHhXbgdGY1s+m8CdILC9U/II7gb6+s99S2Eh8VneEn/JG9wHc+UOzrQCeFN0phFP51QbLkjkiQbbanjT1HP8UQ==}
     engines: {node: '>=18'}
@@ -4405,6 +4415,10 @@ packages:
 
   '@sentry/bundler-plugin-core@5.1.1':
     resolution: {integrity: sha512-F+itpwR9DyQR7gEkrXd2tigREPTvtF5lC8qu6e4anxXYRTui1+dVR0fXNwjpyAZMhIesLfXRN7WY7ggdj7hi0Q==}
+    engines: {node: '>= 18'}
+
+  '@sentry/bundler-plugin-core@5.3.0':
+    resolution: {integrity: sha512-L5T60sWdAI3qWwdg3Ptwek/0TY59PERrxyqp4XMUkroayQvGd9r5dIW9Q1kSeXX9iJ442nXbFZKAOyCKV4Z13Q==}
     engines: {node: '>= 18'}
 
   '@sentry/cli-darwin@2.58.5':
@@ -4470,6 +4484,10 @@ packages:
   '@sentry/core@10.40.0':
     resolution: {integrity: sha512-/wrcHPp9Avmgl6WBimPjS4gj810a1wU5oX9fF1bzJfeIIbF3jTsAbv0oMbgDp0cSDnkwv2+NvcPnn3+c5J6pBA==}
     engines: {node: '>=18'}
+
+  '@sentry/esbuild-plugin@5.3.0':
+    resolution: {integrity: sha512-irCsMPs435toPEX66RZV86xvdAPjohv/ul5BvzRF11EwYVSRX3sMX30P28iCGuvarjFH3wh+RK7EtDkEIOTyPg==}
+    engines: {node: '>= 18'}
 
   '@sentry/node-core@10.38.0':
     resolution: {integrity: sha512-ErXtpedrY1HghgwM6AliilZPcUCoNNP1NThdO4YpeMq04wMX9/GMmFCu46TnCcg6b7IFIOSr2S4yD086PxLlHQ==}
@@ -13008,6 +13026,8 @@ snapshots:
 
   '@sentry/babel-plugin-component-annotate@5.1.1': {}
 
+  '@sentry/babel-plugin-component-annotate@5.3.0': {}
+
   '@sentry/browser@10.36.0':
     dependencies:
       '@sentry-internal/browser-utils': 10.36.0
@@ -13028,6 +13048,19 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.0
       '@sentry/babel-plugin-component-annotate': 5.1.1
+      '@sentry/cli': 2.58.5
+      dotenv: 16.6.1
+      find-up: 5.0.0
+      glob: 13.0.6
+      magic-string: 0.30.21
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  '@sentry/bundler-plugin-core@5.3.0':
+    dependencies:
+      '@babel/core': 7.29.0
+      '@sentry/babel-plugin-component-annotate': 5.3.0
       '@sentry/cli': 2.58.5
       dotenv: 16.6.1
       find-up: 5.0.0
@@ -13086,6 +13119,13 @@ snapshots:
   '@sentry/core@10.38.0': {}
 
   '@sentry/core@10.40.0': {}
+
+  '@sentry/esbuild-plugin@5.3.0':
+    dependencies:
+      '@sentry/bundler-plugin-core': 5.3.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   '@sentry/node-core@10.38.0(@opentelemetry/api@1.9.0)(@opentelemetry/context-async-hooks@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.211.0(@opentelemetry/api@1.9.0))(@opentelemetry/resources@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.5.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.39.0)':
     dependencies:

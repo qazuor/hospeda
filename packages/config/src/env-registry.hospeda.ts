@@ -1101,20 +1101,20 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'SENTRY_AUTH_TOKEN',
-        description: 'Sentry auth token used at build time to upload source maps (web app only)',
+        description: 'Sentry auth token used at build time to upload source maps (web, admin, api)',
         descriptionEs:
-            'Token de autenticación de Sentry usado en build-time para subir source maps (solo app web)',
+            'Token de autenticación de Sentry usado en build-time para subir source maps (web, admin, api)',
         type: 'string',
         required: false,
         secret: true,
         exampleValue: 'sntrys_xxxxxxxxxxxxxxxxxxxx',
-        apps: ['web'],
+        apps: ['web', 'admin', 'api'],
         category: 'monitoring',
         helpUrl: 'https://docs.sentry.io/account/auth-tokens/',
         howToObtain:
-            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro at build time to upload web app source maps so production stack traces are symbolicated. Build skips upload silently if missing. The `org` and `project` slugs are hardcoded to `qazuor`/`hospeda-web` in apps/web/astro.config.mjs, so only this token is needed in env.',
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro (web), @sentry/vite-plugin (admin), and @sentry/esbuild-plugin (api) at build time to upload source maps so production stack traces are symbolicated. Build skips upload silently if missing. Org slug `qazuor` and per-app project slugs (`hospeda-web`, `hospeda-admin`, `hospeda-api`) are hardcoded in each app build config — the same org-scoped token works for all three.',
         howToObtainEs:
-            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usa @sentry/astro en build-time para subir los source maps del web app y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. Los slugs `org` y `project` están hardcoded como `qazuor`/`hospeda-web` en apps/web/astro.config.mjs, así que en env solo se necesita este token.'
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
     },
 
     // -------------------------------------------------------------------------

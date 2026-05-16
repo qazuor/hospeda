@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
@@ -145,7 +146,21 @@ export default defineConfig({
                     }
                 };
             }
-        }
+        },
+        // Sentry source maps upload (build-time only).
+        // Gated on SENTRY_AUTH_TOKEN so local dev builds and builds without
+        // the token still work — the plugin only registers when the token
+        // is present. Org/project are hardcoded; the Sentry CLI auth token
+        // is org-scoped (shared across hospeda-web/hospeda-admin/hospeda-api).
+        ...(process.env.SENTRY_AUTH_TOKEN
+            ? [
+                  sentryVitePlugin({
+                      org: 'qazuor',
+                      project: 'hospeda-admin',
+                      authToken: process.env.SENTRY_AUTH_TOKEN
+                  })
+              ]
+            : [])
     ],
     resolve: {
         alias: {
