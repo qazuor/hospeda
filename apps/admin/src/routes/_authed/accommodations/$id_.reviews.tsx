@@ -4,8 +4,8 @@
  * Displays and manages reviews for a specific accommodation.
  */
 
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementGate } from '@qazuor/qzpay-react';
@@ -43,12 +43,10 @@ function AccommodationReviewsPage() {
     const averageRating = accommodation?.averageRating || 0;
 
     return (
-        <div className="space-y-4">
-            <PageTabs
-                tabs={accommodationTabs}
-                basePath={`/accommodations/${id}`}
-            />
-
+        <AccommodationSubTabLayout
+            accommodationId={id}
+            entityName={accommodation?.name}
+        >
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.reviews')}</h2>
 
@@ -193,7 +191,7 @@ function AccommodationReviewsPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </AccommodationSubTabLayout>
     );
 }
 

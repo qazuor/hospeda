@@ -4,9 +4,9 @@
  * Displays and manages amenities for a specific accommodation.
  */
 
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
@@ -28,11 +28,10 @@ function AccommodationAmenitiesPage() {
         : [];
 
     return (
-        <div className="space-y-4">
-            <PageTabs
-                tabs={accommodationTabs}
-                basePath={`/accommodations/${id}`}
-            />
+        <AccommodationSubTabLayout
+            accommodationId={id}
+            entityName={accommodation?.name}
+        >
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.amenities')}</h2>
 
@@ -86,6 +85,6 @@ function AccommodationAmenitiesPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </AccommodationSubTabLayout>
     );
 }
