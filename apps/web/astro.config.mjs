@@ -94,13 +94,18 @@ export default defineConfig({
         ]
     },
     integrations: [
+        // Sentry runtime config lives in `sentry.client.config.ts` and
+        // `sentry.server.config.ts` (auto-discovered by @sentry/astro).
+        // Here we only configure build-time concerns: which org/project the
+        // source maps belong to, and the auth token used to upload them.
+        // `dsn` is intentionally NOT passed here (deprecated path in
+        // @sentry/astro >= 10; would warn at every build).
         ...(process.env.PUBLIC_SENTRY_DSN
             ? [
                   sentry({
-                      dsn: process.env.PUBLIC_SENTRY_DSN,
-                      sourceMapsUploadOptions: {
-                          enabled: Boolean(process.env.SENTRY_AUTH_TOKEN)
-                      }
+                      org: 'qazuor',
+                      project: 'hospeda-web',
+                      authToken: process.env.SENTRY_AUTH_TOKEN
                   })
               ]
             : []),

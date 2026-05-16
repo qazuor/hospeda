@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-139",
+    "title": "Upload API source maps to Sentry on build",
+    "type": "fix",
+    "complexity": "small",
+    "status": "draft",
+    "created": "2026-05-16T04:35:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["api", "sentry", "source-maps", "monitoring", "tsup", "follow-up", "spec-111"]
+}

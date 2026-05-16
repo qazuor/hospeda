@@ -1099,6 +1099,23 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
     },
+    {
+        name: 'SENTRY_AUTH_TOKEN',
+        description: 'Sentry auth token used at build time to upload source maps (web app only)',
+        descriptionEs:
+            'Token de autenticación de Sentry usado en build-time para subir source maps (solo app web)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sntrys_xxxxxxxxxxxxxxxxxxxx',
+        apps: ['web'],
+        category: 'monitoring',
+        helpUrl: 'https://docs.sentry.io/account/auth-tokens/',
+        howToObtain:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro at build time to upload web app source maps so production stack traces are symbolicated. Build skips upload silently if missing. The `org` and `project` slugs are hardcoded to `qazuor`/`hospeda-web` in apps/web/astro.config.mjs, so only this token is needed in env.',
+        howToObtainEs:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usa @sentry/astro en build-time para subir los source maps del web app y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. Los slugs `org` y `project` están hardcoded como `qazuor`/`hospeda-web` en apps/web/astro.config.mjs, así que en env solo se necesita este token.'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
