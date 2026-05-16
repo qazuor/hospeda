@@ -12,10 +12,12 @@
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { StrongPasswordRegex } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import styles from './SignUp.module.css';
 
@@ -62,10 +64,41 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isClientReady, setIsClientReady] = useState(false);
+
+    /**
+     * i18n strings for the PasswordField component. Built from the same
+     * `t()` helper so the keys stay consistent with the rest of the form.
+     */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('auth.signUp.showPassword', 'Mostrar contraseña'),
+        hidePassword: t('auth.signUp.hidePassword', 'Ocultar contraseña'),
+        strength: {
+            weak: t('auth.signUp.strength.weak', 'Débil'),
+            medium: t('auth.signUp.strength.medium', 'Media'),
+            strong: t('auth.signUp.strength.strong', 'Fuerte')
+        },
+        rules: {
+            length: t('auth.signUp.rules.length', 'Al menos 8 caracteres'),
+            upper: t('auth.signUp.rules.upper', 'Una letra mayúscula (A-Z)'),
+            lower: t('auth.signUp.rules.lower', 'Una letra minúscula (a-z)'),
+            digit: t('auth.signUp.rules.digit', 'Un número (0-9)'),
+            special: t('auth.signUp.rules.special', 'Un carácter especial (@$!%*?&)')
+        }
+    };
+
+    /** Confirm field reuses the visibility toggle but skips the rules block. */
+    const confirmI18n: PasswordFieldI18n = {
+        showPassword: passwordI18n.showPassword,
+        hidePassword: passwordI18n.hidePassword,
+        strength: passwordI18n.strength
+    };
 
     useEffect(() => {
         setIsClientReady(true);
@@ -74,9 +107,26 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
+        setPasswordError(null);
+        setConfirmError(null);
 
-        if (password.length < 8) {
-            setError(t('auth.signUp.passwordHint', 'Mínimo 8 caracteres'));
+        // Enforce the full strong-password contract client-side so the
+        // user sees rule violations as inline field errors instead of
+        // a back-end 400 with a vague generic message.
+        if (!StrongPasswordRegex.test(password)) {
+            setPasswordError(
+                t(
+                    'auth.signUp.errors.passwordWeak',
+                    'La contraseña debe cumplir todas las reglas (8+ caracteres, mayúscula, minúscula, número y carácter especial).'
+                )
+            );
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setConfirmError(
+                t('auth.signUp.errors.passwordsDoNotMatch', 'Las contraseñas no coinciden.')
+            );
             return;
         }
 
@@ -224,34 +274,40 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 />
             </div>
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="signup-password"
-                    className={styles.label}
-                >
-                    {t('auth.signUp.password', 'Contraseña')}
-                </label>
-                <input
-                    id="signup-password"
-                    type="password"
-                    className={styles.input}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    aria-required="true"
-                    aria-describedby="signup-password-hint"
-                    disabled={isLoading}
-                />
-                <span
-                    id="signup-password-hint"
-                    className={styles.hint}
-                >
-                    {t('auth.signUp.passwordHint', 'Mínimo 8 caracteres')}
-                </span>
-            </div>
+            <PasswordField
+                id="signup-password"
+                label={t('auth.signUp.password', 'Contraseña')}
+                value={password}
+                onChange={(value) => {
+                    setPassword(value);
+                    if (passwordError) setPasswordError(null);
+                    if (confirmError) setConfirmError(null);
+                }}
+                placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                showStrength
+                showRuleChecklist
+                error={passwordError ?? undefined}
+                i18n={passwordI18n}
+            />
+
+            <PasswordField
+                id="signup-confirm-password"
+                label={t('auth.signUp.confirmPassword', 'Confirmar contraseña')}
+                value={confirmPassword}
+                onChange={(value) => {
+                    setConfirmPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
+                placeholder={t('auth.signUp.confirmPasswordPlaceholder', 'Repetí tu contraseña')}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                error={confirmError ?? undefined}
+                i18n={confirmI18n}
+            />
 
             <GradientButton
                 as="button"
