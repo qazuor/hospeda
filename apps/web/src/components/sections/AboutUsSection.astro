@@ -410,26 +410,35 @@ const { t } = createTranslations(locale);
             gap: 2rem;
         }
 
-        /* Reset fixed dimensions — let the collage adapt */
+        /* Reset fixed dimensions — let the collage adapt. The min-height is
+           tuned so the absolutely-positioned photos (main reaches y≈376px,
+           secondary reaches y≈448px including the 12px border) leave only a
+           small visual gap before the tagline. The 32px flex gap on
+           .about-us__layout still applies. */
         .about-us__collage {
             width: 100%;
             max-width: 432px;
             height: auto;
-            min-height: 400px;
+            min-height: 440px;
         }
 
-        /* Center main photo: override absolute left offset so the collage   */
-        /* doesn't waste space on the left side at tablet widths.            */
+        /* Center main photo: override absolute left offset so the collage
+           doesn't waste space on the left side at tablet widths. Pull the
+           photo closer to the section top edge — the desktop value of 63px
+           leaves too much air above the collage when the airplane decoratives
+           and badge are hidden. */
         .about-us__photo-main {
             left: 50%;
+            top: 38px;
             transform: translateX(-50%);
         }
 
-        /* Anchor secondary photo relative to right edge instead of a fixed  */
-        /* pixel offset that may overflow at narrower widths.                */
+        /* Anchor secondary photo relative to right edge instead of a fixed
+           pixel offset that may overflow at narrower widths. */
         .about-us__photo-secondary {
             left: auto;
             right: 5%;
+            top: 266px;
         }
 
         .about-us__content {
