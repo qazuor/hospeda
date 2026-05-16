@@ -61,7 +61,8 @@ export default defineConfig({
             'test/**/*.test.ts',
             'test/**/*.test.tsx',
             'src/**/*.test.ts',
-            'src/**/*.test.tsx'
+            'src/**/*.test.tsx',
+            'integrations/**/*.test.ts'
         ],
         coverage: {
             provider: 'v8',

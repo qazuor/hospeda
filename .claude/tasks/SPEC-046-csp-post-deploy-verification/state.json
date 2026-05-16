@@ -119,32 +119,37 @@
             "id": "T-004",
             "title": "Unit tests for injectNonce HTML walker",
             "description": "Add vitest tests in apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts covering: (1) plain <script>...</script> receives nonce, (2) <script src=\"...\"> receives nonce, (3) <script nonce=\"existing\"> is untouched, (4) <style>...</style> receives nonce, (5) <style nonce=\"existing\"> untouched, (6) <noscript><script>...</script></noscript> is NOT modified, (7) script content containing the literal text '<style>' is not corrupted, (8) malformed HTML (unclosed tags) does not throw, (9) empty input returns empty output, (10) nonce string with special chars (=, +, /) is escaped if needed. AAA pattern. Use fixtures stored as string constants. Coverage target: 100% of injectNonce branches.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Create test file at apps/web/integrations/csp-nonce-injector/test/inject-nonce.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write fixtures (10 cases listed above) as string constants",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Implement assertions following AAA pattern", "completed": false },
+                { "title": "Implement assertions following AAA pattern", "completed": true },
                 {
                     "title": "Verify pnpm test passes with full branch coverage on injectNonce",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "vitest", "gap-09b", "gap-13"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "12/12 tests passing (10 cases del spec + 2 defensivas: no-op con nonce vacío y un mixed-document para verificar contadores). Walker cubierto al 100% en branches: script, style, con-nonce, sin-nonce, dentro de noscript, fuera de noscript, src externo, contenido literal <style>, HTML malformado, input vacío, nonce vacío, nonce con base64-chars, nonce con XSS-like '\"' (escapado correctamente por parse5 a &quot;). vitest.config.ts include extendido con 'integrations/**/*.test.ts' para que el runner descubra los tests sin tener que moverlos a test/. Pre-commit hook reformateó el test file (line-width 100)."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T19:20:00.000Z",
+                "completed": "2026-05-16T19:30:00.000Z"
             }
         },
         {
@@ -468,9 +473,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.5
     }
