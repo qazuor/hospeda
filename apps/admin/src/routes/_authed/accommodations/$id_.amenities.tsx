@@ -5,11 +5,12 @@
  */
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
-import { createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/amenities')({
     component: AccommodationAmenitiesPage
@@ -46,9 +47,23 @@ function AccommodationAmenitiesPage() {
                         ))}
                     </div>
                 ) : amenities.length === 0 ? (
-                    <p className="text-muted-foreground">
-                        No amenities assigned to this accommodation.
-                    </p>
+                    <div className="space-y-4 py-6 text-center">
+                        <p className="text-muted-foreground">
+                            {t('admin-pages.accommodations.amenities.empty')}
+                        </p>
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                        >
+                            <Link
+                                to="/accommodations/$id/edit"
+                                params={{ id }}
+                            >
+                                {t('admin-pages.accommodations.amenities.editCta')}
+                            </Link>
+                        </Button>
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {amenities.map((amenity: unknown, index: number) => {

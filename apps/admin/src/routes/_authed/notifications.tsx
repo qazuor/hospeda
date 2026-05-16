@@ -82,16 +82,11 @@ function NotificationsPage() {
         <MainPageLayout title={t('admin-pages.notifications.title')}>
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="font-bold text-2xl">
-                            {t('admin-pages.notifications.title')}
-                        </h2>
-                        <p className="text-muted-foreground">
-                            {unreadCount > 0
-                                ? `${unreadCount} ${unreadCount > 1 ? t('admin-pages.notifications.unreadPlural').replace('{{count}}', String(unreadCount)) : t('admin-pages.notifications.unreadSingular').replace('{{count}}', String(unreadCount))}`
-                                : t('admin-pages.notifications.allRead')}
-                        </p>
-                    </div>
+                    <p className="text-muted-foreground">
+                        {unreadCount > 0
+                            ? `${unreadCount} ${unreadCount > 1 ? t('admin-pages.notifications.unreadPlural').replace('{{count}}', String(unreadCount)) : t('admin-pages.notifications.unreadSingular').replace('{{count}}', String(unreadCount))}`
+                            : t('admin-pages.notifications.allRead')}
+                    </p>
                     {notifications.length > 0 && (
                         <Button
                             onClick={clearAll}
