@@ -7,7 +7,7 @@ import {
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
@@ -234,14 +234,14 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-2xl">
+                            <h1 className="font-semibold text-2xl leading-none tracking-tight">
                                 {mode === 'view'
                                     ? entityName
                                     : t('admin-common.entityPage.editTitle').replace(
                                           '{entity}',
                                           entityName
                                       )}
-                            </CardTitle>
+                            </h1>
                             <p className="text-muted-foreground">
                                 {mode === 'view'
                                     ? t('admin-common.entityPage.viewDescription').replace(
