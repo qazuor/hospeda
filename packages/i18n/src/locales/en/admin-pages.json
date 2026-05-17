@@ -752,6 +752,10 @@
                 "perGuest": "Per Guest"
             }
         },
+        "amenities": {
+            "empty": "This accommodation has no amenities assigned.",
+            "editCta": "Add amenity"
+        },
         "reviews": {
             "noReviews": "No reviews yet for this accommodation.",
             "summary": "Reviews Summary",

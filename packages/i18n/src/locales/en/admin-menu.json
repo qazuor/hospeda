@@ -10,7 +10,13 @@
         "title": "Accommodations",
         "add": "Add",
         "list": "List",
-        "myAccommodations": "My Accommodations"
+        "myAccommodations": "My Accommodations",
+        "edit": "Edit",
+        "amenities": "Amenities",
+        "features": "Features",
+        "gallery": "Gallery",
+        "pricing": "Pricing",
+        "reviews": "Reviews"
     },
     "destinations": {
         "title": "Destinations",
@@ -43,7 +49,30 @@
         "revalidation": "ISR Revalidation"
     },
     "billing": {
-        "title": "Billing"
+        "title": "Billing",
+        "plans": "Plans",
+        "subscriptions": "Subscriptions",
+        "addons": "Add-ons",
+        "payments": "Payments",
+        "invoices": "Invoices",
+        "promoCodes": "Promo Codes",
+        "sponsorships": "Sponsorships",
+        "ownerPromotions": "Owner Promotions",
+        "exchangeRates": "Exchange Rates",
+        "metrics": "Metrics",
+        "settings": "Settings",
+        "cron": "Scheduled Tasks",
+        "notificationLogs": "Notification Logs",
+        "webhookEvents": "Webhook Events"
+    },
+    "notifications": "Notifications",
+    "access": {
+        "title": "Access",
+        "users": "Users",
+        "roles": "Roles",
+        "permissions": "Permissions",
+        "activity": "Activity",
+        "edit": "Edit"
     },
     "sponsors": "Sponsors",
     "analytics": {

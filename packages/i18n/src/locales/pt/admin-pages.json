@@ -752,6 +752,10 @@
                 "perGuest": "Por Hóspede"
             }
         },
+        "amenities": {
+            "empty": "Esta acomodação não tem comodidades atribuídas.",
+            "editCta": "Adicionar comodidade"
+        },
         "reviews": {
             "noReviews": "Ainda não há avaliações para esta acomodação.",
             "summary": "Resumo de Avaliações",

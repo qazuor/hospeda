@@ -1204,6 +1204,22 @@
             "tags": ["admin", "accessibility", "wcag"]
         },
         {
+            "specId": "SPEC-137",
+            "title": "Admin i18n + Polish + Routing fixes",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-137-admin-i18n-polish-routing",
+            "created": "2026-05-16T01:30:00Z",
+            "startedAt": "2026-05-16T06:30:00Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-137-admin-i18n-polish-routing",
+            "branch": "spec/SPEC-137-admin-i18n-polish-routing",
+            "parent": "SPEC-134",
+            "tags": ["admin", "i18n", "polish", "routing"],
+            "deferredFindings": ["F-022"],
+            "deferredNote": "F-022 (gallery==edit routing) deferred — Gallery feature was never implemented, will be filed as a separate feature spec."
+        },
+        {
             "specId": "SPEC-140",
             "title": "Self-hosted Analytics Stack (Umami)",
             "type": "feat",
