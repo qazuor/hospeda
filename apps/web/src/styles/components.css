@@ -697,3 +697,44 @@
         animation: none;
     }
 }
+
+/* ==========================================================================
+   Frosted surfaces
+   --------------------------------------------------------------------------
+   Translucent backgrounds with a backdrop blur for floating UI (toggles,
+   filter FABs, sheet triggers) that sits above page content. Use
+   `.frosted-light` over light-on-dark backdrops (cards, photos) and
+   `.frosted-dark` when the floating control itself reads white-on-dark.
+   Tokens live in global.css → --frost-bg-* / --frost-blur / --frost-border.
+
+   Both variants share a Safari prefix and a no-blur fallback so older
+   browsers still render an acceptable translucent surface.
+   ========================================================================== */
+
+.frosted-light,
+.frosted-dark {
+    backdrop-filter: blur(var(--frost-blur));
+    -webkit-backdrop-filter: blur(var(--frost-blur));
+    border: 1px solid var(--frost-border);
+}
+
+.frosted-light {
+    background-color: var(--frost-bg-light);
+}
+
+.frosted-dark {
+    background-color: var(--frost-bg-dark);
+}
+
+/* If the browser doesn't support backdrop-filter, bump the alpha so the
+ * background stays readable on busy content. */
+@supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+    .frosted-light {
+        background-color: oklch(from var(--core-card) l c h / 0.95);
+    }
+    .frosted-dark {
+        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+    }
+}

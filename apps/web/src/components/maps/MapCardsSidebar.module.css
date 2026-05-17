@@ -216,19 +216,33 @@
     z-index: 1000;
     padding: 12px 24px;
     border-radius: var(--radius-pill, 9999px);
-    background-color: var(--core-foreground);
+    /* Frosted-glass dark surface (see global.css → --frost-* tokens). The
+     * "open cards" CTA stays the dominant action over the map, so we keep
+     * the dark variant for visual hierarchy vs the lighter view-toggle and
+     * filters trigger next to it. */
+    background-color: var(--frost-bg-dark);
+    backdrop-filter: blur(var(--frost-blur));
+    -webkit-backdrop-filter: blur(var(--frost-blur));
     color: white;
     font-family: var(--font-sans, sans-serif);
     font-size: 0.9375rem;
     font-weight: 500;
-    border: none;
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.4);
     cursor: pointer;
     box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
-    transition: transform var(--duration-normal, 0.4s) ease;
+    transition: transform var(--duration-normal, 0.4s) ease, background-color
+        var(--duration-normal, 0.4s) ease;
 }
 
 .sheetTrigger:hover {
     transform: translateX(-50%) translateY(-1px);
+    background-color: oklch(from var(--core-foreground) l c h / 0.82);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sheetTrigger {
+        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+    }
 }
 
 .sheet {

@@ -199,6 +199,17 @@
     --overlay-bg-light: oklch(0 0 0 / 0.45);
     --overlay-blur: 4px;
 
+    /* --- Frosted surfaces -----------------------------------------------------
+     * For floating UI (toggles, filter FABs, sheet triggers) that sits above
+     * page content. Pairs a translucent surface with a backdrop blur so the
+     * controls keep contrast over photos / maps / cards without going opaque.
+     * Use `.frosted-light` / `.frosted-dark` from components.css instead of
+     * setting these directly on a component. */
+    --frost-bg-light: oklch(from var(--core-card) l c h / 0.72);
+    --frost-bg-dark: oklch(from var(--core-foreground) l c h / 0.7);
+    --frost-blur: 14px;
+    --frost-border: oklch(from var(--core-foreground) l c h / 0.08);
+
     /* --- Layout --- */
     --container-max: 1350px;
     --container-narrow: 900px;

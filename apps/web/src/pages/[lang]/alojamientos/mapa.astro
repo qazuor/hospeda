@@ -374,6 +374,7 @@ for (const card of cards) {
 		margin: var(--space-4, 16px) 0;
 		background-color: var(--surface-warm, #faf6f0);
 		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid transparent;
 	}
 	.view-toggle__btn {
 		font-family: var(--font-sans);
@@ -407,7 +408,12 @@ for (const card of cards) {
 			transform: translateX(-50%);
 			z-index: 150;
 			margin: 0;
-			box-shadow: 0 4px 16px oklch(0 0 0 / 0.18);
+			/* Frosted-glass surface — see global.css → --frost-* tokens. */
+			background-color: var(--frost-bg-light);
+			backdrop-filter: blur(var(--frost-blur));
+			-webkit-backdrop-filter: blur(var(--frost-blur));
+			border-color: var(--frost-border);
+			box-shadow: 0 4px 18px oklch(0 0 0 / 0.18), 0 1px 3px oklch(0 0 0 / 0.08);
 		}
 
 		:global(html[data-filters-drawer-open]) .view-toggle,
