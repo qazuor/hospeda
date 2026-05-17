@@ -232,32 +232,37 @@
             "id": "T-007",
             "title": "Refactor stagger pattern: style={transition-delay} -> data-stagger-index + CSS",
             "description": "For every file in inventory-09a.md classified as 'stagger', replace `<div data-reveal=\"...\" style={`transition-delay: ${i*100}ms`}>` with `<div data-reveal=\"...\" data-stagger-index={Math.min(i, 6)}>`. Add a CSS rule in apps/web/src/styles/global.css (or a new partial) covering indices 0-6: `[data-stagger-index=\"0\"] { transition-delay: 0ms; } [data-stagger-index=\"1\"] { transition-delay: 100ms; } ...`. Verify reveal-stagger.ts (apps/web/src/lib/reveal-stagger.ts) does not break — it currently emits the same inline style; update its doc example to the new pattern. Test: existing reveal-stagger tests must still pass; if there are none, add a snapshot test of the helper. Acceptance: zero `style={\\`transition-delay` patterns remain in apps/web/src/.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Add CSS rules for data-stagger-index 0-6 in global.css",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update all .astro files from inventory to use data-stagger-index",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Update reveal-stagger.ts doc and any helper", "completed": false },
+                { "title": "Update reveal-stagger.ts doc and any helper", "completed": true },
                 {
                     "title": "Run rg post-change to confirm zero remaining matches",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["refactor", "css", "gap-09a"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "21 CSS rules agregadas en css-var-themes.css (Stagger map, 3 steps x 7 indices). Decisión arquitectural aprobada por user: soportar los 3 step values (60/80/100) via data-stagger-step + data-stagger-index combinados, zero visual regression. Helper revealDelay() refactorizado a revealStagger() en lib/reveal-stagger.ts: ahora retorna `{ 'data-stagger-index': number, 'data-stagger-step': '60'|'80'|'100' }` para spread en elementos. 5 helper call sites migrados a `{...revealStagger({ index })}`. 30 non-helper call sites refactorizados via script Python (29 con transformación mecánica + 1 mantenido en LatestArticlesSection con `revealStagger({index:0})`). Variables stagger uncapped (i*100 sin Math.min) ahora capean a Math.min(i,6) — leve fix de comportamiento que mejora la consistencia (era inconsistente que algunos sites capeaban y otros no). Smoke dev mode en 5 pages (home/alojamientos/publicaciones/eventos/contacto): 0 inline transition-delay attrs, 76 total data-stagger pairs (29+20+9+9+9), index count siempre === step count. Full test suite: 2461 passed | 7 failed baseline (sin cambio) | 22 skipped. Updated test/components/CategoryTiles.test.ts assertion para reflejar nueva architectura."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-16T22:00:00.000Z",
+                "completed": "2026-05-16T22:50:00.000Z"
             }
         },
         {
@@ -508,9 +513,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     }

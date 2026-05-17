@@ -214,7 +214,7 @@ const postCategoryChips = [
 
 			<div class="posts-grid">
 				{cards.map((card, i) => (
-					<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<ArticleCard data={card} locale={locale} />
 					</div>
 				))}

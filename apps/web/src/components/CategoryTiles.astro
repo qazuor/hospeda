@@ -58,7 +58,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
                     href={href}
                     class="category-tiles__tile"
                     data-reveal="up"
-                    style={`transition-delay: ${Math.min(i, 6) * 80}ms`}
+                    data-stagger-index={Math.min(i, 6)} data-stagger-step="80"
                 >
                     {/* Visual area: image or icon */}
                     <div class="category-tiles__visual" aria-hidden="true">

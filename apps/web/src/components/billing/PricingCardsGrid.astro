@@ -132,7 +132,7 @@ function formatPriceArs(cents: number): string {
 						class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
 						data-reveal="up"
 						data-recommended-label={isHighlighted ? recommendedLabel : null}
-						style={`transition-delay: ${i * 100}ms`}
+						data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
 					>
 						<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
 						<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>

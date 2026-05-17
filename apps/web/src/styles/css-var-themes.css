@@ -143,6 +143,85 @@
 }
 
 /* =========================================================================
+ * Stagger map (consumed by [data-reveal] grids across the site)
+ *
+ * Replaces inline `style="transition-delay: Xms"` per SPEC-046 GAP-046-09a.
+ * Elements opt into a stagger by setting:
+ *   data-stagger-index   -> integer 0..6 (capped by callers via Math.min)
+ *   data-stagger-step    -> "60" | "80" | "100" (step in ms)
+ *
+ * Three step values are supported because existing call sites used three
+ * different cadences (60ms for FAQ-style lists, 80ms for tile/article grids,
+ * 100ms for card grids). Standardising would have required design approval;
+ * supporting all three is a zero-visual-regression alternative.
+ * ========================================================================= */
+[data-stagger-step="60"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="60"][data-stagger-index="1"] {
+    transition-delay: 60ms;
+}
+[data-stagger-step="60"][data-stagger-index="2"] {
+    transition-delay: 120ms;
+}
+[data-stagger-step="60"][data-stagger-index="3"] {
+    transition-delay: 180ms;
+}
+[data-stagger-step="60"][data-stagger-index="4"] {
+    transition-delay: 240ms;
+}
+[data-stagger-step="60"][data-stagger-index="5"] {
+    transition-delay: 300ms;
+}
+[data-stagger-step="60"][data-stagger-index="6"] {
+    transition-delay: 360ms;
+}
+
+[data-stagger-step="80"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="80"][data-stagger-index="1"] {
+    transition-delay: 80ms;
+}
+[data-stagger-step="80"][data-stagger-index="2"] {
+    transition-delay: 160ms;
+}
+[data-stagger-step="80"][data-stagger-index="3"] {
+    transition-delay: 240ms;
+}
+[data-stagger-step="80"][data-stagger-index="4"] {
+    transition-delay: 320ms;
+}
+[data-stagger-step="80"][data-stagger-index="5"] {
+    transition-delay: 400ms;
+}
+[data-stagger-step="80"][data-stagger-index="6"] {
+    transition-delay: 480ms;
+}
+
+[data-stagger-step="100"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="100"][data-stagger-index="1"] {
+    transition-delay: 100ms;
+}
+[data-stagger-step="100"][data-stagger-index="2"] {
+    transition-delay: 200ms;
+}
+[data-stagger-step="100"][data-stagger-index="3"] {
+    transition-delay: 300ms;
+}
+[data-stagger-step="100"][data-stagger-index="4"] {
+    transition-delay: 400ms;
+}
+[data-stagger-step="100"][data-stagger-index="5"] {
+    transition-delay: 500ms;
+}
+[data-stagger-step="100"][data-stagger-index="6"] {
+    transition-delay: 600ms;
+}
+
+/* =========================================================================
  * Wave header padding map (consumed by WaveHeader)
  *
  * Layouts pick a semantic name instead of a hard-coded rem value so the
