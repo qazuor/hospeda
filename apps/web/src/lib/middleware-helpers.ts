@@ -454,6 +454,7 @@ export function buildCspHeader({
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
+        "frame-src 'none'",
         "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',

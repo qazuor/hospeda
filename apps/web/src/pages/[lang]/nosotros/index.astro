@@ -171,7 +171,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 					{ titleKey: 'about.values.simplicity.title', titleFb: 'Simplicidad', descKey: 'about.values.simplicity.desc', descFb: 'Herramientas fáciles de usar tanto para viajeros como para propietarios.' },
 					{ titleKey: 'about.values.community.title', titleFb: 'Comunidad', descKey: 'about.values.community.desc', descFb: 'Creemos en el turismo como motor de desarrollo local y regional.' },
 				].map((value, i) => (
-					<div class="about-values__card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="about-values__card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<h3 class="about-values__card-title">{t(value.titleKey, value.titleFb)}</h3>
 						<p class="about-values__card-desc">{t(value.descKey, value.descFb)}</p>
 					</div>

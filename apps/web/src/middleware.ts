@@ -15,6 +15,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { injectNonce } from '../integrations/csp-nonce-injector';
 import { getApiUrl, getNoindexHosts } from './lib/env';
 import {
     buildCspHeader,
@@ -88,12 +89,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // crawlers don't index the private docs even if the URL leaks.
     if (isBetaRoute({ path })) {
         (context.locals as { user: null }).user = null;
-        const betaResponse = await next();
+        let betaResponse = await next();
 
         betaResponse.headers.set('X-Robots-Tag', 'noindex, nofollow');
 
         const betaContentType = betaResponse.headers.get('content-type') ?? '';
         if (betaContentType.includes('text/html')) {
+            // Stamp the per-request nonce on any inline <style>/<script>
+            // emitted by Astro without one, so they match the policy we set
+            // below. Content-Length is recomputed by Node from the new body.
+            const originalBody = await betaResponse.text();
+            const { html: rewrittenBody } = injectNonce({
+                html: originalBody,
+                nonce: cspNonce
+            });
+            const newHeaders = new Headers(betaResponse.headers);
+            newHeaders.delete('content-length');
+            betaResponse = new Response(rewrittenBody, {
+                status: betaResponse.status,
+                headers: newHeaders
+            });
+
             const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
             const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
             const directives = buildCspHeader({
@@ -218,7 +234,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         (context.locals as { user: null }).user = null;
     }
 
-    const response = await next();
+    let response = await next();
 
     // Step 8: If the downstream handler returned a 404, rewrite to our custom 404 page
     // so it renders with the full site layout and i18n context.
@@ -226,12 +242,31 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.rewrite('/404');
     }
 
-    // Step 9: Attach a Content-Security-Policy-Report-Only header to all HTML responses.
-    // This is the single source of truth for the CSP policy.
+    // Step 9: Attach a Content-Security-Policy-Report-Only header to all HTML responses
+    // AND stamp the per-request nonce on every inline <style>/<script> Astro
+    // emitted without one (so they match the policy below). The CSP header
+    // is the single source of truth; the body rewrite makes the policy
+    // actually enforceable for inline emissions Astro doesn't tag itself.
     // Phase 1 uses Report-Only so violations are reported without blocking content.
     // Switch to 'Content-Security-Policy' for Phase 2 enforcement.
     const contentType = response.headers.get('content-type') ?? '';
     if (contentType.includes('text/html')) {
+        // Rewrite body first so the policy header we set after this reflects
+        // the same nonce that's now stamped on every unguarded inline tag.
+        // Content-Length is dropped because the rewrite changes body size;
+        // Node will recompute it on send.
+        const originalBody = await response.text();
+        const { html: rewrittenBody } = injectNonce({
+            html: originalBody,
+            nonce: cspNonce
+        });
+        const newHeaders = new Headers(response.headers);
+        newHeaders.delete('content-length');
+        response = new Response(rewrittenBody, {
+            status: response.status,
+            headers: newHeaders
+        });
+
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN as string | undefined;
         const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
 

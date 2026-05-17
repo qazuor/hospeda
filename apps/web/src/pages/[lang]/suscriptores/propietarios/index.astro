@@ -188,7 +188,7 @@ const faqJsonLd = {
 			<h2 class="owners-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
 			<div class="owners-benefits__grid">
 				{benefits.map((b, i) => (
-					<div class="owners-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="owners-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="owners-benefit-card__icon" aria-hidden="true">
 							<b.Icon size={28} weight="regular" />
 						</div>
@@ -222,7 +222,7 @@ const faqJsonLd = {
 					/>
 				</svg>
 				{steps.map((s, i) => (
-					<div class="owners-step" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="owners-step" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<span class="owners-step__num">{s.num}</span>
 						<h3 class="owners-step__title">{t(s.titleKey, s.titleFb)}</h3>
 						<p class="owners-step__desc">{t(s.descKey, s.descFb)}</p>

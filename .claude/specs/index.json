@@ -121,9 +121,9 @@
             "created": "2026-03-16T00:00:00.000Z",
             "archived": false,
             "dependsOn": ["SPEC-042", "SPEC-045"],
-            "worktree": "/home/qazuor/projects/WEBS/hospeda2-spec-046-csp-post-deploy-verification",
-            "branch": "spec/SPEC-046-csp-post-deploy-verification",
-            "progressNote": "Code-side baseline shipped via SPEC-042/047. Extended 2026-05-16 with section 1C cataloguing real staging violations from full-site crawl (home, listing, detail, auth, signup) under Astro ClientRouter SPA: GAP-046-09a (inline style attrs to CSS classes refactor), GAP-046-09b (Astro inline style blocks need nonce propagation), GAP-046-11 (Cloudflare Web Analytics disable, replaced by SPEC-140 Umami), GAP-046-12 (web frame-src to 'none'), GAP-046-13 (inline scripts missing nonce — Astro nonce propagation). GAP-046-10 (suspected Zod runtime dynamic-code evaluation) verified absent and dropped. Section 11 added documenting expected Report-Only warnings ('self' ignored under strict-dynamic, /_astro/*.js cascading blocks). Authenticated /mi-cuenta/* and billing entry points still need a staging test account before Phase 2. Tasks not generated yet."
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-046-impl",
+            "branch": "feat/SPEC-046-csp-implementation",
+            "progressNote": "Spec extension shipped via PR #1130 (merged 2026-05-16) with section 1C cataloguing real staging violations and Astro 6 CSP research (Path A: middleware nonce + Astro integration). 15 atomic tasks generated (avg complexity 2.5, 5 parallel tracks). GAP-046-10 (Zod dynamic-code eval) verified absent and dropped. Implementation worktree cut from origin/staging on 2026-05-16 — prior spec worktree (hospeda2-spec-046-csp-post-deploy-verification on spec/SPEC-046-csp-post-deploy-verification) cleaned up after merge."
         },
         {
             "specId": "SPEC-061",
