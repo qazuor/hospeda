@@ -24,7 +24,8 @@ import {
     SubscriptionCheckoutError,
     computePlanChangeDelta,
     initiatePaidAnnualSubscription,
-    initiatePaidMonthlySubscription
+    initiatePaidMonthlySubscription,
+    initiatePaidPlanUpgrade
 } from '../../src/services/subscription-checkout.service';
 
 // ---------------------------------------------------------------------------
@@ -866,5 +867,347 @@ describe('computePlanChangeDelta', () => {
         // Should be close to (2M - 1M) * 25/30 ≈ 833333
         expect(delta).toBeGreaterThan(820_000);
         expect(delta).toBeLessThan(850_000);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// initiatePaidPlanUpgrade (SPEC-141 D7 — upgrade delta-charge)
+// ---------------------------------------------------------------------------
+
+const UPGRADE_SUB_ID = 'sub-upgrade-1';
+const NEW_PLAN_ID = '00000000-0000-4000-8000-0000000000bb';
+const NEW_PRICE_ID = 'price_monthly_new';
+
+const UPGRADE_PERIOD_START = new Date('2026-06-01T00:00:00.000Z');
+const UPGRADE_PERIOD_END = new Date('2026-07-01T00:00:00.000Z');
+const HALFWAY = new Date('2026-06-16T00:00:00.000Z'); // 15 days remaining of 30
+
+const UPGRADE_URLS = {
+    successUrl: 'https://hospeda.test/billing/return?ctx=upgrade',
+    cancelUrl: 'https://hospeda.test/billing/return?ctx=upgrade&cancelled=1',
+    notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
+};
+
+const UPGRADE_CUSTOMER: CustomerFixture = {
+    id: CUSTOMER_ID,
+    email: 'host@hospeda.test',
+    name: 'Maria Rodriguez',
+    livemode: false
+};
+
+function priceWith(overrides: { id: string; unitAmount: number; intervalCount?: number }) {
+    return {
+        billingInterval: 'month',
+        intervalCount: 1,
+        active: true,
+        ...overrides
+    };
+}
+
+interface UpgradeBillingMockOpts {
+    /** Active subscription returned by billing.subscriptions.get */
+    subscription?: {
+        id: string;
+        planId: string;
+        currentPeriodStart: Date;
+        currentPeriodEnd: Date;
+    } | null;
+    /** Current plan returned by billing.plans.get(sub.planId) */
+    currentPlan?: { id: string; name: string; prices: unknown[] } | null;
+    /** Target plan returned by billing.plans.get(newPlanId) */
+    targetPlan?: { id: string; name: string; prices: unknown[] } | null;
+    customer?: CustomerFixture | null;
+    checkoutResult?: {
+        id?: string;
+        providerInitPoint?: string;
+        providerSandboxInitPoint?: string;
+    } | null;
+}
+
+function createUpgradeBillingMock(opts: UpgradeBillingMockOpts = {}) {
+    const subscription =
+        opts.subscription === undefined
+            ? {
+                  id: UPGRADE_SUB_ID,
+                  planId: PLAN_ID,
+                  currentPeriodStart: UPGRADE_PERIOD_START,
+                  currentPeriodEnd: UPGRADE_PERIOD_END
+              }
+            : opts.subscription;
+
+    const currentPlan =
+        opts.currentPlan === undefined
+            ? {
+                  id: PLAN_ID,
+                  name: 'owner-basico',
+                  prices: [priceWith({ id: 'price_monthly_current', unitAmount: 1_500_000 })]
+              }
+            : opts.currentPlan;
+
+    const targetPlan =
+        opts.targetPlan === undefined
+            ? {
+                  id: NEW_PLAN_ID,
+                  name: 'owner-premium',
+                  prices: [priceWith({ id: NEW_PRICE_ID, unitAmount: 3_500_000 })]
+              }
+            : opts.targetPlan;
+
+    const customer = opts.customer === undefined ? UPGRADE_CUSTOMER : opts.customer;
+    const checkoutResult =
+        opts.checkoutResult === undefined
+            ? { id: 'checkout-up-1', providerInitPoint: 'https://mp.test/upgrade-abc' }
+            : opts.checkoutResult;
+
+    const planMap = new Map<string, typeof currentPlan>();
+    if (currentPlan) planMap.set(currentPlan.id, currentPlan);
+    if (targetPlan && targetPlan.id !== currentPlan?.id) planMap.set(targetPlan.id, targetPlan);
+
+    return {
+        subscriptions: {
+            get: vi.fn().mockResolvedValue(subscription)
+        },
+        plans: {
+            get: vi.fn((id: string) => Promise.resolve(planMap.get(id) ?? null))
+        },
+        customers: { get: vi.fn().mockResolvedValue(customer) },
+        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) }
+    };
+}
+
+describe('initiatePaidPlanUpgrade', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns checkoutUrl + delta on successful upgrade (half-period remaining)', async () => {
+        const billing = createUpgradeBillingMock();
+
+        const result = await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+
+        expect(result.checkoutUrl).toBe('https://mp.test/upgrade-abc');
+        expect(result.localSubscriptionId).toBe(UPGRADE_SUB_ID);
+        expect(result.newPlanId).toBe(NEW_PLAN_ID);
+        // (3_500_000 - 1_500_000) * 15/30 = 1_000_000 centavos
+        expect(result.deltaCentavos).toBe(1_000_000);
+        expect(new Date(result.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('invokes billing.checkout.create with delta line item and full upgrade metadata', async () => {
+        const billing = createUpgradeBillingMock();
+
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            statementDescriptor: 'HOSPEDA',
+            now: HALFWAY
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.mode).toBe('payment');
+        const lineItems = call.lineItems as Array<Record<string, unknown>>;
+        expect(lineItems[0]?.unitAmount).toBe(1_000_000); // delta in centavos
+        expect(lineItems[0]?.currency).toBe('ARS');
+        expect((lineItems[0]?.title as string).toLowerCase()).toContain('upgrade');
+        expect(call.successUrl).toBe(UPGRADE_URLS.successUrl);
+        expect(call.cancelUrl).toBe(UPGRADE_URLS.cancelUrl);
+        expect(call.notificationUrl).toBe(UPGRADE_URLS.notificationUrl);
+        expect(call.statementDescriptor).toBe('HOSPEDA');
+        expect(call.customerId).toBe(CUSTOMER_ID);
+        expect(call.customerEmail).toBe(UPGRADE_CUSTOMER.email);
+        expect(call.payerFirstName).toBe('Maria');
+        expect(call.payerLastName).toBe('Rodriguez');
+        // Idempotency key encodes both the sub and the target plan so a
+        // user who retries the SAME upgrade gets the same MP checkout,
+        // but a DIFFERENT target plan creates a fresh one.
+        expect(call.idempotencyKey).toBe(`${UPGRADE_SUB_ID}:upgrade:${NEW_PLAN_ID}`);
+        const metadata = call.metadata as Record<string, unknown>;
+        expect(metadata.planChangeUpgradeId).toBe(UPGRADE_SUB_ID);
+        expect(metadata.oldPlanId).toBe(PLAN_ID);
+        expect(metadata.newPlanId).toBe(NEW_PLAN_ID);
+        expect(metadata.newPriceId).toBe(NEW_PRICE_ID);
+        expect(metadata.targetTransactionAmountMajor).toBe(35_000); // 3_500_000 / 100
+        expect(metadata.deltaCentavos).toBe(1_000_000);
+    });
+
+    it('throws SUBSCRIPTION_NOT_FOUND when the active sub does not exist', async () => {
+        const billing = createUpgradeBillingMock({ subscription: null });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: 'missing-sub',
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'SUBSCRIPTION_NOT_FOUND' });
+    });
+
+    it('throws SAME_PLAN when newPlanId equals current planId', async () => {
+        const billing = createUpgradeBillingMock();
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: PLAN_ID, // same as current
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'SAME_PLAN' });
+    });
+
+    it('throws NOT_AN_UPGRADE when delta is zero or negative (downgrade or equal price)', async () => {
+        // Target plan price is LOWER → downgrade computes negative delta.
+        const billing = createUpgradeBillingMock({
+            targetPlan: {
+                id: NEW_PLAN_ID,
+                name: 'owner-basico-cheaper',
+                prices: [priceWith({ id: NEW_PRICE_ID, unitAmount: 500_000 })]
+            }
+        });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'NOT_AN_UPGRADE' });
+    });
+
+    it('throws NO_MATCHING_PRICE when current plan has no price for the interval', async () => {
+        const billing = createUpgradeBillingMock({
+            currentPlan: {
+                id: PLAN_ID,
+                name: 'owner-basico',
+                prices: [
+                    priceWith({ id: 'annual', unitAmount: 15_000_000 }),
+                    priceWith({ id: 'm', unitAmount: 1_500_000 })
+                ].map((p) => ({ ...p, billingInterval: 'year' })) // both annual — no monthly
+            }
+        });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'NO_MATCHING_PRICE' });
+    });
+
+    it('throws PLAN_NOT_FOUND when target plan does not exist', async () => {
+        const billing = createUpgradeBillingMock({ targetPlan: null });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'PLAN_NOT_FOUND' });
+    });
+
+    it('throws CUSTOMER_NOT_FOUND when the qzpay customer lookup returns null', async () => {
+        const billing = createUpgradeBillingMock({ customer: null });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'CUSTOMER_NOT_FOUND' });
+    });
+
+    it('throws MISSING_INIT_POINT when checkout returns no URLs', async () => {
+        const billing = createUpgradeBillingMock({ checkoutResult: { id: 'empty' } });
+
+        await expect(
+            initiatePaidPlanUpgrade({
+                customerId: CUSTOMER_ID,
+                currentSubscriptionId: UPGRADE_SUB_ID,
+                newPlanId: NEW_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                // biome-ignore lint/suspicious/noExplicitAny: structural mock
+                billing: billing as any,
+                urls: UPGRADE_URLS,
+                now: HALFWAY
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_INIT_POINT' });
+    });
+
+    it('falls back to sandbox init point when providerInitPoint is missing', async () => {
+        const billing = createUpgradeBillingMock({
+            checkoutResult: {
+                id: 'sb',
+                providerSandboxInitPoint: 'https://sandbox.mp.test/upgrade-xyz'
+            }
+        });
+
+        const result = await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+
+        expect(result.checkoutUrl).toBe('https://sandbox.mp.test/upgrade-xyz');
     });
 });

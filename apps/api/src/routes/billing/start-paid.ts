@@ -88,9 +88,13 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
         case 'PLAN_NOT_FOUND':
         case 'NO_MONTHLY_PRICE':
         case 'NO_ANNUAL_PRICE':
+        case 'NO_MATCHING_PRICE':
         case 'CUSTOMER_NOT_FOUND':
+        case 'SUBSCRIPTION_NOT_FOUND':
             return new HTTPException(404, { message: err.message });
         case 'INVALID_PROMO_CODE':
+        case 'SAME_PLAN':
+        case 'NOT_AN_UPGRADE':
             return new HTTPException(422, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });

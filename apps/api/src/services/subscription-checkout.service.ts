@@ -41,9 +41,13 @@ export type SubscriptionCheckoutErrorCode =
     | 'PLAN_NOT_FOUND'
     | 'NO_MONTHLY_PRICE'
     | 'NO_ANNUAL_PRICE'
+    | 'NO_MATCHING_PRICE'
     | 'CUSTOMER_NOT_FOUND'
     | 'MISSING_INIT_POINT'
-    | 'INVALID_PROMO_CODE';
+    | 'INVALID_PROMO_CODE'
+    | 'SUBSCRIPTION_NOT_FOUND'
+    | 'SAME_PLAN'
+    | 'NOT_AN_UPGRADE';
 
 /**
  * Domain-level error thrown by {@link initiatePaidMonthlySubscription}.
@@ -457,6 +461,236 @@ export async function initiatePaidAnnualSubscription(
         checkoutUrl,
         localSubscriptionId,
         expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+    };
+}
+
+/**
+ * Input for {@link initiatePaidPlanUpgrade}.
+ *
+ * Unlike monthly/annual the caller already has the local subscription
+ * id on hand (from the active sub lookup the route does anyway), so
+ * we accept it directly instead of re-resolving via
+ * `billing.subscriptions.getByCustomerId`. This also makes the test
+ * surface simpler — no need to mock a list query just to pick the
+ * active row.
+ *
+ * `billingInterval` uses qzpay-core's enum (`'month'` / `'year'`) and
+ * `intervalCount` matches the storage column. The caller is responsible
+ * for mapping its public-facing enum (monthly/annual/quarterly/…) into
+ * this pair — `plan-change.ts` already has `mapBillingIntervalToQZPay`
+ * for that, and reusing it keeps the conversion in one place.
+ */
+export interface InitiatePaidPlanUpgradeInput {
+    /** Local billing customer id (the qzpay customer id). */
+    readonly customerId: string;
+    /** Local subscription id of the currently-active sub being upgraded. */
+    readonly currentSubscriptionId: string;
+    /** Target plan id (UUID — from `billing_plans.id`, NOT the slug). */
+    readonly newPlanId: string;
+    /** Billing interval the upgrade keeps using (e.g. `'month'`). */
+    readonly billingInterval: 'month' | 'year';
+    /** Interval count (e.g. 1 for monthly, 3 for quarterly). */
+    readonly intervalCount: number;
+    /** Resolved qzpay billing instance. */
+    readonly billing: QZPayBilling;
+    /** URL builders the route already resolved from env. */
+    readonly urls: {
+        readonly successUrl: string;
+        readonly cancelUrl: string;
+        readonly notificationUrl: string;
+    };
+    /** Provider-side statement descriptor (1–11 ASCII chars). */
+    readonly statementDescriptor?: string;
+    /** Drizzle client override for tests. */
+    readonly db?: DrizzleClient;
+    /** Clock override for tests (used by `computePlanChangeDelta`). */
+    readonly now?: Date;
+}
+
+/**
+ * Output shape of a successful upgrade initiation. The caller exposes
+ * `checkoutUrl` to the front and persists `deltaCentavos` /
+ * `newPlanId` for the audit trail. The local subscription id is
+ * returned for symmetry with monthly/annual, even though here it is
+ * the same id the caller already had (the sub being upgraded).
+ */
+export interface InitiatePaidPlanUpgradeResult {
+    readonly checkoutUrl: string;
+    readonly localSubscriptionId: string;
+    readonly expiresAt: string;
+    readonly newPlanId: string;
+    readonly deltaCentavos: number;
+}
+
+/**
+ * Initiate a paid plan upgrade via a one-time MP checkout for the
+ * prorated delta (SPEC-141 D7).
+ *
+ * Flow:
+ *   1. Load the active sub (`currentSubscriptionId`), reject if missing
+ *      or `same plan`.
+ *   2. Load current + target plans, resolve their price rows for the
+ *      sub's billing interval.
+ *   3. Compute prorated delta via {@link computePlanChangeDelta}.
+ *   4. Reject with `NOT_AN_UPGRADE` when delta ≤ 0 — downgrades have
+ *      their own (scheduled) flow in Fase 4.
+ *   5. Load the customer for payer fields and `livemode` consistency.
+ *   6. Create a one-time MP checkout with metadata
+ *      `{ planChangeUpgradeId, oldPlanId, newPlanId, newPriceId,
+ *      targetTransactionAmountMajor }` so the
+ *      `payment.updated` webhook can finish the transition.
+ *
+ * IMPORTANT: this function does NOT mutate the local subscription. The
+ * change is committed by `confirmPlanUpgrade` in the webhook layer
+ * after the user actually pays the delta.
+ *
+ * @throws SubscriptionCheckoutError When any precondition is missing.
+ */
+export async function initiatePaidPlanUpgrade(
+    input: InitiatePaidPlanUpgradeInput
+): Promise<InitiatePaidPlanUpgradeResult> {
+    const {
+        customerId,
+        currentSubscriptionId,
+        newPlanId,
+        billingInterval,
+        intervalCount,
+        billing,
+        urls,
+        statementDescriptor
+    } = input;
+
+    const sub = await billing.subscriptions.get(currentSubscriptionId);
+    if (!sub) {
+        throw new SubscriptionCheckoutError(
+            'SUBSCRIPTION_NOT_FOUND',
+            `Subscription '${currentSubscriptionId}' not found`
+        );
+    }
+
+    if (sub.planId === newPlanId) {
+        throw new SubscriptionCheckoutError('SAME_PLAN', 'Cannot upgrade to the same plan');
+    }
+
+    const [currentPlan, targetPlan] = await Promise.all([
+        billing.plans.get(sub.planId),
+        billing.plans.get(newPlanId)
+    ]);
+
+    if (!currentPlan) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_FOUND',
+            `Current plan '${sub.planId}' not found`
+        );
+    }
+    if (!targetPlan) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_FOUND',
+            `Target plan '${newPlanId}' not found`
+        );
+    }
+
+    const matchesInterval = (p: {
+        billingInterval: string;
+        intervalCount?: number | null;
+        active: boolean;
+    }) =>
+        p.active &&
+        p.billingInterval === billingInterval &&
+        (p.intervalCount ?? 1) === intervalCount;
+
+    const currentPrice = currentPlan.prices.find(matchesInterval);
+    const targetPrice = targetPlan.prices.find(matchesInterval);
+
+    if (!currentPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MATCHING_PRICE',
+            `Current plan has no active price for interval '${billingInterval}'/${intervalCount}`
+        );
+    }
+    if (!targetPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MATCHING_PRICE',
+            `Target plan has no active price for interval '${billingInterval}'/${intervalCount}`
+        );
+    }
+
+    const deltaCentavos = computePlanChangeDelta({
+        currentPriceCentavos: currentPrice.unitAmount,
+        targetPriceCentavos: targetPrice.unitAmount,
+        currentPeriodStart: sub.currentPeriodStart,
+        currentPeriodEnd: sub.currentPeriodEnd,
+        ...(input.now ? { now: input.now } : {})
+    });
+
+    if (deltaCentavos <= 0) {
+        throw new SubscriptionCheckoutError(
+            'NOT_AN_UPGRADE',
+            `Computed delta is ${deltaCentavos}; route caller must handle downgrades separately`
+        );
+    }
+
+    const customer = await billing.customers.get(customerId);
+    if (!customer) {
+        throw new SubscriptionCheckoutError(
+            'CUSTOMER_NOT_FOUND',
+            `Customer '${customerId}' not found`
+        );
+    }
+
+    const [firstName, ...rest] = (customer.name ?? '').trim().split(/\s+/);
+
+    // qzpay stores prices in centavos; MP `auto_recurring.transaction_amount`
+    // expects major units. We forward MAJOR units in metadata so the
+    // webhook handler can pass it straight to paymentAdapter.subscriptions.update
+    // without re-deriving it from a DB lookup.
+    const targetTransactionAmountMajor = targetPrice.unitAmount / 100;
+
+    const checkout = await billing.checkout.create({
+        mode: 'payment',
+        lineItems: [
+            {
+                unitAmount: deltaCentavos,
+                currency: 'ARS',
+                quantity: 1,
+                title: `${targetPlan.name} (Upgrade prorated)`,
+                categoryId: 'services'
+            }
+        ],
+        successUrl: urls.successUrl,
+        cancelUrl: urls.cancelUrl,
+        customerId,
+        customerEmail: customer.email,
+        ...(customer.name ? { customerName: customer.name } : {}),
+        ...(firstName ? { payerFirstName: firstName } : {}),
+        ...(rest.length > 0 ? { payerLastName: rest.join(' ') } : {}),
+        notificationUrl: urls.notificationUrl,
+        ...(statementDescriptor ? { statementDescriptor } : {}),
+        idempotencyKey: `${currentSubscriptionId}:upgrade:${newPlanId}`,
+        metadata: {
+            planChangeUpgradeId: currentSubscriptionId,
+            oldPlanId: sub.planId,
+            newPlanId,
+            newPriceId: targetPrice.id,
+            targetTransactionAmountMajor,
+            deltaCentavos
+        }
+    });
+
+    const checkoutUrl = checkout.providerInitPoint ?? checkout.providerSandboxInitPoint;
+    if (!checkoutUrl) {
+        throw new SubscriptionCheckoutError(
+            'MISSING_INIT_POINT',
+            'Payment provider did not return a checkout URL'
+        );
+    }
+
+    return {
+        checkoutUrl,
+        localSubscriptionId: currentSubscriptionId,
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        newPlanId,
+        deltaCentavos
     };
 }
 
