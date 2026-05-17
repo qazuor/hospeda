@@ -36,15 +36,6 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
-
-/** Map size tokens to CSS height values. */
-const sizeValues: Record<NonNullable<Props['size']>, string> = {
-	sm: '2rem',
-	md: '2.5rem',
-	lg: '3.5rem',
-} as const;
-
-const heightValue = sizeValues[size];
 ---
 
 <a
@@ -57,8 +48,7 @@ const heightValue = sizeValues[size];
 		width={logoSrc.width}
 		height={logoSrc.height}
 		alt="Hospeda"
-		class="logo__image"
-		style={`height: ${heightValue};`}
+		class:list={['logo__image', `logo__image--${size}`]}
 		loading="eager"
 		decoding="async"
 	/>
@@ -79,5 +69,23 @@ const heightValue = sizeValues[size];
 	.logo__image {
 		width: auto;
 		object-fit: contain;
+	}
+
+	/*
+	 * Size modifier classes — replace inline `style="height: Xrem;"` per
+	 * SPEC-046 GAP-046-09a so the logo does not emit `style-src-attr`-
+	 * violating attributes during SSR. The three values mirror the
+	 * `size: 'sm' | 'md' | 'lg'` prop enum 1:1.
+	 */
+	.logo__image--sm {
+		height: 2rem;
+	}
+
+	.logo__image--md {
+		height: 2.5rem;
+	}
+
+	.logo__image--lg {
+		height: 3.5rem;
 	}
 </style>
