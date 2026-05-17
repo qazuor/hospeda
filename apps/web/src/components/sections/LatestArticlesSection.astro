@@ -76,8 +76,6 @@ const isSparse = posts.length < 2;
             title={t('home.latestPosts.title', 'Últimos artículos')}
             subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
             alignment="left"
-            actionLabel={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
-            actionHref={buildUrl({ locale, path: '/publicaciones/' })}
         />
 
         {posts.length === 0 ? (
@@ -117,9 +115,9 @@ const isSparse = posts.length < 2;
                     )}
                 </div>
 
-                <!-- Mobile-only "see all" CTA below the grid so users don't have to
-                     scroll back up to the SectionHeader action. -->
-                <div class="articles__see-all-mobile">
+                <!-- "See all" CTA below the grid. The SectionHeader no longer
+                     carries an action button. -->
+                <div class="articles__see-all">
                     <GradientButton
                         href={buildUrl({ locale, path: '/publicaciones/' })}
                         label={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
@@ -182,15 +180,9 @@ const isSparse = posts.length < 2;
 
     /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
 
-    .articles__see-all-mobile {
-        display: none;
-    }
-
-    @media (max-width: 767px) {
-        .articles__see-all-mobile {
-            display: flex;
-            justify-content: center;
-            margin-top: var(--space-card-gap, 2rem);
-        }
+    .articles__see-all {
+        display: flex;
+        justify-content: center;
+        margin-top: var(--space-card-gap, 2rem);
     }
 </style>

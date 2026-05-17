@@ -59,14 +59,12 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 <section class="section accommodations">
   <div class="section__container">
 
-    <!-- Section header: left-aligned with "Ver todos" pill action -->
+    <!-- Section header: action moved below the grid (see __see-all-mobile). -->
     <SectionHeader
       tagline={t('home.featuredAccommodations.accentSubtitle')}
       title={t('home.featuredAccommodations.title')}
       subtitle={t('home.featuredAccommodations.description')}
       alignment="left"
-      actionLabel={seeAllLabel}
-      actionHref={seeAllHref}
     />
 
     <!-- Accommodation type filter badges: per-type colour identity,
@@ -107,10 +105,10 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
           ))}
         </div>
 
-        <!-- Mobile-only "see all" CTA below the grid so users don't have to
-             scroll back up to the SectionHeader action. Hidden on tablet+
-             where the top action is one short scroll away. -->
-        <div class="accommodations__see-all-mobile">
+        <!-- "See all" CTA below the grid. The SectionHeader no longer
+             carries an action button (every viewport scrolls past the
+             grid and lands on this CTA instead). -->
+        <div class="accommodations__see-all">
           <GradientButton
             href={seeAllHref}
             label={seeAllLabel}
@@ -133,17 +131,12 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     height: 100%;
   }
   /* The default --space-section-header-mb (50px) is sized for sections
-   * where the header is followed directly by the grid. Here a scrollable
-   * row of type chips sits between, so the 50px gap leaves a visible
-   * empty band between the "Ver todos" action and the chips. Halve it so
-   * the chips read as a continuation of the header block, and zero out
-   * the action button's own bottom margin (it was stacking another 50px
-   * because the header is a flex row and the action is its tallest child). */
+   * where the header is followed directly by the grid. Here the chip row
+   * sits between, so the 50px gap leaves a visible empty band between
+   * the subtitle and the chips. Compact it so the chips read as a
+   * continuation of the header block. */
   .accommodations :global(.section-header) {
     margin-bottom: 1.1rem;
-  }
-  .accommodations :global(.section-header__action) {
-    margin-bottom: 0;
   }
   /* Type pills row spacing only — overflow + fade + arrows come from
    * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro).
@@ -176,15 +169,9 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     }
   }
 
-  .accommodations__see-all-mobile {
-    display: none;
-  }
-
-  @media (max-width: 767px) {
-    .accommodations__see-all-mobile {
-      display: flex;
-      justify-content: center;
-      margin-top: var(--space-card-gap, 2rem);
-    }
+  .accommodations__see-all {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-card-gap, 2rem);
   }
 </style>

@@ -63,14 +63,12 @@ const bottomEvents = remainingEvents.slice(2, 5);
 <section class="section">
   <div class="section__container">
 
-    <!-- Section header with inline view-all action -->
+    <!-- Section header: action moved below the grid (see __see-all). -->
     <SectionHeader
       tagline={t('home.upcomingEvents.accentSubtitle')}
       title={t('home.upcomingEvents.title')}
       subtitle={t('home.upcomingEvents.description')}
       alignment="left"
-      actionLabel={t('home.upcomingEvents.viewAll')}
-      actionHref={buildUrl({ locale, path: '/eventos/' })}
     />
 
     {eventItems.length === 0 ? (
@@ -113,9 +111,9 @@ const bottomEvents = remainingEvents.slice(2, 5);
 
         </div>
 
-        <!-- Mobile-only "see all" CTA below the grid so users don't have to
-             scroll back up to the SectionHeader action. -->
-        <div class="events__see-all-mobile">
+        <!-- "See all" CTA below the grid. The SectionHeader no longer
+             carries an action button. -->
+        <div class="events__see-all">
           <GradientButton
             href={buildUrl({ locale, path: '/eventos/' })}
             label={t('home.upcomingEvents.viewAll')}
@@ -203,15 +201,9 @@ const bottomEvents = remainingEvents.slice(2, 5);
 
   /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
 
-  .events__see-all-mobile {
-    display: none;
-  }
-
-  @media (max-width: 767px) {
-    .events__see-all-mobile {
-      display: flex;
-      justify-content: center;
-      margin-top: var(--space-card-gap, 2rem);
-    }
+  .events__see-all {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-card-gap, 2rem);
   }
 </style>
