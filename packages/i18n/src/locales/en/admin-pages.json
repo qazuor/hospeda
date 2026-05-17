@@ -288,6 +288,8 @@
             "statusCancelled": "Cancelled",
             "filterAllStatuses": "All statuses",
             "filterAllTypes": "All types",
+            "filterStatusLabel": "Filter by status",
+            "filterTypeLabel": "Filter by type",
             "viewDetails": "View details",
             "dialog": {
                 "details": "Sponsorship details",

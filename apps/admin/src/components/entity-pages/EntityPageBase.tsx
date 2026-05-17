@@ -150,6 +150,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     if (isLoading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
+                {/* sr-only h1 so the page always has a heading-1 for screen readers
+                    and axe page-has-heading-one, even during the data load. */}
+                <h1 className="sr-only">{t('admin-common.states.loading')}</h1>
                 <div className="text-center">
                     <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                     <p className="mt-2 text-muted-foreground text-sm">
@@ -228,20 +231,26 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         }
     };
 
+    // Always-present accessible page title. The visible heading below is rendered
+    // as h2 with h1-like styling to avoid duplicate-h1 warnings while ensuring
+    // axe page-has-heading-one always passes — even during any micro-window
+    // between loading and happy-path render where the visible heading isn't yet
+    // mounted.
+    const pageTitleText =
+        mode === 'view'
+            ? entityName
+            : t('admin-common.entityPage.editTitle').replace('{entity}', entityName);
+
     return (
         <div className={`space-y-6 ${className || ''}`}>
+            <h1 className="sr-only">{pageTitleText}</h1>
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="font-semibold text-2xl leading-none tracking-tight">
-                                {mode === 'view'
-                                    ? entityName
-                                    : t('admin-common.entityPage.editTitle').replace(
-                                          '{entity}',
-                                          entityName
-                                      )}
-                            </h1>
+                            <h2 className="font-semibold text-2xl leading-none tracking-tight">
+                                {pageTitleText}
+                            </h2>
                             <p className="text-muted-foreground">
                                 {mode === 'view'
                                     ? t('admin-common.entityPage.viewDescription').replace(

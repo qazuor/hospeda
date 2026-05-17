@@ -96,13 +96,13 @@ export function CampaignPreview({ html, subject }: CampaignPreviewProps) {
                         {subject}
                     </h1>
                 ) : (
-                    <h1 className="mb-4 font-bold text-muted-foreground/40 text-xl italic leading-snug">
+                    <h1 className="mb-4 font-bold text-muted-foreground/80 text-xl italic leading-snug">
                         (sin asunto)
                     </h1>
                 )}
 
                 {isEmpty ? (
-                    <p className="text-center text-muted-foreground/60 text-sm italic">
+                    <p className="text-center text-muted-foreground/80 text-sm italic">
                         El contenido del email aparecerá aquí...
                     </p>
                 ) : (
