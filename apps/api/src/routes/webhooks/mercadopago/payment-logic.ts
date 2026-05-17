@@ -14,6 +14,7 @@ import { getAddonBySlug } from '@repo/billing';
 import { and, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
@@ -173,6 +174,13 @@ async function confirmAnnualSubscription(input: {
         .update(billingSubscriptions)
         .set({ status: SubscriptionStatusEnum.ACTIVE, updatedAt: new Date() })
         .where(eq(billingSubscriptions.id, sub.id));
+
+    // Invalidate the entitlement middleware cache for this customer. Without
+    // this, the entitlement middleware would keep serving the pre-activation
+    // (empty) entitlement set for up to 5 minutes — the user pays for an
+    // annual plan and sees their features blocked until the TTL expires.
+    // Synchronous, in-process, no I/O — safe to call unconditionally.
+    clearEntitlementCache(sub.customerId);
 
     apiLogger.info(
         {

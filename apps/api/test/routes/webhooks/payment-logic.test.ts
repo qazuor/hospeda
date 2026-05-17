@@ -118,6 +118,10 @@ vi.mock('../../../src/services/addon-plan-change.service', () => ({
     handlePlanChangeAddonRecalculation: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('../../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: vi.fn()
+}));
+
 vi.mock('../../../src/services/addon.service', () => {
     const confirmPurchase = vi.fn().mockResolvedValue({ success: true, data: undefined });
     const MockAddonService = vi.fn().mockImplementation(() => ({ confirmPurchase }));
@@ -132,6 +136,7 @@ vi.mock('@repo/billing', () => ({
 }));
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { clearEntitlementCache } from '../../../src/middlewares/entitlement';
 import {
     sendPaymentFailureNotifications,
     sendPaymentSuccessNotification
@@ -399,6 +404,46 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(false);
             expect(mockBilling.payments.record).not.toHaveBeenCalled();
             expect(annualDbState.updateCalls).toHaveLength(0);
+        });
+
+        it('invalidates the entitlement cache for the customer on activation', async () => {
+            // Annual checkout activation flips status pending_provider → active,
+            // and the entitlement middleware caches per-customer derived plan
+            // limits for 5 min. Without clearing on activation the user would
+            // see "no plan" features for up to 5 min after paying.
+            approvedAnnualPayment();
+            annualDbState.subRows = [
+                { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+            ];
+            annualDbState.paymentDedupeRows = [];
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            expect(result.annualSubscriptionConfirmed).toBe(true);
+            expect(clearEntitlementCache).toHaveBeenCalledOnce();
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-1');
+        });
+
+        it('does NOT invalidate the entitlement cache when activation is skipped (idempotent)', async () => {
+            approvedAnnualPayment();
+            annualDbState.subRows = [{ id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'active' }];
+
+            await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            // Sub was already active → no work done → no cache to clear.
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
         });
 
         it('skips record() when the providerPaymentId is already in billing_payments', async () => {
