@@ -132,6 +132,19 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
   .accommodations__card-wrapper {
     height: 100%;
   }
+  /* The default --space-section-header-mb (50px) is sized for sections
+   * where the header is followed directly by the grid. Here a scrollable
+   * row of type chips sits between, so the 50px gap leaves a visible
+   * empty band between the "Ver todos" action and the chips. Halve it so
+   * the chips read as a continuation of the header block, and zero out
+   * the action button's own bottom margin (it was stacking another 50px
+   * because the header is a flex row and the action is its tallest child). */
+  .accommodations :global(.section-header) {
+    margin-bottom: 1.1rem;
+  }
+  .accommodations :global(.section-header__action) {
+    margin-bottom: 0;
+  }
   /* Type pills row spacing only — overflow + fade + arrows come from
    * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro).
    *
@@ -143,12 +156,12 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
   :global(.accommodations__types) {
     justify-content: center;
     gap: 0.5rem;
-    /* Extra breathing room below the pills: cards use `data-reveal="up"`
-     * with an ease-bounce curve that briefly overshoots their final
-     * position. With only 2rem the cards visually collided with the pills
-     * during the reveal. clamp() scales the gap from compact on mobile
-     * to comfortable on desktop. */
-    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+    /* Match the gap between the SectionHeader's action and the chip row
+     * above so the rhythm header → chips → grid feels even. (Previously
+     * the gap below the chips was much larger via clamp(2.5rem, 5vw,
+     * 3.5rem) — a workaround for cards' `data-reveal="up"` overshoot,
+     * which we accept now in exchange for a tighter visual flow.) */
+    margin-bottom: 1.1rem;
   }
 
   .accommodations__see-all-mobile {
