@@ -14,15 +14,18 @@ import { getAddonBySlug } from '@repo/billing';
 import { and, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
 import {
+    type PlanChangeUpgradeMetadata,
     extractAddonFromReference,
     extractAddonMetadata,
     extractAnnualSubscriptionMetadata,
-    extractPaymentInfo
+    extractPaymentInfo,
+    extractPlanChangeUpgradeMetadata
 } from './utils';
 
 /** Input for processing a payment.updated event */
@@ -41,6 +44,8 @@ interface ProcessPaymentUpdatedResult {
     readonly addonConfirmed: boolean;
     /** True when this event activated an annual subscription (SPEC-141 D1). */
     readonly annualSubscriptionConfirmed?: boolean;
+    /** True when this event committed a plan-change upgrade (SPEC-141 D7). */
+    readonly planUpgradeConfirmed?: boolean;
 }
 
 /**
@@ -184,6 +189,190 @@ async function confirmAnnualSubscription(input: {
 }
 
 /**
+ * Commit a plan-change upgrade after the user paid the prorated
+ * delta upfront (SPEC-141 D7).
+ *
+ * Idempotent: a subsequent webhook for the same payment finds the
+ * subscription already on `newPlanId` and returns without re-running
+ * the change. Sub-step failures (MP propagation, addon recalc, payment
+ * record) are logged but do not block the webhook bucket — MP will
+ * retry the event, and the idempotency guards short-circuit the second
+ * pass.
+ *
+ * Operations are ordered so the most-critical step happens first:
+ *   1. `billing.subscriptions.changePlan(...)` — flips local planId.
+ *   2. `paymentAdapter.subscriptions.update(...)` — propagates the
+ *      new recurring amount to MP (best-effort; webhook reconciliation
+ *      eventually fixes drift in either direction).
+ *   3. `handlePlanChangeAddonRecalculation(...)` — refreshes addon
+ *      limits for the new plan (best-effort).
+ *   4. `billing.payments.record(...)` — records the delta in
+ *      billing_payments (skipped if a row with this MP payment id
+ *      already exists).
+ */
+async function confirmPlanUpgrade(input: {
+    readonly metadata: PlanChangeUpgradeMetadata;
+    readonly providerPaymentId: string;
+    readonly amount: number;
+    readonly currency: string;
+    readonly billing: QZPayBilling;
+    readonly source: string;
+}): Promise<{ confirmed: boolean }> {
+    const { metadata, providerPaymentId, amount, currency, billing, source } = input;
+    const { planChangeUpgradeId, oldPlanId, newPlanId, newPriceId, targetTransactionAmountMajor } =
+        metadata;
+
+    const db = getDb();
+
+    const sub = await billing.subscriptions.get(planChangeUpgradeId);
+    if (!sub) {
+        apiLogger.warn(
+            { planChangeUpgradeId, providerPaymentId, source },
+            'Plan upgrade confirmation: local subscription not found — payment ignored'
+        );
+        return { confirmed: false };
+    }
+
+    if (sub.planId === newPlanId) {
+        apiLogger.info(
+            { planChangeUpgradeId, providerPaymentId, newPlanId, source },
+            'Plan upgrade confirmation: subscription already on target plan — idempotent skip'
+        );
+        return { confirmed: false };
+    }
+
+    if (sub.status !== 'active' && sub.status !== 'trialing') {
+        apiLogger.warn(
+            {
+                planChangeUpgradeId,
+                providerPaymentId,
+                source,
+                currentStatus: sub.status
+            },
+            'Plan upgrade confirmation: subscription is not active/trialing — payment ignored'
+        );
+        return { confirmed: false };
+    }
+
+    // Step 1: commit the local plan change via qzpay-core. If this step
+    // throws, we surface the error and let MP retry — without the plan
+    // flip nothing else makes sense.
+    const changeResult = await billing.subscriptions.changePlan(planChangeUpgradeId, {
+        newPlanId,
+        newPriceId,
+        prorationBehavior: 'create_prorations',
+        applyAt: 'immediately'
+    });
+
+    // Step 2: propagate to MP preapproval — best-effort.
+    const mpSubscriptionId = sub.providerSubscriptionIds?.mercadopago;
+    if (mpSubscriptionId) {
+        const paymentAdapter = billing.getPaymentAdapter();
+        if (paymentAdapter) {
+            try {
+                await paymentAdapter.subscriptions.update(mpSubscriptionId, {
+                    planId: newPlanId,
+                    transactionAmount: targetTransactionAmountMajor
+                });
+            } catch (mpErr) {
+                apiLogger.error(
+                    {
+                        planChangeUpgradeId,
+                        providerPaymentId,
+                        mpSubscriptionId,
+                        oldPlanId,
+                        newPlanId,
+                        source,
+                        error: mpErr instanceof Error ? mpErr.message : String(mpErr)
+                    },
+                    'Plan upgrade confirmation: failed to propagate to MP preapproval — local change persisted, will reconcile via webhook'
+                );
+            }
+        }
+    }
+
+    // Step 3: refresh addon limits — best-effort.
+    try {
+        await handlePlanChangeAddonRecalculation({
+            customerId: changeResult.subscription.customerId,
+            oldPlanId,
+            newPlanId,
+            billing,
+            db
+        });
+    } catch (recalcErr) {
+        apiLogger.error(
+            {
+                planChangeUpgradeId,
+                providerPaymentId,
+                source,
+                error: recalcErr instanceof Error ? recalcErr.message : String(recalcErr)
+            },
+            'Plan upgrade confirmation: addon recalculation failed — non-blocking'
+        );
+    }
+
+    // Step 4: record the delta payment in billing_payments.
+    const existingPayment = await db
+        .select({ id: billingSubscriptions.id })
+        .from(sql`billing_payments`)
+        .where(sql`provider_payment_ids->>'mercadopago' = ${providerPaymentId}`)
+        .limit(1);
+
+    if (existingPayment.length === 0) {
+        const amountInCentavos = Math.round(amount * 100);
+        try {
+            await billing.payments.record({
+                id: crypto.randomUUID(),
+                customerId: changeResult.subscription.customerId,
+                amount: amountInCentavos,
+                currency: currency as QZPayCurrency,
+                status: 'succeeded' as QZPayPaymentStatus,
+                provider: 'mercadopago',
+                providerPaymentId,
+                subscriptionId: planChangeUpgradeId,
+                metadata: {
+                    flow: 'plan-upgrade-delta',
+                    oldPlanId,
+                    newPlanId
+                }
+            });
+        } catch (recordErr) {
+            apiLogger.error(
+                {
+                    planChangeUpgradeId,
+                    providerPaymentId,
+                    source,
+                    error: recordErr instanceof Error ? recordErr.message : String(recordErr)
+                },
+                'Plan upgrade confirmation: failed to record billing_payments row — non-blocking, plan change already persisted'
+            );
+        }
+    } else {
+        apiLogger.debug(
+            { planChangeUpgradeId, providerPaymentId, source },
+            'Plan upgrade confirmation: delta payment already recorded — skipping record'
+        );
+    }
+
+    apiLogger.info(
+        {
+            planChangeUpgradeId,
+            providerPaymentId,
+            oldPlanId,
+            newPlanId,
+            customerId: changeResult.subscription.customerId,
+            amount,
+            currency,
+            source
+        },
+        'Plan upgrade committed by MP payment confirmation'
+    );
+
+    return { confirmed: true };
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -273,6 +462,44 @@ export async function processPaymentUpdated({
                         error: annualErr instanceof Error ? annualErr.message : String(annualErr)
                     },
                     'Annual subscription confirmation: unexpected error — event acknowledged'
+                );
+                return { success: false, addonConfirmed: false };
+            }
+        }
+    }
+
+    // SPEC-141 D7: plan-change upgrade confirmation. Runs after the
+    // annual dispatch so an event carrying both metadata keys (would be
+    // a bug) still picks annual first; in practice the two metadata
+    // shapes are mutually exclusive.
+    const upgradeMetadata = extractPlanChangeUpgradeMetadata(data.metadata);
+    if (upgradeMetadata && paymentInfo && MP_APPROVED_STATUSES.has(paymentInfo.status)) {
+        const providerPaymentId =
+            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+        if (providerPaymentId) {
+            try {
+                const result = await confirmPlanUpgrade({
+                    metadata: upgradeMetadata,
+                    providerPaymentId,
+                    amount: paymentInfo.amount,
+                    currency: paymentInfo.currency,
+                    billing,
+                    source
+                });
+                return {
+                    success: true,
+                    addonConfirmed: false,
+                    planUpgradeConfirmed: result.confirmed
+                };
+            } catch (upgradeErr) {
+                apiLogger.error(
+                    {
+                        planChangeUpgradeId: upgradeMetadata.planChangeUpgradeId,
+                        source,
+                        error: upgradeErr instanceof Error ? upgradeErr.message : String(upgradeErr)
+                    },
+                    'Plan upgrade confirmation: unexpected error — event acknowledged'
                 );
                 return { success: false, addonConfirmed: false };
             }

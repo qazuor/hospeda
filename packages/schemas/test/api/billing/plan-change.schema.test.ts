@@ -132,7 +132,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.subscriptionId).toBe('sub_123');
                 expect(result.data.previousPlanId).toBe('plan_owner_basico');
                 expect(result.data.newPlanId).toBe('plan_owner_pro');
@@ -153,7 +153,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.status).toBe('scheduled');
                 expect(result.data.proratedAmount).toBeUndefined();
             }
@@ -186,7 +186,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.proratedAmount).toBe(0);
             }
         });
