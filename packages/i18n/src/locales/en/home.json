@@ -35,7 +35,7 @@
         "emptyState": "No accommodations available at this time",
         "emptyAction": "View all accommodations",
         "noReviews": "No reviews",
-        "seeAllAction": "View all accommodations →"
+        "seeAllAction": "View all accommodations"
     },
     "accommodations": {
         "badge": {
@@ -63,7 +63,7 @@
         "accentSubtitle": "Don't miss out",
         "emptyState": "No upcoming events at this time",
         "emptyAction": "View all events",
-        "viewAll": "View all events →"
+        "viewAll": "View all events"
     },
     "latestPosts": {
         "title": "Latest articles",
@@ -73,7 +73,7 @@
         "emptyAction": "View all articles",
         "tagline": "Stay informed, get inspired, discover",
         "subtitle": "Stories, guides and secrets of the Litoral region to inspire your next adventure.",
-        "viewAll": "View all articles →"
+        "viewAll": "View all articles"
     },
     "testimonials": {
         "title": "What our users say",

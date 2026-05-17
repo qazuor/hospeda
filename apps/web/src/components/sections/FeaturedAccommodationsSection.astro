@@ -51,7 +51,7 @@ try {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
 }
 
-const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos →');
+const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos');
 const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 
 ---
