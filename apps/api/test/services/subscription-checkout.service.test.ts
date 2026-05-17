@@ -22,6 +22,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     PENDING_PROVIDER_TTL_MS,
     SubscriptionCheckoutError,
+    computePlanChangeDelta,
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription
 } from '../../src/services/subscription-checkout.service';
@@ -740,5 +741,130 @@ describe('initiatePaidAnnualSubscription', () => {
                 db: stub
             })
         ).rejects.toMatchObject({ code: 'MISSING_INIT_POINT' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// computePlanChangeDelta (SPEC-141 D7 upgrade — sub-decision 3)
+// ---------------------------------------------------------------------------
+
+describe('computePlanChangeDelta', () => {
+    const PERIOD_START = new Date('2026-06-01T00:00:00.000Z');
+    const PERIOD_END = new Date('2026-07-01T00:00:00.000Z'); // 30 days
+
+    it('returns the prorated delta when half the period remains', () => {
+        const halfwayThrough = new Date('2026-06-16T00:00:00.000Z'); // 15 days remaining of 30
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 3_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: halfwayThrough
+        });
+        // (3_500_000 - 1_500_000) * 15/30 = 1_000_000 centavos
+        expect(delta).toBe(1_000_000);
+    });
+
+    it('returns the full delta at the very start of the period', () => {
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 3_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: PERIOD_START
+        });
+        expect(delta).toBe(2_000_000); // (3_500_000 - 1_500_000) * 1
+    });
+
+    it('returns 0 when the period has already ended', () => {
+        const afterEnd = new Date('2026-07-15T00:00:00.000Z');
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 3_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: afterEnd
+        });
+        expect(delta).toBe(0);
+    });
+
+    it('returns the full delta when "now" is before period start (clamps ratio to 1)', () => {
+        const beforeStart = new Date('2026-05-15T00:00:00.000Z');
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 3_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: beforeStart
+        });
+        // remaining = end - now > total, so ratio clamps to 1.
+        expect(delta).toBe(2_000_000);
+    });
+
+    it('returns a negative value for a downgrade (caller decides what to do)', () => {
+        const halfwayThrough = new Date('2026-06-16T00:00:00.000Z');
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 3_500_000,
+            targetPriceCentavos: 1_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: halfwayThrough
+        });
+        // (1_500_000 - 3_500_000) * 15/30 = -1_000_000
+        expect(delta).toBe(-1_000_000);
+    });
+
+    it('returns 0 when current and target prices are equal', () => {
+        const halfwayThrough = new Date('2026-06-16T00:00:00.000Z');
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 1_500_000,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            now: halfwayThrough
+        });
+        expect(delta).toBe(0);
+    });
+
+    it('returns 0 for a degenerate period (start >= end) instead of throwing', () => {
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_500_000,
+            targetPriceCentavos: 3_500_000,
+            currentPeriodStart: PERIOD_END,
+            currentPeriodEnd: PERIOD_START,
+            now: PERIOD_START
+        });
+        expect(delta).toBe(0);
+    });
+
+    it('rounds to the nearest centavo (no fractional centavos in storage)', () => {
+        // 7-day period, 3-day remaining → ratio = 3/7 ≈ 0.42857
+        // delta = 1_000_000 * 0.42857 = 428571.4… → rounds to 428571
+        const start = new Date('2026-06-01T00:00:00.000Z');
+        const end = new Date('2026-06-08T00:00:00.000Z'); // 7 days
+        const now = new Date('2026-06-05T00:00:00.000Z'); // 3 days remaining
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 0,
+            targetPriceCentavos: 1_000_000,
+            currentPeriodStart: start,
+            currentPeriodEnd: end,
+            now
+        });
+        expect(delta).toBe(428_571);
+    });
+
+    it('defaults `now` to wall-clock when omitted (smoke test, not deterministic)', () => {
+        // Just verify no throw + a sane number for any "now" between start and end.
+        const start = new Date(Date.now() - 1000 * 60 * 60 * 24 * 5); // 5 days ago
+        const end = new Date(Date.now() + 1000 * 60 * 60 * 24 * 25); // 25 days from now
+        const delta = computePlanChangeDelta({
+            currentPriceCentavos: 1_000_000,
+            targetPriceCentavos: 2_000_000,
+            currentPeriodStart: start,
+            currentPeriodEnd: end
+        });
+        // Should be close to (2M - 1M) * 25/30 ≈ 833333
+        expect(delta).toBeGreaterThan(820_000);
+        expect(delta).toBeLessThan(850_000);
     });
 });

@@ -105,6 +105,61 @@ function findAnnualPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | nu
 }
 
 /**
+ * Inputs for {@link computePlanChangeDelta}. All monetary fields are
+ * integers in CENTAVOS (matches `billing_prices.unit_amount` storage).
+ */
+export interface ComputePlanChangeDeltaInput {
+    /** Current plan's recurring price for the active interval. */
+    readonly currentPriceCentavos: number;
+    /** Target plan's recurring price for the same interval. */
+    readonly targetPriceCentavos: number;
+    /** Start of the active billing period (from `billing_subscriptions`). */
+    readonly currentPeriodStart: Date;
+    /** End of the active billing period. */
+    readonly currentPeriodEnd: Date;
+    /**
+     * "Now" reference for the proration. Injected so tests can lock the
+     * clock; production callers omit and the helper uses `new Date()`.
+     */
+    readonly now?: Date;
+}
+
+/**
+ * Prorated upgrade-delta amount, in centavos, that the user should be
+ * charged upfront for the change to take effect for the remainder of
+ * the current billing period.
+ *
+ * Formula (SPEC-122 Sub-decision 3):
+ *
+ *   delta = (target - current) * remaining_ms / total_ms
+ *
+ * Returned value is rounded to the nearest centavo. Negative or zero
+ * values indicate no charge is needed (downgrade, equal-priced swap,
+ * or the cycle already ended) — the caller decides what to do in
+ * those cases.
+ *
+ * Defensive against degenerate periods (start >= end) — returns 0
+ * rather than throwing, so a corrupted local row cannot 500 the
+ * upgrade route.
+ */
+export function computePlanChangeDelta(input: ComputePlanChangeDeltaInput): number {
+    const { currentPriceCentavos, targetPriceCentavos, currentPeriodStart, currentPeriodEnd } =
+        input;
+    const now = input.now ?? new Date();
+
+    const totalMs = currentPeriodEnd.getTime() - currentPeriodStart.getTime();
+    if (totalMs <= 0) {
+        return 0;
+    }
+
+    const remainingMs = Math.max(0, currentPeriodEnd.getTime() - now.getTime());
+    const remainingRatio = Math.min(1, remainingMs / totalMs);
+
+    const deltaPerPeriod = targetPriceCentavos - currentPriceCentavos;
+    return Math.round(deltaPerPeriod * remainingRatio);
+}
+
+/**
  * Input for {@link initiatePaidMonthlySubscription}.
  *
  * `urls.paymentMethodReturnUrl` and `urls.notificationUrl` are injected
@@ -412,5 +467,6 @@ export async function initiatePaidAnnualSubscription(
 export const _internals = {
     resolvePlanBySlug,
     findMonthlyPrice,
-    findAnnualPrice
+    findAnnualPrice,
+    computePlanChangeDelta
 };
