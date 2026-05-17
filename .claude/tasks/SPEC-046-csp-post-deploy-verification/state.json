@@ -497,9 +497,9 @@
         },
         {
             "id": "T-015",
-            "title": "Crawl authenticated /mi-cuenta/* and billing pages (optional, requires staging test account)",
-            "description": "Once a staging test account is provisioned (separate from this spec — track as a follow-up if missing), repeat the Persist-Logs crawl on /mi-cuenta/* and billing entry points. Document any new violation types as additional GAP-046-NN entries (e.g. if MercadoPago Brick triggers new violations not yet catalogued). If no new violation types appear, close the §1C.8 coverage status as fully complete and remove the 'pending test account' caveat from §7 item 20. Acceptance: a markdown report at .claude/specs/SPEC-046-csp-post-deploy-verification/verification-authenticated-2026-MM-DD.md. If no staging account is feasible in reasonable timeline, document that decision and explicitly accept the residual coverage risk before Phase 2.",
-            "status": "pending",
+            "title": "Crawl authenticated /mi-cuenta/* and billing pages (DEFERRED to SPEC-142)",
+            "description": "DEFERRED 2026-05-17 with explicit risk acceptance per the spec's own escape clause ('If no staging account is feasible in reasonable timeline, document that decision and explicitly accept the residual coverage risk before Phase 2'). Risk profile: CSP is in Report-Only mode through SPEC-046, so any uncatalogued violations on /mi-cuenta/* or the MercadoPago checkout flow are silent reports, NOT broken UX. The audit MUST happen before the Phase 2 enforce flip — it is the central acceptance gate of follow-up SPEC-142 workstream 2.A. Original task description preserved below for traceability.\n\nORIGINAL: Once a staging test account is provisioned (separate from this spec — track as a follow-up if missing), repeat the Persist-Logs crawl on /mi-cuenta/* and billing entry points. Document any new violation types as additional GAP-046-NN entries (e.g. if MercadoPago Brick triggers new violations not yet catalogued). If no new violation types appear, close the §1C.8 coverage status as fully complete. Acceptance: a markdown report at .claude/specs/SPEC-046-csp-post-deploy-verification/verification-authenticated-2026-MM-DD.md.",
+            "status": "deferred",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -516,21 +516,28 @@
                 { "title": "Write verification-authenticated markdown report", "completed": false },
                 { "title": "Update §1C.8 / §7 item 20 in spec accordingly", "completed": false }
             ],
-            "tags": ["verification", "authenticated", "manual", "optional"],
+            "tags": ["verification", "authenticated", "manual", "optional", "deferred-to-spec-142"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null,
+                "notes": "Deferred to SPEC-142 workstream 2.A under explicit risk acceptance per the task's own escape clause. Spec is closed at 14/15 + 1 deferred; the deferred work is gated as a Phase-2 prerequisite in SPEC-142 so it cannot be silently skipped."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": null,
+                "deferred": "2026-05-17T18:30:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
         "completed": 14,
+        "deferred": 1,
         "blocked": 0,
         "averageComplexity": 2.5
     }

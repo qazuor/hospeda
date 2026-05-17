@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-142",
+    "title": "CSP Phase 2 + remaining SPEC-046 coverage gaps",
+    "type": "feat",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-17T18:30:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["security", "csp", "web", "billing", "phase-2"]
+}
