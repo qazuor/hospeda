@@ -150,6 +150,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     if (isLoading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
+                {/* sr-only h1 so the page always has a heading-1 for screen readers
+                    and axe page-has-heading-one, even during the data load. */}
+                <h1 className="sr-only">{t('admin-common.states.loading')}</h1>
                 <div className="text-center">
                     <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                     <p className="mt-2 text-muted-foreground text-sm">

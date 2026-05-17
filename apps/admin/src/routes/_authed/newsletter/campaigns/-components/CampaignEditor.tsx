@@ -585,11 +585,14 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                             )}
                         </form.Field>
 
-                        {/* Hidden submit trigger — visually hidden, not focusable */}
+                        {/* Hidden submit trigger — visually hidden, not focusable.
+                            aria-label keeps axe happy; sr-only + tabIndex=-1 keep it
+                            invisible/unreachable to mouse + keyboard users. */}
                         <button
                             type="submit"
                             className="sr-only"
                             tabIndex={-1}
+                            aria-label="Enviar formulario"
                         />
                     </form>
                 </div>

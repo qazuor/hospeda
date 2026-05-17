@@ -78,12 +78,10 @@ function RevalidationPage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.REVALIDATION_CONFIG_VIEW]}>
-            <SidebarPageLayout>
+            <SidebarPageLayout titleKey="revalidation.title">
                 <div className="space-y-6">
-                    <div>
-                        <h2 className="mb-2 font-bold text-2xl">{t('revalidation.title')}</h2>
-                        <p className="text-muted-foreground">{t('revalidation.pageDescription')}</p>
-                    </div>
+                    {/* Page subtitle (h1 rendered by SidebarPageLayout) */}
+                    <p className="text-muted-foreground">{t('revalidation.pageDescription')}</p>
 
                     <Tabs defaultValue="config">
                         <TabsList>

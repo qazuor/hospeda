@@ -63,17 +63,12 @@ function SponsorInvoicesPage() {
     }
 
     return (
-        <SidebarPageLayout>
+        <SidebarPageLayout titleKey="admin-pages.sponsor.invoices.title">
             <div className="space-y-6">
-                {/* Page header */}
-                <div>
-                    <h2 className="mb-2 font-bold text-2xl">
-                        {t('admin-pages.sponsor.invoices.title')}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        {t('admin-pages.sponsor.invoices.subtitle')}
-                    </p>
-                </div>
+                {/* Page subtitle (h1 rendered by SidebarPageLayout) */}
+                <p className="text-muted-foreground">
+                    {t('admin-pages.sponsor.invoices.subtitle')}
+                </p>
 
                 {/* Invoices table */}
                 <Card>

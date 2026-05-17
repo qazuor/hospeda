@@ -583,6 +583,7 @@ function NotificationToggle({
                 <p className="text-muted-foreground text-xs">{description}</p>
             </div>
             <Switch
+                aria-label={label}
                 checked={checked}
                 disabled={disabled}
                 onCheckedChange={onChange}
