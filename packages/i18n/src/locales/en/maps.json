@@ -15,7 +15,9 @@
         "resultsCount_one": "{{count}} accommodation",
         "resultsCount_other": "{{count}} accommodations",
         "emptyState": "No accommodations in this area. Try adjusting filters or panning the map.",
-        "openSheet": "View list",
+        "openSheet": "View cards",
+        "openSheetCount_one": "View {{count}} result",
+        "openSheetCount_other": "View {{count}} results",
         "closeSheet": "Close"
     }
 }

@@ -40,6 +40,12 @@ interface MapCardsSidebarProps {
         readonly resultsCount: (n: number) => string;
         readonly emptyState: string;
         readonly openSheet: string;
+        /**
+         * "Ver {{count}} resultados" template used on the floating sheet
+         * trigger button (mobile). Falls back to `openSheet · resultsCount`
+         * when not provided, preserving the previous behavior.
+         */
+        readonly openSheetCount?: (n: number) => string;
         readonly closeSheet: string;
     };
 }
@@ -157,7 +163,9 @@ export function MapCardsSidebar({ items, hoveredItemId, onCardHover, i18n }: Map
                     aria-expanded={isSheetOpen}
                     aria-controls="map-cards-sheet"
                 >
-                    {i18n.openSheet} · {i18n.resultsCount(items.length)}
+                    {i18n.openSheetCount
+                        ? i18n.openSheetCount(items.length)
+                        : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`}
                 </button>
                 <div
                     id="map-cards-sheet"

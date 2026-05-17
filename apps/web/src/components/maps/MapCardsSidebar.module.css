@@ -210,33 +210,63 @@
     position: fixed;
     /* Lift above the cookie banner (or any future bottom overlay) via the
      * shared --bottom-safe-inset token defined in global.css. */
-    bottom: calc(16px + var(--bottom-safe-inset, 0px));
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    padding: 12px 24px;
+    bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
+    /* Anchored to the right so the bottom row reads as
+     * [Filtros (izq)] ... [Tarjetas (der)] — view-toggle sits at the top of
+     * the map instead of competing for the bottom center. */
+    right: 1rem;
+    /* Cap so the CTA never spills past the viewport edge or runs into the
+     * filters trigger on narrow screens. Pairs with --bottom-safe-inset on
+     * the filters trigger to guarantee the bottom row stays inside the
+     * viewport regardless of label length / locale. */
+    max-width: calc(50vw - 12px);
+    z-index: 200;
+    padding: 12px 20px;
+    /* Truncate over-long labels (e.g. "View 1234 results" in en) instead of
+     * letting them wrap to two lines and push the pill off the viewport. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     border-radius: var(--radius-pill, 9999px);
     /* Frosted-glass dark surface (see global.css → --frost-* tokens). The
      * "open cards" CTA stays the dominant action over the map, so we keep
-     * the dark variant for visual hierarchy vs the lighter view-toggle and
-     * filters trigger next to it. */
+     * the dark variant for visual hierarchy vs the lighter filters trigger. */
     background-color: var(--frost-bg-dark);
     backdrop-filter: blur(var(--frost-blur));
     -webkit-backdrop-filter: blur(var(--frost-blur));
     color: white;
     font-family: var(--font-sans, sans-serif);
-    font-size: 0.9375rem;
-    font-weight: 500;
+    font-size: 0.875rem;
+    font-weight: 600;
     border: 1px solid oklch(from var(--core-foreground) l c h / 0.4);
     cursor: pointer;
-    box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
-    transition: transform var(--duration-normal, 0.4s) ease, background-color
-        var(--duration-normal, 0.4s) ease;
+    box-shadow: 0 4px 18px oklch(0 0 0 / 0.25), 0 1px 3px oklch(0 0 0 / 0.08);
+    transition: transform var(--duration-fast, 0.2s) ease, background-color
+        var(--duration-fast, 0.2s) ease, opacity var(--duration-fast, 0.2s) ease;
 }
 
 .sheetTrigger:hover {
-    transform: translateX(-50%) translateY(-1px);
+    transform: translateY(-1px);
     background-color: oklch(from var(--core-foreground) l c h / 0.82);
+}
+
+/* Tighten padding + label on very narrow phones so the full label
+ * ("Ver 100 resultados") stays visible instead of getting truncated. */
+@media (max-width: 360px) {
+    .sheetTrigger {
+        padding: 10px 14px;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Hide while a blocking overlay is open so the sheet trigger doesn't poke out
+ * from underneath the filters drawer / search panel / mobile menu. Same set
+ * of html flags the view-toggle already honors. */
+:global(html[data-filters-drawer-open]) .sheetTrigger,
+:global(html[data-search-panel-open]) .sheetTrigger,
+:global(html[data-mobile-menu-open]) .sheetTrigger {
+    visibility: hidden;
+    pointer-events: none;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

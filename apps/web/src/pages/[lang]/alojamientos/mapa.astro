@@ -353,7 +353,9 @@ for (const card of cards) {
 					resultsCountOne: t('maps.sidebar.resultsCount_one', '{{count}} alojamiento'),
 					resultsCountOther: t('maps.sidebar.resultsCount_other', '{{count}} alojamientos'),
 					emptyState: t('maps.sidebar.emptyState', 'No hay alojamientos en esta zona.'),
-					openSheet: t('maps.sidebar.openSheet', 'Ver lista'),
+					openSheet: t('maps.sidebar.openSheet', 'Ver tarjetas'),
+					openSheetCountOne: t('maps.sidebar.openSheetCount_one', 'Ver {{count}} resultado'),
+					openSheetCountOther: t('maps.sidebar.openSheetCount_other', 'Ver {{count}} resultados'),
 					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
 				}}
 				i18nStrings={{
@@ -396,26 +398,28 @@ for (const card of cards) {
 		cursor: default;
 	}
 
-	/* Mobile: fixed bottom tab bar — see alojamientos/index.astro for the
-	 * full rationale (Airbnb/Booking pattern, z-index choices, hide rules). */
+	/* Mobile: float the toggle over the top of the fullscreen map, centered.
+	 * The bottom row of the map view is reserved for Filtros (left) + Ver
+	 * tarjetas (right), so the Lista/Mapa selector hovers near the top
+	 * instead of competing for the bottom-center slot. */
 	@media (max-width: 767px) {
 		.view-toggle {
 			position: fixed;
-			/* Lift above the cookie banner (or any future bottom overlay) via
-			 * the shared --bottom-safe-inset token defined in global.css. */
-			bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
+			top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 77px) + 8px);
 			left: 50%;
 			transform: translateX(-50%);
-			z-index: 150;
+			z-index: 200;
 			margin: 0;
 			/* Frosted-glass surface — see global.css → --frost-* tokens. */
 			background-color: var(--frost-bg-light);
 			backdrop-filter: blur(var(--frost-blur));
 			-webkit-backdrop-filter: blur(var(--frost-blur));
 			border-color: var(--frost-border);
-			box-shadow: 0 4px 18px oklch(0 0 0 / 0.18), 0 1px 3px oklch(0 0 0 / 0.08);
+			box-shadow: 0 4px 12px oklch(0 0 0 / 0.12), 0 1px 3px oklch(0 0 0 / 0.06);
 		}
 
+		/* Hide while a blocking overlay is open — same set the sheet trigger
+		 * and filters trigger already honor. */
 		:global(html[data-filters-drawer-open]) .view-toggle,
 		:global(html[data-search-panel-open]) .view-toggle,
 		:global(html[data-mobile-menu-open]) .view-toggle {
@@ -480,11 +484,16 @@ for (const card of cards) {
 		}
 		.acc-listing-map :global([class*="disclaimer"]) {
 			position: absolute;
-			top: 8px;
-			right: 8px;
-			max-width: 60%;
+			/* Slot the disclaimer below the floating Lista/Mapa toggle on
+			 * mobile (toggle ends ~57px into the map) so the two never
+			 * overlap, even on a 320px viewport where horizontal room is
+			 * tight. Top-LEFT keeps the right side clear for the user. */
+			top: 64px;
+			left: 8px;
+			max-width: 50%;
 			padding: 6px 10px;
-			font-size: 0.6875rem;
+			font-size: 0.625rem;
+			line-height: 1.3;
 			border-radius: var(--radius-button, 8px);
 			border: none;
 			background-color: oklch(from var(--core-card) l c h / 0.92);

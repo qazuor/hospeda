@@ -28,7 +28,19 @@ interface SidebarI18n {
     readonly resultsCountOne: string;
     readonly resultsCountOther: string;
     readonly emptyState: string;
+    /**
+     * Plain "View cards" label used inside the sheet header. Kept separate
+     * from `openSheetCount*` so we can show a compact action label without
+     * forcing the count when none is available.
+     */
     readonly openSheet: string;
+    /**
+     * Pluralised templates with `{{count}}` for the floating sheet trigger
+     * button. Renders as "Ver 100 resultados" / "View 1 result" so the user
+     * always sees the result count on the CTA itself.
+     */
+    readonly openSheetCountOne: string;
+    readonly openSheetCountOther: string;
     readonly closeSheet: string;
 }
 
@@ -188,6 +200,17 @@ export function AccommodationsListingMap({
         [sidebarI18n?.resultsCountOne, sidebarI18n?.resultsCountOther]
     );
 
+    const openSheetCountFn = useCallback(
+        (n: number) => {
+            const tpl =
+                n === 1
+                    ? (sidebarI18n?.openSheetCountOne ?? 'Ver {{count}} resultado')
+                    : (sidebarI18n?.openSheetCountOther ?? 'Ver {{count}} resultados');
+            return tpl.replace('{{count}}', String(n)).replace('{count}', String(n));
+        },
+        [sidebarI18n?.openSheetCountOne, sidebarI18n?.openSheetCountOther]
+    );
+
     if (!showSidebar || !sidebarI18n) {
         return (
             <ListingMap
@@ -235,6 +258,7 @@ export function AccommodationsListingMap({
                         resultsCount: sidebarCountFn,
                         emptyState: sidebarI18n.emptyState,
                         openSheet: sidebarI18n.openSheet,
+                        openSheetCount: openSheetCountFn,
                         closeSheet: sidebarI18n.closeSheet
                     }}
                 />
