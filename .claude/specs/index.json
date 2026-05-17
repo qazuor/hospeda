@@ -1166,9 +1166,11 @@
             "title": "Admin Audit Remediation — Master",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-134-admin-audit-remediation",
             "created": "2026-05-16T01:30:00Z",
+            "completedAt": "2026-05-17T22:51:26Z",
+            "completionRef": "All children merged. SPEC-135 (PR #1125), SPEC-136 (PR #1128), SPEC-137 (PR #1132 + #1133 bookkeeping), SPEC-136 a11y residuals follow-up (PR #1137, merge commit a2f4f4f367ae4c96d0d7c9e8a97a41a8f0752f03). Final axe sweep: 0 critical, 0 serious extras (color-contrast documented exception cleared by token bump), 0 missing-h1, 0 aria-prohibited-attr, 0 heading-order. From 8 unique axe rules pre-audit to 0-1 residual.",
             "extractedFrom": "SPEC-131 audit findings",
             "tags": ["admin", "remediation", "epic", "master"],
             "children": ["SPEC-135", "SPEC-136", "SPEC-137"]
