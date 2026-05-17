@@ -208,7 +208,9 @@
 /* ----- Mobile bottom sheet ----- */
 .sheetTrigger {
     position: fixed;
-    bottom: 16px;
+    /* Lift above the cookie banner (or any future bottom overlay) via the
+     * shared --bottom-safe-inset token defined in global.css. */
+    bottom: calc(16px + var(--bottom-safe-inset, 0px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -303,7 +305,8 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background-color: rgb(0 0 0 / 0.4);
+    /* Shared scrim token — see global.css → --overlay-bg-light. */
+    background-color: var(--overlay-bg-light);
     border: none;
     cursor: pointer;
     padding: 0;

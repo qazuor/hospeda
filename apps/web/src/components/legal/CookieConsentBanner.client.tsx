@@ -83,20 +83,26 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
         return () => window.removeEventListener('cookie-consent:reopen', handleReopen);
     }, []);
 
-    // Move focus into the banner when it opens (accessibility requirement)
+    // Move focus into the banner when it opens (accessibility requirement).
+    // We focus the dialog itself rather than picking a specific button so we
+    // (a) don't pre-bias the user toward any choice (GDPR-friendly), and
+    // (b) don't accidentally focus the inline "Más información" anchor at the
+    // end of the description, which would auto-scroll the paragraph to the
+    // bottom and hide the opening text. `preventScroll` is a belt-and-
+    // suspenders guard for the same reason. Tab key then walks the actions.
     useEffect(() => {
         if (isOpen && bannerRef.current) {
-            const firstFocusable = bannerRef.current.querySelector<HTMLElement>(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            firstFocusable?.focus();
+            bannerRef.current.focus({ preventScroll: true });
         }
     }, [isOpen]);
 
-    // Track banner height on the <body> so the footer gets bottom padding
-    // (so all content stays scrollable above the banner) and the
-    // scroll-to-top button can shift up. See `.cookie-banner-open` rules
-    // in global.css.
+    // Expose the live banner height as a CSS custom property on <html> so any
+    // fixed-bottom UI (footer padding, scroll-to-top, feedback FAB, filter
+    // trigger, view toggles, sheet triggers) can lift above it via the
+    // `--bottom-safe-inset` alias defined in global.css. Setting it on
+    // documentElement (not body) lets the alias declared on :root resolve
+    // correctly while still allowing the `cookie-banner-open` class on body
+    // to drive legacy selectors.
     useEffect(() => {
         if (!isOpen) return;
         const banner = bannerRef.current;
@@ -104,7 +110,10 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
 
         function updateHeight() {
             if (!banner) return;
-            document.body.style.setProperty('--cookie-banner-height', `${banner.offsetHeight}px`);
+            document.documentElement.style.setProperty(
+                '--cookie-banner-height',
+                `${banner.offsetHeight}px`
+            );
         }
 
         document.body.classList.add('cookie-banner-open');
@@ -116,7 +125,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
         return () => {
             resizeObserver.disconnect();
             document.body.classList.remove('cookie-banner-open');
-            document.body.style.removeProperty('--cookie-banner-height');
+            document.documentElement.style.removeProperty('--cookie-banner-height');
         };
     }, [isOpen]);
 
@@ -146,154 +155,170 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <dialog
-            ref={bannerRef}
-            aria-labelledby={titleId}
-            open
-            className={styles.banner}
-        >
-            <div className={styles.inner}>
-                {view === 'main' ? (
-                    <>
-                        <div className={styles.content}>
-                            <h2
-                                id={titleId}
-                                className={styles.title}
-                            >
-                                {t('cookieConsent.title')}
-                            </h2>
-                            <p className={styles.description}>
-                                {t('cookieConsent.description')}{' '}
-                                <a
-                                    href={cookiesPolicyUrl}
-                                    className={styles.learnMore}
+        <>
+            {/* Shared backdrop scrim (see components.css → `.overlay-base`).
+             * Non-interactive: cookie consent is a forced choice, the user
+             * must hit Aceptar / Rechazar / Personalizar. We render it
+             * separately from the <dialog> so it can use the shared scrim
+             * tokens and not couple to dialog browser defaults. */}
+            <div
+                className={`overlay-base overlay-light ${styles.backdrop}`}
+                aria-hidden="true"
+            />
+            <dialog
+                ref={bannerRef}
+                aria-labelledby={titleId}
+                open
+                tabIndex={-1}
+                className={styles.banner}
+            >
+                <div className={styles.inner}>
+                    {view === 'main' ? (
+                        <>
+                            <div className={styles.content}>
+                                <h2
+                                    id={titleId}
+                                    className={styles.title}
                                 >
-                                    {t('cookieConsent.learnMore')}
-                                </a>
-                            </p>
-                        </div>
-                        <div className={styles.actions}>
-                            <button
-                                type="button"
-                                className={styles.btnSecondary}
-                                onClick={() => setView('customize')}
-                            >
-                                {t('cookieConsent.buttons.customize')}
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.btnGhost} ${styles.rejectMain}`}
-                                onClick={handleRejectAll}
-                            >
-                                {t('cookieConsent.buttons.rejectAll')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.btnPrimary}
-                                onClick={handleAcceptAll}
-                            >
-                                {t('cookieConsent.buttons.acceptAll')}
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className={styles.content}>
-                            <h2
-                                id={titleId}
-                                className={styles.title}
-                            >
-                                {t('cookieConsent.title')}
-                            </h2>
-
-                            {/* Necessary (always on) */}
-                            <div className={styles.category}>
-                                <div className={styles.categoryHeader}>
-                                    <span className={styles.categoryLabel}>
-                                        {t('cookieConsent.categories.necessary.label')}
-                                    </span>
-                                    <span
-                                        className={styles.alwaysOn}
-                                        aria-label="always active"
+                                    {t('cookieConsent.title')}
+                                </h2>
+                                <p className={styles.description}>
+                                    {t('cookieConsent.description')}{' '}
+                                    <a
+                                        href={cookiesPolicyUrl}
+                                        className={styles.learnMore}
                                     >
-                                        {/* Lock icon via CSS pseudo */}
-                                    </span>
-                                </div>
-                                <p className={styles.categoryDesc}>
-                                    {t('cookieConsent.categories.necessary.description')}
+                                        {t('cookieConsent.learnMore')}
+                                    </a>
                                 </p>
                             </div>
+                            <div className={styles.actions}>
+                                <button
+                                    type="button"
+                                    className={styles.btnSecondary}
+                                    onClick={() => setView('customize')}
+                                >
+                                    {t('cookieConsent.buttons.customize')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.btnGhost} ${styles.rejectMain}`}
+                                    onClick={handleRejectAll}
+                                >
+                                    {t('cookieConsent.buttons.rejectAll')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.btnPrimary}
+                                    onClick={handleAcceptAll}
+                                >
+                                    {t('cookieConsent.buttons.acceptAll')}
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className={styles.content}>
+                                <h2
+                                    id={titleId}
+                                    className={styles.title}
+                                >
+                                    {t('cookieConsent.title')}
+                                </h2>
 
-                            {/* Analytics */}
-                            <div className={styles.category}>
-                                <div className={styles.categoryHeader}>
-                                    <span className={styles.categoryLabel}>
-                                        {t('cookieConsent.categories.analytics.label')}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={categories.analytics}
-                                        className={`${styles.toggle} ${categories.analytics ? styles.toggleOn : ''}`}
-                                        onClick={() => toggleCategory('analytics')}
-                                        aria-label={t('cookieConsent.categories.analytics.label')}
-                                    >
+                                {/* Necessary (always on) */}
+                                <div className={styles.category}>
+                                    <div className={styles.categoryHeader}>
+                                        <span className={styles.categoryLabel}>
+                                            {t('cookieConsent.categories.necessary.label')}
+                                        </span>
                                         <span
-                                            className={styles.toggleThumb}
-                                            aria-hidden="true"
-                                        />
-                                    </button>
+                                            className={styles.alwaysOn}
+                                            aria-label="always active"
+                                        >
+                                            {/* Lock icon via CSS pseudo */}
+                                        </span>
+                                    </div>
+                                    <p className={styles.categoryDesc}>
+                                        {t('cookieConsent.categories.necessary.description')}
+                                    </p>
                                 </div>
-                                <p className={styles.categoryDesc}>
-                                    {t('cookieConsent.categories.analytics.description')}
-                                </p>
+
+                                {/* Analytics */}
+                                <div className={styles.category}>
+                                    <div className={styles.categoryHeader}>
+                                        <span className={styles.categoryLabel}>
+                                            {t('cookieConsent.categories.analytics.label')}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={categories.analytics}
+                                            className={`${styles.toggle} ${categories.analytics ? styles.toggleOn : ''}`}
+                                            onClick={() => toggleCategory('analytics')}
+                                            aria-label={t(
+                                                'cookieConsent.categories.analytics.label'
+                                            )}
+                                        >
+                                            <span
+                                                className={styles.toggleThumb}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                    </div>
+                                    <p className={styles.categoryDesc}>
+                                        {t('cookieConsent.categories.analytics.description')}
+                                    </p>
+                                </div>
+
+                                {/* Marketing */}
+                                <div className={styles.category}>
+                                    <div className={styles.categoryHeader}>
+                                        <span className={styles.categoryLabel}>
+                                            {t('cookieConsent.categories.marketing.label')}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={categories.marketing}
+                                            className={`${styles.toggle} ${categories.marketing ? styles.toggleOn : ''}`}
+                                            onClick={() => toggleCategory('marketing')}
+                                            aria-label={t(
+                                                'cookieConsent.categories.marketing.label'
+                                            )}
+                                        >
+                                            <span
+                                                className={styles.toggleThumb}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                    </div>
+                                    <p className={styles.categoryDesc}>
+                                        {t('cookieConsent.categories.marketing.description')}
+                                    </p>
+                                </div>
                             </div>
 
-                            {/* Marketing */}
-                            <div className={styles.category}>
-                                <div className={styles.categoryHeader}>
-                                    <span className={styles.categoryLabel}>
-                                        {t('cookieConsent.categories.marketing.label')}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={categories.marketing}
-                                        className={`${styles.toggle} ${categories.marketing ? styles.toggleOn : ''}`}
-                                        onClick={() => toggleCategory('marketing')}
-                                        aria-label={t('cookieConsent.categories.marketing.label')}
-                                    >
-                                        <span
-                                            className={styles.toggleThumb}
-                                            aria-hidden="true"
-                                        />
-                                    </button>
-                                </div>
-                                <p className={styles.categoryDesc}>
-                                    {t('cookieConsent.categories.marketing.description')}
-                                </p>
+                            <div className={styles.actions}>
+                                <button
+                                    type="button"
+                                    className={styles.btnGhost}
+                                    onClick={handleRejectAll}
+                                >
+                                    {t('cookieConsent.buttons.rejectAll')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.btnPrimary}
+                                    onClick={handleSavePreferences}
+                                >
+                                    {t('cookieConsent.buttons.savePreferences')}
+                                </button>
                             </div>
-                        </div>
-
-                        <div className={styles.actions}>
-                            <button
-                                type="button"
-                                className={styles.btnGhost}
-                                onClick={handleRejectAll}
-                            >
-                                {t('cookieConsent.buttons.rejectAll')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.btnPrimary}
-                                onClick={handleSavePreferences}
-                            >
-                                {t('cookieConsent.buttons.savePreferences')}
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-        </dialog>
+                        </>
+                    )}
+                </div>
+            </dialog>
+        </>
     );
 }

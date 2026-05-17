@@ -649,3 +649,51 @@
     -webkit-mask-size: contain;
     mask-size: contain;
 }
+
+/* ==========================================================================
+   Shared overlay / scrim
+   --------------------------------------------------------------------------
+   One pattern for every dim/blur layer that sits behind a dialog, drawer,
+   sheet, mobile menu, or cookie banner. Compose `.overlay-base` with a
+   variant (`.overlay-strong` or `.overlay-light`). The scrim color and blur
+   come from the `--overlay-*` tokens in global.css — tweak them there to
+   retune every overlay at once.
+
+   Use `.overlay-strong` for full-attention modals (heavier dim + blur) and
+   `.overlay-light` for non-blocking drawers, sheets, menus, banners.
+
+   Components are responsible for setting their own z-index (above page,
+   below their panel) so the same overlay can stack at different layers
+   depending on context.
+   ========================================================================== */
+
+.overlay-base {
+    position: fixed;
+    inset: 0;
+    animation: overlay-fade-in var(--duration-fast, 0.2s) ease forwards;
+}
+
+.overlay-strong {
+    background-color: var(--overlay-bg-strong);
+    backdrop-filter: blur(var(--overlay-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-blur));
+}
+
+.overlay-light {
+    background-color: var(--overlay-bg-light);
+}
+
+@keyframes overlay-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay-base {
+        animation: none;
+    }
+}

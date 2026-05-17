@@ -178,11 +178,26 @@
     /* --- Layout (runtime tokens overridden by JS) --- */
     --navbar-height: 80px;
     --cookie-banner-height: 0px;
+    /* Semantic alias consumed by every fixed-bottom UI element (FABs, floating
+     * toggles, sheet triggers) so they lift above any bottom-anchored global
+     * overlay without each one having to know about specific overlays.
+     * Today it resolves to the cookie banner height; future banners can sum
+     * into this token via JS without touching individual components. */
+    --bottom-safe-inset: var(--cookie-banner-height, 0px);
 
     /* --- Hover / state variants (derived) --- */
     --primary-hover: oklch(from var(--brand-primary) calc(l - 0.05) c h);
     --accent-hover: oklch(from var(--brand-accent) calc(l - 0.05) c h);
     --brand-primary-dark: oklch(from var(--brand-primary) calc(l - 0.1) c h);
+
+    /* --- Overlays (shared scrims) ---------------------------------------------
+     * One source of truth for every dim/blur behind a dialog, drawer, sheet,
+     * mobile menu, or cookie banner. Components consume these via the
+     * `.overlay-base` + `.overlay-{strong|light}` utility classes in
+     * components.css. Change a value here to retune every overlay at once. */
+    --overlay-bg-strong: oklch(0 0 0 / 0.7);
+    --overlay-bg-light: oklch(0 0 0 / 0.45);
+    --overlay-blur: 4px;
 
     /* --- Layout --- */
     --container-max: 1350px;

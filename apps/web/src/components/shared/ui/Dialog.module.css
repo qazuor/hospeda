@@ -12,8 +12,11 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background-color: oklch(0 0 0 / 0.85);
-    backdrop-filter: blur(4px);
+    /* Shared scrim tokens — see global.css → --overlay-bg-strong / --overlay-blur.
+     * We use the heavier "strong" variant because modals demand full attention. */
+    background-color: var(--overlay-bg-strong);
+    backdrop-filter: blur(var(--overlay-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-blur));
     display: flex;
     align-items: center;
     justify-content: center;
