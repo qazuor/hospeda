@@ -47,7 +47,7 @@ function SponsorInvoicesPage() {
 
     if (error) {
         return (
-            <SidebarPageLayout>
+            <SidebarPageLayout titleKey="admin-pages.sponsor.invoices.title">
                 <Card>
                     <CardContent className="py-8">
                         <div className="text-center">

@@ -28,7 +28,7 @@ function SponsorDashboardPage() {
 
     if (error) {
         return (
-            <SidebarPageLayout>
+            <SidebarPageLayout titleKey="admin-pages.sponsor.dashboard.title">
                 <Card>
                     <CardContent className="py-8">
                         <div className="text-center">
