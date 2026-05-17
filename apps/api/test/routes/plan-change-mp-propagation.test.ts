@@ -114,11 +114,15 @@ import { handlePlanChange } from '../../src/routes/billing/plan-change';
 const CUSTOMER_ID = 'cust_owner';
 const SUB_ID = 'sub_1';
 const MP_PREAPPROVAL_ID = 'mp-preapproval-abc';
-const CURRENT_PLAN_ID = 'plan_basic';
-const TARGET_PLAN_ID = 'plan_pro';
-// 200,000 centavos = 2,000 ARS (typical "pro" monthly).
-const TARGET_UNIT_AMOUNT_CENTAVOS = 200_000;
-const TARGET_TRANSACTION_AMOUNT_ARS = 2_000;
+// Setup is a DOWNGRADE so the legacy synchronous changePlan + MP
+// propagation path is exercised. Upgrades now redirect to a one-time
+// MP checkout (SPEC-141 D7) and the MP propagation moved to the
+// confirmPlanUpgrade webhook handler — see payment-logic.test.ts.
+const CURRENT_PLAN_ID = 'plan_pro';
+const TARGET_PLAN_ID = 'plan_basic';
+// 100,000 centavos = 1,000 ARS — basic monthly (target is CHEAPER).
+const TARGET_UNIT_AMOUNT_CENTAVOS = 100_000;
+const TARGET_TRANSACTION_AMOUNT_ARS = 1_000;
 
 interface ContextOpts {
     body?: unknown;
@@ -189,7 +193,12 @@ function makeBillingMock(opts: BillingMockOpts = {}) {
                     return Promise.resolve({
                         id: CURRENT_PLAN_ID,
                         prices: [
-                            { id: 'price_basic', billingInterval: 'month', unitAmount: 100_000 }
+                            {
+                                id: 'price_pro_monthly',
+                                billingInterval: 'month',
+                                unitAmount: 200_000, // current (pro) — more expensive
+                                intervalCount: 1
+                            }
                         ]
                     });
                 }
@@ -197,9 +206,9 @@ function makeBillingMock(opts: BillingMockOpts = {}) {
                     id: TARGET_PLAN_ID,
                     prices: [
                         {
-                            id: 'price_pro_monthly',
+                            id: 'price_basic_monthly',
                             billingInterval: 'month',
-                            unitAmount: TARGET_UNIT_AMOUNT_CENTAVOS,
+                            unitAmount: TARGET_UNIT_AMOUNT_CENTAVOS, // target (basic) — cheaper
                             intervalCount: 1
                         }
                     ]

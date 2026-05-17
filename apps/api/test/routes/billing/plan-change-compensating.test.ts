@@ -152,11 +152,16 @@ function buildContext({
 
 /**
  * Builds a mock QZPay billing instance wired for a successful plan change.
- * The changePlan result reflects a Basic → Pro upgrade.
+ *
+ * Defaults represent a Pro → Basic DOWNGRADE so the legacy synchronous
+ * changePlan + compensating-event path stays exercised. SPEC-141 D7
+ * routed upgrades into a one-time MP checkout (see
+ * `initiatePaidPlanUpgrade`), so the local-transaction failure path
+ * is now downgrade-only.
  */
 function buildBillingMock({
-    currentPlanId = 'plan_basico',
-    newPlanId = 'plan_pro',
+    currentPlanId = 'plan_pro',
+    newPlanId = 'plan_basico',
     subscriptionId = 'sub_test_001'
 }: {
     currentPlanId?: string;
@@ -198,16 +203,17 @@ function buildBillingMock({
         },
         plans: {
             get: vi.fn().mockImplementation((id: string) => {
+                // current = pro (15k), new = basic (5k) → downgrade
                 if (id === currentPlanId) {
                     return Promise.resolve({
                         id: currentPlanId,
-                        prices: [basicPrice]
+                        prices: [proPrice]
                     });
                 }
                 if (id === newPlanId) {
                     return Promise.resolve({
                         id: newPlanId,
-                        prices: [proPrice]
+                        prices: [basicPrice]
                     });
                 }
                 return Promise.resolve(null);

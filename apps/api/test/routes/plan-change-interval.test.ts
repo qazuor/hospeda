@@ -143,9 +143,14 @@ function createBillingMock(
         activeSubInterval?: string;
     } = {}
 ) {
+    // Default `current` is HIGH so any default-or-override `target` is a
+    // downgrade — keeps the legacy synchronous changePlan path active.
+    // Upgrades redirect to a one-time MP checkout (SPEC-141 D7) and never
+    // hit billing.subscriptions.changePlan, which would break the assertions
+    // in this file.
     const {
-        currentPlanPrices = [{ id: 'price_1', billingInterval: 'month', unitAmount: 1000 }],
-        targetPlanPrices = [{ id: 'price_2', billingInterval: 'month', unitAmount: 2000 }],
+        currentPlanPrices = [{ id: 'price_1', billingInterval: 'month', unitAmount: 1_000_000 }],
+        targetPlanPrices = [{ id: 'price_2', billingInterval: 'month', unitAmount: 1000 }],
         activeSubPlanId = 'plan_basic',
         activeSubInterval = 'month'
     } = options;

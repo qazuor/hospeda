@@ -24,10 +24,38 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service';
+import {
+    SubscriptionCheckoutError,
+    initiatePaidPlanUpgrade
+} from '../../services/subscription-checkout.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
+import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
+
+/**
+ * Map a `SubscriptionCheckoutError` from the upgrade service to an
+ * `HTTPException`. Kept colocated with the plan-change handler because
+ * it shares the error union with `start-paid.ts`'s mapper — see that
+ * file for the full mapping rationale.
+ */
+function mapUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
+    switch (err.code) {
+        case 'PLAN_NOT_FOUND':
+        case 'NO_MATCHING_PRICE':
+        case 'CUSTOMER_NOT_FOUND':
+        case 'SUBSCRIPTION_NOT_FOUND':
+            return new HTTPException(404, { message: err.message });
+        case 'SAME_PLAN':
+        case 'NOT_AN_UPGRADE':
+            return new HTTPException(422, { message: err.message });
+        case 'MISSING_INIT_POINT':
+            return new HTTPException(500, { message: err.message });
+        default:
+            return new HTTPException(500, { message: err.message });
+    }
+}
 
 /**
  * Mapped QZPay interval with count for multi-month periods.
@@ -214,7 +242,67 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
         const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
 
+        // SPEC-141 D7 — upgrade branch. The local subscription is NOT
+        // mutated here: the user is redirected to MP to pay the prorated
+        // delta, and `confirmPlanUpgrade` (payment-logic.ts) commits the
+        // plan change once the payment.updated webhook lands. Returning
+        // a `pending_payment` response keeps the legacy synchronous
+        // downgrade flow below intact.
+        if (isUpgrade) {
+            if (qzpayInterval !== 'month' && qzpayInterval !== 'year') {
+                // mapBillingIntervalToQZPay only emits 'month'|'year' for the
+                // intervals SUPPORTED_INTERVALS allows; this guard exists to
+                // narrow the type for `initiatePaidPlanUpgrade` and to
+                // surface a clear error if a future caller widens the union.
+                throw new HTTPException(422, {
+                    message: `Upgrade flow does not support interval '${qzpayInterval}'`
+                });
+            }
+            try {
+                const upgradeResult = await initiatePaidPlanUpgrade({
+                    customerId: billingCustomerId,
+                    currentSubscriptionId: activeSubscription.id,
+                    newPlanId,
+                    billingInterval: qzpayInterval,
+                    intervalCount: qzpayIntervalCount,
+                    billing,
+                    urls: {
+                        successUrl: `${env.HOSPEDA_SITE_URL}/billing/return`,
+                        cancelUrl: `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`,
+                        notificationUrl: `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`
+                    },
+                    statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                });
+
+                apiLogger.info(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: activeSubscription.id,
+                        oldPlanId: activeSubscription.planId,
+                        newPlanId,
+                        deltaCentavos: upgradeResult.deltaCentavos
+                    },
+                    'Plan upgrade initiated, awaiting prorated delta payment'
+                );
+
+                return {
+                    status: 'pending_payment' as const,
+                    checkoutUrl: upgradeResult.checkoutUrl,
+                    localSubscriptionId: upgradeResult.localSubscriptionId,
+                    expiresAt: upgradeResult.expiresAt,
+                    newPlanId: upgradeResult.newPlanId,
+                    deltaCentavos: upgradeResult.deltaCentavos
+                };
+            } catch (upgradeError) {
+                if (upgradeError instanceof SubscriptionCheckoutError) {
+                    throw mapUpgradeErrorToHttp(upgradeError);
+                }
+                throw upgradeError;
+            }
+        }
+
         // 9. Capture oldPlanId BEFORE changePlan() mutates the subscription record
+        // (legacy synchronous downgrade flow continues below).
         const oldPlanId = activeSubscription.planId;
 
         // 10. Change the plan with appropriate proration behavior
@@ -385,13 +473,18 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         }
 
         // 13. Map to response format
+        // Reaching here implies !isUpgrade (the upgrade branch returned
+        // earlier with `status: 'pending_payment'`), so the legacy
+        // synchronous path always emits `status: 'scheduled'`. The
+        // status remains in the schema as a discriminated literal so
+        // legacy consumers that asserted on this value continue to work.
         const response: {
             subscriptionId: string;
             previousPlanId: string;
             newPlanId: string;
             effectiveAt: string;
             proratedAmount?: number;
-            status: 'active' | 'scheduled';
+            status: 'scheduled';
         } = {
             subscriptionId: result.subscription.id,
             previousPlanId: oldPlanId,
@@ -399,13 +492,8 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             effectiveAt: result.proration?.effectiveDate
                 ? result.proration.effectiveDate.toISOString()
                 : new Date().toISOString(),
-            status: isUpgrade ? 'active' : 'scheduled'
+            status: 'scheduled'
         };
-
-        // Add prorated amount only for upgrades
-        if (isUpgrade && result.proration) {
-            response.proratedAmount = result.proration.chargeAmount - result.proration.creditAmount;
-        }
 
         // Clear entitlement cache to reflect plan change immediately
         clearEntitlementCache(billingCustomerId);
