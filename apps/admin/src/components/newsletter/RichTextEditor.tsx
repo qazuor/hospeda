@@ -306,7 +306,11 @@ export function RichTextEditor({
         editable: !disabled,
         editorProps: {
             attributes: {
-                // aria-label wired to the ProseMirror div (the real textbox)
+                // role="textbox" + aria-multiline make aria-label a permitted
+                // ARIA attribute on the div (axe aria-prohibited-attr otherwise
+                // rejects it because <div> has no implicit role accepting it).
+                role: 'textbox',
+                'aria-multiline': 'true',
                 'aria-label': ariaLabel ?? 'Editor de contenido',
                 ...(id ? { id } : {})
             }
