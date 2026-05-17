@@ -244,6 +244,18 @@ describe('buildCspHeader', () => {
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe("frame-src 'none'");
     });
+
+    // SPEC-046 GAP-046-11 follow-up: the manual Cloudflare Web Analytics
+    // snippet (BaseLayout.astro) loads beacon.min.js from
+    // static.cloudflareinsights.com (handled by script-src strict-dynamic
+    // + nonce), then POSTs Core Web Vitals telemetry to
+    // cloudflareinsights.com — that endpoint must be reachable.
+    it('must allowlist cloudflareinsights.com in connect-src for CF Web Analytics RUM beacon', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src '));
+        expect(connectSrc).toBeDefined();
+        expect(connectSrc).toContain('https://cloudflareinsights.com');
+    });
 });
 
 // ---------------------------------------------------------------------------
