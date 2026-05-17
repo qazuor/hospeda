@@ -44,7 +44,8 @@
         },
         "price": {
             "from": "Desde",
-            "perNight": "/noche"
+            "perNight": "/noche",
+            "consult": "Consultar"
         },
         "amenities": {
             "label": "Amenidades"

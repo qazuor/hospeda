@@ -210,7 +210,9 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 						<span class="acc-card__price-label">{t('home.accommodations.price.perNight', '/noche')}</span>
 					</div>
 				) : (
-					<div></div>
+					<div class="acc-card__price-block">
+						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Consultar')}</span>
+					</div>
 				)}
 				<span class="acc-card__cta-btn">
 					{t('common.readMore', 'Ver más')} →
