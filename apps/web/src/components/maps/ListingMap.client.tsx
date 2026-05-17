@@ -21,7 +21,15 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import {
+    Circle,
+    MapContainer,
+    Marker,
+    Popup,
+    TileLayer,
+    useMap,
+    useMapEvents
+} from 'react-leaflet';
 import ReactLeafletClusterImport from 'react-leaflet-cluster';
 
 // CJS/ESM interop guard.
@@ -115,6 +123,13 @@ interface ListingMapStrings {
 interface BaseProps {
     readonly initialCenter: [number, number];
     readonly initialZoom?: number;
+    /**
+     * When provided, the map initializes with `fitBounds` over this rectangle
+     * instead of `center + zoom`. Use it to frame all visible items on mount.
+     * Tuple is `[[southLat, westLng], [northLat, eastLng]]` (Leaflet's
+     * `LatLngBoundsExpression` corner order).
+     */
+    readonly initialBounds?: [[number, number], [number, number]];
     readonly hoveredItemId?: string | null;
     readonly onBoundsChange?: (bbox: ListingBBox) => void;
     readonly onMarkerClick?: (id: string) => void;
@@ -149,6 +164,43 @@ const ACCOMMODATION_MAX_ZOOM = 17;
 const DESTINATION_MAX_ZOOM = 19;
 const DEFAULT_BOUNDS_DEBOUNCE_MS = 300;
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+/**
+ * Mount-only `map.fitBounds(...)` to frame all initial items in view. Runs
+ * once on first paint; subsequent pans/zooms are controlled by the user.
+ * `useMap` here grabs the Leaflet instance owned by the parent MapContainer.
+ */
+function FitBoundsOnce({
+    bounds,
+    maxZoom
+}: {
+    bounds: [[number, number], [number, number]];
+    maxZoom: number;
+}) {
+    const map = useMap();
+    const appliedRef = useRef(false);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only; we deliberately use the bounds/map/maxZoom captured at first render and never re-fit on prop changes (the user controls panning after mount)
+    useEffect(() => {
+        if (appliedRef.current) return;
+        appliedRef.current = true;
+        // The container's height changes between mount and the moment the
+        // mobile-fullscreen script publishes --wave-bar-compact, so Leaflet's
+        // cached container size is stale and leaves tiles missing. Force it
+        // to remeasure before applying bounds.
+        map.invalidateSize();
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom });
+
+        // Also re-invalidate whenever the container resizes (e.g. mobile
+        // browser chrome collapsing on scroll, orientation change). Leaflet
+        // otherwise won't request the tiles for the newly revealed area and
+        // leaves a gray gap.
+        const container = map.getContainer();
+        const ro = new ResizeObserver(() => map.invalidateSize());
+        ro.observe(container);
+        return () => ro.disconnect();
+    }, []);
+    return null;
+}
 
 function BoundsReporter({
     onBoundsChange,
@@ -202,6 +254,7 @@ export function ListingMap(props: ListingMapProps) {
     const {
         initialCenter,
         initialZoom = 8,
+        initialBounds,
         hoveredItemId,
         onBoundsChange,
         onMarkerClick,
@@ -302,6 +355,12 @@ export function ListingMap(props: ListingMapProps) {
                     url={TILE_URL}
                     maxZoom={maxZoom}
                 />
+                {initialBounds && (
+                    <FitBoundsOnce
+                        bounds={initialBounds}
+                        maxZoom={maxZoom}
+                    />
+                )}
                 <BoundsReporter
                     onBoundsChange={onBoundsChange}
                     debounceMs={DEFAULT_BOUNDS_DEBOUNCE_MS}

@@ -94,10 +94,26 @@ const { paddingTop = '3rem', class: className } = Astro.props;
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
 
+      // Opt-in lock: a page can keep the wave header permanently compact by
+      // setting `data-locked-compact="true"` on the root .wave-header element.
+      // Used by the mobile fullscreen map view so the bar doesn't expand back
+      // out when the auto-scroll lands at the top of the map.
+      if (header.dataset.lockedCompact === 'true') {
+        header.classList.add('wave-header--compact');
+        continue;
+      }
+
       const navbarHeight = readNavbarHeight();
 
       const observer = new IntersectionObserver(
         (entries) => {
+          // Bail if the page locked the header in compact mode after the
+          // observer was attached (e.g. the mobile map view sets this on
+          // astro:page-load). We don't want to fight a deliberate lock.
+          if (header.dataset.lockedCompact === 'true') {
+            header.classList.add('wave-header--compact');
+            return;
+          }
           for (const entry of entries) {
             header.classList.toggle('wave-header--compact', !entry.isIntersecting);
           }

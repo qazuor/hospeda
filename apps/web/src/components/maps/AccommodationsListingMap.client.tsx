@@ -103,6 +103,35 @@ export function AccommodationsListingMap({
 
     const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
+    /*
+     * Compute the bounding box of all initial items so the map opens framed
+     * around every accommodation in the current result set. We only consider
+     * the SSR-provided `initialItems` (not the live `items` from viewport
+     * search) so the initial framing is deterministic — after that, panning
+     * is driven by the user, not by refetches.
+     */
+    const initialBounds = useMemo<[[number, number], [number, number]] | undefined>(() => {
+        let minLat = Number.POSITIVE_INFINITY;
+        let maxLat = Number.NEGATIVE_INFINITY;
+        let minLng = Number.POSITIVE_INFINITY;
+        let maxLng = Number.NEGATIVE_INFINITY;
+        let count = 0;
+        for (const item of initialItems) {
+            const loc = item.approximateLocation;
+            if (!loc) continue;
+            if (loc.lat < minLat) minLat = loc.lat;
+            if (loc.lat > maxLat) maxLat = loc.lat;
+            if (loc.lng < minLng) minLng = loc.lng;
+            if (loc.lng > maxLng) maxLng = loc.lng;
+            count++;
+        }
+        if (count === 0) return undefined;
+        return [
+            [minLat, minLng],
+            [maxLat, maxLng]
+        ];
+    }, [initialItems]);
+
     const mapItems = useMemo(
         () =>
             items
@@ -166,6 +195,7 @@ export function AccommodationsListingMap({
                 items={itemsWithLabels}
                 initialCenter={initialCenter}
                 initialZoom={initialZoom}
+                initialBounds={initialBounds}
                 hoveredItemId={hoveredItemId}
                 onMarkerClick={onMarkerClick}
                 onBoundsChange={onBoundsChange}
@@ -185,6 +215,7 @@ export function AccommodationsListingMap({
                     items={itemsWithLabels}
                     initialCenter={initialCenter}
                     initialZoom={initialZoom}
+                    initialBounds={initialBounds}
                     hoveredItemId={hoveredItemId}
                     onMarkerClick={onMarkerClick}
                     onBoundsChange={onBoundsChange}
