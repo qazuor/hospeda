@@ -120,7 +120,7 @@ This section catalogs **concrete violations observed on deployed staging**, dist
 |---|---|---|---|---|
 | GAP-046-09a | `style-src-attr` | Inline `style=""` attrs on React islands (transition-delay, CSS vars, animation start state) | Refactor to CSS classes + `data-*` attrs | **A** — approved |
 | GAP-046-09b | `style-src-elem` | Inline `<style>` blocks (~24 per page) emitted by Astro without the request nonce (middleware sets nonce in header only) | Inject nonce into Astro-emitted `<style>` tags via middleware/integration (see [`research/astro-csp-options.md`](research/astro-csp-options.md) Path A) | **A** — approved |
-| GAP-046-10 | `script-src` (`'unsafe-eval'`) | Zod client-side schemas were suspected to use `eval`. **Verified absent** in full-site crawl 2026-05-16 (Astro `ClientRouter` SPA navigation across home, listing, detail, auth forms, signup — zero `'unsafe-eval'` or `script-src` violations citing `eval`/`data:`/`blob:`). | n/a | **Dropped** — verified absent |
+| GAP-046-10 | `script-src` (`'unsafe-eval'`) | `schemas.<hash>.js` chunk runs a `Function('')` feature-detection probe (intent: pick JIT validator if `unsafe-eval` allowed, else CSP-safe fallback). T-014 staging crawl 2026-05-17 confirmed: one report per pageload, library `try/catch` swallows the exception, functionality unaffected. See §1C.4 for full detail. | Accept as known benign report; optionally filter from Sentry ingestion. | **Accepted (benign)** — no policy change |
 | GAP-046-11 | (external) | `static.cloudflareinsights.com/beacon.min.js` blocked by CORS + sha512 integrity mismatch | Disable Cloudflare Web Analytics in CF dashboard (Umami SPEC-140 replaces it) | **A** — approved |
 | GAP-046-12 | `frame-src` (missing) | Web `middleware.ts` does not declare `frame-src`. No iframes today. | Add `frame-src 'none'` | **B** — approved |
 | GAP-046-13 | `script-src-elem` | Inline `<script>` blocks in HTML tail (lines 835-840) without nonce — Astro hydration scripts | Inject nonce into Astro-emitted inline `<script>` tags via the same middleware/integration as 09b | **A** — approved |
@@ -183,13 +183,34 @@ The original "Astro experimental.csp nonce" option (previously listed as A) does
 
 **Decision**: **A — middleware/integration nonce injection**. Approved 2026-05-16 after research. **B retained as fallback for components that prove difficult to nonce-stamp** (e.g. content emitted before middleware runs, if any). **C tracked as Post-Phase-2 roadmap entry**, not a Phase 2 prerequisite. **D rejected**.
 
-### 1C.4 GAP-046-10 — Runtime dynamic-code evaluation in client-side Zod (DROPPED — verified absent)
+### 1C.4 GAP-046-10 — Runtime dynamic-code evaluation in client-side Zod (REOPENED 2026-05-17 — intentional, fallback-safe probe)
 
-**Status**: **Verified absent** in the 2026-05-16 full-site crawl. The crawl was performed with Astro `ClientRouter` active, meaning SPA navigations across home, listing index, listing detail, sign-in form, and sign-up form all aggregate their CSP reports under the initial document. Across the entire dataset there were **zero** `'unsafe-eval'` reports, zero `script-src` violations naming dynamic-code-evaluation as blocked-uri, and zero `data:` / `blob:` script blocks reported.
+**Updated status (2026-05-17)**: **The probe IS present**. The original "verified absent" conclusion from the 2026-05-16 crawl was wrong — that crawl did not exercise the signup page or capture the report-uri POSTs sent to Sentry. The T-014 verification crawl on staging (2026-05-17, post PR #1134/#1135 deploys) caught two reports per page that does load `schemas.sjtBSBUc.js`:
 
-**Conclusion**: The earlier audit observation that Zod might trigger runtime dynamic-code evaluation in the client does not reproduce on the deployed staging bundle. Likely explanations: (a) the Zod version in use does not invoke any dynamic-code-evaluation primitive at runtime, (b) tree-shaking eliminated that code path, or (c) the suspected schemas are not actually loaded in the web client bundle.
+```text
+[INFO] Evaluating a string as JavaScript violates the following Content Security
+Policy directive because 'unsafe-eval' is not an allowed source of script:
+"script-src 'self' 'nonce-...' 'strict-dynamic'".
+The policy is report-only, so the violation has been logged but no further
+action has been taken. @ https://staging.hospeda.com.ar/_astro/schemas.sjtBSBUc.js:0
+```
 
-**Action**: GAP-046-10 is **dropped** from Phase 2 prerequisites. If a future regression re-introduces dynamic-code evaluation in the client (e.g., Zod major upgrade, new validation library), this gap can be re-opened with the option matrix preserved below.
+**Root cause**: the violation comes from a feature-detection probe in the schemas chunk:
+
+```js
+re = s(() => {
+    if (typeof navigator < `u` && navigator?.userAgent?.includes(`Cloudflare`)) return false;
+    try { return Function(``), true } catch { return false }
+});
+```
+
+The library (Zod, Valibot, or similar — pinned in `@repo/schemas` transitive deps) probes `Function('')` to detect whether `'unsafe-eval'` is allowed. If it is, the library uses a JIT-compiled validator (faster). If it is NOT, the `try/catch` swallows the exception and the library falls back to a CSP-safe runtime validator. **Functionality is unaffected**; only the speed of validation changes (negligible in practice for typical form schemas).
+
+**Conclusion**: this is an **intentional, fallback-safe probe**, not a real security gap. The CSP report fires once per page load that imports the schemas chunk, the library handles the exception cleanly, and the user-visible behavior is identical.
+
+**Action**: GAP-046-10 is **accepted as a known benign report**. We do NOT add `'unsafe-eval'` to `script-src` (that would weaken the policy in exchange for a marginal validation speed gain that the library already handles via fallback). For Phase 2 enforcement, the violation will be **blocked** by the browser; the library's `try/catch` already covers that case, so no behavior change is expected.
+
+**Future cleanup option** (optional, not blocking): add a Sentry `beforeSend` filter on the security ingestion endpoint that drops violation reports whose `blocked-uri` is `eval` and whose `source-file` matches `_astro/schemas*.js` — purely to reduce report noise. Tracked as a follow-up nice-to-have, not a SPEC-046 acceptance criterion.
 
 **Options preserved for historical reference** (in case this gap is re-opened):
 
