@@ -102,7 +102,7 @@ export function CampaignPreview({ html, subject }: CampaignPreviewProps) {
                 )}
 
                 {isEmpty ? (
-                    <p className="text-center text-muted-foreground/60 text-sm italic">
+                    <p className="text-center text-muted-foreground/80 text-sm italic">
                         El contenido del email aparecerá aquí...
                     </p>
                 ) : (
