@@ -448,7 +448,7 @@ export function buildCspHeader({
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
         `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",
