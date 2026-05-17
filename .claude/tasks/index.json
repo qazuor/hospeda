@@ -233,9 +233,7 @@
             "completedAt": "2026-04-29T18:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-04-29T18:45:00.000Z",
-            "absorbs": [
-                "SPEC-075"
-            ]
+            "absorbs": ["SPEC-075"]
         },
         {
             "specId": "SPEC-060-gaps",
@@ -402,9 +400,11 @@
         {
             "specId": "SPEC-046",
             "title": "CSP Post-Deployment Verification",
-            "status": "pending",
-            "progress": "0/15",
-            "path": "SPEC-046-csp-post-deploy-verification"
+            "status": "completed",
+            "progress": "14/15 (T-015 deferred to SPEC-142)",
+            "path": "SPEC-046-csp-post-deploy-verification",
+            "completedAt": "2026-05-17T18:30:00.000Z",
+            "followUpSpec": "SPEC-142"
         }
     ],
     "standalone": {

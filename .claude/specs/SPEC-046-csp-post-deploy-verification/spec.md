@@ -499,18 +499,21 @@ These criteria were identified by the GAP-042 security audit and MUST be satisfi
 <!-- Added: §1C real-violations prerequisites, 2026-05-16 -->
 14. **GAP-046-09a resolved**: inline `style=""` attributes on React islands refactored to CSS classes + `data-*` attrs. Evidence: zero `style-src-attr` violations on `/es/alojamientos/` and equivalent pages after deploy.
 15. **GAP-046-09b resolved**: Astro `<style>` blocks carry the request nonce (or moved to external CSS modules as fallback). Evidence: zero `style-src-elem` violations from Astro-emitted style blocks.
-16. **GAP-046-10 verified absent** (2026-05-16): full-site crawl with Astro `ClientRouter` SPA navigation across home, listing, detail, auth forms, signup produced zero `'unsafe-eval'` and zero dynamic-code-evaluation reports. Gap dropped. No action required unless a future regression re-introduces dynamic-code evaluation in the client bundle.
-17. **GAP-046-11 resolved**: Cloudflare Web Analytics disabled in CF dashboard for `hospeda.com.ar` and `staging.hospeda.com.ar`. Coordinated with SPEC-140 (Umami) rollout to avoid analytics blackout. Evidence: no `static.cloudflareinsights.com` requests in network panel.
+16. **GAP-046-10 accepted as benign** (2026-05-17, T-014): the `schemas.<hash>.js` chunk emits a `Function('')` feature-detection probe wrapped in `try/catch`. The library falls back to a CSP-safe validator when the probe fails. One `unsafe-eval` report per pageload, zero functional impact. See §1C.4 (rewritten 2026-05-17). No policy change.
+17. **GAP-046-11 resolved**: Cloudflare Web Analytics migrated from broken Auto Setup to working Manual Setup (PR #1135 + operator switch in CF dashboard 2026-05-17). The manual snippet `<script>` is inline in `BaseLayout.astro` and the walker stamps it with the per-request nonce; `'strict-dynamic'` propagates trust to `beacon.min.js`. `connect-src` extended to allow RUM POSTs to `cloudflareinsights.com`. Evidence: beacon loads 200, RUM POST returns 204, zero CSP violations from the CF flow (Firefox / Chromium via playwright on 2026-05-17). The pivot from "disable" to "manual snippet" preserved Core Web Vitals RUM data that Umami (SPEC-140) does not natively cover.
 18. **GAP-046-12 resolved**: `frame-src 'none'` declared in `apps/web/src/middleware.ts`. Evidence: CSP header on web responses includes `frame-src 'none'`.
-19. **GAP-046-13 resolved**: Astro `experimental.csp` (or successor) propagates the request nonce to inline `<script>` blocks. Evidence: zero `script-src-elem` violations on inline scripts AND zero cascading `/_astro/*.js` blocks (because `'strict-dynamic'` now trusts the chunks imported by nonce-carrying inline scripts).
-20. **§1C.8 coverage**: public-pages full-site crawl completed 2026-05-16 (home, listing index/detail, auth, signup — no new violation types). Authenticated `/mi-cuenta/*` and billing entry points still pending a staging test account; must be crawled before Phase 2 OR documented as out-of-scope with rationale.
+19. **GAP-046-13 resolved**: parse5-based walker in `apps/web/integrations/csp-nonce-injector/` stamps the request nonce on every inline `<script>` and `<style>` tag Astro emits without one. Wired from middleware after `next()`. Evidence: zero `script-src-elem` violations on inline scripts AND zero cascading `/_astro/*.js` blocks.
+20. **§1C.8 coverage**: public-pages full-site crawl completed 2026-05-17 (home, listing, detail, signin, signup — see [`verification-2026-05-17.md`](verification-2026-05-17.md)). Authenticated `/mi-cuenta/*` and billing entry points DEFERRED to **SPEC-142 workstream 2.A** under explicit risk acceptance — must be completed before the Phase-2 enforce flip (gated by SPEC-142 acceptance criteria).
+21. **`GAP-046-FOLLOWUP-HOME-CSP-HEADER` filed (2026-05-17, T-014)**: the `/es/` home route does NOT emit the CSP header in its HTTP response, although the body carries nonce-stamped tags (so middleware ran). Pre-existing, not introduced by SPEC-046. Tracked as **SPEC-142 workstream 2.C** — Phase-2-enforce blocker, must be resolved before flipping.
 
 ### Decision
 
-Once all prerequisites (1-13) are met, create a follow-up task to:
-1. Change CSP header from Report-Only to enforcing
-2. Deploy to staging first, observe 48 hours
-3. Deploy to production
+SPEC-046 ships at **14/15 tasks completed + 1 deferred to SPEC-142**. The Phase 2 enforce flip is OUT OF SCOPE of SPEC-046 and gated by SPEC-142:
+
+1. SPEC-142 workstream 2.A (auth crawl) must close zero unresolved violations
+2. SPEC-142 workstream 2.B (MercadoPago Brick CSP) must complete a successful test payment with hardened CSP
+3. SPEC-142 workstream 2.C (home header gap) must be resolved
+4. THEN SPEC-142 workstream 2.D flips the header name from `Content-Security-Policy-Report-Only` to `Content-Security-Policy` (one-line change), deploys to staging for 48h soak, then production.
 
 ---
 

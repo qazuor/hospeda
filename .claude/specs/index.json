@@ -114,16 +114,18 @@
         {
             "specId": "SPEC-046",
             "title": "CSP Post-Deployment Verification",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-046-csp-post-deploy-verification",
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
+            "completedAt": "2026-05-17T18:30:00.000Z",
             "archived": false,
             "dependsOn": ["SPEC-042", "SPEC-045"],
+            "followUpSpec": "SPEC-142",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-046-impl",
-            "branch": "feat/SPEC-046-csp-implementation",
-            "progressNote": "Spec extension shipped via PR #1130 (merged 2026-05-16) with section 1C cataloguing real staging violations and Astro 6 CSP research (Path A: middleware nonce + Astro integration). 15 atomic tasks generated (avg complexity 2.5, 5 parallel tracks). GAP-046-10 (Zod dynamic-code eval) verified absent and dropped. Implementation worktree cut from origin/staging on 2026-05-16 — prior spec worktree (hospeda2-spec-046-csp-post-deploy-verification on spec/SPEC-046-csp-post-deploy-verification) cleaned up after merge."
+            "branch": "fix/SPEC-046-t014-followups",
+            "progressNote": "14/15 tasks completed. T-015 (authenticated crawl) deferred to SPEC-142 workstream 2.A under explicit risk acceptance — CSP is in Report-Only mode, so any uncatalogued violations on /mi-cuenta/* or MercadoPago Brick checkout are silent reports, not broken UX. The deferred work is gated as a Phase-2 prerequisite in SPEC-142 so it cannot be silently skipped. PRs shipped to staging: #1130 (spec extension + research), #1134 (main implementation T-001..T-012), #1135 (CF Web Analytics manual snippet migration), #1136 (T-014 follow-ups: Logo modifier classes + GAP-046-10 reopen + verification-2026-05-17.md report)."
         },
         {
             "specId": "SPEC-061",
@@ -1244,6 +1246,18 @@
             "extractedFrom": "SPEC-136 post-fix axe verification",
             "parent": "SPEC-134",
             "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
+        },
+        {
+            "specId": "SPEC-142",
+            "title": "CSP Phase 2 + remaining SPEC-046 coverage gaps",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-142-csp-phase-2-and-coverage",
+            "created": "2026-05-17T18:30:00Z",
+            "extractedFrom": "SPEC-046 closure: T-015 deferral + T-014 follow-up findings (Logo blind spot lesson, /es/ home CSP header miss, Sentry env config, eval probe noise)",
+            "dependsOn": ["SPEC-046"],
+            "tags": ["security", "csp", "web", "billing", "phase-2", "auth-flows", "mercadopago"]
         }
     ]
 }
