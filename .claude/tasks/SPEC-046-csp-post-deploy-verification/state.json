@@ -390,25 +390,30 @@
             "id": "T-012",
             "title": "Coordinate Cloudflare Web Analytics disable timing with SPEC-140 (Umami)",
             "description": "Document the disable timing of Cloudflare Web Analytics relative to SPEC-140 (self-hosted Umami) rollout. Add a section to .claude/specs/SPEC-046-csp-post-deploy-verification/research/cf-analytics-disable-plan.md describing: (1) current state (CF Web Analytics enabled for hospeda.com.ar and staging), (2) target state (disabled, Umami serves analytics), (3) decision on overlap window (recommend: enable Umami first, run both for 1 week, then disable CF). Notify the SPEC-140 owner (could be self) via PR comment or message that CF disable is pending their go-ahead. This task produces ONLY the plan; the actual disable lives in T-013.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Write cf-analytics-disable-plan.md", "completed": false },
+                { "title": "Write cf-analytics-disable-plan.md", "completed": true },
                 {
                     "title": "Coordinate with SPEC-140 owner (PR comment or message)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Get go-ahead recorded in the plan doc", "completed": false }
+                { "title": "Get go-ahead recorded in the plan doc", "completed": true }
             ],
             "tags": ["coordination", "docs", "gap-11", "spec-140"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null,
+                "notes": "Plan en .claude/specs/SPEC-046-csp-post-deploy-verification/research/cf-analytics-disable-plan.md. Hallazgo importante que invierte la recomendación original del task: la CF Web Analytics beacon ya está rota en producción (CORS + SRI hash mismatch desde 2026-05-16 staging audit — documentado en SPEC-046 §1C.5 y SPEC-140 §1). NO está capturando analytics client-side. El 'overlap window de 1 semana' del task description original es académico: no hay analytics que perder. Recomendación revisada: disable CF inmediato, independiente de SPEC-140 timing. SPEC-140 está en draft y su scope (item a) duplica el disable — primera spec que actúe satisface ambas acceptance criteria. Plan doc tiene execution log table que T-013 (o SPEC-140 (a)) van a completar al hacer la operación manual."
+            },
             "timestamps": {
                 "created": "2026-05-16T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-17T01:30:00.000Z",
+                "completed": "2026-05-17T01:45:00.000Z"
             }
         },
         {
@@ -513,9 +518,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5
     }
