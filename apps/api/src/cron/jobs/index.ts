@@ -33,3 +33,4 @@ export { conversationNotificationJob } from './conversation-notification.job.js'
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
+export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';

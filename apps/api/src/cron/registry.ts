@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
     cloudinaryE2eCleanupJob,
@@ -50,7 +51,8 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
     trialPreEndNotifJob,
-    abandonedPendingSubsJob
+    abandonedPendingSubsJob,
+    applyScheduledPlanChangesJob
 ];
 
 /**
