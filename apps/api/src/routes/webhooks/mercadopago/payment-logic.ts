@@ -16,6 +16,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
+import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
@@ -352,6 +353,24 @@ async function confirmPlanUpgrade(input: {
         apiLogger.debug(
             { planChangeUpgradeId, providerPaymentId, source },
             'Plan upgrade confirmation: delta payment already recorded — skipping record'
+        );
+    }
+
+    // Race-condition cleanup (SPEC-141 Fase 4 C4): if the user had a
+    // downgrade queued before the upgrade landed, clear it — the upgrade
+    // obsoletes the queued change. Best-effort: a clear failure does not
+    // invalidate the upgrade that already applied.
+    try {
+        await clearPendingScheduledPlanChange(billing, planChangeUpgradeId);
+    } catch (clearErr) {
+        apiLogger.warn(
+            {
+                planChangeUpgradeId,
+                providerPaymentId,
+                source,
+                error: clearErr instanceof Error ? clearErr.message : String(clearErr)
+            },
+            'Plan upgrade confirmation: failed to clear pending scheduled downgrade — non-blocking'
         );
     }
 

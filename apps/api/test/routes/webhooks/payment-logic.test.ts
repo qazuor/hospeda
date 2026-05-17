@@ -566,10 +566,12 @@ describe('processPaymentUpdated', () => {
                     planId: string;
                     status: string;
                     providerSubscriptionIds?: Record<string, string>;
+                    scheduledPlanChange?: { status: string; targetPlanId?: string } | null;
                 } | null;
                 paymentAdapterUpdateThrows?: Error;
                 paymentAdapterPresent?: boolean;
                 changePlanThrows?: Error;
+                subscriptionsUpdateThrows?: Error;
             } = {}
         ) {
             const sub =
@@ -579,7 +581,8 @@ describe('processPaymentUpdated', () => {
                           customerId: 'cust-1',
                           planId: OLD_PLAN_ID,
                           status: 'active',
-                          providerSubscriptionIds: { mercadopago: 'mp-pre-123' }
+                          providerSubscriptionIds: { mercadopago: 'mp-pre-123' },
+                          scheduledPlanChange: null
                       }
                     : opts.sub;
 
@@ -603,24 +606,32 @@ describe('processPaymentUpdated', () => {
                     ? null
                     : { subscriptions: { update: paymentAdapterUpdate } };
 
+            const subscriptionsUpdate = opts.subscriptionsUpdateThrows
+                ? vi.fn().mockRejectedValue(opts.subscriptionsUpdateThrows)
+                : vi.fn().mockResolvedValue({ id: UPGRADE_SUB_ID });
+
             return {
                 customers: mockBilling.customers,
                 subscriptions: {
                     get: vi.fn().mockResolvedValue(sub),
                     getByCustomerId: vi.fn(),
-                    changePlan
+                    changePlan,
+                    update: subscriptionsUpdate
                 },
                 plans: { list: vi.fn() },
                 payments: {
                     record: vi.fn().mockResolvedValue({ id: 'recorded-delta-uuid' })
                 },
                 getPaymentAdapter: vi.fn(() => paymentAdapter),
-                _paymentAdapterUpdate: paymentAdapterUpdate
+                _paymentAdapterUpdate: paymentAdapterUpdate,
+                _subscriptionsUpdate: subscriptionsUpdate
             } as unknown as QZPayBilling & {
                 _paymentAdapterUpdate: ReturnType<typeof vi.fn>;
+                _subscriptionsUpdate: ReturnType<typeof vi.fn>;
                 subscriptions: {
                     get: ReturnType<typeof vi.fn>;
                     changePlan: ReturnType<typeof vi.fn>;
+                    update: ReturnType<typeof vi.fn>;
                 };
                 payments: { record: ReturnType<typeof vi.fn> };
             };
@@ -811,6 +822,79 @@ describe('processPaymentUpdated', () => {
             expect(result.planUpgradeConfirmed).toBe(true);
             expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
             expect(billing.payments.record).not.toHaveBeenCalled();
+        });
+
+        // ── SPEC-141 Fase 4 C4: race-condition cleanup ───────────────────
+        // When an upgrade lands, any pending scheduled downgrade queued
+        // on the same sub is obsolete and must be cleared.
+
+        it('upgrade success clears any pending scheduled downgrade', async () => {
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: OLD_PLAN_ID,
+                    status: 'active',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' },
+                    scheduledPlanChange: { status: 'pending', targetPlanId: 'plan_starter' }
+                }
+            });
+
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(billing._subscriptionsUpdate).toHaveBeenCalledOnce();
+            const updateArgs = billing._subscriptionsUpdate.mock.calls[0] as [
+                string,
+                Record<string, unknown>
+            ];
+            expect(updateArgs[0]).toBe(UPGRADE_SUB_ID);
+            expect(updateArgs[1]).toEqual({ scheduledPlanChange: null });
+        });
+
+        it('upgrade success does not call update when no pending schedule exists', async () => {
+            approvedUpgradePayment();
+            // Default sub from makeUpgradeBilling has scheduledPlanChange: null.
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            expect(result.planUpgradeConfirmed).toBe(true);
+            // clearPendingScheduledPlanChange short-circuits when
+            // scheduledPlanChange is null — no update should happen.
+            expect(billing._subscriptionsUpdate).not.toHaveBeenCalled();
+        });
+
+        it('clear failure does not break upgrade confirmation (best-effort)', async () => {
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: OLD_PLAN_ID,
+                    status: 'active',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' },
+                    scheduledPlanChange: { status: 'pending', targetPlanId: 'plan_starter' }
+                },
+                subscriptionsUpdateThrows: new Error('qzpay update timeout')
+            });
+
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Upgrade still confirmed despite the clear failure.
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+            expect(billing._subscriptionsUpdate).toHaveBeenCalledOnce();
         });
 
         it('annual takes precedence when both metadata keys are (erroneously) present', async () => {
