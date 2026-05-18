@@ -173,6 +173,20 @@ const DEFAULT_BOUNDS_DEBOUNCE_MS = 300;
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 /**
+ * Escapes HTML-significant characters before we inject accommodation
+ * names + prices into a Leaflet divIcon `html` string. Names come from the
+ * API and could in theory contain `<`, `>`, `&` or quotes.
+ */
+function escapeHtmlForPill(text: string): string {
+    return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+/**
  * Decorative pulsing halo rendered on top of the item the user picked from
  * the cards sidebar. Two stacked CircleMarkers: a steady center dot in
  * brand-accent and an outer ring that scales/fades via a CSS keyframe. The
@@ -334,11 +348,37 @@ export function ListingMap(props: ListingMapProps) {
 
     const renderedMarkers = useMemo(() => {
         if (isAccommodationMode) {
-            return props.items.map((item) => {
+            return props.items.flatMap((item) => {
                 const isHovered = hoveredItemId === item.id;
-                return (
+                /*
+                 * Each accommodation renders as TWO layers stacked at the
+                 * same coord:
+                 *   1) A semi-transparent Circle (radius in meters) that
+                 *      visualises the privacy approximation.
+                 *   2) A Marker with a pixel-sized divIcon "pill" carrying
+                 *      the accommodation name (+ price when available),
+                 *      Airbnb-style. The pill is the real click target and
+                 *      stays visible at every zoom — the privacy circle can
+                 *      shrink past visibility at small zooms but the pill
+                 *      never disappears, which also resolves the
+                 *      "single item too small to see when zoomed out" issue.
+                 * The cluster picks both up via the MarkerClusterGroup, so
+                 * when many items overlap they collapse into a single
+                 * cluster icon instead of a wall of pills + halos.
+                 */
+                const priceLabel = item.priceLabel?.trim();
+                const pillText = priceLabel ? `${item.name} · ${priceLabel}` : item.name;
+                const pillIcon = L.divIcon({
+                    className: styles.itemPill,
+                    html: `<span class="${styles.itemPillInner}${
+                        isHovered ? ` ${styles.itemPillHovered}` : ''
+                    }">${escapeHtmlForPill(pillText)}</span>`,
+                    iconSize: [0, 0],
+                    iconAnchor: [0, 0]
+                });
+                return [
                     <Circle
-                        key={item.id}
+                        key={`${item.id}-circle`}
                         center={[item.approximateLocation.lat, item.approximateLocation.lng]}
                         radius={item.approximateLocation.radiusMeters}
                         pathOptions={{
@@ -347,6 +387,14 @@ export function ListingMap(props: ListingMapProps) {
                             fillOpacity: isHovered ? 0.35 : 0.18,
                             weight: isHovered ? 3 : 2
                         }}
+                        eventHandlers={{
+                            click: () => onMarkerClick?.(item.id)
+                        }}
+                    />,
+                    <Marker
+                        key={`${item.id}-pill`}
+                        position={[item.approximateLocation.lat, item.approximateLocation.lng]}
+                        icon={pillIcon}
                         eventHandlers={{
                             click: () => onMarkerClick?.(item.id)
                         }}
@@ -364,8 +412,8 @@ export function ListingMap(props: ListingMapProps) {
                                 locale={locale}
                             />
                         </Popup>
-                    </Circle>
-                );
+                    </Marker>
+                ];
             });
         }
         return props.items.map((item) => (

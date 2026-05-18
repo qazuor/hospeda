@@ -298,3 +298,58 @@
         opacity: 0;
     }
 }
+
+/* ----- Accommodation item pill (Airbnb-style) -----
+ * Each item in the cluster renders a Marker with a divIcon that uses this
+ * pill instead of the default teardrop icon. The pill sits over its
+ * matching privacy Circle, carries the accommodation name (+ price when
+ * present), and clicks open the same popup that used to live on the Circle.
+ *
+ * The Leaflet `divIcon` is configured with iconSize/iconAnchor [0,0], so we
+ * position the inner pill absolutely with a translate(-50%, -100%) — its
+ * bottom-center sits exactly on the lat/lng coord, like a map "label".
+ */
+.itemPill {
+    /* Disable Leaflet's default icon background. */
+    background: transparent;
+    border: none;
+    pointer-events: none;
+}
+
+.itemPillInner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* Sit the pill's bottom-center on the marker coord (above the Circle's
+     * center). */
+    transform: translate(-50%, -100%);
+    display: inline-block;
+    max-width: 220px;
+    padding: 6px 12px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--core-foreground);
+    background-color: var(--core-card, #fff);
+    border: 1px solid oklch(0 0 0 / 0.08);
+    border-radius: 9999px;
+    box-shadow: 0 2px 6px oklch(0 0 0 / 0.12), 0 6px 16px oklch(0 0 0 / 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Restore interactivity (parent disables it for the Leaflet default
+     * icon). */
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.itemPillInner:hover,
+.itemPillHovered {
+    transform: translate(-50%, calc(-100% - 2px));
+    box-shadow: 0 4px 10px oklch(0 0 0 / 0.18), 0 10px 24px oklch(0 0 0 / 0.14);
+    background-color: var(--core-card, #fff);
+    border-color: oklch(from var(--brand-accent) l c h / 0.4);
+}
