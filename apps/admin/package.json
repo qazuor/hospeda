@@ -51,7 +51,7 @@
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
-        "@sentry/react": "^10.36.0",
+        "@sentry/react": "^10.53.1",
         "@tailwindcss/vite": "4.1.12",
         "@tanstack/match-sorter-utils": "8.19.4",
         "@tanstack/react-devtools": "0.2.2",

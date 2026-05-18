@@ -47,8 +47,15 @@ function getSentryConfig(): SentryConfig {
         // Prefer VITE_SENTRY_ENVIRONMENT over MODE so staging and prod (both
         // MODE=production) end up in different Sentry environments. Falls
         // back to MODE when the explicit override is unset.
-        environment: env.VITE_SENTRY_ENVIRONMENT ?? import.meta.env.MODE ?? 'development',
-        release: env.VITE_SENTRY_RELEASE ?? env.VITE_APP_VERSION ?? 'development',
+        environment: env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development',
+        // Read VITE_SENTRY_RELEASE with `||` (not `??`) so empty strings from
+        // Coolify also fall through to the 'development' default. Matches the
+        // web pattern in apps/web/sentry.client.config.ts. VITE_APP_VERSION is
+        // intentionally NOT used as a fallback — it defaults to '1.0.0' for
+        // every deploy and would defeat per-deploy release tracking. Operators
+        // should set VITE_SENTRY_RELEASE to the deploy's git SHA in Coolify
+        // (SPEC-146).
+        release: env.VITE_SENTRY_RELEASE || 'development',
         // Performance monitoring
         tracesSampleRate: 0.1, // 10% of transactions
         // Session replay
