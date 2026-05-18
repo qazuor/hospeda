@@ -372,12 +372,16 @@
         {
             "specId": "SPEC-130",
             "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
-            "status": "in-progress",
-            "progress": "0/5",
+            "status": "completed",
+            "progress": "5/5",
             "path": "SPEC-130-deprecate-vercel-env-stubs",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-130-deprecate-vercel-env-stubs",
             "branch": "spec/SPEC-130-deprecate-vercel-env-stubs",
-            "startedAt": "2026-05-18T03:50:00Z"
+            "startedAt": "2026-05-18T03:50:00Z",
+            "completedAt": "2026-05-18T02:31:16.000Z",
+            "completionRef": "PR #1142 (commit d5a1353fd91c7c65eee9f1ba9bf49a197b4d4635)",
+            "archived": true,
+            "archivedAt": "2026-05-18T02:31:16.000Z"
         },
         {
             "specId": "SPEC-131",
