@@ -51,7 +51,7 @@ export function ComingSoon({
             className={`flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center ${className ?? ''}`}
         >
             {icon && <div className="mb-3 text-muted-foreground">{icon}</div>}
-            <h3 className="mb-1 font-semibold text-sm">{displayTitle}</h3>
+            <h2 className="mb-1 font-semibold text-sm">{displayTitle}</h2>
             <p className="max-w-sm text-muted-foreground text-xs">{displayDescription}</p>
         </div>
     );

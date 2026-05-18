@@ -125,30 +125,11 @@ Step 4 (`pnpm env:check:registry`) is the CI gate — it runs three
 per-app vitest suites that import the Zod schema and assert every
 schema key has a matching registry entry. Drift fails CI.
 
-Step 6 is what the deprecated `pnpm env:sync` used to do against
-Vercel — it now lives in `hops env-set`. See the deprecation note
-below.
-
-## Deprecated commands
-
-The following commands targeted the Vercel API. After the
-Vercel/Neon/Upstash teardown (Phase 16.4), prod no longer runs on
-Vercel and these commands have no meaningful remote to talk to:
-
-| Command | What it did | Use this instead |
-|---|---|---|
-| `pnpm env:pull` | Fetch env vars from Vercel, write to local .env.local | `hops env-pull <kind>` on the VPS, then scp |
-| `pnpm env:push` | Push local .env.local up to Vercel | `hops env-set <kind> KEY VALUE` per var on the VPS |
-| `pnpm env:sync` | Interactive bulk push to Vercel | Same as env:push |
-| `pnpm env:check` | Compare .env.example against what is configured in Vercel | `hops env-list <kind>` on the VPS for prod audit; `pnpm env:check:registry` for registry/schema sync |
-
-The entry points still exist in `package.json` but print a deprecation
-notice and exit 1. They will be removed in a future cleanup pass once
-documentation references have been updated.
-
-`pnpm env:check:registry` is **not** deprecated — it is a pure local
-test that compares the registry against per-app Zod schemas, no remote
-calls.
+Step 6 (push to prod) is done via `hops env-set` on the VPS — see the
+"Production (Coolify on the VPS)" section above. There is no
+laptop-to-prod env push command in the repo by design: all prod env
+changes go through Coolify (CLI or UI), never through a generic
+"sync" script.
 
 ## Audit checklist — once per quarter
 

@@ -179,6 +179,17 @@
             "complex": "Complexo",
             "tourist": "Turista"
         },
+        "descriptions": {
+            "owner-basico": "Plano básico para proprietários individuais. Ideal para começar.",
+            "owner-pro": "Plano profissional com análises avançadas e suporte prioritário.",
+            "owner-premium": "Plano premium com todas as funcionalidades, gerente dedicado e acesso à API.",
+            "complex-basico": "Plano básico para complexos e hotéis. Gestão multi-propriedade.",
+            "complex-pro": "Plano profissional para complexos com análises consolidadas.",
+            "complex-premium": "Plano premium para grandes complexos com todas as funcionalidades.",
+            "tourist-free": "Plano gratuito para turistas. Funcionalidades básicas incluídas.",
+            "tourist-plus": "Plano Plus para turistas frequentes. Experiência sem anúncios e alertas de preço.",
+            "tourist-vip": "Plano VIP para turistas exigentes. Todas as funcionalidades premium incluídas."
+        },
         "statusActive": "Ativo",
         "statusInactive": "Inativo",
         "statusDefault": "Padrão",

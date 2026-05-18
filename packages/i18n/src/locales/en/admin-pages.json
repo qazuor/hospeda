@@ -288,6 +288,8 @@
             "statusCancelled": "Cancelled",
             "filterAllStatuses": "All statuses",
             "filterAllTypes": "All types",
+            "filterStatusLabel": "Filter by status",
+            "filterTypeLabel": "Filter by type",
             "viewDetails": "View details",
             "dialog": {
                 "details": "Sponsorship details",
@@ -751,6 +753,10 @@
                 "perNight": "Per Night",
                 "perGuest": "Per Guest"
             }
+        },
+        "amenities": {
+            "empty": "This accommodation has no amenities assigned.",
+            "editCta": "Add amenity"
         },
         "reviews": {
             "noReviews": "No reviews yet for this accommodation.",

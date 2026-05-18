@@ -431,6 +431,14 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                             aria-expanded={open}
                             aria-required={required || undefined}
                             aria-describedby={cn(descriptionId, errorId)}
+                            aria-label={
+                                label
+                                    ? undefined
+                                    : t('ui.entitySelect.searchPlaceholder', {
+                                          entityType:
+                                              entityConfig?.entityType?.toLowerCase() || 'elementos'
+                                      })
+                            }
                             className={cn(
                                 'w-full justify-between',
                                 !value && 'text-muted-foreground',

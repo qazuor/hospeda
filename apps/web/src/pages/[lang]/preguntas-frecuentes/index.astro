@@ -287,7 +287,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 							class="faq-item"
 							role="listitem"
 							data-reveal="up"
-							style={`transition-delay: ${Math.min(i, 6) * 60}ms`}
+							data-stagger-index={Math.min(i, 6)} data-stagger-step="60"
 						>
 							<summary class="faq-item__summary">
 								<span class="faq-item__question">{item.question}</span>

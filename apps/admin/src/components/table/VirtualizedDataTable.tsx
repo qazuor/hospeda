@@ -174,7 +174,7 @@ export const VirtualizedDataTable = <TData,>({
 
     // Render table header
     const renderHeader = () => (
-        <thead className="bg-muted text-muted-foreground">
+        <thead className="bg-muted text-foreground">
             {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
                     {hg.headers.map((header) => {

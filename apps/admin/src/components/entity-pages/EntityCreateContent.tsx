@@ -8,7 +8,7 @@ import { unflattenValues } from '@/components/entity-form/utils/unflatten-values
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { env } from '@/env';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
@@ -267,7 +267,9 @@ export function EntityCreateContent({
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-2xl">{config.title}</CardTitle>
+                            <h1 className="font-semibold text-2xl leading-none tracking-tight">
+                                {config.title}
+                            </h1>
                             <p className="text-muted-foreground">{config.description}</p>
                         </div>
                         <div className="flex items-center gap-3">

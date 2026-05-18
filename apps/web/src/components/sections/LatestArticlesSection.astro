@@ -20,7 +20,7 @@ import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
-import { revealDelay } from '@/lib/reveal-stagger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -94,7 +94,7 @@ const isSparse = posts.length < 2;
                 <div class="articles__layout">
                     <!-- Featured card: full-width top row -->
                     {featured && (
-                        <div class="articles__featured-row" data-reveal="up" style="transition-delay: 0ms">
+                        <div class="articles__featured-row" data-reveal="up" {...revealStagger({ index: 0 })}>
                             <FeaturedArticleCard data={featured} locale={locale} isTrending={true} />
                         </div>
                     )}
@@ -106,7 +106,7 @@ const isSparse = posts.length < 2;
                                 <div
                                     class="articles__secondary-item"
                                     data-reveal="up"
-                                    style={`transition-delay: ${revealDelay({ index: i + 1 })}ms`}
+                                    {...revealStagger({ index: i + 1 })}
                                 >
                                     <ArticleCard data={post} locale={locale} />
                                 </div>

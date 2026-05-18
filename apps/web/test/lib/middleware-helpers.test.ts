@@ -180,6 +180,27 @@ describe('buildCspHeader', () => {
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
+    it('should allow PostHog Cloud (US) hosts in script-src, connect-src, and img-src (SPEC-140)', () => {
+        // Arrange
+        const header = buildCspHeader({ nonce: 'x' });
+
+        // Act / Assert — directive-scoped checks (not just substring presence
+        // anywhere in the header) so accidental cross-directive leaks fail.
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+
+        // script-src and connect-src need BOTH the ingestion host and the
+        // assets host (PostHog loads sub-bundles from us-assets).
+        expect(scriptSrc).toContain('https://us.i.posthog.com');
+        expect(scriptSrc).toContain('https://us-assets.i.posthog.com');
+        expect(connectSrc).toContain('https://us.i.posthog.com');
+        expect(connectSrc).toContain('https://us-assets.i.posthog.com');
+
+        // img-src only needs the ingestion host (1x1 pixel fallback origin).
+        expect(imgSrc).toContain('https://us.i.posthog.com');
+    });
+
     it('should not include report-uri when not provided', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('report-uri');
@@ -218,13 +239,21 @@ describe('buildCspHeader', () => {
         expect(header).not.toContain('unsafe-inline');
     });
 
-    // SPEC-047: lock the script-src shape so a future change cannot regress
-    // the policy back to 'unsafe-inline' or drop strict-dynamic / nonce.
-    it('script-src must have exactly: self + nonce + strict-dynamic (no unsafe-inline, no https:)', () => {
+    // SPEC-047 (rewritten in SPEC-140): lock the script-src security
+    // posture — self + nonce + strict-dynamic + NO 'unsafe-inline'. The
+    // SPEC-047 original asserted exact-string equality which made any new
+    // https: host (e.g. PostHog ingestion hosts in SPEC-140) regress the
+    // test. With 'strict-dynamic' present, host allowlists in script-src
+    // are IGNORED by browsers per CSP3, so additional https: tokens are
+    // decoration / documentation — the security claim still holds.
+    it('script-src must have self + nonce + strict-dynamic and no unsafe-inline', () => {
         const header = buildCspHeader({ nonce: 'abc123' });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src '));
         expect(scriptSrc).toBeDefined();
-        expect(scriptSrc).toBe("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
+        expect(scriptSrc).toContain("'self'");
+        expect(scriptSrc).toContain("'nonce-abc123'");
+        expect(scriptSrc).toContain("'strict-dynamic'");
+        expect(scriptSrc).not.toContain('unsafe-inline');
     });
 
     it('style-src must use nonce-based policy without unsafe-inline', () => {
@@ -233,6 +262,28 @@ describe('buildCspHeader', () => {
         expect(styleSrc).toBeDefined();
         expect(styleSrc).toContain("'nonce-abc123'");
         expect(styleSrc).not.toContain('unsafe-inline');
+    });
+
+    // SPEC-046 GAP-046-12: lock the embed surface — we never embed anything,
+    // and even if frame-ancestors blocks others from embedding us, frame-src
+    // is the symmetric guard that stops us from embedding others. Together
+    // they make the frame story explicit on both directions.
+    it("must include frame-src 'none' (GAP-046-12)", () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
+        expect(frameSrc).toBe("frame-src 'none'");
+    });
+
+    // SPEC-046 GAP-046-11 follow-up: the manual Cloudflare Web Analytics
+    // snippet (BaseLayout.astro) loads beacon.min.js from
+    // static.cloudflareinsights.com (handled by script-src strict-dynamic
+    // + nonce), then POSTs Core Web Vitals telemetry to
+    // cloudflareinsights.com — that endpoint must be reachable.
+    it('must allowlist cloudflareinsights.com in connect-src for CF Web Analytics RUM beacon', () => {
+        const header = buildCspHeader({ nonce: 'x' });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src '));
+        expect(connectSrc).toBeDefined();
+        expect(connectSrc).toContain('https://cloudflareinsights.com');
     });
 });
 

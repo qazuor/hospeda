@@ -43,6 +43,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'apply-scheduled-plan-changes',
+        schedule: '*/15 * * * *',
+        description:
+            'Apply due scheduled plan changes (SPEC-141 D7 downgrade) on subscriptions whose period_end has passed.'
+    },
+    {
         name: 'archive-abandoned-drafts',
         schedule: '0 3 * * *',
         description: 'Archive accommodation drafts left untouched past the retention window.'

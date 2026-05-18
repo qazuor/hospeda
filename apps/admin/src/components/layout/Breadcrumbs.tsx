@@ -1,4 +1,5 @@
 import { useTranslations } from '@/hooks/use-translations';
+import { breadcrumbLabels, breadcrumbSegmentLabels } from '@/lib/breadcrumb-labels';
 import { menuTree } from '@/lib/menu';
 import type { TranslationKey } from '@repo/i18n';
 import { BreadcrumbsIcon } from '@repo/icons';
@@ -40,8 +41,20 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
         }
     }
 
-    // Default: capitalize the last segment
+    // Fallback to the path-keyed breadcrumb label map for routes that are
+    // sub-pages of a section and not surfaced in the main nav.
+    if (breadcrumbLabels[path]) {
+        return { type: 'i18n', key: breadcrumbLabels[path] };
+    }
+
+    // Fallback to the trailing-segment dictionary (e.g. nested routes like
+    // `/accommodations/<id>/amenities` where only the suffix is translatable).
     const seg = path.split('/').filter(Boolean).pop() ?? '';
+    if (breadcrumbSegmentLabels[seg]) {
+        return { type: 'i18n', key: breadcrumbSegmentLabels[seg] };
+    }
+
+    // Default: capitalize the last segment
     return { type: 'text', value: seg.charAt(0).toUpperCase() + seg.slice(1) };
 };
 

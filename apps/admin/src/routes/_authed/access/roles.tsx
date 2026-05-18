@@ -133,9 +133,9 @@ function RolesPage() {
                                     </p>
 
                                     <div>
-                                        <h4 className="mb-2 font-medium text-sm">
+                                        <h3 className="mb-2 font-medium text-sm">
                                             {t('admin-pages.access.roles.keyCapabilities')}
-                                        </h4>
+                                        </h3>
                                         <ul className="space-y-1">
                                             {capabilities.map((capability) => (
                                                 <li

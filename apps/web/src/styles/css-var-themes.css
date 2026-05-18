@@ -1,0 +1,235 @@
+/*
+ * css-var-themes.css
+ *
+ * Data-attribute themed CSS variable maps. Replaces inline
+ * `style="--xxx: ${value}"` declarations that were emitted per-instance
+ * by React/Astro components (SPEC-046 GAP-046-09a).
+ *
+ * Each block here maps a finite enum value (set via `data-*` on a parent
+ * element) to one or more CSS custom properties. Component-scoped styles
+ * then consume those custom properties without knowing which value was
+ * selected — same dynamic look, zero `style-src-attr` CSP violations.
+ *
+ * IMPORTANT: keep these maps in sync with `apps/web/src/lib/colors.ts`.
+ * The token choices below mirror the `getEventCategoryColor` /
+ * `getPostCategoryColor` switch statements. Drift here will not break
+ * builds but will desync the visual identity from JS consumers of
+ * `colors.ts` (badges still rendered from JS).
+ */
+
+/* =========================================================================
+ * Event category map (consumed by EventCardFeatured)
+ *
+ * Each rule exposes two tokens:
+ *   --event-cat-bg   -> base token for opacity-modulated backgrounds
+ *                       (consumers compose with `oklch(from ... l c h / N)`)
+ *   --event-cat-text -> token for accent text + solid block backgrounds
+ *
+ * Mirrors getEventCategoryColor() in lib/colors.ts. Lowercase keys to match
+ * the function's `.toLowerCase()` normalisation.
+ * ========================================================================= */
+[data-event-category="music"] {
+    --event-cat-bg: var(--brand-accent);
+    --event-cat-text: var(--brand-accent);
+}
+[data-event-category="sports"] {
+    --event-cat-bg: var(--brand-primary);
+    --event-cat-text: var(--brand-primary);
+}
+[data-event-category="cultural"],
+[data-event-category="culture"] {
+    --event-cat-bg: var(--hospeda-sky);
+    --event-cat-text: var(--hospeda-sky);
+}
+[data-event-category="gastronomy"] {
+    --event-cat-bg: var(--hospeda-forest);
+    --event-cat-text: var(--hospeda-forest);
+}
+[data-event-category="festival"] {
+    --event-cat-bg: var(--hospeda-sky);
+    --event-cat-text: var(--hospeda-sky);
+}
+[data-event-category="wellness"] {
+    --event-cat-bg: var(--hospeda-river);
+    --event-cat-text: var(--core-card);
+}
+[data-event-category="art"] {
+    --event-cat-bg: var(--hospeda-sand);
+    --event-cat-text: var(--core-foreground);
+}
+[data-event-category="family"] {
+    --event-cat-bg: var(--info);
+    --event-cat-text: var(--info-foreground);
+}
+[data-event-category="nature"] {
+    --event-cat-bg: var(--hospeda-forest);
+    --event-cat-text: var(--hospeda-forest);
+}
+[data-event-category="theater"] {
+    --event-cat-bg: var(--hospeda-river);
+    --event-cat-text: var(--core-card);
+}
+[data-event-category="workshop"] {
+    --event-cat-bg: var(--hospeda-sand);
+    --event-cat-text: var(--core-foreground);
+}
+[data-event-category="other"] {
+    --event-cat-bg: var(--core-muted-foreground);
+    --event-cat-text: var(--core-muted-foreground);
+}
+
+/* =========================================================================
+ * Post category map (consumed by ArticleCard)
+ *
+ * Exposes:
+ *   --card-accent -> the accent text color used for the card's accent line
+ *
+ * Mirrors POST_CATEGORY_COLOR's `.text` values in lib/colors.ts. UPPERCASE
+ * keys because PostCategoryEnum values are uppercase at the API level.
+ * ========================================================================= */
+[data-post-category="TOURISM"] {
+    --card-accent: var(--brand-primary);
+}
+[data-post-category="TIPS"] {
+    --card-accent: var(--brand-accent);
+}
+[data-post-category="GASTRONOMY"] {
+    --card-accent: var(--hospeda-forest);
+}
+[data-post-category="CULTURE"] {
+    --card-accent: var(--core-foreground);
+}
+[data-post-category="NATURE"] {
+    --card-accent: var(--core-card);
+}
+[data-post-category="EVENTS"] {
+    --card-accent: var(--info-foreground);
+}
+[data-post-category="SPORT"] {
+    --card-accent: var(--hospeda-sky);
+}
+[data-post-category="CARNIVAL"] {
+    --card-accent: var(--brand-accent);
+}
+[data-post-category="NIGHTLIFE"] {
+    --card-accent: var(--core-card);
+}
+[data-post-category="HISTORY"] {
+    --card-accent: var(--core-foreground);
+}
+[data-post-category="TRADITIONS"] {
+    --card-accent: var(--core-foreground);
+}
+[data-post-category="WELLNESS"] {
+    --card-accent: var(--hospeda-forest);
+}
+[data-post-category="FAMILY"] {
+    --card-accent: var(--info-foreground);
+}
+[data-post-category="ART"] {
+    --card-accent: var(--core-foreground);
+}
+[data-post-category="BEACH"] {
+    --card-accent: var(--hospeda-sky);
+}
+[data-post-category="RURAL"] {
+    --card-accent: var(--hospeda-forest);
+}
+[data-post-category="FESTIVALS"] {
+    --card-accent: var(--brand-accent);
+}
+[data-post-category="GENERAL"] {
+    --card-accent: var(--brand-primary);
+}
+
+/* =========================================================================
+ * Stagger map (consumed by [data-reveal] grids across the site)
+ *
+ * Replaces inline `style="transition-delay: Xms"` per SPEC-046 GAP-046-09a.
+ * Elements opt into a stagger by setting:
+ *   data-stagger-index   -> integer 0..6 (capped by callers via Math.min)
+ *   data-stagger-step    -> "60" | "80" | "100" (step in ms)
+ *
+ * Three step values are supported because existing call sites used three
+ * different cadences (60ms for FAQ-style lists, 80ms for tile/article grids,
+ * 100ms for card grids). Standardising would have required design approval;
+ * supporting all three is a zero-visual-regression alternative.
+ * ========================================================================= */
+[data-stagger-step="60"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="60"][data-stagger-index="1"] {
+    transition-delay: 60ms;
+}
+[data-stagger-step="60"][data-stagger-index="2"] {
+    transition-delay: 120ms;
+}
+[data-stagger-step="60"][data-stagger-index="3"] {
+    transition-delay: 180ms;
+}
+[data-stagger-step="60"][data-stagger-index="4"] {
+    transition-delay: 240ms;
+}
+[data-stagger-step="60"][data-stagger-index="5"] {
+    transition-delay: 300ms;
+}
+[data-stagger-step="60"][data-stagger-index="6"] {
+    transition-delay: 360ms;
+}
+
+[data-stagger-step="80"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="80"][data-stagger-index="1"] {
+    transition-delay: 80ms;
+}
+[data-stagger-step="80"][data-stagger-index="2"] {
+    transition-delay: 160ms;
+}
+[data-stagger-step="80"][data-stagger-index="3"] {
+    transition-delay: 240ms;
+}
+[data-stagger-step="80"][data-stagger-index="4"] {
+    transition-delay: 320ms;
+}
+[data-stagger-step="80"][data-stagger-index="5"] {
+    transition-delay: 400ms;
+}
+[data-stagger-step="80"][data-stagger-index="6"] {
+    transition-delay: 480ms;
+}
+
+[data-stagger-step="100"][data-stagger-index="0"] {
+    transition-delay: 0ms;
+}
+[data-stagger-step="100"][data-stagger-index="1"] {
+    transition-delay: 100ms;
+}
+[data-stagger-step="100"][data-stagger-index="2"] {
+    transition-delay: 200ms;
+}
+[data-stagger-step="100"][data-stagger-index="3"] {
+    transition-delay: 300ms;
+}
+[data-stagger-step="100"][data-stagger-index="4"] {
+    transition-delay: 400ms;
+}
+[data-stagger-step="100"][data-stagger-index="5"] {
+    transition-delay: 500ms;
+}
+[data-stagger-step="100"][data-stagger-index="6"] {
+    transition-delay: 600ms;
+}
+
+/* =========================================================================
+ * Wave header padding map (consumed by WaveHeader)
+ *
+ * Layouts pick a semantic name instead of a hard-coded rem value so the
+ * intent (`listing` vs `detail`) is visible in markup.
+ * ========================================================================= */
+[data-wave-padding="listing"] {
+    --wave-header-padding-top: 3rem;
+}
+[data-wave-padding="detail"] {
+    --wave-header-padding-top: 2rem;
+}

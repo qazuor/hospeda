@@ -37,7 +37,6 @@ import {
 } from '@repo/icons';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { buildUrl } from '@/lib/urls';
-import { getEventCategoryColor } from '@/lib/colors';
 import { formatEventDate } from './utils/formatEventDate';
 import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
 import type { EventCardData } from '@/data/types';
@@ -67,7 +66,6 @@ interface Props {
 const { data, locale, isAuthenticated = false } = Astro.props;
 
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
-const categoryColor = getEventCategoryColor({ category: data.category });
 
 const dateResult = formatEventDate({
   start: data.date.start,
@@ -89,17 +87,9 @@ const hasRealImage =
   Boolean(data.featuredImage.url) &&
   !data.featuredImage.url.includes('placeholder');
 
-/**
- * Semi-transparent version of the category color used for the badge overlay.
- * We use a slightly more opaque value (0.85) for a glassy but readable look.
- */
-const badgeBgSolid = getEventCategoryColor({
-  category: data.category,
-  bgOpacity: 0.85,
-}).bg;
 ---
 
-<article class="event-card-featured" style={`--category-color: ${categoryColor.text};`}>
+<article class="event-card-featured" data-event-category={data.category.toLowerCase()}>
   <!-- FavoriteButton island: top-right over image, OUTSIDE the <a> link (HTML semantics) -->
   <div class="event-card-featured__fav-wrapper">
     <FavoriteButton
@@ -126,7 +116,6 @@ const badgeBgSolid = getEventCategoryColor({
       <div
         class="event-card-featured__image-fallback"
         aria-hidden="true"
-        style={`background: linear-gradient(135deg, ${categoryColor.bg}, ${categoryColor.border});`}
       >
         <span class="event-card-featured__fallback-icon">
           {categoryIconName === 'BallroomIcon' && <BallroomIcon size={96} weight="duotone" aria-hidden="true" />}
@@ -165,7 +154,6 @@ const badgeBgSolid = getEventCategoryColor({
       <div
         class="event-card-featured__badge"
         aria-hidden="true"
-        style={`background-color: ${badgeBgSolid}; color: var(--primary-foreground);`}
       >
         <span class="event-card-featured__badge-icon">
           {categoryIconName === 'BallroomIcon' && <BallroomIcon size={14} weight="fill" aria-hidden="true" />}
@@ -189,7 +177,6 @@ const badgeBgSolid = getEventCategoryColor({
       <div
         class="event-card-featured__date-block"
         aria-hidden="true"
-        style={`background-color: ${categoryColor.text};`}
       >
         <span class="event-card-featured__date-line">{dateLine}</span>
         {timeLine && (
@@ -260,7 +247,9 @@ const badgeBgSolid = getEventCategoryColor({
     left: 0;
     width: 4px;
     height: 100%;
-    background-color: var(--category-color, var(--brand-primary));
+    /* Category-tinted accent. `--event-cat-text` comes from
+     * data-event-category on the root (see css-var-themes.css). */
+    background-color: var(--event-cat-text, var(--brand-primary));
     transition: width var(--duration-normal) ease;
     z-index: 2;
   }
@@ -289,7 +278,11 @@ const badgeBgSolid = getEventCategoryColor({
     overflow: hidden;
   }
 
-  /* Fallback gradient sits behind the real image; always rendered */
+  /* Fallback gradient sits behind the real image; always rendered.
+   * Gradient uses the category bg token at the two opacities the old
+   * inline `${categoryColor.bg}` (0.15) / `${categoryColor.border}` (0.30)
+   * supplied. `--event-cat-bg` is set by data-event-category on root
+   * (see css-var-themes.css). */
   .event-card-featured__image-fallback {
     position: absolute;
     inset: 0;
@@ -297,6 +290,11 @@ const badgeBgSolid = getEventCategoryColor({
     align-items: center;
     justify-content: center;
     z-index: 0;
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--event-cat-bg, var(--brand-primary)) l c h / 0.15),
+      oklch(from var(--event-cat-bg, var(--brand-primary)) l c h / 0.3)
+    );
   }
 
   .event-card-featured__image {
@@ -318,7 +316,7 @@ const badgeBgSolid = getEventCategoryColor({
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--category-color, var(--brand-primary));
+    color: var(--event-cat-text, var(--brand-primary));
     transform: rotate(-12deg) scale(1.2);
   }
 
@@ -353,6 +351,10 @@ const badgeBgSolid = getEventCategoryColor({
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 1;
+    /* Glassy 0.85 opacity over the category bg token. The previous inline
+     * style used getEventCategoryColor({ bgOpacity: 0.85 }).bg directly. */
+    background-color: oklch(from var(--event-cat-bg, var(--brand-primary)) l c h / 0.85);
+    color: var(--primary-foreground);
   }
 
   .event-card-featured__badge-icon {
@@ -379,6 +381,8 @@ const badgeBgSolid = getEventCategoryColor({
     padding: 0.5rem 0.875rem;
     border-radius: 10px;
     z-index: 1;
+    /* Solid date block tinted by the category text token. */
+    background-color: var(--event-cat-text, var(--brand-primary));
     color: var(--primary-foreground);
     min-width: 72px;
     text-align: center;

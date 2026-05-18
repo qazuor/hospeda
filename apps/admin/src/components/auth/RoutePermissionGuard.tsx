@@ -7,6 +7,7 @@
  */
 
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
@@ -36,6 +37,7 @@ export function RoutePermissionGuard({
     const { isLoading } = useAuthContext();
     const userPermissions = useUserPermissions();
     const navigate = useNavigate();
+    const { t } = useTranslations();
     const hasRedirected = useRef(false);
 
     const hasAccess =
@@ -51,19 +53,26 @@ export function RoutePermissionGuard({
         }
     }, [hasAccess, userPermissions, navigate, redirectTo]);
 
-    // While auth is loading, render nothing to prevent hydration mismatch
-    // (SSR renders null because user is null, client must match)
+    // Render a sr-only h1 in all the "not yet allowed" states so the page never
+    // ends up without a heading-1 for axe / screen readers, even during the
+    // auth load window (which previously rendered null and was caught by the
+    // sweep as page-has-heading-one on /events/organizers/$id/edit). The
+    // placeholder string is the same in every branch, so SSR/client output
+    // match and there's no hydration mismatch.
+    const guardPlaceholder = <h1 className="sr-only">{t('admin-common.states.loading')}</h1>;
+
+    // While auth is loading, render the placeholder (was: null).
     if (isLoading) {
-        return null;
+        return guardPlaceholder;
     }
 
-    // While permissions are loading (empty array), show nothing
+    // While permissions are loading (empty array), render the placeholder.
     if (userPermissions.length === 0) {
-        return null;
+        return guardPlaceholder;
     }
 
     if (!hasAccess) {
-        return null;
+        return guardPlaceholder;
     }
 
     return <>{children}</>;

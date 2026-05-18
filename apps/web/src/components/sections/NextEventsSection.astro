@@ -26,7 +26,7 @@ import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
-import { revealDelay } from '@/lib/reveal-stagger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations and build internal URLs. */
@@ -92,7 +92,7 @@ const bottomEvents = remainingEvents.slice(2, 5);
               <EventCardFeatured data={featuredEvent} locale={locale} />
             </div>
             {topEvents.map((event, i) => (
-              <div data-reveal="right" style={`transition-delay: ${revealDelay({ index: i + 1 })}ms`}>
+              <div data-reveal="right" {...revealStagger({ index: i + 1 })}>
                 <EventCardHorizontal data={event} locale={locale} />
               </div>
             ))}
@@ -102,7 +102,7 @@ const bottomEvents = remainingEvents.slice(2, 5);
           {bottomEvents.length > 0 && (
             <div class="events__grid-bottom">
               {bottomEvents.map((event, i) => (
-                <div data-reveal="up" style={`transition-delay: ${revealDelay({ index: i + 3 })}ms`}>
+                <div data-reveal="up" {...revealStagger({ index: i + 3 })}>
                   <EventCardHorizontal data={event} locale={locale} />
                 </div>
               ))}

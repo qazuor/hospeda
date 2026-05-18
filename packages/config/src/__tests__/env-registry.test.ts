@@ -20,15 +20,22 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
- * Updated 2026-05-15 to 189: +1 for a pre-existing drift on staging that was
- * never reconciled (the constant was left at 187 while the registry already
- * had 188 entries) and +1 for `HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR`
- * added in SPEC-109. Previous value 187 (2026-05-12) covered the SPEC-101
- * (Newsletter MVP) additions. When adding or removing variables, bump this
- * constant in the same commit and regenerate the snapshot below
+ * Updated 2026-05-17 to 195: net +6 vs the previous 189. Breakdown:
+ *  - +4 for SPEC-140 PostHog client vars (PUBLIC_POSTHOG_KEY, PUBLIC_POSTHOG_HOST
+ *    in `env-registry.client.ts` CLIENT_WEB_ENV_VARS and VITE_POSTHOG_KEY,
+ *    VITE_POSTHOG_HOST in CLIENT_ADMIN_ENV_VARS).
+ *  - +3 for pre-existing drift in monitoring/features categories (constants
+ *    were not bumped when those vars were added on staging).
+ *  - -1 for removing a duplicate registration of PUBLIC_ENABLE_LOGGING that
+ *    existed in BOTH `env-registry.client.ts` (category 'client-web', kept)
+ *    AND `env-registry.hospeda.ts` (category 'debugging', removed in
+ *    SPEC-140 cleanup since PUBLIC_* vars belong in the client registry).
+ * Previous value 189 (2026-05-15) covered SPEC-109. Previous 187 (2026-05-12)
+ * covered SPEC-101 (Newsletter MVP). When adding or removing variables, bump
+ * this constant in the same commit and regenerate the snapshot below
  * (`vitest -u`).
  */
-const EXPECTED_VAR_COUNT = 189;
+const EXPECTED_VAR_COUNT = 195;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -362,12 +369,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 23 VITE_* admin variables', () => {
+        it('should contain all 25 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(23);
+            expect(viteVars.length).toBe(25);
         });
     });
 

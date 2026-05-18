@@ -16,7 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { AnimatedCounter } from '@/components/sections/AnimatedCounter.client';
 import type { StatItemData } from '@/data/types';
-import { revealDelay } from '@/lib/reveal-stagger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations. */
@@ -67,7 +67,7 @@ const t = createT(locale);
         <div
           class="stats-section__card"
           data-reveal="up"
-          style={`transition-delay: ${revealDelay({ index: i })}ms`}
+          {...revealStagger({ index: i })}
         >
           <AnimatedCounter
             client:visible

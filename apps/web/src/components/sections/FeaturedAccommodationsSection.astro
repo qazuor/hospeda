@@ -24,7 +24,7 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
-import { revealDelay } from '@/lib/reveal-stagger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations and build internal URLs. */
@@ -99,7 +99,7 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
       <>
         <div class="grid-cards accommodations__grid">
           {items.map((accommodation, i) => (
-            <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${revealDelay({ index: i })}ms`}>
+            <div data-reveal="up" class="accommodations__card-wrapper" {...revealStagger({ index: i })}>
               <AccommodationCard data={accommodation} locale={locale} />
             </div>
           ))}

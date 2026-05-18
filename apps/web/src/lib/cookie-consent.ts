@@ -15,6 +15,16 @@
 /** Cookie name used to persist consent state. */
 export const CONSENT_COOKIE_NAME = 'cookie-consent' as const;
 
+/**
+ * Window event dispatched after every {@link saveConsent} call so listeners
+ * (e.g. the PostHog initializer) can react to consent changes without a
+ * full page reload. The event's `detail` is the new {@link ConsentState}.
+ *
+ * Sibling to the existing `cookie-consent:reopen` event which is fired by
+ * the footer "Cookie preferences" button to reopen the banner.
+ */
+export const CONSENT_CHANGED_EVENT = 'cookie-consent:changed' as const;
+
 /** Schema version — bump when adding new categories. */
 export const CONSENT_VERSION = 1 as const;
 
@@ -100,6 +110,15 @@ export function saveConsent({
         'Path=/',
         'SameSite=Lax'
     ].join('; ');
+
+    // Notify any listener (PostHog initializer, future analytics SDKs)
+    // that consent has been updated so they can switch persistence mode
+    // mid-session without a full page reload.
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+            new CustomEvent<ConsentState>(CONSENT_CHANGED_EVENT, { detail: state })
+        );
+    }
 
     return state;
 }

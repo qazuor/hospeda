@@ -20,9 +20,10 @@ import {
     useUpdatePlanMutation
 } from '@/features/billing-plans';
 import { useTranslations } from '@/hooks/use-translations';
+import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import { ALL_PLANS } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/plans')({
     component: BillingPlansPage
@@ -52,6 +53,21 @@ function BillingPlansPage() {
     const deleteMutation = useDeletePlanMutation();
     const createMutation = useCreatePlanMutation();
     const updateMutation = useUpdatePlanMutation();
+
+    // Report query errors to Sentry once per occurrence (the transform layer
+    // also reports its own ApiError, but plain network/HTTP errors only land
+    // here).
+    useEffect(() => {
+        if (error) {
+            reportError({
+                error,
+                source: 'BillingPlansPage',
+                tags: { feature: 'billing', surface: 'plans-list' }
+            });
+        }
+    }, [error]);
+
+    const friendlyError = error ? getFriendlyErrorInfo(error) : null;
 
     // Use API data if available, otherwise fall back to static config
     const hasApiData = Array.isArray(data?.items) && data.items.length > 0;
@@ -131,9 +147,9 @@ function BillingPlansPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.plans.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.plans.description')}
                         </p>
@@ -142,10 +158,12 @@ function BillingPlansPage() {
                     <Card>
                         <CardContent className="py-8">
                             <div className="text-center">
-                                <p className="text-muted-foreground">
-                                    {t('admin-billing.plans.apiLoadError')}
+                                <p className="font-medium text-destructive">
+                                    {friendlyError?.title ?? t('admin-billing.plans.apiLoadError')}
                                 </p>
-                                <p className="mt-2 text-destructive text-sm">{error.message}</p>
+                                <p className="mt-1 text-destructive text-sm">
+                                    {friendlyError?.description ?? ''}
+                                </p>
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.plans.staticFallback')}
                                 </p>
@@ -184,9 +202,9 @@ function BillingPlansPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.plans.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.plans.description')}
                         </p>
@@ -262,6 +280,7 @@ function PlansTable({
             <div className="flex items-center justify-between gap-4">
                 <div className="flex gap-2">
                     <select
+                        aria-label={t('admin-billing.plans.allCategories')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={categoryFilter}
                         onChange={(e) => onCategoryFilterChange(e.target.value as PlanCategory)}

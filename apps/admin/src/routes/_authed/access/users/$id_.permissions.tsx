@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { AlertCircleIcon, InfoIcon, LoaderIcon, ShieldIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -18,46 +19,6 @@ import { createFileRoute } from '@tanstack/react-router';
 export const Route = createFileRoute('/_authed/access/users/$id_/permissions')({
     component: UserPermissionsPage
 });
-
-// Role descriptions for context
-const ROLE_INFO: Record<RoleEnum, { label: string; description: string }> = {
-    [RoleEnum.SUPER_ADMIN]: {
-        label: 'Super Admin',
-        description: 'Full system access with all permissions'
-    },
-    [RoleEnum.ADMIN]: {
-        label: 'Admin',
-        description: 'Manages platform content and users'
-    },
-    [RoleEnum.CLIENT_MANAGER]: {
-        label: 'Client Manager',
-        description: 'Manages client accounts, billing and subscriptions'
-    },
-    [RoleEnum.EDITOR]: {
-        label: 'Editor',
-        description: 'Creates and edits events and posts'
-    },
-    [RoleEnum.HOST]: {
-        label: 'Host',
-        description: 'Manages their own accommodation listings'
-    },
-    [RoleEnum.USER]: {
-        label: 'User',
-        description: 'Registered user of the public portal'
-    },
-    [RoleEnum.SPONSOR]: {
-        label: 'Sponsor',
-        description: 'External business sponsor with limited dashboard access'
-    },
-    [RoleEnum.GUEST]: {
-        label: 'Guest',
-        description: 'Public visitor, not logged in'
-    },
-    [RoleEnum.SYSTEM]: {
-        label: 'System',
-        description: 'Reserved non-loginable account for automated operations'
-    }
-};
 
 function UserPermissionsPage() {
     const { t } = useTranslations();
@@ -113,9 +74,13 @@ function UserPermissionsPage() {
         );
     }
 
-    // Get role info
+    // Get role info from the same i18n catalog used by /access/roles, so
+    // role labels stay consistent and locale-aware across the admin.
     const userRole = (user.role || RoleEnum.USER) as RoleEnum;
-    const roleInfo = ROLE_INFO[userRole];
+    const roleInfo = {
+        label: t(`admin-pages.access.roles.catalog.${userRole}.name` as TranslationKey),
+        description: t(`admin-pages.access.roles.catalog.${userRole}.description` as TranslationKey)
+    };
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.usersView">

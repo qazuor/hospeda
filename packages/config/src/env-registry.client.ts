@@ -145,6 +145,42 @@ export const CLIENT_WEB_ENV_VARS = [
             'Mirror of HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (server-side, for the welcome email). WhatsApp → Channels → your channel → Channel link → copy the public invite URL. Leave unset to hide the CTA entirely.',
         howToObtainEs:
             'Mirror del valor server-side HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (que usa el email de bienvenida). WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA.'
+    },
+    {
+        name: 'PUBLIC_POSTHOG_KEY',
+        description:
+            'PostHog Cloud project API key for the web app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
+        descriptionEs:
+            'API key del proyecto PostHog Cloud para la app web (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        apps: ['web'],
+        category: 'client-web',
+        helpUrl: 'https://us.posthog.com',
+        howToObtain:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-web-prod` (or `hospeda-web-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Marked secret for log hygiene even though PostHog treats project keys as public ingestion keys (they ship to every browser).',
+        howToObtainEs:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-web-prod` (o `hospeda-web-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". Marcada como secret por higiene de logs aunque PostHog las trata como keys públicas de ingestión (viajan a todos los browsers).'
+    },
+    {
+        name: 'PUBLIC_POSTHOG_HOST',
+        description:
+            'PostHog ingestion endpoint for the web app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
+        descriptionEs:
+            'Endpoint de ingestión de PostHog para la app web. Default región US Cloud. Override para EU Cloud o self-hosted.',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://us.i.posthog.com',
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Leave unset to use the default.',
+        howToObtainEs:
+            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. Dejalo sin setear para usar el default.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
@@ -515,5 +551,41 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'Default true — colored console output. Set false when piping logs to files/CI to avoid ANSI escape garbage.',
         howToObtainEs:
             'Por defecto true; salida coloreada en la consola. Poné false cuando mandás logs a archivos o CI para evitar caracteres de escape ANSI feos.'
+    },
+    {
+        name: 'VITE_POSTHOG_KEY',
+        description:
+            'PostHog Cloud project API key for the admin app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
+        descriptionEs:
+            'API key del proyecto PostHog Cloud para la app admin (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        apps: ['admin'],
+        category: 'client-admin',
+        helpUrl: 'https://us.posthog.com',
+        howToObtain:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-admin-prod` (or `hospeda-admin-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
+        howToObtainEs:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-admin-prod` (o `hospeda-admin-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
+    },
+    {
+        name: 'VITE_POSTHOG_HOST',
+        description:
+            'PostHog ingestion endpoint for the admin app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
+        descriptionEs:
+            'Endpoint de ingestión de PostHog para la app admin. Default región US Cloud. Override para EU Cloud o self-hosted.',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://us.i.posthog.com',
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['admin'],
+        category: 'client-admin',
+        howToObtain:
+            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
+        howToObtainEs:
+            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

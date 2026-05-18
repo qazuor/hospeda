@@ -114,7 +114,7 @@ export function DiscountItem({
                     </div>
                 )}
             </div>
-            <p className="font-semibold text-green-600 text-sm dark:text-green-400">
+            <p className="font-semibold text-green-700 text-sm dark:text-green-300">
                 {discount.price == null
                     ? '—'
                     : discount.isPercent

@@ -25,7 +25,7 @@ function CronJobsPage() {
                         <ClockIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.cron.title')}</h2>
+                        <h1 className="mb-2 font-bold text-2xl">{t('admin-billing.cron.title')}</h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.cron.description')}
                         </p>
