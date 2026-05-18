@@ -472,7 +472,7 @@
         "heading": "Agregá una contraseña",
         "contextGoogle": "Te registraste con Google. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
         "contextFacebook": "Te registraste con Facebook. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
-        "contextOAuth": "Te registraste con una cuenta social. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
+        "contextOAuth": "Agregá una contraseña a tu cuenta para poder iniciar sesión también con email y contraseña.",
         "fields": {
             "password": "Contraseña",
             "passwordPlaceholder": "Mínimo 8 caracteres",

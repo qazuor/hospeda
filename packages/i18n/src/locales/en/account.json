@@ -472,7 +472,7 @@
         "heading": "Add a password",
         "contextGoogle": "You signed up with Google. If you want, you can add a password to also sign in with email.",
         "contextFacebook": "You signed up with Facebook. If you want, you can add a password to also sign in with email.",
-        "contextOAuth": "You signed up with a social account. If you want, you can add a password to also sign in with email.",
+        "contextOAuth": "Add a password to your account so you can also sign in with email and password.",
         "fields": {
             "password": "Password",
             "passwordPlaceholder": "Minimum 8 characters",

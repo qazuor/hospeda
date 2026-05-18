@@ -470,9 +470,9 @@
         "pageTitle": "Adicionar senha",
         "pageDescription": "Adicione uma senha para entrar com email",
         "heading": "Adicione uma senha",
-        "contextGoogle": "Voce se cadastrou com o Google. Se quiser, pode adicionar uma senha para também entrar com email.",
-        "contextFacebook": "Voce se cadastrou com o Facebook. Se quiser, pode adicionar uma senha para também entrar com email.",
-        "contextOAuth": "Voce se cadastrou com uma conta social. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextGoogle": "Você se cadastrou com o Google. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextFacebook": "Você se cadastrou com o Facebook. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextOAuth": "Adicione uma senha à sua conta para também entrar com email e senha.",
         "fields": {
             "password": "Senha",
             "passwordPlaceholder": "Mínimo 8 caracteres",
