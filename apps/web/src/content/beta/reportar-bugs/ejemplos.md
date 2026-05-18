@@ -65,7 +65,7 @@ Descripción:
 - "Está feo" → ¿qué? ¿en qué dispositivo? ¿captura?
 - "El sitio es lento" → ¿qué página? ¿cuánto tarda? ¿desde dónde te conectás?
 
-No te vamos a putear si reportás así. Pero si podés mejorarlo, mejor.
+Igual nos sirve si reportás así. Pero si podés mejorarlo, mejor.
 
 ## Si te confunde algo, igual reportalo
 
