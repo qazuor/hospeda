@@ -728,9 +728,7 @@
 
 /* If the browser doesn't support backdrop-filter, bump the alpha so the
  * background stays readable on busy content. */
-@supports not (
-    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .frosted-light {
         background-color: oklch(from var(--core-card) l c h / 0.95);
     }

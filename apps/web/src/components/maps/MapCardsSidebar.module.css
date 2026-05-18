@@ -145,7 +145,7 @@
 }
 
 .cardStatusCorner::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -448,11 +448,7 @@
     font-size: 12px;
     line-height: 19.2px;
     color: var(--core-foreground);
-    background: linear-gradient(
-        135deg,
-        var(--brand-secondary) 0%,
-        var(--core-background) 100%
-    );
+    background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
     white-space: nowrap;
     flex-shrink: 0;
     transition: opacity 200ms ease-out;
