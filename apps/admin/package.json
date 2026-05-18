@@ -78,6 +78,7 @@
         "dompurify": "^3.3.1",
         "leaflet": "^1.9.4",
         "p-limit": "^7.3.0",
+        "posthog-js": "^1.374.2",
         "react": "19.1.1",
         "react-dom": "19.1.1",
         "react-leaflet": "^4.2.1",
