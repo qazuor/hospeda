@@ -57,7 +57,12 @@ import { E2EApiClient } from '../../helpers/api-client.js';
 import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
 import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
-import { createTestUser, seedBillingTestPlans } from '../../setup/seed-helpers.js';
+import {
+    createTestPlan,
+    createTestPrice,
+    createTestUser,
+    seedBillingTestPlans
+} from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 
 // Construct the stub once per test file and wire it into the ref that the
@@ -66,7 +71,7 @@ import { testDb } from '../../setup/test-database.js';
 const mpStub = createMpStubAdapter();
 stubRef.current = mpStub.adapter;
 
-describe('SPEC-143 T-143-09 — annual checkout (happy path)', () => {
+describe('SPEC-143 T-143-09 — annual checkout', () => {
     let app: ReturnType<typeof initApp>;
     let client: E2EApiClient;
     let cheapPlanName: string;
@@ -173,5 +178,131 @@ describe('SPEC-143 T-143-09 — annual checkout (happy path)', () => {
         const calls = mpStub.config.getCalls('checkout.create');
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('success');
+    });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    // -----------------------------------------------------------------------
+
+    it('returns 404 when the plan slug does not match any existing plan', async () => {
+        // No stub configuration: the service fails at plan lookup, before any
+        // adapter call. If checkout.create were ever invoked, the loud
+        // unconfigured-error from the stub would fail the test.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: 'Non Existent Plan Name',
+            billingInterval: 'annual'
+        });
+
+        expect(response.status).toBe(404);
+
+        // No DB side effects: no subscription, no checkout row.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(0);
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+
+        // Adapter was never called.
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('returns 404 when the plan exists but has no active annual price', async () => {
+        // Create a plan with ONLY a monthly price. The seedBillingTestPlans
+        // baseline plans always have both intervals, so we need an ad-hoc plan
+        // to exercise this branch.
+        const monthlyOnly = await createTestPlan({
+            name: 'Monthly Only Plan',
+            metadata: { slug: 'monthly-only', category: 'test-error-path' }
+        });
+        await createTestPrice({
+            planId: monthlyOnly.planId,
+            unitAmount: 100_000,
+            billingInterval: 'month'
+        });
+        // Deliberately NO annual price.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: monthlyOnly.name,
+            billingInterval: 'annual'
+        });
+
+        expect(response.status).toBe(404);
+
+        // No DB side effects.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(0);
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+
+        // Adapter was never called.
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('returns 500 when the adapter response carries no checkout URL', async () => {
+        // qzpay-core only sets `providerInitPoint` when `providerResult.url` is
+        // truthy. An empty string is falsy, so the handler hits the
+        // MISSING_INIT_POINT branch and surfaces 500.
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_no_url',
+                url: ''
+            })
+        );
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'annual'
+        });
+
+        expect(response.status).toBe(500);
+
+        // qzpay-core invoked the adapter, but the response was insufficient.
+        const calls = mpStub.config.getCalls('checkout.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('success');
+
+        // The pending_provider subscription row is created BEFORE the adapter
+        // call (Decision 1A in qzpay-core: "no orphans"). The abandoned-pending-
+        // subs cron picks it up after TTL — no manual rollback. Validate that
+        // contract here.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('pending_provider');
+    });
+
+    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
+        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
+        // (the qzpay default). When the adapter throws, qzpay logs a warning
+        // and returns the un-enriched local session (no providerInitPoint).
+        // The hospeda handler then surfaces MISSING_INIT_POINT as 500.
+        //
+        // This validates the qzpay log-strategy branch end-to-end, distinct
+        // from the previous test which exercised the success-with-missing-url
+        // path. Both reach the same 500 but via different qzpay internals.
+        mpStub.config.setError(
+            'checkout.create',
+            429,
+            'MercadoPago rate limit exceeded',
+            'RATE_LIMITED'
+        );
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'annual'
+        });
+
+        expect(response.status).toBe(500);
+
+        // Adapter was called and threw — outcome recorded as 'error'.
+        const calls = mpStub.config.getCalls('checkout.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('error');
+
+        // Subscription row remains in pending_provider despite the provider
+        // failure (the abandoned-pending-subs cron reaper handles it later).
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('pending_provider');
     });
 });
