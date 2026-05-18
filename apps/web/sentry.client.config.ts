@@ -8,13 +8,15 @@ const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
 const environment =
     import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development';
 
-// Only initialize Sentry when the user has consented to analytics cookies.
-// If no consent cookie exists (first visit), Sentry stays silent until the
-// user accepts and the page reloads or the next navigation picks up the cookie.
+// Only initialize Sentry when the user has consented to crash reporting.
+// Crash reporting is its own consent category (separate from analytics) so
+// users who opt out of behavioural tracking can still opt in to error
+// reporting that helps us fix bugs that affect them. If no consent cookie
+// exists (first visit), Sentry stays silent until the user opts in.
 const consent = getConsent();
-const analyticsAllowed = consent?.analytics === true;
+const crashReportingAllowed = consent?.crashReporting === true;
 
-if (dsn && analyticsAllowed) {
+if (dsn && crashReportingAllowed) {
     Sentry.init({
         dsn,
         environment,
