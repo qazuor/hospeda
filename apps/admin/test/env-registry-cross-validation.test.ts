@@ -39,7 +39,12 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     'VITE_LOG_LEVEL',
     'VITE_LOG_INCLUDE_TIMESTAMPS',
     'VITE_LOG_INCLUDE_LEVEL',
-    'VITE_LOG_USE_COLORS'
+    'VITE_LOG_USE_COLORS',
+
+    // Build-time only — consumed by @sentry/vite-plugin during the admin
+    // build to upload source maps. Not read by the runtime, so it is
+    // deliberately absent from AdminEnvSchema.
+    'SENTRY_AUTH_TOKEN'
 ]);
 
 /**
