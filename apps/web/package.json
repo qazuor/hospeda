@@ -30,7 +30,7 @@
         "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
-        "@sentry/astro": "^10.40.0",
+        "@sentry/astro": "^10.53.1",
         "astro": "^6.3.3",
         "better-auth": "^1.4.18",
         "clsx": "^2.1.1",
