@@ -1239,15 +1239,18 @@
         },
         {
             "specId": "SPEC-141",
-            "title": "Admin design-token contrast remediation",
+            "title": "Subscription post-launch follow-ups (annual + plan changes)",
             "type": "feature",
-            "complexity": "medium",
-            "status": "draft",
-            "path": "SPEC-141-admin-design-token-contrast",
-            "created": "2026-05-16T13:00:00Z",
-            "extractedFrom": "SPEC-136 post-fix axe verification",
-            "parent": "SPEC-134",
-            "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
+            "complexity": "high",
+            "status": "completed",
+            "archived": true,
+            "completedAt": "2026-05-17T23:15:41Z",
+            "completionRef": "PR #1139 (merge commit 7c27b995aab467a35f91c7311bd1d0b5995500ab)",
+            "path": "SPEC-141-subscription-post-launch-followups",
+            "created": "2026-05-15T00:00:00Z",
+            "scope": "D1 annual checkout + D4 annual payment idempotency + D7 plan-change upgrade (delta-charge) + D7 plan-change downgrade (scheduled apply-on-period-end)",
+            "backfillNote": "Entry backfilled 2026-05-17 after PR merge. Spec was worked in parallel to SPEC-141-admin-design-token-contrast which had already been registered with the same number. Collision resolved 2026-05-17T23:50:00Z by renumbering the design-token draft to SPEC-144; this entry now owns the SPEC-141 slot per engram registry source of truth.",
+            "tags": ["billing", "subscriptions", "mercadopago", "annual", "plan-change", "cron"]
         },
         {
             "specId": "SPEC-142",
@@ -1260,6 +1263,21 @@
             "extractedFrom": "SPEC-046 closure: T-015 deferral + T-014 follow-up findings (Logo blind spot lesson, /es/ home CSP header miss, Sentry env config, eval probe noise)",
             "dependsOn": ["SPEC-046"],
             "tags": ["security", "csp", "web", "billing", "phase-2", "auth-flows", "mercadopago"]
+        },
+        {
+            "specId": "SPEC-144",
+            "title": "Admin design-token contrast remediation",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-144-admin-design-token-contrast",
+            "created": "2026-05-16T13:00:00Z",
+            "renumberedFrom": "SPEC-141",
+            "renumberedAt": "2026-05-17T23:50:00Z",
+            "renumberedReason": "Collision with SPEC-141 subscription post-launch follow-ups (merged via PR #1139). Engram registry resolved in favor of the merged subscription work; this draft (no work started) renumbered to next free slot SPEC-144 (SPEC-143 already reserved for billing-testing-coverage).",
+            "extractedFrom": "SPEC-136 post-fix axe verification",
+            "parent": "SPEC-134",
+            "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
         }
     ]
 }

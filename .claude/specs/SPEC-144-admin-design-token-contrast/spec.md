@@ -1,10 +1,13 @@
 ---
-spec-id: SPEC-141
+spec-id: SPEC-144
 title: Admin design-token contrast remediation (badges, muted text, destructive on muted bg)
 type: feature
 complexity: medium
 status: draft
 created: 2026-05-16T13:00:00Z
+renumberedFrom: SPEC-141
+renumberedAt: 2026-05-17T23:50:00Z
+renumberedReason: Collision with SPEC-141 subscription post-launch follow-ups (merged via PR #1139, commit 7c27b995a) — engram registry resolved in favor of the merged work; this draft renumbered to SPEC-144 (next free after SPEC-143 billing-testing-coverage reservation).
 effort_estimate_hours: 4-8
 tags: [admin, accessibility, wcag, design-tokens, tailwind]
 parent: SPEC-134
@@ -13,7 +16,7 @@ priority: medium
 findings_addressed: [color-contrast-residual]
 ---
 
-# SPEC-141: Admin design-token contrast remediation
+# SPEC-144: Admin design-token contrast remediation
 
 ## 1. Overview
 
