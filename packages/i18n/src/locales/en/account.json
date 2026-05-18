@@ -207,6 +207,7 @@
             "removeFromCollection": "Remove from collection",
             "removing": "Removing...",
             "removeError": "Error removing favorite from collection",
+            "removeConfirm": "Remove this favorite from the collection? It will stay in your saved items.",
             "fetchError": "Could not load the collection. Please try again later.",
             "prevPage": "Previous page",
             "nextPage": "Next page",

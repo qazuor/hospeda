@@ -207,6 +207,7 @@
             "removeFromCollection": "Quitar de colección",
             "removing": "Quitando...",
             "removeError": "Error al quitar el favorito de la colección",
+            "removeConfirm": "¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.",
             "fetchError": "No se pudo cargar la colección. Intentá de nuevo más tarde.",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
