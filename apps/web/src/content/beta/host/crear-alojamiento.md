@@ -1,6 +1,6 @@
 ---
 title: Crear tu primer alojamiento
-description: Flujo de creación — mini-form rápido en el sitio público + wizard completo en el panel.
+description: Proceso de creación — mini-form rápido en el sitio público + asistente guiado (wizard) completo en el panel.
 order: 2
 role: host
 section: Empezar como host
@@ -8,10 +8,10 @@ section: Empezar como host
 
 # Crear tu primer alojamiento
 
-El flujo está partido en **dos etapas**:
+El proceso está partido en **dos etapas**:
 
 1. **Mini-form en el sitio público** — apenas 4 campos para crear la propiedad inicial.
-2. **Wizard completo en el panel de administración** — donde completás todos los detalles (ubicación, fotos, precios, etc.).
+2. **Asistente guiado (wizard) completo en el panel de administración** — donde completás todos los detalles (ubicación, fotos, precios, etc.).
 
 Después del paso 1, **el sitio te redirige automáticamente al panel** para que sigas. Es importante que sepas esto: vas a salir de `staging.hospeda.com.ar` y aterrizar en el subdominio del panel admin durante el proceso.
 
@@ -45,9 +45,9 @@ El select tiene exactamente estas 10 opciones:
 
 > Si ves opciones distintas a estas (ej. "Rural", "Boutique"), reportalo.
 
-## Etapa 2 — Wizard completo en el panel admin
+## Etapa 2 — Asistente guiado completo en el panel admin
 
-Una vez en el panel, llegás a la edición de tu propiedad con un wizard partido en **8 secciones**. Las podés ir guardando con **"Guardar borrador"** y volver cuando quieras.
+Una vez en el panel, llegás a la edición de tu propiedad con un asistente guiado partido en **8 secciones**. Las podés ir guardando con **"Guardar borrador"** y volver cuando quieras.
 
 ### 1. Datos básicos
 
@@ -77,7 +77,7 @@ Una vez en el panel, llegás a la edición de tu propiedad con un wizard partido
 
 ### 4. Comodidades
 
-Lista grande de checkboxes (con label **"Comodidades"** — no "Amenidades"): WiFi, Aire acondicionado, Calefacción, Cocina completa, Heladera con freezer, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín privado, Detector de humo, Botiquín de primeros auxilios, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Estacionamiento cubierto, Balcón, Terraza, Plancha, Secador de pelo, Caja fuerte, Ventilador, Cortinas blackout, Cuna, Accesible para silla de ruedas, Se aceptan mascotas.
+Lista grande de casillas de verificación (con label **"Comodidades"** — no "Amenidades"): WiFi, Aire acondicionado, Calefacción, Cocina completa, Heladera con freezer, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín privado, Detector de humo, Botiquín de primeros auxilios, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Estacionamiento cubierto, Balcón, Terraza, Plancha, Secador de pelo, Caja fuerte, Ventilador, Cortinas blackout, Cuna, Accesible para silla de ruedas, Se aceptan mascotas.
 
 Probá marcar/desmarcar varias. Si hay un campo de búsqueda dentro de la lista, usalo.
 
@@ -114,7 +114,7 @@ Probá:
 - Pantalla de revisión final.
 - Si te faltan campos obligatorios, ves **"Faltan datos obligatorios"** con la lista de qué completar.
 - Cuando todo esté listo, apretá **"Publicar"**.
-- Toast: **"¡Tu propiedad fue publicada!"**.
+- Notificación flotante (toast): **"¡Tu propiedad fue publicada!"**.
 - Andá al sitio público (en otra pestaña) y buscá tu alojamiento por nombre. ¿Aparece?
 
 ## Qué reportar
@@ -124,7 +124,7 @@ Probá:
 > - Si el mini-form del sitio público falla al apretar Publicar
 > - Si el redirect al panel admin se rompe (página en blanco, error, no llegás)
 > - Si al volver al sitio público para comparar, los datos no se ven igual a los que cargaste en el admin
-> - Si en algún paso del wizard el botón "Siguiente" / "Guardar" no funciona
+> - Si en algún paso del asistente guiado el botón "Siguiente" / "Guardar" no funciona
 > - Si refrescaste la página y se perdieron datos
 > - Si una foto no se subió (anotá tamaño y formato del archivo)
 > - Si publicaste pero no aparece en el sitio público después de 1 minuto
@@ -132,4 +132,4 @@ Probá:
 
 ## Próximo paso
 
-Andá a **[Tu dashboard de host](/beta/host/dashboard/)** para revisar lo que creaste y editarlo.
+Andá a **[Tu panel de control (dashboard) de propietario o anfitrión (host)](/beta/host/dashboard/)** para revisar lo que creaste y editarlo.

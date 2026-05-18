@@ -1,6 +1,6 @@
 ---
 title: Cómo intentar romper el sistema
-description: Convertite en detective de bugs — 9 maneras de encontrar lo raro.
+description: Convertite en detective de errores (bugs) — 9 maneras de encontrar lo raro.
 order: 3
 role: reportar-bugs
 section: Reportar bugs
@@ -8,7 +8,7 @@ section: Reportar bugs
 
 # Cómo intentar romper el sistema
 
-OK, esta sección es divertida. **Convertite en detective de bugs.**
+OK, esta sección es divertida. **Convertite en detective de errores (bugs).**
 
 Ahora que ya probaste el uso "normal" del sitio, queremos que te metas en cosas raras. Imaginá que sos un usuario distraído, apurado, malicioso, o que tiene mala conexión.
 
@@ -58,12 +58,12 @@ Probá poner en cualquier campo (nombre, email, descripción, etc.):
 
 ## 7. El usuario sin permisos
 
-- Logueate como turista, copiá una URL de admin, pegala en tu navegador. ¿Te frena? ¿Te dice "no podés"?
-- Cerrá sesión y entrá a una URL que requiere login (ej. "Mi cuenta"). ¿Te lleva al login?
+- Logueate como turista, copiá una dirección web (URL) de admin, pegala en tu navegador. ¿Te frena? ¿Te dice "no podés"?
+- Cerrá sesión y entrá a una dirección web que requiere iniciar sesión (login) (ej. "Mi cuenta"). ¿Te lleva al iniciar sesión?
 
 ## 8. El usuario que clickea cosas raras
 
-- **Encontrá todos los botones / links rotos** que puedas. Si un botón no hace nada, eso es un bug.
+- **Encontrá todos los botones / enlaces (link) rotos** que puedas. Si un botón no hace nada, eso es un error.
 - **Buscá tipografías cortadas, imágenes que no cargan, iconos faltantes.**
 - **Encontrá errores de ortografía.** Aunque sea uno.
 

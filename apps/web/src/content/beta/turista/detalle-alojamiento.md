@@ -12,15 +12,15 @@ Hacé clic en cualquier alojamiento del catálogo. Te lleva a la página de deta
 
 ## Qué hay que mirar
 
-- **La galería de fotos.** Hay un botón **"Ver todas las fotos"** que abre una vista ampliada. En esa vista, pasá entre fotos con flechas (en compu) o swipe (en mobile).
+- **La galería de fotos.** Hay un botón **"Ver todas las fotos"** que abre una vista ampliada. En esa vista, pasá entre fotos con flechas (en computadora) o swipe (en celular).
 - **La descripción.** ¿Se entiende? ¿Está bien escrita?
 - **El precio.** Aparece con el formato "Desde $X /noche". Si dice **"Consultar"**, ese alojamiento no tiene precio cargado.
 - **El mapa de ubicación.** Marca una **ubicación aproximada** (no la exacta — eso lo aclara un cartelito abajo del mapa). Probá zoom y mover el mapa.
-- **Las comodidades** (WiFi, Pileta, Estacionamiento, etc.). Si hay muchas, hay un link **"Ver todas las N comodidades"**.
-- **Las reseñas.** Si hay, vas a ver un puntaje y categorías (Limpieza, Hospitalidad, Servicios, Precisión, Comunicación, Ubicación). Hay un link **"Ver las N opiniones"** para abrir el modal completo.
+- **Las comodidades** (WiFi, Pileta, Estacionamiento, etc.). Si hay muchas, hay un enlace (link) **"Ver todas las N comodidades"**.
+- **Las reseñas.** Si hay, vas a ver un puntaje y categorías (Limpieza, Hospitalidad, Servicios, Precisión, Comunicación, Ubicación). Hay un enlace **"Ver las N opiniones"** para abrir la ventana emergente completa.
 - **El botón de favorito** (icono de corazón). Apretalo: se llena. Volvé a apretarlo: se vacía. Si no estás logueado, te pide que inicies sesión primero.
-- **Los datos del propietario** (al pie de la página): nombre del anfitrión y fecha desde la que es miembro ("Miembro desde..."). Si el host cargó sus datos públicos vas a ver botones **"Enviar email"**, **"Llamar"** y/o **"Visitar sitio web"**. Si no cargó, dice **"Información de contacto no disponible"**.
-- **El formulario de mensaje al host** está en una sección aparte de la página. Eso lo probás en [Contactar al host](/beta/turista/contactar-host/).
+- **Los datos del propietario** (al pie de la página): nombre del anfitrión y fecha desde la que es miembro ("Miembro desde..."). Si el propietario o anfitrión (host) cargó sus datos públicos vas a ver botones **"Enviar email"**, **"Llamar"** y/o **"Visitar sitio web"**. Si no cargó, dice **"Información de contacto no disponible"**.
+- **El formulario de mensaje al propietario** está en una sección aparte de la página. Eso lo probás en [Contactar al propietario](/beta/turista/contactar-host/).
 
 ## Qué reportar
 

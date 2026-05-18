@@ -1,6 +1,6 @@
 ---
 title: Contactar al propietario (mensajería)
-description: Cómo enviar mensajes al host desde la página del alojamiento — como invitado y como usuario logueado.
+description: Cómo enviar mensajes al propietario o anfitrión (host) desde la página del alojamiento — como invitado y como usuario logueado.
 order: 4
 role: turista
 section: Explorar el sitio
@@ -8,7 +8,7 @@ section: Explorar el sitio
 
 # Contactar al propietario
 
-En la página de detalle de cada alojamiento hay una sección con un **formulario de mensaje al host**. El sistema tiene 3 modos según tu estado de sesión:
+En la página de detalle de cada alojamiento hay una sección con un **formulario de mensaje al propietario o anfitrión (host)**. El sistema tiene 3 modos según tu estado de sesión:
 
 ## Modo A — Sin tener cuenta (mensajería para invitados)
 
@@ -16,20 +16,20 @@ En la página de detalle de cada alojamiento hay una sección con un **formulari
 2. Entrá a cualquier alojamiento.
 3. Bajá hasta el formulario de contacto. Vas a ver campos:
    - **Nombre** ("Tu nombre completo")
-   - **Email** (placeholder: `tu@email.com`)
+   - **Email** (texto de ejemplo: `tu@email.com`)
    - **Teléfono (opcional)** ("+54 11 1234-5678")
    - **Mensaje** ("Escribí tu consulta aquí...") — máximo 5000 caracteres
 4. Completá los campos y apretá **"Enviar mensaje"**.
 5. Vas a ver una confirmación: **"Te enviamos un email de verificación. Revisá tu casilla."**
 6. Andá a tu email. Buscá el asunto **"Verificá tu email para continuar la conversación — Hospeda"**.
-7. Apretá el link del email. Te abre la **conversación con el host sin necesidad de logueo**.
+7. Apretá el enlace (link) del email. Te abre la **conversación con el propietario sin necesidad de logueo**.
 8. Probá responder un mensaje desde ahí.
 
 > 📋 **Reportá:**
 >
 > - ¿El email de verificación llegó? ¿Cuánto tardó?
 > - ¿Llegó a Spam?
-> - ¿El link del email te abrió la conversación bien?
+> - ¿El enlace del email te abrió la conversación bien?
 > - ¿Pudiste mandar y recibir mensajes?
 > - Si volvés a entrar al mismo alojamiento desde el navegador (sin email-link), ¿qué te muestra? ¿Pide email otra vez?
 
@@ -42,10 +42,10 @@ En la página de detalle de cada alojamiento hay una sección con un **formulari
 
 ## Modo C — Logueado, con conversación existente
 
-Si ya hablaste con el host de ese alojamiento antes:
+Si ya hablaste con el propietario de ese alojamiento antes:
 
 1. Entrá al mismo alojamiento.
-2. En lugar del formulario vas a ver un link **"Ver conversación existente"**.
+2. En lugar del formulario vas a ver un enlace **"Ver conversación existente"**.
 3. Apretalo: te lleva a tu bandeja de mensajes con ese hilo abierto.
 
 ## Tu bandeja de mensajes
@@ -58,12 +58,12 @@ Si ya hablaste con el host de ese alojamiento antes:
 
 ## Si perdiste el email-link (invitado)
 
-Cuando enviás como invitado, el acceso a tu conversación está atado al link del email. Si lo perdés:
+Cuando enviás como invitado, el acceso a tu conversación está atado al enlace del email. Si lo perdés:
 
 1. Volvé al alojamiento.
-2. En el formulario hay un link **"Solicitar un nuevo enlace"** o **"Solicitar acceso"** (alguno de los dos).
+2. En el formulario hay un enlace **"Solicitar un nuevo enlace"** o **"Solicitar acceso"** (alguno de los dos).
 3. Ingresá tu email y apretá **"Enviar enlace"**.
-4. Si existe una conversación asociada, vas a recibir el link de nuevo.
+4. Si existe una conversación asociada, vas a recibir el enlace de nuevo.
 
 > 📋 **Reportá también:**
 >

@@ -8,11 +8,11 @@ section: Pago real
 
 # Pago real — introducción
 
-> Este documento es **solo para los 2 testers** a los que les avisamos por privado que prueban el flujo de pago **con dinero real**. Si no te avisamos personalmente, **este anexo NO es para vos** — usá [tarjetas de prueba](/beta/host/suscripcion-y-pagos/).
+> Este documento es **solo para los 2 testers** a los que les avisamos por privado que prueban el proceso de pago **con dinero real**. Si no te avisamos personalmente, **este anexo NO es para vos** — usá [tarjetas de prueba](/beta/host/suscripcion-y-pagos/).
 
 ## ¿Por qué te elegimos para esto?
 
-Porque confiamos en vos. Los pagos con tarjetas de prueba (sandbox) cubren el 95% del flujo, pero hay un 5% que **solo se prueba con plata real**:
+Porque confiamos en vos. Los pagos con tarjetas de prueba (modo de prueba (sandbox)) cubren el 95% del proceso, pero hay un 5% que **solo se prueba con plata real**:
 
 - La **conciliación automática** del pago real
 - Los **webhooks reales** de MercadoPago avisándonos del pago

@@ -8,7 +8,7 @@ section: Explorar el sitio
 
 # Páginas estáticas
 
-Visitá estas páginas (suelen estar en el footer abajo):
+Visitá estas páginas (suelen estar en el pie de página (footer) abajo):
 
 - **Preguntas frecuentes / FAQ**
 - **Contacto**
@@ -17,7 +17,7 @@ Visitá estas páginas (suelen estar en el footer abajo):
 - **Política de privacidad**
 - **Política de cookies**
 - **Beneficios**
-- **Propietarios** (landing para hosts)
+- **Propietarios** (landing para propietarios o anfitriones (hosts))
 
 ## Lo que queremos que hagas en cada una
 

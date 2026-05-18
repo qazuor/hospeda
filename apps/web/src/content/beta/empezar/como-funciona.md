@@ -22,7 +22,7 @@ Como **mínimo te pedimos 3 horas por semana**. Pueden ser de un saque o reparti
 
 ## Qué te pedimos como compromiso
 
-- **Probá las partes que te corresponden** (turista, y si te toca, host). Idealmente todas las features, pero **si no te da el tiempo, elegí las que más te interesen** y arrancá por ahí. Mejor 5 cosas probadas con detalle que 50 a las apuradas.
+- **Probá las partes que te corresponden** (turista, y si te toca, propietario o anfitrión (host)). Idealmente todas las funcionalidades, pero **si no te da el tiempo, elegí las que más te interesen** y arrancá por ahí. Mejor 5 cosas probadas con detalle que 50 a las apuradas.
 - **Probá tanto en celular como en computadora**, si tenés ambos. Si solo tenés uno (especialmente si solo tenés celular), **no hay problema**, probá con lo que tengas.
 - **Reportá lo que encuentres**, aunque sea poco. Reportar 5 cosas pequeñas es mejor que no reportar nada.
 - **Dá la mayor cantidad de detalle posible** en los reportes. Mirá [Cómo reportar](/beta/reportar-bugs/como-reportar/).
@@ -31,8 +31,8 @@ Como **mínimo te pedimos 3 horas por semana**. Pueden ser de un saque o reparti
 ## Lo que NO te pedimos
 
 - No tenés que escribir reportes técnicos largos. Una foto y "esto se ve raro" alcanza. Pero si podés agregar más detalle, sería lo ideal.
-- No tenés que conocer términos como "bug", "frontend", "API", "deploy". Si los usás, perfecto. Si no, también.
-- No tenés que probar todas las features. Probá las que te interesen, dejá las que no.
+- No tenés que conocer términos como "error (bug)", "frontend", "API", "deploy". Si los usás, perfecto. Si no, también.
+- No tenés que probar todas las funcionalidades. Probá las que te interesen, dejá las que no.
 
 ## ¿Cobro algo?
 

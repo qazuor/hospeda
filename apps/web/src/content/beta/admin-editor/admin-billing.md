@@ -36,7 +36,7 @@ Andá a **Billing → Suscripciones**.
 
 Andá a **Billing → Add-ons**.
 
-- ¿Hay add-ons cargados? Si no, probá crear uno (featured listing, soporte prioritario, etc.).
+- ¿Hay add-ons cargados? Si no, probá crear uno (lista destacada, soporte prioritario, etc.).
 
 ## Códigos promocionales
 
@@ -48,7 +48,7 @@ Andá a **Billing → Códigos promo**.
 - **Listar** los códigos creados.
 - **Editar** uno.
 
-> ⚠️ **No vas a poder validar el descuento desde un checkout del sitio público** — el checkout corre en MercadoPago Checkout Pro y no expone un campo de promo code al usuario final. Los promo codes hoy son una herramienta administrativa cuyo flujo de aplicación final está en revisión.
+> ⚠️ **No vas a poder validar el descuento desde un checkout del sitio público** — el checkout corre en MercadoPago Checkout Pro y no expone un campo de promo code al usuario final. Los promo codes hoy son una herramienta administrativa cuyo proceso de aplicación final está en revisión.
 
 ## Promociones para propietarios (Owner Promotions)
 
@@ -80,7 +80,7 @@ Andá a **Billing → Facturas**.
 - Descargarla en PDF.
 - Los estados posibles son: **Borrador → Enviado → Pendiente → Pagado** (también puede haber **Cancelado**). No existe el estado "Emitida".
 
-> Sobre **Notas de crédito**: existe el permiso a nivel sistema pero **no hay todavía una pantalla en el panel para gestionarlas**. Si la encontrás en el menú, anotala — sería un cambio reciente. Si no, no es un bug, está pendiente.
+> Sobre **Notas de crédito**: existe el permiso a nivel sistema pero **no hay todavía una pantalla en el panel para gestionarlas**. Si la encontrás en el menú, anotala — sería un cambio reciente. Si no, no es un error (bug), está pendiente.
 
 ## Tasas de cambio
 
@@ -102,7 +102,7 @@ Andá a **Billing → Métricas**.
 - **Notification logs** → logs de notificaciones de billing enviadas
 - **Webhook events** → eventos recibidos desde MercadoPago
 
-> ⚠️ Estas dos páginas existen como rutas pero **podrían no estar en el menú lateral de Billing**. Si no las ves en el sidebar, podés intentar acceder por URL directa (`/billing/notification-logs` y `/billing/webhook-events`). Si funciona, **reportá "estas pantallas no aparecen en el menú lateral pero existen"** — eso es un bug del sidebar.
+> ⚠️ Estas dos páginas existen como rutas pero **podrían no estar en el menú lateral de Billing**. Si no las ves en la barra lateral, podés intentar acceder por dirección web directa (`/billing/notification-logs` y `/billing/webhook-events`). Si funciona, **reportá "estas pantallas no aparecen en el menú lateral pero existen"** — eso es un error de la barra lateral.
 
 ## Qué reportar
 

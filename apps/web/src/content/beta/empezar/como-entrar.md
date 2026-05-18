@@ -1,6 +1,6 @@
 ---
 title: Cómo entrar al sitio
-description: Acceso al staging, dispositivos y navegadores recomendados para el beta.
+description: Acceso al ambiente de prueba, dispositivos y navegadores recomendados para el beta.
 order: 3
 role: empezar
 section: Introducción
@@ -14,7 +14,7 @@ El sitio para probar está en:
 >
 > ⚠️ **Importante:** este NO es el sitio público de Hospeda. Es una versión de prueba separada. Lo que hagas acá no afecta nada del mundo real. Podés hacer lo que quieras sin miedo.
 
-Abrí ese link en tu navegador (Chrome, Firefox, Safari, Edge, lo que uses). Va a aparecer la página de inicio de Hospeda.
+Abrí ese enlace (link) en tu navegador (Chrome, Firefox, Safari, Edge, lo que uses). Va a aparecer la página de inicio de Hospeda.
 
 **Si te aparece una pantalla rara que dice "no es seguro" o "certificado inválido"**, sacale una foto y reportalo. No avances. Avisanos por WhatsApp.
 
@@ -63,5 +63,5 @@ Versiones muy viejas (Internet Explorer) **NO** las soportamos. Cualquier navega
 Si te trabaste con palabras técnicas, mirá el **[Glosario](/beta/empezar/glosario/)**. Si todo claro, andá directo a tu rol:
 
 - **[Crear cuenta de turista](/beta/turista/crear-cuenta/)**
-- **[Onboarding como host](/beta/host/onboarding/)**
+- **[Bienvenida inicial como propietario o anfitrión](/beta/host/onboarding/)**
 - **[Acceso al panel admin](/beta/admin-editor/acceso-y-roles/)**

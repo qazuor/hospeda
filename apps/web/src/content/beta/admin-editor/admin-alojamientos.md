@@ -17,7 +17,7 @@ Como admin tenés **mucho más** que un editor. Te recomendamos hacer también t
 
 > Para no abrumarte, te organizamos las áreas por importancia. Probá todo lo que puedas en las 2-3 semanas del beta.
 
-## Dashboard principal (prioridad alta)
+## Panel de control (dashboard) principal (prioridad alta)
 
 - Mirá los KPIs (usuarios, alojamientos, ingresos, etc.).
 - Mirá los gráficos / tendencias.
@@ -28,9 +28,9 @@ Como admin tenés **mucho más** que un editor. Te recomendamos hacer también t
 Tenés CRUD completo:
 
 - **Listar** alojamientos. Filtros disponibles: **estado**, **tipo**, **destacado**, **incluir eliminados** y búsqueda libre. *No hay filtro por propietario en este momento — si lo encontrás, reportá dónde.*
-- **Ver detalle** de un alojamiento: mirá las tabs (General, Amenidades, Galería, Precios, Reseñas).
+- **Ver detalle** de un alojamiento: mirá las pestañas (General, Amenidades, Galería, Precios, Reseñas).
 - **Editar** un alojamiento: cambiá un campo, guardá, fijate si se actualizó en el sitio público.
-- **Crear** alojamiento desde admin: completá el wizard. ¿Funcionó?
+- **Crear** alojamiento desde admin: completá el asistente guiado (wizard). ¿Funcionó?
 - **Borrar** uno: ¿soft delete? ¿se puede recuperar?
 
 ### Casos especiales
@@ -44,10 +44,10 @@ Tenés CRUD completo:
 
 ## Destinos (prioridad alta)
 
-Mismo flujo que con alojamientos:
+Mismo proceso que con alojamientos:
 
 - Listar, filtrar, buscar.
-- Ver detalle (tabs: General, Alojamientos, Atracciones, Eventos).
+- Ver detalle (pestañas: General, Alojamientos, Atracciones, Eventos).
 - Editar: cambiá descripción, foto cover.
 - Crear un destino nuevo (ciudad, región).
 - Asignar **atracciones** (puntos de interés) al destino.
@@ -70,7 +70,7 @@ Hay un sub-menú **Contenido** con:
 - **Características de Alojamientos** (habitaciones, baños, etc.).
 - **Atracciones de Destinos** (puntos de interés que después se asignan a destinos).
 
-> 📋 **Reportá:** si una comodidad / característica que creaste no aparece después en el formulario del host.
+> 📋 **Reportá:** si una comodidad / característica que creaste no aparece después en el formulario del propietario o anfitrión (host).
 
 ## Publicaciones / Blog (mismo que editor + extras)
 
@@ -79,12 +79,12 @@ Como admin tenés:
 - **Pestaña SEO** con más opciones que editor.
 - **Pestaña Sponsorship**: asignar marcas patrocinadoras / enlaces promocionales a posts.
 
-## Etiquetas / Tags (más tipos que editor)
+## Etiquetas / tags (más tipos que editor)
 
-- **Tags de blog (post-tags)** — visibles para usuarios
-- **Tags internas** — organización interna del equipo, no visibles al público
-- **Tags de sistema** — predefinidas, modificables con cuidado
-- **Tags de moderación de usuario** — tags que el sistema usa para clasificar perfiles de USUARIO (no para marcar spam/abuso del usuario)
+- **Etiquetas de blog (post-tags)** — visibles para usuarios
+- **Etiquetas internas** — organización interna del equipo, no visibles al público
+- **Etiquetas de sistema** — predefinidas, modificables con cuidado
+- **Etiquetas de moderación de usuario** — etiquetas que el sistema usa para clasificar perfiles de USUARIO (no para marcar spam/abuso del usuario)
 
 ## Próximo paso
 

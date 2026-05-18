@@ -21,7 +21,7 @@ Andá a **Acceso → Usuarios**.
 
 - **Listar** usuarios. Filtrar por rol, estado.
 - **Buscar** por email.
-- Abrir un usuario al azar. Mirar las tabs (General, Actividad, Permisos).
+- Abrir un usuario al azar. Mirar las pestañas (General, Actividad, Permisos).
 - **Editar** un usuario (cambiar nombre, agregar permisos extra).
 - **Crear** un usuario admin nuevo de prueba.
 

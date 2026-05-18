@@ -11,13 +11,13 @@ section: Pago real
 ## "Mi tarjeta fue rechazada"
 
 - Probá con otra tarjeta tuya si tenés (para descartar problema con la tarjeta puntual).
-- Si rechaza con todas, reportalo. Puede ser un bug de la integración.
+- Si rechaza con todas, reportalo. Puede ser un error (bug) de la integración.
 - Avisanos por WhatsApp.
 
 ## "Pagué pero la suscripción no se activó"
 
 - Esto es **importante** que reportes con detalle. Dato del pago + dato de tu cuenta.
-- Avisanos por **WhatsApp directo**, no solo por el FAB.
+- Avisanos por **WhatsApp directo**, no solo por el botón flotante.
 - **No vuelvas a pagar.**
 
 ## "Pagué dos veces sin querer"

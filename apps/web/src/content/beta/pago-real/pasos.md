@@ -11,7 +11,7 @@ section: Pago real
 ## Paso 1 — Crear tu cuenta (igual que el resto)
 
 1. Andá a **<https://staging.hospeda.com.ar>**.
-2. Registrate como host — mirá **[Onboarding como host](/beta/host/onboarding/)**.
+2. Registrate como propietario o anfitrión (host) — mirá **[Bienvenida inicial (onboarding) como propietario](/beta/host/onboarding/)**.
 3. Verificá tu email.
 
 ## Paso 2 — Crear un alojamiento de prueba
@@ -20,7 +20,7 @@ Seguí **[Crear tu primer alojamiento](/beta/host/crear-alojamiento/)**. Creá u
 
 ## Paso 3 — Llegar al checkout
 
-1. Andá a **"Suscriptores → Planes"** o desde tu dashboard "Suscribirme a un plan".
+1. Andá a **"Suscriptores → Planes"** o desde tu panel de control (dashboard) "Suscribirme a un plan".
 2. Elegí el plan que te asignamos (Basic / Pro / Premium).
 3. Apretá **"Suscribirme"**.
 
@@ -75,7 +75,7 @@ Te lleva a una pantalla de error con algún motivo.
 
 ## Paso 6 — Verificar la activación
 
-1. Volvé a tu **dashboard** de host.
+1. Volvé a tu **panel de control** de propietario.
 2. Andá a **"Mi cuenta → Mi suscripción"**.
 3. ¿Aparece tu plan como **activa**?
 4. ¿Te muestra la fecha de próxima renovación?
@@ -87,17 +87,17 @@ Te lleva a una pantalla de error con algún motivo.
 > - Cualquier email que NO llegó (si esperabas confirmación y no llegó)
 > - Si tu suscripción aparece pero los datos están raros
 
-## Paso 7 — Probar las features que el plan habilita
+## Paso 7 — Probar las funcionalidades que el plan habilita
 
 Ahora que tenés un plan pagado real, probá todo lo que ese plan te habilita:
 
-- Si es Basic, las features de Basic.
-- Si es Pro, las features Pro (más fotos, más amenidades, etc.).
-- Si es Premium, las de Premium (todas las features).
+- Si es Basic, las funcionalidades de Basic.
+- Si es Pro, las funcionalidades Pro (más fotos, más amenidades, etc.).
+- Si es Premium, las de Premium (todas las funcionalidades).
 
 Comparalo con lo que prometía el plan en la página de planes. ¿Coincide?
 
-> 📋 **Reportá:** cualquier feature que el plan promete y no funciona.
+> 📋 **Reportá:** cualquier funcionalidad que el plan promete y no funciona.
 
 ## Paso 8 — Cuando termines, avisanos
 
@@ -119,7 +119,7 @@ Independiente del resultado:
 1. **Captura del checkout** antes de pagar
 2. **Captura del resultado** del pago (aprobado / pendiente / rechazado)
 3. **Hora exacta** del intento de pago
-4. **Email del recibo de MercadoPago** (te lo manda MP a tu casilla, reenvialo a <qazuor@gmail.com> o subilo como adjunto al FAB)
+4. **Email del recibo de MercadoPago** (te lo manda MP a tu casilla, reenvialo a <qazuor@gmail.com> o subilo como adjunto al botón flotante)
 5. **Cualquier diferencia** entre lo prometido en el plan y lo que efectivamente pasó
 
 ## Próximo paso

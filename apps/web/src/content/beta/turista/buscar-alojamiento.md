@@ -12,7 +12,7 @@ Ya estás logueado (o si no, no importa — la búsqueda y el catálogo se puede
 
 ## La barra de búsqueda
 
-1. En la home hay una **barra de búsqueda**. En compu está sobre el hero (la imagen principal); en mobile está al inicio de la página.
+1. En la home hay una **barra de búsqueda**. En computadora está sobre el hero (la imagen principal); en celular está al inicio de la página.
 2. Probá buscar:
    - **Por destino**: "Concepción del Uruguay"
    - **Por nombre de alojamiento** si conocés alguno
@@ -21,13 +21,13 @@ Ya estás logueado (o si no, no importa — la búsqueda y el catálogo se puede
 
 ## El catálogo de alojamientos
 
-1. En el menú principal (arriba en compu, dentro del menú ☰ en mobile) hay un link **"Alojamientos"**. Hacé clic.
+1. En el menú principal (arriba en computadora, dentro del menú ☰ en celular) hay un enlace (link) **"Alojamientos"**. Hacé clic.
 2. Vas al listado completo. Mirá cómo se ven las tarjetas (foto, nombre, tipo, precio por noche).
 3. Probá la **paginación** abajo (ir a página 2, página 3).
 
 ## Los filtros
 
-En la columna izquierda en compu (o en un drawer/panel en mobile) tenés un grupo **"Filtros"** con estas secciones:
+En la columna izquierda en computadora (o en un panel flotante en celular) tenés un grupo **"Filtros"** con estas secciones:
 
 - **Tipo de alojamiento**: Hotel, Apartamento, Casa, Cabaña, Casa quinta, Hostal, Camping, Habitación, Motel, Complejo turístico
 - **Precio por noche**: Mínimo y Máximo
@@ -36,7 +36,7 @@ En la columna izquierda en compu (o en un drawer/panel en mobile) tenés un grup
 - **Calificación mínima**: por estrellas
 - **Adultos** y **Niños** (dos controles separados de capacidad)
 - **Dormitorios** y **Baños**
-- **Solo destacados** (toggle)
+- **Solo destacados** (interruptor)
 
 Probá:
 
@@ -49,7 +49,7 @@ Probá:
 1. Buscá el botón **"Ver en mapa"** (en la parte superior del listado).
 2. El mapa muestra pines con los alojamientos del listado actual (respeta los filtros activos).
 3. Probá moverlo, hacer zoom, clickear un pin.
-4. Volvé a la vista de lista con el botón **"Ver lista"** (en el sidebar del mapa).
+4. Volvé a la vista de lista con el botón **"Ver lista"** (en la barra lateral del mapa).
 
 ## Qué reportar
 

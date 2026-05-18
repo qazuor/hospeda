@@ -10,28 +10,28 @@ section: Empezar como turista
 
 Vamos a crearte una cuenta de turista. Hay **3 formas** de registrarte. Usá la que más uses normalmente.
 
-> Antes de crear cuenta, recorré tranquilamente la **home** del sitio. Bajá hasta el final. Mirá. Probá los controles de idioma (ES / EN / PT, arriba a la derecha en compu, dentro del menú ☰ en mobile) y de tema (Claro / Sistema / Oscuro). Anotá cualquier cosa rara para reportar después.
+> Antes de crear cuenta, recorré tranquilamente la **home** del sitio. Bajá hasta el final. Mirá. Probá los controles de idioma (ES / EN / PT, arriba a la derecha en computadora, dentro del menú ☰ en celular) y de tema (Claro / Sistema / Oscuro). Anotá cualquier cosa rara para reportar después.
 
 ## Opción 1 — Email y contraseña
 
 1. Arriba a la derecha hay un botón **"Iniciar sesión"**. Apretalo.
-2. En la pantalla de login, al pie hay un link **"¿No tienes cuenta? Regístrate aquí"**. Hacé clic.
+2. En la pantalla de iniciar sesión (login), al pie hay un enlace (link) **"¿No tienes cuenta? Regístrate aquí"**. Hacé clic.
 3. Llegás al formulario de registro **"Crear Cuenta"**. Completá los **3 campos**:
    - **Nombre** (un solo campo — nombre completo)
    - **Correo electrónico** (usá uno tuyo de verdad — vamos a mandarte un email de verificación)
    - **Contraseña** (mínimo 8 caracteres)
 4. Apretá el botón **"Crear Cuenta"**.
-5. Vas a recibir un email de Hospeda con un **link para verificar tu email**. **Revisá también la carpeta de Spam / Correo no deseado.**
-6. Hacé clic en ese link. Te lleva al sitio en una pantalla **"Verificar email"** que valida automáticamente.
+5. Vas a recibir un email de Hospeda con un **enlace para verificar tu email**. **Revisá también la carpeta de Spam / Correo no deseado.**
+6. Hacé clic en ese enlace. Te lleva al sitio en una pantalla **"Verificar email"** que valida automáticamente.
 7. Quedás logueado.
 
 > 📋 **Reportá:**
 >
 > - ¿Tardó mucho en llegar el email? ¿Cuánto?
 > - ¿Llegó a Spam? Si llegó a Spam, **eso es importante avisarnos.**
-> - ¿El link del email te llevó a la verificación sin problemas?
+> - ¿El enlace del email te llevó a la verificación sin problemas?
 > - ¿La contraseña te pidió reglas raras (mayúsculas, números, símbolos)? ¿Te avisó claramente cuáles eran?
-> - Si el form te muestra más campos de los 3 que mencionamos arriba (ej. Apellido, Confirmar contraseña), reportalo — eso sería un cambio del flujo.
+> - Si el form te muestra más campos de los 3 que mencionamos arriba (ej. Apellido, Confirmar contraseña), reportalo — eso sería un cambio del proceso.
 
 ## Opción 2 — Con Google
 
@@ -55,7 +55,7 @@ Vamos a crearte una cuenta de turista. Hay **3 formas** de registrarte. Usá la 
 
 - **Cerrar sesión**: arriba a la derecha, donde está tu avatar, abrí el menú y elegí **"Cerrar Sesión"**.
 - **Volver a entrar** con tus mismas credenciales. ¿Anduvo?
-- **Recuperar contraseña**: en la pantalla de login hay un link **"¿Olvidaste tu contraseña?"**. Pedí el reset, andá al email, hacé clic en el link, poné nueva contraseña. ¿Funcionó todo?
+- **Recuperar contraseña**: en la pantalla de iniciar sesión hay un enlace **"¿Olvidaste tu contraseña?"**. Pedí el reset, andá al email, hacé clic en el enlace, poné nueva contraseña. ¿Funcionó todo?
 
 ## Tips de email
 

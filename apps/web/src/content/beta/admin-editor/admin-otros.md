@@ -17,7 +17,7 @@ Estas son secciones de prioridad media-baja. Probalas si te queda tiempo.
 
 ## Patrocinadores (prioridad baja)
 
-Andá a **Patrocinadores** en el menú lateral (la URL es `/sponsors`).
+Andá a **Patrocinadores** en el menú lateral (la dirección web (URL) es `/sponsors`).
 
 - Listar sponsors (marcas).
 - Crear uno nuevo.
@@ -25,9 +25,9 @@ Andá a **Patrocinadores** en el menú lateral (la URL es `/sponsors`).
 
 ## Mensajes (prioridad baja)
 
-Andá a **Mensajes** en el menú lateral (la URL es `/conversations`).
+Andá a **Mensajes** en el menú lateral (la dirección web es `/conversations`).
 
-- Listar todas las conversaciones de la plataforma (entre turistas y hosts).
+- Listar todas las conversaciones de la plataforma (entre turistas y propietarios o anfitriones (hosts)).
 - Filtrar por fecha, estado, participantes.
 - Abrir una conversación. ¿Podés moderar? ¿Cerrar? ¿Marcar resuelta?
 
@@ -49,7 +49,7 @@ Andá a **Configuración → SEO**.
 
 Andá a **Revalidación ISR** en el menú lateral.
 
-- La pantalla tiene 3 tabs (Config, Logs, Disparador manual).
+- La pantalla tiene 3 pestañas (Config, Logs, Disparador manual).
 - Probá forzar la revalidación de páginas estáticas (ej. después de editar un alojamiento, forzar revalidación para que el sitio público se actualice).
 
 ## Qué reportar
@@ -58,4 +58,4 @@ Andá a **Revalidación ISR** en el menú lateral.
 
 ## Próximo paso
 
-Cuando termines con los módulos, hacé los **[flujos guiados](/beta/admin-editor/flujos-guiados/)** completos.
+Cuando termines con los módulos, hacé los **[procesos guiados](/beta/admin-editor/flujos-guiados/)** completos.

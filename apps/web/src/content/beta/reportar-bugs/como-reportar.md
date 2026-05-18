@@ -10,13 +10,13 @@ section: Reportar bugs
 
 Tenés **dos canales** según qué tipo de cosa quieras reportar.
 
-## a) El botón flotante (FAB) — para bugs
+## a) El botón flotante (FAB) — para errores (bugs)
 
-En todas las páginas del sitio vas a ver una **pastilla flotante abajo a la derecha** que dice **"Reportar problema"** (en mobile aparece solo el icono).
+En todas las páginas del sitio vas a ver una **pastilla flotante abajo a la derecha** que dice **"Reportar problema"** (en celular aparece solo el icono).
 
 También podés abrirla con el atajo de teclado **`Ctrl + Shift + F`** desde cualquier pantalla.
 
-Apretalo. Se abre el modal **"Reportar un problema"** con varios campos:
+Apretalo. Se abre la ventana emergente (modal) **"Reportar un problema"** con varios campos:
 
 - **Tipo** (select con categorías predefinidas)
 - **Título** — ej. "El precio se ve cortado en el celular"
@@ -27,7 +27,7 @@ Apretalo. Se abre el modal **"Reportar un problema"** con varios campos:
 - **Email** y **Nombre** (si no estás logueado)
 - **Capturas de pantalla** — botón **"Subir"** (formatos PNG, JPG, WebP, GIF — mirá el [glosario](/beta/empezar/glosario/) para cómo sacar capturas)
 
-> ⚠️ **Importante:** abajo del form hay una sección **"Detalles técnicos (auto-recolectados)"** con URL, navegador, sistema operativo, viewport, errores de consola. **No la borres ni la modifiques.** Esa info nos sirve un montón para encontrar el problema.
+> ⚠️ **Importante:** abajo del form hay una sección **"Detalles técnicos (auto-recolectados)"** con dirección web (URL), navegador, sistema operativo, viewport, errores de consola. **No la borres ni la modifiques.** Esa info nos sirve un montón para encontrar el problema.
 
 Apretá **"Enviar"**. Listo. Ese reporte llega directo a nosotros.
 

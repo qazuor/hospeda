@@ -10,7 +10,7 @@ section: Gestión del host
 
 Para que tu alojamiento esté visible al público o tener más beneficios, vas a tener que suscribirte a un plan.
 
-> ⚠️ **El checkout no vive en el sitio público.** Cuando elegís un plan y apretás "Suscribirme", el sistema te redirige a **MercadoPago Checkout Pro** (la URL del checkout es de MercadoPago, no nuestra). El pago se hace en su plataforma; nosotros recibimos el resultado por webhook.
+> ⚠️ **El checkout no vive en el sitio público.** Cuando elegís un plan y apretás "Suscribirme", el sistema te redirige a **MercadoPago Checkout Pro** (la dirección web (URL) del checkout es de MercadoPago, no nuestra). El pago se hace en su plataforma; nosotros recibimos el resultado por webhook.
 >
 > ⚠️ **NO USES TU TARJETA REAL.** Hay 2 testers especiales (avisados por privado) que sí usan tarjeta real (mirá [Pago real](/beta/pago-real/introduccion/)). El resto **NO**.
 
@@ -22,11 +22,11 @@ Los planes de propietario que vas a ver listados son:
 - **Professional**
 - **Premium**
 
-Pueden aparecer también planes adicionales como **Complex Basic / Complex Professional / Complex Premium** (para hosts con múltiples propiedades) o variantes como **Free / Plus / VIP**. Si ves algún plan con nombre que no entendés, anotá el nombre exacto y reportalo.
+Pueden aparecer también planes adicionales como **Complex Basic / Complex Professional / Complex Premium** (para propietarios o anfitriones (hosts) con múltiples propiedades) o variantes como **Free / Plus / VIP**. Si ves algún plan con nombre que no entendés, anotá el nombre exacto y reportalo.
 
 ## Tarjetas de prueba
 
-Estas son tarjetas oficiales de MercadoPago sandbox. **NO cobran plata real.**
+Estas son tarjetas oficiales de MercadoPago en modo de prueba (sandbox). **NO cobran plata real.**
 
 | Tipo | Número | CVV | Vencimiento |
 | --- | --- | --- | --- |
@@ -61,10 +61,10 @@ Poné en "Nombre del titular" alguno de estos códigos:
 
 ## Pasos para suscribirte
 
-1. En el menú principal del sitio público, andá a **"Precios"** (link en la nav).
+1. En el menú principal del sitio público, andá a **"Precios"** (enlace (link) en la nav).
 2. Llegás a la página de planes en `/suscriptores/precios/`.
 3. Mirá las diferencias entre planes. Elegí uno y apretá el CTA para suscribirte.
-4. **Te redirige al checkout de MercadoPago** (URL de MP, ya no nuestra).
+4. **Te redirige al checkout de MercadoPago** (dirección web de MP, ya no nuestra).
 5. Completá los datos de la tarjeta de prueba (número, nombre del titular según el resultado que quieras simular, vencimiento, CVV).
 6. Apretá el botón de pagar en el checkout de MP.
 7. MP te devuelve al sitio con el resultado.
@@ -78,9 +78,9 @@ Poné en "Nombre del titular" alguno de estos códigos:
 
 ## Códigos promocionales
 
-> ⚠️ **No hay campo de código promocional en el checkout del sitio público.** Los promo codes existen como herramienta administrativa (los crea un admin desde el panel), pero el flujo de checkout actual es enteramente vía MercadoPago Checkout Pro — el código promo, si existe, lo aplicaría el admin antes/después, no el tester en el checkout.
+> ⚠️ **No hay campo de código promocional en el checkout del sitio público.** Los promo codes existen como herramienta administrativa (los crea un admin desde el panel), pero el proceso de checkout actual es enteramente vía MercadoPago Checkout Pro — el código promo, si existe, lo aplicaría el admin antes/después, no el tester en el checkout.
 >
-> Si te pasamos un código promocional para usar y **encontrás un campo dónde aplicarlo en tu flujo de checkout**, anotá dónde lo viste y reportalo. Si no aparece nunca, no es un bug — es el estado actual.
+> Si te pasamos un código promocional para usar y **encontrás un campo dónde aplicarlo en tu proceso de checkout**, anotá dónde lo viste y reportalo. Si no aparece nunca, no es un error (bug) — es el estado actual.
 
 ## Ver tu suscripción
 
@@ -103,8 +103,8 @@ Andá a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`).
 > - Si después de pagar la suscripción no se activó en "Mi cuenta → Suscripción"
 > - Si el mensaje de error / pendiente no se entiende
 >
-> ⚠️ **Sobre los emails de pago:** en este entorno de beta **podría no llegarte email** cuando pagás (depende de la configuración del servicio de email para staging). **No reportes "no me llegó el email del pago"** salvo que te avisemos lo contrario.
+> ⚠️ **Sobre los emails de pago:** en este entorno de beta **podría no llegarte email** cuando pagás (depende de la configuración del servicio de email para el ambiente de prueba). **No reportes "no me llegó el email del pago"** salvo que te avisemos lo contrario.
 
 ## Próximo paso
 
-Si recibiste mensajes de turistas, andá a **[Mensajes recibidos como host](/beta/host/mensajes/)**.
+Si recibiste mensajes de turistas, andá a **[Mensajes recibidos como propietario](/beta/host/mensajes/)**.

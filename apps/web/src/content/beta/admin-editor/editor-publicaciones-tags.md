@@ -1,12 +1,12 @@
 ---
-title: Editor — publicaciones y tags
+title: Editor — publicaciones y etiquetas (tags)
 description: Gestión completa de posts del blog y etiquetas — solo para el rol de Editor.
 order: 2
 role: admin-editor
 section: Solo editor
 ---
 
-# Editor — publicaciones, tags y eventos
+# Editor — publicaciones, etiquetas (tags) y eventos
 
 <aside class="beta-callout beta-callout--info beta-callout--compact">
   <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
@@ -15,7 +15,7 @@ section: Solo editor
 
 Como editor vas a ver y gestionar **Publicaciones (blog)**, **Etiquetas (tags)** y **Eventos** (creación, edición, publicación, ubicaciones y organizadores). No tenés acceso a usuarios, billing ni configuración.
 
-Esta página cubre publicaciones y tags. Para eventos, los flujos coinciden con los descriptos en [Admin — alojamientos, destinos y eventos](/beta/admin-editor/admin-alojamientos/) (sección Eventos).
+Esta página cubre publicaciones y etiquetas. Para eventos, los procesos coinciden con los descriptos en [Admin — alojamientos, destinos y eventos](/beta/admin-editor/admin-alojamientos/) (sección Eventos).
 
 ## Publicaciones / Blog
 
@@ -25,11 +25,11 @@ Esta página cubre publicaciones y tags. Para eventos, los flujos coinciden con 
 2. Vas a ver una tabla con todos los artículos.
 3. Probá:
    - Buscar por título
-   - Filtrar por estado (los posts usan estados internos: **Draft / Active / Inactive / Archived**, no la dicotomía "borrador/publicado")
+   - Filtrar por estado (los posts usan estados internos: **Borrador (Draft) / Active / Inactive / Archived**, no la dicotomía "borrador/publicado")
    - Cambiar el orden (más recientes / más antiguos)
    - Ir a página 2, 3
 
-> Si ves un filtro "por autor" en algún lugar, anotalo y reportá dónde — no estamos seguros si está expuesto en el listing actual.
+> Si ves un filtro "por autor" en algún lugar, anotalo y reportá dónde — no estamos seguros si está expuesto en la lista actual.
 
 ### Crear un post nuevo
 
@@ -40,11 +40,11 @@ Esta página cubre publicaciones y tags. Para eventos, los flujos coinciden con 
    - **Resumen** (excerpt corto)
    - **Categoría**
    - **Destacado** / **Destacado en Web** / **Es Noticia** (flags)
-   - **Contenido** (editor — probá negrita, itálica, listas, links, agregar imagen)
+   - **Contenido** (editor — probá negrita, itálica, listas, enlaces, agregar imagen)
    - **Tiempo de Lectura**
    - **Imagen Destacada**
    - **Galería**
-3. Guardalo y verificá que quedó como **borrador (Draft)**.
+3. Guardalo y verificá que quedó como **borrador**.
 4. Recargá la página. ¿Quedó guardado?
 5. Volvé a abrir el post. En la cabecera vas a ver una pestaña **"SEO"** (es una ruta dedicada `/posts/{id}/seo`). Completá:
    - **Meta title**
@@ -53,7 +53,7 @@ Esta página cubre publicaciones y tags. Para eventos, los flujos coinciden con 
 6. Cambiá el estado del post a **Active** (publicado).
 7. Andá al sitio público (en otra pestaña) y buscá tu post en `/publicaciones/`. ¿Apareció?
 
-> Los **tags** del post se asignan desde otra parte (no hay un campo "Tags" dentro del editor básico). Si no encontrás dónde, reportalo describiendo qué buscaste.
+> Las **etiquetas** del post se asignan desde otra parte (no hay un campo "Etiquetas" dentro del editor básico). Si no encontrás dónde, reportalo describiendo qué buscaste.
 >
 > 📋 **Reportá:**
 >
@@ -67,22 +67,22 @@ Esta página cubre publicaciones y tags. Para eventos, los flujos coinciden con 
 - **Editá** un post existente. Cambiá el contenido. Guardá. ¿Se actualizó en el sitio público?
 - Probá **borrarlo** (¿soft delete? ¿borrado real? ¿se puede recuperar?).
 
-## Etiquetas (Tags)
+## Etiquetas (tags)
 
 Andá a la sección **"Etiquetas"** del menú lateral. Como Editor vas a ver al menos:
 
-- **Tags de blog (post-tags)** — los que se usan en posts
-- **Tags de sistema** — predefinidas (mirá pero no edites)
+- **Etiquetas de blog (post-tags)** — las que se usan en posts
+- **Etiquetas de sistema** — predefinidas (mirá pero no edites)
 
-(Los tipos "Tags internas" y "Tags de moderación de usuario" existen en el panel pero **el Editor no tiene permisos para verlas** — si las ves, reportalo, es un bug.)
+(Los tipos "Etiquetas internas" y "Etiquetas de moderación de usuario" existen en el panel pero **el Editor no tiene permisos para verlas** — si las ves, reportalo, es un error (bug).)
 
-Para los tags de blog:
+Para las etiquetas de blog:
 
-1. **Crear** un tag nuevo. Los campos son **nombre**, **color** y **estado** (no hay campo "descripción").
-2. **Editar** uno existente.
-3. **Eliminar** uno. Probá eliminar **uno que esté en uso por algún post** y anotá qué pasa: ¿el sistema te avisa antes? ¿lo elimina silenciosamente? ¿los posts pierden el tag o quedan sin él? Reportá el comportamiento exacto.
-4. **Asignar** un tag a un post desde el editor del post.
-5. En el sitio público, andá a `/publicaciones/etiqueta/[el-tag-que-creaste]/`. ¿Aparecen los posts con ese tag?
+1. **Crear** una etiqueta nueva. Los campos son **nombre**, **color** y **estado** (no hay campo "descripción").
+2. **Editar** una existente.
+3. **Eliminar** una. Probá eliminar **una que esté en uso por algún post** y anotá qué pasa: ¿el sistema te avisa antes? ¿la elimina silenciosamente? ¿los posts pierden la etiqueta o quedan sin ella? Reportá el comportamiento exacto.
+4. **Asignar** una etiqueta a un post desde el editor del post.
+5. En el sitio público, andá a `/publicaciones/etiqueta/[la-etiqueta-que-creaste]/`. ¿Aparecen los posts con esa etiqueta?
 
 > 📋 **Reportá:** lo de siempre — cosas que se ven mal, no funcionan, mensajes confusos.
 

@@ -12,7 +12,7 @@ section: Para todos (editor y admin)
   <span class="beta-callout__icon" aria-hidden="true">⚠️</span>
   <div class="beta-callout__body">
     <strong class="beta-callout__title">Esta sección es solo para testers preseleccionados</strong>
-    Si no te avisamos expresamente por WhatsApp que ibas a probar el <strong>panel de administración</strong>, podés <strong>ignorar toda esta sección</strong> tranquilo. Seguí con la guía de tu rol (turista / host) y listo. Si tenés dudas de si te tocaba o no, preguntá en el grupo.
+    Si no te avisamos expresamente por WhatsApp que ibas a probar el <strong>panel de administración</strong>, podés <strong>ignorar toda esta sección</strong> tranquilo. Seguí con la guía de tu rol (turista / propietario o anfitrión (host)) y listo. Si tenés dudas de si te tocaba o no, preguntá en el grupo.
   </div>
 </aside>
 
@@ -24,15 +24,15 @@ Te elegimos para probar el **panel de administración** de Hospeda. Es la parte 
 
 | Rol | Qué puede hacer |
 | --- | --- |
-| **Editor** | Gestiona **publicaciones (blog)**, **etiquetas (tags)** y **eventos** (crear, editar, publicar, gestionar ubicaciones y organizadores). No ve usuarios, ni billing, ni configuración. |
+| **Editor** | Gestiona **publicaciones (blog)**, **etiquetas** y **eventos** (crear, editar, publicar, gestionar ubicaciones y organizadores). No ve usuarios, ni billing, ni configuración. |
 | **Admin** | Ve y gestiona casi todo: alojamientos, destinos, eventos, posts, billing, sponsors, mensajes, etc. |
 
 ## Antes de empezar
 
 - **No es un servidor de producción.** Hacé lo que quieras. No vas a romper datos reales de clientes.
-- **Probá en celular y compu** igual que con la guía principal. El panel se usa más en compu, pero también lo abrimos a celular.
+- **Probá en celular y computadora** igual que con la guía principal. El panel se usa más en computadora, pero también lo abrimos a celular.
 - **No compartas tus credenciales** (ni con otros testers). Cada uno tiene las suyas.
-- **Si encontrás algo crítico** (datos personales expuestos, errores graves de seguridad), avisanos por **WhatsApp directo**, no por el FAB. Después también ponelo en el FAB.
+- **Si encontrás algo crítico** (datos personales expuestos, errores graves de seguridad), avisanos por **WhatsApp directo**, no por el botón flotante. Después también ponelo en el botón flotante.
 
 ## URL del panel
 
@@ -44,7 +44,7 @@ El panel está en una URL distinta del sitio público:
 
 ## Cómo te damos acceso
 
-El panel tiene un formulario de signup propio, pero **para el beta no lo uses**: nosotros te promovemos manualmente desde una cuenta que ya tenés en el sitio público. El flujo es:
+El panel tiene un formulario de crear cuenta (signup) propio, pero **para el beta no lo uses**: nosotros te promovemos manualmente desde una cuenta que ya tenés en el sitio público. El proceso es:
 
 ### Paso 1 — Registrate en el sitio público como usuario normal
 
@@ -67,22 +67,22 @@ Yo, manualmente, te paso de "usuario normal" a Admin o Editor. Puede tardar **un
 
 1. Abrí **<https://staging-admin.hospeda.com.ar>**.
 2. Logueate con el **mismo email y contraseña** que usaste para registrarte en el sitio público.
-3. Entrás al **dashboard principal** del panel admin.
+3. Entrás al **panel de control (dashboard) principal** del panel admin.
 4. Recorrelo. Mirá los KPIs (usuarios, alojamientos, ingresos).
 
 ## Qué reportar
 
 > 📋 **Reportá:**
 >
-> - Si el login no funciona aun después de que te confirmé la promoción
+> - Si el iniciar sesión (login) no funciona aun después de que te confirmé la promoción
 > - Si después de loguearte aparece pantalla blanca
-> - Si los números del dashboard parecen raros
+> - Si los números del panel de control parecen raros
 >
-> ⚠️ **Si intentás entrar al panel ANTES de que yo te promueva**, el sistema te va a bloquear el acceso (la pantalla exacta depende del estado de la sesión). **Eso es esperado**, no es un bug. Esperá la confirmación.
+> ⚠️ **Si intentás entrar al panel ANTES de que yo te promueva**, el sistema te va a bloquear el acceso (la pantalla exacta depende del estado de la sesión). **Eso es esperado**, no es un error (bug). Esperá la confirmación.
 
 ## Próximo paso
 
 Según tu rol:
 
-- **Editor**: **[Publicaciones y tags](/beta/admin-editor/editor-publicaciones-tags/)**
+- **Editor**: **[Publicaciones y etiquetas](/beta/admin-editor/editor-publicaciones-tags/)**
 - **Admin**: **[Alojamientos y destinos](/beta/admin-editor/admin-alojamientos/)** (y todo el resto de la sección admin)

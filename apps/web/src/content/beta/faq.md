@@ -44,7 +44,7 @@ Es una fase de prueba. El sitio todavía no está abierto al público. Te invita
 
 ## Sobre cómo entrar al sitio
 
-### ¿Cuál es el link?
+### ¿Cuál es el enlace (link)?
 
 > **<https://staging.hospeda.com.ar>**
 
@@ -88,7 +88,7 @@ Necesitás un email real. Si querés usar uno secundario, perfecto. Con Gmail pr
 
 ### Me olvidé la contraseña
 
-En la pantalla de login hay **"Olvidé mi contraseña"**. Apretalo, ingresá tu email, te llega un link para resetear. Si no llega, mirá Spam.
+En la pantalla de iniciar sesión (login) hay **"Olvidé mi contraseña"**. Apretalo, ingresá tu email, te llega un enlace para resetear. Si no llega, mirá Spam.
 
 ### ¿Puedo entrar con Google / Facebook?
 
@@ -100,7 +100,7 @@ Reportalo. Decinos cuánto tiempo después se cerró.
 
 ### ¿Puedo tener varias cuentas?
 
-Sí. Si querés probar como turista y como host, podés crear 2 cuentas con emails distintos.
+Sí. Si querés probar como turista y como propietario o anfitrión (host), podés crear 2 cuentas con emails distintos.
 
 ---
 
@@ -108,7 +108,7 @@ Sí. Si querés probar como turista y como host, podés crear 2 cuentas con emai
 
 ### ¿Tengo que pagar de verdad?
 
-**NO.** Vas a usar tarjetas de prueba. El sistema está en modo "sandbox".
+**NO.** Vas a usar tarjetas de prueba. El sistema está en modo de prueba (sandbox).
 
 > Excepción: los 2 testers de [pago real](/beta/pago-real/introduccion/), avisados por privado.
 
@@ -122,11 +122,11 @@ El **nombre del titular** controla el resultado: `APRO` aprueba, `OTHE` rechaza,
 
 ### Pagué pero no me activaron la suscripción
 
-Es un bug. Reportalo con hora, plan, captura, email registrado.
+Es un error (bug). Reportalo con hora, plan, captura, email registrado.
 
 ### ¿Me van a llegar emails de pago?
 
-**Puede que no en este entorno.** El sistema tiene plantillas para emails de pago/factura/recordatorios, pero la configuración del servicio de email en beta puede estar reducida. Si esperabas un email y no llegó, **reportalo** — verificamos en logs si se intentó enviar. Mirá [Cosas que parecen bug pero no lo son](/beta/reportar-bugs/que-no-es-bug/) para más detalle.
+**Puede que no en este entorno.** El sistema tiene plantillas para emails de pago/factura/recordatorios, pero la configuración del servicio de email en beta puede estar reducida. Si esperabas un email y no llegó, **reportalo** — verificamos en logs si se intentó enviar. Mirá [Cosas que parecen error pero no lo son](/beta/reportar-bugs/que-no-es-bug/) para más detalle.
 
 ---
 
@@ -144,7 +144,7 @@ Mirá la tabla completa en el **[Glosario](/beta/empezar/glosario/#cómo-sacar-u
 
 **No es obligatorio**, pero ayuda. Mirá **[Ejemplos](/beta/reportar-bugs/ejemplos/)**.
 
-### El FAB me carga datos automáticamente, ¿los borro?
+### El botón flotante me carga datos automáticamente, ¿los borro?
 
 **Dejalos.** Son los más útiles. Solo agregá tu info encima.
 
@@ -178,15 +178,15 @@ En **español** principal. También en **inglés** y **portugués**. Hay un sele
 
 ### El sitio se ve oscuro / claro y yo no quiero
 
-Hay un control con 3 opciones para cambiar el **tema**: **Claro · Sistema · Oscuro** (iconos Sol / Engranaje / Luna en el header).
+Hay un control con 3 opciones para cambiar el **tema**: **Claro · Sistema · Oscuro** (iconos Sol / Engranaje / Luna en la cabecera (header)).
 
 ### Una imagen no carga
 
-Captura + reporte. Es un bug.
+Captura + reporte. Es un error.
 
 ### Error 404
 
-Captura + reporte. Decinos qué link estabas siguiendo.
+Captura + reporte. Decinos qué enlace estabas siguiendo.
 
 ### El sitio anda lento
 
@@ -240,7 +240,7 @@ La captura queda en la galería de fotos.
 
 ### Grabar un video corto de la pantalla
 
-A veces un bug solo se entiende en movimiento (animación rara, transición que falla, algo que solo pasa al hacer scroll). Para eso:
+A veces un error solo se entiende en movimiento (animación rara, transición que falla, algo que solo pasa al hacer scroll). Para eso:
 
 | Equipo | Cómo |
 | --- | --- |
@@ -248,7 +248,7 @@ A veces un bug solo se entiende en movimiento (animación rara, transición que 
 | **iPhone** | Centro de control (deslizar desde arriba a la derecha) → ícono de círculo dentro de un círculo. Si no te aparece, lo activás en `Ajustes → Centro de control → Grabación de pantalla`. |
 | **Windows 10/11** | `Win + G` abre la barra de juegos, que tiene un botón para grabar. |
 | **Mac** | `Cmd + Shift + 5` te muestra opciones para grabar pantalla completa o un área. |
-| **Cualquier sistema (online)** | <https://www.loom.com> (gratis, instalás la extensión de Chrome). Sube el video y te da un link para pegar en el reporte. |
+| **Cualquier sistema (online)** | <https://www.loom.com> (gratis, instalás la extensión de Chrome). Sube el video y te da un enlace para pegar en el reporte. |
 
 > No grabes más de **30 segundos** por reporte. Si necesitás más, hacé varios videos cortos.
 
@@ -269,6 +269,7 @@ Si te pedimos "mirá qué llamadas hace la página":
 
 1. Apretá `F12`.
 2. Clickeá la pestaña **"Red"** o **"Network"**.
+
 3. Recargá la página (`F5`).
 4. Si ves líneas en rojo, esa es una llamada que falló. Sacale captura.
 
@@ -285,7 +286,7 @@ No necesitás entender qué significa cada línea. Con la captura nos alcanza.
 | `Ctrl + Shift + N` / `Cmd + Shift + N` | Abrir ventana en **modo incógnito / privado** |
 | `Ctrl + T` / `Cmd + T` | Abrir pestaña nueva |
 | `Ctrl + W` / `Cmd + W` | Cerrar pestaña actual |
-| `Ctrl + L` / `Cmd + L` | Saltar a la barra de direcciones (para copiar la URL rápido) |
+| `Ctrl + L` / `Cmd + L` | Saltar a la barra de direcciones (para copiar la dirección web rápido) |
 
 ### "Algo se ve raro pero no entiendo qué"
 
@@ -296,11 +297,11 @@ No necesitás entender qué significa cada línea. Con la captura nos alcanza.
 3. **Otro navegador**: si solo pasa en uno, **decinos cuál**.
 4. **Otro equipo / celular**: si solo pasa en tu compu pero no en el celular, **también es info útil**.
 
-Si después de probar todo eso el problema sigue, **ese es un buen bug para reportar** y agregale como dato: "ya probé recargar fuerte / incógnito / otro navegador, y sigue."
+Si después de probar todo eso el problema sigue, **ese es un buen error para reportar** y agregale como dato: "ya probé recargar fuerte / incógnito / otro navegador, y sigue."
 
-### Cómo copio la URL exacta donde estoy
+### Cómo copio la dirección web exacta donde estoy
 
-- **Compu**: `Ctrl + L` (`Cmd + L` en Mac) selecciona la URL, después `Ctrl + C` (`Cmd + C`) la copia.
+- **Computadora**: `Ctrl + L` (`Cmd + L` en Mac) selecciona la dirección, después `Ctrl + C` (`Cmd + C`) la copia.
 - **Celular**: tocá la barra de dirección, te aparece la opción "Copiar".
 
 Pegala en el reporte. Nos sirve un montón para encontrar la página exacta.
@@ -327,7 +328,7 @@ Si querés ver cómo se ve todo desde cero (sin tu historial, sin sesión inicia
 2. Andá a `staging.hospeda.com.ar`.
 3. Vas a estar deslogueado, sin caché, sin nada. Como un visitante nuevo.
 
-Esto es **especialmente útil** para los onboarding (turista, host) y para detectar cosas que solo aparecen "la primera vez".
+Esto es **especialmente útil** para las bienvenidas iniciales (onboarding) (turista, propietario) y para detectar cosas que solo aparecen "la primera vez".
 
 ---
 

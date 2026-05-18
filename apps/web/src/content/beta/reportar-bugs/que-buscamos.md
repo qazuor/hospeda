@@ -1,6 +1,6 @@
 ---
 title: Qué cosas estamos buscando
-description: Las categorías de bugs que nos interesa que encuentres durante el beta.
+description: Las categorías de errores (bugs) que nos interesa que encuentres durante el beta.
 order: 2
 role: reportar-bugs
 section: Reportar bugs
@@ -12,9 +12,9 @@ Estas son las **categorías** de cosas que nos interesa que encuentres. La prime
 
 ## a) Funcionamiento — ¿hace lo que dice que hace?
 
-**Esta es la categoría más importante.** Antes de fijarte en colores o velocidad, queremos saber si las cosas **andan**. Si un flujo no se completa, **es bug crítico**.
+**Esta es la categoría más importante.** Antes de fijarte en colores o velocidad, queremos saber si las cosas **andan**. Si un proceso no se completa, **es error (bug) crítico**.
 
-Probá los flujos completos, de punta a punta, y fijate si:
+Probá los procesos completos, de punta a punta, y fijate si:
 
 ### Cuenta y sesión
 
@@ -30,15 +30,15 @@ Probá los flujos completos, de punta a punta, y fijate si:
 - Podés **buscar alojamientos** y te devuelve resultados
 - Los **filtros** funcionan (precio, capacidad, amenidades, fecha)
 - Entrás al **detalle** de un alojamiento y se ve la galería, descripción, precio, mapa
-- Podés **contactar al host** desde el detalle y le llega el mensaje
+- Podés **contactar al propietario o anfitrión (host)** desde el detalle y le llega el mensaje
 - Marcás un alojamiento como **favorito** y aparece en tu cuenta
 - Podés **crear una colección** y mover favoritos adentro
 - Navegás **destinos**, **eventos** y **blog** y todo abre bien
 - El **cambio de página** (paginación) funciona
 
-### Como host
+### Como propietario
 
-- Podés **registrarte como host** y completar el onboarding sin trabarte
+- Podés **registrarte como propietario** y completar la bienvenida inicial (onboarding) sin trabarte
 - Podés **crear un alojamiento** entero (todos los pasos, todos los campos)
 - Podés **subir fotos** y se ven en el detalle público
 - Podés **editar** un alojamiento ya creado y los cambios se reflejan
@@ -53,7 +53,7 @@ Probá los flujos completos, de punta a punta, y fijate si:
 
 - Podés crear / editar / eliminar lo que te corresponde según tu rol
 - Los cambios que hacés en el panel **aparecen** en el sitio público
-- Los **flujos guiados** del rol completan sin trabarse
+- Los **procesos guiados** del rol completan sin trabarse
 
 > **Si algo de esto no anda, reportalo con prioridad alta.** "Intenté crear un alojamiento y al llegar al paso 4 se rompió" vale más que veinte detalles cosméticos.
 
@@ -85,10 +85,10 @@ Probá los flujos completos, de punta a punta, y fijate si:
 - Falta traducir algo (queda en español aunque elegiste otro idioma)
 - Errores de ortografía o tipeo
 
-## f) Responsive — ¿se ve bien en distintos tamaños?
+## f) Adaptable al dispositivo (responsive) — ¿se ve bien en distintos tamaños?
 
-- En el celular se ve perfecto pero en la compu no
-- En la compu queda re bien pero en el celular se rompe
+- En el celular se ve perfecto pero en la computadora no
+- En la computadora queda re bien pero en el celular se rompe
 - Si achicás la ventana del navegador, algo se desarma
 
 ## g) Pagos y suscripciones — ¿el pago funciona?

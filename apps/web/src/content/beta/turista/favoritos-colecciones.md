@@ -26,13 +26,13 @@ Las colecciones te permiten agrupar favoritos por tema. **Hasta 10 colecciones p
 3. Guardala.
 4. Agregá algunos favoritos a esa colección con el botón **"Mover"** de cada tarjeta.
 5. Creá otra colección, ej. "Para volver con la flia".
-6. **Mové cosas entre colecciones** desde el modal de **"Mover a colección"**.
+6. **Mové cosas entre colecciones** desde la ventana emergente (modal) de **"Mover a colección"**.
 7. Probá **editar** una colección con el botón **"Editar colección"**.
 8. Probá **borrar** una con **"Borrar colección"** — el sitio te avisa: "¿Seguro que querés borrar esta colección? Los favoritos quedarán sin colección, no se borran."
 
 ## Probá los límites
 
-- Intentá crear **una colección número 11**. **Lo esperado** es que el sitio te muestre **"Ya alcanzaste el máximo de 10 colecciones"**. Si te deja crear la 11ª, es un bug — reportalo.
+- Intentá crear **una colección número 11**. **Lo esperado** es que el sitio te muestre **"Ya alcanzaste el máximo de 10 colecciones"**. Si te deja crear la 11ª, es un error (bug) — reportalo.
 - Movélos a la opción **"Sin colección"** para sacar favoritos de una carpeta sin perderlos.
 - Probá la paginación dentro de una colección con muchos favoritos.
 

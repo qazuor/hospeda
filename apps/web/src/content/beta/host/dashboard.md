@@ -1,12 +1,12 @@
 ---
-title: Tu dashboard de host
+title: Tu panel de control (dashboard) de propietario o anfitrión (host)
 description: Cómo revisar tus alojamientos publicados, editarlos y ver el preview público.
 order: 3
 role: host
 section: Gestión del host
 ---
 
-# Tu dashboard de host
+# Tu panel de control (dashboard) de propietario o anfitrión (host)
 
 Abrí el menú de usuario (arriba a la derecha) y elegí **"Mis propiedades"**. Llegás al panel del propietario con el título **"Mis propiedades"** y debajo el subtítulo **"Gestioná tus publicaciones"**.
 
@@ -16,7 +16,7 @@ Cada propiedad aparece como una tarjeta con:
 
 - **Imagen** y **nombre**
 - **Precio por noche**
-- **Estado** (badge): **"Borrador"**, **"Publicada"** o **"Suspendida"**
+- **Estado** (etiqueta): **"Borrador"**, **"Publicada"** o **"Suspendida"**
 - Botones de acción: **"Editar"**, **"Publicar"** / **"Despublicar"**, **"Ver en el sitio"**
 
 Si nunca creaste una propiedad, vas a ver **"Aún no publicaste ninguna propiedad"** con un botón **"Publicar ahora"**.
@@ -24,15 +24,15 @@ Si nunca creaste una propiedad, vas a ver **"Aún no publicaste ninguna propieda
 ## Editar tu alojamiento
 
 1. Apretá **"Editar"** en la tarjeta de tu propiedad.
-2. **Al apretar Editar te redirige al panel de administración** (subdominio admin, fuera de `staging.hospeda.com.ar`). Ahí vivís el wizard de 8 secciones.
+2. **Al apretar Editar te redirige al panel de administración** (subdominio admin, fuera de `staging.hospeda.com.ar`). Ahí vivís el asistente guiado (wizard) de 8 secciones.
 3. Cambiá el nombre. Guardá. Recargá. ¿Quedó?
 4. Agregá una foto más. Guardá. ¿Apareció?
 5. Sacá una comodidad. ¿Se actualizó?
-6. Cambiá el precio. Volvé al sitio público (con **"Ver en el sitio"** desde el dashboard) y verificá que el precio coincida.
+6. Cambiá el precio. Volvé al sitio público (con **"Ver en el sitio"** desde el panel de control) y verificá que el precio coincida.
 
-> Si ves un toast **"Cambios guardados"**, está OK.
+> Si ves una notificación flotante (toast) **"Cambios guardados"**, está OK.
 >
-> ⚠️ El redirect web → admin durante la edición es esperado, no es un bug.
+> ⚠️ El redirect web → admin durante la edición es esperado, no es un error (bug).
 
 ## Despublicar y volver a publicar
 
@@ -53,15 +53,15 @@ Si nunca creaste una propiedad, vas a ver **"Aún no publicaste ninguna propieda
 
 > ⚠️ **No los reportes** — están planeados pero no para este beta:
 >
-> - ❌ Estadísticas del listing (cuántas vistas, clicks, favoritos)
+> - ❌ Estadísticas de la lista (cuántas vistas, clicks, favoritos)
 > - ❌ Calendario de disponibilidad
 > - ❌ Sincronización con Google Calendar / Airbnb
 > - ❌ Embed de video YouTube en la descripción
-> - ❌ Comprar add-ons extra desde tu dashboard
-> - ❌ Crear promociones temporales desde tu cuenta de host
+> - ❌ Comprar add-ons extra desde tu panel de control
+> - ❌ Crear promociones temporales desde tu cuenta de propietario
 > - ❌ Responder a reseñas de huéspedes
 
-Mirá la lista completa en [Qué no es bug](/beta/reportar-bugs/que-no-es-bug/).
+Mirá la lista completa en [Qué no es error](/beta/reportar-bugs/que-no-es-bug/).
 
 ## Próximo paso
 
