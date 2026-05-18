@@ -8,7 +8,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -50,7 +50,7 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 		<div class="events-grid">
 			{cards.map((card, i) => (
 				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-					<EventCard data={card} locale={locale} />
+					<EventCardHorizontal data={card} locale={locale} />
 				</div>
 			))}
 		</div>
@@ -59,7 +59,6 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 </ListingLayout>
 
 <style>
-	.events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-card-gap); }
-	@media (max-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
-	@media (max-width: 640px) { .events-grid { grid-template-columns: 1fr; } }
+	.events-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-card-gap); }
+	@media (min-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
