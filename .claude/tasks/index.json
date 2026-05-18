@@ -365,9 +365,12 @@
         {
             "specId": "SPEC-111",
             "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
-            "status": "in-progress",
-            "progress": "0/9",
-            "path": "SPEC-111-astro-server-islands-fix"
+            "status": "completed",
+            "progress": "9/9",
+            "path": "SPEC-111-astro-server-islands-fix",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "archiveNote": "Completed via Astro 6.3.3 bump (commit 64c77925c). Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-130",
