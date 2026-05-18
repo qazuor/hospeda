@@ -1333,6 +1333,18 @@
             "extractedFrom": "SPEC-136 post-fix axe verification",
             "parent": "SPEC-134",
             "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
+        },
+        {
+            "specId": "SPEC-146",
+            "title": "Sentry release wiring + SDK version alignment",
+            "type": "fix",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-146-sentry-release-and-sdk-bump",
+            "created": "2026-05-18T00:00:00Z",
+            "discoveredDuring": "2026-05-18 staging Sentry health check after SPEC-140 PR #1146 verification",
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["sentry", "monitoring", "observability", "web", "admin"]
         }
     ]
 }
