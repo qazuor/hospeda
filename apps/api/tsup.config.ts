@@ -47,7 +47,8 @@ export default defineConfig({
         '@react-email/components',
         '@react-email/render',
         'resend',
-        'ioredis'
+        'ioredis',
+        'node-cron'
     ],
     noExternal: [
         /@repo\/.*/,
