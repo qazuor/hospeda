@@ -20,22 +20,16 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
- * Updated 2026-05-17 to 195: net +6 vs the previous 189. Breakdown:
- *  - +4 for SPEC-140 PostHog client vars (PUBLIC_POSTHOG_KEY, PUBLIC_POSTHOG_HOST
- *    in `env-registry.client.ts` CLIENT_WEB_ENV_VARS and VITE_POSTHOG_KEY,
- *    VITE_POSTHOG_HOST in CLIENT_ADMIN_ENV_VARS).
- *  - +3 for pre-existing drift in monitoring/features categories (constants
- *    were not bumped when those vars were added on staging).
- *  - -1 for removing a duplicate registration of PUBLIC_ENABLE_LOGGING that
- *    existed in BOTH `env-registry.client.ts` (category 'client-web', kept)
- *    AND `env-registry.hospeda.ts` (category 'debugging', removed in
- *    SPEC-140 cleanup since PUBLIC_* vars belong in the client registry).
- * Previous value 189 (2026-05-15) covered SPEC-109. Previous 187 (2026-05-12)
- * covered SPEC-101 (Newsletter MVP). When adding or removing variables, bump
- * this constant in the same commit and regenerate the snapshot below
- * (`vitest -u`).
+ * Updated 2026-05-18 to 197: net +2 vs the previous 195 (SPEC-140 PostHog).
+ * Both new vars come from the Sentry staging-vs-prod environment separation:
+ *  - `PUBLIC_SENTRY_ENVIRONMENT` in CLIENT_WEB_ENV_VARS
+ *  - `VITE_SENTRY_ENVIRONMENT` in CLIENT_ADMIN_ENV_VARS
+ * Previous value 195 (2026-05-17) covered SPEC-140 (PostHog Cloud), which also
+ * removed a pre-existing duplicate of PUBLIC_ENABLE_LOGGING. Previous 189
+ * (2026-05-15) covered SPEC-109. When adding or removing variables, bump this
+ * constant in the same commit and regenerate the snapshot below (`vitest -u`).
  */
-const EXPECTED_VAR_COUNT = 195;
+const EXPECTED_VAR_COUNT = 197;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -369,12 +363,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 25 VITE_* admin variables', () => {
+        it('should contain all 26 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(25);
+            expect(viteVars.length).toBe(26);
         });
     });
 

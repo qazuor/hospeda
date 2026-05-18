@@ -72,6 +72,12 @@ const AdminEnvSchema = z.object({
         .describe('Sentry DSN for error tracking (production only)'),
     VITE_SENTRY_RELEASE: z.string().optional().describe('Sentry release identifier'),
     VITE_SENTRY_PROJECT: z.string().optional().describe('Sentry project slug'),
+    VITE_SENTRY_ENVIRONMENT: z
+        .string()
+        .optional()
+        .describe(
+            'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
+        ),
 
     // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
     // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
@@ -170,6 +176,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
+            VITE_SENTRY_ENVIRONMENT: import.meta.env.VITE_SENTRY_ENVIRONMENT,
             VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
             VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
             VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',

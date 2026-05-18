@@ -25,6 +25,7 @@ import styles from './CookieConsentBanner.module.css';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CategoryState {
+    readonly crashReporting: boolean;
     readonly analytics: boolean;
     readonly marketing: boolean;
 }
@@ -53,6 +54,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     const [isOpen, setIsOpen] = useState(false);
     const [view, setView] = useState<BannerView>('main');
     const [categories, setCategories] = useState<CategoryState>({
+        crashReporting: false,
         analytics: false,
         marketing: false
     });
@@ -65,7 +67,11 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
             return;
         }
         // Pre-fill with saved preferences (for reopen scenario)
-        setCategories({ analytics: existing.analytics, marketing: existing.marketing });
+        setCategories({
+            crashReporting: existing.crashReporting,
+            analytics: existing.analytics,
+            marketing: existing.marketing
+        });
     }, []);
 
     // Listen for the "reopen" custom event dispatched by the footer button
@@ -73,7 +79,11 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
         function handleReopen() {
             const existing = getConsent();
             if (existing) {
-                setCategories({ analytics: existing.analytics, marketing: existing.marketing });
+                setCategories({
+                    crashReporting: existing.crashReporting,
+                    analytics: existing.analytics,
+                    marketing: existing.marketing
+                });
             }
             setView('customize');
             setIsOpen(true);
@@ -134,17 +144,21 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     // ─── Handlers ─────────────────────────────────────────────────────────────
 
     function handleAcceptAll() {
-        saveConsent({ analytics: true, marketing: true });
+        saveConsent({ crashReporting: true, analytics: true, marketing: true });
         setIsOpen(false);
     }
 
     function handleRejectAll() {
-        saveConsent({ analytics: false, marketing: false });
+        saveConsent({ crashReporting: false, analytics: false, marketing: false });
         setIsOpen(false);
     }
 
     function handleSavePreferences() {
-        saveConsent({ analytics: categories.analytics, marketing: categories.marketing });
+        saveConsent({
+            crashReporting: categories.crashReporting,
+            analytics: categories.analytics,
+            marketing: categories.marketing
+        });
         setIsOpen(false);
     }
 
@@ -241,6 +255,33 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                                     </div>
                                     <p className={styles.categoryDesc}>
                                         {t('cookieConsent.categories.necessary.description')}
+                                    </p>
+                                </div>
+
+                                {/* Crash reporting */}
+                                <div className={styles.category}>
+                                    <div className={styles.categoryHeader}>
+                                        <span className={styles.categoryLabel}>
+                                            {t('cookieConsent.categories.crashReporting.label')}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={categories.crashReporting}
+                                            className={`${styles.toggle} ${categories.crashReporting ? styles.toggleOn : ''}`}
+                                            onClick={() => toggleCategory('crashReporting')}
+                                            aria-label={t(
+                                                'cookieConsent.categories.crashReporting.label'
+                                            )}
+                                        >
+                                            <span
+                                                className={styles.toggleThumb}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                    </div>
+                                    <p className={styles.categoryDesc}>
+                                        {t('cookieConsent.categories.crashReporting.description')}
                                     </p>
                                 </div>
 

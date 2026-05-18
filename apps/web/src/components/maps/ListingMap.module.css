@@ -399,8 +399,7 @@
      * icon). */
     pointer-events: auto;
     cursor: pointer;
-    transition: transform 150ms ease-out, box-shadow 150ms ease-out,
-        background-color 150ms ease-out;
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
 }
 
 /* When the pill stacks name + price on two lines we soften the radius so the
