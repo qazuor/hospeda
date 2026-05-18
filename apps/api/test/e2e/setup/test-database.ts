@@ -65,6 +65,13 @@ export class TestDatabaseManager {
     /**
      * Begin a new transaction for test isolation
      * Returns a transaction client that can be used for all operations
+     *
+     * @deprecated SPEC-143: this implementation is structurally broken — Drizzle's
+     *   `db.transaction(async tx => {...})` commits implicitly when the callback
+     *   returns, leaving the returned `txClient` pointing at an already-closed
+     *   transaction. The accompanying {@link rollbackTransaction} is a no-op.
+     *   Six pre-existing test files still call this pair so we preserve it
+     *   unchanged; new code should use {@link withRollback} instead.
      */
     async beginTransaction(): Promise<any> {
         if (!this.db) throw new Error('Database not initialized');
@@ -82,10 +89,78 @@ export class TestDatabaseManager {
 
     /**
      * Rollback a transaction (automatic cleanup after test)
+     *
+     * @deprecated SPEC-143: paired with {@link beginTransaction} which is broken;
+     *   the transaction has already been committed by the time this is called.
+     *   Use {@link withRollback} for new code.
      */
     async rollbackTransaction(txClient: any): Promise<void> {
         this.activeTransactions.delete(txClient);
         // Transaction is automatically rolled back when it goes out of scope
+    }
+
+    /**
+     * Run a test body inside a transaction and ALWAYS roll back (SPEC-143 T-143-07).
+     *
+     * Correct replacement for the broken {@link beginTransaction} +
+     * {@link rollbackTransaction} pair. Writes inside the callback do NOT persist.
+     *
+     * Usage:
+     *
+     * ```ts
+     * await testDb.withRollback(async (tx) => {
+     *     const { planId } = await createTestPlan({}, tx);
+     *     // ... factories called with `tx` write inside the transaction ...
+     *     // test assertions go here
+     * });
+     * // After the callback returns, the transaction is rolled back automatically.
+     * ```
+     *
+     * Uses a sentinel error to force Drizzle's `db.transaction` to ROLLBACK; the
+     * sentinel is caught and discarded so the caller sees either the callback's
+     * return value or any non-sentinel error it threw.
+     *
+     * @param fn - Test body that receives the transaction client
+     * @returns Whatever `fn` returns (after rollback has fired)
+     */
+    async withRollback<T>(fn: (tx: any) => Promise<T>): Promise<T> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const ROLLBACK_SENTINEL = Symbol('TestDatabaseManager.withRollback rollback');
+
+        let captured: { kind: 'value'; value: T } | { kind: 'error'; error: unknown } | null = null;
+
+        try {
+            await this.db.transaction(async (tx: any) => {
+                this.activeTransactions.add(tx);
+                try {
+                    const value = await fn(tx);
+                    captured = { kind: 'value', value };
+                } catch (error) {
+                    captured = { kind: 'error', error };
+                } finally {
+                    this.activeTransactions.delete(tx);
+                }
+                // Throwing forces Drizzle to ROLLBACK the transaction.
+                throw ROLLBACK_SENTINEL;
+            });
+        } catch (error) {
+            if (error !== ROLLBACK_SENTINEL) {
+                throw error;
+            }
+        }
+
+        if (captured === null) {
+            throw new Error(
+                'TestDatabaseManager.withRollback: callback did not run (this should not happen)'
+            );
+        }
+
+        const result = captured as { kind: 'value'; value: T } | { kind: 'error'; error: unknown };
+        if (result.kind === 'error') {
+            throw result.error;
+        }
+        return result.value;
     }
 
     /**
