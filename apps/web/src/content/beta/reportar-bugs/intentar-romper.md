@@ -58,12 +58,12 @@ En cualquier campo:
 
 ## 7. El usuario sin permisos
 
-- Logueate como turista, pegá una URL de admin en el navegador. ¿Te frena? ¿Te dice "no podés"?
+- Logueate como turista, pegá una dirección web (URL) de admin en el navegador. ¿Te frena? ¿Te dice "no podés"?
 - Cerrá sesión y entrá a "Mi cuenta". ¿Te redirige a iniciar sesión?
 
 ## 8. El usuario que clickea cosas raras
 
-- **Encontrá botones / enlaces rotos** (un botón que no hace nada es bug).
+- **Encontrá botones / enlaces rotos** (un botón que no hace nada es error (bug)).
 - **Tipografías cortadas, imágenes que no cargan, íconos faltantes.**
 - **Errores de ortografía.** Aunque sea uno.
 

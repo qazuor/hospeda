@@ -17,7 +17,7 @@ Como admin tenés mucho más que un editor. Hacé también todo lo del [editor](
 
 > Áreas organizadas por importancia. Probá todo lo que puedas en las 2-3 semanas del beta.
 
-## Dashboard principal (prioridad alta)
+## Panel de control (dashboard) principal (prioridad alta)
 
 - KPIs (usuarios, alojamientos, ingresos).
 - Gráficos / tendencias.
@@ -48,7 +48,7 @@ Mismo proceso:
 
 - Listar, filtrar, buscar.
 - Detalle (pestañas: General, Alojamientos, Atracciones, Eventos).
-- Editar descripción, foto cover.
+- Editar descripción, foto de portada.
 - Crear destino (ciudad, región).
 - Asignar **atracciones** (puntos de interés).
 
@@ -70,7 +70,7 @@ Sub-menú **Contenido**:
 - **Características** (habitaciones, baños, etc.).
 - **Atracciones de Destinos**.
 
-> 📋 **Reportá** si una comodidad/característica que creaste no aparece después en el form del host.
+> 📋 **Reportá** si una comodidad/característica que creaste no aparece después en el formulario del propietario o anfitrión (host).
 
 ## Publicaciones / Blog (igual que editor + extras)
 

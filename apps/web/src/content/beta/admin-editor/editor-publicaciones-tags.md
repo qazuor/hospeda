@@ -13,7 +13,7 @@ section: Solo editor
   <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
 </aside>
 
-Como editor gestionás **Publicaciones (blog)**, **Etiquetas (tags)** y **Eventos**. No tenés acceso a usuarios, billing ni configuración.
+Como editor gestionás **Publicaciones (blog)**, **Etiquetas (tags)** y **Eventos**. No tenés acceso a usuarios, facturación (billing) ni configuración.
 
 Esta página cubre publicaciones y etiquetas. Para eventos, mirá [Admin — alojamientos, destinos y eventos](/beta/admin-editor/admin-alojamientos/) (sección Eventos).
 
@@ -53,7 +53,7 @@ Menú lateral → **"Etiquetas"**. Vas a ver al menos:
 - **Etiquetas de blog (post-tags)** — usadas en posts
 - **Etiquetas de sistema** — predefinidas (mirá, no edites)
 
-(Los tipos "Internas" y "Moderación de usuario" existen en el panel pero el Editor no tiene permisos. Si las ves, reportalo: es bug.)
+(Los tipos "Internas" y "Moderación de usuario" existen en el panel pero el Editor no tiene permisos. Si las ves, reportalo: es error (bug).)
 
 Para las etiquetas de blog:
 

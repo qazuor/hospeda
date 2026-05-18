@@ -30,13 +30,13 @@ Si no recibís un email esperado:
 2. **Reseteo de contraseña**
 3. **Verificación de mensajería para invitados**
 
-Si **alguno de estos 3** no llega, es bug grave — reportá con urgencia.
+Si **alguno de estos 3** no llega, es error grave — reportá con urgencia.
 
-Para el resto, reportá si no llegan pero esperá nuestra confirmación antes de asumir que es bug — puede ser config de entorno.
+Para el resto, reportá si no llegan pero esperá nuestra confirmación antes de asumir que es error — puede ser config de entorno.
 
 ## Funcionalidades que todavía no están
 
-Si algo no existe pero sabemos que lo queremos hacer, no es bug. Mirá la [lista de próximas funcionalidades](/beta/empezar/proximas-funcionalidades/).
+Si algo no existe pero sabemos que lo queremos hacer, no es error. Mirá la [lista de próximas funcionalidades](/beta/empezar/proximas-funcionalidades/).
 
 ¿Se te ocurre alguna funcionalidad útil? Propónela con el botón flotante: también sirve para sugerir ideas.
 

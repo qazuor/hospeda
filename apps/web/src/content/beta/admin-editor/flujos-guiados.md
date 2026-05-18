@@ -17,7 +17,7 @@ Procesos completos de uso real. Hacelos al menos una vez.
 
 ## Proceso 1 — Crear destino con todo
 
-1. **Acceso → Usuarios** → crear "host de prueba" con tu email + 1.
+1. **Acceso → Usuarios** → crear "propietario o anfitrión (host) de prueba" con tu email + 1.
 2. **Destinos** → crear "Ciudad de Prueba".
 3. **Contenido → Atracciones de Destinos** → crear 3 y asignalas al destino.
 4. **Alojamientos** → crear uno en ese destino.
@@ -26,7 +26,7 @@ Procesos completos de uso real. Hacelos al menos una vez.
 ## Proceso 2 — Gestionar suscripción de propietario
 
 1. Crear propietario nuevo (otro email tuyo).
-2. Desde la web pública, suscribirlo con [tarjeta test de MP](/beta/host/suscripcion-y-pagos/).
+2. Desde la web pública, suscribirlo con [tarjeta de prueba de MP](/beta/host/suscripcion-y-pagos/).
 3. Admin → **Billing → Suscripciones** → buscar esa suscripción.
 4. ¿Está activa? ¿Próxima renovación correcta?
 5. **Billing → Pagos** → buscar el pago. Si hay opción de reembolso, probala.
@@ -45,10 +45,10 @@ Procesos completos de uso real. Hacelos al menos una vez.
 2. Título, contenido (con formato), imagen de portada.
 3. Asignar 3 etiquetas + 1 categoría.
 4. Configurar SEO (meta title, description, slug).
-5. Guardar como borrador, editarlo, asignar sponsorship.
+5. Guardar como borrador, editarlo, asignar patrocinio (sponsorship).
 6. Cambiar a **publicado**.
-7. Sitio público: aparece en `/publicaciones/`, bajo su categoría y cada etiqueta, SEO aplicado (title de pestaña), sponsorship visible.
+7. Sitio público: aparece en `/publicaciones/`, bajo su categoría y cada etiqueta, SEO aplicado (title de pestaña), patrocinio visible.
 
 ## Qué reportar
 
-> 📋 **Reportá** cualquier paso que no funcionó. Estos procesos son representativos del uso real: cada bug acá vale doble.
+> 📋 **Reportá** cualquier paso que no funcionó. Estos procesos son representativos del uso real: cada error (bug) acá vale doble.

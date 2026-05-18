@@ -1,12 +1,12 @@
 ---
-title: Admin — Billing y monetización
+title: Admin — Facturación (billing) y monetización
 description: Planes, suscripciones, add-ons, códigos promo, pagos, facturas, métricas.
 order: 4
 role: admin-editor
 section: Solo admin
 ---
 
-# Admin — Billing y monetización
+# Admin — Facturación (billing) y monetización
 
 <aside class="beta-callout beta-callout--info beta-callout--compact">
   <span class="beta-callout__icon" aria-hidden="true">ℹ️</span>
@@ -43,17 +43,17 @@ Sección clave y grande. Tomate tu tiempo.
 - Crear otro al **100%** y guardarlo.
 - **Listar** y **editar** un código.
 
-> ⚠️ No vas a poder validar el descuento desde un checkout del sitio público — el checkout corre en MercadoPago Checkout Pro y no expone un campo de promo code al usuario final. Hoy son una herramienta administrativa cuya aplicación final está en revisión.
+> ⚠️ No vas a poder validar el descuento desde un checkout del sitio público — el checkout corre en MercadoPago Checkout Pro y no expone un campo de código promo al usuario final. Hoy son una herramienta administrativa cuya aplicación final está en revisión.
 
 ## Promociones para propietarios (Owner Promotions)
 
-> ⚠️ Distinto de los códigos promo. Las owner promotions son promos de un alojamiento (ej. 20% en una cabaña por temporada baja). Los promo codes son cupones globales para suscripciones.
+> ⚠️ Distinto de los códigos promo. Las promociones para propietarios son promos de un alojamiento (ej. 20% en una cabaña por temporada baja). Los códigos promo son cupones globales para suscripciones.
 
 **Billing → Promociones para propietarios**, probá crear una.
 
 ## Sponsorships
 
-**Billing → Patrocinios** o **Sponsorships**. Crear un sponsorship asociando una marca a un post, con duración y monto.
+**Billing → Patrocinios** o **Sponsorships**. Crear un patrocinio asociando una marca a una publicación, con duración y monto.
 
 ## Pagos
 
@@ -66,7 +66,7 @@ Sección clave y grande. Tomate tu tiempo.
 - Listar, generar una nueva, descargar PDF.
 - Estados: **Borrador → Enviado → Pendiente → Pagado** (también **Cancelado**). No existe "Emitida".
 
-> Notas de crédito: existe el permiso pero **no hay pantalla todavía** para gestionarlas. Si aparece, anotala. Si no, no es bug — está pendiente.
+> Notas de crédito: existe el permiso pero **no hay pantalla todavía** para gestionarlas. Si aparece, anotala. Si no, no es error (bug) — está pendiente.
 
 ## Tasas de cambio
 
@@ -78,10 +78,10 @@ Sección clave y grande. Tomate tu tiempo.
 
 ## Logs y eventos
 
-- **Notification logs** → notificaciones de billing enviadas
-- **Webhook events** → eventos recibidos desde MercadoPago
+- **Registros de notificación (Notification logs)** → notificaciones de facturación enviadas
+- **Eventos de webhook (Webhook events)** → eventos recibidos desde MercadoPago
 
-> ⚠️ Existen como rutas pero **pueden no aparecer en el menú lateral**. Probá acceder por URL directa (`/billing/notification-logs`, `/billing/webhook-events`). Si funcionan, **reportá** "estas pantallas no aparecen en el menú lateral pero existen".
+> ⚠️ Existen como rutas pero **pueden no aparecer en el menú lateral**. Probá acceder por dirección web (URL) directa (`/billing/notification-logs`, `/billing/webhook-events`). Si funcionan, **reportá** "estas pantallas no aparecen en el menú lateral pero existen".
 
 ## Qué reportar
 

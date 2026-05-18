@@ -12,7 +12,7 @@ Al usar el botón flotante **"Reportar problema"** (`Ctrl + Shift + F`), cuanto 
 
 ## El botón ya recolecta info por vos
 
-Al abrir el formulario, abajo hay una sección colapsable **"Detalles técnicos (auto-recolectados)"** con URL, navegador, OS, viewport, errores de consola, idioma, zona horaria y dispositivo.
+Al abrir el formulario, abajo hay una sección colapsable **"Detalles técnicos (auto-recolectados)"** con dirección web (URL), navegador, sistema operativo (OS), viewport, errores de consola, idioma, zona horaria y dispositivo.
 
 > ⚠️ **NO borres ni modifiques** la info precargada. **Solo agregá** lo tuyo (título, descripción, captura).
 

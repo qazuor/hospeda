@@ -17,7 +17,7 @@ Visitá estas páginas (suelen estar en el pie):
 - **Política de privacidad**
 - **Política de cookies**
 - **Beneficios**
-- **Propietarios** (landing para hosts)
+- **Propietarios** (landing para propietarios o anfitriones (hosts))
 
 ## Qué hacer en cada una
 

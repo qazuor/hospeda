@@ -24,7 +24,7 @@ Pueden aparecer también **Complex Basic / Pro / Premium** (multi-propiedad) o v
 
 ## Tarjetas de prueba
 
-Tarjetas oficiales de MercadoPago en sandbox. **No cobran plata real.**
+Tarjetas oficiales de MercadoPago en modo de prueba (sandbox). **No cobran plata real.**
 
 | Tipo | Número | CVV | Vencimiento |
 | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 
 ## Códigos promocionales
 
-> ⚠️ No hay campo de código promo en el checkout. Los promo codes existen como herramienta administrativa pero el checkout actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es bug — es el estado actual.
+> ⚠️ No hay campo de código promo en el checkout. Los códigos promo existen como herramienta administrativa pero el checkout actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
 
 ## Ver tu suscripción
 
@@ -85,7 +85,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 > 📋 **Reportá:**
 >
 > - Te quedaste sin saber qué hacer en algún paso
-> - El redirect al checkout de MP no funciona
+> - La redirección al checkout de MP no funciona
 > - Después de pagar no volvés bien al sitio
 > - El monto en MP no coincide con el del plan
 > - La suscripción no se activó después de pagar

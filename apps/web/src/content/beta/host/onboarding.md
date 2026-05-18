@@ -1,6 +1,6 @@
 ---
 title: Bienvenida como propietario/anfitrión
-description: Cómo llegar al dashboard de host y dar el primer paso para publicar.
+description: Cómo llegar al panel de control del propietario y dar el primer paso para publicar.
 order: 1
 role: host
 section: Empezar como host

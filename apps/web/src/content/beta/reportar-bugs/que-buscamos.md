@@ -12,7 +12,7 @@ Categorías de cosas que nos interesan. La primera es la más importante: **¿fu
 
 ## a) Funcionamiento — ¿hace lo que dice?
 
-**La categoría más importante.** Antes de colores o velocidad, queremos saber si las cosas **andan**. Si un proceso no se completa, **es bug crítico**.
+**La categoría más importante.** Antes de colores o velocidad, queremos saber si las cosas **andan**. Si un proceso no se completa, **es error (bug) crítico**.
 
 Probá los procesos de punta a punta:
 
@@ -30,14 +30,14 @@ Probá los procesos de punta a punta:
 - **Buscar alojamientos** y recibir resultados
 - **Filtros** (precio, capacidad, amenidades, fecha)
 - **Detalle**: galería, descripción, precio, mapa
-- **Contactar al host** desde el detalle, le llega el mensaje
+- **Contactar al propietario o anfitrión (host)** desde el detalle, le llega el mensaje
 - **Favoritos** y **colecciones**
 - Navegar **destinos**, **eventos**, **blog**
 - **Paginación**
 
 ### Como propietario
 
-- **Registro como host** y onboarding sin trabarte
+- **Registro como propietario** y bienvenida inicial (onboarding) sin trabarte
 - **Crear un alojamiento** completo
 - **Subir fotos** y verlas en el detalle público
 - **Editar** un alojamiento y que se reflejen los cambios
@@ -54,7 +54,7 @@ Probá los procesos de punta a punta:
 
 > **Si algo de esto no anda, reportá con prioridad alta.** "El paso 4 se rompió" vale más que veinte detalles cosméticos.
 
-## b) Performance — ¿anda lento?
+## b) Rendimiento (performance) — ¿anda lento?
 
 Páginas que tardan, botones que demoran en responder, scroll a saltitos, imágenes que tardan.
 

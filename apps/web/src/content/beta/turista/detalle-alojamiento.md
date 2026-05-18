@@ -18,9 +18,9 @@ Click en cualquier alojamiento del catálogo. **Explorá libremente.**
 - **Mapa de ubicación.** Marca **ubicación aproximada**, no exacta (lo aclara un cartelito abajo). Probá zoom y mover.
 - **Comodidades** (WiFi, Pileta, etc.). Si hay muchas, enlace **"Ver todas las N comodidades"**.
 - **Reseñas.** Si hay, ves puntaje y categorías (Limpieza, Hospitalidad, Servicios, Precisión, Comunicación, Ubicación). Enlace **"Ver las N opiniones"**.
-- **Favorito** (icono corazón). Apretalo, se llena. Otra vez, se vacía. Sin login, te pide iniciar sesión.
+- **Favorito** (icono corazón). Apretalo, se llena. Otra vez, se vacía. Sin sesión iniciada, te pide iniciar sesión.
 - **Datos del propietario** (al pie): nombre + "Miembro desde...". Si cargó datos públicos, ves **"Enviar email"**, **"Llamar"** y/o **"Visitar sitio web"**. Si no, **"Información de contacto no disponible"**.
-- **Formulario de mensaje al host**: sección aparte, lo probás en [Contactar al host](/beta/turista/contactar-host/).
+- **Formulario de mensaje al propietario o anfitrión (host)**: sección aparte, lo probás en [Contactar al propietario](/beta/turista/contactar-host/).
 
 ## Qué reportar
 

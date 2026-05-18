@@ -1,6 +1,6 @@
 ---
 title: Tu panel de control (dashboard) de propietario/anfitrión
-description: Cómo revisar tus alojamientos, editarlos y ver el preview público.
+description: Cómo revisar tus alojamientos, editarlos y ver la vista previa pública.
 order: 3
 role: host
 section: Gestión del host
@@ -30,15 +30,15 @@ Si nunca creaste una propiedad, ves **"Aún no publicaste ninguna propiedad"** +
 5. Sacá una comodidad. ¿Se actualizó?
 6. Cambiá el precio. Volvé al sitio público con **"Ver en el sitio"** y verificá que coincida.
 
-> Toast **"Cambios guardados"** = OK.
+> Notificación flotante **"Cambios guardados"** = OK.
 >
-> ⚠️ El redirect web → admin es esperado, no bug.
+> ⚠️ La redirección web → admin es esperada, no error (bug).
 
 ## Despublicar y volver a publicar
 
 1. En una **"Publicada"**, apretá **"Despublicar"**.
 2. ¿Cambió a "Suspendida"? ¿Sigue visible en el sitio? ¿Aparece como 404?
-3. Apretá **"Publicar"** para reactivarla. ¿Volvió al listado público?
+3. Apretá **"Publicar"** para reactivarla. ¿Volvió a la lista pública?
 
 ## Qué reportar
 
@@ -56,7 +56,7 @@ Si nunca creaste una propiedad, ves **"Aún no publicaste ninguna propiedad"** +
 > - ❌ Estadísticas de la lista (vistas, clicks, favoritos)
 > - ❌ Calendario de disponibilidad
 > - ❌ Sincronización con Google Calendar / Airbnb
-> - ❌ Embed de video YouTube en la descripción
+> - ❌ Incrustar video de YouTube en la descripción
 > - ❌ Comprar add-ons extra desde tu panel
 > - ❌ Crear promociones desde la cuenta de propietario
 > - ❌ Responder a reseñas

@@ -12,7 +12,7 @@ section: Pago real
 
 ## ¿Por qué te elegimos?
 
-Confiamos en vos. Las tarjetas de prueba (sandbox) cubren el 95% del proceso, pero hay un 5% que **solo se prueba con plata real**:
+Confiamos en vos. Las tarjetas de prueba (modo de prueba (sandbox)) cubren el 95% del proceso, pero hay un 5% que **solo se prueba con plata real**:
 
 - Conciliación automática del pago
 - Webhooks reales de MercadoPago

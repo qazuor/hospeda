@@ -1,6 +1,6 @@
 ---
 title: Crear tu primer alojamiento
-description: Mini-form rápido en el sitio + asistente guiado completo en el panel admin.
+description: Miniformulario rápido en el sitio + asistente guiado completo en el panel admin.
 order: 2
 role: host
 section: Empezar como host
@@ -10,12 +10,12 @@ section: Empezar como host
 
 El proceso está partido en **dos etapas**:
 
-1. **Mini-form en el sitio público** — 4 campos para crear la propiedad inicial.
+1. **Miniformulario en el sitio público** — 4 campos para crear la propiedad inicial.
 2. **Asistente guiado (wizard) en el panel admin** — donde completás todos los detalles.
 
 Después del paso 1 el sitio te redirige al panel. Vas a salir de `staging.hospeda.com.ar` y aterrizar en el subdominio del panel admin: es esperado.
 
-## Etapa 1 — Mini-form en el sitio público
+## Etapa 1 — Miniformulario en el sitio público
 
 1. En **"Mis propiedades"** (`/mi-cuenta/propiedades/`), apretá el botón para crear una propiedad nueva (si no tenés ninguna, vas a ver el CTA **"Publicar ahora"**).
 2. Te abre un formulario con **4 campos**: Nombre, Tipo, Ciudad, Resumen.
@@ -26,7 +26,7 @@ Después del paso 1 el sitio te redirige al panel. Vas a salir de `staging.hospe
 
 ### Tipos de alojamiento disponibles
 
-El select tiene exactamente estas 10 opciones:
+El menú desplegable tiene exactamente estas 10 opciones:
 
 Apartamento · Casa · Casa quinta · Cabaña · Hotel · Hostal · Camping · Habitación · Motel · Complejo turístico.
 
@@ -44,9 +44,9 @@ Nombre, Descripción corta, Descripción completa, Tipo de propiedad.
 
 ### 2. Ubicación
 
-Dirección, Ciudad, Provincia, País, Código postal, Latitud y Longitud. Mapa interactivo con pin arrastrable (hint: "Arrastrá el pin para ajustar la ubicación") y botones **"Expandir / Contraer mapa"**.
+Dirección, Ciudad, Provincia, País, Código postal, Latitud y Longitud. Mapa interactivo con pin arrastrable (ayuda: "Arrastrá el pin para ajustar la ubicación") y botones **"Expandir / Contraer mapa"**.
 
-> El form **puede** autocompletar las coordenadas desde la dirección. Si no lo hace, arrastrá el pin manualmente.
+> El formulario **puede** autocompletar las coordenadas desde la dirección. Si no lo hace, arrastrá el pin manualmente.
 
 ### 3. Capacidad
 
@@ -54,7 +54,7 @@ Huéspedes máximos, Habitaciones, Baños, Camas.
 
 ### 4. Comodidades
 
-Lista grande de casillas (label **"Comodidades"**, no "Amenidades"): WiFi, Aire, Calefacción, Cocina, Heladera, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín, Detector de humo, Botiquín, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Balcón, Terraza, Plancha, Secador, Caja fuerte, Ventilador, Blackout, Cuna, Accesibilidad, Mascotas.
+Lista grande de casillas (etiqueta **"Comodidades"**, no "Amenidades"): WiFi, Aire, Calefacción, Cocina, Heladera, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín, Detector de humo, Botiquín, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Balcón, Terraza, Plancha, Secador, Caja fuerte, Ventilador, Blackout, Cuna, Accesibilidad, Mascotas.
 
 Probá marcar/desmarcar varias. Si hay buscador en la lista, usalo.
 
@@ -82,15 +82,15 @@ Email, Teléfono, Método preferido (Email / Teléfono / WhatsApp).
 ### 8. Publicar
 
 - Pantalla de revisión final. Si faltan campos obligatorios, ves **"Faltan datos obligatorios"** con la lista.
-- Apretá **"Publicar"**. Toast: **"¡Tu propiedad fue publicada!"**.
+- Apretá **"Publicar"**. Notificación flotante: **"¡Tu propiedad fue publicada!"**.
 - Andá al sitio público en otra pestaña y buscá tu alojamiento por nombre. ¿Aparece?
 
 ## Qué reportar
 
 > 📋 **Reportá:**
 >
-> - El mini-form falla al apretar Publicar
-> - El redirect al panel admin se rompe (página en blanco, error)
+> - El miniformulario falla al apretar Publicar
+> - La redirección al panel admin se rompe (página en blanco, error)
 > - Los datos en el sitio público no coinciden con los del admin
 > - Un botón "Siguiente" / "Guardar" no funciona
 > - Refrescaste y se perdieron datos

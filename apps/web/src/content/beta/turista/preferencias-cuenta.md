@@ -16,7 +16,7 @@ Arriba a la derecha (compu) o dentro del menú ☰ (celular) hay un selector **E
 
 1. Cambialo a **EN**.
 2. Recorré las páginas que ya viste en español.
-3. Buscá: textos que **quedaron en español** aunque elegiste EN (eso es bug), traducciones **muy raras o mal escritas**.
+3. Buscá: textos que **quedaron en español** aunque elegiste EN (eso es error (bug)), traducciones **muy raras o mal escritas**.
 4. Repetí con **PT**.
 
 > 📋 **Reportá** la página y el texto mal traducido (copiá exacto si podés).
@@ -25,13 +25,13 @@ Arriba a la derecha (compu) o dentro del menú ☰ (celular) hay un selector **E
 
 Cerca del selector de idioma hay un control con 3 opciones: **Claro · Sistema · Oscuro** (íconos Sol · Engranaje · Luna).
 
-- **Sistema** sigue la preferencia de tu OS.
+- **Sistema** sigue la preferencia de tu sistema operativo (OS).
 
 Probá:
 
 - Cambiar entre los tres.
 - ¿Algún texto queda ilegible? ¿Algún ícono o imagen raro?
-- Con **Sistema**, cambiá el tema de tu OS y mirá si el sitio se actualiza solo sin recargar.
+- Con **Sistema**, cambiá el tema de tu sistema operativo y mirá si el sitio se actualiza solo sin recargar.
 
 ## Editar tu perfil
 
@@ -40,11 +40,11 @@ Probá:
 3. Si te deja, cambiá el avatar (JPEG/PNG/WebP, máx 5 MB).
 4. Apretá **"Guardar cambios"**. Recargá y fijate si guardó.
 
-> 📋 **Reportá:** algo no se guardó, error al guardar, foto que no subió (probá <5 MB y formato válido), si el helper "El correo electrónico no puede ser modificado" tiene sentido.
+> 📋 **Reportá:** algo no se guardó, error al guardar, foto que no subió (probá <5 MB y formato válido), si el texto de ayuda "El correo electrónico no puede ser modificado" tiene sentido.
 
 ## Suscribirte al newsletter
 
-En el pie de página hay un formulario **"Recibí novedades"** con input email + botón **"Suscribirme"**.
+En el pie de página hay un formulario **"Recibí novedades"** con campo email + botón **"Suscribirme"**.
 
 > ⚠️ Por ahora solo acepta email. Aunque el texto mencione "correo o whatsapp", la suscripción por WhatsApp todavía no está disponible. No la reportes — está planificada.
 
@@ -84,6 +84,6 @@ Probá:
 
 ## Comparar celular vs computadora
 
-Repetí lo más importante en el otro dispositivo: buscar alojamiento, ver detalle, marcar favorito, enviar mensaje al host.
+Repetí lo más importante en el otro dispositivo: buscar alojamiento, ver detalle, marcar favorito, enviar mensaje al propietario o anfitrión (host).
 
 **¿Se ve igual de bien en los dos?** ¿Hay algo cortado, deforme o mal alineado en uno que en el otro está perfecto?

@@ -1,6 +1,6 @@
 ---
 title: Admin — otros módulos
-description: Sponsors, conversaciones, notificaciones, SEO y revalidación de cache.
+description: Patrocinadores, conversaciones, notificaciones, SEO y revalidación de caché.
 order: 6
 role: admin-editor
 section: Solo admin
@@ -17,25 +17,25 @@ Prioridad media-baja. Probalas si te queda tiempo.
 
 ## Patrocinadores
 
-**Patrocinadores** (URL `/sponsors`).
+**Patrocinadores** (dirección web (URL) `/sponsors`).
 
-- Listar sponsors (marcas), crear uno nuevo, asignarle sponsorships activos.
+- Listar patrocinadores (marcas), crear uno nuevo, asignarle patrocinios activos.
 
 ## Mensajes
 
-**Mensajes** (URL `/conversations`).
+**Mensajes** (dirección web `/conversations`).
 
-- Listar todas las conversaciones (turistas y hosts).
+- Listar todas las conversaciones (turistas y propietarios o anfitriones (hosts)).
 - Filtrar por fecha, estado, participantes.
 - Abrir una: ¿podés moderar? ¿cerrar? ¿marcar resuelta?
 
 ## Notificaciones
 
-Inbox del sistema. Marcá como leído / sin leer.
+Bandeja del sistema. Marcá como leído / sin leer.
 
 ## Configuración SEO
 
-**Configuración → SEO**. Mirá robots.txt, sitemap, structured data.
+**Configuración → SEO**. Mirá robots.txt, sitemap, datos estructurados (structured data).
 
 ⚠️ **No la modifiques sin avisar.** Si algo no se entiende, reportalo.
 

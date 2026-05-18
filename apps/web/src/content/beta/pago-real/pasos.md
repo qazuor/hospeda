@@ -20,7 +20,7 @@ Seguí **[Crear tu primer alojamiento](/beta/host/crear-alojamiento/)**. Podés 
 
 ## Paso 3 — Llegar al checkout
 
-1. Andá a **"Suscriptores → Planes"** o desde el dashboard "Suscribirme a un plan".
+1. Andá a **"Suscriptores → Planes"** o desde el panel de control (dashboard) "Suscribirme a un plan".
 2. Elegí el plan que te asignamos (Basic / Pro / Premium).
 3. Apretá **"Suscribirme"**.
 

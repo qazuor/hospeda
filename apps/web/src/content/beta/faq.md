@@ -88,7 +88,7 @@ Necesitás uno real. Con Gmail probá `tuemail+beta@gmail.com`.
 
 ### Me olvidé la contraseña
 
-En login → **"Olvidé mi contraseña"**. Te llega un enlace. Si no, mirá Spam.
+En iniciar sesión (login) → **"Olvidé mi contraseña"**. Te llega un enlace. Si no, mirá Spam.
 
 ### ¿Puedo entrar con Google / Facebook?
 
@@ -108,7 +108,7 @@ Sí. Para probar como turista y como propietario podés crear 2 cuentas con emai
 
 ### ¿Tengo que pagar de verdad?
 
-**NO.** Tarjetas de prueba en modo sandbox.
+**NO.** Tarjetas de prueba en modo de prueba (sandbox).
 
 > Excepción: los 2 testers de [pago real](/beta/pago-real/introduccion/).
 
@@ -122,7 +122,7 @@ El **nombre del titular** controla el resultado: `APRO` aprueba, `OTHE` rechaza,
 
 ### Pagué pero no me activaron
 
-Es bug. Reportá hora, plan, captura, email registrado.
+Es error (bug). Reportá hora, plan, captura, email registrado.
 
 ### ¿Me llegan emails de pago?
 
@@ -182,7 +182,7 @@ Hay un control con 3 opciones: **Claro · Sistema · Oscuro** (Sol / Engranaje /
 
 ### Una imagen no carga
 
-Captura + reporte. Es bug.
+Captura + reporte. Es error.
 
 ### Error 404
 
@@ -324,7 +324,7 @@ Para ver todo desde cero:
 2. Andá a `staging.hospeda.com.ar`.
 3. Sin sesión, sin caché. Como un visitante nuevo.
 
-Especialmente útil para onboarding (turista, propietario) y cosas que solo aparecen "la primera vez".
+Especialmente útil para bienvenida inicial (onboarding) (turista, propietario) y cosas que solo aparecen "la primera vez".
 
 ---
 

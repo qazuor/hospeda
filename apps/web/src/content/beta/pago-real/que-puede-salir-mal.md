@@ -11,7 +11,7 @@ section: Pago real
 ## "Mi tarjeta fue rechazada"
 
 - Probá con otra tarjeta tuya (descartá problema con la primera).
-- Si todas rechazan, reportalo. Puede ser bug de la integración.
+- Si todas rechazan, reportalo. Puede ser error (bug) de la integración.
 - Avisanos por WhatsApp.
 
 ## "Pagué pero la suscripción no se activó"

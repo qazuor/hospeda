@@ -16,9 +16,9 @@ En todas las páginas hay una pastilla flotante abajo a la derecha **"Reportar p
 
 Atajo de teclado: **`Ctrl + Shift + F`**.
 
-Apretalo y se abre el modal **"Reportar un problema"** con campos:
+Apretalo y se abre la ventana emergente (modal) **"Reportar un problema"** con campos:
 
-- **Tipo** (select con categorías)
+- **Tipo** (menú desplegable con categorías)
 - **Título** (ej. "El precio se corta en celular")
 - **Descripción**
 - **Severidad** (opcional)
@@ -27,7 +27,7 @@ Apretalo y se abre el modal **"Reportar un problema"** con campos:
 - **Email** y **Nombre** (si no estás logueado)
 - **Capturas** (PNG, JPG, WebP, GIF — cómo sacarlas en el [glosario](/beta/empezar/glosario/))
 
-> ⚠️ Abajo del form hay **"Detalles técnicos (auto-recolectados)"** con URL, navegador, OS, viewport, errores de consola. **No la borres ni modifiques.**
+> ⚠️ Abajo del formulario hay **"Detalles técnicos (auto-recolectados)"** con dirección web (URL), navegador, sistema operativo (OS), viewport, errores de consola. **No la borres ni modifiques.**
 
 Apretá **"Enviar"**. Llega directo a nosotros.
 
@@ -51,7 +51,7 @@ Para: preguntas sobre cómo usar la plataforma, impresiones generales, pedir ayu
 | "Apareció un error en pantalla" | Botón flotante |
 | "Se ve mal / cortado / desalineado" | Botón flotante |
 | "No entiendo cómo funciona X" | WhatsApp |
-| "¿Esto está bien o es bug?" | WhatsApp |
+| "¿Esto está bien o es error?" | WhatsApp |
 | "Idea: estaría bueno que tenga Y" | Botón flotante (tipo "sugerencia" si está) |
 | "Falta traducir algo" | Botón flotante |
 | "Mi opinión general de la home" | WhatsApp |

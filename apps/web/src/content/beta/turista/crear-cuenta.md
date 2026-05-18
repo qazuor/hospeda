@@ -15,8 +15,8 @@ Hay **3 formas** de registrarte. Usá la que más uses.
 ## Opción 1 — Email y contraseña
 
 1. Arriba a la derecha, **"Iniciar sesión"**.
-2. Al pie de la pantalla de login, **"¿No tienes cuenta? Regístrate aquí"**.
-3. Form **"Crear Cuenta"** con 3 campos:
+2. Al pie de la pantalla de inicio de sesión (login), **"¿No tienes cuenta? Regístrate aquí"**.
+3. Formulario **"Crear Cuenta"** con 3 campos:
    - **Nombre** (un solo campo, completo)
    - **Correo electrónico** (usá uno real — te mandamos verificación)
    - **Contraseña** (mínimo 8 caracteres)
@@ -53,9 +53,9 @@ Hay **3 formas** de registrarte. Usá la que más uses.
 
 - **Cerrar sesión**: avatar arriba a la derecha → **"Cerrar Sesión"**.
 - **Volver a entrar** con las mismas credenciales.
-- **Recuperar contraseña**: en login, **"¿Olvidaste tu contraseña?"**. Pedí reset, click en el email, poné nueva. ¿Funcionó todo?
+- **Recuperar contraseña**: en iniciar sesión, **"¿Olvidaste tu contraseña?"**. Pedí restablecimiento, click en el email, poné nueva. ¿Funcionó todo?
 
-## Tips de email
+## Consejos de email
 
 - Gmail: usá `tuemail+beta@gmail.com` (el `+` separa los emails del beta sin cambiar de casilla).
 - Si después de **30 minutos** no llega el email (ni a Spam), reportalo.
