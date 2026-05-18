@@ -70,6 +70,17 @@ export interface CreateTestBillingCustomerInput {
     readonly segment?: TestBillingCustomerSegment;
     readonly livemode?: boolean;
     readonly metadata?: Readonly<Record<string, unknown>>;
+    /**
+     * Map of payment-provider identifiers (e.g. `{ mercadopago: 'mp_cust_xxx' }`).
+     * Required by qzpay-core flows that hit the provider with the customer's
+     * provider-side id — specifically `billing.subscriptions.create` for the
+     * monthly preapproval path (billing.ts:1258-1263 throws
+     * `QZPayValidationError` if the entry for the active provider is missing).
+     * One-time annual `billing.checkout.create({ mode: 'payment' })` does not
+     * read this map, so tests that exercise the annual flow can leave it unset.
+     * Defaults to `{}` to preserve backwards compatibility with existing tests.
+     */
+    readonly providerCustomerIds?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -98,6 +109,14 @@ export async function createTestBillingCustomer(
     const status: TestBillingCustomerStatus = input.status ?? 'active';
     const segment: TestBillingCustomerSegment = input.segment ?? 'individual';
 
+    // The qzpay drizzle schema stores provider customer ids in dedicated
+    // columns (`mp_customer_id`, `stripe_customer_id`), NOT in a jsonb map.
+    // The QZPayCustomer record reconstructs `providerCustomerIds` from those
+    // columns at read time (see qzpay's customer mapper). Translate the
+    // map-shaped helper input into the column-shaped insert values.
+    const mpCustomerId = input.providerCustomerIds?.mercadopago;
+    const stripeCustomerId = input.providerCustomerIds?.stripe;
+
     const inserted = await db
         .insert(billingCustomers)
         .values({
@@ -107,7 +126,9 @@ export async function createTestBillingCustomer(
             status,
             segment,
             livemode: input.livemode ?? false,
-            metadata: input.metadata ?? {}
+            metadata: input.metadata ?? {},
+            ...(mpCustomerId !== undefined ? { mpCustomerId } : {}),
+            ...(stripeCustomerId !== undefined ? { stripeCustomerId } : {})
         } as typeof billingCustomers.$inferInsert)
         .returning({ id: billingCustomers.id });
 
