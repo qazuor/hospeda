@@ -62,7 +62,12 @@ import { E2EApiClient } from '../../helpers/api-client.js';
 import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
 import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
-import { createTestUser, seedBillingTestPlans } from '../../setup/seed-helpers.js';
+import {
+    createTestPlan,
+    createTestPrice,
+    createTestUser,
+    seedBillingTestPlans
+} from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
 
 // Construct the stub once per test file and wire it into the ref that the
@@ -191,5 +196,162 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         const calls = mpStub.config.getCalls('subscriptions.create');
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('success');
+    });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    //
+    // The monthly flow surfaces five distinct error codes from
+    // `initiatePaidMonthlySubscription`, each mapped to an HTTP status by
+    // `mapServiceErrorToHttp` in start-paid.ts:86. The tests below exercise
+    // each branch end-to-end and assert no half-state lands in the DB when
+    // the failure happens BEFORE the qzpay create call.
+    // -----------------------------------------------------------------------
+
+    it('returns 404 when the plan slug does not match any existing plan', async () => {
+        // No stub configuration: the service fails at plan lookup, before any
+        // adapter call. If `subscriptions.create` were ever invoked, the loud
+        // unconfigured-error from the stub would fail the test.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: 'Non Existent Plan Name',
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(404);
+
+        // No DB side effects: no subscription row.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(0);
+
+        // Adapter was never called.
+        expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
+    });
+
+    it('returns 404 when the plan exists but has no active monthly price', async () => {
+        // Create a plan with ONLY an annual price. The seedBillingTestPlans
+        // baseline plans always have both intervals, so we need an ad-hoc
+        // plan to exercise this branch (the symmetric case of the
+        // NO_ANNUAL_PRICE test in annual-checkout.test.ts).
+        const annualOnly = await createTestPlan({
+            name: 'Annual Only Plan',
+            metadata: { slug: 'annual-only', category: 'test-error-path' }
+        });
+        await createTestPrice({
+            planId: annualOnly.planId,
+            unitAmount: 1_200_000,
+            billingInterval: 'year'
+        });
+        // Deliberately NO monthly price.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: annualOnly.name,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(404);
+
+        // No DB side effects.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(0);
+
+        // Adapter was never called.
+        expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
+    });
+
+    it('returns 500 when the adapter response carries no init point', async () => {
+        // qzpay-core surfaces `providerInitPoint` only when the provider
+        // result returns a truthy `initPoint` (falls back to `sandboxInitPoint`
+        // if the former is missing). Both empty → the hospeda handler hits
+        // the MISSING_INIT_POINT branch and surfaces 500.
+        mpStub.config.setSuccess(
+            'subscriptions.create',
+            providerResponseFixtures.subscription({
+                id: 'sub_no_url',
+                status: 'pending',
+                initPoint: ''
+            })
+        );
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(500);
+
+        // qzpay-core invoked the adapter, but the response was insufficient.
+        const calls = mpStub.config.getCalls('subscriptions.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('success');
+
+        // qzpay-core's create flow inserts the local subscription row BEFORE
+        // calling the provider adapter (see billing.ts:1262). The row stays
+        // in storage even though no provider link was established — the
+        // `abandoned-pending-subs` cron picks it up after the TTL. Validate
+        // that contract here (symmetric with the annual MISSING_INIT_POINT
+        // test which asserts the same no-rollback invariant).
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(1);
+    });
+
+    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
+        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
+        // (the qzpay default, mirrored by hospeda's middlewares/billing.ts).
+        // When the adapter throws, qzpay logs a warning and returns the
+        // un-enriched local subscription (no providerInitPoint). The hospeda
+        // handler then surfaces MISSING_INIT_POINT as 500.
+        //
+        // This validates the qzpay log-strategy branch end-to-end, distinct
+        // from the previous test which exercised the success-with-missing-url
+        // path. Both reach the same 500 but via different qzpay internals.
+        mpStub.config.setError(
+            'subscriptions.create',
+            429,
+            'MercadoPago rate limit exceeded',
+            'RATE_LIMITED'
+        );
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(500);
+
+        // Adapter was called and threw — outcome recorded as 'error'.
+        const calls = mpStub.config.getCalls('subscriptions.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('error');
+
+        // Local subscription row persists despite the provider failure (the
+        // abandoned-pending-subs cron reaper handles it later). qzpay-core's
+        // `log` strategy explicitly keeps the local record so the user can
+        // retry by hitting the endpoint again without an orphaned state.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(1);
+    });
+
+    it('returns 422 when the promo code is not a valid free-trial extension', async () => {
+        // The monthly flow honors only `type: 'free_trial_extension'` promos
+        // (SPEC-126 D9). An unknown or non-extension code is rejected at the
+        // service layer with INVALID_PROMO_CODE BEFORE any qzpay call, so
+        // the failure leaves no DB or adapter side effects.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'monthly',
+            promoCode: 'unknown-promo-code-xyz'
+        });
+
+        expect(response.status).toBe(422);
+
+        // No DB side effects: the promo validation runs before plan lookup
+        // and before any qzpay call.
+        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        expect(subs).toHaveLength(0);
+
+        // Adapter was never called.
+        expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
     });
 });
