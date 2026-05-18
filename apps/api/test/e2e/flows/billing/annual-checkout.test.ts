@@ -48,6 +48,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
+import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -55,7 +56,11 @@ import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
-import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
+import {
+    invalidSignatureHeaders,
+    providerResponseFixtures,
+    signWebhookPayload
+} from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     createTestPlan,
@@ -304,5 +309,236 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         const subs = await testDb.getDb().select().from(billingSubscriptions);
         expect(subs).toHaveLength(1);
         expect(subs[0]?.status).toBe('pending_provider');
+    });
+
+    // -----------------------------------------------------------------------
+    // Webhook activation — sub-commit 3
+    //
+    // MercadoPago IPN delivers `{ id, type, action, data: { id } }`. Hospeda's
+    // handlePaymentUpdated (post SPEC-143 T-143-09 fix) fetches the full
+    // payment via paymentAdapter.payments.retrieve, then dispatches to
+    // confirmAnnualSubscription when metadata carries `annualSubscriptionId`
+    // and the status is approved/accredited.
+    //
+    // The test programs three stub operations to simulate the full flow:
+    //   - webhooks.verifySignature -> true (qzpay-hono's middleware check)
+    //   - webhooks.constructEvent  -> the parsed QZPayWebhookEvent
+    //   - payments.retrieve        -> the full QZPayProviderPayment with
+    //                                  status='approved' + metadata
+    // -----------------------------------------------------------------------
+
+    /**
+     * Helper: create a pending_provider annual subscription via the happy
+     * path so the webhook test has something to activate.
+     */
+    async function createPendingAnnualSubscription(): Promise<string> {
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_for_activation',
+                url: 'https://stub.example/checkout/for-activation'
+            })
+        );
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'annual'
+        });
+        expect(response.status).toBe(201);
+        const body = (await response.json()) as {
+            readonly data: { readonly localSubscriptionId: string };
+        };
+        mpStub.config.reset();
+        return body.data.localSubscriptionId;
+    }
+
+    /**
+     * Helper: build + sign an MP IPN payment.updated payload.
+     */
+    function buildSignedWebhookRequest(opts: {
+        readonly providerPaymentId: string;
+    }): {
+        readonly body: string;
+        readonly headers: Record<string, string>;
+    } {
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'payment',
+            action: 'payment.updated',
+            data: { id: opts.providerPaymentId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const headers = signWebhookPayload({ body });
+        return { body, headers };
+    }
+
+    it('webhook payment.updated with matching annualSubscriptionId flips subscription to active', async () => {
+        // ARRANGE: pending_provider sub created via happy path
+        const localSubscriptionId = await createPendingAnnualSubscription();
+
+        // ARRANGE: stub the three adapter calls qzpay-hono + the handler make
+        const providerPaymentId = `pay_test_${randomUUID()}`;
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_activation',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: 1_000_000,
+                currency: 'ARS',
+                metadata: {
+                    annualSubscriptionId: localSubscriptionId,
+                    planSlug: cheapPlanName,
+                    billingInterval: 'annual'
+                }
+            })
+        );
+
+        // ACT: POST the signed webhook
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: webhook acknowledged
+        expect(response.status).toBe(200);
+
+        // ASSERT: subscription flipped to active
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('active');
+
+        // ASSERT: each stub leg fired exactly once
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(1);
+        expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(1);
+    });
+
+    it('webhook with mismatched annualSubscriptionId leaves subscription pending', async () => {
+        // ARRANGE: pending_provider sub created via happy path
+        const localSubscriptionId = await createPendingAnnualSubscription();
+
+        // ARRANGE: webhook carries a *different* annualSubscriptionId — one that
+        // does not match any subscription row. The handler should swallow the
+        // miss + acknowledge the event without mutating the existing sub.
+        const providerPaymentId = `pay_test_${randomUUID()}`;
+        const mismatchedSubId = randomUUID();
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_mismatch',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: 1_000_000,
+                currency: 'ARS',
+                metadata: {
+                    annualSubscriptionId: mismatchedSubId,
+                    planSlug: cheapPlanName,
+                    billingInterval: 'annual'
+                }
+            })
+        );
+
+        // ACT
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: 200 (event acknowledged) but no state change to the real sub
+        expect(response.status).toBe(200);
+
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('pending_provider');
+
+        // The mismatched id obviously creates no new subscription row either.
+        const sub2 = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, mismatchedSubId));
+        expect(sub2).toHaveLength(0);
+    });
+
+    it('webhook with invalid signature is rejected with 401 and produces no DB change', async () => {
+        // ARRANGE: pending_provider sub
+        const localSubscriptionId = await createPendingAnnualSubscription();
+        const providerPaymentId = `pay_test_${randomUUID()}`;
+
+        // ACT: build a body but use wrong-hmac headers — Hospeda's own
+        // webhookSignatureMiddleware (HMAC over the body with the test secret)
+        // rejects BEFORE qzpay-hono even runs.
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'payment',
+            action: 'payment.updated',
+            data: { id: providerPaymentId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
+
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...badHeaders
+            },
+            body
+        });
+
+        expect(response.status).toBe(401);
+
+        // ASSERT: subscription untouched
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('pending_provider');
+
+        // ASSERT: stub never reached (hospeda's middleware short-circuited).
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
+        expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     });
 });
