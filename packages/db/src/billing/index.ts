@@ -38,6 +38,12 @@ export {
     billingAuditLogs,
     type QZPayBillingAuditLog,
     type QZPayBillingAuditLogInsert,
+    // Checkout exports
+    billingCheckoutInsertSchema,
+    billingCheckoutSelectSchema,
+    billingCheckouts,
+    type QZPayBillingCheckout,
+    type QZPayBillingCheckoutInsert,
     // Customer exports
     billingCustomerInsertSchema,
     billingCustomerSelectSchema,
