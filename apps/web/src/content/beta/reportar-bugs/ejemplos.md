@@ -8,46 +8,36 @@ section: Reportar bugs
 
 # Ejemplos de buenos reportes
 
-Cuando uses el FAB **"Reportar problema"** (o el atajo `Ctrl + Shift + F`), **mientras más detalle nos pases, mejor**. No hace falta un reporte técnico largo, pero cuanto más completo, más rápido podemos resolverlo.
+Al usar el botón flotante **"Reportar problema"** (`Ctrl + Shift + F`), cuanto más detalle pases, más rápido resolvemos.
 
-## El FAB ya recolecta info por vos
+## El botón ya recolecta info por vos
 
-Al abrir el formulario vas a ver, abajo, una sección colapsable **"Detalles técnicos (auto-recolectados)"** con URL, navegador, sistema operativo, viewport, errores de consola, idioma, zona horaria y tipo de dispositivo.
+Al abrir el formulario, abajo hay una sección colapsable **"Detalles técnicos (auto-recolectados)"** con dirección web (URL), navegador, sistema operativo (OS), viewport, errores de consola, idioma, zona horaria y dispositivo.
 
-> ⚠️ **NO borres ni modifiques** la información que viene precargada. Esa info es la que más nos sirve para encontrar el problema. **Solo agregá** lo que vos quieras sumar (título, descripción, captura, etc.).
+> ⚠️ **NO borres ni modifiques** la info precargada. **Solo agregá** lo tuyo (título, descripción, captura).
 
-## Tratá de completar el formulario al máximo
+## Completá el formulario al máximo
 
-Cuando se te abre el reporte, vas a ver varios campos. **Llenalos todos los que puedas.** Si alguno no sabés qué poner o no entendés a qué se refiere, **dejalo en blanco** o **metelo en la descripción** explicando con tus palabras.
+Llená todos los campos que puedas. Si no entendés alguno, **dejalo en blanco** o **metelo en la descripción**.
 
-**Regla simple:** si dudás dónde poner algo, ponelo en **descripción**. Mejor que esté en el lugar "incorrecto" pero esté, a que no esté.
+**Regla simple:** si dudás dónde poner algo, ponelo en **descripción**. Mejor que esté en el lugar "incorrecto" a que no esté.
 
-## Qué nos ayuda saber sobre tu dispositivo
+## Qué info de tu dispositivo nos ayuda
 
-### Si reportás desde celular
+**Celular:** marca y modelo ("Samsung Galaxy A52", "iPhone 12"), OS y versión (Android 13, iOS 17), navegador, orientación (vertical / horizontal).
 
-- **Marca y modelo**: ej. "Samsung Galaxy A52", "iPhone 12", "Motorola G8"
-- **Sistema operativo y versión** si lo sabés: Android 13, iOS 17, etc.
-- **Navegador**: Chrome, Safari, Firefox, Brave
-- **Cómo lo estabas usando**: vertical / horizontal
-
-### Si reportás desde computadora
-
-- **Sistema operativo**: Windows 10, Windows 11, macOS Sonoma, Ubuntu, etc.
-- **Navegador y versión**: Chrome 120, Firefox 122, Safari 17, etc.
-- **Resolución de pantalla** si la sabés (ej. 1920x1080) — si no, podés decir "monitor grande", "notebook chica", etc.
-- **Si la ventana del navegador estaba a pantalla completa o achicada**
+**Compu:** OS (Windows 11, macOS Sonoma, Ubuntu), navegador + versión, resolución (1920x1080) o descripción ("notebook chica"), si la ventana estaba completa o achicada.
 
 ## Estructura ideal
 
 ```
-Título: una frase corta que resuma el problema
+Título: frase corta que resume el problema
 
 Descripción:
-- Qué estaba haciendo: "Estaba intentando crear una cuenta nueva"
-- Qué pasó: "Cuando apreté 'Registrarme' no pasó nada y se quedó cargando 30 segundos"
-- Qué esperaba: "Que me cree la cuenta y me lleve a la página de inicio"
-- Dispositivo: "Celular Samsung Galaxy A52, Android 13, Chrome, en vertical"
+- Qué estaba haciendo: "Intentando crear una cuenta nueva"
+- Qué pasó: "Al apretar 'Registrarme' se quedó cargando 30 s"
+- Qué esperaba: "Que me cree la cuenta y me lleve al inicio"
+- Dispositivo: "Samsung Galaxy A52, Android 13, Chrome, vertical"
 - Captura adjunta: sí
 ```
 
@@ -55,37 +45,37 @@ Descripción:
 
 > **Título:** El precio del alojamiento se corta en el celular
 >
-> **Descripción:** En la página de detalle del alojamiento "Cabaña del río", en mi celular el precio aparece cortado a la mitad. En la compu se ve bien. Adjunto captura. Es en un Samsung Galaxy A52, Android 13, Chrome, en vertical. Si lo giro a horizontal se ve bien. El alojamiento es: [link]
+> **Descripción:** En el detalle de "Cabaña del río", en celular el precio aparece cortado a la mitad. En compu se ve bien. Adjunto captura. Samsung Galaxy A52, Android 13, Chrome, vertical. Si giro a horizontal se ve bien. Alojamiento: [enlace]
 >
 > ---
 >
 > **Título:** No me llegó el email de confirmación
 >
-> **Descripción:** Me registré como turista hace 20 minutos con el email <pepito@gmail.com>. Revisé la bandeja y la carpeta de Spam. Ningún email. Probé reenviar y tampoco. Estoy en Windows 11 con Firefox 122.
+> **Descripción:** Me registré como turista hace 20 min con <pepito@gmail.com>. Revisé bandeja y Spam: nada. Probé reenviar y tampoco. Windows 11, Firefox 122.
 >
 > ---
 >
-> **Título:** Falta traducción al inglés en el footer
+> **Título:** Falta traducción al inglés en el pie de página
 >
-> **Descripción:** Cuando cambio el idioma a inglés, los links del footer ("Términos", "Privacidad", "Contacto") siguen apareciendo en español. Adjunto captura. Probado en Mac con Safari y también en iPhone 13 con Chrome — pasa en los dos.
+> **Descripción:** Al cambiar a inglés, los enlaces del pie ("Términos", "Privacidad", "Contacto") siguen en español. Adjunto captura. Probado en Mac con Safari y iPhone 13 con Chrome — pasa en los dos.
 
 ## Ejemplos que NO ayudan ✗
 
-- "No anda nada" → ¿qué no anda? ¿en qué pantalla? ¿qué dispositivo?
-- "Está feo" → ¿qué está feo? ¿en qué dispositivo? ¿una captura?
-- "El sitio es lento" → ¿qué página? ¿cuánto tarda? ¿desde dónde te conectás? ¿qué dispositivo?
+- "No anda nada" → ¿qué? ¿en qué pantalla? ¿qué dispositivo?
+- "Está feo" → ¿qué? ¿en qué dispositivo? ¿captura?
+- "El sitio es lento" → ¿qué página? ¿cuánto tarda? ¿desde dónde te conectás?
 
-No te vamos a putear si reportás así, eh. Pero si podés mejorarlo, mejor.
+No te vamos a putear si reportás así. Pero si podés mejorarlo, mejor.
 
 ## Si te confunde algo, igual reportalo
 
-Si pensás "esto debe ser que yo no entiendo, no creo que sea un bug", **igual reportalo**. La mitad de las veces no es que vos no entendés. Es que el sitio no está claro. Y eso es un problema para nosotros.
+"Esto debe ser que yo no entiendo" — igual reportalo. La mitad de las veces no es que vos no entendés: es que el sitio no está claro. Y eso es un problema **nuestro**.
 
 ## Resumen rápido
 
-1. Apretá **"Reportar problema"** (o `Ctrl + Shift + F`).
+1. Apretá **"Reportar problema"** (`Ctrl + Shift + F`).
 2. **No borres** los datos auto-recolectados.
-3. Llená todos los campos que puedas. Si dudás dónde, ponelo en **descripción**.
-4. Sumá info de tu dispositivo (marca, modelo, OS, navegador) si el FAB no la capturó automáticamente.
-5. Adjuntá captura de pantalla siempre que puedas.
-6. Apretá **"Enviar"**. Listo.
+3. Llená lo que puedas. Si dudás, va en **descripción**.
+4. Sumá info de tu dispositivo si no fue capturada automáticamente.
+5. Adjuntá captura siempre que puedas.
+6. **Enviar**. Listo.

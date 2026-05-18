@@ -35,6 +35,8 @@ const {
     hideToc = false
 } = Astro.props;
 
+const isGlosario = currentSlug === 'empezar/glosario';
+
 const cspNonce = Astro.locals.cspNonce ?? '';
 const pageTitle = `${title} · Beta Hospeda`;
 ---
@@ -80,6 +82,15 @@ const pageTitle = `${title} · Beta Hospeda`;
 
             <main id="main-content" class="beta-doc-main">
                 <article class="beta-doc-article">
+                    {!isGlosario && (
+                        <aside class="beta-glosario-hint" aria-label="Acceso al glosario">
+                            <span class="beta-glosario-hint__icon" aria-hidden="true">📖</span>
+                            <span class="beta-glosario-hint__text">
+                                ¿No entendés alguna palabra? Mirá el{' '}
+                                <a href="/beta/empezar/glosario/">glosario</a>.
+                            </span>
+                        </aside>
+                    )}
                     <slot />
                 </article>
             </main>
@@ -528,5 +539,38 @@ const pageTitle = `${title} · Beta Hospeda`;
     .beta-doc-article th {
         font-weight: 600;
         background: var(--surface-warm);
+    }
+
+    .beta-glosario-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 10px);
+        background: var(--surface-warm);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .beta-glosario-hint__icon {
+        flex-shrink: 0;
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .beta-glosario-hint__text {
+        line-height: 1.5;
+    }
+
+    .beta-glosario-hint a {
+        color: var(--brand-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .beta-glosario-hint a:hover {
+        color: var(--brand-accent);
     }
 </style>

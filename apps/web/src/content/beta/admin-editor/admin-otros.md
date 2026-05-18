@@ -1,6 +1,6 @@
 ---
 title: Admin — otros módulos
-description: Sponsors, conversaciones, notificaciones, configuración SEO y revalidación de cache.
+description: Patrocinadores, conversaciones, notificaciones, SEO y revalidación de caché.
 order: 6
 role: admin-editor
 section: Solo admin
@@ -13,49 +13,40 @@ section: Solo admin
   <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
 </aside>
 
-Estas son secciones de prioridad media-baja. Probalas si te queda tiempo.
+Prioridad media-baja. Probalas si te queda tiempo.
 
-## Patrocinadores (prioridad baja)
+## Patrocinadores
 
-Andá a **Patrocinadores** en el menú lateral (la URL es `/sponsors`).
+**Patrocinadores** (dirección web (URL) `/sponsors`).
 
-- Listar sponsors (marcas).
-- Crear uno nuevo.
-- Asignarle sponsorships activos.
+- Listar patrocinadores (marcas), crear uno nuevo, asignarle patrocinios activos.
 
-## Mensajes (prioridad baja)
+## Mensajes
 
-Andá a **Mensajes** en el menú lateral (la URL es `/conversations`).
+**Mensajes** (dirección web `/conversations`).
 
-- Listar todas las conversaciones de la plataforma (entre turistas y hosts).
+- Listar todas las conversaciones (turistas y propietarios o anfitriones (hosts)).
 - Filtrar por fecha, estado, participantes.
-- Abrir una conversación. ¿Podés moderar? ¿Cerrar? ¿Marcar resuelta?
+- Abrir una: ¿podés moderar? ¿cerrar? ¿marcar resuelta?
 
-## Notificaciones (prioridad baja)
+## Notificaciones
 
-Andá a **Notificaciones**.
+Bandeja del sistema. Marcá como leído / sin leer.
 
-- Mirá tu inbox de notificaciones del sistema.
-- Marcá como leído / sin leer.
+## Configuración SEO
 
-## Configuración SEO (prioridad baja)
+**Configuración → SEO**. Mirá robots.txt, sitemap, datos estructurados (structured data).
 
-Andá a **Configuración → SEO**.
-
-- Mirá la configuración de robots.txt, sitemap, structured data.
-- ⚠️ **No la modifiques sin avisar.** Si algo no se entiende, reportalo.
+⚠️ **No la modifiques sin avisar.** Si algo no se entiende, reportalo.
 
 ## Revalidación ISR
 
-Andá a **Revalidación ISR** en el menú lateral.
-
-- La pantalla tiene 3 tabs (Config, Logs, Disparador manual).
-- Probá forzar la revalidación de páginas estáticas (ej. después de editar un alojamiento, forzar revalidación para que el sitio público se actualice).
+3 pestañas (Config, Logs, Disparador manual). Probá forzar revalidación de páginas estáticas (ej. después de editar un alojamiento) para que el sitio público se actualice.
 
 ## Qué reportar
 
-> 📋 **Reportá:** secciones que no cargan, errores raros, info que no cuadra, opciones que parecen no hacer nada.
+> 📋 **Reportá:** secciones que no cargan, errores, info que no cuadra, opciones que no hacen nada.
 
 ## Próximo paso
 
-Cuando termines con los módulos, hacé los **[flujos guiados](/beta/admin-editor/flujos-guiados/)** completos.
+**[Procesos guiados](/beta/admin-editor/flujos-guiados/)**.

@@ -1,6 +1,6 @@
 ---
 title: Suscripción y pagos con tarjetas de prueba
-description: Cómo suscribirte a un plan, las tarjetas de prueba de MercadoPago y los códigos para simular resultados.
+description: Suscripción a planes, tarjetas de prueba y códigos para simular resultados.
 order: 4
 role: host
 section: Gestión del host
@@ -8,25 +8,23 @@ section: Gestión del host
 
 # Suscripción y pagos
 
-Para que tu alojamiento esté visible al público o tener más beneficios, vas a tener que suscribirte a un plan.
+Para tener tu alojamiento visible o más beneficios necesitás suscribirte a un plan.
 
-> ⚠️ **El checkout no vive en el sitio público.** Cuando elegís un plan y apretás "Suscribirme", el sistema te redirige a **MercadoPago Checkout Pro** (la URL del checkout es de MercadoPago, no nuestra). El pago se hace en su plataforma; nosotros recibimos el resultado por webhook.
+> ⚠️ **El checkout no vive en el sitio público.** Al apretar "Suscribirme" el sistema te redirige a **MercadoPago Checkout Pro**. El pago corre en su plataforma; nosotros recibimos el resultado por webhook.
 >
 > ⚠️ **NO USES TU TARJETA REAL.** Hay 2 testers especiales (avisados por privado) que sí usan tarjeta real (mirá [Pago real](/beta/pago-real/introduccion/)). El resto **NO**.
 
 ## Planes disponibles
 
-Los planes de propietario que vas a ver listados son:
-
 - **Basic** (Básico)
 - **Professional**
 - **Premium**
 
-Pueden aparecer también planes adicionales como **Complex Basic / Complex Professional / Complex Premium** (para hosts con múltiples propiedades) o variantes como **Free / Plus / VIP**. Si ves algún plan con nombre que no entendés, anotá el nombre exacto y reportalo.
+Pueden aparecer también **Complex Basic / Pro / Premium** (multi-propiedad) o variantes **Free / Plus / VIP**. Si ves un plan con nombre raro, anotalo y reportalo.
 
 ## Tarjetas de prueba
 
-Estas son tarjetas oficiales de MercadoPago sandbox. **NO cobran plata real.**
+Tarjetas oficiales de MercadoPago en modo de prueba (sandbox). **No cobran plata real.**
 
 | Tipo | Número | CVV | Vencimiento |
 | --- | --- | --- | --- |
@@ -38,20 +36,18 @@ Estas son tarjetas oficiales de MercadoPago sandbox. **NO cobran plata real.**
 
 ## Cómo simular APROBADO, RECHAZADO o PENDIENTE
 
-En MercadoPago test, **el resultado del pago lo controla el nombre del titular** que pongas. Usás la misma tarjeta, cambiás el nombre del titular según qué quieras simular.
-
-Poné en "Nombre del titular" alguno de estos códigos:
+En MercadoPago test, **el resultado del pago lo controla el nombre del titular**. Misma tarjeta, cambia el nombre.
 
 | Nombre del titular | Resultado simulado |
 | --- | --- |
-| `APRO` | Pago **aprobado** ✓ |
-| `OTHE` | Pago **rechazado** por error general ✗ |
-| `CONT` | Pago **pendiente** ⏳ |
-| `FUND` | Pago rechazado por **fondos insuficientes** ✗ |
-| `SECU` | Pago rechazado por **CVV inválido** ✗ |
-| `EXPI` | Pago rechazado por **vencimiento inválido** ✗ |
-| `CALL` | Pago rechazado, **llamar a autorizar** ✗ |
-| `FORM` | Pago rechazado por **error de formulario** ✗ |
+| `APRO` | **Aprobado** ✓ |
+| `OTHE` | **Rechazado** por error general ✗ |
+| `CONT` | **Pendiente** ⏳ |
+| `FUND` | Rechazado por **fondos insuficientes** ✗ |
+| `SECU` | Rechazado por **CVV inválido** ✗ |
+| `EXPI` | Rechazado por **vencimiento inválido** ✗ |
+| `CALL` | Rechazado, **llamar a autorizar** ✗ |
+| `FORM` | Rechazado por **error de formulario** ✗ |
 
 ### Ejemplo
 
@@ -61,50 +57,42 @@ Poné en "Nombre del titular" alguno de estos códigos:
 
 ## Pasos para suscribirte
 
-1. En el menú principal del sitio público, andá a **"Precios"** (link en la nav).
-2. Llegás a la página de planes en `/suscriptores/precios/`.
-3. Mirá las diferencias entre planes. Elegí uno y apretá el CTA para suscribirte.
-4. **Te redirige al checkout de MercadoPago** (URL de MP, ya no nuestra).
-5. Completá los datos de la tarjeta de prueba (número, nombre del titular según el resultado que quieras simular, vencimiento, CVV).
-6. Apretá el botón de pagar en el checkout de MP.
-7. MP te devuelve al sitio con el resultado.
-8. Volvé a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`) y verificá si la suscripción quedó activa.
+1. Menú principal → **"Precios"** (`/suscriptores/precios/`).
+2. Elegí un plan y apretá el CTA para suscribirte.
+3. **Te redirige al checkout de MercadoPago**.
+4. Completá los datos de la tarjeta de prueba (número + nombre del titular según el resultado que quieras simular).
+5. Apretá pagar. MP te devuelve al sitio con el resultado.
+6. Andá a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`) y verificá si quedó activa.
 
 ## Probá también
 
-- **Pago RECHAZADO** (titular `OTHE`) — ¿llegás a la pantalla de error? ¿el mensaje se entiende? ¿te deja reintentar?
-- **Pago PENDIENTE** (titular `CONT`) — ¿llegás a la pantalla de "esperando confirmación"? ¿Qué pasa después?
-- **Fondos insuficientes** (titular `FUND`) y **CVV inválido** (titular `SECU`) — verificá si los mensajes de error son claros.
+- **Rechazado** (`OTHE`): ¿pantalla de error, mensaje claro, deja reintentar?
+- **Pendiente** (`CONT`): ¿pantalla de "esperando confirmación"? ¿Qué pasa después?
+- **Fondos insuficientes** (`FUND`) y **CVV inválido** (`SECU`): ¿mensajes claros?
 
 ## Códigos promocionales
 
-> ⚠️ **No hay campo de código promocional en el checkout del sitio público.** Los promo codes existen como herramienta administrativa (los crea un admin desde el panel), pero el flujo de checkout actual es enteramente vía MercadoPago Checkout Pro — el código promo, si existe, lo aplicaría el admin antes/después, no el tester en el checkout.
->
-> Si te pasamos un código promocional para usar y **encontrás un campo dónde aplicarlo en tu flujo de checkout**, anotá dónde lo viste y reportalo. Si no aparece nunca, no es un bug — es el estado actual.
+> ⚠️ No hay campo de código promo en el checkout. Los códigos promo existen como herramienta administrativa pero el checkout actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
 
 ## Ver tu suscripción
 
-Andá a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`).
+**"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`). ¿Ves plan actual, próxima renovación, historial de pagos?
 
-- ¿Ves tu plan actual?
-- ¿La fecha de próxima renovación?
-- ¿Historial de pagos / facturas?
-
-> ⚠️ **Métodos de pago guardados:** en este momento **no podés guardar tarjetas para renovación automática**. Cada renovación va a pedirte los datos de nuevo. Es esperado.
+> ⚠️ **Métodos de pago guardados:** no podés guardar tarjetas para renovación automática. Cada renovación pide los datos de nuevo. Es esperado.
 
 ## Qué reportar
 
 > 📋 **Reportá:**
 >
-> - Si en algún paso te quedaste sin saber qué hacer
-> - Si el redirect al checkout de MP no funciona
-> - Si después de pagar en MP no volvés correctamente al sitio
-> - Si el monto en el checkout de MP no coincide con el del plan
-> - Si después de pagar la suscripción no se activó en "Mi cuenta → Suscripción"
-> - Si el mensaje de error / pendiente no se entiende
+> - Te quedaste sin saber qué hacer en algún paso
+> - La redirección al checkout de MP no funciona
+> - Después de pagar no volvés bien al sitio
+> - El monto en MP no coincide con el del plan
+> - La suscripción no se activó después de pagar
+> - El mensaje de error / pendiente no se entiende
 >
-> ⚠️ **Sobre los emails de pago:** en este entorno de beta **podría no llegarte email** cuando pagás (depende de la configuración del servicio de email para staging). **No reportes "no me llegó el email del pago"** salvo que te avisemos lo contrario.
+> ⚠️ **Emails de pago:** en beta puede no llegarte email al pagar (config del servicio de email). No lo reportes salvo que te avisemos.
 
 ## Próximo paso
 
-Si recibiste mensajes de turistas, andá a **[Mensajes recibidos como host](/beta/host/mensajes/)**.
+Si recibiste mensajes, andá a **[Mensajes recibidos como propietario](/beta/host/mensajes/)**.
