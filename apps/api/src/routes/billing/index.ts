@@ -45,11 +45,18 @@ import { usageRouter } from './usage';
 /**
  * Authentication middleware for billing routes.
  * Compatible with QZPay's authMiddleware requirement.
+ *
+ * Accepts either `user` (set by better-auth session middleware in production)
+ * or `actor` (set by actorMiddleware, which is the codebase-wide auth abstraction
+ * and is also populated in test mode via HOSPEDA_ALLOW_MOCK_ACTOR). The two are
+ * always set together in production; the dual check exists so test setups that
+ * skip the session layer still pass through.
  */
 const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
     const user = c.get('user');
+    const actor = c.get('actor');
 
-    if (!user?.id) {
+    if (!user?.id && !actor?.id) {
         throw new HTTPException(401, {
             message: 'Authentication required for billing operations'
         });

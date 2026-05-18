@@ -40,6 +40,20 @@ const DIRECT_CUSTOMER_RESOURCES = new Set(['customers']);
 const LOOKUP_RESOURCES = new Set(['subscriptions', 'invoices', 'payments', 'entitlements']);
 
 /**
+ * Custom user-facing action sub-paths that follow a resource segment but are
+ * actions, not IDs. When the segment after a known resource matches one of
+ * these, the path does NOT target a specific resource and ownership check
+ * must be skipped (the underlying handlers enforce ownership via
+ * `c.get('billingCustomerId')` themselves).
+ *
+ * Keep this set in sync with `allowedSubPaths` for the matching rules in
+ * `billing-admin-guard.middleware.ts`. Both middlewares were written against
+ * the QZPay pre-built `segment/:id/subPath` shape and need explicit awareness
+ * of the Hospeda-custom `segment/<action>` routes (start-paid, change-plan).
+ */
+const CUSTOM_ACTION_SUB_PATHS = new Set(['start-paid', 'change-plan']);
+
+/**
  * Extracts the resource type and ID from a billing route path.
  *
  * Matches patterns like:
@@ -64,9 +78,15 @@ function extractResourceFromPath(path: string): { resource: string; id: string }
     for (let i = 0; i < segments.length - 1; i++) {
         const segment = segments[i];
         if (segment && (DIRECT_CUSTOMER_RESOURCES.has(segment) || LOOKUP_RESOURCES.has(segment))) {
-            const id = segments[i + 1];
-            if (id) {
-                return { resource: segment, id };
+            const next = segments[i + 1];
+            // Skip when `next` is a custom action sub-path (not a resource id),
+            // e.g. /subscriptions/start-paid. The underlying custom handler
+            // enforces ownership via `c.get('billingCustomerId')` directly.
+            if (next && CUSTOM_ACTION_SUB_PATHS.has(next)) {
+                continue;
+            }
+            if (next) {
+                return { resource: segment, id: next };
             }
         }
     }
