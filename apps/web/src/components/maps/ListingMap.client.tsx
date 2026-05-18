@@ -20,7 +20,7 @@ import L from 'leaflet';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { type ReactElement, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     Circle,
     MapContainer,
@@ -346,37 +346,52 @@ export function ListingMap(props: ListingMapProps) {
     const accentColor = 'var(--brand-accent)';
     const highlightColor = 'var(--primary, #2563eb)';
 
-    const renderedMarkers = useMemo(() => {
+    /*
+     * For accommodations we split rendering into two layers, only one of
+     * which is fed into MarkerClusterGroup:
+     *
+     *   - `accommodationCircles` (NOT clustered): the semi-transparent
+     *     privacy Circle for each item. These render directly under the
+     *     cluster group so they remain anchored to the actual coord
+     *     regardless of clustering decisions.
+     *   - `clusterableMarkers` (CLUSTERED): the pill Markers. The cluster
+     *     decides when to fold a group of pills into a single counter icon.
+     *
+     * Why split: MarkerClusterGroup counts every layer it receives as
+     * cluster-eligible and groups any two layers whose pixel distance is
+     * < maxClusterRadius. If we send Circle + Marker for the same item,
+     * both sit at the exact same lat/lng (pixel distance 0), so the
+     * library always groups them into a cluster of count >= 2 — at any
+     * zoom — and we never reach "1 item, no cluster". Pulling Circles out
+     * of the group makes the cluster count match the actual item count.
+     *
+     * Destination mode keeps the simpler single-Marker-per-item layout.
+     */
+    const { clusterableMarkers, accommodationCircles } = useMemo(() => {
         if (isAccommodationMode) {
-            return props.items.flatMap((item) => {
+            const markers: ReactElement[] = [];
+            const circles: ReactElement[] = [];
+            for (const item of props.items) {
                 const isHovered = hoveredItemId === item.id;
-                /*
-                 * Each accommodation renders as TWO layers stacked at the
-                 * same coord:
-                 *   1) A semi-transparent Circle (radius in meters) that
-                 *      visualises the privacy approximation.
-                 *   2) A Marker with a pixel-sized divIcon "pill" carrying
-                 *      the accommodation name (+ price when available),
-                 *      Airbnb-style. The pill is the real click target and
-                 *      stays visible at every zoom — the privacy circle can
-                 *      shrink past visibility at small zooms but the pill
-                 *      never disappears, which also resolves the
-                 *      "single item too small to see when zoomed out" issue.
-                 * The cluster picks both up via the MarkerClusterGroup, so
-                 * when many items overlap they collapse into a single
-                 * cluster icon instead of a wall of pills + halos.
-                 */
                 const priceLabel = item.priceLabel?.trim();
-                const pillText = priceLabel ? `${item.name} · ${priceLabel}` : item.name;
+                /*
+                 * Two-line pill when a price is available:
+                 *   line 1: accommodation name (semibold)
+                 *   line 2: price label (regular)
+                 * Single-line pill when there is no price.
+                 */
+                const pillBody = priceLabel
+                    ? `<span class="${styles.itemPillName}">${escapeHtmlForPill(item.name)}</span><span class="${styles.itemPillPrice}">${escapeHtmlForPill(priceLabel)}</span>`
+                    : `<span class="${styles.itemPillName}">${escapeHtmlForPill(item.name)}</span>`;
                 const pillIcon = L.divIcon({
                     className: styles.itemPill,
                     html: `<span class="${styles.itemPillInner}${
                         isHovered ? ` ${styles.itemPillHovered}` : ''
-                    }">${escapeHtmlForPill(pillText)}</span>`,
+                    }${priceLabel ? ` ${styles.itemPillStacked}` : ''}">${pillBody}</span>`,
                     iconSize: [0, 0],
                     iconAnchor: [0, 0]
                 });
-                return [
+                circles.push(
                     <Circle
                         key={`${item.id}-circle`}
                         center={[item.approximateLocation.lat, item.approximateLocation.lng]}
@@ -390,7 +405,9 @@ export function ListingMap(props: ListingMapProps) {
                         eventHandlers={{
                             click: () => onMarkerClick?.(item.id)
                         }}
-                    />,
+                    />
+                );
+                markers.push(
                     <Marker
                         key={`${item.id}-pill`}
                         position={[item.approximateLocation.lat, item.approximateLocation.lng]}
@@ -413,10 +430,11 @@ export function ListingMap(props: ListingMapProps) {
                             />
                         </Popup>
                     </Marker>
-                ];
-            });
+                );
+            }
+            return { clusterableMarkers: markers, accommodationCircles: circles };
         }
-        return props.items.map((item) => (
+        const markers = props.items.map((item) => (
             <Marker
                 key={item.id}
                 position={[item.coordinates.lat, item.coordinates.lng]}
@@ -437,6 +455,7 @@ export function ListingMap(props: ListingMapProps) {
                 </Popup>
             </Marker>
         ));
+        return { clusterableMarkers: markers, accommodationCircles: [] as ReactElement[] };
     }, [
         props.items,
         isAccommodationMode,
@@ -475,7 +494,8 @@ export function ListingMap(props: ListingMapProps) {
                     onBoundsChange={onBoundsChange}
                     debounceMs={DEFAULT_BOUNDS_DEBOUNCE_MS}
                 />
-                <MarkerClusterGroup chunkedLoading>{renderedMarkers}</MarkerClusterGroup>
+                {accommodationCircles}
+                <MarkerClusterGroup chunkedLoading>{clusterableMarkers}</MarkerClusterGroup>
                 {selectedCoord && (
                     <PulseHalo
                         lat={selectedCoord.lat}
@@ -506,20 +526,25 @@ function AccommodationPopupContent({
         item.averageRating > 0 &&
         typeof item.reviewsCount === 'number' &&
         item.reviewsCount > 0;
+    const hasHeaderRow =
+        Boolean(item.typeLabel) ||
+        (item.isFeatured && Boolean(item.featuredLabel)) ||
+        Boolean(item.id);
     return (
         <div className={styles.popupCard}>
-            {item.thumbnailUrl ? (
-                <div className={styles.popupImageWrapper}>
-                    <img
-                        src={item.thumbnailUrl}
-                        alt={item.name}
-                        className={styles.popupImage}
-                        loading="lazy"
-                    />
-                    {item.typeLabel ? (
-                        <span className={styles.popupTypeChip}>{item.typeLabel}</span>
-                    ) : null}
-                    <div className={styles.popupFavoriteBtn}>
+            <div className={styles.popupBody}>
+                {hasHeaderRow ? (
+                    <div className={styles.popupHeader}>
+                        <div className={styles.popupHeaderChips}>
+                            {item.typeLabel ? (
+                                <span className={styles.popupTypeChip}>{item.typeLabel}</span>
+                            ) : null}
+                            {item.isFeatured && item.featuredLabel ? (
+                                <span className={styles.popupFeaturedBadge}>
+                                    {item.featuredLabel}
+                                </span>
+                            ) : null}
+                        </div>
                         <FavoriteButton
                             entityId={item.id}
                             entityType="ACCOMMODATION"
@@ -531,42 +556,40 @@ function AccommodationPopupContent({
                             isAuthenticated={isAuthenticated}
                         />
                     </div>
-                </div>
-            ) : null}
-            <div className={styles.popupBody}>
-                <div className={styles.popupTitleRow}>
+                ) : null}
+                <div className={styles.popupTitleBlock}>
                     <h3 className={styles.popupTitle}>{item.name}</h3>
-                    {item.isFeatured && item.featuredLabel ? (
-                        <span className={styles.popupFeaturedBadge}>{item.featuredLabel}</span>
-                    ) : null}
+                    {item.cityName ? <p className={styles.popupCity}>{item.cityName}</p> : null}
                 </div>
-                {item.cityName ? <p className={styles.popupCity}>{item.cityName}</p> : null}
                 {item.summary ? <p className={styles.popupSummary}>{item.summary}</p> : null}
-                <div className={styles.popupMeta}>
-                    {hasRating ? (
-                        <span
-                            className={styles.popupRating}
-                            aria-label={`${item.averageRating?.toFixed(1)} estrellas`}
-                        >
-                            <span aria-hidden="true">★</span>
-                            <span>{item.averageRating?.toFixed(1)}</span>
-                            <span className={styles.popupReviewsCount}>
-                                {item.reviewsLabel ?? `(${item.reviewsCount})`}
-                            </span>
+                {hasRating ? (
+                    <span
+                        className={styles.popupRating}
+                        aria-label={`${item.averageRating?.toFixed(1)} estrellas`}
+                    >
+                        <span aria-hidden="true">★</span>
+                        <span>{item.averageRating?.toFixed(1)}</span>
+                        <span className={styles.popupReviewsCount}>
+                            {item.reviewsLabel ?? `(${item.reviewsCount})`}
                         </span>
-                    ) : null}
+                    </span>
+                ) : null}
+                <div className={styles.popupFooter}>
                     {item.priceLabel ? (
                         <span className={styles.popupPrice}>{item.priceLabel}</span>
+                    ) : (
+                        <span aria-hidden="true" />
+                    )}
+                    {item.detailHref ? (
+                        <a
+                            href={item.detailHref}
+                            className={styles.popupCta}
+                        >
+                            <span>{viewDetailsLabel ?? 'Ver más'}</span>
+                            <span aria-hidden="true">→</span>
+                        </a>
                     ) : null}
                 </div>
-                {item.detailHref ? (
-                    <a
-                        href={item.detailHref}
-                        className={styles.popupCta}
-                    >
-                        {viewDetailsLabel ?? 'Ver más'}
-                    </a>
-                ) : null}
             </div>
         </div>
     );
