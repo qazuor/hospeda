@@ -11,17 +11,22 @@ export class TestDatabaseManager {
     private activeTransactions: Set<any> = new Set();
 
     /**
-     * Initialize test database connection
+     * Initialize test database connection.
+     *
+     * Reads HOSPEDA_DATABASE_URL exclusively (SPEC-035 canonical, SPEC-143 T-143-01).
+     * The env file apps/api/.env.test is loaded by setup/env-setup.ts before this runs.
+     * Throws if the variable is missing — no fallback by design.
      */
     async setup(): Promise<void> {
-        // Create PostgreSQL connection pool for tests
-        this.pool = new Pool({
-            connectionString:
-                process.env.TEST_DB_URL ||
-                `postgresql://${process.env.TEST_DB_USER || 'postgres'}:${process.env.TEST_DB_PASSWORD || 'postgres'}@${process.env.TEST_DB_HOST || 'localhost'}:${process.env.TEST_DB_PORT || 5432}/${process.env.TEST_DB_NAME || 'hospeda_test'}`
-        });
+        const connectionString = process.env.HOSPEDA_DATABASE_URL;
+        if (!connectionString) {
+            throw new Error(
+                'HOSPEDA_DATABASE_URL is not set. Ensure apps/api/.env.test is loaded by env-setup.ts before the test database connects.'
+            );
+        }
 
-        // Verify connection
+        this.pool = new Pool({ connectionString });
+
         try {
             const client = await this.pool.connect();
             client.release();
@@ -31,7 +36,6 @@ export class TestDatabaseManager {
             );
         }
 
-        // Initialize Drizzle with test pool
         this.db = initializeDb(this.pool);
     }
 
