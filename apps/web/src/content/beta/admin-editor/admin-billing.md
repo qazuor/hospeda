@@ -4,6 +4,7 @@ description: Planes, suscripciones, add-ons, códigos promo, pagos, facturas, m�
 order: 4
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Admin — Facturación (billing) y monetización
@@ -43,7 +44,7 @@ Sección clave y grande. Tomate tu tiempo.
 - Crear otro al **100%** y guardarlo.
 - **Listar** y **editar** un código.
 
-> ⚠️ No vas a poder validar el descuento desde un checkout del sitio público — el checkout corre en MercadoPago Checkout Pro y no expone un campo de código promo al usuario final. Hoy son una herramienta administrativa cuya aplicación final está en revisión.
+> ⚠️ No vas a poder validar el descuento desde la pantalla de pago del sitio público — la pantalla de pago corre en MercadoPago Checkout Pro y no expone un campo de código promo al usuario final. Hoy son una herramienta administrativa cuya aplicación final está en revisión.
 
 ## Promociones para propietarios (Owner Promotions)
 

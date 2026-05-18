@@ -124,8 +124,8 @@ Same as T-013 with the Facebook button. Verify `accounts.provider = "facebook"` 
 
 ### A11y (T-023)
 
-- [ ] Open `/es/auth/signin/` with screen reader (NVDA on Windows, VoiceOver on macOS, Orca on Linux). Verify: page landmark announced, form label "Iniciar Sesión" announced, inputs labeled.
-- [ ] Tab through all interactive elements. Tab order should be: skip-to-content (if any) → logo → email → password → "Iniciar Sesión" → "Continuar con Google" → "Continuar con Facebook" → "Olvidaste..." → "Regístrate aquí". No focus traps.
+- [ ] Open `/es/auth/signin/` with screen reader (NVDA on Windows, VoiceOver on macOS, Orca on Linux). Verify: page landmark announced, form label "Iniciar sesión" announced, inputs labeled.
+- [ ] Tab through all interactive elements. Tab order should be: skip-to-content (if any) → logo → email → password → "Iniciar sesión" → "Continuar con Google" → "Continuar con Facebook" → "Olvidaste..." → "Registrate acá". No focus traps.
 - [ ] Press Enter while focused on the password input. Expected: form submits.
 - [ ] Verify `autocomplete="email"` on email and `autocomplete="current-password"` on password (password managers recognize).
 

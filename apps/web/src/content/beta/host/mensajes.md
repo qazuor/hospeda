@@ -1,9 +1,9 @@
 ---
 title: Mensajes recibidos como propietario o anfitrión (host)
 description: Cómo leer y responder mensajes de turistas en tu bandeja.
-order: 5
+order: 4
 role: host
-section: Gestión del host
+section: Gestión del propietario
 ---
 
 # Mensajes recibidos como propietario
@@ -14,7 +14,7 @@ Cuando un turista (o vos desde otra cuenta) usa el [formulario de contacto](/bet
 
 1. Menú de usuario → **"Mis mensajes"** (`/mi-cuenta/messages/`).
 2. Cada conversación muestra: **Alojamiento**, **Huésped** (nombre/email), **Última actividad**, **Estado** (Abierta / Cerrada / Bloqueada / Pendiente de verificación / Esperando respuesta del huésped / del anfitrión).
-3. Click en una conversación para abrirla.
+3. Apretá una conversación para abrirla.
 4. Responder: campo **"Escribí tu respuesta..."** + **"Enviar"**.
 5. Acciones: **Archivar**, **Bloquear**, **Cerrar conversación**, **Reabrir**, **Eliminar conversación**.
 

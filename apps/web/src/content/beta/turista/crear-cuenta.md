@@ -15,14 +15,14 @@ Hay **3 formas** de registrarte. Usá la que más uses.
 ## Opción 1 — Email y contraseña
 
 1. Arriba a la derecha, **"Iniciar sesión"**.
-2. Al pie de la pantalla de inicio de sesión (login), **"¿No tienes cuenta? Regístrate aquí"**.
-3. Formulario **"Crear Cuenta"** con 3 campos:
+2. Al pie de la pantalla de inicio de sesión (login), **"¿No tenés cuenta? Registrate acá"**.
+3. Formulario **"Crear cuenta"** con 3 campos:
    - **Nombre** (un solo campo, completo)
    - **Correo electrónico** (usá uno real — te mandamos verificación)
    - **Contraseña** (mínimo 8 caracteres)
-4. Apretá **"Crear Cuenta"**.
+4. Apretá **"Crear cuenta"**.
 5. Te llega un email con **enlace para verificar**. **Revisá Spam también.**
-6. Click en el enlace → pantalla **"Verificar email"** valida automáticamente.
+6. Hacé clic en el enlace → pantalla **"Verificar email"** valida automáticamente.
 7. Quedás logueado.
 
 > 📋 **Reportá:**
@@ -53,7 +53,7 @@ Hay **3 formas** de registrarte. Usá la que más uses.
 
 - **Cerrar sesión**: avatar arriba a la derecha → **"Cerrar Sesión"**.
 - **Volver a entrar** con las mismas credenciales.
-- **Recuperar contraseña**: en iniciar sesión, **"¿Olvidaste tu contraseña?"**. Pedí restablecimiento, click en el email, poné nueva. ¿Funcionó todo?
+- **Recuperar contraseña**: en iniciar sesión, **"¿Olvidaste tu contraseña?"**. Pedí restablecimiento, hacé clic en el enlace del email, poné nueva. ¿Funcionó todo?
 
 ## Consejos de email
 

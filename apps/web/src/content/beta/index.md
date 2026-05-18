@@ -43,13 +43,13 @@ Te lo dijimos por WhatsApp cuando te sumamos. Si no te acordás, escribinos al g
 - **[Soy turista](/beta/turista/crear-cuenta/)** — Querés viajar / buscar alojamiento.
 - **[Soy propietario o anfitrión](/beta/host/onboarding/)** — Querés publicar tu alojamiento. **Hacé también la parte de turista.**
 - **[Soy admin o editor](/beta/admin-editor/acceso-y-roles/)** — Vas a probar el panel de administración. Hacé también las dos anteriores.
-- **[Probás con pago real](/beta/pago-real/introduccion/)** — Te avisamos por privado. Hacé también las anteriores.
+- **[Probás con pago real](/beta/pagos/pago-real/introduccion/)** — Te avisamos por privado. Hacé también las anteriores.
 
 ## Lo más importante en 5 puntos
 
 1. **No tenés que ser experto en tecnología.** Justamente queremos que pruebes como persona normal.
 2. **Probá en celular Y en computadora.** Si solo tenés celular, está bien — probá con eso.
-3. **Si encontrás algo raro, reportalo.** Botón flotante azul abajo a la derecha.
+3. **Si encontrás algo raro, reportalo.** Botón flotante naranja abajo a la derecha.
 4. **Si tenés dudas, preguntá en el grupo de WhatsApp.** No te quedes con la duda.
 5. **No vas a romper nada.** El sitio es de prueba. Hacé lo que se te ocurra. Cuanto más raro, mejor.
 

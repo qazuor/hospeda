@@ -87,3 +87,7 @@ Probá:
 Repetí lo más importante en el otro dispositivo: buscar alojamiento, ver detalle, marcar favorito, enviar mensaje al propietario o anfitrión (host).
 
 **¿Se ve igual de bien en los dos?** ¿Hay algo cortado, deforme o mal alineado en uno que en el otro está perfecto?
+
+## Próximo paso
+
+Terminaste el recorrido como turista. Si te asignamos también rol de propietario, andá a **[Bienvenida como propietario](/beta/host/onboarding/)**. Si no, pasá a **[Cómo reportar errores](/beta/reportar-bugs/como-reportar/)** para dejarnos tu feedback.

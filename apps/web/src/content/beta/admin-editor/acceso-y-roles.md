@@ -4,6 +4,7 @@ description: Cómo conseguir acceso de admin o editor — registro + promoción 
 order: 1
 role: admin-editor
 section: Para todos (editor y admin)
+audience: ['admin', 'editor']
 ---
 
 # Acceso al panel y roles

@@ -20,7 +20,7 @@ const betaRoleEnum = z.enum([
     'turista',
     'host',
     'admin-editor',
-    'pago-real',
+    'pagos',
     'reportar-bugs',
     'faq'
 ]);
@@ -34,6 +34,10 @@ const betaRoleEnum = z.enum([
  * - `section` is a free-form label for sub-groupings inside a role (e.g.
  *   "Reservar", "Mi cuenta") — purely cosmetic.
  * - `draft` hides the page from the sidebar and the search index.
+ * - `audience` narrows which testers see the entry inside its role group.
+ *   Optional. Currently used to split `admin-editor` pages between admin-only
+ *   and editor-eligible. If absent, the entry is shown to anyone who already
+ *   sees the parent role.
  */
 const beta = defineCollection({
     loader: glob({ pattern: '**/*.md', base: './src/content/beta' }),
@@ -43,7 +47,8 @@ const beta = defineCollection({
         order: z.number().default(999),
         role: betaRoleEnum.default('common'),
         section: z.string().optional(),
-        draft: z.boolean().default(false)
+        draft: z.boolean().default(false),
+        audience: z.array(z.enum(['admin', 'editor', 'host', 'turista'])).optional()
     })
 });
 

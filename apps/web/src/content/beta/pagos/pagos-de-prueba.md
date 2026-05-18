@@ -1,26 +1,18 @@
 ---
-title: Suscripción y pagos con tarjetas de prueba
-description: Suscripción a planes, tarjetas de prueba y códigos para simular resultados.
-order: 4
-role: host
-section: Gestión del host
+title: Pagos de prueba (sandbox)
+description: Cómo simular suscripciones de propietario y turista sin usar plata real, con tarjetas de prueba de MercadoPago.
+order: 2
+role: pagos
+section: Empezar
 ---
 
-# Suscripción y pagos
+# Pagos de prueba
 
-Para tener tu alojamiento visible o más beneficios necesitás suscribirte a un plan.
+Para testear suscripciones sin cobrar plata real, MercadoPago provee **tarjetas de prueba** que simulan pagos. Sirven tanto para **suscripciones de propietario** (Owner Basic / Pro / Premium, Complex Basic / Pro / Premium) como para **suscripciones de turista** (Plus, VIP). El plan Free de turista no requiere checkout.
 
-> ⚠️ **El checkout no vive en el sitio público.** Al apretar "Suscribirme" el sistema te redirige a **MercadoPago Checkout Pro**. El pago corre en su plataforma; nosotros recibimos el resultado por webhook.
+> ⚠️ **La pantalla de pago no vive en el sitio público.** Al apretar "Suscribirme" el sistema te redirige a **MercadoPago Checkout Pro**. El pago corre en su plataforma; nosotros recibimos el resultado por webhook.
 >
-> ⚠️ **NO USES TU TARJETA REAL.** Hay 2 testers especiales (avisados por privado) que sí usan tarjeta real (mirá [Pago real](/beta/pago-real/introduccion/)). El resto **NO**.
-
-## Planes disponibles
-
-- **Basic** (Básico)
-- **Professional**
-- **Premium**
-
-Pueden aparecer también **Complex Basic / Pro / Premium** (multi-propiedad) o variantes **Free / Plus / VIP**. Si ves un plan con nombre raro, anotalo y reportalo.
+> ⚠️ **NO USES TU TARJETA REAL.** Hay 2 testers especiales (avisados por privado) que sí usan tarjeta real — mirá **[Pago real](/beta/pagos/pago-real/introduccion/)**. El resto **NO**.
 
 ## Tarjetas de prueba
 
@@ -55,11 +47,11 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 - **Rechazado**: misma tarjeta + titular `OTHE`
 - **Pendiente**: misma tarjeta + titular `CONT`
 
-## Pasos para suscribirte
+## Pasos para suscribirte (propietario o turista)
 
 1. Menú principal → **"Precios"** (`/suscriptores/precios/`).
 2. Elegí un plan y apretá el CTA para suscribirte.
-3. **Te redirige al checkout de MercadoPago**.
+3. **Te redirige a la pantalla de pago de MercadoPago**.
 4. Completá los datos de la tarjeta de prueba (número + nombre del titular según el resultado que quieras simular).
 5. Apretá pagar. MP te devuelve al sitio con el resultado.
 6. Andá a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`) y verificá si quedó activa.
@@ -72,7 +64,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 
 ## Códigos promocionales
 
-> ⚠️ No hay campo de código promo en el checkout. Los códigos promo existen como herramienta administrativa pero el checkout actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
+> ⚠️ No hay campo de código promo en la pantalla de pago. Los códigos promo existen como herramienta administrativa pero la pantalla de pago actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
 
 ## Ver tu suscripción
 
@@ -85,7 +77,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 > 📋 **Reportá:**
 >
 > - Te quedaste sin saber qué hacer en algún paso
-> - La redirección al checkout de MP no funciona
+> - La redirección al pago de MP no funciona
 > - Después de pagar no volvés bien al sitio
 > - El monto en MP no coincide con el del plan
 > - La suscripción no se activó después de pagar
@@ -95,4 +87,4 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 
 ## Próximo paso
 
-Si recibiste mensajes, andá a **[Mensajes recibidos como propietario](/beta/host/mensajes/)**.
+Si te avisamos por privado, **[Pago real — introducción](/beta/pagos/pago-real/introduccion/)**. Si no, ya está — pasá a **[Cómo reportar errores](/beta/reportar-bugs/como-reportar/)**.

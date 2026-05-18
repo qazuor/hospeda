@@ -4,6 +4,7 @@ description: Secciones del panel admin que no debés probar — pueden romper el
 order: 8
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Lo que NO tenés que tocar

@@ -1,8 +1,8 @@
 ---
 title: Qué puede salir mal (y qué hacer)
 description: Casos problemáticos durante el pago real y cómo manejarlos.
-order: 3
-role: pago-real
+order: 5
+role: pagos
 section: Pago real
 ---
 
@@ -27,7 +27,7 @@ section: Pago real
 
 ## "Cobraron un monto distinto"
 
-- Captura del **checkout** (lo que decía pagar).
+- Captura de la **pantalla de pago** (lo que decía pagar).
 - Captura del **comprobante de MP** (lo que efectivamente cobró).
 - Avisanos.
 
