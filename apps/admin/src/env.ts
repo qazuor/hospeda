@@ -191,9 +191,25 @@ export const validateAdminEnv = (): AdminEnv => {
 
         return AdminEnvSchema.parse(envData);
     } catch (error) {
-        adminLogger.error('❌ Admin App environment validation FAILED');
-        adminLogger.error(error instanceof Error ? error.message : String(error));
-        throw new Error('Environment validation failed for Admin App');
+        // Build a detailed, structured error report. We log to BOTH adminLogger
+        // (dev convenience, browser console) AND console.error (guarantees the
+        // message reaches stdout/stderr in containerized runtimes where the
+        // adminLogger transport may be silenced). The detailed list of failing
+        // fields is also embedded in the thrown Error message so it surfaces
+        // in stack traces and crash reports (e.g. Coolify container logs).
+        const issues =
+            error instanceof z.ZodError
+                ? error.issues.map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`)
+                : [`  - ${error instanceof Error ? error.message : String(error)}`];
+        const detail = issues.join('\n');
+        const header = '❌ Admin App environment validation FAILED';
+
+        adminLogger.error(header);
+        for (const line of issues) adminLogger.error(line);
+
+        console.error(`${header}\n${detail}`);
+
+        throw new Error(`Environment validation failed for Admin App:\n${detail}`);
     }
 };
 
