@@ -19,7 +19,7 @@ import {
     createTestSubscription
 } from '../../helpers/billing-factories.js';
 import {
-    mpApiResponseFixtures,
+    providerResponseFixtures,
     signWebhookPayload,
     webhookEventFixtures
 } from '../../helpers/billing-fixtures.js';
@@ -114,30 +114,30 @@ describe('SPEC-143 Phase 0 — billing infrastructure smoke', () => {
     it('T-143-05 / mp-stub throws MpStubUnconfiguredError when no response set', async () => {
         const stub = createMpStubAdapter();
 
-        await expect(stub.adapter.preferences.create({})).rejects.toBeInstanceOf(
+        await expect(stub.adapter.checkout.create({} as never)).rejects.toBeInstanceOf(
             MpStubUnconfiguredError
         );
     });
 
-    it('T-143-05 / mp-stub returns canned success after setSuccess + records the call', async () => {
+    it('T-143-05 / mp-stub returns canned checkout response after setSuccess + records the call', async () => {
         const stub = createMpStubAdapter();
-        const preference = mpApiResponseFixtures.preference({ id: 'pref_smoke_123' });
-        stub.config.setSuccess('preferences.create', preference);
+        const checkout = providerResponseFixtures.checkout({ id: 'chk_smoke_123' });
+        stub.config.setSuccess('checkout.create', checkout);
 
-        const result = await stub.adapter.preferences.create({ external_reference: 'sub_123' });
+        const result = await stub.adapter.checkout.create({} as never);
 
-        expect(result).toEqual(preference);
-        const calls = stub.config.getCalls('preferences.create');
+        expect(result).toEqual(checkout);
+        const calls = stub.config.getCalls('checkout.create');
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('success');
     });
 
-    it('T-143-05 / mp-stub setError throws with status + code', async () => {
+    it('T-143-05 / mp-stub setError throws with status + code on subscriptions.retrieve', async () => {
         const stub = createMpStubAdapter();
-        stub.config.setError('payments.get', 429, 'rate limited', 'RATE_LIMITED');
+        stub.config.setError('subscriptions.retrieve', 429, 'rate limited', 'RATE_LIMITED');
 
         try {
-            await stub.adapter.payments.get('12345');
+            await stub.adapter.subscriptions.retrieve('preapproval_123');
             expect.unreachable('expected error');
         } catch (error) {
             const err = error as Error & { status?: number; code?: string };
@@ -145,6 +145,18 @@ describe('SPEC-143 Phase 0 — billing infrastructure smoke', () => {
             expect(err.code).toBe('RATE_LIMITED');
             expect(err.message).toBe('rate limited');
         }
+    });
+
+    it('T-143-05 / mp-stub adapter exposes provider field + all 6 sub-adapters', async () => {
+        const stub = createMpStubAdapter();
+        expect(stub.adapter.provider).toBe('mercadopago');
+        // Sanity that all expected sub-adapters exist (they are objects with methods).
+        expect(typeof stub.adapter.checkout.create).toBe('function');
+        expect(typeof stub.adapter.customers.create).toBe('function');
+        expect(typeof stub.adapter.payments.create).toBe('function');
+        expect(typeof stub.adapter.subscriptions.create).toBe('function');
+        expect(typeof stub.adapter.prices.create).toBe('function');
+        expect(typeof stub.adapter.webhooks.verifySignature).toBe('function');
     });
 
     it('T-143-06 / webhookEventFixtures + signWebhookPayload produce a valid signature header', async () => {

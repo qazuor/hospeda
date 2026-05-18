@@ -1,5 +1,5 @@
 /**
- * MercadoPago adapter stub for E2E billing tests (SPEC-143 T-143-05).
+ * MercadoPago adapter stub for E2E billing tests (SPEC-143 T-143-05 revised).
  *
  * Replaces the real `QZPayMercadoPagoAdapter` produced by
  * `createMercadoPagoAdapter()` in `@repo/billing` with a deterministic,
@@ -7,38 +7,42 @@
  * per the SPEC-143 decision Q1: stub MP in CI, use real sandbox only in
  * Workstream B manual checklists.
  *
+ * SHAPE NOTE: this stub mirrors the REAL adapter contract defined in
+ * qzpay-core's `QZPayPaymentAdapter` interface (verified against
+ * `/home/qazuor/projects/PACKAGES/qzpay/packages/core/src/adapters/payment.adapter.ts`).
+ * Each sub-adapter (`customers`, `subscriptions`, `payments`, `checkout`,
+ * `prices`, `webhooks`) exposes only the methods qzpay-core or hospeda code
+ * actually invokes — no MP-raw operations (those are internal to the real
+ * MP adapter, not callable through the QZPay contract).
+ *
  * Distinction from {@link applyTestControl} (packages/billing/src/adapters/qzpay-test-control.ts):
  * - `qzpay-test-control` wraps the REAL adapter and injects failures into
- *   specific operations. It needs a real MP sandbox to provide success-path
- *   responses. Used by Workstream B sandbox tests.
+ *   specific high-level operations. It needs a real MP sandbox to provide
+ *   success-path responses. Used by Workstream B sandbox tests.
  * - This stub IS the adapter. No network. Used by Workstream A CI tests.
  *
  * Usage pattern in a test file:
  *
  * ```ts
  * import { createMpStubAdapter } from '../../helpers/mp-stub';
+ * import { providerResponseFixtures } from '../../helpers/billing-fixtures';
+ *
+ * const mpStub = createMpStubAdapter();
  *
  * vi.mock('@repo/billing', async (importOriginal) => {
  *     const actual = await importOriginal<typeof import('@repo/billing')>();
  *     return { ...actual, createMercadoPagoAdapter: () => mpStub.adapter };
  * });
  *
- * const mpStub = createMpStubAdapter();
+ * beforeEach(() => mpStub.config.reset());
  *
- * beforeEach(() => {
- *     mpStub.config.reset();
- * });
- *
- * it('annual checkout creates preference', async () => {
- *     mpStub.config.setSuccess('preferences.create', {
- *         id: 'pref_test_123',
- *         init_point: 'https://stub.example/checkout/pref_test_123'
- *     });
- *
+ * it('annual checkout calls checkout.create', async () => {
+ *     mpStub.config.setSuccess(
+ *         'checkout.create',
+ *         providerResponseFixtures.checkout({ id: 'chk_test_123', url: '...' })
+ *     );
  *     // ... act ...
- *
- *     const calls = mpStub.config.getCalls('preferences.create');
- *     expect(calls).toHaveLength(1);
+ *     expect(mpStub.config.getCalls('checkout.create')).toHaveLength(1);
  * });
  * ```
  *
@@ -53,35 +57,44 @@ import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 
 /**
  * Operations the stub knows how to intercept. Each maps to a dotted path
- * on the real `QZPayMercadoPagoAdapter` (e.g. `preferences.create` →
- * `adapter.preferences.create(...)`).
+ * on the real `QZPayPaymentAdapter` (e.g. `checkout.create` →
+ * `adapter.checkout.create(...)`). Set matches the qzpay-core contract
+ * exactly; methods qzpay-core or hospeda code does not invoke are omitted.
  *
  * If a test invokes an operation not listed here, the stub throws a
  * descriptive error rather than silently returning `undefined`.
  */
 export type MpStubOperation =
-    // Checkout preference (one-time payments: annual subscription, addon purchase)
-    | 'preferences.create'
-    | 'preferences.get'
-    // Preapproval (recurring subscriptions: monthly subscription via MP preapproval)
-    | 'preapproval.create'
-    | 'preapproval.get'
-    | 'preapproval.update'
-    | 'preapproval.cancel'
-    // Payments (post-checkout, used by webhook handlers and reconciliation)
-    | 'payments.get'
-    | 'payments.list'
-    | 'payments.search'
-    | 'payments.refund'
-    | 'payments.create'
-    | 'payments.capture'
-    // Customers (MP-side customer records; distinct from billing_customers)
+    // Checkout (one-time payments: annual subscription, addon purchase)
+    | 'checkout.create'
+    | 'checkout.retrieve'
+    | 'checkout.expire'
+    // Customers (provider-side customer records)
     | 'customers.create'
-    | 'customers.get'
+    | 'customers.retrieve'
     | 'customers.update'
-    | 'customers.search'
-    // Subscriptions (direct adapter calls from webhook subscription-logic.ts)
-    | 'subscriptions.update';
+    | 'customers.delete'
+    // Payments (post-checkout, reconciliation, refund)
+    | 'payments.create'
+    | 'payments.retrieve'
+    | 'payments.capture'
+    | 'payments.cancel'
+    | 'payments.refund'
+    // Subscriptions (preapproval-style recurring)
+    | 'subscriptions.create'
+    | 'subscriptions.retrieve'
+    | 'subscriptions.update'
+    | 'subscriptions.cancel'
+    | 'subscriptions.pause'
+    | 'subscriptions.resume'
+    // Prices (provider-side price catalog)
+    | 'prices.create'
+    | 'prices.retrieve'
+    | 'prices.archive'
+    | 'prices.createProduct'
+    // Webhooks (signature + event parsing helpers)
+    | 'webhooks.constructEvent'
+    | 'webhooks.verifySignature';
 
 /**
  * Response modes for a stubbed operation.
@@ -91,8 +104,7 @@ export type MpStubOperation =
  *   The thrown error carries `status` and `code` properties for handlers
  *   that branch on those fields.
  * - `timeout`: never resolves within `delayMs` milliseconds. The caller's
- *   timeout config (default 5s via {@link MERCADO_PAGO_DEFAULT_TIMEOUT_MS})
- *   is expected to reject before then.
+ *   timeout config is expected to reject before then.
  * - `malformed`: returns `raw` as-is — useful to exercise downstream parsing
  *   code paths that expect a specific shape. The stub does NO validation.
  */
@@ -162,9 +174,9 @@ export interface CreateMpStubResult {
      * with `createMercadoPagoAdapter`'s real return type.
      *
      * IMPORTANT: only the operations listed in {@link MpStubOperation} are
-     * actually implemented. Calls to any other adapter method throw at
-     * runtime — this is intentional so tests fail loud rather than silently
-     * pass on missing stubs.
+     * implemented. Calls to any other adapter method throw at runtime —
+     * this is intentional so tests fail loud rather than silently pass on
+     * missing stubs.
      */
     readonly adapter: QZPayMercadoPagoAdapter;
     readonly config: MpStubConfig;
@@ -231,7 +243,6 @@ export function createMpStubAdapter(): CreateMpStubResult {
                 });
                 await new Promise<void>((resolve) => {
                     const timer = setTimeout(() => resolve(), mode.delayMs);
-                    // Allow vitest's fake timers to advance without leaking handles.
                     if (typeof timer === 'object' && timer && 'unref' in timer) {
                         (timer as { unref: () => void }).unref();
                     }
@@ -252,6 +263,61 @@ export function createMpStubAdapter(): CreateMpStubResult {
                 return mode.raw as T;
             }
         }
+    }
+
+    /**
+     * Synchronous dispatcher for webhooks.verifySignature which returns a
+     * boolean (not a Promise). The real adapter signature is synchronous so
+     * the stub must match.
+     */
+    function dispatchSync<T>(op: MpStubOperation, args: readonly unknown[]): T {
+        const mode = responses.get(op);
+
+        if (mode === undefined) {
+            calls.push({
+                operation: op,
+                args: [...args],
+                timestamp: Date.now(),
+                outcome: 'unconfigured'
+            });
+            throw new MpStubUnconfiguredError(op);
+        }
+
+        if (mode.kind === 'success') {
+            calls.push({
+                operation: op,
+                args: [...args],
+                timestamp: Date.now(),
+                outcome: 'success'
+            });
+            return mode.data as T;
+        }
+
+        if (mode.kind === 'error') {
+            calls.push({
+                operation: op,
+                args: [...args],
+                timestamp: Date.now(),
+                outcome: 'error'
+            });
+            throw buildHttpLikeError(mode.status, mode.message, mode.code);
+        }
+
+        if (mode.kind === 'malformed') {
+            calls.push({
+                operation: op,
+                args: [...args],
+                timestamp: Date.now(),
+                outcome: 'malformed'
+            });
+            return mode.raw as T;
+        }
+
+        // `timeout` mode is not supported for synchronous methods; treat as
+        // an unconfigured-style failure so the test fails loudly.
+        throw new Error(
+            `mp-stub: 'timeout' mode is not supported for synchronous operation "${op}"`
+        );
     }
 
     const config: MpStubConfig = {
@@ -282,35 +348,54 @@ export function createMpStubAdapter(): CreateMpStubResult {
 
     // Build the duck-typed adapter shape. Each method delegates to dispatch.
     // We satisfy QZPayMercadoPagoAdapter via `unknown as` because the real
-    // interface ships from a versioned external package and we only need to
-    // honor the methods invoked by Hospeda code under test.
+    // class has private fields we do not implement; the public method shape
+    // is what qzpay-core actually invokes.
     const adapter = {
-        preferences: {
-            create: (input: unknown) => dispatch('preferences.create', [input]),
-            get: (id: string) => dispatch('preferences.get', [id])
-        },
-        preapproval: {
-            create: (input: unknown) => dispatch('preapproval.create', [input]),
-            get: (id: string) => dispatch('preapproval.get', [id]),
-            update: (id: string, data: unknown) => dispatch('preapproval.update', [id, data]),
-            cancel: (id: string) => dispatch('preapproval.cancel', [id])
-        },
-        payments: {
-            create: (input: unknown) => dispatch('payments.create', [input]),
-            get: (id: string) => dispatch('payments.get', [id]),
-            list: (filters: unknown) => dispatch('payments.list', [filters]),
-            search: (filters: unknown) => dispatch('payments.search', [filters]),
-            refund: (id: string, data?: unknown) => dispatch('payments.refund', [id, data]),
-            capture: (id: string, data?: unknown) => dispatch('payments.capture', [id, data])
+        provider: 'mercadopago' as const,
+        checkout: {
+            create: (input: unknown) => dispatch('checkout.create', [input]),
+            retrieve: (id: string) => dispatch('checkout.retrieve', [id]),
+            expire: (id: string) => dispatch('checkout.expire', [id])
         },
         customers: {
             create: (input: unknown) => dispatch('customers.create', [input]),
-            get: (id: string) => dispatch('customers.get', [id]),
-            update: (id: string, data: unknown) => dispatch('customers.update', [id, data]),
-            search: (filters: unknown) => dispatch('customers.search', [filters])
+            retrieve: (id: string) => dispatch('customers.retrieve', [id]),
+            update: (id: string, partial: unknown) => dispatch('customers.update', [id, partial]),
+            delete: (id: string) => dispatch('customers.delete', [id])
+        },
+        payments: {
+            create: (providerCustomerId: string, input: unknown) =>
+                dispatch('payments.create', [providerCustomerId, input]),
+            retrieve: (id: string) => dispatch('payments.retrieve', [id]),
+            capture: (id: string) => dispatch('payments.capture', [id]),
+            cancel: (id: string) => dispatch('payments.cancel', [id]),
+            refund: (input: unknown, providerPaymentId: string) =>
+                dispatch('payments.refund', [input, providerPaymentId])
         },
         subscriptions: {
-            update: (id: string, data: unknown) => dispatch('subscriptions.update', [id, data])
+            create: (input: unknown) => dispatch('subscriptions.create', [input]),
+            retrieve: (id: string) => dispatch('subscriptions.retrieve', [id]),
+            update: (id: string, input: unknown) => dispatch('subscriptions.update', [id, input]),
+            cancel: (id: string, cancelAtPeriodEnd: boolean) =>
+                dispatch('subscriptions.cancel', [id, cancelAtPeriodEnd]),
+            pause: (id: string) => dispatch('subscriptions.pause', [id]),
+            resume: (id: string) => dispatch('subscriptions.resume', [id])
+        },
+        prices: {
+            create: (input: unknown, providerProductId: string) =>
+                dispatch('prices.create', [input, providerProductId]),
+            archive: (id: string) => dispatch('prices.archive', [id]),
+            retrieve: (id: string) => dispatch('prices.retrieve', [id]),
+            createProduct: (name: string, description?: string) =>
+                dispatch('prices.createProduct', [name, description])
+        },
+        webhooks: {
+            // `constructEvent` and `verifySignature` are SYNCHRONOUS in the
+            // real adapter contract. Use dispatchSync to match the signature.
+            constructEvent: (payload: string | Buffer, signature: string) =>
+                dispatchSync('webhooks.constructEvent', [payload, signature]),
+            verifySignature: (payload: string | Buffer, signature: string) =>
+                dispatchSync<boolean>('webhooks.verifySignature', [payload, signature])
         }
     };
 

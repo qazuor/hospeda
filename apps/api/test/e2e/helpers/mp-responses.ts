@@ -1,14 +1,22 @@
 /**
- * MercadoPago API response fixtures for E2E tests (SPEC-143 T-143-06).
+ * QZPay provider response fixtures for E2E tests (SPEC-143 T-143-06 revised).
  *
- * What the stub adapter (see `./mp-stub`) returns when Hospeda handlers fetch
- * the full object after receiving a lightweight IPN webhook event. Program
- * via `mpStub.config.setSuccess('<operation>', fixture)`.
+ * Shapes mirror the QZPay-core adapter contract `QZPayProvider*` types from
+ * `/home/qazuor/projects/PACKAGES/qzpay/packages/core/src/adapters/payment.adapter.ts`,
+ * NOT MercadoPago raw API responses. Reason: the MP adapter receives raw MP
+ * payloads internally and transforms them into QZPayProvider* shapes before
+ * returning to qzpay-core. The stub adapter (see `./mp-stub`) sits ABOVE that
+ * transformation — its return values are what qzpay-core sees, which are the
+ * QZPayProvider* shapes.
  *
- * Shapes mirror real MercadoPago API responses captured from production
- * webhooks and `@qazuor/qzpay-mercadopago` adapter calls. Only the fields
- * downstream Hospeda code reads are populated; unrelated fields are omitted to
- * keep fixtures focused.
+ * Use these fixtures to program the stub:
+ *
+ * ```ts
+ * mpStub.config.setSuccess(
+ *     'checkout.create',
+ *     providerResponseFixtures.checkout({ id: 'chk_test_123' })
+ * );
+ * ```
  *
  * @module test/e2e/helpers/mp-responses
  */
@@ -16,185 +24,176 @@
 import { randomUUID } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
-// Types
+// Provider-shape types (mirror qzpay-core QZPayProvider* — DO NOT use raw MP shapes)
 // ---------------------------------------------------------------------------
 
 /**
- * MP preference object (returned by `preferences.create` and `preferences.get`).
+ * Provider-side checkout session response (returned by `checkout.create/retrieve`).
+ * Mirrors `QZPayProviderCheckout`.
  */
-export interface McPreferenceResponse {
+export interface ProviderCheckoutResponse {
     readonly id: string;
-    readonly init_point: string;
-    readonly sandbox_init_point: string;
-    readonly external_reference?: string;
-    readonly items: ReadonlyArray<{
-        readonly id?: string;
-        readonly title: string;
-        readonly quantity: number;
-        readonly unit_price: number;
-        readonly currency_id: string;
-    }>;
-    readonly metadata?: Readonly<Record<string, unknown>>;
+    readonly url: string;
+    readonly status: string;
+    readonly paymentIntentId: string | null;
+    readonly subscriptionId: string | null;
+    readonly customerId: string | null;
+    readonly metadata: Readonly<Record<string, string>>;
 }
 
 /**
- * MP preapproval object (returned by `preapproval.create/get/update`).
+ * Provider-side customer response (returned by `customers.retrieve`).
+ * Mirrors `QZPayProviderCustomer`. Note: `customers.create` returns a string
+ * (the provider id), not this object.
  */
-export interface McPreapprovalResponse {
-    readonly id: string;
-    readonly status: 'pending' | 'authorized' | 'paused' | 'cancelled';
-    readonly payer_email: string;
-    readonly external_reference?: string;
-    readonly reason: string;
-    readonly auto_recurring: {
-        readonly frequency: number;
-        readonly frequency_type: 'months' | 'days';
-        readonly transaction_amount: number;
-        readonly currency_id: string;
-        readonly start_date?: string;
-        readonly end_date?: string;
-    };
-    readonly back_url?: string;
-    readonly init_point?: string;
-    readonly date_created?: string;
-    readonly last_modified?: string;
-}
-
-/**
- * MP payment object (returned by `payments.get/list/search`).
- */
-export interface McPaymentResponse {
-    readonly id: number;
-    readonly status:
-        | 'pending'
-        | 'approved'
-        | 'authorized'
-        | 'in_process'
-        | 'in_mediation'
-        | 'rejected'
-        | 'cancelled'
-        | 'refunded'
-        | 'charged_back';
-    readonly status_detail: string;
-    readonly transaction_amount: number;
-    readonly currency_id: string;
-    readonly external_reference?: string;
-    readonly payment_method_id?: string;
-    readonly payment_type_id?: string;
-    readonly payer?: { readonly id?: string; readonly email?: string };
-    readonly metadata?: Readonly<Record<string, unknown>>;
-    readonly refunds?: ReadonlyArray<{ readonly id: number; readonly amount: number }>;
-    readonly date_approved?: string | null;
-    readonly date_created?: string;
-}
-
-/**
- * MP customer object (returned by `customers.create/get/update`).
- */
-export interface McCustomerResponse {
+export interface ProviderCustomerResponse {
     readonly id: string;
     readonly email: string;
-    readonly external_reference?: string;
-    readonly first_name?: string;
-    readonly last_name?: string;
-    readonly date_created?: string;
+    readonly name: string | null;
+    readonly metadata: Readonly<Record<string, string>>;
 }
 
 /**
- * MP authorized_payment object (returned by D4 recurring-charge flows).
- * Distinct from `payment`: this is the scheduled execution of a preapproval.
+ * Provider-side payment response (returned by `payments.create/retrieve/capture`).
+ * Mirrors `QZPayProviderPayment`.
  */
-export interface McAuthorizedPaymentResponse {
+export interface ProviderPaymentResponse {
     readonly id: string;
-    readonly preapproval_id: string;
-    readonly status: 'scheduled' | 'processed' | 'recycling' | 'cancelled';
-    readonly transaction_amount: number;
-    readonly currency_id: string;
-    readonly payment?: { readonly id: number; readonly status: string };
-    readonly debit_date?: string;
-}
-
-/**
- * MP chargeback object (returned when a dispute is opened).
- */
-export interface McChargebackResponse {
-    readonly id: string;
-    readonly payment_id: number;
-    readonly status: 'opened' | 'under_review' | 'closed';
+    readonly status: string;
     readonly amount: number;
-    readonly currency_id: string;
-    readonly reason?: string;
-    readonly date_created?: string;
+    readonly currency: string;
+    readonly metadata: Readonly<Record<string, string>>;
+    readonly clientSecret?: string;
+    readonly nextAction?: {
+        readonly type: string;
+        readonly redirectUrl?: string;
+    };
+}
+
+/**
+ * Provider-side refund response (returned by `payments.refund`).
+ * Mirrors `QZPayProviderRefund`.
+ */
+export interface ProviderRefundResponse {
+    readonly id: string;
+    readonly status: string;
+    readonly amount: number;
+}
+
+/**
+ * Provider-side subscription response (returned by
+ * `subscriptions.create/retrieve/update`). Mirrors `QZPayProviderSubscription`.
+ */
+export interface ProviderSubscriptionResponse {
+    readonly id: string;
+    readonly status: string;
+    readonly currentPeriodStart: Date;
+    readonly currentPeriodEnd: Date;
+    readonly cancelAtPeriodEnd: boolean;
+    readonly canceledAt: Date | null;
+    readonly trialStart: Date | null;
+    readonly trialEnd: Date | null;
+    readonly metadata: Readonly<Record<string, string>>;
+    readonly initPoint?: string;
+    readonly sandboxInitPoint?: string;
+}
+
+/**
+ * Provider-side price response (returned by `prices.retrieve`).
+ * Mirrors `QZPayProviderPrice`.
+ */
+export interface ProviderPriceResponse {
+    readonly id: string;
+    readonly active: boolean;
+    readonly unitAmount: number;
+    readonly currency: string;
+    readonly recurring: {
+        readonly interval: string;
+        readonly intervalCount: number;
+    } | null;
+}
+
+/**
+ * Parsed webhook event (returned by `webhooks.constructEvent`).
+ * Mirrors `QZPayWebhookEvent`.
+ */
+export interface ProviderWebhookEventResponse {
+    readonly id: string;
+    readonly type: string;
+    readonly data: unknown;
+    readonly created: Date;
 }
 
 // ---------------------------------------------------------------------------
 // Input shapes
 // ---------------------------------------------------------------------------
 
-interface PreferenceFixtureInput {
+interface CheckoutFixtureInput {
     readonly id?: string;
-    readonly externalReference?: string;
-    readonly amount?: number;
-    readonly title?: string;
-    readonly currencyId?: string;
-}
-
-interface PreapprovalFixtureInput {
-    readonly id?: string;
-    readonly status?: McPreapprovalResponse['status'];
-    readonly payerEmail?: string;
-    readonly externalReference?: string;
-    readonly amount?: number;
-    readonly currencyId?: string;
-    readonly reason?: string;
-}
-
-interface PaymentFixtureInput {
-    readonly id?: number;
-    readonly status?: McPaymentResponse['status'];
-    readonly statusDetail?: string;
-    readonly amount?: number;
-    readonly currencyId?: string;
-    readonly externalReference?: string;
-    readonly metadata?: Readonly<Record<string, unknown>>;
-}
-
-interface RefundedPaymentFixtureInput {
-    readonly paymentId: number;
-    readonly refundId?: number;
-    readonly amount?: number;
-    readonly currencyId?: string;
+    readonly url?: string;
+    readonly status?: string;
+    readonly paymentIntentId?: string | null;
+    readonly subscriptionId?: string | null;
+    readonly customerId?: string | null;
+    readonly metadata?: Readonly<Record<string, string>>;
 }
 
 interface CustomerFixtureInput {
     readonly id?: string;
     readonly email?: string;
-    readonly externalReference?: string;
+    readonly name?: string | null;
+    readonly metadata?: Readonly<Record<string, string>>;
 }
 
-interface AuthorizedPaymentFixtureInput {
+interface PaymentFixtureInput {
     readonly id?: string;
-    readonly preapprovalId: string;
-    readonly status?: McAuthorizedPaymentResponse['status'];
+    readonly status?: string;
     readonly amount?: number;
-    readonly currencyId?: string;
+    readonly currency?: string;
+    readonly metadata?: Readonly<Record<string, string>>;
+    readonly clientSecret?: string;
+    readonly nextAction?: {
+        readonly type: string;
+        readonly redirectUrl?: string;
+    };
 }
 
-interface ChargebackFixtureInput {
+interface RefundFixtureInput {
     readonly id?: string;
-    readonly paymentId: number;
-    readonly status?: McChargebackResponse['status'];
+    readonly status?: string;
     readonly amount?: number;
-    readonly currencyId?: string;
-    readonly reason?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
+interface SubscriptionFixtureInput {
+    readonly id?: string;
+    readonly status?: string;
+    readonly currentPeriodStart?: Date;
+    readonly currentPeriodEnd?: Date;
+    readonly cancelAtPeriodEnd?: boolean;
+    readonly canceledAt?: Date | null;
+    readonly trialStart?: Date | null;
+    readonly trialEnd?: Date | null;
+    readonly metadata?: Readonly<Record<string, string>>;
+    readonly initPoint?: string;
+    readonly sandboxInitPoint?: string;
+}
 
-function randomNumericId(): number {
-    return Math.floor(Math.random() * 9_000_000_000) + 1_000_000_000;
+interface PriceFixtureInput {
+    readonly id?: string;
+    readonly active?: boolean;
+    readonly unitAmount?: number;
+    readonly currency?: string;
+    readonly recurring?: {
+        readonly interval: string;
+        readonly intervalCount: number;
+    } | null;
+}
+
+interface WebhookEventFixtureInput {
+    readonly id?: string;
+    readonly type?: string;
+    readonly data?: unknown;
+    readonly created?: Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,116 +201,94 @@ function randomNumericId(): number {
 // ---------------------------------------------------------------------------
 
 /**
- * Builders for stubbed MP API responses. Each returns a typed object suitable
- * for `mpStub.config.setSuccess('<operation>', fixture)`.
+ * Builders for stubbed QZPay provider responses. Each returns a typed object
+ * suitable for `mpStub.config.setSuccess('<operation>', fixture)`.
+ *
+ * IMPORTANT: these are NOT raw MercadoPago API responses. They are the
+ * post-transformation QZPayProvider* shapes that the real MP adapter
+ * produces internally. Use them to stub the QZPay adapter contract, not
+ * the MP HTTP API.
  */
-export const mpApiResponseFixtures = {
-    preference(input: PreferenceFixtureInput = {}): McPreferenceResponse {
-        const id = input.id ?? `pref_test_${randomUUID()}`;
+export const providerResponseFixtures = {
+    checkout(input: CheckoutFixtureInput = {}): ProviderCheckoutResponse {
+        const id = input.id ?? `chk_test_${randomUUID()}`;
         return {
             id,
-            init_point: `https://stub.example/checkout/${id}`,
-            sandbox_init_point: `https://stub.example/sandbox/checkout/${id}`,
-            external_reference: input.externalReference,
-            items: [
-                {
-                    id: 'item-test-1',
-                    title: input.title ?? 'Test subscription plan',
-                    quantity: 1,
-                    unit_price: input.amount ?? 1000,
-                    currency_id: input.currencyId ?? 'ARS'
-                }
-            ]
+            url: input.url ?? `https://stub.example/checkout/${id}`,
+            status: input.status ?? 'pending',
+            paymentIntentId: input.paymentIntentId ?? null,
+            subscriptionId: input.subscriptionId ?? null,
+            customerId: input.customerId ?? null,
+            metadata: input.metadata ?? {}
         };
     },
-    preapproval(input: PreapprovalFixtureInput = {}): McPreapprovalResponse {
-        const id = input.id ?? `preapproval_test_${randomUUID()}`;
-        const now = new Date().toISOString();
+    customer(input: CustomerFixtureInput = {}): ProviderCustomerResponse {
+        return {
+            id: input.id ?? `cust_test_${randomUUID()}`,
+            email: input.email ?? 'test-customer@example.com',
+            name: input.name ?? 'Test Customer',
+            metadata: input.metadata ?? {}
+        };
+    },
+    payment(input: PaymentFixtureInput = {}): ProviderPaymentResponse {
+        return {
+            id: input.id ?? `pay_test_${randomUUID()}`,
+            status: input.status ?? 'approved',
+            amount: input.amount ?? 1000,
+            currency: input.currency ?? 'ARS',
+            metadata: input.metadata ?? {},
+            ...(input.clientSecret !== undefined ? { clientSecret: input.clientSecret } : {}),
+            ...(input.nextAction !== undefined ? { nextAction: input.nextAction } : {})
+        };
+    },
+    refund(input: RefundFixtureInput = {}): ProviderRefundResponse {
+        return {
+            id: input.id ?? `ref_test_${randomUUID()}`,
+            status: input.status ?? 'approved',
+            amount: input.amount ?? 1000
+        };
+    },
+    subscription(input: SubscriptionFixtureInput = {}): ProviderSubscriptionResponse {
+        const now = new Date();
+        const oneMonthLater = new Date(now);
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+        const id = input.id ?? `sub_test_${randomUUID()}`;
         return {
             id,
             status: input.status ?? 'authorized',
-            payer_email: input.payerEmail ?? 'test-payer@example.com',
-            external_reference: input.externalReference,
-            reason: input.reason ?? 'Test monthly subscription',
-            auto_recurring: {
-                frequency: 1,
-                frequency_type: 'months',
-                transaction_amount: input.amount ?? 1000,
-                currency_id: input.currencyId ?? 'ARS',
-                start_date: now
-            },
-            init_point: `https://stub.example/preapproval/${id}`,
-            date_created: now,
-            last_modified: now
+            currentPeriodStart: input.currentPeriodStart ?? now,
+            currentPeriodEnd: input.currentPeriodEnd ?? oneMonthLater,
+            cancelAtPeriodEnd: input.cancelAtPeriodEnd ?? false,
+            canceledAt: input.canceledAt ?? null,
+            trialStart: input.trialStart ?? null,
+            trialEnd: input.trialEnd ?? null,
+            metadata: input.metadata ?? {},
+            ...(input.initPoint !== undefined
+                ? { initPoint: input.initPoint }
+                : { initPoint: `https://stub.example/preapproval/${id}` }),
+            ...(input.sandboxInitPoint !== undefined
+                ? { sandboxInitPoint: input.sandboxInitPoint }
+                : {})
         };
     },
-    payment(input: PaymentFixtureInput = {}): McPaymentResponse {
-        const id = input.id ?? randomNumericId();
-        const status = input.status ?? 'approved';
-        const now = new Date().toISOString();
+    price(input: PriceFixtureInput = {}): ProviderPriceResponse {
         return {
-            id,
-            status,
-            status_detail: input.statusDetail ?? (status === 'approved' ? 'accredited' : 'pending'),
-            transaction_amount: input.amount ?? 1000,
-            currency_id: input.currencyId ?? 'ARS',
-            external_reference: input.externalReference,
-            payment_method_id: 'visa',
-            payment_type_id: 'credit_card',
-            payer: { email: 'test-payer@example.com' },
-            metadata: input.metadata,
-            date_approved: status === 'approved' ? now : null,
-            date_created: now
+            id: input.id ?? `price_test_${randomUUID()}`,
+            active: input.active ?? true,
+            unitAmount: input.unitAmount ?? 100_000,
+            currency: input.currency ?? 'ARS',
+            recurring:
+                input.recurring !== undefined
+                    ? input.recurring
+                    : { interval: 'month', intervalCount: 1 }
         };
     },
-    /**
-     * Convenience: a payment row in the `refunded` terminal state with the
-     * refund record attached. Use for refund-flow assertions.
-     */
-    paymentRefunded(input: RefundedPaymentFixtureInput): McPaymentResponse {
-        const amount = input.amount ?? 1000;
+    webhookEvent(input: WebhookEventFixtureInput = {}): ProviderWebhookEventResponse {
         return {
-            id: input.paymentId,
-            status: 'refunded',
-            status_detail: 'refunded',
-            transaction_amount: amount,
-            currency_id: input.currencyId ?? 'ARS',
-            payment_method_id: 'visa',
-            payment_type_id: 'credit_card',
-            refunds: [{ id: input.refundId ?? randomNumericId(), amount }],
-            date_approved: null,
-            date_created: new Date().toISOString()
-        };
-    },
-    customer(input: CustomerFixtureInput = {}): McCustomerResponse {
-        return {
-            id: input.id ?? `customer_test_${randomUUID()}`,
-            email: input.email ?? 'test-customer@example.com',
-            external_reference: input.externalReference,
-            first_name: 'Test',
-            last_name: 'Customer',
-            date_created: new Date().toISOString()
-        };
-    },
-    authorizedPayment(input: AuthorizedPaymentFixtureInput): McAuthorizedPaymentResponse {
-        return {
-            id: input.id ?? `authorized_payment_test_${randomUUID()}`,
-            preapproval_id: input.preapprovalId,
-            status: input.status ?? 'processed',
-            transaction_amount: input.amount ?? 1000,
-            currency_id: input.currencyId ?? 'ARS',
-            debit_date: new Date().toISOString()
-        };
-    },
-    chargeback(input: ChargebackFixtureInput): McChargebackResponse {
-        return {
-            id: input.id ?? `chargeback_test_${randomUUID()}`,
-            payment_id: input.paymentId,
-            status: input.status ?? 'opened',
-            amount: input.amount ?? 1000,
-            currency_id: input.currencyId ?? 'ARS',
-            reason: input.reason ?? 'fraud',
-            date_created: new Date().toISOString()
+            id: input.id ?? `evt_test_${randomUUID()}`,
+            type: input.type ?? 'payment.updated',
+            data: input.data ?? {},
+            created: input.created ?? new Date()
         };
     }
 } as const;
