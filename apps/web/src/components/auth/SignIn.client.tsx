@@ -236,7 +236,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
-            aria-label={t('auth.signIn.submit', 'Iniciar Sesión')}
+            aria-label={t('auth.signIn.submit', 'Iniciar sesión')}
         >
             {error && (
                 <div
@@ -298,7 +298,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError
                 label={
                     isLoading
                         ? t('auth.signIn.loading', 'Ingresando...')
-                        : t('auth.signIn.submit', 'Iniciar Sesión')
+                        : t('auth.signIn.submit', 'Iniciar sesión')
                 }
                 disabled={isLoading}
                 aria={{ busy: isLoading }}
