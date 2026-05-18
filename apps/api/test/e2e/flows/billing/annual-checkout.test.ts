@@ -50,9 +50,15 @@ vi.mock('@repo/billing', async (importOriginal) => {
 
 import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
+import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
+import {
+    clearEntitlementCache,
+    entitlementMiddleware,
+    getEntitlementCacheStats
+} from '../../../../src/middlewares/entitlement.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
@@ -540,5 +546,163 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
+    });
+
+    // -----------------------------------------------------------------------
+    // Entitlement load post-activation — sub-commit 4
+    //
+    // Hospeda's billing system loads `userEntitlements` and `userLimits`
+    // into the request context via a globally-mounted `entitlementMiddleware`
+    // (see apps/api/src/utils/create-app.ts:184). When an annual subscription
+    // activates via a payment.updated webhook, the handler at
+    // apps/api/src/routes/webhooks/mercadopago/payment-logic.ts:183 invokes
+    // `clearEntitlementCache(customerId)` so the next request sees the
+    // post-activation plan entitlements without waiting for the 5-minute TTL.
+    //
+    // This test validates the full reload path by exercising a mini-app
+    // probe that mounts the REAL `entitlementMiddleware` against the REAL
+    // billing instance + DB. Pre-webhook the probe returns an empty
+    // entitlement set (the sub is still `pending_provider` and the
+    // middleware's `loadEntitlements` finds no active sub). Post-webhook
+    // the probe returns the cheap plan's declared entitlements, proving
+    // (a) the cache was invalidated for this customer and (b) the
+    // middleware correctly loads plan-level entitlements after activation.
+    // If `clearEntitlementCache` were removed from the webhook handler,
+    // this test would fail: the cached empty set would persist for the
+    // 5-minute TTL and the post-webhook probe would still return [].
+    //
+    // SCOPE NOTE: this test validates the LOAD pipeline only. The
+    // ENFORCEMENT pipeline (wiring `requireEntitlement` / `gateXxx` to
+    // production routes so unentitled users actually get 403s) is gap
+    // work tracked under SPEC-145 (Billing Entitlements and Limits
+    // Enforcement) as a formal sequential follow-up of this spec.
+    // -----------------------------------------------------------------------
+
+    it('webhook activation invalidates the entitlement cache and the next lookup loads plan entitlements', async () => {
+        // ARRANGE: create the pending_provider annual sub via the happy
+        // path. Capture its customer id so the probe app can target it.
+        const localSubscriptionId = await createPendingAnnualSubscription();
+        const subRows = await testDb
+            .getDb()
+            .select({ customerId: billingSubscriptions.customerId })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        const customerId = subRows[0]?.customerId as string;
+        expect(customerId).toMatch(/^[0-9a-f-]{36}$/);
+
+        // ARRANGE: mini-app that runs the REAL entitlementMiddleware
+        // against the REAL billing instance and exposes the resulting
+        // userEntitlements + userLimits in JSON. The synthetic prelude
+        // middleware sets billingEnabled + billingCustomerId so the
+        // entitlement middleware does not short-circuit before calling
+        // loadEntitlements.
+        const probeApp = new Hono();
+        probeApp.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', customerId);
+            return next();
+        });
+        probeApp.use(entitlementMiddleware());
+        probeApp.get('/probe', (c) => {
+            return c.json({
+                entitlements: Array.from(c.get('userEntitlements') ?? []),
+                limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                billingLoadFailed: c.get('billingLoadFailed') ?? false
+            });
+        });
+
+        // ARRANGE: ensure the cache singleton has no entry for this
+        // customer (prior tests in this file leave the singleton populated
+        // because the cache is process-wide and not cleared by
+        // testDb.clean()).
+        clearEntitlementCache(customerId);
+
+        // ACT 1: probe BEFORE webhook activation. The sub is in
+        // `pending_provider`, so loadEntitlements finds no active sub and
+        // returns an empty set with shouldCache=true; the empty set lands
+        // in the cache for this customer.
+        const preRes = await probeApp.request('/probe');
+        expect(preRes.status).toBe(200);
+        const preBody = (await preRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(preBody.entitlements).toEqual([]);
+        expect(preBody.limits).toEqual({});
+        expect(preBody.billingLoadFailed).toBe(false);
+
+        // Snapshot the cache size so we can prove exactly one entry was
+        // removed by the webhook handler (the singleton may carry entries
+        // for other customers from prior tests; we assert a delta of -1
+        // rather than an absolute value).
+        const cacheSizeBeforeWebhook = getEntitlementCacheStats().size;
+        expect(cacheSizeBeforeWebhook).toBeGreaterThanOrEqual(1);
+
+        // ACT 2: webhook payment.updated. The handler activates the sub
+        // AND invokes clearEntitlementCache for this customer.
+        const providerPaymentId = `pay_test_${randomUUID()}`;
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_reload',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: 1_000_000,
+                currency: 'ARS',
+                metadata: {
+                    annualSubscriptionId: localSubscriptionId,
+                    planSlug: cheapPlanName,
+                    billingInterval: 'annual'
+                }
+            })
+        );
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+        expect(webhookRes.status).toBe(200);
+
+        // ASSERT: the webhook handler removed exactly this customer's
+        // entry from the cache. Other customers' entries (if any) are
+        // untouched, so the delta is -1.
+        const cacheSizeAfterWebhook = getEntitlementCacheStats().size;
+        expect(cacheSizeAfterWebhook).toBe(cacheSizeBeforeWebhook - 1);
+
+        // ACT 3: probe AFTER activation. The cache miss for this customer
+        // forces loadEntitlements to re-query, which now finds the newly-
+        // active sub, fetches the cheap plan, and surfaces its declared
+        // entitlements + limits.
+        const postRes = await probeApp.request('/probe');
+        expect(postRes.status).toBe(200);
+        const postBody = (await postRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        // The cheap plan declares ['public:read'] (apps/api/test/e2e/setup/
+        // seed-helpers.ts:352). The probe must surface that entitlement.
+        // Note: 'public:read' is a string-literal entitlement value that
+        // is NOT present in the EntitlementKey enum; the middleware
+        // accepts it via an `as EntitlementKey[]` cast. SPEC-145 Phase 0
+        // closes that catalog gap.
+        expect(postBody.entitlements).toContain('public:read');
+        // The cheap plan declares { ads_per_month: 5 } in limits.
+        expect(postBody.limits.ads_per_month).toBe(5);
+        expect(postBody.billingLoadFailed).toBe(false);
     });
 });
