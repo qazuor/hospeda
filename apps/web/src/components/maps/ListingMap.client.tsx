@@ -366,14 +366,76 @@ export function ListingMap(props: ListingMapProps) {
      * of the group makes the cluster count match the actual item count.
      *
      * Destination mode keeps the simpler single-Marker-per-item layout.
+     *
+     * --- Stable-element cache (cluster flicker mitigation) ---
+     * `useViewportSearch` re-fetches and re-replaces the items array on
+     * every pan/zoom; the new array is a brand-new JS reference, so a
+     * naive iteration would produce brand-new React elements (and brand-new
+     * L.divIcon instances) for accommodations that didn't actually change.
+     * MarkerClusterGroup sees the new children, tears the existing
+     * Leaflet markers off the map, and adds new ones — that's what the
+     * user sees as a "flicker" while paneando.
+     *
+     * To prevent that, we keep a `cacheRef` keyed by item id. On every
+     * render we compute a signature for each item from the fields that
+     * actually affect the rendered marker; if the cached signature
+     * matches we reuse the same `<Circle>` and `<Marker>` element
+     * references, and React (and react-leaflet-cluster) treat them as
+     * unchanged. Entries for items that fell out of the result set are
+     * pruned at the end of each pass.
      */
+    const accommodationCacheRef = useRef<
+        Map<string, { signature: string; circle: ReactElement; marker: ReactElement }>
+    >(new Map());
+    const destinationCacheRef = useRef<Map<string, { signature: string; marker: ReactElement }>>(
+        new Map()
+    );
+
     const { clusterableMarkers, accommodationCircles } = useMemo(() => {
         if (isAccommodationMode) {
+            const cache = accommodationCacheRef.current;
+            const seenIds = new Set<string>();
             const markers: ReactElement[] = [];
             const circles: ReactElement[] = [];
             for (const item of props.items) {
+                seenIds.add(item.id);
                 const isHovered = hoveredItemId === item.id;
                 const priceLabel = item.priceLabel?.trim();
+                /*
+                 * Signature: every field that, if changed, should rebuild
+                 * the Circle+Marker pair (position, label text, hover state,
+                 * favorite state, popup body content). Locale/auth gates
+                 * apply globally and are already part of the outer
+                 * useMemo deps, so they're not re-checked per item.
+                 */
+                const signature = [
+                    isHovered ? '1' : '0',
+                    item.name,
+                    priceLabel ?? '',
+                    item.approximateLocation.lat,
+                    item.approximateLocation.lng,
+                    item.approximateLocation.radiusMeters,
+                    item.typeLabel ?? '',
+                    item.cityName ?? '',
+                    item.summary ?? '',
+                    item.isFeatured ? '1' : '0',
+                    item.featuredLabel ?? '',
+                    item.averageRating ?? '',
+                    item.reviewsCount ?? '',
+                    item.reviewsLabel ?? '',
+                    item.detailHref ?? '',
+                    item.isFavorited ? '1' : '0',
+                    item.favoriteBookmarkId ?? '',
+                    item.bookmarkCount ?? ''
+                ].join('|');
+
+                const cached = cache.get(item.id);
+                if (cached && cached.signature === signature) {
+                    circles.push(cached.circle);
+                    markers.push(cached.marker);
+                    continue;
+                }
+
                 /*
                  * Two-line pill when a price is available:
                  *   line 1: accommodation name (semibold)
@@ -391,7 +453,7 @@ export function ListingMap(props: ListingMapProps) {
                     iconSize: [0, 0],
                     iconAnchor: [0, 0]
                 });
-                circles.push(
+                const circle = (
                     <Circle
                         key={`${item.id}-circle`}
                         center={[item.approximateLocation.lat, item.approximateLocation.lng]}
@@ -407,7 +469,7 @@ export function ListingMap(props: ListingMapProps) {
                         }}
                     />
                 );
-                markers.push(
+                const marker = (
                     <Marker
                         key={`${item.id}-pill`}
                         position={[item.approximateLocation.lat, item.approximateLocation.lng]}
@@ -431,30 +493,65 @@ export function ListingMap(props: ListingMapProps) {
                         </Popup>
                     </Marker>
                 );
+                cache.set(item.id, { signature, circle, marker });
+                circles.push(circle);
+                markers.push(marker);
+            }
+            // Drop cached entries for items that left the current viewport
+            // — keeps the map bounded and avoids stale closures lingering.
+            for (const id of cache.keys()) {
+                if (!seenIds.has(id)) cache.delete(id);
             }
             return { clusterableMarkers: markers, accommodationCircles: circles };
         }
-        const markers = props.items.map((item) => (
-            <Marker
-                key={item.id}
-                position={[item.coordinates.lat, item.coordinates.lng]}
-                eventHandlers={{
-                    click: () => onMarkerClick?.(item.id)
-                }}
-            >
-                <Popup
-                    className={styles.popup}
-                    maxWidth={300}
-                    minWidth={280}
-                    autoPanPadding={[40, 40]}
+
+        const cache = destinationCacheRef.current;
+        const seenIds = new Set<string>();
+        const markers: ReactElement[] = [];
+        for (const item of props.items) {
+            seenIds.add(item.id);
+            const signature = [
+                item.name,
+                item.coordinates.lat,
+                item.coordinates.lng,
+                item.thumbnailUrl ?? '',
+                item.accommodationsCount ?? '',
+                item.accommodationsLabel ?? '',
+                item.description ?? '',
+                item.detailHref ?? ''
+            ].join('|');
+            const cached = cache.get(item.id);
+            if (cached && cached.signature === signature) {
+                markers.push(cached.marker);
+                continue;
+            }
+            const marker = (
+                <Marker
+                    key={item.id}
+                    position={[item.coordinates.lat, item.coordinates.lng]}
+                    eventHandlers={{
+                        click: () => onMarkerClick?.(item.id)
+                    }}
                 >
-                    <DestinationPopupContent
-                        item={item}
-                        viewDetailsLabel={i18nStrings.viewDetails}
-                    />
-                </Popup>
-            </Marker>
-        ));
+                    <Popup
+                        className={styles.popup}
+                        maxWidth={300}
+                        minWidth={280}
+                        autoPanPadding={[40, 40]}
+                    >
+                        <DestinationPopupContent
+                            item={item}
+                            viewDetailsLabel={i18nStrings.viewDetails}
+                        />
+                    </Popup>
+                </Marker>
+            );
+            cache.set(item.id, { signature, marker });
+            markers.push(marker);
+        }
+        for (const id of cache.keys()) {
+            if (!seenIds.has(id)) cache.delete(id);
+        }
         return { clusterableMarkers: markers, accommodationCircles: [] as ReactElement[] };
     }, [
         props.items,
@@ -465,6 +562,19 @@ export function ListingMap(props: ListingMapProps) {
         isAuthenticated,
         locale
     ]);
+
+    /*
+     * When the runtime-affecting context flips (locale, auth, click handler,
+     * i18n strings, or the mode itself) the cached elements still wrap the
+     * stale closure / callback, so we drop the caches and force them to
+     * rebuild on the next render. Item-level changes are handled by the
+     * per-item signature above; this effect is the "everything-else" reset.
+     */
+    // biome-ignore lint/correctness/useExhaustiveDependencies: each dep is a deliberate cache-invalidation signal; the effect body does not read them, it only fires .clear() when any of them changes.
+    useEffect(() => {
+        accommodationCacheRef.current.clear();
+        destinationCacheRef.current.clear();
+    }, [isAccommodationMode, onMarkerClick, i18nStrings, isAuthenticated, locale]);
 
     return (
         <div
