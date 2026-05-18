@@ -1,0 +1,32 @@
+{
+    "specId": "SPEC-145",
+    "title": "Billing Entitlements and Limits Enforcement",
+    "type": "feature",
+    "complexity": "high",
+    "status": "reserved",
+    "created": "2026-05-18T22:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "entitlements",
+        "limits",
+        "enforcement",
+        "e2e",
+        "feature-gates",
+        "go-live-gate"
+    ],
+    "extractedFrom": "SPEC-143 T-143-09 sub-commit 4 audit (engram observation for spec/spec-145/reserved)",
+    "dependsOn": ["SPEC-143"],
+    "blocks": ["real-money-go-live"],
+    "firstAllocatedViaEngramProtocol": true,
+    "worktree": null,
+    "branch": null,
+    "base": "staging",
+    "effortEstimateHours": "60-90",
+    "engramRefs": {
+        "reservation": "spec/spec-145/reserved",
+        "predecessorCheckpoint": "spec/spec-143/t-143-09-checkpoint"
+    }
+}
