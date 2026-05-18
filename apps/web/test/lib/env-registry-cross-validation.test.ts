@@ -25,6 +25,11 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // (PUBLIC_ENABLE_LOGGING was previously here as an exception — registered
     // post-Astro 6 audit: now validated by serverEnvSchema and read through
     // getEnv() in lib/env.ts instead of raw import.meta.env.)
+
+    // Build-time only — consumed by @sentry/astro during the web build to
+    // upload source maps. Not read by the runtime, so it is deliberately
+    // absent from serverEnvSchema.
+    'SENTRY_AUTH_TOKEN'
 ]);
 
 /**
