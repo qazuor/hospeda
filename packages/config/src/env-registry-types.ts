@@ -39,8 +39,8 @@ export interface EnvVarDefinition {
 
     /**
      * Spanish translation of `description`. Used by interactive tooling
-     * (e.g. `pnpm env:sync`) when the user prefers Spanish output. Optional —
-     * tooling falls back to `description` when absent.
+     * when the user prefers Spanish output. Optional — tooling falls back
+     * to `description` when absent.
      */
     readonly descriptionEs?: string;
 
@@ -81,10 +81,10 @@ export interface EnvVarDefinition {
     readonly category: string;
 
     /**
-     * Free-form instructions shown in interactive prompts (e.g. `pnpm env:sync`)
-     * to help the developer obtain a valid value. Use plain text — multiple
-     * sentences allowed. Should explain how to generate the value or where to
-     * find it (provider dashboard URL, CLI command, etc.).
+     * Free-form instructions shown in interactive prompts to help the
+     * developer obtain a valid value. Use plain text — multiple sentences
+     * allowed. Should explain how to generate the value or where to find it
+     * (provider dashboard URL, CLI command, etc.).
      *
      * Examples:
      *   - 'Generate with: openssl rand -base64 32'
@@ -95,8 +95,8 @@ export interface EnvVarDefinition {
 
     /**
      * Spanish translation of `howToObtain`. Used by interactive tooling
-     * (e.g. `pnpm env:sync`) when the user prefers Spanish output. Optional —
-     * tooling falls back to `howToObtain` when absent.
+     * when the user prefers Spanish output. Optional — tooling falls back
+     * to `howToObtain` when absent.
      */
     readonly howToObtainEs?: string;
 
