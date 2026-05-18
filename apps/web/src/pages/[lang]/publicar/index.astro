@@ -115,7 +115,7 @@ const faqJsonLd = {
 			<h2 class="publicar-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
 			<div class="publicar-benefits__grid">
 				{benefits.map((b, i) => (
-					<div class="publicar-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="publicar-benefit-card__icon" aria-hidden="true">
 							<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
 								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
@@ -136,7 +136,7 @@ const faqJsonLd = {
 			<h2 class="publicar-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
 			<div class="publicar-steps__grid">
 				{steps.map((s, i) => (
-					<div class="publicar-step" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="publicar-step" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<span class="publicar-step__num">{s.num}</span>
 						<h3 class="publicar-step__title">{t(s.titleKey, s.titleFb)}</h3>
 						<p class="publicar-step__desc">{t(s.descKey, s.descFb)}</p>

@@ -41,11 +41,9 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     'VITE_LOG_INCLUDE_LEVEL',
     'VITE_LOG_USE_COLORS',
 
-    // SENTRY_AUTH_TOKEN: build-time only. Consumed by @sentry/vite-plugin
-    // inside the Vite build to upload source maps during `pnpm build`. Never
-    // read at runtime by app code, so it has no place in AdminEnvSchema.
-    // Registered with apps: ['web', 'admin', 'api'] because all three builds
-    // need it; runtime validation does not apply.
+    // Build-time only — consumed by @sentry/vite-plugin during the admin
+    // build to upload source maps. Not read by the runtime, so it is
+    // deliberately absent from AdminEnvSchema.
     'SENTRY_AUTH_TOKEN'
 ]);
 

@@ -290,6 +290,85 @@ export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
 }
 
 /**
+ * Extract annual-subscription metadata from a payment event.
+ *
+ * The annual subscription flow (SPEC-141 D1) embeds the local
+ * subscription UUID in the MP checkout's metadata as
+ * `annualSubscriptionId`. When the payment.updated webhook fires for
+ * an `approved`/`accredited` charge, the handler dispatches to the
+ * annual-confirmation path by this metadata key (mirrors how
+ * `addonSlug` + `customerId` dispatches to add-on confirmation).
+ *
+ * @param metadata - Payment metadata object
+ * @returns The local subscription UUID if found, null otherwise.
+ */
+export function extractAnnualSubscriptionMetadata(metadata: unknown): string | null {
+    if (!metadata || typeof metadata !== 'object') {
+        return null;
+    }
+    const meta = metadata as Record<string, unknown>;
+    if (typeof meta.annualSubscriptionId === 'string' && meta.annualSubscriptionId.length > 0) {
+        return meta.annualSubscriptionId;
+    }
+    return null;
+}
+
+/**
+ * Plan-change upgrade metadata extracted from a payment event.
+ *
+ * Set by `initiatePaidPlanUpgrade` (SPEC-141 D7) when creating the
+ * one-time MP checkout for the prorated delta. The webhook handler
+ * uses these fields to commit the plan change locally + propagate
+ * the new recurring amount to the MP preapproval without re-querying
+ * qzpay for plan/price data.
+ */
+export interface PlanChangeUpgradeMetadata {
+    /** Local subscription id of the sub being upgraded. */
+    readonly planChangeUpgradeId: string;
+    /** Plan id before the upgrade (for the audit trail). */
+    readonly oldPlanId: string;
+    /** Target plan id the upgrade moves to. */
+    readonly newPlanId: string;
+    /** Target price id (qzpay price uuid, NOT the user-facing slug). */
+    readonly newPriceId: string;
+    /** New recurring amount in MAJOR units (ARS), forwarded to MP preapproval. */
+    readonly targetTransactionAmountMajor: number;
+}
+
+/**
+ * Extract plan-change upgrade metadata from a payment event.
+ *
+ * Returns `null` when the metadata is absent or malformed — the
+ * caller short-circuits to the next dispatch branch (addon, default,
+ * etc.) in that case.
+ */
+export function extractPlanChangeUpgradeMetadata(
+    metadata: unknown
+): PlanChangeUpgradeMetadata | null {
+    if (!metadata || typeof metadata !== 'object') {
+        return null;
+    }
+    const m = metadata as Record<string, unknown>;
+    if (
+        typeof m.planChangeUpgradeId !== 'string' ||
+        m.planChangeUpgradeId.length === 0 ||
+        typeof m.oldPlanId !== 'string' ||
+        typeof m.newPlanId !== 'string' ||
+        typeof m.newPriceId !== 'string' ||
+        typeof m.targetTransactionAmountMajor !== 'number'
+    ) {
+        return null;
+    }
+    return {
+        planChangeUpgradeId: m.planChangeUpgradeId,
+        oldPlanId: m.oldPlanId,
+        newPlanId: m.newPlanId,
+        newPriceId: m.newPriceId,
+        targetTransactionAmountMajor: m.targetTransactionAmountMajor
+    };
+}
+
+/**
  * Check if external_reference follows add-on pattern (addon_SLUG_TIMESTAMP).
  *
  * @param externalReference - External reference string

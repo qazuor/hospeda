@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findMonorepoRoot, isExitPromptError } from '../utils.js';
 
@@ -11,12 +13,14 @@ describe('findMonorepoRoot', () => {
         expect(root.length).toBeGreaterThan(0);
     });
 
-    it('should return a path that ends with the monorepo name', () => {
+    it('should return a directory containing pnpm-workspace.yaml', () => {
         // Arrange & Act
         const root = findMonorepoRoot();
 
-        // Assert
-        expect(root).toMatch(/hospeda$/);
+        // Assert — the canonical marker for the monorepo root, independent of
+        // the working-tree directory name (works for git worktrees with
+        // suffixes like `hospeda-spec-XXX-...`).
+        expect(existsSync(join(root, 'pnpm-workspace.yaml'))).toBe(true);
     });
 
     it('should return an absolute path', () => {

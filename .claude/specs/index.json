@@ -78,21 +78,27 @@
         {
             "specId": "SPEC-024",
             "title": "Credential Rotation & Git History Purge",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-024-credential-rotation-and-git-purge",
             "created": "2026-03-01T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-17T22:30:00Z",
+            "archiveNote": "Marked completed per user 2026-05-17. NOTE: audit found no direct code evidence (0 commits, no git-filter-repo trace); credential rotation may have happened outside formal spec workflow during VPS migration."
         },
         {
             "specId": "SPEC-025",
             "title": "Staging Environment Setup & Deployment Pipeline",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-025-staging-environment-setup",
             "created": "2026-03-02T00:00:00.000Z",
-            "archived": false,
-            "progressNote": "SECRETS.md rewritten + turbo.json globalEnv extended + workflows present; pending SENTRY_ENVIRONMENT plumbing, staging branch, smoke/db scripts, and external Vercel/Neon/Upstash setup gated on Vercel Pro decision."
+            "archived": true,
+            "progressNote": "SECRETS.md rewritten + turbo.json globalEnv extended + workflows present; pending SENTRY_ENVIRONMENT plumbing, staging branch, smoke/db scripts, and external Vercel/Neon/Upstash setup gated on Vercel Pro decision.",
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-07T00:00:00Z",
+            "archiveNote": "Staging env (Coolify + Neon + Redis + Upstash) deployed during VPS migration (Phase 16.4, 2026-05-07). Config-driven, no SPEC-025-tagged commits. Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-028",
@@ -114,13 +120,18 @@
         {
             "specId": "SPEC-046",
             "title": "CSP Post-Deployment Verification",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-046-csp-post-deploy-verification",
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
+            "completedAt": "2026-05-17T18:30:00.000Z",
             "archived": false,
-            "dependsOn": ["SPEC-042", "SPEC-045"]
+            "dependsOn": ["SPEC-042", "SPEC-045"],
+            "followUpSpec": "SPEC-142",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-046-impl",
+            "branch": "fix/SPEC-046-t014-followups",
+            "progressNote": "14/15 tasks completed. T-015 (authenticated crawl) deferred to SPEC-142 workstream 2.A under explicit risk acceptance — CSP is in Report-Only mode, so any uncatalogued violations on /mi-cuenta/* or MercadoPago Brick checkout are silent reports, not broken UX. The deferred work is gated as a Phase-2 prerequisite in SPEC-142 so it cannot be silently skipped. PRs shipped to staging: #1130 (spec extension + research), #1134 (main implementation T-001..T-012), #1135 (CF Web Analytics manual snippet migration), #1136 (T-014 follow-ups: Logo modifier classes + GAP-046-10 reopen + verification-2026-05-17.md report)."
         },
         {
             "specId": "SPEC-061",
@@ -682,11 +693,14 @@
         {
             "specId": "SPEC-097",
             "title": "Interactive Maps with Privacy-Aware Location for Accommodations and Destinations",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-097-interactive-maps-privacy-aware-location",
             "created": "2026-05-01T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-04-28T00:00:00Z",
+            "archiveNote": "Interactive maps shipped 2026-04-28 (Leaflet + HMAC obfuscation, 8634 tests). Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-098",
@@ -813,11 +827,15 @@
             "title": "MercadoPago Production Readiness — full toggle, code hardening, homologation",
             "type": "feat",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-109-mercadopago-production-readiness",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-109-mp-production",
             "branch": "spec/SPEC-109-mercadopago-production-readiness",
-            "startedAt": "2026-05-15T00:00:00Z"
+            "startedAt": "2026-05-15T00:00:00Z",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-17T22:30:00Z",
+            "archiveNote": "Code prod-ready: HOSPEDA_MERCADO_PAGO_SANDBOX toggle wired, qzpay 1.5.0+ shipped. CAVEAT: homologation submission to MP pending external approval. Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-114",
@@ -878,10 +896,14 @@
             "title": "Admin Pages Stabilization",
             "type": "fix",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-117-admin-pages-stabilization",
             "created": "2026-05-14T10:00:00Z",
-            "notes": "Active in worktree fix/admin-pages-audit. Phase 0/1/2 closed; Phase 4 i18n 2/5 (T-012, T-013 done; T-014/T-015/T-016 pending). Another agent is working on this branch."
+            "notes": "Active in worktree fix/admin-pages-audit. Phase 0/1/2 closed; Phase 4 i18n 2/5 (T-012, T-013 done; T-014/T-015/T-016 pending). Another agent is working on this branch.",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:45:00Z",
+            "completedAt": "2026-05-15T00:00:00Z",
+            "archiveNote": "Phase 4 i18n ✅ 5/5 (T-012/013/014/015/016) verified 2026-05-15. Phase 6 scope expanded ✅ 6 items resolved + 3 false positives dismissed. Follow-ups durante D-SPONSORSHIP.1 ✅ 5/5 shipped (commits 504034913, a8a40c9ac, d7a27c89a, 066ff6632, 441df05ac, c17a640de, 876651bc7). Drift fix per audit 2026-05-17: engram tenía info stale de session previa, spec.md ya marcaba phases done."
         },
         {
             "specId": "SPEC-118",
@@ -938,42 +960,54 @@
             "title": "qzpay foundation fixes (Phase A)",
             "type": "fix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-123-qzpay-foundation-fixes",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-122",
             "phase": "A",
             "dependsOn": [],
             "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-12T00:00:00Z",
+            "archiveNote": "qzpay foundation A1-A5 shipped in qzpay 1.4-1.6 (commits 4425eb6, 961e820, cb31502, 91c9a5c). hospeda apps/api bumped to ^1.6.1. Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-124",
             "title": "qzpay subscription preapproval wire-up (Phase B)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-124-qzpay-subscription-preapproval-wire-up",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-122",
             "phase": "B",
             "dependsOn": ["SPEC-123"],
             "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-13T00:00:00Z",
+            "archiveNote": "qzpay subscription preapproval API shipped in qzpay 1.6+ (commits 0055abe, bbe8b04, df2ebf7, bc4f89b, b89f133). Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-125",
             "title": "qzpay checkout adapter parity with Hospeda Phase 1 (Phase C)",
             "type": "feat",
             "complexity": "low",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-125-qzpay-checkout-adapter-parity",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-122",
             "phase": "C",
             "dependsOn": [],
             "targetRepo": "/home/qazuor/projects/PACKAGES/qzpay",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-13T00:00:00Z",
+            "archiveNote": "qzpay checkout adapter parity shipped in qzpay 1.6+ (commits 773d418, cf6b103, 4661902, 6fcbaf3). billing.checkout public API exposed. Drift fix per audit 2026-05-17."
         },
         {
             "specId": "SPEC-126",
@@ -991,7 +1025,7 @@
             "archived": true,
             "completedAt": "2026-05-16T04:11:01Z",
             "completionRef": "PR #1115 (commit 83fd90757)",
-            "archiveNote": "8 of 9 tasks shipped (D2, fix-D2, D1 monthly, D3, D5, D6, D7, D4 ack-only, D8, D9). D1 annual deferred to a post-spec follow-up along with D4 full payment recording and D7 upgrade delta-charge + downgrade scheduling — all blocked on qzpay-core not exposing billing.checkout publicly."
+            "archiveNote": "8 of 9 tasks shipped (D2, fix-D2, D1 monthly, D3, D5, D6, D7, D4 ack-only, D8, D9). D1 annual deferred to a post-spec follow-up along with D4 full payment recording and D7 upgrade delta-charge + downgrade scheduling — all blocked on qzpay-core not exposing billing.checkout publicly. Re-validated by qzpay+billing audit 2026-05-17 (PR #1115 confirmed)."
         },
         {
             "specId": "SPEC-127",
@@ -1026,21 +1060,25 @@
             "title": "Profile completion flow — required intermediate step after first signup / OAuth",
             "type": "feat",
             "complexity": "medium-high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-113-profile-completion-flow",
             "created": "2026-05-14T04:15:00Z",
             "startedAt": "2026-05-15T06:00:00Z",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-113-profile-completion-flow",
             "branch": "spec/SPEC-113-profile-completion-flow",
             "absorbs": ["SPEC-103 T-094 (OAuth-only set-password flow)"],
-            "discoveredDuring": "SPEC-103 T-012 + T-019 auth smoke (2026-05-14)"
+            "discoveredDuring": "SPEC-103 T-012 + T-019 auth smoke (2026-05-14)",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-16T00:00:00Z",
+            "archiveNote": "Profile completion flow shipped: DB col profile_completed, API /profile/status+/complete, web /mi-cuenta/completar-perfil, middleware guards. Follow-up bugfix branch fix/SPEC-113-birthdate-format-hint exists but spec scope is done."
         },
         {
             "specId": "SPEC-111",
             "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
             "type": "fix",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-111-astro-server-islands-fix",
             "created": "2026-05-14T01:35:00Z",
             "startedAt": "2026-05-15T00:00:00Z",
@@ -1055,19 +1093,31 @@
                 "runtime",
                 "investigation",
                 "upstream-bug"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-16T00:00:00Z",
+            "archiveNote": "Astro server islands runtime crash fixed via commit 64c77925c (Astro 6.3.3 bump). All 9 tasks done."
         },
         {
             "specId": "SPEC-130",
             "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
             "type": "cleanup",
             "complexity": "low",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-130-deprecate-vercel-env-stubs",
             "created": "2026-05-15T17:50:00Z",
             "discoveredDuring": "SPEC-111 worktree setup (2026-05-15)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["cleanup", "scripts", "env", "vercel", "deprecation", "monorepo"]
+            "tags": ["cleanup", "scripts", "env", "vercel", "deprecation", "monorepo"],
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-130-deprecate-vercel-env-stubs",
+            "branch": "spec/SPEC-130-deprecate-vercel-env-stubs",
+            "startedAt": "2026-05-18T03:50:00Z",
+            "approvedOption": "A — delete entirely",
+            "completedAt": "2026-05-18T02:31:16.000Z",
+            "completionRef": "PR #1142 (commit d5a1353fd91c7c65eee9f1ba9bf49a197b4d4635)",
+            "archived": true,
+            "archivedAt": "2026-05-18T02:31:16.000Z"
         },
         {
             "specId": "SPEC-131",
@@ -1126,24 +1176,32 @@
             "title": "Upload admin source maps to Sentry on build",
             "type": "fix",
             "complexity": "small",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-138-admin-source-maps-upload",
             "created": "2026-05-16T04:30:00Z",
             "discoveredDuring": "SPEC-111 Sentry config audit (2026-05-16)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["admin", "sentry", "source-maps", "monitoring", "follow-up", "spec-111"]
+            "tags": ["admin", "sentry", "source-maps", "monitoring", "follow-up", "spec-111"],
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-16T00:00:00Z",
+            "archiveNote": "Admin source maps to Sentry wired in apps/admin/vite.config.ts:157 via commit a9ab67b86. All 7 tasks done."
         },
         {
             "specId": "SPEC-139",
             "title": "Upload API source maps to Sentry on build",
             "type": "fix",
             "complexity": "small",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-139-api-source-maps-upload",
             "created": "2026-05-16T04:35:00Z",
             "discoveredDuring": "SPEC-111 Sentry config audit (2026-05-16)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["api", "sentry", "source-maps", "monitoring", "tsup", "follow-up", "spec-111"]
+            "tags": ["api", "sentry", "source-maps", "monitoring", "tsup", "follow-up", "spec-111"],
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "completedAt": "2026-05-16T00:00:00Z",
+            "archiveNote": "API source maps to Sentry wired in apps/api/tsup.config.ts:20-28 via commit a9ab67b86. All 9 tasks done."
         },
         {
             "specId": "SPEC-129",
@@ -1161,9 +1219,11 @@
             "title": "Admin Audit Remediation — Master",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-134-admin-audit-remediation",
             "created": "2026-05-16T01:30:00Z",
+            "completedAt": "2026-05-17T22:51:26Z",
+            "completionRef": "All children merged. SPEC-135 (PR #1125), SPEC-136 (PR #1128), SPEC-137 (PR #1132 + #1133 bookkeeping), SPEC-136 a11y residuals follow-up (PR #1137, merge commit a2f4f4f367ae4c96d0d7c9e8a97a41a8f0752f03). Final axe sweep: 0 critical, 0 serious extras (color-contrast documented exception cleared by token bump), 0 missing-h1, 0 aria-prohibited-attr, 0 heading-order. From 8 unique axe rules pre-audit to 0-1 residual.",
             "extractedFrom": "SPEC-131 audit findings",
             "tags": ["admin", "remediation", "epic", "master"],
             "children": ["SPEC-135", "SPEC-136", "SPEC-137"]
@@ -1201,6 +1261,24 @@
             "tags": ["admin", "accessibility", "wcag"]
         },
         {
+            "specId": "SPEC-137",
+            "title": "Admin i18n + Polish + Routing fixes",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-137-admin-i18n-polish-routing",
+            "created": "2026-05-16T01:30:00Z",
+            "startedAt": "2026-05-16T06:30:00Z",
+            "completedAt": "2026-05-17T02:15:13Z",
+            "completionRef": "PR #1132 (merge commit 5f84accda65f30ccad946e8d275b1a8855d10e7a)",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-137-admin-i18n-polish-routing",
+            "branch": "spec/SPEC-137-admin-i18n-polish-routing",
+            "parent": "SPEC-134",
+            "tags": ["admin", "i18n", "polish", "routing"],
+            "deferredFindings": ["F-022"],
+            "deferredNote": "F-022 (gallery==edit routing) deferred — Gallery feature was never implemented, will be filed as a separate feature spec."
+        },
+        {
             "specId": "SPEC-140",
             "title": "PostHog Cloud Analytics Stack (web + admin)",
             "type": "feat",
@@ -1216,12 +1294,42 @@
         },
         {
             "specId": "SPEC-141",
+            "title": "Subscription post-launch follow-ups (annual + plan changes)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "completed",
+            "archived": true,
+            "completedAt": "2026-05-17T23:15:41Z",
+            "completionRef": "PR #1139 (merge commit 7c27b995aab467a35f91c7311bd1d0b5995500ab)",
+            "path": "SPEC-141-subscription-post-launch-followups",
+            "created": "2026-05-15T00:00:00Z",
+            "scope": "D1 annual checkout + D4 annual payment idempotency + D7 plan-change upgrade (delta-charge) + D7 plan-change downgrade (scheduled apply-on-period-end)",
+            "backfillNote": "Entry backfilled 2026-05-17 after PR merge. Spec was worked in parallel to SPEC-141-admin-design-token-contrast which had already been registered with the same number. Collision resolved 2026-05-17T23:50:00Z by renumbering the design-token draft to SPEC-144; this entry now owns the SPEC-141 slot per engram registry source of truth.",
+            "tags": ["billing", "subscriptions", "mercadopago", "annual", "plan-change", "cron"]
+        },
+        {
+            "specId": "SPEC-142",
+            "title": "CSP Phase 2 + remaining SPEC-046 coverage gaps",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-142-csp-phase-2-and-coverage",
+            "created": "2026-05-17T18:30:00Z",
+            "extractedFrom": "SPEC-046 closure: T-015 deferral + T-014 follow-up findings (Logo blind spot lesson, /es/ home CSP header miss, Sentry env config, eval probe noise)",
+            "dependsOn": ["SPEC-046"],
+            "tags": ["security", "csp", "web", "billing", "phase-2", "auth-flows", "mercadopago"]
+        },
+        {
+            "specId": "SPEC-144",
             "title": "Admin design-token contrast remediation",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
-            "path": "SPEC-141-admin-design-token-contrast",
+            "path": "SPEC-144-admin-design-token-contrast",
             "created": "2026-05-16T13:00:00Z",
+            "renumberedFrom": "SPEC-141",
+            "renumberedAt": "2026-05-17T23:50:00Z",
+            "renumberedReason": "Collision with SPEC-141 subscription post-launch follow-ups (merged via PR #1139). Engram registry resolved in favor of the merged subscription work; this draft (no work started) renumbered to next free slot SPEC-144 (SPEC-143 already reserved for billing-testing-coverage).",
             "extractedFrom": "SPEC-136 post-fix axe verification",
             "parent": "SPEC-134",
             "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]

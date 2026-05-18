@@ -132,7 +132,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.subscriptionId).toBe('sub_123');
                 expect(result.data.previousPlanId).toBe('plan_owner_basico');
                 expect(result.data.newPlanId).toBe('plan_owner_pro');
@@ -153,7 +153,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.status).toBe('scheduled');
                 expect(result.data.proratedAmount).toBeUndefined();
             }
@@ -186,7 +186,7 @@ describe('Plan Change Schemas', () => {
             const result = PlanChangeResponseSchema.safeParse(response);
 
             expect(result.success).toBe(true);
-            if (result.success) {
+            if (result.success && result.data.status !== 'pending_payment') {
                 expect(result.data.proratedAmount).toBe(0);
             }
         });
@@ -311,6 +311,111 @@ describe('Plan Change Schemas', () => {
 
             expect(response.subscriptionId).toBeDefined();
             expect(response.status).toBeDefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-141 D7: pending_payment variant
+    // -----------------------------------------------------------------------
+
+    describe('PlanChangeResponseSchema — pending_payment variant', () => {
+        it('contains the PENDING_PAYMENT enum value', () => {
+            expect(PlanChangeStatusEnum.PENDING_PAYMENT).toBe('pending_payment');
+        });
+
+        it('validates a valid pending_payment response', () => {
+            const response = {
+                status: 'pending_payment',
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                localSubscriptionId: '11111111-1111-4111-8111-111111111111',
+                expiresAt: '2026-06-16T00:30:00.000Z',
+                newPlanId: 'plan_owner_premium',
+                deltaCentavos: 1_000_000
+            };
+
+            const result = PlanChangeResponseSchema.safeParse(response);
+
+            expect(result.success).toBe(true);
+            if (result.success && result.data.status === 'pending_payment') {
+                expect(result.data.checkoutUrl).toBe('https://mp.test/checkout/abc');
+                expect(result.data.deltaCentavos).toBe(1_000_000);
+            }
+        });
+
+        it('rejects pending_payment with non-URL checkoutUrl', () => {
+            const response = {
+                status: 'pending_payment',
+                checkoutUrl: 'not-a-url',
+                localSubscriptionId: '11111111-1111-4111-8111-111111111111',
+                expiresAt: '2026-06-16T00:30:00.000Z',
+                newPlanId: 'plan_owner_premium',
+                deltaCentavos: 1_000_000
+            };
+
+            const result = PlanChangeResponseSchema.safeParse(response);
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects pending_payment with deltaCentavos <= 0 (upgrade implies positive delta)', () => {
+            const response = {
+                status: 'pending_payment',
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                localSubscriptionId: '11111111-1111-4111-8111-111111111111',
+                expiresAt: '2026-06-16T00:30:00.000Z',
+                newPlanId: 'plan_owner_premium',
+                deltaCentavos: 0
+            };
+
+            const result = PlanChangeResponseSchema.safeParse(response);
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects pending_payment missing the localSubscriptionId', () => {
+            const response = {
+                status: 'pending_payment',
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                expiresAt: '2026-06-16T00:30:00.000Z',
+                newPlanId: 'plan_owner_premium',
+                deltaCentavos: 1_000_000
+            };
+
+            const result = PlanChangeResponseSchema.safeParse(response);
+            expect(result.success).toBe(false);
+        });
+
+        it('discriminated union: applied-variant fields are rejected under pending_payment status', () => {
+            // Mixing fields from the wrong variant must fail validation —
+            // proves the discriminator works as intended.
+            const response = {
+                status: 'pending_payment',
+                subscriptionId: 'sub-1',
+                previousPlanId: 'old',
+                newPlanId: 'new',
+                effectiveAt: '2026-06-16T00:30:00.000Z'
+            };
+
+            const result = PlanChangeResponseSchema.safeParse(response);
+            expect(result.success).toBe(false);
+        });
+
+        it('infers the union type with correct narrowing per status', () => {
+            const _pending: PlanChangeResponse = {
+                status: 'pending_payment',
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                localSubscriptionId: 'sub-1',
+                expiresAt: '2026-06-16T00:30:00.000Z',
+                newPlanId: 'plan-new',
+                deltaCentavos: 1_000_000
+            };
+            const _applied: PlanChangeResponse = {
+                status: 'active',
+                subscriptionId: 'sub-1',
+                previousPlanId: 'old',
+                newPlanId: 'new',
+                effectiveAt: '2026-06-16T00:30:00.000Z'
+            };
+            expect(_pending.status).toBe('pending_payment');
+            expect(_applied.status).toBe('active');
         });
     });
 });

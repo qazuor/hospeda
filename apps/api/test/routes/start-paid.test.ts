@@ -55,9 +55,26 @@ vi.mock('../../src/utils/route-factory', () => ({
 vi.mock('../../src/utils/env', () => ({
     env: {
         HOSPEDA_SITE_URL: 'https://hospeda.test',
-        HOSPEDA_API_URL: 'https://api.hospeda.test'
+        HOSPEDA_API_URL: 'https://api.hospeda.test',
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA'
     }
 }));
+
+// `@repo/db` is mocked at module level so `initiatePaidAnnualSubscription`'s
+// direct Drizzle insert into billing_subscriptions does not require a live
+// Postgres. The default behaviour is a no-op insert; individual tests can
+// inspect `getDb` calls if they need to assert the row shape.
+vi.mock('@repo/db', () => {
+    const insertChain = {
+        values: vi.fn().mockResolvedValue(undefined)
+    };
+    return {
+        getDb: vi.fn(() => ({
+            insert: vi.fn(() => insertChain)
+        })),
+        billingSubscriptions: { __table: 'billing_subscriptions' }
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks).
@@ -328,17 +345,9 @@ describe('handleStartPaidSubscription (monthly)', () => {
         ).rejects.toMatchObject({ status: 404 });
     });
 
-    it('returns 501 when billingInterval is "annual" (D1 annual follow-up)', async () => {
-        mockBilling(createBillingMock());
-
-        const ctx = createMockContext();
-        await expect(
-            handleStartPaidSubscription(ctx as never, {
-                planSlug: 'owner-premium',
-                billingInterval: 'annual'
-            })
-        ).rejects.toMatchObject({ status: 501 });
-    });
+    // The 501 placeholder for annual was removed in SPEC-141 D1;
+    // annual now delegates to `initiatePaidAnnualSubscription` — see the
+    // `handleStartPaidSubscription (annual)` describe block below.
 
     it('accepts the FREEMONTH promo and forwards freeTrialDays to qzpay (D9)', async () => {
         const billing = createBillingMock();
@@ -441,5 +450,192 @@ describe('handleStartPaidSubscription (monthly)', () => {
         ).rejects.toMatchObject({ status: 422 });
 
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Annual tests (SPEC-141 D1)
+// ---------------------------------------------------------------------------
+
+const ANNUAL_CUSTOMER_FIXTURE = {
+    id: OWNER_CUSTOMER_ID,
+    email: 'host@hospeda.test',
+    name: 'Maria Rodriguez',
+    livemode: false
+};
+
+interface AnnualBillingMockOptions {
+    plans?: ReturnType<typeof createPlan>[];
+    customer?: typeof ANNUAL_CUSTOMER_FIXTURE | null;
+    checkoutResult?: {
+        id?: string;
+        providerInitPoint?: string;
+        providerSandboxInitPoint?: string;
+    } | null;
+}
+
+function createAnnualBillingMock(opts: AnnualBillingMockOptions = {}) {
+    const annualPriceWithAmount = {
+        ...ANNUAL_PRICE,
+        unitAmount: 35_000_000
+    };
+    const plans =
+        opts.plans ??
+        ([
+            {
+                id: PLAN_ID,
+                name: 'owner-premium',
+                prices: [annualPriceWithAmount]
+            }
+        ] as unknown as ReturnType<typeof createPlan>[]);
+    const customer = opts.customer === undefined ? ANNUAL_CUSTOMER_FIXTURE : opts.customer;
+    const checkoutResult =
+        opts.checkoutResult === undefined
+            ? { id: 'checkout-1', providerInitPoint: 'https://mp.test/annual-abc' }
+            : opts.checkoutResult;
+
+    return {
+        plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
+        customers: { get: vi.fn().mockResolvedValue(customer) },
+        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) },
+        // Stub for monthly fallback path — never invoked in annual tests.
+        subscriptions: { create: vi.fn() }
+    };
+}
+
+describe('handleStartPaidSubscription (annual)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('creates an annual subscription via billing.checkout (mode=payment) and returns the URL', async () => {
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        const result = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        expect(result.checkoutUrl).toBe('https://mp.test/annual-abc');
+        expect(typeof result.localSubscriptionId).toBe('string');
+        expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/i);
+        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+        // Monthly path must NOT be invoked when interval is annual.
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('passes successUrl, cancelUrl, notificationUrl and statementDescriptor from env', async () => {
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.successUrl).toBe('https://hospeda.test/billing/return');
+        expect(call.cancelUrl).toBe('https://hospeda.test/billing/return?cancelled=1');
+        expect(call.notificationUrl).toBe('https://api.hospeda.test/api/v1/webhooks/mercadopago');
+        expect(call.statementDescriptor).toBe('HOSPEDA');
+    });
+
+    it('returns 404 when the plan has no active annual price (NO_ANNUAL_PRICE)', async () => {
+        mockBilling(
+            createAnnualBillingMock({
+                plans: [createPlan([MONTHLY_PRICE])] // monthly only
+            })
+        );
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('returns 404 when the customer cannot be resolved (CUSTOMER_NOT_FOUND)', async () => {
+        mockBilling(createAnnualBillingMock({ customer: null }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('returns 500 when checkout returns no init point (MISSING_INIT_POINT)', async () => {
+        mockBilling(
+            createAnnualBillingMock({
+                checkoutResult: { id: 'checkout-empty' }
+            })
+        );
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 500 });
+    });
+
+    it('returns 404 when the plan slug is unknown', async () => {
+        mockBilling(createAnnualBillingMock({ plans: [] }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'does-not-exist',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('returns 503 when billing is not configured (shared short-circuit)', async () => {
+        mockBilling(null);
+        const ctx = createMockContext({ billingEnabled: false });
+
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 503 });
+    });
+
+    it('returns 400 when no billing customer is on session (shared short-circuit)', async () => {
+        mockBilling(createAnnualBillingMock());
+        const ctx = createMockContext({ billingCustomerId: null });
+
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('promoCode is ignored on annual (only forwarded by the monthly path)', async () => {
+        const billing = createAnnualBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual',
+            promoCode: 'FREEMONTH'
+        });
+
+        // billing.checkout was called (success) — annual ignores promoCode
+        // entirely (Decision 4 of SPEC-122: discount-type promos out of MVP).
+        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
     });
 });

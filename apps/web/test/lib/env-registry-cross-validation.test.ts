@@ -25,12 +25,10 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // (PUBLIC_ENABLE_LOGGING was previously here as an exception — registered
     // post-Astro 6 audit: now validated by serverEnvSchema and read through
     // getEnv() in lib/env.ts instead of raw import.meta.env.)
-    //
-    // SENTRY_AUTH_TOKEN: build-time only. Consumed by @sentry/astro inside
-    // astro.config.mjs to upload source maps during `astro build`. Never read
-    // at runtime by app code, so it has no place in the runtime Zod schema.
-    // Registered with apps: ['web', 'admin', 'api'] because all three builds
-    // need it; runtime validation does not apply.
+
+    // Build-time only — consumed by @sentry/astro during the web build to
+    // upload source maps. Not read by the runtime, so it is deliberately
+    // absent from serverEnvSchema.
     'SENTRY_AUTH_TOKEN'
 ]);
 

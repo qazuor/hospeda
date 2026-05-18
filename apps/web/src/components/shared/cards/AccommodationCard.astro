@@ -13,7 +13,6 @@ import {
 	StarIcon,
 } from '@repo/icons';
 import { resolveAmenityIcon } from './accommodation-card-icons';
-import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
@@ -62,8 +61,6 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = data.createdAt
 	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
 	: false;
-const featuredColors = getBadgeStatusColor({ status: 'featured' });
-const newColors = getBadgeStatusColor({ status: 'new' });
 
 ---
 
@@ -103,7 +100,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				<div
 					class="acc-card__status-corner"
 					aria-hidden="true"
-					style={`--corner-bg: ${newColors.bg}; --corner-text: ${newColors.text};`}
 				>
 					<span class="acc-card__status-text">{t('home.accommodations.badge.new', 'Nuevo')}</span>
 				</div>
@@ -113,7 +109,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			{data.isFeatured && (
 				<div
 					class="acc-card__featured-badge"
-					style={`background-color: ${featuredColors.bg}; color: ${featuredColors.text};`}
 				>
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
 				</div>
@@ -287,7 +282,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		left: 0;
 		width: 0;
 		height: 0;
-		border-top: 80px solid var(--corner-bg);
+		/* Status corner uses the "new" badge colors. They are constants so we
+		 * bake them directly instead of threading through inline style=
+		 * (SPEC-046 GAP-046-09a). */
+		border-top: 80px solid var(--hospeda-forest);
 		border-right: 80px solid transparent;
 	}
 
@@ -300,7 +298,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		font-weight: 700;
 		font-size: 14px;
 		line-height: 22.4px;
-		color: var(--corner-text);
+		color: var(--primary-foreground);
 		white-space: nowrap;
 	}
 
@@ -317,6 +315,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		line-height: 22.4px;
 		padding: 4px 10px;
 		border-radius: 9999px;
+		/* Featured badge uses constant accent colors (status='featured').
+		 * Baked in to avoid inline style= per SPEC-046 GAP-046-09a. */
+		background-color: var(--brand-accent);
+		color: var(--primary-foreground);
 	}
 
 	/* Wave separator */

@@ -126,7 +126,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</h1>
 			<div class="benefits-section__grid">
 				{touristBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="benefits-card__icon" aria-hidden="true">
 							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
 								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
@@ -197,7 +197,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</h2>
 			<div class="benefits-section__grid">
 				{ownerBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="benefits-card__icon" aria-hidden="true">
 							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
 								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-accent) l c h / 0.1)" />

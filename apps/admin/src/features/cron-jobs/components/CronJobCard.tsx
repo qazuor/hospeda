@@ -107,24 +107,26 @@ export function CronJobCard({ job }: CronJobCardProps) {
                             />
                         </div>
 
-                        <Button
-                            onClick={handleTrigger}
-                            disabled={isPending}
-                            size="sm"
-                            className="w-full"
-                        >
-                            {isPending ? (
-                                <>
-                                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                                    {t('admin-billing.cron.card.runningButton')}
-                                </>
-                            ) : (
-                                <>
-                                    <PlayIcon className="mr-2 h-4 w-4" />
-                                    {t('admin-billing.cron.card.runButton')}
-                                </>
-                            )}
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button
+                                onClick={handleTrigger}
+                                disabled={isPending}
+                                size="sm"
+                                variant="outline"
+                            >
+                                {isPending ? (
+                                    <>
+                                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                                        {t('admin-billing.cron.card.runningButton')}
+                                    </>
+                                ) : (
+                                    <>
+                                        <PlayIcon className="mr-2 h-4 w-4" />
+                                        {t('admin-billing.cron.card.runButton')}
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 )}
 

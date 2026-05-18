@@ -17,7 +17,7 @@ function SponsorAnalyticsPage() {
     const { t } = useTranslations();
 
     return (
-        <SidebarPageLayout>
+        <SidebarPageLayout titleKey="admin-pages.sponsor.dashboard.analytics">
             <ComingSoon
                 title={t('admin-common.comingSoon.title' as TranslationKey)}
                 description={t('admin-common.comingSoon.sponsorAnalytics' as TranslationKey)}

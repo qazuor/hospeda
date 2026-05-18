@@ -59,8 +59,8 @@ function PostSeoPage() {
     const getCharCountColor = (current: number, target: number) => {
         const ratio = current / target;
         if (ratio < 0.8 || ratio > 1.2) return 'text-destructive';
-        if (ratio < 0.9 || ratio > 1.1) return 'text-yellow-600 dark:text-yellow-400';
-        return 'text-green-600 dark:text-green-400';
+        if (ratio < 0.9 || ratio > 1.1) return 'text-yellow-700 dark:text-yellow-300';
+        return 'text-green-700 dark:text-green-300';
     };
 
     return (

@@ -38,9 +38,13 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain("from './accommodation-card-icons'");
         });
 
-        it('should import getBadgeStatusColor from @/lib/colors for featured/new pills', () => {
-            expect(src).toContain("from '@/lib/colors'");
-            expect(src).toContain('getBadgeStatusColor');
+        it('should bake "new" and "featured" badge colors into scoped CSS (no inline style=, SPEC-046)', () => {
+            // SPEC-046 GAP-046-09a: the badge colors are constants (status='new' /
+            // status='featured' from getBadgeStatusColor) so we hard-code them in
+            // the scoped <style> instead of threading via inline style= attributes.
+            expect(src).toContain('var(--hospeda-forest)');
+            expect(src).toContain('var(--brand-accent)');
+            expect(src).not.toContain('getBadgeStatusColor');
         });
 
         it('should import the shared AccommodationTypeBadge', () => {

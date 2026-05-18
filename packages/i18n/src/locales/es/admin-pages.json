@@ -288,6 +288,8 @@
             "statusCancelled": "Cancelado",
             "filterAllStatuses": "Todos los estados",
             "filterAllTypes": "Todos los tipos",
+            "filterStatusLabel": "Filtrar por estado",
+            "filterTypeLabel": "Filtrar por tipo",
             "viewDetails": "Ver detalles",
             "dialog": {
                 "details": "Detalles del patrocinio",
@@ -751,6 +753,10 @@
                 "perNight": "Por Noche",
                 "perGuest": "Por Huésped"
             }
+        },
+        "amenities": {
+            "empty": "Este alojamiento no tiene amenidades asignadas.",
+            "editCta": "Agregar amenidad"
         },
         "reviews": {
             "noReviews": "Aún no hay reseñas para este alojamiento.",
