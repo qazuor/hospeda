@@ -65,4 +65,4 @@ Lista completa en [Qué no es error](/beta/reportar-bugs/que-no-es-bug/).
 
 ## Próximo paso
 
-Para que tu alojamiento siga visible más allá del beta, **[Suscripción y pagos](/beta/host/suscripcion-y-pagos/)**.
+Para que tu alojamiento siga visible más allá del beta, mirá **[Pagos y suscripciones](/beta/pagos/introduccion/)** — los planes, qué cubre cada uno y cómo testear con tarjetas de prueba.

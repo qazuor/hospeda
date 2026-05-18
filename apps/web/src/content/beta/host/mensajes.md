@@ -1,7 +1,7 @@
 ---
 title: Mensajes recibidos como propietario o anfitrión (host)
 description: Cómo leer y responder mensajes de turistas en tu bandeja.
-order: 5
+order: 4
 role: host
 section: Gestión del propietario
 ---

@@ -27,7 +27,7 @@ Procesos completos de uso real. Hacelos al menos una vez.
 ## Proceso 2 — Gestionar suscripción de propietario
 
 1. Crear propietario nuevo (otro email tuyo).
-2. Desde la web pública, suscribirlo con [tarjeta de prueba de MP](/beta/host/suscripcion-y-pagos/).
+2. Desde la web pública, suscribirlo con [tarjeta de prueba de MP](/beta/pagos/pagos-de-prueba/).
 3. Admin → **Billing → Suscripciones** → buscar esa suscripción.
 4. ¿Está activa? ¿Próxima renovación correcta?
 5. **Billing → Pagos** → buscar el pago. Si hay opción de reembolso, probala.

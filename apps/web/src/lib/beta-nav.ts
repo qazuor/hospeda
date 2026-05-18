@@ -25,7 +25,7 @@ export const BETA_ROLES_ORDER: ReadonlyArray<BetaRole> = [
     'turista',
     'host',
     'admin-editor',
-    'pago-real',
+    'pagos',
     'reportar-bugs',
     'faq'
 ];
@@ -39,7 +39,7 @@ export const BETA_ROLE_LABELS: Record<BetaRole, string> = {
     turista: 'Turista',
     host: 'Propietario / Anfitrión',
     'admin-editor': 'Admin / Editor',
-    'pago-real': 'Pago real',
+    pagos: 'Pagos y suscripciones',
     'reportar-bugs': 'Reportar problemas',
     faq: 'FAQ'
 };

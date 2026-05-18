@@ -20,7 +20,7 @@ const betaRoleEnum = z.enum([
     'turista',
     'host',
     'admin-editor',
-    'pago-real',
+    'pagos',
     'reportar-bugs',
     'faq'
 ]);
