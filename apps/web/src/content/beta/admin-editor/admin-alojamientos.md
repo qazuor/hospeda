@@ -1,6 +1,6 @@
 ---
 title: Admin — alojamientos, destinos y eventos
-description: CRUD completo de alojamientos, destinos y eventos en el panel de administración.
+description: CRUD completo de alojamientos, destinos y eventos en el panel admin.
 order: 3
 role: admin-editor
 section: Solo admin
@@ -13,79 +13,79 @@ section: Solo admin
   <div class="beta-callout__body">Sección solo para testers preseleccionados de admin / editor. Si no es tu caso, podés ignorarla. <a href="/beta/admin-editor/acceso-y-roles/">Más info</a>.</div>
 </aside>
 
-Como admin tenés **mucho más** que un editor. Te recomendamos hacer también todo lo del [editor](/beta/admin-editor/editor-publicaciones-tags/).
+Como admin tenés mucho más que un editor. Hacé también todo lo del [editor](/beta/admin-editor/editor-publicaciones-tags/).
 
-> Para no abrumarte, te organizamos las áreas por importancia. Probá todo lo que puedas en las 2-3 semanas del beta.
+> Áreas organizadas por importancia. Probá todo lo que puedas en las 2-3 semanas del beta.
 
-## Panel de control (dashboard) principal (prioridad alta)
+## Dashboard principal (prioridad alta)
 
-- Mirá los KPIs (usuarios, alojamientos, ingresos, etc.).
-- Mirá los gráficos / tendencias.
-- ¿Los números cuadran? ¿Te parecen razonables?
+- KPIs (usuarios, alojamientos, ingresos).
+- Gráficos / tendencias.
+- ¿Los números cuadran y son razonables?
 
 ## Alojamientos (prioridad alta)
 
-Tenés CRUD completo:
+CRUD completo:
 
-- **Listar** alojamientos. Filtros disponibles: **estado**, **tipo**, **destacado**, **incluir eliminados** y búsqueda libre. *No hay filtro por propietario en este momento — si lo encontrás, reportá dónde.*
-- **Ver detalle** de un alojamiento: mirá las pestañas (General, Amenidades, Galería, Precios, Reseñas).
-- **Editar** un alojamiento: cambiá un campo, guardá, fijate si se actualizó en el sitio público.
-- **Crear** alojamiento desde admin: completá el asistente guiado (wizard). ¿Funcionó?
-- **Borrar** uno: ¿soft delete? ¿se puede recuperar?
+- **Listar**: filtros por estado, tipo, destacado, incluir eliminados, búsqueda libre. *No hay filtro por propietario — si lo encontrás, reportá dónde.*
+- **Ver detalle**: pestañas General, Amenidades, Galería, Precios, Reseñas.
+- **Editar**: cambiá un campo, guardá, verificá en el sitio público.
+- **Crear** desde admin: completá el asistente.
+- **Borrar**: ¿soft delete? ¿se recupera?
 
 ### Casos especiales
 
-- Probá editar la **galería**: subir, reordenar, eliminar fotos.
-- Probá editar las **amenidades** y **características**.
-- Probá modificar los **precios** (por noche, por temporada).
-- Mirá las **reseñas**. ¿Podés moderarlas? ¿Marcar spam?
+- Editar **galería**: subir, reordenar, eliminar.
+- Editar **amenidades** y **características**.
+- Modificar **precios** (por noche, por temporada).
+- **Reseñas**: ¿se moderan? ¿se marca spam?
 
-> 📋 **Reportá:** todo lo que no haya guardado, dado error o no se haya reflejado en el sitio público.
+> 📋 **Reportá:** lo que no guardó, dio error o no se reflejó en el sitio.
 
 ## Destinos (prioridad alta)
 
-Mismo proceso que con alojamientos:
+Mismo proceso:
 
 - Listar, filtrar, buscar.
-- Ver detalle (pestañas: General, Alojamientos, Atracciones, Eventos).
-- Editar: cambiá descripción, foto cover.
-- Crear un destino nuevo (ciudad, región).
-- Asignar **atracciones** (puntos de interés) al destino.
+- Detalle (pestañas: General, Alojamientos, Atracciones, Eventos).
+- Editar descripción, foto cover.
+- Crear destino (ciudad, región).
+- Asignar **atracciones** (puntos de interés).
 
 ## Eventos (prioridad media)
 
-- Listar y filtrar eventos.
-- Crear un evento (nombre, descripción, fecha, ubicación, organizador, categoría).
-- Editar un evento existente.
-- Sub-menú **Ubicaciones** (venues): crear / editar / eliminar.
-- Sub-menú **Organizadores**: crear / editar / eliminar.
+- Listar y filtrar.
+- Crear: nombre, descripción, fecha, ubicación, organizador, categoría.
+- Editar uno existente.
+- Sub-menú **Ubicaciones** (venues): CRUD.
+- Sub-menú **Organizadores**: CRUD.
 
-> ⚠️ La gestión de **tickets / asistentes** todavía no está completa. **No la reportes** si no la encontrás.
+> ⚠️ Tickets / asistentes todavía incompleto. No lo reportes si no aparece.
 
 ## Contenido transversal (prioridad media)
 
-Hay un sub-menú **Contenido** con:
+Sub-menú **Contenido**:
 
-- **Comodidades de Alojamientos** (la lista maestra: WiFi, Pileta, Estacionamiento, etc.). Probá agregar, editar, eliminar.
-- **Características de Alojamientos** (habitaciones, baños, etc.).
-- **Atracciones de Destinos** (puntos de interés que después se asignan a destinos).
+- **Comodidades de Alojamientos** (lista maestra: WiFi, Pileta, etc.). Agregar, editar, eliminar.
+- **Características** (habitaciones, baños, etc.).
+- **Atracciones de Destinos**.
 
-> 📋 **Reportá:** si una comodidad / característica que creaste no aparece después en el formulario del propietario o anfitrión (host).
+> 📋 **Reportá** si una comodidad/característica que creaste no aparece después en el form del host.
 
-## Publicaciones / Blog (mismo que editor + extras)
+## Publicaciones / Blog (igual que editor + extras)
 
 Como admin tenés:
 
-- **Pestaña SEO** con más opciones que editor.
-- **Pestaña Sponsorship**: asignar marcas patrocinadoras / enlaces promocionales a posts.
+- **Pestaña SEO** con más opciones.
+- **Pestaña Sponsorship**: marcas / enlaces promocionales en posts.
 
-## Etiquetas / tags (más tipos que editor)
+## Etiquetas (más tipos que editor)
 
-- **Etiquetas de blog (post-tags)** — visibles para usuarios
-- **Etiquetas internas** — organización interna del equipo, no visibles al público
-- **Etiquetas de sistema** — predefinidas, modificables con cuidado
-- **Etiquetas de moderación de usuario** — etiquetas que el sistema usa para clasificar perfiles de USUARIO (no para marcar spam/abuso del usuario)
+- **De blog (post-tags)** — visibles para usuarios
+- **Internas** — uso del equipo, no visibles al público
+- **De sistema** — predefinidas, modificables con cuidado
+- **De moderación de usuario** — clasifican perfiles de USUARIO (no spam/abuso)
 
 ## Próximo paso
 
-Andá a **[Admin — Billing](/beta/admin-editor/admin-billing/)** (la sección más grande del panel).
+**[Admin — Billing](/beta/admin-editor/admin-billing/)** (la sección más grande).

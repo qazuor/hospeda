@@ -1,6 +1,6 @@
 ---
 title: Páginas estáticas (FAQ, legales, contacto)
-description: Cómo revisar las páginas informativas del sitio y el formulario de contacto.
+description: Revisar páginas informativas del sitio y el formulario de contacto.
 order: 7
 role: turista
 section: Explorar el sitio
@@ -8,48 +8,41 @@ section: Explorar el sitio
 
 # Páginas estáticas
 
-Visitá estas páginas (suelen estar en el pie de página (footer) abajo):
+Visitá estas páginas (suelen estar en el pie):
 
 - **Preguntas frecuentes / FAQ**
 - **Contacto**
-- **Sobre nosotros / Nosotros**
+- **Sobre nosotros**
 - **Términos de servicio**
 - **Política de privacidad**
 - **Política de cookies**
 - **Beneficios**
-- **Propietarios** (landing para propietarios o anfitriones (hosts))
+- **Propietarios** (landing para hosts)
 
-## Lo que queremos que hagas en cada una
+## Qué hacer en cada una
 
-**Leelas.** En serio. Tomate 5 minutos por página. Estos textos los va a ver el público real, así que necesitamos saber si:
+**Leelas.** En serio. 5 minutos por página. El público las va a ver, así que:
 
-- ¿Se entiende lo que dice?
-- ¿Hay frases raras, mal escritas, con errores de ortografía?
-- ¿Falta información que vos esperarías encontrar?
-- ¿Hay contradicciones entre páginas (ej. términos dice una cosa y privacidad otra)?
-- ¿El tono es coherente (a veces formal, a veces informal)?
-- ¿Hay textos en otro idioma sin traducir?
+- ¿Se entiende?
+- ¿Hay frases raras, mal escritas, errores de ortografía?
+- ¿Falta info que vos esperarías?
+- ¿Hay contradicciones entre páginas (términos vs. privacidad)?
+- ¿Tono coherente (no salta entre formal e informal)?
+- ¿Hay texto en otro idioma sin traducir?
 
-## Especialmente: probá el formulario de contacto
+## Probá el formulario de contacto
 
-1. Andá a la página de **Contacto**.
-2. Completalo con datos reales (tu email).
-3. Probá distintos asuntos / mensajes.
-4. Apretá **Enviar**.
-5. ¿Te confirmó que el mensaje se mandó? ¿Te dio error?
-6. Probá enviar el formulario **vacío**. ¿Te avisa que faltan campos?
-7. Probá poner un email mal formateado (ej. "hola.com" sin @). ¿Te avisa?
+1. Página de **Contacto**.
+2. Completalo con datos reales.
+3. Probá distintos asuntos/mensajes.
+4. **Enviar**. ¿Confirmó? ¿Dio error?
+5. Probá enviar **vacío** — ¿avisa de campos faltantes?
+6. Probá email mal formateado ("hola.com" sin @). ¿Avisa?
 
 ## Qué reportar
 
-> 📋 **Reportá:**
->
-> - Si alguna página no carga
-> - Si tiene texto cortado, mal alineado, mal escrito
-> - Si el formulario de contacto no envía o tira error
-> - Errores de ortografía, gramática, frases mal redactadas
-> - Información que falta o que está confusa
+> 📋 **Reportá:** página que no carga, texto cortado/mal escrito, formulario que falla, errores de ortografía, info faltante o confusa.
 
 ## Próximo paso
 
-Ahora pasá a **[preferencias y cuenta](/beta/turista/preferencias-cuenta/)** — idiomas, tema, perfil, newsletter, cookies.
+**[Preferencias y cuenta](/beta/turista/preferencias-cuenta/)**.

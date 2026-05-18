@@ -1,49 +1,49 @@
 ---
 title: Cosas que parecen error (bug) pero no lo son
-description: Comportamientos esperados que no debés reportar — funcionalidades en desarrollo y limitaciones conocidas.
+description: Comportamientos esperados que no debés reportar.
 order: 5
 role: reportar-bugs
 section: Reportar bugs
 ---
 
-# Cosas que parecen error (bug) pero no lo son
+# Cosas que parecen error pero no lo son
 
-Esto es importante. Te lo decimos para que **no pierdas tiempo reportando estas cosas** (sabemos que están así).
+Para que **no pierdas tiempo reportando** estas cosas (las conocemos).
 
-## Editor de texto plano vs editor con formato
+## Editor de texto plano vs con formato
 
-Cuando creás o editás la descripción de un alojamiento (como propietario o anfitrión (host)), el campo es **texto plano simple**, sin opciones de negrita / itálica / listas. **Eso es esperado.** El editor con formato está en desarrollo.
+La descripción de un alojamiento es **texto plano**, sin negrita / itálica / listas. Esperado. El editor con formato está en desarrollo.
 
 ## Emails transaccionales en el beta
 
-El código del sistema tiene **muchas plantillas de email** conectadas (registro, reset de contraseña, confirmación de pago, error de pago, mensaje nuevo en conversación, expiración de add-ons, recordatorio de fin de prueba, cancelación de suscripción, formulario de contacto, reporte de feedback, etc.).
+El sistema tiene muchas plantillas (registro, reset, confirmación de pago, mensajes, expiración de add-ons, etc.). **Pero en beta** la config del servicio de email **puede estar reducida**.
 
-**Pero en este entorno de beta** la configuración del servicio de email **puede estar reducida**. Si no recibís un email que esperabas:
+Si no recibís un email esperado:
 
-- **No asumas que falta la funcionalidad** — el código lo tiene.
-- **Reportalo igual** indicando qué acción hiciste y qué email esperabas.
-- Nosotros verificamos en logs si se intentó enviar y por qué no llegó.
+- No asumas que falta la funcionalidad — el código la tiene.
+- **Reportalo igual** indicando qué acción hiciste y qué esperabas.
+- Verificamos en logs si se intentó enviar.
 
-Los **emails que sí o sí deberían llegarte** (porque son críticos para usar el sitio) son:
+**Los 3 que sí o sí deberían llegar** (críticos para usar el sitio):
 
-1. **Verificación de email al registrarte** (sin esto no podés activar tu cuenta)
-2. **Reseteo de contraseña** (sin esto no podés recuperar acceso)
-3. **Verificación de mensajería para invitados** (sin esto no podés seguir conversaciones como invitado)
+1. **Verificación al registrarte**
+2. **Reseteo de contraseña**
+3. **Verificación de mensajería para invitados**
 
-Si **alguno de estos 3** no te llega, es un error grave — reportalo con urgencia.
+Si **alguno de estos 3** no llega, es bug grave — reportá con urgencia.
 
-Para todo el resto (confirmación de pago, recordatorios, etc.), reportá si no llegan pero esperá nuestra confirmación antes de asumir que es error — puede ser config de entorno.
+Para el resto, reportá si no llegan pero esperá nuestra confirmación antes de asumir que es bug — puede ser config de entorno.
 
 ## Funcionalidades que todavía no están
 
-Si una funcionalidad no existe pero sabemos que la queremos hacer, no es un error. Mirá la [lista de próximas funcionalidades](/beta/empezar/proximas-funcionalidades/) para ver qué viene.
+Si algo no existe pero sabemos que lo queremos hacer, no es bug. Mirá la [lista de próximas funcionalidades](/beta/empezar/proximas-funcionalidades/).
 
-¿Se te ocurre alguna funcionalidad que podría ser útil, interesante o atractiva tener? Propónela usando el **botón flotante azul** abajo a la derecha — el mismo que usás para reportar errores también sirve para sugerir ideas.
+¿Se te ocurre alguna funcionalidad útil? Propónela con el botón flotante: también sirve para sugerir ideas.
 
 ## Período de prueba de 14 días
 
-Cuando te creás como propietario, te van a dar **14 días de prueba gratis** automáticamente. Después tenés que pagar. Esos 14 días son **esperados**, no es un error.
+Como propietario te dan **14 días gratis** automáticos. Después tenés que pagar. Esperado.
 
-## Si ves alguna de estas medio funcionando
+## Si ves algo medio funcionando
 
-Reportala igual. Si está medio implementada y rompe algo, queremos saberlo. Pero si **no la encontrás** en el menú, es porque no está.
+Reportá igual. Si está medio implementado y rompe algo, queremos saberlo. Pero si **no la encontrás** en el menú, es porque no está.

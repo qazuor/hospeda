@@ -1,6 +1,6 @@
 ---
 title: Crear tu cuenta de turista
-description: Tres formas de registrarte en Hospeda — email, Google o Facebook — paso a paso.
+description: Tres formas de registrarte — email, Google o Facebook.
 order: 1
 role: turista
 section: Empezar como turista
@@ -8,60 +8,58 @@ section: Empezar como turista
 
 # Crear tu cuenta de turista
 
-Vamos a crearte una cuenta de turista. Hay **3 formas** de registrarte. Usá la que más uses normalmente.
+Hay **3 formas** de registrarte. Usá la que más uses.
 
-> Antes de crear cuenta, recorré tranquilamente la **home** del sitio. Bajá hasta el final. Mirá. Probá los controles de idioma (ES / EN / PT, arriba a la derecha en computadora, dentro del menú ☰ en celular) y de tema (Claro / Sistema / Oscuro). Anotá cualquier cosa rara para reportar después.
+> Antes de crear cuenta, recorré la **home**. Bajá hasta el final. Probá los controles de idioma (ES / EN / PT, arriba a la derecha en compu o dentro del menú ☰ en celular) y de tema (Claro / Sistema / Oscuro). Anotá cualquier cosa rara.
 
 ## Opción 1 — Email y contraseña
 
-1. Arriba a la derecha hay un botón **"Iniciar sesión"**. Apretalo.
-2. En la pantalla de iniciar sesión (login), al pie hay un enlace (link) **"¿No tienes cuenta? Regístrate aquí"**. Hacé clic.
-3. Llegás al formulario de registro **"Crear Cuenta"**. Completá los **3 campos**:
-   - **Nombre** (un solo campo — nombre completo)
-   - **Correo electrónico** (usá uno tuyo de verdad — vamos a mandarte un email de verificación)
+1. Arriba a la derecha, **"Iniciar sesión"**.
+2. Al pie de la pantalla de login, **"¿No tienes cuenta? Regístrate aquí"**.
+3. Form **"Crear Cuenta"** con 3 campos:
+   - **Nombre** (un solo campo, completo)
+   - **Correo electrónico** (usá uno real — te mandamos verificación)
    - **Contraseña** (mínimo 8 caracteres)
-4. Apretá el botón **"Crear Cuenta"**.
-5. Vas a recibir un email de Hospeda con un **enlace para verificar tu email**. **Revisá también la carpeta de Spam / Correo no deseado.**
-6. Hacé clic en ese enlace. Te lleva al sitio en una pantalla **"Verificar email"** que valida automáticamente.
+4. Apretá **"Crear Cuenta"**.
+5. Te llega un email con **enlace para verificar**. **Revisá Spam también.**
+6. Click en el enlace → pantalla **"Verificar email"** valida automáticamente.
 7. Quedás logueado.
 
 > 📋 **Reportá:**
 >
-> - ¿Tardó mucho en llegar el email? ¿Cuánto?
-> - ¿Llegó a Spam? Si llegó a Spam, **eso es importante avisarnos.**
-> - ¿El enlace del email te llevó a la verificación sin problemas?
-> - ¿La contraseña te pidió reglas raras (mayúsculas, números, símbolos)? ¿Te avisó claramente cuáles eran?
-> - Si el form te muestra más campos de los 3 que mencionamos arriba (ej. Apellido, Confirmar contraseña), reportalo — eso sería un cambio del proceso.
+> - ¿Tardó mucho el email? ¿Cuánto?
+> - ¿Llegó a Spam? Eso es importante avisarnos.
+> - ¿El enlace funcionó sin problemas?
+> - ¿La contraseña te pidió reglas raras y las avisó claramente?
+> - Si ves más campos de los 3 mencionados (Apellido, Confirmar contraseña), reportalo.
 
 ## Opción 2 — Con Google
 
-1. En la pantalla de registro **"Crear Cuenta"**, hay un botón **"Registrarse con Google"** (con el logo de Google).
-2. Apretalo. Te lleva a la pantalla de Google.
-3. Elegí tu cuenta de Google y aceptá los permisos.
-4. Volvés a Hospeda, ya con sesión iniciada.
+1. Botón **"Registrarse con Google"** en la pantalla de registro.
+2. Elegí tu cuenta y aceptá permisos.
+3. Volvés a Hospeda logueado.
 
-> 📋 **Reportá:** si en algún paso te aparece un error, sacá foto y reportá.
+> 📋 **Reportá** errores con captura.
 
 ## Opción 3 — Con Facebook
 
-1. En la pantalla de registro **"Crear Cuenta"**, hay un botón **"Registrarse con Facebook"**.
-2. Logueate con tu Facebook.
-3. Aceptá los permisos.
-4. Volvés a Hospeda con sesión iniciada.
+1. Botón **"Registrarse con Facebook"**.
+2. Logueate, aceptá permisos.
+3. Volvés logueado.
 
-> 📋 **Reportá:** lo mismo que con Google.
+> 📋 **Reportá** lo mismo que con Google.
 
 ## Probá también
 
-- **Cerrar sesión**: arriba a la derecha, donde está tu avatar, abrí el menú y elegí **"Cerrar Sesión"**.
-- **Volver a entrar** con tus mismas credenciales. ¿Anduvo?
-- **Recuperar contraseña**: en la pantalla de iniciar sesión hay un enlace **"¿Olvidaste tu contraseña?"**. Pedí el reset, andá al email, hacé clic en el enlace, poné nueva contraseña. ¿Funcionó todo?
+- **Cerrar sesión**: avatar arriba a la derecha → **"Cerrar Sesión"**.
+- **Volver a entrar** con las mismas credenciales.
+- **Recuperar contraseña**: en login, **"¿Olvidaste tu contraseña?"**. Pedí reset, click en el email, poné nueva. ¿Funcionó todo?
 
 ## Tips de email
 
-- Si tenés Gmail, podés usar el truco `tuemail+beta@gmail.com` (Gmail entiende el `+` y lo manda igual a tu casilla normal). Útil si querés separar emails del beta de los tuyos.
-- Si no te llega el email de verificación después de **30 minutos** (incluso revisando Spam), reportalo.
+- Gmail: usá `tuemail+beta@gmail.com` (el `+` separa los emails del beta sin cambiar de casilla).
+- Si después de **30 minutos** no llega el email (ni a Spam), reportalo.
 
 ## Próximo paso
 
-Tu cuenta ya está lista. Ahora andá a **[Buscar un alojamiento](/beta/turista/buscar-alojamiento/)**.
+**[Buscar un alojamiento](/beta/turista/buscar-alojamiento/)**.

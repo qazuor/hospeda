@@ -8,99 +8,99 @@ section: FAQ
 
 # Preguntas frecuentes
 
-> Si te trabaste con algo, mirá acá primero. Si tu pregunta no está, escribí al grupo de WhatsApp <https://chat.whatsapp.com/BDvBuU0rAfNJYh3RDaMgvL> y te ayudamos.
+> Si te trabaste, mirá acá primero. Si tu pregunta no está, escribí al grupo de WhatsApp <https://chat.whatsapp.com/BDvBuU0rAfNJYh3RDaMgvL>.
 
 ## Sobre el beta en general
 
 ### ¿Qué es esto del "beta"?
 
-Es una fase de prueba. El sitio todavía no está abierto al público. Te invitamos a probarlo antes y darnos tu opinión para arreglar lo que esté mal.
+Una fase de prueba. El sitio no está abierto al público. Te invitamos a probarlo antes y darnos tu opinión.
 
 ### ¿Cuánto dura?
 
-**Depende de cuántas cosas vayamos encontrando.** Entre **2 semanas y 1 mes**. Te avisamos por WhatsApp cuando arranca y cuando lo damos por terminado.
+**De 2 semanas a 1 mes**, depende de cuántas cosas encontremos. Te avisamos por WhatsApp.
 
-### ¿Cuánto tiempo le tengo que dedicar?
+### ¿Cuánto tiempo le dedico?
 
-**Lo que más puedas.** Como mínimo **3 horas por semana**.
+**Lo que más puedas.** Mínimo **3 horas por semana**.
 
 ### ¿Cobro algo?
 
-**No.** Es voluntario. Pero si reportás varias cosas útiles, vamos a tener algún detalle de agradecimiento al final.
+**No.** Es voluntario. Si reportás cosas útiles, va a haber algún detalle de agradecimiento al final.
 
-### ¿Tengo que ser experto en computación?
+### ¿Tengo que ser experto?
 
 **No, todo lo contrario.**
 
 ### ¿Y si rompo algo?
 
-**No vas a romper nada.** El sitio es una copia de prueba aislada del sitio real.
+**No vas a romper nada.** El sitio es una copia de prueba aislada del real.
 
-### ¿Tengo que probar todo todo?
+### ¿Tengo que probar todo?
 
-**Lo ideal sí, pero si no te da, no.** Mejor 5 cosas probadas con detalle que 50 a las apuradas.
+**Lo ideal sí, pero si no te da, no.** Mejor 5 cosas con detalle que 50 a las apuradas.
 
 ---
 
 ## Sobre cómo entrar al sitio
 
-### ¿Cuál es el enlace (link)?
+### ¿Cuál es el enlace?
 
 > **<https://staging.hospeda.com.ar>**
 
-### Me dice "el sitio no es seguro" / "certificado inválido"
+### Me dice "no es seguro" / "certificado inválido"
 
-Sacale captura y reportanos por WhatsApp. **No avances.**
+Captura + WhatsApp. **No avances.**
 
-### Entré pero está en blanco / no carga
+### Entré pero está en blanco
 
-1. Refrescá la página (F5 en compu, deslizar para abajo en celular).
+1. Refrescá (F5 o deslizar para abajo).
 2. Cerrá y abrí el navegador.
-3. Probá con otro navegador.
-4. Si nada anda, avisanos por WhatsApp.
+3. Probá otro navegador.
+4. Si nada anda, WhatsApp.
 
 ### ¿Puedo usar tablet / iPad?
 
-Sí, sumate. Pero la regla principal es **celular y compu sí o sí**.
+Sí, sumate. Pero la regla principal es **celular y compu** sí o sí.
 
-### ¿Qué navegador uso?
+### ¿Qué navegador?
 
-El que ya uses. Chrome, Firefox, Safari, Edge — todos soportados. Internet Explorer **NO**.
+El que ya uses. Chrome, Firefox, Safari, Edge — todos OK. Internet Explorer **NO**.
 
-### En el celular, ¿lo uso parado o acostado?
+### En el celular, ¿parado o acostado?
 
-**Las dos.** Probalo vertical y horizontal. Girá el celular **mientras** navegás una página.
+**Las dos.** Probá vertical y horizontal. Girá **mientras** navegás una página.
 
 ---
 
 ## Sobre crear cuenta y loguearse
 
-### Me registré pero no me llega el email de confirmación
+### No me llega el email de confirmación
 
-1. **Revisá la carpeta de Spam / Correo no deseado** (lo más común).
+1. **Carpeta de Spam** (lo más común).
 2. Esperá 5 minutos.
-3. Pedí que reenvíen el email.
+3. Pedí que reenvíen.
 4. Si después de 30 minutos no llega, reportalo.
 
 ### ¿Puedo registrarme con email "falso"?
 
-Necesitás un email real. Si querés usar uno secundario, perfecto. Con Gmail probá `tuemail+beta@gmail.com`.
+Necesitás uno real. Con Gmail probá `tuemail+beta@gmail.com`.
 
 ### Me olvidé la contraseña
 
-En la pantalla de iniciar sesión (login) hay **"Olvidé mi contraseña"**. Apretalo, ingresá tu email, te llega un enlace para resetear. Si no llega, mirá Spam.
+En login → **"Olvidé mi contraseña"**. Te llega un enlace. Si no, mirá Spam.
 
 ### ¿Puedo entrar con Google / Facebook?
 
-Sí, son las 2 opciones disponibles.
+Sí, las 2 opciones disponibles.
 
-### Me logueé pero me cierra la sesión sola
+### Me cierra la sesión sola
 
 Reportalo. Decinos cuánto tiempo después se cerró.
 
 ### ¿Puedo tener varias cuentas?
 
-Sí. Si querés probar como turista y como propietario o anfitrión (host), podés crear 2 cuentas con emails distintos.
+Sí. Para probar como turista y como propietario podés crear 2 cuentas con emails distintos.
 
 ---
 
@@ -108,25 +108,25 @@ Sí. Si querés probar como turista y como propietario o anfitrión (host), pod�
 
 ### ¿Tengo que pagar de verdad?
 
-**NO.** Vas a usar tarjetas de prueba. El sistema está en modo de prueba (sandbox).
+**NO.** Tarjetas de prueba en modo sandbox.
 
-> Excepción: los 2 testers de [pago real](/beta/pago-real/introduccion/), avisados por privado.
+> Excepción: los 2 testers de [pago real](/beta/pago-real/introduccion/).
 
 ### ¿Dónde están las tarjetas de prueba?
 
-Mirá **[Suscripción y pagos](/beta/host/suscripcion-y-pagos/)**.
+**[Suscripción y pagos](/beta/host/suscripcion-y-pagos/)**.
 
-### Usé la tarjeta de prueba y me dice "rechazada"
+### Usé la tarjeta y dice "rechazada"
 
 El **nombre del titular** controla el resultado: `APRO` aprueba, `OTHE` rechaza, `CONT` deja pendiente. Tabla completa en [Suscripción y pagos](/beta/host/suscripcion-y-pagos/).
 
-### Pagué pero no me activaron la suscripción
+### Pagué pero no me activaron
 
-Es un error (bug). Reportalo con hora, plan, captura, email registrado.
+Es bug. Reportá hora, plan, captura, email registrado.
 
-### ¿Me van a llegar emails de pago?
+### ¿Me llegan emails de pago?
 
-**Puede que no en este entorno.** El sistema tiene plantillas para emails de pago/factura/recordatorios, pero la configuración del servicio de email en beta puede estar reducida. Si esperabas un email y no llegó, **reportalo** — verificamos en logs si se intentó enviar. Mirá [Cosas que parecen error pero no lo son](/beta/reportar-bugs/que-no-es-bug/) para más detalle.
+**Puede que no en este entorno.** Las plantillas existen pero la config de email en beta puede estar reducida. Si esperabas uno y no llegó, **reportalo** — verificamos en logs. Mirá [Cosas que parecen error pero no lo son](/beta/reportar-bugs/que-no-es-bug/).
 
 ---
 
@@ -134,37 +134,37 @@ Es un error (bug). Reportalo con hora, plan, captura, email registrado.
 
 ### ¿Dónde está el botón para reportar?
 
-Es una pastilla flotante **"Reportar problema"** abajo a la derecha de todas las páginas. También se abre con el atajo **`Ctrl + Shift + F`**.
+Pastilla flotante **"Reportar problema"** abajo a la derecha, en todas las páginas. Atajo: **`Ctrl + Shift + F`**.
 
-### ¿Cómo saco una captura de pantalla?
+### ¿Cómo saco captura de pantalla?
 
-Mirá la tabla completa en el **[Glosario](/beta/empezar/glosario/#cómo-sacar-una-captura-de-pantalla)** o la sección **[Herramientas para testear](#herramientas-para-testear)** más abajo.
+Mirá el **[Glosario](/beta/empezar/glosario/#cómo-sacar-una-captura-de-pantalla)** o la sección **[Herramientas para testear](#herramientas-para-testear)** más abajo.
 
-### ¿Tengo que escribir mucho en el reporte?
+### ¿Tengo que escribir mucho?
 
 **No es obligatorio**, pero ayuda. Mirá **[Ejemplos](/beta/reportar-bugs/ejemplos/)**.
 
-### El botón flotante me carga datos automáticamente, ¿los borro?
+### El botón carga datos automáticamente, ¿los borro?
 
 **Dejalos.** Son los más útiles. Solo agregá tu info encima.
 
 ### ¿Reporto cosas obvias?
 
-**Sí.** A veces lo "obvio" lo tenemos tan adentro que no lo vemos.
+**Sí.** Lo "obvio" lo tenemos tan adentro que no lo vemos.
 
 ### ¿Reporto si algo NO me gusta estéticamente?
 
-**Sí.** Diseño, colores, tamaños de letras, todo eso lo queremos saber.
+**Sí.** Diseño, colores, tamaños — todo.
 
 ### Reporté algo y no me responden
 
-No te preocupes. **No respondemos a cada reporte uno por uno** — son demasiados. Lo leímos, lo anotamos, lo arreglamos.
+**No respondemos uno por uno** — son demasiados. Lo leímos, anotamos, arreglamos.
 
-### ¿Dónde puedo ver lo que reporté?
+### ¿Puedo ver lo que reporté?
 
-Por ahora no hay un lugar para que veas tus reportes anteriores.
+Por ahora no hay un lugar para verlo.
 
-### Reporté algo pero ahora veo que se arregló
+### Reporté algo y ahora se arregló
 
 ¡Bárbaro! Si querés, escribí al grupo "se arregló X, gracias". Nos motiva un montón.
 
@@ -174,104 +174,100 @@ Por ahora no hay un lugar para que veas tus reportes anteriores.
 
 ### ¿En qué idioma está?
 
-En **español** principal. También en **inglés** y **portugués**. Hay un selector arriba.
+**Español** principal, **inglés** y **portugués**. Hay selector arriba.
 
-### El sitio se ve oscuro / claro y yo no quiero
+### Se ve oscuro / claro y no quiero
 
-Hay un control con 3 opciones para cambiar el **tema**: **Claro · Sistema · Oscuro** (iconos Sol / Engranaje / Luna en la cabecera (header)).
+Hay un control con 3 opciones: **Claro · Sistema · Oscuro** (Sol / Engranaje / Luna en la cabecera).
 
 ### Una imagen no carga
 
-Captura + reporte. Es un error.
+Captura + reporte. Es bug.
 
 ### Error 404
 
-Captura + reporte. Decinos qué enlace estabas siguiendo.
+Captura + reporte. Decinos qué enlace seguiste.
 
 ### El sitio anda lento
 
-Reportalo igual. Decinos qué página, cuánto tarda, si tu internet en general está lento.
+Reportalo. Decinos qué página, cuánto tarda, si tu internet en general está lento.
 
 ---
 
 ## Sobre privacidad y datos
 
-### ¿Los datos que pongo en el beta son seguros?
+### ¿Los datos del beta son seguros?
 
-El sistema está en un servidor separado del público. Tus datos de prueba **no se mezclan con datos reales**.
+El sistema está en un servidor separado. Tus datos de prueba **no se mezclan con datos reales**.
 
 ### ¿Puedo borrar mi cuenta de prueba al final?
 
-**Sí.** Avisanos al final del beta y te la borramos.
+**Sí.** Avisanos y la borramos.
 
 ### ¿Mis reportes son anónimos?
 
-Lo que reportes desde "Reportar problema" queda asociado a tu cuenta logueada (si estás logueado). **No reportes información personal sensible** (números de tarjeta, claves) en el grupo.
+Quedan asociados a tu cuenta logueada. **No reportes información personal sensible** (números de tarjeta, claves) en el grupo.
 
 ### ¿Pueden ver lo que escribo en formularios?
 
-Como sos beta tester, sí. **No pongas datos reales sensibles tuyos** (DNI real, datos bancarios) salvo que un doc específico te lo pida (ej. [pago real](/beta/pago-real/introduccion/)).
+Sí. **No pongas datos reales sensibles tuyos** (DNI real, datos bancarios) salvo que un doc te lo pida (ej. [pago real](/beta/pago-real/introduccion/)).
 
 ---
 
 ## Herramientas para testear
 
-> Esta sección es para que tengas a mano cómo hacer las cosas básicas que vas a necesitar mientras probás (capturas, video, ver errores, etc.). **No tenés que ser técnico para usar nada de esto.**
+> Esta sección es para tener a mano cómo hacer las cosas básicas (capturas, video, ver errores). **No tenés que ser técnico para usar nada.**
 
 ### Captura de pantalla en celular
 
 | Equipo | Atajo |
 | --- | --- |
 | Android | **Volumen abajo + Encendido** al mismo tiempo |
-| iPhone con botón Home | **Home + Encendido** al mismo tiempo |
-| iPhone sin Home | **Subir volumen + Encendido** al mismo tiempo |
+| iPhone con Home | **Home + Encendido** |
+| iPhone sin Home | **Subir volumen + Encendido** |
 
-La captura queda en la galería de fotos.
+La captura queda en la galería.
 
 ### Captura de pantalla en compu
 
 | Sistema | Atajo |
 | --- | --- |
-| **Windows** (pantalla completa) | Tecla `PrtSc` (a veces se llama "Impr Pant"). Después pegala con `Ctrl + V` en cualquier lado. |
-| **Windows** (seleccionar área) | `Win + Shift + S`. Te deja recortar un pedazo. Queda en el portapapeles. |
-| **Mac** (seleccionar área) | `Cmd + Shift + 4`. Te deja arrastrar y elegir la zona. Queda en el escritorio. |
-| **Mac** (pantalla completa) | `Cmd + Shift + 3`. Queda en el escritorio. |
-| **Linux** | Tecla `PrtSc` o la app "Captura de pantalla" que viene con el sistema. |
+| **Windows** (completa) | `PrtSc`. Después `Ctrl + V` en cualquier lado. |
+| **Windows** (selección) | `Win + Shift + S`. Recortás un pedazo, queda en portapapeles. |
+| **Mac** (selección) | `Cmd + Shift + 4`. Queda en el escritorio. |
+| **Mac** (completa) | `Cmd + Shift + 3`. Queda en el escritorio. |
+| **Linux** | `PrtSc` o la app "Captura de pantalla". |
 
-### Grabar un video corto de la pantalla
+### Grabar video corto de la pantalla
 
-A veces un error solo se entiende en movimiento (animación rara, transición que falla, algo que solo pasa al hacer scroll). Para eso:
+Algunos errores solo se entienden en movimiento (animaciones, transiciones, scroll).
 
 | Equipo | Cómo |
 | --- | --- |
-| **Android** | Deslizá las notificaciones para abajo y buscá "Grabar pantalla" (también llamado "Captura de pantalla" en algunos modelos). |
-| **iPhone** | Centro de control (deslizar desde arriba a la derecha) → ícono de círculo dentro de un círculo. Si no te aparece, lo activás en `Ajustes → Centro de control → Grabación de pantalla`. |
-| **Windows 10/11** | `Win + G` abre la barra de juegos, que tiene un botón para grabar. |
-| **Mac** | `Cmd + Shift + 5` te muestra opciones para grabar pantalla completa o un área. |
-| **Cualquier sistema (online)** | <https://www.loom.com> (gratis, instalás la extensión de Chrome). Sube el video y te da un enlace para pegar en el reporte. |
+| **Android** | Notificaciones → "Grabar pantalla". |
+| **iPhone** | Centro de control → ícono círculo dentro de círculo. Si no aparece: `Ajustes → Centro de control → Grabación de pantalla`. |
+| **Windows 10/11** | `Win + G` abre la barra de juegos con botón de grabar. |
+| **Mac** | `Cmd + Shift + 5`. |
+| **Online** | <https://www.loom.com> (gratis, extensión de Chrome). |
 
-> No grabes más de **30 segundos** por reporte. Si necesitás más, hacé varios videos cortos.
+> No grabes más de **30 segundos** por reporte. Si necesitás más, hacé varios.
 
-### Ver errores de la consola del navegador
+### Ver errores de la consola
 
-Esto suena técnico pero es fácil. Si te pedimos que veas "qué dice la consola":
+Si te pedimos que veas "qué dice la consola":
 
-1. Apretá la tecla **`F12`** (en compu).
-2. Se abre un panel con varias pestañas: clickeá **"Consola"** o **"Console"**.
-3. Si hay texto **en rojo**, sacale captura entera (incluyendo la consola abierta).
-4. Cerralo con `F12` de nuevo.
+1. Apretá **`F12`** (compu).
+2. Click en pestaña **"Consola"** / **"Console"**.
+3. Si hay texto **en rojo**, captura entera con la consola abierta.
+4. Cerralo con `F12`.
 
-> En Mac usá `Cmd + Option + I`. En Firefox podés usar `Ctrl + Shift + K` (`Cmd + Option + K`).
+> Mac: `Cmd + Option + I`. Firefox: `Ctrl + Shift + K` (`Cmd + Option + K`).
 
-### Ver qué carga la página (Network tab)
+### Ver qué carga la página (Network)
 
-Si te pedimos "mirá qué llamadas hace la página":
-
-1. Apretá `F12`.
-2. Clickeá la pestaña **"Red"** o **"Network"**.
-
-3. Recargá la página (`F5`).
-4. Si ves líneas en rojo, esa es una llamada que falló. Sacale captura.
+1. `F12` → pestaña **"Red"** / **"Network"**.
+2. Recargá (`F5`).
+3. Líneas en rojo = llamada fallada. Captura.
 
 No necesitás entender qué significa cada línea. Con la captura nos alcanza.
 
@@ -279,76 +275,76 @@ No necesitás entender qué significa cada línea. Con la captura nos alcanza.
 
 | Atajo | Qué hace |
 | --- | --- |
-| `F5` o `Ctrl + R` / `Cmd + R` | Recargar la página |
-| `Ctrl + Shift + R` / `Cmd + Shift + R` | Recargar **forzando que no use caché** (ver punto siguiente) |
-| `Ctrl + F` / `Cmd + F` | Buscar texto dentro de la página actual |
-| `Ctrl + N` / `Cmd + N` | Abrir ventana nueva |
-| `Ctrl + Shift + N` / `Cmd + Shift + N` | Abrir ventana en **modo incógnito / privado** |
-| `Ctrl + T` / `Cmd + T` | Abrir pestaña nueva |
-| `Ctrl + W` / `Cmd + W` | Cerrar pestaña actual |
-| `Ctrl + L` / `Cmd + L` | Saltar a la barra de direcciones (para copiar la dirección web rápido) |
+| `F5` / `Ctrl + R` / `Cmd + R` | Recargar |
+| `Ctrl + Shift + R` / `Cmd + Shift + R` | Recargar **sin caché** |
+| `Ctrl + F` / `Cmd + F` | Buscar texto en la página |
+| `Ctrl + N` / `Cmd + N` | Ventana nueva |
+| `Ctrl + Shift + N` / `Cmd + Shift + N` | Ventana **incógnito** |
+| `Ctrl + T` / `Cmd + T` | Pestaña nueva |
+| `Ctrl + W` / `Cmd + W` | Cerrar pestaña |
+| `Ctrl + L` / `Cmd + L` | Saltar a la barra de direcciones |
 
 ### "Algo se ve raro pero no entiendo qué"
 
-**Probá esto en orden** antes de reportar (a veces se arregla solo):
+**Probá esto en orden** antes de reportar:
 
-1. **Recargar fuerte**: `Ctrl + Shift + R` (Windows/Linux) o `Cmd + Shift + R` (Mac). Esto ignora caché y baja todo de nuevo.
-2. **Modo incógnito**: abrí la página en una ventana de incógnito (`Ctrl + Shift + N`). Si en incógnito anda bien, probablemente sea cache o una extensión tuya.
+1. **Recargar fuerte**: `Ctrl + Shift + R` (Win/Linux) o `Cmd + Shift + R` (Mac). Ignora caché.
+2. **Incógnito** (`Ctrl + Shift + N`). Si en incógnito anda, probablemente sea caché o una extensión.
 3. **Otro navegador**: si solo pasa en uno, **decinos cuál**.
-4. **Otro equipo / celular**: si solo pasa en tu compu pero no en el celular, **también es info útil**.
+4. **Otro equipo / celular**: si solo pasa en tu compu pero no en el celular, **es info útil**.
 
-Si después de probar todo eso el problema sigue, **ese es un buen error para reportar** y agregale como dato: "ya probé recargar fuerte / incógnito / otro navegador, y sigue."
+Si después de todo eso sigue, **ese es buen error para reportar**: agregá "ya probé recargar fuerte / incógnito / otro navegador y sigue".
 
-### Cómo copio la dirección web exacta donde estoy
+### Cómo copio la dirección web exacta
 
-- **Computadora**: `Ctrl + L` (`Cmd + L` en Mac) selecciona la dirección, después `Ctrl + C` (`Cmd + C`) la copia.
-- **Celular**: tocá la barra de dirección, te aparece la opción "Copiar".
+- **Compu**: `Ctrl + L` (`Cmd + L`) selecciona la dirección, después `Ctrl + C` (`Cmd + C`).
+- **Celular**: tocá la barra de dirección → "Copiar".
 
-Pegala en el reporte. Nos sirve un montón para encontrar la página exacta.
+Pegala en el reporte. Nos sirve un montón.
 
 ### ¿Cómo limpio el caché?
 
-Si te pedimos "limpiá caché":
+Si te pedimos:
 
-- **Chrome / Edge**: `Ctrl + Shift + Supr` (`Cmd + Shift + Suprimir` en Mac) → marcá "Imágenes y archivos en caché" → "Borrar datos".
+- **Chrome / Edge**: `Ctrl + Shift + Supr` → "Imágenes y archivos en caché" → "Borrar datos".
 - **Firefox**: `Ctrl + Shift + Supr` → "Caché".
-- **Safari**: `Cmd + Option + E` (borra caché). O en Preferencias → Avanzado → activá "Mostrar el menú Desarrollo en la barra de menús" y de ahí "Vaciar cachés".
+- **Safari**: `Cmd + Option + E`. O Preferencias → Avanzado → "Mostrar menú Desarrollo" → "Vaciar cachés".
 
-> En la mayoría de los casos NO hace falta limpiar caché entero. Probá primero **recargar fuerte** (`Ctrl + Shift + R`). Es menos invasivo.
+> En general NO hace falta limpiar caché entero. Probá primero **recargar fuerte** (`Ctrl + Shift + R`).
 
 ### ¿Cómo veo en qué versión / build estoy?
 
-Si te lo pedimos: clickeá derecho en cualquier parte vacía de la página → **"Ver código fuente de la página"** (o `Ctrl + U` / `Cmd + Option + U`). Arriba de todo suele aparecer una línea tipo `<!-- build: abc123 -->`. Si no la encontrás, no pasa nada.
+Click derecho en una parte vacía → **"Ver código fuente"** (`Ctrl + U` / `Cmd + Option + U`). Arriba suele aparecer `<!-- build: abc123 -->`. Si no, no pasa nada.
 
 ### Probar como "usuario nuevo" (cuenta limpia)
 
-Si querés ver cómo se ve todo desde cero (sin tu historial, sin sesión iniciada):
+Para ver todo desde cero:
 
-1. Abrí una **ventana de incógnito** (`Ctrl + Shift + N` / `Cmd + Shift + N`).
+1. Ventana **incógnito** (`Ctrl + Shift + N` / `Cmd + Shift + N`).
 2. Andá a `staging.hospeda.com.ar`.
-3. Vas a estar deslogueado, sin caché, sin nada. Como un visitante nuevo.
+3. Sin sesión, sin caché. Como un visitante nuevo.
 
-Esto es **especialmente útil** para las bienvenidas iniciales (onboarding) (turista, propietario) y para detectar cosas que solo aparecen "la primera vez".
+Especialmente útil para onboarding (turista, propietario) y cosas que solo aparecen "la primera vez".
 
 ---
 
 ## Otras
 
-### Tengo un familiar que también quiere probar, ¿puedo sumarlo?
+### Tengo un familiar que quiere probar, ¿lo sumo?
 
-Mejor consultanos primero. El beta tiene cupo de 40 personas seleccionadas.
+Mejor consultanos. El beta tiene cupo de 40 personas seleccionadas.
 
-### ¿Puedo compartir capturas en redes sociales?
+### ¿Puedo compartir capturas en redes?
 
-**No por ahora.** El sitio todavía no es público. Cuando lancemos, ahí sí.
+**No por ahora.** El sitio todavía no es público.
 
-### ¿Cuándo lanza Hospeda al público?
+### ¿Cuándo lanza Hospeda?
 
-Después de procesar todo lo del beta. Estimamos algunas semanas / meses, depende de cuánto haya que arreglar.
+Después de procesar todo el beta. Semanas o meses, depende de cuánto haya que arreglar.
 
 ### Algo más
 
-Si tenés una duda que no está acá, **preguntá en el grupo de WhatsApp** <https://chat.whatsapp.com/BDvBuU0rAfNJYh3RDaMgvL>.
+Si tu duda no está, **WhatsApp** <https://chat.whatsapp.com/BDvBuU0rAfNJYh3RDaMgvL>.
 
 ---
 

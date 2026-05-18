@@ -24,7 +24,7 @@ Estas funcionalidades están en el roadmap pero no van a estar listas para este 
 - 📅 **Calendario de disponibilidad** para alojamientos
 - 🔄 **Sincronización con calendarios externos** (Google Calendar, Airbnb, etc.)
 - 🎥 **Embed de video** en la descripción del alojamiento
-- 🛒 **Add-ons comprables** (lista destacada, etc.) desde el panel de control (dashboard) del propietario o anfitrión (host)
+- 🛒 **Add-ons comprables** (publicación destacada, etc.) desde el panel de control del propietario
 - 📊 **Estadísticas de la lista** (vistas, clicks, favoritos)
 - 🎫 **Tickets para eventos** (comprar entrada para un evento)
 - 💬 **WhatsApp Business integrado** (chat del propietario adentro de la plataforma)

@@ -1,6 +1,6 @@
 ---
 title: Contactar al propietario (mensajería)
-description: Cómo enviar mensajes al propietario o anfitrión (host) desde la página del alojamiento — como invitado y como usuario logueado.
+description: Cómo enviar mensajes al host desde el detalle del alojamiento.
 order: 4
 role: turista
 section: Explorar el sitio
@@ -8,70 +8,66 @@ section: Explorar el sitio
 
 # Contactar al propietario
 
-En la página de detalle de cada alojamiento hay una sección con un **formulario de mensaje al propietario o anfitrión (host)**. El sistema tiene 3 modos según tu estado de sesión:
+En cada detalle de alojamiento hay un **formulario de mensaje al host** con 3 modos según tu sesión.
 
-## Modo A — Sin tener cuenta (mensajería para invitados)
+## Modo A — Sin tener cuenta (invitado)
 
-1. **Cerrá sesión** si la tenés iniciada.
-2. Entrá a cualquier alojamiento.
-3. Bajá hasta el formulario de contacto. Vas a ver campos:
+1. Cerrá sesión y entrá a cualquier alojamiento.
+2. Bajá al formulario. Campos:
    - **Nombre** ("Tu nombre completo")
-   - **Email** (texto de ejemplo: `tu@email.com`)
+   - **Email** (placeholder `tu@email.com`)
    - **Teléfono (opcional)** ("+54 11 1234-5678")
-   - **Mensaje** ("Escribí tu consulta aquí...") — máximo 5000 caracteres
-4. Completá los campos y apretá **"Enviar mensaje"**.
-5. Vas a ver una confirmación: **"Te enviamos un email de verificación. Revisá tu casilla."**
-6. Andá a tu email. Buscá el asunto **"Verificá tu email para continuar la conversación — Hospeda"**.
-7. Apretá el enlace (link) del email. Te abre la **conversación con el propietario sin necesidad de logueo**.
-8. Probá responder un mensaje desde ahí.
+   - **Mensaje** (máx 5000 caracteres)
+3. Completá y **"Enviar mensaje"**.
+4. Confirmación: **"Te enviamos un email de verificación."**
+5. Email: asunto **"Verificá tu email para continuar la conversación — Hospeda"**.
+6. Apretá el enlace: te abre la conversación **sin necesidad de login**.
+7. Probá responder desde ahí.
 
 > 📋 **Reportá:**
 >
-> - ¿El email de verificación llegó? ¿Cuánto tardó?
-> - ¿Llegó a Spam?
-> - ¿El enlace del email te abrió la conversación bien?
-> - ¿Pudiste mandar y recibir mensajes?
-> - Si volvés a entrar al mismo alojamiento desde el navegador (sin email-link), ¿qué te muestra? ¿Pide email otra vez?
+> - ¿Llegó el email de verificación? ¿Cuánto tardó? ¿Spam?
+> - ¿El enlace abrió la conversación bien?
+> - ¿Pudiste mandar y recibir?
+> - Si volvés al mismo alojamiento sin el email-link, ¿qué muestra? ¿Pide email de nuevo?
 
 ## Modo B — Logueado, sin conversación previa
 
-1. Iniciá sesión.
-2. Entrá a cualquier alojamiento (uno distinto al de Modo A, idealmente).
-3. Bajá al formulario. Ahora vas a ver **solo el campo de Mensaje** (nombre y email los toma de tu cuenta).
-4. Escribí algo y apretá **"Enviar mensaje"**.
+1. Iniciá sesión. Entrá a un alojamiento distinto al de Modo A.
+2. Verás **solo el campo Mensaje** (nombre y email los toma de tu cuenta).
+3. Escribí algo y **"Enviar mensaje"**.
 
 ## Modo C — Logueado, con conversación existente
 
-Si ya hablaste con el propietario de ese alojamiento antes:
+Si ya hablaste con ese host:
 
 1. Entrá al mismo alojamiento.
-2. En lugar del formulario vas a ver un enlace **"Ver conversación existente"**.
-3. Apretalo: te lleva a tu bandeja de mensajes con ese hilo abierto.
+2. En lugar del form ves **"Ver conversación existente"**.
+3. Te lleva a tu bandeja con el hilo abierto.
 
 ## Tu bandeja de mensajes
 
-1. Abrí el menú de usuario (arriba a la derecha) y elegí **"Mis mensajes"**.
-2. Vas a llegar a **"Mis consultas"** (bandeja de huésped).
-3. Ahí están todas las conversaciones que iniciaste como turista.
-4. Filtros disponibles: por estado (Abierta / Cerrada / Bloqueada / Pendiente de verificación).
-5. Abrí una conversación. Probá responder con el campo **"Escribí tu respuesta..."** y apretá **"Enviar"**.
+1. Menú de usuario → **"Mis mensajes"** → **"Mis consultas"** (bandeja de huésped).
+2. Ahí están todas tus conversaciones como turista.
+3. Filtros: estado (Abierta / Cerrada / Bloqueada / Pendiente de verificación).
+4. Abrí una. Respondé con **"Escribí tu respuesta..."** + **"Enviar"**.
 
 ## Si perdiste el email-link (invitado)
 
-Cuando enviás como invitado, el acceso a tu conversación está atado al enlace del email. Si lo perdés:
+El acceso a tu conversación como invitado depende del enlace del email. Si lo perdés:
 
 1. Volvé al alojamiento.
-2. En el formulario hay un enlace **"Solicitar un nuevo enlace"** o **"Solicitar acceso"** (alguno de los dos).
-3. Ingresá tu email y apretá **"Enviar enlace"**.
-4. Si existe una conversación asociada, vas a recibir el enlace de nuevo.
+2. En el formulario hay **"Solicitar un nuevo enlace"** o **"Solicitar acceso"**.
+3. Ingresá tu email + **"Enviar enlace"**.
+4. Si existe la conversación, recibís el enlace.
 
 > 📋 **Reportá también:**
 >
-> - Si en algún paso el formulario no se enviaba o tiraba error
-> - Si la pantalla de "verificación enviada" no aparece después de Enviar
-> - Si la conversación se ve mal en celular
-> - Si los modos A / B / C se confunden (ej. logueado pero te muestra form anónimo, o al revés)
+> - Formulario no envía o tira error
+> - No aparece la pantalla de "verificación enviada"
+> - Conversación se ve mal en celular
+> - Modos A/B/C se confunden (logueado pero ves form anónimo, o al revés)
 
 ## Próximo paso
 
-Ahora vamos con **[favoritos y colecciones](/beta/turista/favoritos-colecciones/)**.
+**[Favoritos y colecciones](/beta/turista/favoritos-colecciones/)**.
