@@ -334,11 +334,13 @@ export interface EventLocation {
 }
 
 /**
- * Props for the EventCard component.
+ * Props for the event card components.
  *
  * Produced by `toEventCardProps()` in `transforms.ts` and consumed
- * by `EventCard.astro`. Used in the homepage events section and
- * the full events listing page.
+ * by `EventCardHorizontal.astro` and `EventCardFeatured.astro`.
+ * Used in the homepage events section, the full events listing
+ * page, and related-events sections on destination/accommodation
+ * detail pages.
  *
  * @example
  * ```ts
