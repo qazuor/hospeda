@@ -80,6 +80,22 @@ export const CLIENT_WEB_ENV_VARS = [
             'Etiqueta de versión libre por deploy. Recomendado: conectala al SHA del commit deployado (por ejemplo vía HOSPEDA_COMMIT_SHA en CI/CD) así cada deploy es un release único ("abc123def456"). Evitá strings semver tipo "1.0.0" porque cada preview/staging tendría colisión en el mismo release en Sentry.'
     },
     {
+        name: 'PUBLIC_SENTRY_ENVIRONMENT',
+        description: 'Sentry environment tag for the web app (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry para la web (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Free-text label applied to all Sentry events from the web app (both SSR and browser). Set to `production` on hospeda-web-prod and `staging` on hospeda-web-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Astro production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry del web app (SSR y browser). Poné `production` en hospeda-web-prod y `staging` en hospeda-web-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Astro en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
+    },
+    {
         name: 'PUBLIC_ENABLE_LOGGING',
         description: 'Enable verbose client-side logging in the web app',
         descriptionEs: 'Activa el logging verboso del lado cliente en la web',
@@ -410,6 +426,23 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'Project slug shown in your Sentry URL: sentry.io/organizations/<org>/projects/<this>/. Used by source-map upload tooling.',
         howToObtainEs:
             'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este>/. Lo usa la herramienta de upload de source maps.'
+    },
+    {
+        name: 'VITE_SENTRY_ENVIRONMENT',
+        description:
+            'Sentry environment tag for the admin dashboard (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry para el admin (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['admin'],
+        category: 'client-admin',
+        howToObtain:
+            'Free-text label applied to all Sentry events from the admin. Set to `production` on hospeda-admin-prod and `staging` on hospeda-admin-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Vite production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time). Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry del admin. Poné `production` en hospeda-admin-prod y `staging` en hospeda-admin-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Vite en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time). Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
     },
     {
         name: 'VITE_DEBUG_LAZY_SECTIONS',

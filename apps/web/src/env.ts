@@ -26,6 +26,14 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
+    /**
+     * Free-text environment tag applied to all Sentry events from the web app
+     * (SSR and browser). Takes precedence over `import.meta.env.MODE` in the
+     * Sentry init. Required to separate staging from production in the Sentry
+     * dashboard — without it, Astro production builds always emit MODE=production
+     * regardless of which deployment they came from.
+     */
+    PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.

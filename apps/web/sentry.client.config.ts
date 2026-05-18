@@ -2,6 +2,11 @@ import * as Sentry from '@sentry/astro';
 import { getConsent } from './src/lib/cookie-consent';
 
 const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
+// Prefer PUBLIC_SENTRY_ENVIRONMENT over MODE so staging and prod (both
+// MODE=production) end up in different Sentry environments. Falls back
+// to MODE when the explicit override is unset.
+const environment =
+    import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development';
 
 // Only initialize Sentry when the user has consented to analytics cookies.
 // If no consent cookie exists (first visit), Sentry stays silent until the
@@ -12,7 +17,7 @@ const analyticsAllowed = consent?.analytics === true;
 if (dsn && analyticsAllowed) {
     Sentry.init({
         dsn,
-        environment: import.meta.env.MODE || 'development',
+        environment,
         release: import.meta.env.PUBLIC_SENTRY_RELEASE || 'development',
 
         initialScope: {

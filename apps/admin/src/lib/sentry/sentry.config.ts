@@ -44,7 +44,10 @@ export interface SentryConfig {
 function getSentryConfig(): SentryConfig {
     return {
         dsn: env.VITE_SENTRY_DSN,
-        environment: import.meta.env.MODE || 'development',
+        // Prefer VITE_SENTRY_ENVIRONMENT over MODE so staging and prod (both
+        // MODE=production) end up in different Sentry environments. Falls
+        // back to MODE when the explicit override is unset.
+        environment: env.VITE_SENTRY_ENVIRONMENT ?? import.meta.env.MODE ?? 'development',
         release: env.VITE_SENTRY_RELEASE ?? env.VITE_APP_VERSION ?? 'development',
         // Performance monitoring
         tracesSampleRate: 0.1, // 10% of transactions
