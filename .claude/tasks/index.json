@@ -405,6 +405,16 @@
             "path": "SPEC-046-csp-post-deploy-verification",
             "completedAt": "2026-05-17T18:30:00.000Z",
             "followUpSpec": "SPEC-142"
+        },
+        {
+            "specId": "SPEC-143",
+            "title": "Billing Testing Coverage (e2e + manual smoke)",
+            "status": "in_progress",
+            "progress": "0/56",
+            "path": "SPEC-143-billing-testing-coverage",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+            "branch": "spec/SPEC-143-billing-testing-coverage",
+            "startedAt": "2026-05-17T23:55:00Z"
         }
     ],
     "standalone": {
