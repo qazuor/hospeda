@@ -49,15 +49,18 @@ const isDev = import.meta.env.DEV === true;
 // Compute whether to render the snippet at all. Templates without the key
 // render an empty fragment so the page never ships an empty <script> tag.
 const shouldRender = !isDev && posthogKey.length > 0;
----
 
-{
-    shouldRender && (
-        <script
-            is:inline
-            nonce={cspNonce}
-            define:vars={{ posthogKey, posthogHost }}
-        >{`
+// Build the snippet body as a plain string and inject it via `set:html`.
+// We CANNOT use the JSX expression form `<script>{\`...\`}</script>` here:
+// inside an Astro `<script is:inline define:vars={...}>`, Astro wraps the
+// element children in an IIFE that prepends the var declarations. JSX
+// expression braces in that wrapped body are emitted literally, so the
+// snippet ends up parsed as `{ \`...\` }` — a JS block containing a
+// dangling template literal that evaluates and discards the snippet body.
+// `set:html` bypasses the JSX path and writes the string directly inside
+// the <script> tag, where Astro's `define:vars` wrapper composes it
+// correctly. See regression test in apps/web/test/lib/analytics/.
+const snippetBody = `
 !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me Te Ee Re capture De calculateEventProperties Oe register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Ce $e createPersonProfile Ie opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing _t debug L getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
 
 (function () {
@@ -92,6 +95,16 @@ const shouldRender = !isDev && posthogKey.length > 0;
         }
     });
 })();
-`}</script>
+`;
+---
+
+{
+    shouldRender && (
+        <script
+            is:inline
+            nonce={cspNonce}
+            define:vars={{ posthogKey, posthogHost }}
+            set:html={snippetBody}
+        />
     )
 }
