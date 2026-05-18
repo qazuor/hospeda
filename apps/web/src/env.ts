@@ -55,6 +55,19 @@ export const serverEnvBaseSchema = z.object({
      * log regardless of this flag.
      */
     PUBLIC_ENABLE_LOGGING: z.string().optional(),
+    /**
+     * PostHog Cloud project API key for the web app (SPEC-140). Public by
+     * design — ships in the browser bundle. Leave unset to disable PostHog
+     * init (no events sent, no cookies set, no network requests). Per-env
+     * values come from Coolify (one project key per staging/prod).
+     */
+    PUBLIC_POSTHOG_KEY: z.string().optional(),
+    /**
+     * PostHog ingestion endpoint for the web app (SPEC-140). Defaults to
+     * the US Cloud region in posthog-client.ts when unset. Override only
+     * if migrating to EU Cloud or self-hosted PostHog.
+     */
+    PUBLIC_POSTHOG_HOST: z.url().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 
