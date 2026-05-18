@@ -22,7 +22,7 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
-        "@qazuor/qzpay-core": "^1.6.2",
+        "@qazuor/qzpay-core": "^1.6.3",
         "@qazuor/qzpay-mercadopago": "^1.4.3",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
