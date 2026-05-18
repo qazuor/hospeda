@@ -15,7 +15,9 @@
         "resultsCount_one": "{{count}} acomodação",
         "resultsCount_other": "{{count}} acomodações",
         "emptyState": "Não há acomodações nesta área. Tente ajustar os filtros ou mover o mapa.",
-        "openSheet": "Ver lista",
+        "openSheet": "Ver cartões",
+        "openSheetCount_one": "Ver {{count}} resultado",
+        "openSheetCount_other": "Ver {{count}} resultados",
         "closeSheet": "Fechar"
     }
 }
