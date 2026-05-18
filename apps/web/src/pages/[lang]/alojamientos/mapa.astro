@@ -21,7 +21,8 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getAccommodationTypeLabel } from '@/lib/colors';
+import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
+import { formatPrice } from '@/lib/format-utils';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
@@ -259,12 +260,30 @@ for (const key of TYPE_KEYS) {
 }
 const detailHrefById: Record<string, string> = {};
 const reviewsLabelById: Record<string, string> = {};
+const photosLabelById: Record<string, string> = {};
+const priceLabelById: Record<string, string> = {};
 for (const card of cards) {
 	detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
 	if (card.reviewsCount > 0) {
-		reviewsLabelById[card.id] = `(${tPlural('review.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+		reviewsLabelById[card.id] = `(${tPlural('review.list.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+	}
+	if ((card.photoCount ?? 0) > 0) {
+		photosLabelById[card.id] = tPlural('common.photos', card.photoCount ?? 0, { count: card.photoCount ?? 0 });
+	}
+	if (card.price?.amount != null && card.price?.currency) {
+		priceLabelById[card.id] = formatPrice({
+			amount: card.price.amount,
+			currency: card.price.currency,
+			locale,
+		});
 	}
 }
+
+// Sidebar cards (mobile bottom sheet / desktop pane) mirror AccommodationCard
+// visually. The page resolves all the locale-aware copy + status colors once
+// here so the island can stay i18n-agnostic.
+const newColors = getBadgeStatusColor({ status: 'new' });
+const featuredColors = getBadgeStatusColor({ status: 'featured' });
 ---
 
 <ListingLayout
@@ -344,7 +363,19 @@ for (const card of cards) {
 				typeLabels={typeLabels}
 				detailHrefById={detailHrefById}
 				reviewsLabelById={reviewsLabelById}
-				featuredLabel={t('maps.featuredBadge', 'Destacado')}
+				photosLabelById={photosLabelById}
+				priceLabelById={priceLabelById}
+				featuredLabel={t('home.accommodations.badge.featured', 'Destacado')}
+				newLabel={t('home.accommodations.badge.new', 'Nuevo')}
+				newBg={newColors.bg}
+				newText={newColors.text}
+				featuredBg={featuredColors.bg}
+				featuredText={featuredColors.text}
+				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
+				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
+				priceConsultLabel={t('home.accommodations.price.consult', 'Consultar')}
+				ctaLabel={`${t('common.readMore', 'Ver más')} →`}
+				amenitiesLabel={t('home.accommodations.amenities.label', 'Amenidades')}
 				showSidebar={true}
 				isAuthenticated={isAuthenticated}
 				locale={locale}

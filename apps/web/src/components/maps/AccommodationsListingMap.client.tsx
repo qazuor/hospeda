@@ -14,13 +14,20 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 
+import { resolveAmenityIcon } from '@/components/shared/cards/accommodation-card-icons';
 import type { AccommodationCardData } from '@/data/types';
 import { useViewportSearch } from '@/hooks/useViewportSearch';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import type { SupportedLocale } from '@/lib/i18n';
 
 import layoutStyles from './AccommodationsListingMap.module.css';
 import { ListingMap } from './ListingMap.client';
+import type { MapSidebarAmenity } from './MapCardsSidebar.client';
 import { MapCardsSidebar } from './MapCardsSidebar.client';
+
+/** Mirrors the AccommodationCard.astro constant. */
+const MAX_AMENITIES = 4;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface SidebarI18n {
     readonly resultsHeading: string;
@@ -74,6 +81,27 @@ interface AccommodationsListingMapProps {
     readonly reviewsLabelById?: Record<string, string>;
     /** Localised "Destacado" / "Featured" badge used on featured cards. */
     readonly featuredLabel?: string;
+    /**
+     * Sidebar-only labels. Forwarded to each card in the cards sidebar so they
+     * mirror the AccommodationCard look without the island knowing about i18n
+     * or the colors module.
+     */
+    readonly newLabel?: string;
+    readonly newBg?: string;
+    readonly newText?: string;
+    readonly featuredBg?: string;
+    readonly featuredText?: string;
+    readonly priceFromLabel?: string;
+    readonly pricePerNightLabel?: string;
+    readonly priceConsultLabel?: string;
+    readonly ctaLabel?: string;
+    readonly amenitiesLabel?: string;
+    /** Pre-pluralised "9 fotos" / "1 foto" / "8 photos" per accommodation id. */
+    readonly photosLabelById?: Record<string, string>;
+    /** Locale-formatted price label per id (e.g. "$15.500" instead of
+     * "15500 ARS"). Built on the page via `formatPrice` so the island stays
+     * locale-agnostic. */
+    readonly priceLabelById?: Record<string, string>;
     /** When true, render the cards sidebar (desktop) and bottom sheet (mobile). */
     readonly showSidebar?: boolean;
     readonly sidebarI18n?: SidebarI18n;
@@ -101,6 +129,18 @@ export function AccommodationsListingMap({
     detailHrefById,
     reviewsLabelById,
     featuredLabel,
+    newLabel,
+    newBg,
+    newText,
+    featuredBg,
+    featuredText,
+    priceFromLabel,
+    pricePerNightLabel,
+    priceConsultLabel,
+    ctaLabel,
+    amenitiesLabel,
+    photosLabelById,
+    priceLabelById,
     showSidebar = false,
     sidebarI18n,
     extraSearchParams,
@@ -148,34 +188,84 @@ export function AccommodationsListingMap({
         () =>
             items
                 .filter((card) => card.approximateLocation)
-                .map((card) => ({
-                    id: card.id,
-                    slug: card.slug,
-                    name: card.name,
-                    thumbnailUrl: card.featuredImage.url,
-                    priceLabel:
-                        card.price?.amount != null && card.price?.currency
-                            ? `${card.price.amount} ${card.price.currency}`
-                            : undefined,
-                    typeLabel: typeLabels?.[card.type] ?? card.type,
-                    cityName: card.cityName,
-                    summary: card.summary,
-                    isFeatured: card.isFeatured,
-                    featuredLabel: card.isFeatured ? featuredLabel : undefined,
-                    averageRating: card.averageRating,
-                    reviewsCount: card.reviewsCount,
-                    detailHref: detailHrefById?.[card.id],
-                    approximateLocation: card.approximateLocation as {
-                        lat: number;
-                        lng: number;
-                        radiusMeters: number;
-                    },
-                    // SPEC-098 T-044: forward bookmark state for popup FavoriteButton
-                    isFavorited: card.isFavorited,
-                    favoriteBookmarkId: card.favoriteBookmarkId ?? null,
-                    bookmarkCount: card.bookmarkCount
-                })),
-        [items, typeLabels, detailHrefById, featuredLabel]
+                .map((card) => {
+                    const amenitySource = card.amenities ?? [];
+                    const amenities: ReadonlyArray<MapSidebarAmenity> = amenitySource
+                        .slice(0, MAX_AMENITIES)
+                        .map((a) => ({
+                            id: a.key ?? a.label,
+                            label: a.label,
+                            Icon: resolveAmenityIcon(a)
+                        }));
+                    const extraAmenitiesCount = Math.max(0, amenitySource.length - MAX_AMENITIES);
+                    const isNew = card.createdAt
+                        ? Date.now() - new Date(card.createdAt).getTime() < THIRTY_DAYS_MS
+                        : false;
+                    return {
+                        id: card.id,
+                        slug: card.slug,
+                        name: card.name,
+                        thumbnailUrl: card.featuredImage.url,
+                        priceLabel:
+                            priceLabelById?.[card.id] ??
+                            (card.price?.amount != null && card.price?.currency
+                                ? `${card.price.amount} ${card.price.currency}`
+                                : undefined),
+                        typeLabel: typeLabels?.[card.type] ?? card.type,
+                        TypeIcon: getAccommodationTypeIcon({
+                            type: card.type.toLowerCase()
+                        }),
+                        cityName: card.cityName,
+                        summary: card.summary,
+                        isFeatured: card.isFeatured,
+                        featuredLabel: card.isFeatured ? featuredLabel : undefined,
+                        featuredBg,
+                        featuredText,
+                        isNew,
+                        newLabel: isNew ? newLabel : undefined,
+                        newBg,
+                        newText,
+                        priceFromLabel,
+                        pricePerNightLabel,
+                        priceConsultLabel,
+                        ctaLabel,
+                        amenities,
+                        extraAmenitiesCount,
+                        amenitiesLabel,
+                        photoCount: card.photoCount,
+                        photosLabel: photosLabelById?.[card.id],
+                        averageRating: card.averageRating,
+                        reviewsCount: card.reviewsCount,
+                        detailHref: detailHrefById?.[card.id],
+                        approximateLocation: card.approximateLocation as {
+                            lat: number;
+                            lng: number;
+                            radiusMeters: number;
+                        },
+                        // SPEC-098 T-044: forward bookmark state for popup FavoriteButton
+                        isFavorited: card.isFavorited,
+                        favoriteBookmarkId: card.favoriteBookmarkId ?? null,
+                        bookmarkCount: card.bookmarkCount
+                    };
+                }),
+        [
+            items,
+            typeLabels,
+            detailHrefById,
+            featuredLabel,
+            featuredBg,
+            featuredText,
+            newLabel,
+            newBg,
+            newText,
+            priceFromLabel,
+            pricePerNightLabel,
+            priceConsultLabel,
+            ctaLabel,
+            amenitiesLabel,
+            photosLabelById,
+            priceLabelById
+        ]
     );
 
     const itemsWithLabels = useMemo(
@@ -253,6 +343,8 @@ export function AccommodationsListingMap({
                     items={itemsWithLabels}
                     hoveredItemId={hoveredItemId}
                     onCardHover={setHoveredItemId}
+                    locale={locale}
+                    isAuthenticated={isAuthenticated}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,
                         resultsCount: sidebarCountFn,
