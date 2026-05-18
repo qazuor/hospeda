@@ -26,6 +26,7 @@ import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
@@ -436,6 +437,14 @@ const faqSections = accommodation.faqs.map((faq) => ({
             {eventItems.map((item) => <EventCard data={toEventCardProps({ item })} locale={locale} />)}
         </RelatedCarousel>
     )}
+
+    <!-- Analytics tracker (headless, SPEC-140) -->
+    <AccommodationViewTracker
+        client:idle
+        slug={slug}
+        accommodationId={accommodation.id}
+        locale={locale}
+    />
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
