@@ -30,7 +30,7 @@ import { AccommodationViewTracker } from '@/components/analytics/AccommodationVi
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import { accommodationsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
@@ -434,7 +434,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     {eventItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCard data={toEventCardProps({ item })} locale={locale} />)}
+            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} />)}
         </RelatedCarousel>
     )}
 

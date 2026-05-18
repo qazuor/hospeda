@@ -10,7 +10,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
@@ -473,7 +473,7 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 				<div class="dest-detail__preview-grid">
 					{eventCards.map((card, i) => (
 						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<EventCard data={card} locale={locale} />
+							<EventCardHorizontal data={card} locale={locale} />
 						</div>
 					))}
 				</div>
