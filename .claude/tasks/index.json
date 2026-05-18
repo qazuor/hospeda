@@ -88,7 +88,7 @@
         },
         {
             "specId": "SPEC-020-GAPS",
-            "title": "SPEC-020 Deployment Readiness \u2014 Gaps Remediation",
+            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
             "status": "obsolete",
             "progress": "0/17",
             "path": "SPEC-020-gaps-remediation",
@@ -124,7 +124,7 @@
         },
         {
             "specId": "SPEC-043-GAPS",
-            "title": "SPEC-043 Addon Lifecycle Events \u2014 Gaps Remediation",
+            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
             "status": "completed",
             "progress": "65/65",
             "path": "SPEC-043-gaps-remediation",
@@ -144,7 +144,7 @@
         },
         {
             "specId": "SPEC-034-GAPS",
-            "title": "SPEC-034 ISR Revalidation \u2014 Gaps Remediation",
+            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
             "status": "obsolete",
             "progress": "0/28",
             "path": "SPEC-034-gaps-remediation",
@@ -237,7 +237,7 @@
         },
         {
             "specId": "SPEC-060-gaps",
-            "title": "SPEC-060 Gap Remediation \u2014 All 56 Gaps",
+            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
             "status": "completed",
             "progress": "58/58",
             "path": "SPEC-060-gaps",
@@ -301,7 +301,7 @@
         },
         {
             "specId": "SPEC-064",
-            "title": "Billing Transaction Safety \u2014 Advisory Locks and Atomic Operations",
+            "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
             "status": "completed",
             "progress": "35/35",
             "path": "SPEC-064-billing-transaction-safety",
@@ -333,7 +333,7 @@
             "path": "SPEC-092-e2e-test-suite",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 \u2014 bumped to full since spec is closed."
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 — bumped to full since spec is closed."
         },
         {
             "specId": "SPEC-098",
@@ -350,7 +350,7 @@
             "path": "SPEC-103-vps-migration-post-merge-cleanup",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 \u2014 bumped to full since spec is closed."
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 — bumped to full since spec is closed."
         },
         {
             "specId": "SPEC-119",
@@ -364,7 +364,7 @@
         },
         {
             "specId": "SPEC-111",
-            "title": "Astro server islands runtime crash \u2014 manifest.serverIslandMap.get is not a function",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
             "status": "in-progress",
             "progress": "0/9",
             "path": "SPEC-111-astro-server-islands-fix"
@@ -372,9 +372,12 @@
         {
             "specId": "SPEC-130",
             "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/5",
-            "path": "SPEC-130-deprecate-vercel-env-stubs"
+            "path": "SPEC-130-deprecate-vercel-env-stubs",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-130-deprecate-vercel-env-stubs",
+            "branch": "spec/SPEC-130-deprecate-vercel-env-stubs",
+            "startedAt": "2026-05-18T03:50:00Z"
         },
         {
             "specId": "SPEC-131",

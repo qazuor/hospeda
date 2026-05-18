@@ -67,10 +67,6 @@
         "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
         "docs:check-links": "tsx scripts/check-links.ts",
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
-        "env:pull": "tsx scripts/env/pull.ts",
-        "env:push": "tsx scripts/env/push.ts",
-        "env:sync": "tsx scripts/env/sync.ts",
-        "env:check": "tsx scripts/env/check.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
