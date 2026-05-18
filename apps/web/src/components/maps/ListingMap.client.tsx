@@ -131,6 +131,13 @@ interface BaseProps {
      */
     readonly initialBounds?: [[number, number], [number, number]];
     readonly hoveredItemId?: string | null;
+    /**
+     * Coords of the currently-pulsing item — passed as raw {lat, lng} so the
+     * halo survives even when the user pans the map past the original item
+     * and `useViewportSearch` drops it from the live result set. Driven by
+     * the cards sidebar click on desktop.
+     */
+    readonly selectedCoord?: { readonly lat: number; readonly lng: number } | null;
     readonly onBoundsChange?: (bbox: ListingBBox) => void;
     readonly onMarkerClick?: (id: string) => void;
     readonly ariaLabel: string;
@@ -164,6 +171,56 @@ const ACCOMMODATION_MAX_ZOOM = 17;
 const DESTINATION_MAX_ZOOM = 19;
 const DEFAULT_BOUNDS_DEBOUNCE_MS = 300;
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+/**
+ * Decorative pulsing halo rendered on top of the item the user picked from
+ * the cards sidebar. Two stacked CircleMarkers: a steady center dot in
+ * brand-accent and an outer ring that scales/fades via a CSS keyframe. The
+ * halo doesn't change the map viewport — it just calls the user's eye to
+ * the right spot while the rest of the listing keeps reacting to pans.
+ */
+const PULSE_PANE = 'pulseHaloPane';
+
+function PulseHalo({ lat, lng }: { lat: number; lng: number }) {
+    const map = useMap();
+    useEffect(() => {
+        // Dedicated pane stacked above markerPane (600) and cluster icons,
+        // so the pulse always renders above the clusters at the same spot.
+        let pane = map.getPane(PULSE_PANE);
+        if (!pane) {
+            pane = map.createPane(PULSE_PANE);
+            pane.style.zIndex = '660';
+            pane.style.pointerEvents = 'none';
+        }
+        // We use a divIcon (HTML + CSS) instead of CircleMarker because
+        // CircleMarker renders as a generic <path d="...">, and SVG `r`
+        // can't be tweened from CSS while `transform: scale` on a path
+        // doesn't pivot reliably across browsers. HTML elements animate
+        // predictably and let us layer a steady center dot under an
+        // expanding ring with full CSS control.
+        const icon = L.divIcon({
+            className: styles.pulseIcon,
+            html: `
+              <span class="${styles.pulseRing}" aria-hidden="true"></span>
+              <span class="${styles.pulseRing} ${styles.pulseRingDelayed}" aria-hidden="true"></span>
+              <span class="${styles.pulseCore}" aria-hidden="true"></span>
+            `,
+            iconSize: [0, 0],
+            iconAnchor: [0, 0]
+        });
+        const marker = L.marker([lat, lng], {
+            icon,
+            pane: PULSE_PANE,
+            interactive: false,
+            keyboard: false,
+            zIndexOffset: 1000
+        }).addTo(map);
+        return () => {
+            marker.remove();
+        };
+    }, [map, lat, lng]);
+    return null;
+}
 
 /**
  * Mount-only `map.fitBounds(...)` to frame all initial items in view. Runs
@@ -256,6 +313,7 @@ export function ListingMap(props: ListingMapProps) {
         initialZoom = 8,
         initialBounds,
         hoveredItemId,
+        selectedCoord,
         onBoundsChange,
         onMarkerClick,
         ariaLabel,
@@ -266,6 +324,10 @@ export function ListingMap(props: ListingMapProps) {
 
     const isAccommodationMode = props.mode === 'accommodation-list';
     const maxZoom = isAccommodationMode ? ACCOMMODATION_MAX_ZOOM : DESTINATION_MAX_ZOOM;
+
+    // selectedCoord is passed directly from the parent (the cards sidebar
+    // resolves the coord at click time so the halo survives even when the
+    // item leaves the live result set during pan/zoom).
 
     const accentColor = 'var(--brand-accent)';
     const highlightColor = 'var(--primary, #2563eb)';
@@ -366,6 +428,12 @@ export function ListingMap(props: ListingMapProps) {
                     debounceMs={DEFAULT_BOUNDS_DEBOUNCE_MS}
                 />
                 <MarkerClusterGroup chunkedLoading>{renderedMarkers}</MarkerClusterGroup>
+                {selectedCoord && (
+                    <PulseHalo
+                        lat={selectedCoord.lat}
+                        lng={selectedCoord.lng}
+                    />
+                )}
             </MapContainer>
             {isAccommodationMode && (
                 <p className={styles.disclaimer}>{i18nStrings.approximateDisclaimer}</p>

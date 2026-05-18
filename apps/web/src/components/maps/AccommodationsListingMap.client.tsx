@@ -156,6 +156,22 @@ export function AccommodationsListingMap({
     const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
     /*
+     * Coords of the card the user clicked in the sidebar (desktop only).
+     * Stored as raw {lat, lng} — NOT looked up by id — so the pulse halo
+     * survives even when the user pans/zooms the map past the original
+     * item and `useViewportSearch` drops it from the live result set.
+     * We intentionally do NOT move/zoom the map; the live results keep
+     * reacting to the user's viewport as before.
+     *
+     * The actual `handleCardSelect` is defined below `mapItems` so it can
+     * read coords from the current item list.
+     */
+    const [selectedCoord, setSelectedCoord] = useState<{
+        readonly lat: number;
+        readonly lng: number;
+    } | null>(null);
+
+    /*
      * Compute the bounding box of all initial items so the map opens framed
      * around every accommodation in the current result set. We only consider
      * the SSR-provided `initialItems` (not the live `items` from viewport
@@ -279,6 +295,18 @@ export function AccommodationsListingMap({
 
     const onMarkerClick = useCallback((id: string) => setHoveredItemId(id), []);
 
+    const handleCardSelect = useCallback(
+        (id: string) => {
+            const match = mapItems.find((it) => it.id === id);
+            if (!match) return;
+            setSelectedCoord({
+                lat: match.approximateLocation.lat,
+                lng: match.approximateLocation.lng
+            });
+        },
+        [mapItems]
+    );
+
     const sidebarCountFn = useCallback(
         (n: number) => {
             const tpl =
@@ -310,6 +338,7 @@ export function AccommodationsListingMap({
                 initialZoom={initialZoom}
                 initialBounds={initialBounds}
                 hoveredItemId={hoveredItemId}
+                selectedCoord={selectedCoord}
                 onMarkerClick={onMarkerClick}
                 onBoundsChange={onBoundsChange}
                 ariaLabel={ariaLabel}
@@ -330,6 +359,7 @@ export function AccommodationsListingMap({
                     initialZoom={initialZoom}
                     initialBounds={initialBounds}
                     hoveredItemId={hoveredItemId}
+                    selectedCoord={selectedCoord}
                     onMarkerClick={onMarkerClick}
                     onBoundsChange={onBoundsChange}
                     ariaLabel={ariaLabel}
@@ -343,6 +373,7 @@ export function AccommodationsListingMap({
                     items={itemsWithLabels}
                     hoveredItemId={hoveredItemId}
                     onCardHover={setHoveredItemId}
+                    onCardSelect={handleCardSelect}
                     locale={locale}
                     isAuthenticated={isAuthenticated}
                     i18n={{

@@ -81,6 +81,13 @@ interface MapCardsSidebarProps {
     readonly hoveredItemId: string | null;
     readonly onCardHover: (id: string | null) => void;
     /**
+     * Fired when the user clicks anywhere on a card EXCEPT the trailing
+     * "Ver más" CTA. The map view treats this as "fly to and focus this
+     * accommodation" instead of navigating to the detail page — the detail
+     * link is reserved for the CTA only.
+     */
+    readonly onCardSelect?: (id: string) => void;
+    /**
      * Active locale forwarded to per-card FavoriteButton islands so they can
      * render aria labels / popovers in the right language.
      */
@@ -104,10 +111,67 @@ interface MapCardsSidebarProps {
 
 const MOBILE_BREAKPOINT_PX = 768;
 
+/**
+ * Renders the card body inside either an `<a>` (mobile, taps go straight to
+ * the detail page) or a `<button>` (desktop, click highlights the matching
+ * marker on the map with a pulse halo; the trailing CTA inside is the only
+ * link to the detail page). Pulling the conditional wrapper into its own
+ * component keeps the long card JSX flat and identical between both modes.
+ */
+function CardClickable({
+    isMobile,
+    href,
+    ariaLabel,
+    onSelect,
+    children
+}: {
+    readonly isMobile: boolean;
+    readonly href: string;
+    readonly ariaLabel: string;
+    readonly onSelect: () => void;
+    readonly children: React.ReactNode;
+}) {
+    if (isMobile) {
+        return (
+            <a
+                href={href}
+                className={sidebarStyles.cardLink}
+                aria-label={ariaLabel}
+            >
+                {children}
+            </a>
+        );
+    }
+    // Desktop: we need a clickable wrapper that can contain other interactive
+    // elements (the FavoriteButton is a real <button>; HTML forbids nesting
+    // <button> in <button>). Use a div with role="button" + keyboard handler
+    // instead, so the whole card stays focusable and clickable while keeping
+    // valid HTML for hydration.
+    return (
+        // biome-ignore lint/a11y/useSemanticElements: deliberate — a <button> here would nest the inner FavoriteButton's real <button> and break hydration. The div+role+tabIndex+onKeyDown combo keeps a11y semantics intact.
+        <div
+            role="button"
+            tabIndex={0}
+            className={sidebarStyles.cardLink}
+            aria-label={ariaLabel}
+            onClick={onSelect}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect();
+                }
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
 export function MapCardsSidebar({
     items,
     hoveredItemId,
     onCardHover,
+    onCardSelect,
     locale = 'es',
     isAuthenticated = false,
     i18n
@@ -154,10 +218,11 @@ export function MapCardsSidebar({
                             onFocus={() => onCardHover(item.id)}
                             onBlur={() => onCardHover(null)}
                         >
-                            <a
+                            <CardClickable
+                                isMobile={isMobile}
                                 href={item.detailHref ?? `#${item.slug}`}
-                                className={sidebarStyles.cardLink}
-                                aria-label={item.name}
+                                ariaLabel={item.name}
+                                onSelect={() => onCardSelect?.(item.id)}
                             >
                                 {/* IMAGE AREA */}
                                 <div className={sidebarStyles.cardImageArea}>
@@ -398,14 +463,20 @@ export function MapCardsSidebar({
                                                 </span>
                                             )}
                                         </div>
-                                        {item.ctaLabel ? (
-                                            <span className={sidebarStyles.cardCta}>
+                                        {item.ctaLabel && item.detailHref ? (
+                                            <a
+                                                href={item.detailHref}
+                                                className={sidebarStyles.cardCta}
+                                                onClick={(e) => e.stopPropagation()}
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                aria-label={`${item.ctaLabel} — ${item.name}`}
+                                            >
                                                 {item.ctaLabel}
-                                            </span>
+                                            </a>
                                         ) : null}
                                     </div>
                                 </div>
-                            </a>
+                            </CardClickable>
                         </li>
                     );
                 })

@@ -236,3 +236,65 @@
     background-color: var(--accent-hover, #d97706);
     color: white;
 }
+
+/* ----- Selected item pulse (cards sidebar click on desktop) -----
+ * Rendered via a Leaflet divIcon (regular HTML), not a Circle path, so we
+ * have full CSS control over the animation. Two expanding rings (staggered
+ * with a 0.8s delay) plus a steady center dot. The icon is anchored at
+ * (0, 0) and absolutely positions its children around that point. */
+.pulseIcon {
+    /* Leaflet positions the icon at its top-left; we want the visual center
+     * to land on the marker coord, so we anchor the rings/core absolutely
+     * with negative margins relative to (0, 0). */
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.pulseCore,
+.pulseRing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+}
+
+.pulseCore {
+    width: 14px;
+    height: 14px;
+    background-color: var(--primary, #2563eb);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+.pulseRing {
+    width: 14px;
+    height: 14px;
+    background-color: var(--primary, #2563eb);
+    animation: listing-map-pulse-ring 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.pulseRingDelayed {
+    animation-delay: 0.9s;
+}
+
+@keyframes listing-map-pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.6);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(5);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pulseRing,
+    .pulseRingDelayed {
+        animation: none;
+        opacity: 0;
+    }
+}

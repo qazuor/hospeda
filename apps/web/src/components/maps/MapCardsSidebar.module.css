@@ -79,10 +79,27 @@
     box-shadow: 0 4px 12px oklch(0 0 0 / 0.1), 0 14px 32px oklch(0 0 0 / 0.14);
 }
 
+/* Strip native <button> chrome so the card-as-action looks identical to the
+ * previous <a>-wrapped layout. The element still focuses with Tab and fires
+ * onClick/Enter/Space natively. */
 .cardLink {
     display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    text-align: inherit;
     text-decoration: none;
     color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.cardLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 12px);
 }
 
 /* ----- Card visual: mirrors AccommodationCard.astro ----- */
