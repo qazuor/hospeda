@@ -67,8 +67,12 @@ const activeRole = groups.find((group) =>
                                     <ul class="beta-sidebar__list">
                                         {section.entries.map((entry) => {
                                             const isActive = entry.id === currentSlug;
+                                            const audienceAttr = entry.audience?.join(' ');
                                             return (
-                                                <li class="beta-sidebar__item">
+                                                <li
+                                                    class="beta-sidebar__item"
+                                                    data-audience={audienceAttr}
+                                                >
                                                     <a
                                                         href={entry.url}
                                                         class:list={[
@@ -300,5 +304,36 @@ const activeRole = groups.find((group) =>
         color: var(--brand-primary);
         font-weight: 600;
         border-left-color: var(--brand-accent);
+    }
+
+    /**
+     * Audience-based filtering of sidebar entries.
+     *
+     * The userType lives on `<html data-beta-audience="...">`, set early by an
+     * inline script in BetaDocLayout (no FOUC). Four values: default, host,
+     * editor, admin. Rules below hide entire role groups or individual entries
+     * that do not match the current userType.
+     *
+     * `pago-real` is always shown by product decision — no rules touch it.
+     */
+
+    /* default → hide host and admin-editor groups entirely */
+    :root[data-beta-audience="default"] .beta-sidebar__group[data-beta-group="host"],
+    :root[data-beta-audience="default"] .beta-sidebar__group[data-beta-group="admin-editor"] {
+        display: none;
+    }
+
+    /* host → hide admin-editor group entirely */
+    :root[data-beta-audience="host"] .beta-sidebar__group[data-beta-group="admin-editor"] {
+        display: none;
+    }
+
+    /* editor → admin-editor group is visible, but only entries that include
+       `editor` in their declared audience. Entries with audience="admin" only
+       are hidden. Entries without an explicit audience are kept (defensive). */
+    :root[data-beta-audience="editor"]
+        .beta-sidebar__group[data-beta-group="admin-editor"]
+        .beta-sidebar__item[data-audience]:not([data-audience~="editor"]) {
+        display: none;
     }
 </style>

@@ -58,6 +58,15 @@ export interface BetaNavEntry {
     readonly url: string;
     readonly order: number;
     readonly section: string;
+    /**
+     * Optional list of audiences (e.g. `['admin']`, `['admin', 'editor']`) that
+     * should see this entry. When omitted, the entry inherits the visibility of
+     * its parent role and is shown to anyone who already sees that role. The
+     * sidebar emits this as a space-separated `data-audience` attribute, and
+     * client-side CSS hides items whose audience does not include the current
+     * userType.
+     */
+    readonly audience?: ReadonlyArray<string>;
 }
 
 export interface BetaNavSection {
@@ -96,7 +105,8 @@ export function buildBetaNav(
             title: doc.data.title,
             url: toUrl(doc.id),
             order: doc.data.order,
-            section: doc.data.section ?? ''
+            section: doc.data.section ?? '',
+            audience: doc.data.audience
         };
         const bucket = byRole.get(role);
         if (bucket) {

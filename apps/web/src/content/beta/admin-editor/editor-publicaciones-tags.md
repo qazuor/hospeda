@@ -4,6 +4,7 @@ description: Gestión completa de posts del blog y etiquetas — rol Editor.
 order: 2
 role: admin-editor
 section: Solo editor
+audience: ['admin', 'editor']
 ---
 
 # Editor — publicaciones, etiquetas y eventos

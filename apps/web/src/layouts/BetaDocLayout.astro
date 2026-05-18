@@ -56,6 +56,44 @@ const pageTitle = `${title} · Beta Hospeda`;
         <ThemeFoucScript cspNonce={cspNonce} />
 
         <script is:inline nonce={cspNonce}>
+            /**
+             * Beta docs audience selector — sets `<html data-beta-audience>`
+             * before paint so the sidebar CSS hides irrelevant items without
+             * FOUC. Reads `?userType=X` from the URL, persists it to
+             * localStorage, removes the query, and applies the stored value.
+             *
+             * Valid values: 'default' | 'host' | 'editor' | 'admin'.
+             * Anything else is ignored. Default state hides host and
+             * admin-editor groups in the sidebar; pago-real is always shown.
+             */
+            (function () {
+                var ALLOWED = ['default', 'host', 'editor', 'admin'];
+                var STORAGE_KEY = 'beta-audience';
+                var root = document.documentElement;
+
+                function isValid(value) {
+                    return ALLOWED.indexOf(value) !== -1;
+                }
+
+                try {
+                    var url = new URL(window.location.href);
+                    var fromQuery = url.searchParams.get('userType');
+                    if (fromQuery && isValid(fromQuery)) {
+                        localStorage.setItem(STORAGE_KEY, fromQuery);
+                        url.searchParams.delete('userType');
+                        var clean = url.pathname + url.search + url.hash;
+                        window.history.replaceState({}, '', clean);
+                    }
+                    var stored = localStorage.getItem(STORAGE_KEY);
+                    root.dataset.betaAudience = isValid(stored) ? stored : 'default';
+                } catch (err) {
+                    root.dataset.betaAudience = 'default';
+                }
+            })();
+        </script>
+
+
+        <script is:inline nonce={cspNonce}>
             if (document.fonts.status !== 'loaded') {
                 document.documentElement.classList.add('fonts-loading');
             }

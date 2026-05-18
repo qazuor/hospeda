@@ -4,6 +4,7 @@ description: Patrocinadores, conversaciones, notificaciones, SEO y revalidación
 order: 6
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Admin — otros módulos

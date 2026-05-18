@@ -4,6 +4,7 @@ description: Gestión de usuarios, con cuidado de no romperse los propios permis
 order: 5
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Admin — usuarios y permisos

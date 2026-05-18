@@ -4,6 +4,7 @@ description: Planes, suscripciones, add-ons, códigos promo, pagos, facturas, m�
 order: 4
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Admin — Facturación (billing) y monetización

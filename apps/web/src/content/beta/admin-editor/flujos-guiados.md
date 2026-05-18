@@ -4,6 +4,7 @@ description: Cuatro procesos completos que combinan varios módulos del panel.
 order: 7
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Procesos guiados

@@ -22,6 +22,7 @@ interface SearchEntry {
     readonly section: string;
     readonly url: string;
     readonly body: string;
+    readonly audience?: ReadonlyArray<string>;
 }
 
 function stripMarkdown(input: string): string {
@@ -49,7 +50,8 @@ export const GET: APIRoute = async () => {
             role: doc.data.role,
             section: doc.data.section ?? '',
             url,
-            body: stripMarkdown(doc.body ?? '')
+            body: stripMarkdown(doc.body ?? ''),
+            audience: doc.data.audience
         };
     });
 

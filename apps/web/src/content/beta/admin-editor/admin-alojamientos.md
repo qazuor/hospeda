@@ -4,6 +4,7 @@ description: CRUD completo de alojamientos, destinos y eventos en el panel admin
 order: 3
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Admin — alojamientos, destinos y eventos
