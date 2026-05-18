@@ -4,35 +4,36 @@
     "specRef": "SPEC-143",
     "created": "2026-05-17T23:55:00Z",
     "summary": {
-        "total": 56,
-        "pending": 56,
+        "total": 64,
+        "pending": 64,
         "inProgress": 0,
         "completed": 0,
         "blocked": 0,
-        "averageComplexity": 2.86
+        "averageComplexity": 2.88
     },
+    "coverageTarget": "100% functional + 100% line on apps/api billing services/routes/webhooks and packages/billing — with documented true-impossible-in-e2e exceptions in T-143-55.",
     "phases": {
-        "phase-0": "Infrastructure (foundational, blocks everything)",
-        "phase-1-A": "Critical e2e flows (12 financial flows)",
+        "phase-0": "Infrastructure (foundational, blocks everything) — includes deletion of deprecated 2025-11 tests",
+        "phase-1-A": "Critical e2e flows (15 financial flows including free signup, API idempotency, webhook concurrency)",
         "phase-1-B": "Staging manual smoke — Phase 1 sections",
         "phase-1-C": "Prod manual smoke — 3 most critical flows (go-live gate)",
-        "phase-2-A": "High-priority e2e flows (trials, cancel/pause/resume, dunning, refund/dispute, D4 authorized)",
+        "phase-2-A": "High-priority e2e flows (trials, cancel/pause/resume, dunning, refund/dispute, D4 authorized, MP error handling, grace/plan-lifecycle)",
         "phase-2-B": "Staging manual smoke — Phase 2 sections",
-        "phase-3-A": "Important e2e flows (promo, sponsorship, overrides, cache, admin ops, exchange rate, D1..D8 secondary)",
+        "phase-3-A": "Important e2e flows (promo, sponsorship, overrides, cache, admin ops, exchange rate, D1..D8, plan migration matrix, multi-currency)",
         "phase-3-BD": "Staging smoke for Phase 3 + Sentry filter tuning",
-        "phase-4": "Observability + runbooks + dashboards + docs + CI tuning + coverage report"
+        "phase-4": "Observability + runbooks + dashboards + docs + CI tuning + 100% coverage report with exception list"
     },
     "tasks": [
         {
             "id": "T-143-01",
-            "title": "Fix apps/api/.env.test credentials (hospeda_user:hospeda_pass)",
+            "title": "Fix apps/api/.env.test credentials + reconcile DB URL source of truth",
             "phase": "phase-0",
             "workstream": "A",
             "status": "pending",
-            "complexity": 1,
+            "complexity": 2,
             "owner": "agent",
             "dependsOn": [],
-            "notes": "Current .env.test uses hospeda:hospeda which does not match the docker postgres user. Without this, every e2e test fails connection."
+            "notes": "Two issues: (1) .env.test uses hospeda:hospeda but docker postgres has hospeda_user:hospeda_pass; (2) setup/test-database.ts reads TEST_DB_URL/USER/PASSWORD/etc instead of HOSPEDA_DATABASE_URL, creating two sources of truth. Decision: make HOSPEDA_DATABASE_URL the SINGLE source, remove TEST_DB_* fallback path from test-database.ts (no backcompat — per user OK 2026-05-18)."
         },
         {
             "id": "T-143-02",
@@ -73,10 +74,10 @@
             "phase": "phase-0",
             "workstream": "A",
             "status": "pending",
-            "complexity": 3,
+            "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-04"],
-            "notes": "Stub factory returning canned responses for preferences.create(), subscriptions.update(), payments.get(), customers.create(), preapproval.* operations. Configurable per-test via setMpStubResponse() helper."
+            "notes": "Stub factory returning canned responses for ALL MP adapter operations: preferences.create/get, subscriptions.create/update/cancel, payments.get/refund/list, customers.create/get/update, preapproval.create/update/cancel/list. Configurable per-test via setMpStubResponse(operation, response | error). Supports success, 4xx, 5xx, timeout, and malformed-response modes. Used by T-143-59 to exercise error branches."
         },
         {
             "id": "T-143-06",
@@ -108,8 +109,8 @@
             "status": "pending",
             "complexity": 2,
             "owner": "agent",
-            "dependsOn": ["T-143-05", "T-143-06", "T-143-07"],
-            "notes": "Single-test sanity check that infra works end-to-end before writing real flows. If this fails, fix infra before proceeding."
+            "dependsOn": ["T-143-05", "T-143-06", "T-143-07", "T-143-57"],
+            "notes": "Single-test sanity check that infra works end-to-end before writing real flows. If this fails, fix infra before proceeding. Lives at apps/api/test/e2e/flows/billing/smoke-plans.test.ts (new, not the deprecated subscription-purchase.test.ts)."
         },
         {
             "id": "T-143-09",
@@ -252,8 +253,8 @@
             "complexity": 3,
             "owner": "qazuor",
             "ownerType": "manual",
-            "dependsOn": ["T-143-19", "T-143-20"],
-            "notes": "User executes the staging checklist end-to-end against real MP sandbox. Sign-off recorded in checklist."
+            "dependsOn": ["T-143-19", "T-143-20", "T-143-58", "T-143-60", "T-143-64"],
+            "notes": "User executes the staging checklist end-to-end against real MP sandbox. Sign-off recorded in checklist. Covers all 15 Phase 1 flows including free signup, API idempotency, webhook concurrency."
         },
         {
             "id": "T-143-22",
@@ -430,8 +431,8 @@
             "complexity": 3,
             "owner": "qazuor",
             "ownerType": "manual",
-            "dependsOn": ["T-143-35", "T-143-36"],
-            "notes": "Real MP sandbox execution of 12 Phase 2 flows. Sign-off recorded."
+            "dependsOn": ["T-143-35", "T-143-36", "T-143-59", "T-143-63"],
+            "notes": "Real MP sandbox execution of Phase 2 flows (12 base + MP error handling + grace/plan-lifecycle). Sign-off recorded."
         },
         {
             "id": "T-143-38",
@@ -442,7 +443,7 @@
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "promo-code.test.ts. Valid code applies discount, expired code rejected, max-uses code rejected after limit."
+            "notes": "promo-code.test.ts. Exhaustive cases: valid code applies discount, expired code rejected, max-uses overflow rejected, percent-off vs fixed-off, code applied then payment canceled (code use-count not consumed), code applied then payment failed (use-count not consumed), code stacking attempt rejected, code applied to ineligible plan rejected, code case-insensitive match, code with min-purchase threshold."
         },
         {
             "id": "T-143-39",
@@ -453,7 +454,7 @@
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "sponsorship.test.ts. Sponsor grants plan to user → entitlements active without payment → revoke → entitlements end-dated."
+            "notes": "sponsorship.test.ts. Exhaustive cases: grant single user, grant multiple users (batch), revoke single, partial-revoke (one of many), grant with expiry → cron expires it, transition between sponsors (revoke + immediate new grant), expired sponsorship + no other coverage → entitlements drop, sponsorship vs paid subscription precedence."
         },
         {
             "id": "T-143-40",
@@ -464,7 +465,7 @@
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "customer-override.test.ts. Admin sets per-customer entitlement override → applies on entitlement read → expire date → reverts to plan default."
+            "notes": "customer-override.test.ts. Exhaustive cases: admin sets override → applies on read, override expiry boundary → reverts to plan default, override stacks with sponsorship (precedence rules), override vs base plan conflict resolution, override removed mid-cycle, override on user without active subscription."
         },
         {
             "id": "T-143-41",
@@ -475,7 +476,7 @@
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "entitlement-cache.test.ts. Verify Redis cache hits, manual invalidation on subscription change, TTL boundary, fall-through to DB on miss."
+            "notes": "entitlement-cache.test.ts. Exhaustive cases: cache miss → DB hit → primed, cache hit on second read, TTL boundary expiry, manual invalidation on subscription change/cancel/pause/upgrade/downgrade, invalidation on override add/remove, invalidation on sponsorship grant/revoke, cache stampede protection (concurrent reads on miss), Redis down → degrade to DB (no error)."
         },
         {
             "id": "T-143-42",
@@ -486,7 +487,7 @@
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "admin-billing-ops.test.ts. /api/v1/admin/billing/* endpoints validated end-to-end with admin auth + permissions."
+            "notes": "admin-billing-ops.test.ts. Every /api/v1/admin/billing/* endpoint validated: list endpoints (plans, customers, subscriptions, addons, promo-codes, sponsorships, overrides, exchange-rates, cron-jobs) with pagination + filters + sort; customer detail; manual subscription ops (activate/cancel/pause/resume/refund); manual addon ops (grant/revoke); manual cron trigger; permission enforcement (PermissionEnum, not roles); admin actor required."
         },
         {
             "id": "T-143-43",
@@ -508,7 +509,7 @@
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "auth-redirect-cancel-flows.test.ts. Eight smaller flows: success-redirect, failure-redirect, pending-redirect, cancel-from-MP, browser-back-during-checkout, double-submit, session-expired-during-checkout, anonymous-checkout-attempt."
+            "notes": "auth-redirect-cancel-flows.test.ts. Eight smaller flows: D1 success-redirect, D2 failure-redirect, D3 pending-redirect, D4 cancel-from-MP, D5 browser-back-during-checkout, D6 double-submit, D7 session-expired-during-checkout, D8 anonymous-checkout-attempt (must redirect to login preserving intent)."
         },
         {
             "id": "T-143-45",
@@ -530,8 +531,8 @@
             "complexity": 3,
             "owner": "qazuor",
             "ownerType": "manual",
-            "dependsOn": ["T-143-44", "T-143-45"],
-            "notes": "Real MP sandbox execution. Sign-off recorded."
+            "dependsOn": ["T-143-44", "T-143-45", "T-143-61", "T-143-62"],
+            "notes": "Real MP sandbox execution including plan migration matrix and multi-currency flows. Sign-off recorded."
         },
         {
             "id": "T-143-47",
@@ -623,14 +624,14 @@
         },
         {
             "id": "T-143-55",
-            "title": "Coverage verification: 80% line coverage on billing services/routes/webhooks",
+            "title": "Coverage verification: 100% line + functional coverage with documented exceptions",
             "phase": "phase-4",
             "workstream": "D",
             "status": "pending",
-            "complexity": 3,
+            "complexity": 4,
             "owner": "agent",
-            "dependsOn": ["T-143-46"],
-            "notes": "Run vitest --coverage scoped to apps/api/src/services/*billing*, apps/api/src/routes/billing/*, apps/api/src/routes/webhooks/mercadopago/*. Gap analysis if below 80%. Document any /* istanbul ignore */ exceptions in this task."
+            "dependsOn": ["T-143-46", "T-143-58", "T-143-59", "T-143-60", "T-143-61", "T-143-62", "T-143-63", "T-143-64"],
+            "notes": "Two-part verification. (1) Run vitest --coverage scoped to apps/api/src/services/*billing*, apps/api/src/routes/billing/*, apps/api/src/routes/webhooks/mercadopago/*, packages/billing/src/**. Target 100%. Each unreached line gets either an additional test or a /* istanbul ignore */ with a one-line justification (must match a true-impossible category: real MP card internals, real fraud detection ML, non-deterministic network races). (2) Functional audit: cross-check docs/billing-runbooks.md against the e2e test inventory — every documented flow + cron + webhook + admin op must have ≥ 1 test reference. Deliverable: docs/coverage-audit-2026.md with the exception list."
         },
         {
             "id": "T-143-56",
@@ -642,6 +643,94 @@
             "owner": "agent",
             "dependsOn": ["T-143-55"],
             "notes": "Configure vitest project for billing e2e. Test isolation (DB transaction rollback per test or schema-per-test). Time budget for the suite. Surface in CI report."
+        },
+        {
+            "id": "T-143-57",
+            "title": "Delete deprecated billing e2e tests + E2E-ANALYSIS-REPORT.md (deadweight from 2025-11)",
+            "phase": "phase-0",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "agent",
+            "dependsOn": [],
+            "notes": "Files: apps/api/test/e2e/flows/billing/payment-flow.test.ts (28K — soft-skips when billing not configured), subscription-purchase.test.ts (16K — only GETs /billing/plans), sponsorship-purchase.test.ts (16K), apps/api/test/e2e/E2E-ANALYSIS-REPORT.md (13K — refers to /api/v1/subscriptions and /api/v1/payments routes that no longer exist post three-tier refactor). User OK 2026-05-18: delete and rewrite from scratch aligned to new state.json flows. Sandbox tests (apps/api/test/e2e/sandbox/*) are KEPT — they target real MP sandbox and serve Workstream B."
+        },
+        {
+            "id": "T-143-58",
+            "title": "E2E: free plan signup + entitlements (no payment flow)",
+            "phase": "phase-1-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-143-08"],
+            "notes": "free-plan-signup.test.ts. New user with no checkout → free-tier entitlements active immediately + no billing_customer row required initially + upgrade-to-paid path from free works. Edge: free-tier rate limits enforced."
+        },
+        {
+            "id": "T-143-59",
+            "title": "E2E: MercadoPago API error handling (stubbed 4xx / 5xx / timeout / malformed)",
+            "phase": "phase-2-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-143-19"],
+            "notes": "mp-error-handling.test.ts. Use mp-stub.ts error modes (T-143-05) to exercise every error branch in packages/billing/src + apps/api/src/services/*billing*: MP returns 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 422 (business rule), 429 (rate limit), 500 (server), 502/503/504 (gateway), network timeout, malformed JSON. Per response: assert no partial DB write, user gets actionable error, Sentry captures correct context, retry policy (if any) is followed."
+        },
+        {
+            "id": "T-143-60",
+            "title": "E2E: idempotency keys at protected billing API level",
+            "phase": "phase-1-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-143-09"],
+            "notes": "api-idempotency.test.ts. Distinct from webhook idempotency (T-143-15). Tests X-Idempotency-Key header on POST /protected/billing/checkout, /protected/billing/addons/purchase, etc: same key + same body → identical response, no duplicate DB row; same key + different body → conflict 409; missing key → accepted but warned in response."
+        },
+        {
+            "id": "T-143-61",
+            "title": "E2E: plan migration matrix (free↔paid, cycle changes, tier moves)",
+            "phase": "phase-3-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-143-11", "T-143-12"],
+            "notes": "plan-migration-matrix.test.ts. Matrix beyond simple upgrade/downgrade: free → paid (no proration), paid → free (cancel-to-free), monthly → annual same tier (proration + cycle realign), annual → monthly same tier (queued to renewal), tier-up monthly → tier-up annual (combined upgrade + cycle change), paid plan with addon → paid plan without addon (addon transfer or revoke)."
+        },
+        {
+            "id": "T-143-62",
+            "title": "E2E: multi-currency price selection (ARS / USD / BRL per customer)",
+            "phase": "phase-3-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-143-09", "T-143-43"],
+            "notes": "multi-currency.test.ts. Customer with ARS locale → plan ARS price selected; USD locale → USD price; BRL locale → BRL price. Edge: plan with only USD price + customer ARS → fallback to USD with FX conversion using latest billing_exchange_rates row. Stale exchange rate (cron didn't run today) → warning + use last known rate. Currency mismatch between subscription and addon → error."
+        },
+        {
+            "id": "T-143-63",
+            "title": "E2E: grace period past current_period_end + plan disabled while subscription active",
+            "phase": "phase-2-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-143-19", "T-143-30"],
+            "notes": "grace-and-plan-lifecycle.test.ts. (a) Subscription reaches current_period_end and renewal cron has not fired yet → entitlements remain active within N-hour grace window + Sentry alert if grace exceeded. (b) Admin disables a plan while customer subscriptions are active → existing subs keep entitlements until cycle end, no new signups on that plan, existing renewals follow migration policy."
+        },
+        {
+            "id": "T-143-64",
+            "title": "E2E: webhook concurrency (duplicate concurrent + out-of-order delivery)",
+            "phase": "phase-1-A",
+            "workstream": "A",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-143-15"],
+            "notes": "webhook-concurrency.test.ts. (a) Same event ID delivered twice concurrently (parallel POSTs) → only one DB mutation, both return 200, no race-induced duplicate row (rely on DB unique constraint on event_id). (b) Out-of-order delivery: payment.approved arrives BEFORE preference.created/preapproval.authorized in the same flow → reconciliation logic catches up correctly without ending in inconsistent state."
         }
     ]
 }

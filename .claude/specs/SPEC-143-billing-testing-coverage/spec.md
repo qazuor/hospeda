@@ -74,10 +74,17 @@ These five decisions are part of the approved scope and not subject to re-litiga
 
 1. **Stub vs sandbox in CI**: STUB MercadoPago in CI/automated tests via a `createMercadoPagoAdapter` factory returning canned responses. REAL MP sandbox is used only in manual staging checklists (Workstream B). CLAUDE.md rule to add as part of Phase 4: any billing-touching PR must execute the relevant manual checklist before merge.
 
-2. **Coverage target**: 80% line coverage on:
+2. **Coverage target**: **100% functional coverage** of the billing system (every user-reachable flow + every cron + every webhook handler + every admin op) plus **100% line coverage** on:
    - `apps/api/src/services/*billing*`
    - `apps/api/src/routes/billing/*`
    - `apps/api/src/routes/webhooks/mercadopago/*`
+   - `packages/billing/src/**`
+
+   **Exceptions** for "true-impossible in e2e" are allowed but must be:
+   (a) Documented in T-143-55 (coverage gap audit) with rationale + lines excluded via `/* istanbul ignore */`.
+   (b) Compensated by manual smoke (Workstream B or C) wherever possible.
+
+   Examples of acceptable exceptions: real MP card-processing internals, true network race conditions that cannot be reproduced deterministically, real fraud-detection side effects from MP. NOT acceptable as exceptions: anything reachable via stubbed providers, all crons (use virtual clock), all DB-side effects, all 4xx/5xx response branches.
 
 3. **Go-live gate criteria** (agent recommendation, approved):
    - Phase 1 Workstream A complete (all ~12 critical flows green in CI).
@@ -103,7 +110,8 @@ These five decisions are part of the approved scope and not subject to re-litiga
 - [ ] **Phase 3 Workstream B**: relevant staging checklist sections executed + signed off.
 - [ ] **Phase 3 Workstream D (partial)**: observability noise for promo / sponsorship / override edge cases captured in Sentry filters.
 - [ ] **Phase 4 Workstream D**: 4 Sentry alerts active, billing health dashboard live, billing-runbooks.md complete, MP test cards reference doc complete, CLAUDE.md rule added.
-- [ ] **Coverage**: 80% line coverage on the 3 target directories, verified via `vitest --coverage` and reported in the final task.
+- [ ] **Coverage**: 100% line coverage on the 4 target areas (apps/api billing services/routes/webhooks + packages/billing). Any exclusion is documented in T-143-55 with justification + `/* istanbul ignore */` and a manual-smoke counterpart where applicable.
+- [ ] **Functional coverage audit**: every user-reachable billing flow, every cron, every webhook handler, every admin op listed in `docs/billing-runbooks.md` has at least one e2e test referencing it by ID.
 
 ## Out of scope
 
@@ -133,12 +141,14 @@ These five decisions are part of the approved scope and not subject to re-litiga
 
 apps/api/test/e2e/
 ├── helpers/
-│   ├── mp-stub.ts                          (NEW — stub factory)
+│   ├── mp-stub.ts                          (NEW — stub factory, supports success + 4xx/5xx/timeout/malformed modes)
 │   ├── billing-fixtures.ts                 (NEW — test data)
-│   └── billing-factories.ts                (NEW — DB factories)
+│   └── billing-factories.ts                (NEW — DB factories: plans, prices, customers, subscriptions, addons)
 └── flows/billing/
+    ├── smoke-plans.test.ts                 (Phase 0 — infra sanity)
     ├── annual-checkout.test.ts             (Phase 1)
     ├── monthly-checkout.test.ts            (Phase 1)
+    ├── free-plan-signup.test.ts            (Phase 1)
     ├── plan-upgrade.test.ts                (Phase 1)
     ├── plan-downgrade.test.ts              (Phase 1)
     ├── downgrade-cron.test.ts              (Phase 1)
@@ -146,6 +156,8 @@ apps/api/test/e2e/
     ├── webhook-idempotency.test.ts         (Phase 1)
     ├── webhook-signature.test.ts           (Phase 1)
     ├── webhook-failed-payment.test.ts      (Phase 1)
+    ├── webhook-concurrency.test.ts         (Phase 1)
+    ├── api-idempotency.test.ts             (Phase 1)
     ├── subscription-activation.test.ts     (Phase 1)
     ├── entitlement-load.test.ts            (Phase 1)
     ├── trial-lifecycle.test.ts             (Phase 2)
@@ -157,13 +169,23 @@ apps/api/test/e2e/
     ├── authorized-payment.test.ts          (Phase 2)
     ├── refund.test.ts                      (Phase 2)
     ├── dispute.test.ts                     (Phase 2)
+    ├── mp-error-handling.test.ts           (Phase 2)
+    ├── grace-and-plan-lifecycle.test.ts    (Phase 2)
     ├── promo-code.test.ts                  (Phase 3)
     ├── sponsorship.test.ts                 (Phase 3)
     ├── customer-override.test.ts           (Phase 3)
     ├── entitlement-cache.test.ts           (Phase 3)
     ├── admin-billing-ops.test.ts           (Phase 3)
     ├── exchange-rate-cron.test.ts          (Phase 3)
+    ├── plan-migration-matrix.test.ts       (Phase 3)
+    ├── multi-currency.test.ts              (Phase 3)
     └── auth-redirect-cancel-flows.test.ts  (Phase 3, D1..D8 secondary)
+
+# DELETED in Phase 0 (T-143-57):
+#   apps/api/test/e2e/flows/billing/payment-flow.test.ts             (28K, soft-skip deadweight)
+#   apps/api/test/e2e/flows/billing/subscription-purchase.test.ts    (16K, only GETs /plans)
+#   apps/api/test/e2e/flows/billing/sponsorship-purchase.test.ts     (16K, deprecated)
+#   apps/api/test/e2e/E2E-ANALYSIS-REPORT.md                         (13K, references obsolete routes)
 ```
 
 ## Risks
@@ -172,7 +194,8 @@ apps/api/test/e2e/
 |---|---|
 | MP stub diverges from real MP responses, producing false-green CI | Workstream B (staging smoke against real sandbox) is mandatory on every billing PR. The CLAUDE.md rule (Phase 4) enforces this. |
 | 50-65h estimate slips under real exploration | Phases are independently shippable. Phase 1 closure alone unblocks go-live; later phases can land iteratively. |
-| Coverage target too strict for some areas | If 80% is unreachable on a specific file due to defensive code paths, document the exception in the final task and exclude with `/* istanbul ignore */` comments. Do NOT lower the global target. |
+| Coverage target too strict (100% functional) | True-impossible-in-e2e exclusions are documented per Q2 decision. Defensive code paths reachable via stubbed errors (MP 4xx/5xx/timeout) are NOT exceptions and must be covered via T-143-59. |
+| Deprecated billing e2e files (`payment-flow.test.ts` 28K, `subscription-purchase.test.ts` 16K, `sponsorship-purchase.test.ts` 16K, `E2E-ANALYSIS-REPORT.md` 13K) from 2025-11 mislead about state | T-143-57 deletes them in Phase 0 before any new flow lands, to prevent confusion between "what the deadweight pretends to test" and "what the new suite actually tests". |
 | Real prod smoke transaction (Phase 1 C go-live gate) fails | Rollback procedure documented in `docs/prod-smoke-checklist.md` is the safety net. Spec does NOT close without this artifact. |
 | Schema drift between `hospeda_test` and `hospeda` (dev) | `apps/api/.env.test` + `hospeda_test` push will be re-run on every schema change via a CI step (Phase 4 polish) or documented as a manual step. |
 
