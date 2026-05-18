@@ -4,6 +4,7 @@
  * Supports both protected (authenticated) and public (anonymous token-based) endpoints.
  */
 
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useState } from 'react';
@@ -52,25 +53,21 @@ export function ConversationReply(props: ConversationReplyProps) {
         setError(null);
 
         try {
-            let res: Response;
+            // The web (4321) and API (3001) live on different origins in
+            // dev, so the request must hit the API base — relative URLs
+            // would hit the Astro server instead and return 404.
+            const apiBase = getApiUrl().replace(/\/$/, '');
+            const url =
+                props.mode === 'auth'
+                    ? `${apiBase}/api/v1/protected/conversations/${props.conversationId}/messages`
+                    : `${apiBase}/api/v1/public/conversations/guest/${props.token}/messages`;
 
-            if (props.mode === 'auth') {
-                res = await fetch(
-                    `/api/v1/protected/conversations/${props.conversationId}/messages`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ body: body.trim() })
-                    }
-                );
-            } else {
-                res = await fetch(`/api/v1/public/conversations/guest/${props.token}/messages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ body: body.trim() })
-                });
-            }
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ body: body.trim() })
+            });
 
             if (res.status === 429) {
                 const retryAfter = res.headers.get('Retry-After') ?? '60';
@@ -85,18 +82,25 @@ export function ConversationReply(props: ConversationReplyProps) {
                     setError(t('conversations.errors.messageContentBlocked'));
                 } else if (data.error?.reason === 'CONVERSATION_BLOCKED') {
                     setError(t('conversations.errors.conversationBlocked'));
-                } else {
+                } else if (res.status === 404) {
                     setError(t('conversations.errors.conversationNotFound'));
+                } else {
+                    setError(t('conversations.errors.messageSendFailed'));
                 }
                 return;
             }
 
             setBody('');
             setSuccess(true);
-            setTimeout(() => setSuccess(false), 3000);
             onMessageSent?.();
+            // The thread is SSR-rendered, so the new message only shows on
+            // reload. Let the success state render briefly, then refresh so
+            // the user sees their reply in context.
+            setTimeout(() => {
+                if (typeof window !== 'undefined') window.location.reload();
+            }, 600);
         } catch {
-            setError(t('conversations.errors.conversationNotFound'));
+            setError(t('conversations.errors.messageSendFailed'));
         } finally {
             setSending(false);
         }

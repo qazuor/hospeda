@@ -13,34 +13,81 @@
 /* ── Header ──────────────────────────────────────────────────────────────── */
 
 .header {
+    position: relative;
     margin-bottom: var(--space-8, 2rem);
     text-align: center;
+    padding-top: var(--space-4);
+}
+
+/* Small floating brand mark above the heading. */
+.header::before {
+    content: '✦';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(
+        135deg,
+        oklch(from var(--brand-primary) l c h / 0.18),
+        oklch(from var(--brand-accent) l c h / 0.18)
+    );
+    color: var(--brand-primary);
+    font-size: 1.125rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.2);
 }
 
 .heading {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: clamp(1.75rem, 3.5vw, 2.25rem);
     color: var(--core-foreground);
-    margin: 0 0 var(--space-3, 12px);
+    margin: var(--space-6, 24px) 0 var(--space-3, 12px);
+    line-height: 1.15;
 }
 
 .subheading {
     font-family: var(--font-sans);
     font-size: 1rem;
     color: var(--core-muted-foreground);
-    margin: 0;
+    margin: 0 auto;
     line-height: 1.6;
+    max-width: 48ch;
 }
 
 /* ── Form card ───────────────────────────────────────────────────────────── */
 
 .card {
+    position: relative;
     background-color: var(--core-card);
-    border: 1px solid var(--border);
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
     box-shadow: var(--shadow-card);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+/* Brand gradient accent at the top of the card. */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--brand-primary),
+        var(--brand-accent)
+    );
+    z-index: 0;
 }
 
 /* ── Form ────────────────────────────────────────────────────────────────── */

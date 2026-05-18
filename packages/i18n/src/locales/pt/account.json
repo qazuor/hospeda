@@ -207,6 +207,7 @@
             "removeFromCollection": "Remover da coleção",
             "removing": "Removendo...",
             "removeError": "Erro ao remover favorito da coleção",
+            "removeConfirm": "Remover este favorito da coleção? Continuará salvo nos seus favoritos.",
             "fetchError": "Não foi possível carregar a coleção. Tente novamente mais tarde.",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
@@ -266,8 +267,10 @@
             "accommodation": "Acomodacoes",
             "destination": "Destinos"
         },
-        "empty": "Voce nao tem avaliacoes ainda",
-        "emptyAction": "Visite acomodacoes e destinos para deixar suas primeiras avaliacoes",
+        "empty": "Visite uma acomodação e compartilhe sua experiência para ajudar outros viajantes.",
+        "emptyTitle": "Você ainda não escreveu avaliações",
+        "emptyCta": "Explorar acomodações",
+        "emptyAction": "Visite acomodações e destinos para deixar suas primeiras avaliações",
         "loading": "Carregando...",
         "fetchError": "Erro ao carregar avaliacoes",
         "loadMore": "Carregar mais",
@@ -296,31 +299,31 @@
         }
     },
     "pages": {
-        "accountLabel": "Minha Conta",
+        "accountLabel": "Minha conta",
         "dashboard": {
-            "title": "Minha Conta",
-            "description": "Gerencie sua conta, favoritos, avaliacoes e preferencias.",
+            "title": "Minha conta",
+            "description": "Gerencie sua conta, favoritos, avaliações e preferencias.",
             "greeting": "Bem-vindo",
             "dashboardLabel": "Painel",
             "viewLabel": "Ver",
             "nav": {
-                "editProfile": "Editar Perfil",
-                "editProfileDesc": "Atualize suas informacoes pessoais",
-                "myFavorites": "Meus Favoritos",
-                "myFavoritesDesc": "Acomodacoes que voce salvou",
-                "myReviews": "Minhas Avaliacoes",
-                "myReviewsDesc": "Avaliacoes que voce escreveu",
+                "editProfile": "Editar perfil",
+                "editProfileDesc": "Atualize suas informações pessoais",
+                "myFavorites": "Meus favoritos",
+                "myFavoritesDesc": "Acomodações que vocêsalvou",
+                "myReviews": "Minhas avaliações",
+                "myReviewsDesc": "Avaliações que vocêescreveu",
                 "preferences": "Preferencias",
-                "preferencesDesc": "Configuracoes de notificacoes e privacidade",
-                "mySubscription": "Minha Assinatura",
+                "preferencesDesc": "Configurações de notificacoes e privacidade",
+                "mySubscription": "Minha assinatura",
                 "mySubscriptionDesc": "Plano atual e faturamento"
             },
             "stats": {
-                "favorites": "Meus Favoritos",
-                "reviews": "Minhas Avaliacoes",
-                "subscription": "Minha Assinatura",
-                "favoritesDesc": "Acomodacoes salvas",
-                "reviewsDesc": "Avaliacoes publicadas",
+                "favorites": "Meus favoritos",
+                "reviews": "Minhas avaliações",
+                "subscription": "Minha assinatura",
+                "favoritesDesc": "Acomodações salvas",
+                "reviewsDesc": "Avaliações publicadas",
                 "subscriptionDesc": "Plano Gratuito",
                 "subscriptionStatus": "Plano Gratuito",
                 "activeStatus": "Ativo",
@@ -329,18 +332,18 @@
             }
         },
         "editProfile": {
-            "title": "Editar Perfil",
-            "description": "Atualize suas informacoes pessoais e preferencias de conta.",
+            "title": "Editar perfil",
+            "description": "Atualize suas informações pessoais e preferencias de conta.",
             "avatarSection": "Foto do perfil",
             "personalSection": "Informações pessoais"
         },
         "favorites": {
-            "title": "Meus Favoritos",
-            "description": "Gerencie suas acomodacoes, destinos, eventos e artigos favoritos no Hospeda"
+            "title": "Meus favoritos",
+            "description": "Gerencie suas acomodações, destinos, eventos e artigos favoritos no Hospeda"
         },
         "reviews": {
-            "title": "Minhas Avaliacoes",
-            "description": "Gerencie suas avaliacoes de acomodacoes e destinos no Hospeda"
+            "title": "Minhas avaliações",
+            "description": "Gerencie suas avaliações de acomodações e destinos no Hospeda"
         },
         "preferences": {
             "title": "Preferencias",
@@ -356,9 +359,9 @@
             }
         },
         "subscription": {
-            "title": "Minha Assinatura",
+            "title": "Minha assinatura",
             "description": "Gerencie seu plano e assinatura no Hospeda",
-            "heading": "Minha Assinatura",
+            "heading": "Minha assinatura",
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",
             "loading": "Carregando assinatura...",
             "emptyTitle": "Sem assinatura ativa",
@@ -469,9 +472,9 @@
         "pageTitle": "Adicionar senha",
         "pageDescription": "Adicione uma senha para entrar com email",
         "heading": "Adicione uma senha",
-        "contextGoogle": "Voce se cadastrou com o Google. Se quiser, pode adicionar uma senha para também entrar com email.",
-        "contextFacebook": "Voce se cadastrou com o Facebook. Se quiser, pode adicionar uma senha para também entrar com email.",
-        "contextOAuth": "Voce se cadastrou com uma conta social. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextGoogle": "Você se cadastrou com o Google. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextFacebook": "Você se cadastrou com o Facebook. Se quiser, pode adicionar uma senha para também entrar com email.",
+        "contextOAuth": "Adicione uma senha à sua conta para também entrar com email e senha.",
         "fields": {
             "password": "Senha",
             "passwordPlaceholder": "Mínimo 8 caracteres",

@@ -11,18 +11,68 @@
 /* ── Section card ──────────────────────────────────────────────────────── */
 
 .section {
+    position: relative;
     background-color: var(--core-card);
-    border: 1px solid var(--border);
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
+    box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+    overflow: hidden;
+    isolation: isolate;
+    transition: box-shadow var(--duration-normal) ease,
+        border-color var(--duration-normal) ease;
+}
+
+.section:hover {
+    box-shadow: 0 6px 16px oklch(from var(--core-foreground) l c h / 0.06);
+    border-color: oklch(from var(--brand-primary) l c h / 0.18);
+}
+
+/* Brand accent bar across the top of every section. */
+.section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        var(--brand-primary),
+        var(--brand-accent)
+    );
+    opacity: 0.65;
+    z-index: 0;
 }
 
 .sectionTitle {
+    position: relative;
     font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--core-muted-foreground);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
     margin: 0 0 var(--space-5, 20px);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid oklch(from var(--core-foreground) l c h / 0.06);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Small leading dot in brand color to mark each section header. */
+.sectionTitle::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(
+        135deg,
+        var(--brand-primary),
+        var(--brand-accent)
+    );
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.12);
 }
 
 /* ── Fields grid ───────────────────────────────────────────────────────── */
