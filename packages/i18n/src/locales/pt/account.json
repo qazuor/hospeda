@@ -267,8 +267,10 @@
             "accommodation": "Acomodacoes",
             "destination": "Destinos"
         },
-        "empty": "Voce nao tem avaliacoes ainda",
-        "emptyAction": "Visite acomodacoes e destinos para deixar suas primeiras avaliacoes",
+        "empty": "Visite uma acomodação e compartilhe sua experiência para ajudar outros viajantes.",
+        "emptyTitle": "Você ainda não escreveu avaliações",
+        "emptyCta": "Explorar acomodações",
+        "emptyAction": "Visite acomodações e destinos para deixar suas primeiras avaliações",
         "loading": "Carregando...",
         "fetchError": "Erro ao carregar avaliacoes",
         "loadMore": "Carregar mais",

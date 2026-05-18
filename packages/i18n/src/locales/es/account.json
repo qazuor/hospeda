@@ -267,8 +267,10 @@
             "accommodation": "Alojamientos",
             "destination": "Destinos"
         },
-        "empty": "No tienes resenas todavia",
-        "emptyAction": "Visita alojamientos y destinos para dejar tus primeras resenas",
+        "empty": "Visitá un alojamiento y compartí tu experiencia para ayudar a otros viajeros.",
+        "emptyTitle": "Todavía no escribiste reseñas",
+        "emptyCta": "Explorar alojamientos",
+        "emptyAction": "Visitá alojamientos y destinos para dejar tus primeras reseñas",
         "loading": "Cargando...",
         "fetchError": "Error al cargar las resenas",
         "loadMore": "Cargar mas",

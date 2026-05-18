@@ -267,7 +267,9 @@
             "accommodation": "Accommodations",
             "destination": "Destinations"
         },
-        "empty": "You have no reviews yet",
+        "empty": "Visit an accommodation and share your experience to help other travelers.",
+        "emptyTitle": "You haven't written any reviews yet",
+        "emptyCta": "Browse accommodations",
         "emptyAction": "Visit accommodations and destinations to leave your first reviews",
         "loading": "Loading...",
         "fetchError": "Error loading reviews",
