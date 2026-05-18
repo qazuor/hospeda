@@ -299,10 +299,10 @@
         }
     },
     "pages": {
-        "accountLabel": "Mi Cuenta",
+        "accountLabel": "Mi cuenta",
         "dashboard": {
-            "title": "Mi Cuenta",
-            "description": "Administra tu cuenta, favoritos, resenas y preferencias.",
+            "title": "Mi cuenta",
+            "description": "Administrá tu cuenta, favoritos, reseñas y preferencias.",
             "greeting": "Bienvenido",
             "dashboardLabel": "Dashboard",
             "viewLabel": "Ver",
