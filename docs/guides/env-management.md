@@ -131,6 +131,41 @@ laptop-to-prod env push command in the repo by design: all prod env
 changes go through Coolify (CLI or UI), never through a generic
 "sync" script.
 
+## Sentry environment tagging — required for every deploy
+
+Each app sets the Sentry `environment` tag via its own dedicated env var so
+that staging and production are reportable separately. **Without these vars,
+all events tag as `production` (api) or `MODE=production` (web/admin) and
+staging events silently land in the prod bucket.**
+
+| App | Env var | Where to set |
+|---|---|---|
+| `hospeda-api-prod` | `HOSPEDA_SENTRY_ENVIRONMENT=production` | Coolify env (runtime) |
+| `hospeda-api-staging` | `HOSPEDA_SENTRY_ENVIRONMENT=staging` | Coolify env (runtime) |
+| `hospeda-web-prod` | `PUBLIC_SENTRY_ENVIRONMENT=production` | Coolify env (runtime) |
+| `hospeda-web-staging` | `PUBLIC_SENTRY_ENVIRONMENT=staging` | Coolify env (runtime) |
+| `hospeda-admin-prod` | `VITE_SENTRY_ENVIRONMENT=production` | Coolify **build-time** arg + env (Vite bakes it into the bundle) |
+| `hospeda-admin-staging` | `VITE_SENTRY_ENVIRONMENT=staging` | Coolify **build-time** arg + env |
+
+The admin entry is special: `VITE_*` vars are baked into the bundle at `docker
+build` time, NOT read at runtime. The admin Dockerfile declares
+`ARG VITE_SENTRY_ENVIRONMENT`; Coolify must pass it via build-arg (Project →
+Build → Build Arguments) or the bundle will pick up the placeholder. Setting
+it only as a runtime env var has no effect on the served JS bundle.
+
+To verify after deploy:
+
+```bash
+# API + web: check via container env
+hops env-list api --target=staging | rg SENTRY
+hops env-list web --target=staging | rg SENTRY
+
+# Admin: check via running container (build-time bake)
+hops exec admin --target=staging -- printenv | rg SENTRY
+# OR check the JS bundle directly:
+curl -s https://staging-admin.hospeda.com.ar/assets/index-*.js | rg -o 'environment["\']?:\s*["\'][a-z]+'
+```
+
 ## Audit checklist — once per quarter
 
 15 minutes, run alongside the cron audit (`docs/guides/cron-management.md`):
