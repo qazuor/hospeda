@@ -143,6 +143,7 @@
             "svgo": ">=4.0.1",
             "next": ">=16.2.3",
             "drizzle-orm": ">=0.45.2",
+            "@opentelemetry/api": "1.9.1",
             "@remix-run/node": ">=2.17.2",
             "@remix-run/router": ">=1.23.2",
             "@remix-run/server-runtime": ">=2.17.3",
