@@ -33,9 +33,9 @@ Lo procesamos **dentro de los 7 días** desde que terminás.
 
 ## Cuánto vas a pagar
 
-Te asignamos uno de los 3 planes (Basic / Pro / Premium). **Te avisamos por privado cuál te toca y cuánto aproximado** antes del checkout.
+Te asignamos uno de los 3 planes (Basic / Pro / Premium). **Te avisamos por privado cuál te toca y cuánto aproximado** antes de llegar a la pantalla de pago.
 
-El monto exacto está en el **checkout** antes de meter la tarjeta. **Verificalo y sacale captura antes de "Pagar"**:
+El monto exacto está en la **pantalla de pago** antes de meter la tarjeta. **Verificalo y sacale captura antes de "Pagar"**:
 
 - Similar a lo dicho: dale.
 - **Muy distinto**: parate, no pagues, avisanos por WhatsApp.

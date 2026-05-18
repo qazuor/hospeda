@@ -27,7 +27,7 @@ section: Pago real
 
 ## "Cobraron un monto distinto"
 
-- Captura del **checkout** (lo que decía pagar).
+- Captura de la **pantalla de pago** (lo que decía pagar).
 - Captura del **comprobante de MP** (lo que efectivamente cobró).
 - Avisanos.
 

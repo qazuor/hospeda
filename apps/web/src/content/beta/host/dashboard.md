@@ -3,7 +3,7 @@ title: Tu panel de control (dashboard) de propietario/anfitrión
 description: Cómo revisar tus alojamientos, editarlos y ver la vista previa pública.
 order: 3
 role: host
-section: Gestión del host
+section: Gestión del propietario
 ---
 
 # Tu panel de control de propietario/anfitrión
@@ -53,7 +53,7 @@ Si nunca creaste una propiedad, ves **"Aún no publicaste ninguna propiedad"** +
 
 > ⚠️ **No los reportes** — están planeados, no para este beta:
 >
-> - ❌ Estadísticas de la lista (vistas, clicks, favoritos)
+> - ❌ Estadísticas de la lista (vistas, clics, favoritos)
 > - ❌ Calendario de disponibilidad
 > - ❌ Sincronización con Google Calendar / Airbnb
 > - ❌ Incrustar video de YouTube en la descripción

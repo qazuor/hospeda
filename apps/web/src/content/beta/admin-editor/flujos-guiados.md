@@ -52,3 +52,7 @@ Procesos completos de uso real. Hacelos al menos una vez.
 ## Qué reportar
 
 > 📋 **Reportá** cualquier paso que no funcionó. Estos procesos son representativos del uso real: cada error (bug) acá vale doble.
+
+## Próximo paso
+
+Antes de meterte a fondo, leé **[Lo que NO tenés que tocar](/beta/admin-editor/no-tocar/)** — secciones del panel que pueden romper el sistema.

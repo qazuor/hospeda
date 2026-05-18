@@ -18,7 +18,7 @@ section: Pago real
 
 Seguí **[Crear tu primer alojamiento](/beta/host/crear-alojamiento/)**. Podés inventar datos.
 
-## Paso 3 — Llegar al checkout
+## Paso 3 — Llegar a la pantalla de pago
 
 1. Andá a **"Suscriptores → Planes"** o desde el panel de control (dashboard) "Suscribirme a un plan".
 2. Elegí el plan que te asignamos (Basic / Pro / Premium).
@@ -41,7 +41,7 @@ Pueden pasar 3 cosas:
 
 Te lleva a **"Pago confirmado"** / **"Suscripción activa"**.
 
-> 📋 **Reportá:** captura, hora de aparición de la pantalla (si tardó >30 s, anotalo), y si el monto coincide con el checkout.
+> 📋 **Reportá:** captura, hora de aparición de la pantalla (si tardó >30 s, anotalo), y si el monto coincide con la pantalla de pago.
 
 ### b) Pago pendiente ⏳
 
@@ -85,7 +85,7 @@ Procesamos el reembolso en **máximo 7 días**.
 
 ## Lo que sí o sí necesitamos
 
-1. **Captura del checkout** antes de pagar
+1. **Captura de la pantalla de pago** antes de pagar
 2. **Captura del resultado** del pago
 3. **Hora exacta** del intento
 4. **Email del recibo de MercadoPago** (reenvialo a <qazuor@gmail.com> o subilo al botón flotante)

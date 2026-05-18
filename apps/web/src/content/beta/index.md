@@ -49,7 +49,7 @@ Te lo dijimos por WhatsApp cuando te sumamos. Si no te acordás, escribinos al g
 
 1. **No tenés que ser experto en tecnología.** Justamente queremos que pruebes como persona normal.
 2. **Probá en celular Y en computadora.** Si solo tenés celular, está bien — probá con eso.
-3. **Si encontrás algo raro, reportalo.** Botón flotante azul abajo a la derecha.
+3. **Si encontrás algo raro, reportalo.** Botón flotante naranja abajo a la derecha.
 4. **Si tenés dudas, preguntá en el grupo de WhatsApp.** No te quedes con la duda.
 5. **No vas a romper nada.** El sitio es de prueba. Hacé lo que se te ocurra. Cuanto más raro, mejor.
 

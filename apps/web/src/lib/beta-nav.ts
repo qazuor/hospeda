@@ -37,10 +37,10 @@ export const BETA_ROLE_LABELS: Record<BetaRole, string> = {
     common: 'General',
     empezar: 'Empezar',
     turista: 'Turista',
-    host: 'Host / Propietario',
+    host: 'Propietario / Anfitrión',
     'admin-editor': 'Admin / Editor',
     'pago-real': 'Pago real',
-    'reportar-bugs': 'Reportar bugs',
+    'reportar-bugs': 'Reportar problemas',
     faq: 'FAQ'
 };
 

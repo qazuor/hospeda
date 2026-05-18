@@ -32,3 +32,7 @@ section: Solo admin
 ## Qué reportar
 
 > 📋 **Reportá:** no guarda bien, permiso aplicado sin efecto, listado lento, filtros/búsqueda rotos.
+
+## Próximo paso
+
+**[Admin — otros módulos](/beta/admin-editor/admin-otros/)** (patrocinadores, mensajes, notificaciones, SEO).

@@ -324,7 +324,7 @@ Para ver todo desde cero:
 2. Andá a `staging.hospeda.com.ar`.
 3. Sin sesión, sin caché. Como un visitante nuevo.
 
-Especialmente útil para bienvenida inicial (onboarding) (turista, propietario) y cosas que solo aparecen "la primera vez".
+Especialmente útil para probar la bienvenida inicial (turista, propietario) y cosas que solo aparecen "la primera vez".
 
 ---
 

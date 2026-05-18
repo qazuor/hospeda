@@ -3,14 +3,14 @@ title: Suscripción y pagos con tarjetas de prueba
 description: Suscripción a planes, tarjetas de prueba y códigos para simular resultados.
 order: 4
 role: host
-section: Gestión del host
+section: Gestión del propietario
 ---
 
 # Suscripción y pagos
 
 Para tener tu alojamiento visible o más beneficios necesitás suscribirte a un plan.
 
-> ⚠️ **El checkout no vive en el sitio público.** Al apretar "Suscribirme" el sistema te redirige a **MercadoPago Checkout Pro**. El pago corre en su plataforma; nosotros recibimos el resultado por webhook.
+> ⚠️ **La pantalla de pago no vive en el sitio público.** Al apretar "Suscribirme" el sistema te redirige a **MercadoPago Checkout Pro**. El pago corre en su plataforma; nosotros recibimos el resultado por webhook.
 >
 > ⚠️ **NO USES TU TARJETA REAL.** Hay 2 testers especiales (avisados por privado) que sí usan tarjeta real (mirá [Pago real](/beta/pago-real/introduccion/)). El resto **NO**.
 
@@ -59,7 +59,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 
 1. Menú principal → **"Precios"** (`/suscriptores/precios/`).
 2. Elegí un plan y apretá el CTA para suscribirte.
-3. **Te redirige al checkout de MercadoPago**.
+3. **Te redirige a la pantalla de pago de MercadoPago**.
 4. Completá los datos de la tarjeta de prueba (número + nombre del titular según el resultado que quieras simular).
 5. Apretá pagar. MP te devuelve al sitio con el resultado.
 6. Andá a **"Mi cuenta" → "Suscripción"** (`/mi-cuenta/suscripcion/`) y verificá si quedó activa.
@@ -72,7 +72,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 
 ## Códigos promocionales
 
-> ⚠️ No hay campo de código promo en el checkout. Los códigos promo existen como herramienta administrativa pero el checkout actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
+> ⚠️ No hay campo de código promo en la pantalla de pago. Los códigos promo existen como herramienta administrativa pero la pantalla de pago actual es MercadoPago Checkout Pro. Si te pasamos un código y encontrás un campo donde aplicarlo, anotá dónde lo viste y reportalo. Si no aparece, no es error (bug) — es el estado actual.
 
 ## Ver tu suscripción
 
@@ -85,7 +85,7 @@ En MercadoPago test, **el resultado del pago lo controla el nombre del titular**
 > 📋 **Reportá:**
 >
 > - Te quedaste sin saber qué hacer en algún paso
-> - La redirección al checkout de MP no funciona
+> - La redirección al pago de MP no funciona
 > - Después de pagar no volvés bien al sitio
 > - El monto en MP no coincide con el del plan
 > - La suscripción no se activó después de pagar

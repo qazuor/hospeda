@@ -25,7 +25,7 @@ Estas funcionalidades están en el roadmap pero no van a estar listas para este 
 - 🔄 **Sincronización con calendarios externos** (Google Calendar, Airbnb, etc.)
 - 🎥 **Embed de video** en la descripción del alojamiento
 - 🛒 **Add-ons comprables** (publicación destacada, etc.) desde el panel de control del propietario
-- 📊 **Estadísticas de la lista** (vistas, clicks, favoritos)
+- 📊 **Estadísticas de la lista** (vistas, clics, favoritos)
 - 🎫 **Tickets para eventos** (comprar entrada para un evento)
 - 💬 **WhatsApp Business integrado** (chat del propietario adentro de la plataforma)
 - 🔔 **Notificaciones push** del navegador
@@ -47,6 +47,6 @@ Estas 3 funcionalidades no están en el beta v1. Cuando las activemos vamos a ha
 
 ## ¿Se te ocurre alguna otra?
 
-Si pensás que alguna funcionalidad podría ser útil, interesante o atractiva tener, **propónela**. Usá el **botón flotante azul** abajo a la derecha — el mismo que usás para reportar errores también sirve para mandar ideas y sugerencias.
+Si pensás que alguna funcionalidad podría ser útil, interesante o atractiva tener, **propónela**. Usá el **botón flotante naranja** abajo a la derecha — el mismo que usás para reportar errores también sirve para mandar ideas y sugerencias.
 
 También podés mandarlo por el [grupo de WhatsApp del beta](https://chat.whatsapp.com/BDvBuU0rAfNJYh3RDaMgvL) si te queda más cómodo.
