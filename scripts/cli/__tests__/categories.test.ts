@@ -110,8 +110,8 @@ describe('inferCategory', () => {
     });
 
     it('should return environment for env* scripts', () => {
-        expect(inferCategory({ scriptName: 'env:check' })).toBe('environment');
-        expect(inferCategory({ scriptName: 'env:pull' })).toBe('environment');
+        expect(inferCategory({ scriptName: 'env:check:registry' })).toBe('environment');
+        expect(inferCategory({ scriptName: 'env:validate' })).toBe('environment');
     });
 
     it('should return documentation for docs:* and doc:* scripts', () => {
@@ -158,6 +158,6 @@ describe('inferMode', () => {
         expect(inferMode({ scriptName: 'build' })).toBe('one-shot');
         expect(inferMode({ scriptName: 'lint' })).toBe('one-shot');
         expect(inferMode({ scriptName: 'db:migrate' })).toBe('one-shot');
-        expect(inferMode({ scriptName: 'env:check' })).toBe('one-shot');
+        expect(inferMode({ scriptName: 'env:check:registry' })).toBe('one-shot');
     });
 });
