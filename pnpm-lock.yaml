@@ -154,11 +154,11 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: ^1.6.1
-        version: 1.6.1
+        specifier: ^1.6.2
+        version: 1.6.2
       '@qazuor/qzpay-react':
-        specifier: ^1.1.5
-        version: 1.1.5(react@19.1.1)
+        specifier: ^1.1.7
+        version: 1.1.7(react@19.1.1)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -404,14 +404,14 @@ importers:
         specifier: ^75.0.0
         version: 75.0.0(graphql@16.12.0)
       '@qazuor/qzpay-core':
-        specifier: ^1.6.1
-        version: 1.6.1
+        specifier: ^1.6.2
+        version: 1.6.2
       '@qazuor/qzpay-hono':
-        specifier: ^1.1.6
-        version: 1.1.6(hono@4.12.16)(zod@4.3.6)
+        specifier: ^1.1.8
+        version: 1.1.8(hono@4.12.16)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^1.4.1
-        version: 1.4.1(mercadopago@2.12.0)
+        specifier: ^1.4.3
+        version: 1.4.3(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^0.0.30
         version: 0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -526,7 +526,7 @@ importers:
     optionalDependencies:
       node-cron:
         specifier: ^3.0.3
-        version: 3.0.3
+        version: 4.2.1
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -833,11 +833,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.6.1
-        version: 1.6.1
+        specifier: ^1.6.2
+        version: 1.6.2
       '@qazuor/qzpay-mercadopago':
-        specifier: ^1.4.1
-        version: 1.4.1(mercadopago@2.12.0)
+        specifier: ^1.4.3
+        version: 1.4.3(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -901,11 +901,11 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.6.1
-        version: 1.6.1
+        specifier: ^1.6.2
+        version: 1.6.2
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.7.0
-        version: 1.7.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
+        specifier: ^1.7.2
+        version: 1.7.2(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -1425,8 +1425,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.6.1
-        version: 1.6.1
+        specifier: ^1.6.2
+        version: 1.6.2
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -3216,37 +3216,33 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.8
 
-  '@qazuor/qzpay-core@1.6.0':
-    resolution: {integrity: sha512-f9MrpaDzDvllJycmVrUj3YsE8OKcSxTiihFsD7GlOijV4zW0IlSaa+uCzUaybEeZG5CSrX98VbqiA3Srq1Jk0w==}
+  '@qazuor/qzpay-core@1.6.2':
+    resolution: {integrity: sha512-+KaQCeF7dSktc+HVF9bdVt02T8EEcS4yz/Uv7snzN+wsUG4t//SnI2OJYo1L2y+5TVYHatepPJ4gSey/RJPnxA==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-core@1.6.1':
-    resolution: {integrity: sha512-yjB2mSD85Qi4M5LCFNBhit4ycdKa1nInjwjZfbm/HxNKQzjSI2GUMWhPHSYcyYQOpJjZ1EjfF1grI9VSsUjsZw==}
-    engines: {node: '>=22'}
-
-  '@qazuor/qzpay-drizzle@1.7.0':
-    resolution: {integrity: sha512-cXZsOysBmN6MEXGL3m2y2JGzk0BbePoAeeOIWrzLafGGX3AyvyFBnSWUNJVRX5G7/0BiW4Dk81JMWswdRpqm1w==}
+  '@qazuor/qzpay-drizzle@1.7.2':
+    resolution: {integrity: sha512-6dYSRWepaJLj0OQb8rwDIs+JMvPiCNtOHqj7vlnIWlnvcbL32r0ZKTUQdy16L+x2w6ORohF+MHvSI7LBHu+7Xw==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-hono@1.1.6':
-    resolution: {integrity: sha512-vxUwpZZxHDcMq7ufdLT2OyTSSypWBuK7OCPSc6480DuMqGCp1BeXcPFpJISWgHlKzAE3pC2jP6jCWq2DsZMFXw==}
+  '@qazuor/qzpay-hono@1.1.8':
+    resolution: {integrity: sha512-gOwbi63KOjBgoZSRXC8jS57oCx5r2Sd7yRsFvqcY+niqONYq11HqHgMBWTXDPW2m7GacuwifHUam1g1iQ/+THg==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-mercadopago@1.4.1':
-    resolution: {integrity: sha512-AAJPqtEJpCO7L4jLHIHbX5YtXLsics85xbB45s931UKC8C+FlDYyWJhautoBNuh+7cmKf58qF52XSDQiBxcPXQ==}
+  '@qazuor/qzpay-mercadopago@1.4.3':
+    resolution: {integrity: sha512-lk9AXIv1b8p2hzB9K5DVi9GgBZuMRtA55dUSEbbj512zL0jx67Dgp3sQzse7X0uBBKxVB6JY+Fl0K2meP5u+Xg==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
 
-  '@qazuor/qzpay-react@1.1.5':
-    resolution: {integrity: sha512-kFbTQTANJ7VCIzs/3atzAYHxhb76u3LfKW65Ur4W/raaIhQ267K7qikxQ+HMzmiol+VncLfMj0Pqc+ha2c+phw==}
+  '@qazuor/qzpay-react@1.1.7':
+    resolution: {integrity: sha512-vMOx8sokeA4TIGiXnVmM20mL7RrO2apHPplb9uhdXAzpwxUpPuT6Z+SlBUD9IY1sGh5//Q8/ZnJimhQKju03FA==}
     engines: {node: '>=22'}
     peerDependencies:
       react: 19.1.1
@@ -5013,8 +5009,8 @@ packages:
     resolution: {integrity: sha512-nRcYw+w2OEgK6VfjirYvGyPLOK+tZQz1jkYcmH5AjMamQ9PycnlxZF2aEZtPpNoUsaceX2bHptn6Ub5hGXqNvw==}
     engines: {node: '>=20.19'}
 
-  '@tanstack/router-utils@1.161.8':
-    resolution: {integrity: sha512-xyiLWEKjfBAVhauDSSjXxyf7s8elU6SM+V050sbkofvGmIIvkwPFtDsX7Gvwh14kBd6iCwAT+RiPvXTxAptY0Q==}
+  '@tanstack/router-utils@1.162.0':
+    resolution: {integrity: sha512-c3GhqhBRCP636B41nf3TKvVz8EWzC5PTZ3I4J4LDH2tVjpxbyFNYsQKRtbNWiMFl+GTtgK4nCha346Wv7j4hcQ==}
     engines: {node: '>=20.19'}
 
   '@tanstack/server-functions-plugin@1.131.2':
@@ -8045,8 +8041,8 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
-  node-cron@3.0.3:
-    resolution: {integrity: sha512-dOal67//nohNgYWb+nWmg5dkFdIwDm8EpeGYMekPMrngV3637lqnX0lbUcCtgibHTz6SEz7DAIjKvKDFYCnO1A==}
+  node-cron@4.2.1:
+    resolution: {integrity: sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==}
     engines: {node: '>=6.0.0'}
 
   node-domexception@1.0.0:
@@ -8554,8 +8550,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  qs@6.15.1:
-    resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
+  qs@6.15.2:
+    resolution: {integrity: sha512-Rzq0KEyX/w/tEybncDgdkZrJgVUsUMk3xjh3t5bv3S1HTAtg+uOYt72+ZfwiQwKdysThkTBdL/rTi6HDmX9Ddw==}
     engines: {node: '>=0.6'}
 
   quansync@0.2.11:
@@ -9368,6 +9364,11 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  tsx@4.22.1:
+    resolution: {integrity: sha512-TvncJykhxAzFCk0VQZKBTClall4Pm7qXDSodb6uxi8QFa8X8mT6ABjxxsQ2opDRYxG7AzcRWXaFtruz5HJKuWg==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   turbo-darwin-64@2.5.6:
     resolution: {integrity: sha512-3C1xEdo4aFwMJAPvtlPqz1Sw/+cddWIOmsalHFMrsqqydcptwBfu26WW2cDm3u93bUzMbBJ8k3zNKFqxJ9ei2A==}
     cpu: [x64]
@@ -9723,11 +9724,6 @@ packages:
 
   uuid@11.1.1:
     resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
-    hasBin: true
-
-  uuid@8.3.2:
-    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
-    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
@@ -11990,33 +11986,31 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@qazuor/qzpay-core@1.6.0': {}
+  '@qazuor/qzpay-core@1.6.2': {}
 
-  '@qazuor/qzpay-core@1.6.1': {}
-
-  '@qazuor/qzpay-drizzle@1.7.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
+  '@qazuor/qzpay-drizzle@1.7.2(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
     dependencies:
-      '@qazuor/qzpay-core': 1.6.0
+      '@qazuor/qzpay-core': 1.6.2
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(zod@4.4.3)
       postgres: 3.4.8
       zod: 4.4.3
 
-  '@qazuor/qzpay-hono@1.1.6(hono@4.12.16)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.1.8(hono@4.12.16)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
-      '@qazuor/qzpay-core': 1.6.0
+      '@qazuor/qzpay-core': 1.6.2
       hono: 4.12.16
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@1.4.1(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@1.4.3(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 1.6.0
+      '@qazuor/qzpay-core': 1.6.2
       mercadopago: 2.12.0
 
-  '@qazuor/qzpay-react@1.1.5(react@19.1.1)':
+  '@qazuor/qzpay-react@1.1.7(react@19.1.1)':
     dependencies:
-      '@qazuor/qzpay-core': 1.6.0
+      '@qazuor/qzpay-core': 1.6.2
       react: 19.1.1
 
   '@radix-ui/number@1.1.1': {}
@@ -13707,7 +13701,7 @@ snapshots:
       '@tanstack/react-router': 1.167.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-start-client': 1.166.13(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-start-server': 1.166.13(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/router-utils': 1.161.8
+      '@tanstack/router-utils': 1.162.0
       '@tanstack/start-client-core': 1.166.12
       '@tanstack/start-plugin-core': 1.166.15(@tanstack/react-router@1.167.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@8.0.13(@types/node@22.17.2)(esbuild@0.25.9)(jiti@2.6.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.4))
       '@tanstack/start-server-core': 1.166.12
@@ -13728,7 +13722,7 @@ snapshots:
       '@tanstack/react-router': 1.167.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-start-client': 1.166.13(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-start-server': 1.166.13(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/router-utils': 1.161.8
+      '@tanstack/router-utils': 1.162.0
       '@tanstack/start-client-core': 1.166.12
       '@tanstack/start-plugin-core': 1.166.15(@tanstack/react-router@1.167.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@8.0.13(@types/node@25.3.3)(esbuild@0.28.0)(jiti@2.6.1)(terser@5.43.1)(tsx@4.21.0)(yaml@2.8.4))
       '@tanstack/start-server-core': 1.166.12
@@ -13822,7 +13816,7 @@ snapshots:
       prettier: 3.8.3
       recast: 0.23.11
       source-map: 0.7.6
-      tsx: 4.21.0
+      tsx: 4.22.1
       zod: 3.25.76
     transitivePeerDependencies:
       - supports-color
@@ -13925,7 +13919,7 @@ snapshots:
       - supports-color
     optional: true
 
-  '@tanstack/router-utils@1.161.8':
+  '@tanstack/router-utils@1.162.0':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/generator': 7.29.1
@@ -17687,7 +17681,7 @@ snapshots:
       micro-api-client: 3.3.0
       node-fetch: 3.3.2
       p-wait-for: 5.0.2
-      qs: 6.15.1
+      qs: 6.15.2
     optional: true
 
   nitropack@2.13.1(@netlify/blobs@9.1.2)(@vercel/functions@2.2.13)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(rolldown@1.0.1):
@@ -17802,9 +17796,7 @@ snapshots:
 
   node-addon-api@7.1.1: {}
 
-  node-cron@3.0.3:
-    dependencies:
-      uuid: 8.3.2
+  node-cron@4.2.1:
     optional: true
 
   node-domexception@1.0.0:
@@ -18325,7 +18317,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  qs@6.15.1:
+  qs@6.15.2:
     dependencies:
       side-channel: 1.1.0
     optional: true
@@ -19306,6 +19298,13 @@ snapshots:
       fsevents: 2.3.3
     optional: true
 
+  tsx@4.22.1:
+    dependencies:
+      esbuild: 0.28.0
+    optionalDependencies:
+      fsevents: 2.3.3
+    optional: true
+
   turbo-darwin-64@2.5.6:
     optional: true
 
@@ -19608,9 +19607,6 @@ snapshots:
       which-typed-array: 1.1.19
 
   uuid@11.1.1:
-    optional: true
-
-  uuid@8.3.2:
     optional: true
 
   uuid@9.0.1: {}
