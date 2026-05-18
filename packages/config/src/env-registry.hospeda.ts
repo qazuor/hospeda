@@ -1281,23 +1281,5 @@ export const HOSPEDA_ENV_VARS = [
             'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
         howToObtainEs:
             'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
-    },
-    {
-        name: 'PUBLIC_ENABLE_LOGGING',
-        description:
-            'Opt-in flag for client-side console logging in non-dev builds. Dev builds always log regardless of this flag.',
-        descriptionEs:
-            'Flag opt-in para habilitar logging en consola del cliente en builds que no son de dev. Los builds de dev siempre loguean sin importar el valor de este flag.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'true',
-        apps: ['web'],
-        category: 'debugging',
-        howToObtain:
-            'Set to "true" in preview or staging to enable verbose client logs while debugging. Keep unset (defaults to false) in production to avoid noisy consoles.',
-        howToObtainEs:
-            'Poné "true" en preview o staging para habilitar logs verbosos del cliente mientras debuggeás. Dejá sin setear (default false) en producción así no se llena la consola.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

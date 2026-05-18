@@ -6,6 +6,8 @@
  */
 
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -497,6 +499,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             checkOut: dateRange?.to,
                             adults,
                             children
+                        });
+                        trackEvent(WebEvents.AccommodationSearched, {
+                            destination_id: selectedDestination?.id ?? null,
+                            accommodation_types: selectedTypes,
+                            has_dates: Boolean(dateRange?.from || dateRange?.to),
+                            adults,
+                            children,
+                            locale
                         });
                         window.location.assign(url);
                     }}

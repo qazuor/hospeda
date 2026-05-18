@@ -442,13 +442,19 @@ export function buildCspHeader({
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
+    // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
+    // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
+    // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
+    // 'strict-dynamic' which makes host allowlists a no-op for scripts loaded
+    // via the nonce-tagged bootstrapper — the hosts here are documentation +
+    // safety net if 'strict-dynamic' is ever removed.
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
+        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",

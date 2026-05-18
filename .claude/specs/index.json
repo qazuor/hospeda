@@ -1280,15 +1280,17 @@
         },
         {
             "specId": "SPEC-140",
-            "title": "Self-hosted Analytics Stack (Umami)",
+            "title": "PostHog Cloud Analytics Stack (web + admin)",
             "type": "feat",
             "complexity": "medium",
             "status": "draft",
-            "path": "SPEC-140-analytics-stack-umami",
+            "path": "SPEC-140-analytics-stack-posthog",
             "created": "2026-05-16T05:00:00Z",
+            "rewrittenAt": "2026-05-17T23:50:00Z",
+            "rewriteReason": "Switched tool choice from self-hosted Umami to PostHog Cloud free tier after user decision 2026-05-17. Expanded scope to include admin app + custom events from day one. Kept SPEC number; renamed slug.",
             "discoveredDuring": "2026-05-16 staging console audit (broken CF Web Analytics beacon)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["analytics", "infra", "coolify", "web", "monitoring"]
+            "tags": ["analytics", "posthog", "web", "admin", "monitoring", "privacy"]
         },
         {
             "specId": "SPEC-141",

@@ -39,6 +39,7 @@
         "glightbox": "^3.3.0",
         "leaflet": "^1.9.4",
         "parse5": "^7.3.0",
+        "posthog-js": "^1.373.5",
         "react": "19.2.4",
         "react-day-picker": "9.13.2",
         "react-dom": "19.2.4",

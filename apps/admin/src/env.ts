@@ -73,6 +73,19 @@ const AdminEnvSchema = z.object({
     VITE_SENTRY_RELEASE: z.string().optional().describe('Sentry release identifier'),
     VITE_SENTRY_PROJECT: z.string().optional().describe('Sentry project slug'),
 
+    // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
+    // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
+    // Per-env values come from Coolify; keys live in 1Password.
+    VITE_POSTHOG_KEY: z
+        .string()
+        .optional()
+        .describe('PostHog Cloud project API key (phc_...) for the admin app'),
+    VITE_POSTHOG_HOST: z
+        .string()
+        .url()
+        .optional()
+        .describe('PostHog Cloud ingestion endpoint (defaults to https://us.i.posthog.com)'),
+
     // Locale Configuration
     VITE_SUPPORTED_LOCALES: z
         .string()
@@ -157,6 +170,8 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
+            VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
+            VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
             VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',
             VITE_DEFAULT_LOCALE: import.meta.env.VITE_DEFAULT_LOCALE || 'es',
             VITE_DEBUG_LAZY_SECTIONS: import.meta.env.VITE_DEBUG_LAZY_SECTIONS,
