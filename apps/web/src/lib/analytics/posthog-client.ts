@@ -1,120 +1,58 @@
 /**
  * @file posthog-client.ts
- * @description Single source of truth for PostHog SDK initialization in the
- * web app (SPEC-140).
+ * @description Typed wrapper around `window.posthog.capture(...)` for the
+ * web app (SPEC-140 — fix B).
  *
- * Consent + dev gating model:
+ * Initialisation is handled entirely by the inline snippet in
+ * `src/components/analytics/PostHogScript.astro` (mounted from
+ * `BaseLayout.astro`). This module is intentionally thin so call sites can
+ * keep importing `trackEvent` without worrying about whether the SDK has
+ * finished loading — the official PostHog snippet stubs `window.posthog`
+ * with a queueing array.js loader, so `.capture()` calls before full SDK
+ * load are deferred and replayed automatically.
  *
- * | State                                | Init?     | Persistence              |
- * | ------------------------------------ | --------- | ------------------------ |
- * | Server-side (no window)              | skip      | n/a                      |
- * | PUBLIC_POSTHOG_KEY unset             | skip      | n/a                      |
- * | import.meta.env.MODE === development | skip      | n/a                      |
- * | analytics consent === true           | yes       | localStorage + cookie    |
- * | analytics consent !== true (or null) | yes       | memory (cookieless)      |
- *
- * The cookieless fallback (memory persistence) ensures pageviews are still
- * collected for visitors who decline analytics OR haven't seen the consent
- * banner yet — without ever setting a `ph_*` cookie or writing to local
- * storage. PostHog stays SOC 2 / GDPR friendly in this mode because no
- * identifier is persisted across sessions.
- *
- * Session recordings are explicitly disabled at launch (privacy + bandwidth
- * + legal review burden — toggle in PostHog UI later if needed).
- *
- * The trackEvent() wrapper is a no-op when PostHog hasn't been initialized
- * so call sites don't need to guard. Event names should come from the typed
- * catalog in `./events.ts` rather than literals.
+ * Why not bundle posthog-js via ESM here:
+ * The previous SPEC-140 implementation imported `posthog-js` and called
+ * `posthog.init(...)` from a React island. That collided with PostHog's own
+ * array.js auto-loader and left the SDK in a half-state where events never
+ * POSTed to `/e/`. The official PostHog Astro guide uses the inline snippet
+ * pattern (see PostHogScript.astro for details).
  */
-
-import posthog from 'posthog-js';
-import type { ConsentState } from '../cookie-consent';
-import { getPostHogHost, getPostHogKey, isDevelopment } from '../env';
-
-/** Fallback ingestion endpoint when PUBLIC_POSTHOG_HOST is unset. */
-const DEFAULT_POSTHOG_HOST = 'https://us.i.posthog.com';
-
-/** Tracks whether posthog.init() has been called successfully on this page. */
-let initialized = false;
 
 /**
- * Initialize PostHog with the provided consent state.
- *
- * Idempotent within a single page: a second call with the same consent is
- * a no-op. A second call with a CHANGED consent state will reset the SDK
- * and re-init with the new persistence mode — useful when the user updates
- * their preferences without a full page reload.
- *
- * Safe to call on the server (returns early when `window` is undefined).
- *
- * @param consent - The current consent state, or null when no decision recorded.
+ * Shape of the `window.posthog` handle exposed by the inline snippet. Only
+ * the methods used directly by app code are declared; the runtime stub
+ * exposes many more (identify, opt_in_capturing, etc.).
  */
-export function initPostHog({
-    consent
-}: {
-    readonly consent: ConsentState | null;
-}): void {
-    if (typeof window === 'undefined') return;
-
-    const key = getPostHogKey();
-    if (!key) return;
-
-    if (isDevelopment()) return;
-
-    if (initialized) return;
-
-    const analyticsAllowed = consent?.analytics === true;
-    const apiHost = getPostHogHost() ?? DEFAULT_POSTHOG_HOST;
-
-    posthog.init(key, {
-        api_host: apiHost,
-        person_profiles: 'identified_only',
-        capture_pageview: true,
-        autocapture: true,
-        disable_session_recording: true,
-        persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
-        disable_persistence: false,
-        respect_dnt: true
-    });
-
-    initialized = true;
+interface PostHogStub {
+    capture(name: string, props?: Record<string, unknown>): void;
+    set_config(config: Record<string, unknown>): void;
 }
 
-/**
- * Re-initialize PostHog with a new consent state.
- *
- * Resets any existing identity + persisted state and re-inits with the new
- * persistence mode. Intended to be called from the cookie consent banner
- * after the user updates preferences mid-session (so they don't have to
- * wait for the next page navigation for the new mode to take effect).
- *
- * If PostHog has not been initialized yet (e.g. dev mode, missing key)
- * this falls through to a normal init attempt.
- *
- * @param consent - The new consent state, or null when no decision recorded.
- */
-export function setConsent(consent: ConsentState | null): void {
-    if (typeof window === 'undefined') return;
-
-    if (initialized) {
-        posthog.reset();
-        initialized = false;
+declare global {
+    interface Window {
+        readonly posthog?: PostHogStub;
     }
-
-    initPostHog({ consent });
 }
 
 /**
- * Capture a custom event. No-op when PostHog has not been initialized
- * (so call sites don't need to guard on consent / dev mode / missing key).
+ * Capture a custom event via the PostHog browser SDK.
+ *
+ * Safe to call at any time:
+ * - On the server: short-circuits (no-op when `window` is undefined).
+ * - Before the SDK finishes loading: PostHog's snippet stub queues the
+ *   call and replays it once the real SDK is ready.
+ * - When the env var is unset or running in dev mode: `window.posthog`
+ *   never gets stubbed (PostHogScript.astro skips render), so the optional
+ *   chain short-circuits and the call is a true no-op.
  *
  * Prefer importing event names from `./events.ts` over passing string
  * literals — the catalog makes the event surface discoverable + typed.
  *
  * @param name - Event name (use values from {@link ./events}).
- * @param props - Optional event properties; serialized to PostHog as-is.
+ * @param props - Optional event properties; serialised to PostHog as-is.
  */
 export function trackEvent(name: string, props?: Record<string, unknown>): void {
-    if (!initialized) return;
-    posthog.capture(name, props);
+    if (typeof window === 'undefined') return;
+    window.posthog?.capture(name, props);
 }

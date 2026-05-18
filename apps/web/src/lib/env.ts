@@ -105,33 +105,6 @@ export function getDeployVersion(): string | undefined {
 }
 
 /**
- * Get the PostHog Cloud project API key for the web app (SPEC-140).
- *
- * Returns undefined when the env var is unset, in which case the PostHog
- * SDK init must skip entirely (no events, no cookies, no network). The
- * value is client-exposed by design — PostHog project keys ship in the
- * browser bundle.
- *
- * @returns The `phc_...` project key, or undefined if not configured
- */
-export function getPostHogKey(): string | undefined {
-    return getEnv().PUBLIC_POSTHOG_KEY;
-}
-
-/**
- * Get the PostHog ingestion endpoint for the web app (SPEC-140).
- *
- * Returns undefined when the env var is unset; the caller should fall back
- * to the documented default (`https://us.i.posthog.com`). Override only when
- * migrating to EU Cloud or self-hosted PostHog.
- *
- * @returns The PostHog ingestion endpoint URL, or undefined if not configured
- */
-export function getPostHogHost(): string | undefined {
-    return getEnv().PUBLIC_POSTHOG_HOST;
-}
-
-/**
  * Check if running in production.
  *
  * @returns True if in production mode
