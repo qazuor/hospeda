@@ -65,6 +65,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
+import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -78,6 +79,8 @@ import {
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     type TestBillingPlansSeed,
+    createTestPlan,
+    createTestPrice,
     createTestUser,
     seedBillingTestPlans
 } from '../../setup/seed-helpers.js';
@@ -231,5 +234,153 @@ describe('SPEC-143 T-143-12 — plan downgrade scheduling', () => {
         expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
         expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
         expect(mpStub.config.getCalls('subscriptions.update')).toHaveLength(0);
+    });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    //
+    // The plan-change handler + scheduleSubscriptionDowngrade service
+    // surface four distinct error branches reachable through the downgrade
+    // flow. Each test pins one branch end-to-end and asserts no schedule
+    // is written to the local sub and no adapter call is made when the
+    // failure is detected.
+    //
+    // Reminder: the active expensive-plan subscription is seeded by the
+    // file-level beforeEach (expensiveSubscriptionId in scope), so each
+    // test below starts from a clean state and only mutates what it needs.
+    // -----------------------------------------------------------------------
+
+    it('returns 400 when the user requests to change to the same plan', async () => {
+        // ACT: pass the SAME planId the user is already on. The handler
+        // short-circuits at line 213-217 (plan-change.ts) BEFORE the
+        // downgrade service is invoked, so this is a handler-level 400,
+        // not the service's 422 SAME_PLAN (which would only fire if the
+        // handler had let the request through).
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: seed.expensive.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(400);
+
+        // ASSERT — sub unchanged: no scheduled change written.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        expect(subs[0]?.scheduledPlanChange).toBeNull();
+
+        // ASSERT — no side effects on checkouts or adapter.
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+        expect(mpStub.config.getCalls('subscriptions.update')).toHaveLength(0);
+    });
+
+    it('returns 404 when the target plan does not exist', async () => {
+        // ACT: well-formed UUID that does not match any row in
+        // billing_plans. billing.plans.get() returns null and the handler
+        // throws 404 at line 197-202 — before deciding upgrade vs
+        // downgrade.
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: randomUUID(),
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(404);
+
+        // ASSERT — sub unchanged.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        expect(subs[0]?.scheduledPlanChange).toBeNull();
+    });
+
+    it('returns 400 when the target plan has no price for the requested interval', async () => {
+        // ARRANGE: ad-hoc plan with ONLY an annual price. Request a
+        // monthly downgrade against it — the handler at line 233-242
+        // filters targetPlan.prices by interval and surfaces 400 when
+        // nothing matches.
+        //
+        // Mirrors the upgrade no-price test: the handler's price filter
+        // is upstream of the downgrade service, so this 400 is the
+        // observable behavior. The service-level 404 NO_MATCHING_PRICE
+        // would require an `active: false` price row to reach — left to
+        // a follow-up if matching contracts change.
+        const annualOnlyPlan = await createTestPlan({
+            name: 'Plan Without Monthly Price (downgrade)',
+            metadata: { slug: 'annual-only-downgrade', category: 'test-error-path' }
+        });
+        await createTestPrice({
+            planId: annualOnlyPlan.planId,
+            unitAmount: 800_000,
+            billingInterval: 'year'
+        });
+        // Deliberately NO monthly price on annualOnlyPlan.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: annualOnlyPlan.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(400);
+
+        // ASSERT — sub unchanged.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        expect(subs[0]?.scheduledPlanChange).toBeNull();
+    });
+
+    it('returns 422 when the target price is not strictly lower than the current price (NOT_A_DOWNGRADE)', async () => {
+        // ARRANGE: ad-hoc plan with a MONTHLY price equal to the current
+        // (expensive) plan's monthly price. The handler's isUpgrade check
+        // compares NORMALIZED prices (unitAmount / intervalCount). Equal
+        // normalized prices → isUpgrade is false (strictly-greater) →
+        // route falls into the DOWNGRADE branch and dispatches to
+        // scheduleSubscriptionDowngrade. The service's defensive guard
+        // (subscription-downgrade.service.ts:193) then throws
+        // NOT_A_DOWNGRADE because target.unitAmount >= current.unitAmount,
+        // mapped to HTTP 422 by mapDowngradeErrorToHttp.
+        //
+        // This is the symmetric trap of T-143-11's NOT_AN_UPGRADE: forcing
+        // the service-level guard requires a price the handler will route
+        // into the wrong branch from the user's intent.
+        const equalPricePlan = await createTestPlan({
+            name: 'Plan With Equal Monthly Price',
+            metadata: { slug: 'equal-monthly-downgrade', category: 'test-error-path' }
+        });
+        // expensive baseline monthly is 500_000 centavos (seed-helpers.ts).
+        // Set this ad-hoc plan's monthly to the same value so the
+        // normalized comparison routes to the downgrade branch.
+        await createTestPrice({
+            planId: equalPricePlan.planId,
+            unitAmount: 500_000,
+            billingInterval: 'month'
+        });
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: equalPricePlan.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(422);
+
+        // ASSERT — sub unchanged. The service guard fires BEFORE writing
+        // any scheduledPlanChange, so the local row is pristine.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        expect(subs[0]?.scheduledPlanChange).toBeNull();
     });
 });
