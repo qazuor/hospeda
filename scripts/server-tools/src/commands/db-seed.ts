@@ -17,9 +17,13 @@
  *     would require either a bind mount of the repo or a redeploy on
  *     every seed-data change — neither is set up in the current Coolify
  *     deploy.
- *   - The seed connects to Postgres via the `HOSPEDA_DATABASE_URL` env
- *     var, sourced from `HOPS_<TARGET>_DATABASE_URL` in `.env.local` so
- *     prod and staging are isolated.
+ *   - The Postgres URL is DERIVED at runtime by inspecting the target's
+ *     Postgres container: user/db come from {@link getDbCredentials}
+ *     (the same source `hops psql` uses), POSTGRES_PASSWORD is read
+ *     from the container's env, and host:port comes from `docker port`.
+ *     No new secret lives in `.env.local`. The container's 5432 MUST be
+ *     published to the host — the seed connects via the published port,
+ *     not via the docker network.
  *
  * Safety:
  *   - `--target=prod` (the default) prompts with a destructive
@@ -35,12 +39,13 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { getActiveTarget } from '../lib/container-lookup.ts';
+import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
+import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
 import { runner } from '../lib/runner.ts';
-import type { Target } from '../lib/target.ts';
+import { getDbCredentials } from '../lib/target.ts';
 
 const HELP = `
 hops db-seed [--target=prod|staging]
@@ -77,9 +82,13 @@ Unattended examples:
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
 
 Required environment variables (in scripts/server-tools/.env.local):
-  HOPS_PROD_DATABASE_URL       Postgres URL for prod  (only if --target=prod).
-  HOPS_STAGING_DATABASE_URL    Postgres URL for staging (only if --target=staging).
+  HOPS_<TARGET>_POSTGRES_UUID  Coolify Postgres service UUID for the target.
   HOPS_REPO_ROOT (optional)    Path to the hospeda checkout. Default ~/hospeda.
+
+The Postgres URL is derived automatically by inspecting the target's
+Postgres container (password from its env, host:port from \`docker port\`).
+The container's port 5432 MUST be published to the host — the seed runs
+on the host, not inside the docker network.
 
 Notes:
   This command WIPES the target database by default (--reset is on).
@@ -119,17 +128,6 @@ export function resolveRepoRoot(): string {
     const explicit = get('HOPS_REPO_ROOT');
     if (explicit) return explicit;
     return join(homedir(), 'hospeda');
-}
-
-function resolveDatabaseUrl(target: Target): string {
-    const key = `HOPS_${target.toUpperCase()}_DATABASE_URL`;
-    const value = get(key);
-    if (!value) {
-        die(
-            `${key} is not set in scripts/server-tools/.env.local. Add the Postgres connection URL for '${target}' before running db-seed.`
-        );
-    }
-    return value;
 }
 
 export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
@@ -202,11 +200,18 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         die(`'${repoRoot}' is not a git repository.`);
     }
 
-    const databaseUrl = resolveDatabaseUrl(target);
+    const container = await findContainer('postgres');
+    const credentials = getDbCredentials(target);
+    const databaseUrl = await buildPostgresUrl({
+        container,
+        user: credentials.user,
+        db: credentials.database
+    });
     const seedArgs = buildSeedArgs(parsed);
 
     log.info(`Target  : ${target}`);
     log.info(`Repo    : ${repoRoot}`);
+    log.info(`DB      : ${credentials.user}@${container} → ${credentials.database}`);
     log.info(`Flags   : ${formatFlagSummary(parsed)}`);
 
     // ── Pull step ────────────────────────────────────────────────────
