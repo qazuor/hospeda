@@ -31,13 +31,20 @@ ARG HOSPEDA_ADMIN_URL=https://admin.placeholder.local
 ARG PUBLIC_API_URL=https://api.placeholder.local
 ARG PUBLIC_SITE_URL=https://placeholder.local
 ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
-# HOSPEDA_GIT_SHA must precede PUBLIC_SENTRY_RELEASE so the ARG default
-# expression below can reference it. Coolify should pass this as a Build
-# Variable mapped to $COOLIFY_COMMIT_SHA so each deploy gets a unique
-# release identifier in Sentry. Falling back to an unset SHA leaves the
-# downstream `|| 'development'` chain to absorb the empty value.
+# HOSPEDA_GIT_SHA + PUBLIC_SENTRY_RELEASE drive the Sentry release tag baked
+# into the client bundle. The build-time resolution chain is:
+#   1. Explicit --build-arg from Coolify (manual override, if set).
+#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
+#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
+#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
+#      specifically so this file reaches the builder.
+#   3. Last resort: empty string. The downstream `|| 'development'` chain
+#      in apps/web/sentry.client.config.ts absorbs that case.
+# We resolve in a single RUN so the resulting env vars are visible to
+# `astro build` (Astro reads `import.meta.env.PUBLIC_*` from the process
+# environment at build time). Exporting in a prior RUN would not persist.
 ARG HOSPEDA_GIT_SHA
-ARG PUBLIC_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
+ARG PUBLIC_SENTRY_RELEASE
 ARG PUBLIC_SENTRY_ENVIRONMENT
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
@@ -45,11 +52,14 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_API_URL=$PUBLIC_API_URL \
     PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_ADMIN_URL=$PUBLIC_ADMIN_URL \
-    PUBLIC_SENTRY_RELEASE=$PUBLIC_SENTRY_RELEASE \
-    PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT \
-    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
+    PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT
 COPY --from=deps /repo /repo
-RUN pnpm turbo run build --filter=hospeda-web
+COPY .git/HEAD /tmp/git-head
+RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
+    PUBLIC_SENTRY_RELEASE="${PUBLIC_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
+    export HOSPEDA_GIT_SHA PUBLIC_SENTRY_RELEASE && \
+    echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=hospeda-web
 
 # ----- prune stage -----------------------------------------------------------
 # `pnpm deploy` resolves workspace deps as real packages and ships only prod

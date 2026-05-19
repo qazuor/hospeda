@@ -23,6 +23,12 @@ build/
 
 # VCS and tooling metadata
 .git
+# Exception: ship just .git/HEAD so the Dockerfiles can resolve the deploy
+# commit SHA at build time and bake it into the Sentry release tag (web and
+# admin client bundles). Coolify clones in detached HEAD via
+# `git checkout <sha>`, so the file contains a literal 40-char SHA — no
+# refs traversal needed. ~41 bytes added to the build context, negligible.
+!.git/HEAD
 .github
 .husky
 .vscode
