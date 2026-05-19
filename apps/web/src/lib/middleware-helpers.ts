@@ -461,7 +461,14 @@ export function buildCspHeader({
     const directives = [
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
-        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
+        // The Astro client runtime injects an inline <style> at hydration time
+        // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
+        // Because the injection happens via JS AFTER the middleware response
+        // rewrite, `injectNonce` (which only walks the initial SSR HTML) can't
+        // stamp a nonce on it, and the browser blocks/reports it. The CSS
+        // content is hardcoded in Astro's runtime so its SHA-256 is stable —
+        // hash-allow it explicitly to keep `style-src` strict otherwise.
+        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}' 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`,
         // `style-src` (above) defaults to gating BOTH `<style>` elements and
         // inline `style="..."` attributes. Nonces cannot be applied to style
         // attributes by spec, so a strict nonce-based `style-src` blocks every
