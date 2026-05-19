@@ -273,6 +273,15 @@ async function confirmPlanUpgrade(input: {
         applyAt: 'immediately'
     });
 
+    // Invalidate the entitlement middleware cache for this customer.
+    // Without this, the entitlement middleware would keep serving the
+    // pre-upgrade (cheaper-plan) entitlement set for up to 5 minutes —
+    // the user pays the prorated delta and sees the expensive-plan
+    // features blocked until the TTL expires. Synchronous, in-process,
+    // no I/O — safe to call unconditionally. Mirrors the same call in
+    // confirmAnnualSubscription and processSubscriptionUpdated.
+    clearEntitlementCache(changeResult.subscription.customerId);
+
     // Step 2: propagate to MP preapproval — best-effort.
     const mpSubscriptionId = sub.providerSubscriptionIds?.mercadopago;
     if (mpSubscriptionId) {
