@@ -450,11 +450,13 @@
             "title": "E2E: sponsorship grant / revoke",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "obsolete",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "sponsorship.test.ts. Exhaustive cases: grant single user, grant multiple users (batch), revoke single, partial-revoke (one of many), grant with expiry → cron expires it, transition between sponsors (revoke + immediate new grant), expired sponsorship + no other coverage → entitlements drop, sponsorship vs paid subscription precedence."
+            "notes": "OBSOLETE — task notes describe a gift-subscription system (sponsor user grants entitlements to other users with cron expiry + precedence over paid subs) that does NOT exist in the hospeda codebase. The `sponsorships` table + service is CRUD for sponsored ads/posts (a sponsor user pays to feature their own post/event/destination). There is no grant/revoke flow, no sponsorship cron, no entitlement integration. CRUD coverage already lives in unit tests (sponsorship.service.test.ts, sponsorship.model.test.ts). Closed without tests; gap documented in engram `bug/sponsorship-task-notes-misalignment`.",
+            "obsoletedAt": "2026-05-19",
+            "obsoletedReason": "Task notes describe a feature that does not exist in the codebase; CRUD already unit-tested."
         },
         {
             "id": "T-143-40",
