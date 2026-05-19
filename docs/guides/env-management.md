@@ -190,16 +190,20 @@ so the deploy SHA flows into the client bundle automatically when
 
 ### Coolify configuration (one-time per resource)
 
-Coolify v4 exposes the current commit SHA as `COOLIFY_COMMIT_SHA` inside
-the build context. Map it to `HOSPEDA_GIT_SHA` as a **Build Variable**
-(NOT a runtime env var — Vite / Astro bake it into the bundle):
+Coolify exposes the current commit SHA as `$SOURCE_COMMIT` inside the
+build context (NOT `$COOLIFY_COMMIT_SHA` — that name does not exist in
+Coolify and the variable will be empty if you try it). See
+`docs/migration/vps-deployment-spec.md` for the full deployment-side
+reference. Map `SOURCE_COMMIT` to `HOSPEDA_GIT_SHA` as a **Build
+Variable** (NOT a runtime env var — Vite / Astro bake it into the
+bundle):
 
 1. Open `https://coolify.hospeda.com.ar` → resource (one of
    `hospeda-api-{prod,staging}`, `hospeda-web-{prod,staging}`,
    `hospeda-admin-{prod,staging}`).
 2. Navigate to **Environment Variables**, scroll to the
    **Build Variables** section (separate from Runtime Variables).
-3. Add `HOSPEDA_GIT_SHA` with value `${COOLIFY_COMMIT_SHA}`.
+3. Add `HOSPEDA_GIT_SHA` with value `$SOURCE_COMMIT`.
 4. Trigger a rebuild (not just a restart). The next bundle will have the
    SHA baked in.
 
