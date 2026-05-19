@@ -52,30 +52,45 @@ const COLLECTIONS_API_BASE = '/api/v1/protected/user-bookmark-collections';
 const COLLECTIONS_PAGE_SIZE = 100;
 
 /** URL path segment for collection detail pages. */
-const COLLECTIONS_PATH = 'favoritos/colecciones';
+const COLLECTIONS_PATH = 'mi-cuenta/favoritos/colecciones';
 
 // ─── Entity tab types ─────────────────────────────────────────────────────────
 
 /** Supported entity types for the favorites tabs */
 type FavoritesEntityType = 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST';
 
+/**
+ * Tab key extends entity types with a virtual "ALL" tab that aggregates every
+ * type into a single grid. ALL is not an entity type — the API call omits the
+ * `entityType` query param when ALL is active.
+ */
+type FavoritesTabKey = FavoritesEntityType | 'ALL';
+
 interface TabDefinition {
-    readonly entityType: FavoritesEntityType;
+    readonly key: FavoritesTabKey;
     /** i18n key for the tab label */
     readonly labelKey: string;
     /** Accessible panel id */
     readonly panelId: string;
     /** Accessible tab id */
     readonly tabId: string;
-    /** URL path segment for building entity links */
+    /** URL path segment for building entity links (unused for ALL — resolved per-bookmark) */
     readonly pathSegment: string;
-    /** i18n key for the entity type label shown in card meta */
+    /** i18n key for the entity type label shown in card meta (unused for ALL) */
     readonly cardTypeKey: string;
 }
 
 const TABS: readonly TabDefinition[] = [
     {
-        entityType: 'ACCOMMODATION',
+        key: 'ALL',
+        labelKey: 'account.favorites.tabs.all',
+        panelId: 'tab-panel-all',
+        tabId: 'tab-all',
+        pathSegment: '',
+        cardTypeKey: 'account.favorites.tabs.all'
+    },
+    {
+        key: 'ACCOMMODATION',
         labelKey: 'account.favorites.tabs.accommodation',
         panelId: 'tab-panel-accommodation',
         tabId: 'tab-accommodation',
@@ -83,7 +98,7 @@ const TABS: readonly TabDefinition[] = [
         cardTypeKey: 'account.favorites.tabs.accommodation'
     },
     {
-        entityType: 'DESTINATION',
+        key: 'DESTINATION',
         labelKey: 'account.favorites.tabs.destination',
         panelId: 'tab-panel-destination',
         tabId: 'tab-destination',
@@ -91,7 +106,7 @@ const TABS: readonly TabDefinition[] = [
         cardTypeKey: 'account.favorites.tabs.destination'
     },
     {
-        entityType: 'EVENT',
+        key: 'EVENT',
         labelKey: 'account.favorites.tabs.event',
         panelId: 'tab-panel-event',
         tabId: 'tab-event',
@@ -99,7 +114,7 @@ const TABS: readonly TabDefinition[] = [
         cardTypeKey: 'account.favorites.tabs.event'
     },
     {
-        entityType: 'POST',
+        key: 'POST',
         labelKey: 'account.favorites.tabs.post',
         panelId: 'tab-panel-post',
         tabId: 'tab-post',
@@ -108,11 +123,20 @@ const TABS: readonly TabDefinition[] = [
     }
 ] as const;
 
+/** Per-entity-type lookup tables used by the ALL tab to resolve URLs/labels. */
+const ENTITY_PATH_SEGMENTS: Readonly<Record<FavoritesEntityType, string>> = {
+    ACCOMMODATION: 'alojamientos',
+    DESTINATION: 'destinos',
+    EVENT: 'eventos',
+    POST: 'publicaciones'
+};
+
 // ─── Tab counts map ────────────────────────────────────────────────────────────
 
-type TabCounts = Readonly<Record<FavoritesEntityType, number>>;
+type TabCounts = Readonly<Record<FavoritesTabKey, number>>;
 
 const INITIAL_TAB_COUNTS: TabCounts = {
+    ALL: 0,
     ACCOMMODATION: 0,
     DESTINATION: 0,
     EVENT: 0,
@@ -157,7 +181,8 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     const base = apiUrl.replace(/\/$/, '');
 
     // ── Tab state ─────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState<FavoritesEntityType>('ACCOMMODATION');
+    // Default to ALL so the user lands on the aggregated view.
+    const [activeTab, setActiveTab] = useState<FavoritesTabKey>('ALL');
     const [tabCounts, setTabCounts] = useState<TabCounts>(INITIAL_TAB_COUNTS);
 
     const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
@@ -195,10 +220,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
     // ── Tab switch handler ─────────────────────────────────────────────────
 
-    function handleTabChange(entityType: FavoritesEntityType) {
-        if (entityType === activeTab) return;
+    function handleTabChange(key: FavoritesTabKey) {
+        if (key === activeTab) return;
         abortRef.current?.abort();
-        setActiveTab(entityType);
+        setActiveTab(key);
         setPage(1);
         setBookmarks([]);
         setTotal(0);
@@ -210,15 +235,16 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     useEffect(() => {
         const controllers: AbortController[] = [];
 
-        async function fetchCount(entityType: FavoritesEntityType): Promise<void> {
+        async function fetchCount(key: FavoritesTabKey): Promise<void> {
             const ctrl = new AbortController();
             controllers.push(ctrl);
             try {
-                const params = new URLSearchParams({
-                    entityType,
-                    page: '1',
-                    pageSize: '1'
-                });
+                const params = new URLSearchParams({ page: '1', pageSize: '1' });
+                // The ALL tab does not narrow by entityType — the server
+                // returns the global count for the user.
+                if (key !== 'ALL') {
+                    params.set('entityType', key);
+                }
                 const res = await fetch(`${base}${API_BASE}?${params.toString()}`, {
                     credentials: 'include',
                     signal: ctrl.signal
@@ -226,14 +252,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 if (!res.ok) return;
                 const body = (await res.json()) as BookmarksApiResponse;
                 if (body.success && body.data) {
-                    setTabCounts((prev) => ({ ...prev, [entityType]: body.data?.total ?? 0 }));
+                    setTabCounts((prev) => ({ ...prev, [key]: body.data?.total ?? 0 }));
                 }
             } catch {
                 // Ignore aborts and network errors for count-only fetches
             }
         }
 
-        void Promise.all(TABS.map((tab) => fetchCount(tab.entityType)));
+        void Promise.all(TABS.map((tab) => fetchCount(tab.key)));
 
         return () => {
             for (const ctrl of controllers) ctrl.abort();
@@ -287,15 +313,18 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     const fetchErrorMsg = t('account.favorites.errors.fetchFailed', 'Error al cargar favoritos');
 
     const fetchBookmarks = useCallback(
-        async (entityType: FavoritesEntityType, targetPage: number, signal: AbortSignal) => {
+        async (key: FavoritesTabKey, targetPage: number, signal: AbortSignal) => {
             setLoading(true);
             setError(null);
             try {
                 const params = new URLSearchParams({
-                    entityType,
                     page: String(targetPage),
                     pageSize: String(PAGE_SIZE)
                 });
+                // ALL: no entityType filter → server returns the global list.
+                if (key !== 'ALL') {
+                    params.set('entityType', key);
+                }
                 const res = await fetch(`${base}${API_BASE}?${params.toString()}`, {
                     credentials: 'include',
                     signal
@@ -311,7 +340,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 setBookmarks([...(body.data?.bookmarks ?? [])]);
                 setTotal(fetchedTotal);
                 // Reuse active tab total for its badge (avoids extra round-trip)
-                setTabCounts((prev) => ({ ...prev, [entityType]: fetchedTotal }));
+                setTabCounts((prev) => ({ ...prev, [key]: fetchedTotal }));
             } catch (err) {
                 if (err instanceof Error && err.name === 'AbortError') return;
                 const msg = err instanceof Error ? err.message : fetchErrorMsg;
@@ -468,7 +497,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Render helpers ────────────────────────────────────────────────────
 
     function tabLabel(tab: TabDefinition): string {
-        return t(tab.labelKey, tab.entityType);
+        return t(tab.labelKey, tab.key);
     }
 
     function renderTabsRow() {
@@ -479,11 +508,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 className={styles.tabsRow}
             >
                 {TABS.map((tab) => {
-                    const isActive = tab.entityType === activeTab;
-                    const count = tabCounts[tab.entityType];
+                    const isActive = tab.key === activeTab;
+                    const count = tabCounts[tab.key];
                     return (
                         <button
-                            key={tab.entityType}
+                            key={tab.key}
                             id={tab.tabId}
                             role="tab"
                             type="button"
@@ -491,7 +520,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             aria-controls={tab.panelId}
                             tabIndex={isActive ? 0 : -1}
                             className={isActive ? `${styles.tab} ${styles.tabActive}` : styles.tab}
-                            onClick={() => handleTabChange(tab.entityType)}
+                            onClick={() => handleTabChange(tab.key)}
                         >
                             {tabLabel(tab)}
                             {count > 0 && (
@@ -509,7 +538,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
         );
     }
 
-    function renderUncollectedSection(pathSegment: string, cardTypeLabel: string) {
+    function renderUncollectedSection(
+        pathSegment: string | ((entityType: string) => string),
+        cardTypeLabel: string | ((entityType: string) => string)
+    ) {
         const noCollectionLabel = t('account.favorites.collections.no_collection', 'Sin colección');
 
         return (
@@ -638,14 +670,33 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     }
 
     function renderTabPanel() {
-        const activeTabDef = TABS.find((tab) => tab.entityType === activeTab);
-        const panelId = activeTabDef?.panelId ?? 'tab-panel-accommodation';
-        const tabId = activeTabDef?.tabId ?? 'tab-accommodation';
-        const pathSegment = activeTabDef?.pathSegment ?? 'alojamientos';
-        const cardTypeLabel = t(
-            activeTabDef?.cardTypeKey ?? 'account.favorites.tabs.accommodation',
-            activeTab
-        );
+        const activeTabDef = TABS.find((tab) => tab.key === activeTab);
+        const panelId = activeTabDef?.panelId ?? 'tab-panel-all';
+        const tabId = activeTabDef?.tabId ?? 'tab-all';
+
+        // Pre-resolve the per-entity labels once so the ALL tab resolver does
+        // not re-call t() on every card render.
+        const labelByType: Record<FavoritesEntityType, string> = {
+            ACCOMMODATION: t('account.favorites.tabs.accommodation', 'Alojamientos'),
+            DESTINATION: t('account.favorites.tabs.destination', 'Destinos'),
+            EVENT: t('account.favorites.tabs.event', 'Eventos'),
+            POST: t('account.favorites.tabs.post', 'Posts')
+        };
+
+        // For the ALL tab the path segment and label must be resolved per
+        // bookmark since every entity type can appear in the same grid.
+        const pathSegment: string | ((entityType: string) => string) =
+            activeTab === 'ALL'
+                ? (entityType: string) =>
+                      ENTITY_PATH_SEGMENTS[entityType as FavoritesEntityType] ??
+                      entityType.toLowerCase()
+                : (activeTabDef?.pathSegment ?? 'alojamientos');
+
+        const cardTypeLabel: string | ((entityType: string) => string) =
+            activeTab === 'ALL'
+                ? (entityType: string) =>
+                      labelByType[entityType as FavoritesEntityType] ?? entityType
+                : t(activeTabDef?.cardTypeKey ?? 'account.favorites.tabs.accommodation', activeTab);
 
         return (
             <div

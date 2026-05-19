@@ -13,6 +13,7 @@
  */
 
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
+import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import { createT } from '@/lib/i18n';
@@ -20,7 +21,9 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { FavoriteIcon } from '@repo/icons';
 import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
+import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
+import { getUserCollections } from './user-collections-cache';
 
 /**
  * Polymorphic entity types that can be favorited.
@@ -173,6 +176,24 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
 
     /** Whether the auth-required popover is currently visible. */
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
+
+    /**
+     * The bookmark id + collections list to render in the inline collection
+     * picker. Populated after a successful add when the user has at least one
+     * collection. `null` keeps the picker closed.
+     */
+    const [collectionPicker, setCollectionPicker] = useState<{
+        readonly bookmarkId: string;
+        readonly collections: readonly BookmarkCollectionItem[];
+    } | null>(null);
+
+    /**
+     * Tracks the collection a bookmark was just assigned to (via the picker
+     * pop-over) so the post-save toast can deep-link to that collection.
+     * Ref instead of state because the toast read happens outside the React
+     * render cycle (inside `handleAuthenticatedClick`'s async closure).
+     */
+    const assignedCollectionRef = useRef<string | null>(null);
 
     /**
      * Whether the component is currently performing the initial check call.
@@ -338,13 +359,37 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
             // Notify parent with the confirmed bookmarkId.
             onChange?.({ isFavorited: nextFavorited, bookmarkId: confirmedBookmarkId });
 
-            // Show success toast based on whether the entity was favorited or un-favorited.
-            addToast({
-                type: 'success',
-                message: nextFavorited
-                    ? t('account.favorites.toast.saved', 'Guardado en favoritos')
-                    : t('account.favorites.toast.removed', 'Eliminado de favoritos')
-            });
+            if (nextFavorited) {
+                // Add: surface a toast with a "Ver favoritos" link. Auto-routes
+                // to the collection detail page when the new bookmark landed in
+                // a specific collection (populated lazily by the picker
+                // pop-over below — see `assignedCollectionRef`).
+                const assignedCollectionId = assignedCollectionRef.current;
+                const favoritesHref = assignedCollectionId
+                    ? `/${locale}/mi-cuenta/favoritos/colecciones/${assignedCollectionId}/`
+                    : `/${locale}/mi-cuenta/favoritos/`;
+                addToast({
+                    type: 'success',
+                    message: t('account.favorites.toast.saved', 'Guardado en favoritos'),
+                    action: {
+                        label: t('account.favorites.toast.view', 'Ver favoritos'),
+                        href: favoritesHref
+                    }
+                });
+
+                // Open the inline collection picker on the next render if the
+                // user has any collections AND the bookmark is not yet assigned.
+                if (!assignedCollectionId) {
+                    void maybeOpenCollectionPicker(confirmedBookmarkId);
+                }
+            } else {
+                addToast({
+                    type: 'success',
+                    message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
+                });
+            }
+            // Reset the per-click assignment ref so the next save starts fresh.
+            assignedCollectionRef.current = null;
         } catch {
             // Network failure or unexpected throw — rollback and show generic toast.
             setIsFavorited(prevFavorited);
@@ -359,6 +404,22 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
             });
         } finally {
             setIsPending(false);
+        }
+    };
+
+    /**
+     * Open the collection picker pop-over IF the user has any collections.
+     * Called after a successful add; bails out silently if the user has no
+     * collections to choose from (the toast is enough in that case).
+     */
+    const maybeOpenCollectionPicker = async (confirmedBookmarkId: string | null): Promise<void> => {
+        if (!confirmedBookmarkId) return;
+        try {
+            const collections = await getUserCollections();
+            if (collections.length === 0) return;
+            setCollectionPicker({ bookmarkId: confirmedBookmarkId, collections });
+        } catch {
+            // Non-critical — silently skip when the cache fetch fails.
         }
     };
 
@@ -446,6 +507,20 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     onClose={handlePopoverClose}
                     locale={locale}
                     returnUrl={returnUrl}
+                />
+            )}
+
+            {collectionPicker && (
+                <CollectionPickerPopover
+                    bookmarkId={collectionPicker.bookmarkId}
+                    collections={collectionPicker.collections}
+                    locale={locale}
+                    onClose={() => setCollectionPicker(null)}
+                    onAssigned={({ collectionId }) => {
+                        // Remember the assignment so the next toast (if any)
+                        // can deep-link to the collection detail page.
+                        assignedCollectionRef.current = collectionId;
+                    }}
                 />
             )}
         </div>
