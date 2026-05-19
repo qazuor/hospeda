@@ -1052,16 +1052,30 @@ export interface CollectionBookmarkRow {
     readonly name: string | null;
     readonly description: string | null;
     readonly createdAt: string;
+    /** Server-enriched display fields resolved from the referenced entity. */
+    readonly entityName?: string | null;
+    readonly entitySlug?: string | null;
+    readonly entityImage?: string | null;
 }
 
-/** Response shape from the user-bookmark-collections/:id endpoint */
-export interface BookmarkCollectionDetailResponse {
-    readonly collection: BookmarkCollectionItem;
-    readonly bookmarks: {
-        readonly rows: readonly CollectionBookmarkRow[];
-        readonly total: number;
-        readonly page: number;
-        readonly pageSize: number;
+/**
+ * Response shape from the user-bookmark-collections/:id endpoint.
+ *
+ * The server inlines the collection fields at the top level (no `collection`
+ * wrapper) and the bookmarks are paginated using the standard `{ data, pagination }`
+ * envelope from `PaginationResultSchema`. Mirrors `UserBookmarkCollectionDetailResponseSchema`.
+ */
+export interface BookmarkCollectionDetailResponse extends BookmarkCollectionItem {
+    readonly bookmarks?: {
+        readonly data: readonly CollectionBookmarkRow[];
+        readonly pagination: {
+            readonly page: number;
+            readonly pageSize: number;
+            readonly total: number;
+            readonly totalPages: number;
+            readonly hasNextPage: boolean;
+            readonly hasPreviousPage: boolean;
+        };
     };
 }
 
@@ -1090,12 +1104,18 @@ export const userBookmarkCollectionsApi = {
         id,
         bookmarksPage,
         bookmarksPageSize,
-        entityType
+        entityType,
+        cookieHeader
     }: {
         readonly id: string;
         readonly bookmarksPage?: number;
         readonly bookmarksPageSize?: number;
         readonly entityType?: CollectionBookmarkEntityType;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<BookmarkCollectionDetailResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/user-bookmark-collections/${id}`,
@@ -1103,7 +1123,8 @@ export const userBookmarkCollectionsApi = {
                 bookmarksPage,
                 bookmarksPageSize,
                 entityType
-            } as Record<string, unknown>
+            } as Record<string, unknown>,
+            cookieHeader
         });
     },
 
@@ -1147,9 +1168,7 @@ export const userBookmarkCollectionsApi = {
      * if (result.ok) console.log(result.data.id);
      * ```
      */
-    create(
-        input: CreateBookmarkCollectionInput
-    ): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+    create(input: CreateBookmarkCollectionInput): Promise<ApiResult<BookmarkCollectionItem>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/user-bookmark-collections`,
             body: input
@@ -1178,7 +1197,7 @@ export const userBookmarkCollectionsApi = {
     }: {
         readonly id: string;
         readonly input: UpdateBookmarkCollectionInput;
-    }): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+    }): Promise<ApiResult<BookmarkCollectionItem>> {
         return apiClient.patch({
             path: `${PROTECTED}/user-bookmark-collections/${id}`,
             body: input
