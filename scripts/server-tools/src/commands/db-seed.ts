@@ -50,28 +50,37 @@ import { getDbCredentials } from '../lib/target.ts';
 const HELP = `
 hops db-seed [--target=prod|staging]
              [--pull | --no-pull]
-             [--no-reset] [--no-required] [--no-example]
+             [--no-reset] [--no-required] [--no-example] [--no-clean-images]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour:
-  --reset, --required, --example are ON. The default invocation is the
-  equivalent of:
+  --reset, --required, --example, --clean-images are ON. The default
+  invocation is the equivalent of:
     pnpm --filter @repo/seed seed --reset --required --example
+  with the Cloudinary cleanup env vars forwarded from the toolkit's
+  .env.local. The seed's own \`--reset\` implies \`--clean-images\`
+  internally — see packages/seed/CLAUDE.md.
 
 Flags:
-  --no-reset       Skip the database reset step (population only).
-                   May fail on UNIQUE violations if rows already exist.
-  --no-required    Skip the --required step (rare; tests / partial seeds).
-  --no-example     Skip the --example step (required-only seed).
-  --pull           Always git pull \$HOPS_REPO_ROOT before seeding.
-                   Mutually exclusive with --no-pull.
-  --no-pull        Never git pull. Mutually exclusive with --pull.
-  --yes            Skip the destructive-action confirm. Does NOT skip
-                   the pull prompt — combine with --pull / --no-pull
-                   for full unattended operation.
-  --help, -h       Show this help.
+  --no-reset          Skip the database reset step (population only).
+                      May fail on UNIQUE violations if rows already exist.
+  --no-required       Skip the --required step (rare; tests / partial seeds).
+  --no-example        Skip the --example step (required-only seed).
+  --no-clean-images   Do NOT forward Cloudinary creds to the seed.
+                      The seed still gets \`--clean-images\` (implied by
+                      \`--reset\`) but skips the remote deletion silently
+                      because the env vars are missing. Use when you do
+                      not want to touch Cloudinary at all (e.g. dry-run
+                      against a non-default Cloudinary account).
+  --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
+                      Mutually exclusive with --no-pull.
+  --no-pull           Never git pull. Mutually exclusive with --pull.
+  --yes               Skip the destructive-action confirm. Does NOT skip
+                      the pull prompt — combine with --pull / --no-pull
+                      for full unattended operation.
+  --help, -h          Show this help.
 
 Without --pull / --no-pull the command asks interactively:
   "Pull latest seed data from git first? (Y/n)"
@@ -82,8 +91,16 @@ Unattended examples:
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
 
 Required environment variables (in scripts/server-tools/.env.local):
-  HOPS_<TARGET>_POSTGRES_UUID  Coolify Postgres service UUID for the target.
-  HOPS_REPO_ROOT (optional)    Path to the hospeda checkout. Default ~/hospeda.
+  HOPS_<TARGET>_POSTGRES_UUID         Coolify Postgres service UUID for the target.
+  HOPS_REPO_ROOT (optional)           Path to the hospeda checkout. Default ~/hospeda.
+  HOSPEDA_CLOUDINARY_CLOUD_NAME       Cloudinary cloud name (for cleanup).
+  HOSPEDA_CLOUDINARY_API_KEY          Cloudinary API key (for cleanup).
+  HOSPEDA_CLOUDINARY_API_SECRET       Cloudinary API secret (for cleanup).
+
+The three HOSPEDA_CLOUDINARY_* vars are required ONLY when clean-images
+is on (the default). Without them the seed logs a "Cloudinary env vars
+not configured — skipping remote deletion" line and continues; it does
+NOT abort. Pass --no-clean-images to suppress the warning entirely.
 
 The Postgres URL is derived automatically by inspecting the target's
 Postgres container (password from its env, host:port from \`docker port\`).
@@ -102,6 +119,7 @@ export interface ParsedArgs {
     readonly reset: boolean;
     readonly required: boolean;
     readonly example: boolean;
+    readonly cleanImages: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
 }
@@ -119,6 +137,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         reset: !args.includes('--no-reset'),
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
+        cleanImages: !args.includes('--no-clean-images'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
@@ -144,9 +163,43 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     (parsed.reset ? on : off).push('reset');
     (parsed.required ? on : off).push('required');
     (parsed.example ? on : off).push('example');
+    (parsed.cleanImages ? on : off).push('clean-images');
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
+}
+
+/**
+ * Collect the env vars the seed needs to do Cloudinary cleanup. Returns
+ * an empty object when `cleanImages` is false, so the seed will skip
+ * Cloudinary deletion (it logs an informational message and continues).
+ *
+ * We forward the vars from the toolkit's `.env.local` rather than the
+ * project's `apps/api/.env.local` so the seed runs even when the
+ * project env file is not present on the host — operators only need
+ * to maintain the values in one place (the toolkit's local config).
+ *
+ * Logs a warning when `cleanImages` is true but the vars are missing,
+ * because the operator clearly opted into cleanup but the values
+ * aren't set up; without this warning the seed would silently skip
+ * the deletion and leave orphan assets, which is what `--clean-images`
+ * is supposed to prevent.
+ */
+export function collectCloudinaryEnv(cleanImages: boolean): Readonly<Record<string, string>> {
+    if (!cleanImages) return {};
+    const cloudName = get('HOSPEDA_CLOUDINARY_CLOUD_NAME');
+    const apiKey = get('HOSPEDA_CLOUDINARY_API_KEY');
+    const apiSecret = get('HOSPEDA_CLOUDINARY_API_SECRET');
+    const env: Record<string, string> = {};
+    if (cloudName) env.HOSPEDA_CLOUDINARY_CLOUD_NAME = cloudName;
+    if (apiKey) env.HOSPEDA_CLOUDINARY_API_KEY = apiKey;
+    if (apiSecret) env.HOSPEDA_CLOUDINARY_API_SECRET = apiSecret;
+    if (!cloudName || !apiKey || !apiSecret) {
+        log.warn(
+            'Cloudinary cleanup is enabled but HOSPEDA_CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET are not all set in scripts/server-tools/.env.local. The seed will skip remote asset deletion (the local cache is still cleaned).'
+        );
+    }
+    return env;
 }
 
 async function gitPullRepo(repoRoot: string): Promise<void> {
@@ -162,6 +215,7 @@ async function runSeed(params: {
     readonly repoRoot: string;
     readonly databaseUrl: string;
     readonly seedArgs: ReadonlyArray<string>;
+    readonly cloudinaryEnv: Readonly<Record<string, string>>;
 }): Promise<void> {
     log.info(`Running: pnpm ${params.seedArgs.join(' ')}`);
     log.hint(`cwd: ${params.repoRoot}`);
@@ -169,7 +223,8 @@ async function runSeed(params: {
         cwd: params.repoRoot,
         inherit: true,
         env: {
-            HOSPEDA_DATABASE_URL: params.databaseUrl
+            HOSPEDA_DATABASE_URL: params.databaseUrl,
+            ...params.cloudinaryEnv
         }
     });
     if (result.exitCode !== 0) {
@@ -245,6 +300,11 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
                 '--example loads Faker-generated demo data including the well-known admin@hospeda.com credentials.'
             );
         }
+        if (parsed.cleanImages) {
+            log.warn(
+                '--clean-images deletes Cloudinary assets under hospeda/<env>/seed/ before reseeding.'
+            );
+        }
         const ok = await confirm(`Type yes to PROCEED with db-seed against PRODUCTION`, {
             defaultValue: false
         });
@@ -264,7 +324,8 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     // ── Seed ─────────────────────────────────────────────────────────
-    await runSeed({ repoRoot, databaseUrl, seedArgs });
+    const cloudinaryEnv = collectCloudinaryEnv(parsed.cleanImages);
+    await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv });
 
     log.ok(`db-seed completed against ${target}.`);
     log.hint('Verify with `hops db-counts`.');
