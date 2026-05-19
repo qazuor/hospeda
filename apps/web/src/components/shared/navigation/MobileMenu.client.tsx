@@ -251,6 +251,14 @@ export function MobileMenu({
     // ------------------------------------------------------------------
     // Render
     // ------------------------------------------------------------------
+    // Inline-style fallback that guarantees the overlay is fixed-positioned
+    // and hidden off-screen even when the CSS module fails to load. Astro's
+    // ClientRouter occasionally re-renders the server-island parent without
+    // re-injecting the module's <link> on back navigation (the CSS Module's
+    // hashed class then matches no rule), which used to leave the menu's
+    // raw content in the page flow and push the hero down. These inline
+    // styles re-establish only the structural defaults so the overlay can
+    // never break the layout; visual polish still comes from the CSS module.
     return (
         <div
             // biome-ignore lint/a11y/useSemanticElements: CSS-animated overlay; <dialog> open/close API would conflict with the slide-in animation
@@ -259,6 +267,13 @@ export function MobileMenu({
             aria-label={t('nav.mobileMenu', 'Navigation menu')}
             aria-hidden={!isOpen}
             className={cn(styles.overlay, isOpen && styles.overlayOpen)}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9100,
+                transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+                pointerEvents: isOpen ? 'auto' : 'none'
+            }}
         >
             {/* Header row: logo + close button */}
             <div className={styles.header}>

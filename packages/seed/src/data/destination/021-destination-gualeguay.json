@@ -3,8 +3,8 @@
     "id": "021-destination-gualeguay",
     "slug": "gualeguay",
     "name": "Gualeguay",
-    "summary": "Ciudad histórica con tradición artesanal, gastronomía regional y costas del río Gualeguay",
-    "description": "Gualeguay es una de las ciudades más antiguas e importantes de Entre Ríos, ubicada en el departamento homónimo y bañada por el río Gualeguay. Con una rica historia colonial y una tradición artesanal reconocida en toda la provincia, la ciudad ofrece una experiencia cultural profunda. Su centro histórico, museos, artesanías y gastronomía regional son los principales atractivos. La pesca deportiva, las playas fluviales y los deportes náuticos completan la oferta turística de esta vibrante ciudad entrerriana.",
+    "summary": "Una de las ciudades más antiguas de Entre Ríos (fundada en 1783), a orillas del río Gualeguay, con patrimonio colonial, carnaval y pesca deportiva.",
+    "description": "Gualeguay es una de las ciudades más antiguas de Entre Ríos, fundada el 19 de marzo de 1783 por Tomás de Rocamora como Villa de San Antonio de Gualeguay Grande. Ubicada a orillas del río Gualeguay en el departamento homónimo, fue declarada ciudad en 1851 durante el gobierno de Justo José de Urquiza y llegó a ser primera capital de la provincia. Conocida como la Capital Nacional de la Cordialidad, conserva un valioso patrimonio histórico y cultural, incluyendo la casa natal del poeta Olegario Víctor Andrade, una de las figuras literarias más importantes de la región. Su carnaval, con desfiles de comparsas en el corsódromo emplazado en la antigua estación de ferrocarril, es uno de los más tradicionales del litoral. El río Gualeguay y sus arroyos ofrecen playas de arena, pesca deportiva, deportes náuticos y paseos por la costanera y el Parque Intendente Quintana.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -19,8 +19,8 @@
         "number": "500",
         "city": "Gualeguay",
         "coordinates": {
-            "lat": "-33.1417",
-            "long": "-59.3083"
+            "lat": "-33.1467",
+            "long": "-59.3107"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Gualeguay - Historia, Artesanías y Río | Entre Ríos",
-        "description": "Descubre Gualeguay, ciudad histórica con artesanías y gastronomía regional en Entre Ríos.",
-        "keywords": ["Gualeguay", "Entre Ríos", "Historia", "Artesanías", "Gastronomía", "Pesca"]
+        "title": "Gualeguay, Entre Ríos: Historia, Río y Carnaval",
+        "description": "Visitá Gualeguay, una de las ciudades más antiguas de Entre Ríos: patrimonio colonial de 1783, río Gualeguay, carnaval, pesca y la casa de Olegario Andrade.",
+        "keywords": [
+            "Gualeguay",
+            "Entre Ríos",
+            "río Gualeguay",
+            "carnaval Gualeguay",
+            "Olegario Andrade",
+            "pesca deportiva",
+            "historia colonial",
+            "Capital de la Cordialidad"
+        ]
     },
     "tagIds": [
         "022-tag-historia",
@@ -59,10 +68,12 @@
     ],
     "attractionIds": [
         "018-attraction-centro_historico",
+        "072-attraction-plaza_principal",
+        "045-attraction-iglesia_colonial",
         "055-attraction-museo_historico",
-        "040-attraction-feria_artesanal",
-        "069-attraction-playa_fluvial",
-        "065-attraction-pesca_deportiva"
+        "031-attraction-costanera",
+        "065-attraction-pesca_deportiva",
+        "030-attraction-corsodromo"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

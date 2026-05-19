@@ -35,6 +35,8 @@ const {
     hideToc = false
 } = Astro.props;
 
+const isGlosario = currentSlug === 'empezar/glosario';
+
 const cspNonce = Astro.locals.cspNonce ?? '';
 const pageTitle = `${title} · Beta Hospeda`;
 ---
@@ -52,6 +54,44 @@ const pageTitle = `${title} · Beta Hospeda`;
 
         <FontsLoader cspNonce={cspNonce} />
         <ThemeFoucScript cspNonce={cspNonce} />
+
+        <script is:inline nonce={cspNonce}>
+            /**
+             * Beta docs audience selector — sets `<html data-beta-audience>`
+             * before paint so the sidebar CSS hides irrelevant items without
+             * FOUC. Reads `?userType=X` from the URL, persists it to
+             * localStorage, removes the query, and applies the stored value.
+             *
+             * Valid values: 'default' | 'host' | 'editor' | 'admin'.
+             * Anything else is ignored. Default state hides host and
+             * admin-editor groups in the sidebar; pago-real is always shown.
+             */
+            (function () {
+                var ALLOWED = ['default', 'host', 'editor', 'admin'];
+                var STORAGE_KEY = 'beta-audience';
+                var root = document.documentElement;
+
+                function isValid(value) {
+                    return ALLOWED.indexOf(value) !== -1;
+                }
+
+                try {
+                    var url = new URL(window.location.href);
+                    var fromQuery = url.searchParams.get('userType');
+                    if (fromQuery && isValid(fromQuery)) {
+                        localStorage.setItem(STORAGE_KEY, fromQuery);
+                        url.searchParams.delete('userType');
+                        var clean = url.pathname + url.search + url.hash;
+                        window.history.replaceState({}, '', clean);
+                    }
+                    var stored = localStorage.getItem(STORAGE_KEY);
+                    root.dataset.betaAudience = isValid(stored) ? stored : 'default';
+                } catch (err) {
+                    root.dataset.betaAudience = 'default';
+                }
+            })();
+        </script>
+
 
         <script is:inline nonce={cspNonce}>
             if (document.fonts.status !== 'loaded') {
@@ -80,6 +120,15 @@ const pageTitle = `${title} · Beta Hospeda`;
 
             <main id="main-content" class="beta-doc-main">
                 <article class="beta-doc-article">
+                    {!isGlosario && (
+                        <aside class="beta-glosario-hint" aria-label="Acceso al glosario">
+                            <span class="beta-glosario-hint__icon" aria-hidden="true">📖</span>
+                            <span class="beta-glosario-hint__text">
+                                ¿No entendés alguna palabra? Mirá el{' '}
+                                <a href="/beta/empezar/glosario/">glosario</a>.
+                            </span>
+                        </aside>
+                    )}
                     <slot />
                 </article>
             </main>
@@ -528,5 +577,38 @@ const pageTitle = `${title} · Beta Hospeda`;
     .beta-doc-article th {
         font-weight: 600;
         background: var(--surface-warm);
+    }
+
+    .beta-glosario-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 10px);
+        background: var(--surface-warm);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .beta-glosario-hint__icon {
+        flex-shrink: 0;
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .beta-glosario-hint__text {
+        line-height: 1.5;
+    }
+
+    .beta-glosario-hint a {
+        color: var(--brand-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .beta-glosario-hint a:hover {
+        color: var(--brand-accent);
     }
 </style>

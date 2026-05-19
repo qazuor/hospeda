@@ -4,6 +4,7 @@ description: Secciones del panel admin que no debés probar — pueden romper el
 order: 8
 role: admin-editor
 section: Solo admin
+audience: ['admin']
 ---
 
 # Lo que NO tenés que tocar
@@ -15,25 +16,25 @@ section: Solo admin
 
 Estas secciones existen pero **NO las pruebes**:
 
-- ❌ **`/dev/icon-comparison`** — herramienta de desarrollo, no es para usuarios
-- ❌ **Analytics → Debug** — sección de debug interno
-- ❌ **Configuración → Crítico** — settings sensibles del sistema, podés romper algo
-- ❌ **Billing → Tareas Programadas** — tareas automatizadas internas (cron), no tocar
-- ❌ **Acceso → Permisos** — lista maestra de permisos, podés romper roles
-- ❌ **Acceso → Roles** — lista maestra de roles, no editar
+- ❌ **`/dev/icon-comparison`** — herramienta de dev
+- ❌ **Analytics → Debug** — debug interno
+- ❌ **Configuración → Crítico** — settings sensibles, podés romper algo
+- ❌ **Billing → Tareas Programadas** — cron interno, no tocar
+- ❌ **Acceso → Permisos** — lista maestra, podés romper roles
+- ❌ **Acceso → Roles** — lista maestra, no editar
 
-Si entrás por curiosidad y ves algo raro, **mirá pero no toques nada.**
+Si entrás por curiosidad, **mirá pero no toques.**
 
 ## Si encontrás algo crítico
 
-Si encontrás algo que parece **crítico de seguridad** (datos personales que se ven sin permiso, errores que muestran información del sistema, posibilidad de acceder a cosas que no deberías), avisanos **directamente por WhatsApp privado**, no por el grupo.
+Algo crítico de seguridad (datos personales visibles sin permiso, errores con info del sistema, acceso a lo que no deberías): **WhatsApp privado**, no el grupo.
 
-Contacto: Leandro — 3442 453797 — <qazuor@gmail.com>.
+Leandro — 3442 453797 — <qazuor@gmail.com>.
 
 ## Reportes del panel admin
 
-Cuando reportes desde el panel de admin, **aclará en el reporte que es del panel admin** (no del sitio público). Algo tipo:
+Cuando reportes desde el admin, **aclará que es del panel admin** (no del sitio público):
 
-> "Encontrado en el panel de admin, sección Billing → Suscripciones."
+> "Encontrado en el panel admin, sección Billing → Suscripciones."
 
-Esto nos ayuda a ubicar el problema más rápido.
+Nos ayuda a ubicar el problema más rápido.

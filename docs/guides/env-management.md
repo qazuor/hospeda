@@ -125,30 +125,46 @@ Step 4 (`pnpm env:check:registry`) is the CI gate — it runs three
 per-app vitest suites that import the Zod schema and assert every
 schema key has a matching registry entry. Drift fails CI.
 
-Step 6 is what the deprecated `pnpm env:sync` used to do against
-Vercel — it now lives in `hops env-set`. See the deprecation note
-below.
+Step 6 (push to prod) is done via `hops env-set` on the VPS — see the
+"Production (Coolify on the VPS)" section above. There is no
+laptop-to-prod env push command in the repo by design: all prod env
+changes go through Coolify (CLI or UI), never through a generic
+"sync" script.
 
-## Deprecated commands
+## Sentry environment tagging — required for every deploy
 
-The following commands targeted the Vercel API. After the
-Vercel/Neon/Upstash teardown (Phase 16.4), prod no longer runs on
-Vercel and these commands have no meaningful remote to talk to:
+Each app sets the Sentry `environment` tag via its own dedicated env var so
+that staging and production are reportable separately. **Without these vars,
+all events tag as `production` (api) or `MODE=production` (web/admin) and
+staging events silently land in the prod bucket.**
 
-| Command | What it did | Use this instead |
+| App | Env var | Where to set |
 |---|---|---|
-| `pnpm env:pull` | Fetch env vars from Vercel, write to local .env.local | `hops env-pull <kind>` on the VPS, then scp |
-| `pnpm env:push` | Push local .env.local up to Vercel | `hops env-set <kind> KEY VALUE` per var on the VPS |
-| `pnpm env:sync` | Interactive bulk push to Vercel | Same as env:push |
-| `pnpm env:check` | Compare .env.example against what is configured in Vercel | `hops env-list <kind>` on the VPS for prod audit; `pnpm env:check:registry` for registry/schema sync |
+| `hospeda-api-prod` | `HOSPEDA_SENTRY_ENVIRONMENT=production` | Coolify env (runtime) |
+| `hospeda-api-staging` | `HOSPEDA_SENTRY_ENVIRONMENT=staging` | Coolify env (runtime) |
+| `hospeda-web-prod` | `PUBLIC_SENTRY_ENVIRONMENT=production` | Coolify env (runtime) |
+| `hospeda-web-staging` | `PUBLIC_SENTRY_ENVIRONMENT=staging` | Coolify env (runtime) |
+| `hospeda-admin-prod` | `VITE_SENTRY_ENVIRONMENT=production` | Coolify **build-time** arg + env (Vite bakes it into the bundle) |
+| `hospeda-admin-staging` | `VITE_SENTRY_ENVIRONMENT=staging` | Coolify **build-time** arg + env |
 
-The entry points still exist in `package.json` but print a deprecation
-notice and exit 1. They will be removed in a future cleanup pass once
-documentation references have been updated.
+The admin entry is special: `VITE_*` vars are baked into the bundle at `docker
+build` time, NOT read at runtime. The admin Dockerfile declares
+`ARG VITE_SENTRY_ENVIRONMENT`; Coolify must pass it via build-arg (Project →
+Build → Build Arguments) or the bundle will pick up the placeholder. Setting
+it only as a runtime env var has no effect on the served JS bundle.
 
-`pnpm env:check:registry` is **not** deprecated — it is a pure local
-test that compares the registry against per-app Zod schemas, no remote
-calls.
+To verify after deploy:
+
+```bash
+# API + web: check via container env
+hops env-list api --target=staging | rg SENTRY
+hops env-list web --target=staging | rg SENTRY
+
+# Admin: check via running container (build-time bake)
+hops exec admin --target=staging -- printenv | rg SENTRY
+# OR check the JS bundle directly:
+curl -s https://staging-admin.hospeda.com.ar/assets/index-*.js | rg -o 'environment["\']?:\s*["\'][a-z]+'
+```
 
 ## Audit checklist — once per quarter
 

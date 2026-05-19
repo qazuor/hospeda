@@ -7,6 +7,22 @@ role: common
 
 # Bienvenido al beta de Hospeda
 
+<aside class="beta-callout beta-callout--info">
+  <span class="beta-callout__icon" aria-hidden="true">💬</span>
+  <div class="beta-callout__body">
+    <strong class="beta-callout__title">Esta guía está pensada para personas sin formación técnica</strong>
+    Por eso vas a ver mucho detalle, un glosario con palabras explicadas en castellano, y ejemplos paso a paso. Si algo te parece obvio, saltealo. Si algo no se entiende, decínoslo: eso también es feedback útil.
+  </div>
+</aside>
+
+<aside class="beta-callout beta-callout--warning">
+  <span class="beta-callout__icon" aria-hidden="true">⚠️</span>
+  <div class="beta-callout__body">
+    <strong class="beta-callout__title">Todo lo que ves en el sitio son datos de prueba</strong>
+    Los alojamientos, fotos, precios, eventos, destinos, usuarios de ejemplo, mensajes y reseñas no son reales. No reserves nada esperando que sea cierto, no contactes "propietarios o anfitriones (hosts)" pensando que existen, y no uses tarjetas reales para suscribirte. Los pagos también son simulados (modo de prueba).
+  </div>
+</aside>
+
 Si estás leyendo esto es porque te invitamos a ser una de las **40 personas** que van a probar Hospeda antes de que salga al público. Gracias por darte el tiempo. Tu mirada nos importa muchísimo.
 
 ## Paso 1: Empezá por acá (no te lo saltees)
@@ -25,15 +41,15 @@ Y cuando encuentres algo raro: **[Cómo reportar](/beta/reportar-bugs/como-repor
 Te lo dijimos por WhatsApp cuando te sumamos. Si no te acordás, escribinos al grupo. Elegí abajo:
 
 - **[Soy turista](/beta/turista/crear-cuenta/)** — Querés viajar / buscar alojamiento.
-- **[Soy host / propietario](/beta/host/onboarding/)** — Querés publicar tu alojamiento. **Hacé también la parte de turista.**
+- **[Soy propietario o anfitrión](/beta/host/onboarding/)** — Querés publicar tu alojamiento. **Hacé también la parte de turista.**
 - **[Soy admin o editor](/beta/admin-editor/acceso-y-roles/)** — Vas a probar el panel de administración. Hacé también las dos anteriores.
-- **[Probás con pago real](/beta/pago-real/introduccion/)** — Te avisamos por privado. Hacé también las anteriores.
+- **[Probás con pago real](/beta/pagos/pago-real/introduccion/)** — Te avisamos por privado. Hacé también las anteriores.
 
 ## Lo más importante en 5 puntos
 
 1. **No tenés que ser experto en tecnología.** Justamente queremos que pruebes como persona normal.
 2. **Probá en celular Y en computadora.** Si solo tenés celular, está bien — probá con eso.
-3. **Si encontrás algo raro, reportalo.** Botón flotante azul abajo a la derecha.
+3. **Si encontrás algo raro, reportalo.** Botón flotante naranja abajo a la derecha.
 4. **Si tenés dudas, preguntá en el grupo de WhatsApp.** No te quedes con la duda.
 5. **No vas a romper nada.** El sitio es de prueba. Hacé lo que se te ocurra. Cuanto más raro, mejor.
 

@@ -1,0 +1,14 @@
+{
+    "specId": "SPEC-140",
+    "title": "PostHog Cloud Analytics Stack (web + admin)",
+    "type": "feat",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-16T05:00:00Z",
+    "rewrittenAt": "2026-05-17T23:50:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["analytics", "posthog", "web", "admin", "monitoring", "privacy"]
+}

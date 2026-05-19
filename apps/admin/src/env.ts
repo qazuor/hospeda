@@ -72,6 +72,25 @@ const AdminEnvSchema = z.object({
         .describe('Sentry DSN for error tracking (production only)'),
     VITE_SENTRY_RELEASE: z.string().optional().describe('Sentry release identifier'),
     VITE_SENTRY_PROJECT: z.string().optional().describe('Sentry project slug'),
+    VITE_SENTRY_ENVIRONMENT: z
+        .string()
+        .optional()
+        .describe(
+            'Sentry environment tag (production | staging | development). Overrides import.meta.env.MODE so staging and prod (both MODE=production) end up in separate Sentry environments.'
+        ),
+
+    // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
+    // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
+    // Per-env values come from Coolify; keys live in 1Password.
+    VITE_POSTHOG_KEY: z
+        .string()
+        .optional()
+        .describe('PostHog Cloud project API key (phc_...) for the admin app'),
+    VITE_POSTHOG_HOST: z
+        .string()
+        .url()
+        .optional()
+        .describe('PostHog Cloud ingestion endpoint (defaults to https://us.i.posthog.com)'),
 
     // Locale Configuration
     VITE_SUPPORTED_LOCALES: z
@@ -157,6 +176,9 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
             VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
             VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
+            VITE_SENTRY_ENVIRONMENT: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+            VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
+            VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
             VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',
             VITE_DEFAULT_LOCALE: import.meta.env.VITE_DEFAULT_LOCALE || 'es',
             VITE_DEBUG_LAZY_SECTIONS: import.meta.env.VITE_DEBUG_LAZY_SECTIONS,
@@ -169,9 +191,25 @@ export const validateAdminEnv = (): AdminEnv => {
 
         return AdminEnvSchema.parse(envData);
     } catch (error) {
-        adminLogger.error('❌ Admin App environment validation FAILED');
-        adminLogger.error(error instanceof Error ? error.message : String(error));
-        throw new Error('Environment validation failed for Admin App');
+        // Build a detailed, structured error report. We log to BOTH adminLogger
+        // (dev convenience, browser console) AND console.error (guarantees the
+        // message reaches stdout/stderr in containerized runtimes where the
+        // adminLogger transport may be silenced). The detailed list of failing
+        // fields is also embedded in the thrown Error message so it surfaces
+        // in stack traces and crash reports (e.g. Coolify container logs).
+        const issues =
+            error instanceof z.ZodError
+                ? error.issues.map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`)
+                : [`  - ${error instanceof Error ? error.message : String(error)}`];
+        const detail = issues.join('\n');
+        const header = '❌ Admin App environment validation FAILED';
+
+        adminLogger.error(header);
+        for (const line of issues) adminLogger.error(line);
+
+        console.error(`${header}\n${detail}`);
+
+        throw new Error(`Environment validation failed for Admin App:\n${detail}`);
     }
 };
 

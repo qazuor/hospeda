@@ -106,9 +106,7 @@ pnpm build:api        # Build API for production
 
 # Environment
 pnpm env:check:registry  # Local: confirm app schemas match @repo/config registry (CI gate)
-# Note: pnpm env:pull / env:push / env:sync / env:check are deprecated stubs.
-# They targeted Vercel (gone after Phase 16.4). Use hops env-* on the VPS for
-# remote env management. Full workflow: docs/guides/env-management.md.
+# Remote env management lives in hops env-* on the VPS (see docs/guides/env-management.md).
 ```
 
 ### Coding Standards
@@ -262,7 +260,7 @@ Common biome errors that block commits:
 
 See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference and [docs/guides/env-management.md](docs/guides/env-management.md) for the operational workflow (local dev + Coolify prod). Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
 
-The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). The legacy `pnpm env:check / env:pull / env:push / env:sync` commands are deprecated stubs that targeted the Vercel API (gone after Phase 16.4); they print a pointer to the new workflow and exit.
+The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). Remote env management is done via `hops env-*` on the VPS (see `docs/guides/env-management.md`).
 
 ### Adding a new environment variable (workflow)
 

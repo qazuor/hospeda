@@ -436,8 +436,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                     ? undefined
                                     : t('ui.entitySelect.searchPlaceholder', {
                                           entityType:
-                                              entityConfig?.entityType?.toLowerCase() ||
-                                              'elementos'
+                                              entityConfig?.entityType?.toLowerCase() || 'elementos'
                                       })
                             }
                             className={cn(

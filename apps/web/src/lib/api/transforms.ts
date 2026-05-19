@@ -381,6 +381,7 @@ export function toEventCardProps({
 
     const dateObj = item.date as { start?: string; end?: string } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
+    const organizerObj = item.organizer as Record<string, unknown> | undefined;
     const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(locationObj);
 
     const id = String(item.id || '');
@@ -390,6 +391,9 @@ export function toEventCardProps({
             { slug: String(item.slug || '') }
         );
     }
+
+    const organizerName = organizerObj?.name ? String(organizerObj.name) : '';
+    const organizerSlug = organizerObj?.slug ? String(organizerObj.slug) : undefined;
 
     return {
         id,
@@ -413,6 +417,7 @@ export function toEventCardProps({
                   city: cityName
               }
             : undefined,
+        organizer: organizerName ? { name: organizerName, slug: organizerSlug } : undefined,
         cityName,
         cityPath,
         cityDestinationSlug,

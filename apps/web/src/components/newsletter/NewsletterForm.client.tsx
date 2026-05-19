@@ -27,6 +27,8 @@
  */
 
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -292,6 +294,7 @@ export function NewsletterForm({
             );
             setFormState('pending-verification');
             pushDataLayerEvent('newsletter_subscribe_success', { locale });
+            trackEvent(WebEvents.NewsletterSubscribed, { source: 'footer', locale });
         } catch {
             const msg = t(
                 'footer.newsletter.errorMessage',

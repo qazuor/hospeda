@@ -18,7 +18,8 @@
         position: fixed;
         inset: 0;
         z-index: 300;
-        background-color: oklch(0 0 0 / 0.45);
+        /* Shared scrim token — see global.css → --overlay-bg-light. */
+        background-color: var(--overlay-bg-light);
         animation: overlayFadeIn var(--duration-fast) ease forwards;
     }
 }

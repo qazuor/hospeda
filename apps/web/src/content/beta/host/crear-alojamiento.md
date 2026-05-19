@@ -1,135 +1,103 @@
 ---
 title: Crear tu primer alojamiento
-description: Flujo de creación — mini-form rápido en el sitio público + wizard completo en el panel.
+description: Miniformulario rápido en el sitio + asistente guiado completo en el panel admin.
 order: 2
 role: host
-section: Empezar como host
+section: Empezar como propietario
 ---
 
 # Crear tu primer alojamiento
 
-El flujo está partido en **dos etapas**:
+El proceso está partido en **dos etapas**:
 
-1. **Mini-form en el sitio público** — apenas 4 campos para crear la propiedad inicial.
-2. **Wizard completo en el panel de administración** — donde completás todos los detalles (ubicación, fotos, precios, etc.).
+1. **Miniformulario en el sitio público** — 4 campos para crear la propiedad inicial.
+2. **Asistente guiado (wizard) en el panel admin** — donde completás todos los detalles.
 
-Después del paso 1, **el sitio te redirige automáticamente al panel** para que sigas. Es importante que sepas esto: vas a salir de `staging.hospeda.com.ar` y aterrizar en el subdominio del panel admin durante el proceso.
+Después del paso 1 el sitio te redirige al panel. Vas a salir de `staging.hospeda.com.ar` y aterrizar en el subdominio del panel admin: es esperado.
 
-## Etapa 1 — Mini-form en el sitio público
+## Etapa 1 — Miniformulario en el sitio público
 
-1. En el panel **"Mis propiedades"** (`/mi-cuenta/propiedades/`), apretá el botón para crear una propiedad nueva (si todavía no tenés ninguna, vas a ver el CTA **"Publicar ahora"** en el estado vacío).
-2. Te abre un formulario corto con **4 campos**:
-   - **Nombre de la propiedad** (ej. "Casa del Río")
-   - **Tipo de alojamiento** (select)
-   - **Ciudad**
-   - **Resumen** (una línea que describa la propiedad)
+1. En **"Mis propiedades"** (`/mi-cuenta/propiedades/`), apretá el botón para crear una propiedad nueva (si no tenés ninguna, vas a ver el CTA **"Publicar ahora"**).
+2. Te abre un formulario con **4 campos**: Nombre, Tipo, Ciudad, Resumen.
 3. Apretá **"Publicar"**.
-4. El sistema crea la propiedad como borrador y **te redirige automáticamente al panel de administración** para completar los detalles.
+4. El sistema crea la propiedad como borrador y te redirige al panel admin.
 
-> ⚠️ **No te asustes con el cambio de dominio**: al apretar Publicar vas a salir de `staging.hospeda.com.ar` y entrar al subdominio del panel admin. Es esperado.
+> ⚠️ Al apretar Publicar cambia el dominio (vas al subdominio admin). Es esperado.
 
 ### Tipos de alojamiento disponibles
 
-El select tiene exactamente estas 10 opciones:
+El menú desplegable tiene exactamente estas 10 opciones:
 
-- Apartamento
-- Casa
-- Casa quinta
-- Cabaña
-- Hotel
-- Hostal
-- Camping
-- Habitación
-- Motel
-- Complejo turístico
+Apartamento · Casa · Casa quinta · Cabaña · Hotel · Hostal · Camping · Habitación · Motel · Complejo turístico.
 
-> Si ves opciones distintas a estas (ej. "Rural", "Boutique"), reportalo.
+> Si ves opciones distintas (ej. "Rural", "Boutique"), reportalo.
 
-## Etapa 2 — Wizard completo en el panel admin
+## Etapa 2 — Asistente guiado en el panel admin
 
-Una vez en el panel, llegás a la edición de tu propiedad con un wizard partido en **8 secciones**. Las podés ir guardando con **"Guardar borrador"** y volver cuando quieras.
+Llegás al asistente partido en **8 secciones**. Las podés ir guardando con **"Guardar borrador"** y volver cuando quieras.
 
 ### 1. Datos básicos
 
-- **Nombre de la propiedad**
-- **Descripción corta** (una línea)
-- **Descripción completa** (texto largo)
-- **Tipo de propiedad**
+Nombre, Descripción corta, Descripción completa, Tipo de propiedad.
 
-> ⚠️ **Importante:** las descripciones son **texto plano simple**, sin negrita / itálica / listas. **No reportes que "falta el editor con formato"** — el editor enriquecido está en desarrollo.
+> ⚠️ Las descripciones son **texto plano**, sin negrita / itálica / listas. No reportes que "falta el editor con formato" — está en desarrollo.
 
 ### 2. Ubicación
 
-- **Dirección** (calle y número)
-- **Ciudad**, **Provincia**, **País**, **Código postal**
-- **Latitud** y **Longitud** (campos separados)
-- **Mapa interactivo** con un pin arrastrable. Hint: **"Arrastrá el pin para ajustar la ubicación"**.
-- Botones **"Expandir mapa"** / **"Contraer mapa"**.
+Dirección, Ciudad, Provincia, País, Código postal, Latitud y Longitud. Mapa interactivo con pin arrastrable (ayuda: "Arrastrá el pin para ajustar la ubicación") y botones **"Expandir / Contraer mapa"**.
 
-> El form **puede** autocompletar las coordenadas desde la dirección. Si no lo hace, arrastrá el pin manualmente sobre el mapa hasta el lugar correcto.
+> El formulario **puede** autocompletar las coordenadas desde la dirección. Si no lo hace, arrastrá el pin manualmente.
 
 ### 3. Capacidad
 
-- **Huéspedes máximos**
-- **Habitaciones**
-- **Baños**
-- **Camas**
+Huéspedes máximos, Habitaciones, Baños, Camas.
 
 ### 4. Comodidades
 
-Lista grande de checkboxes (con label **"Comodidades"** — no "Amenidades"): WiFi, Aire acondicionado, Calefacción, Cocina completa, Heladera con freezer, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín privado, Detector de humo, Botiquín de primeros auxilios, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Estacionamiento cubierto, Balcón, Terraza, Plancha, Secador de pelo, Caja fuerte, Ventilador, Cortinas blackout, Cuna, Accesible para silla de ruedas, Se aceptan mascotas.
+Lista grande de casillas (etiqueta **"Comodidades"**, no "Amenidades"): WiFi, Aire, Calefacción, Cocina, Heladera, Microondas, Cafetera, Ropa de cama, Toallas, TV por cable, Parrilla, Estacionamiento, Lavarropas, Hogar a leña, Salamandra, Jardín, Detector de humo, Botiquín, Matafuego, Pileta, Jacuzzi, Gimnasio, Lavandería, Ascensor, Desayuno, Restaurante, Bar, Spa, Balcón, Terraza, Plancha, Secador, Caja fuerte, Ventilador, Blackout, Cuna, Accesibilidad, Mascotas.
 
-Probá marcar/desmarcar varias. Si hay un campo de búsqueda dentro de la lista, usalo.
+Probá marcar/desmarcar varias. Si hay buscador en la lista, usalo.
 
 ### 5. Fotos
 
-- Podés subir **hasta 20 fotos**.
-- Interfaz: **"Arrastrá fotos acá o hacé click para seleccionar"**, botón **"Seleccionar archivos"**.
-- Mientras suben aparece **"Subiendo..."**.
-- Cada foto tiene botón **"Quitar foto"**.
-- Si llegás al límite, ves **"Llegaste al máximo de 20 fotos"**.
+- Hasta **20 fotos**.
+- Interfaz: "Arrastrá fotos acá o hacé clic para seleccionar", botón "Seleccionar archivos".
+- Mientras suben aparece **"Subiendo..."**. Cada foto tiene botón **"Quitar foto"**.
+- En el límite ves **"Llegaste al máximo de 20 fotos"**.
 
-> ⚠️ Si la propiedad recién la creaste con el mini-form, el sistema te puede pedir **"Guardá primero los datos básicos antes de subir fotos"**. Guardá la sección Datos básicos primero y volvé a Fotos.
+> ⚠️ Si recién creaste la propiedad, el sistema puede pedir **"Guardá primero los datos básicos antes de subir fotos"**. Guardá Datos básicos y volvé.
 
-Probá:
-
-- Subir 3, después 10, después intentar la #21. **Lo esperado** es que el sistema bloquee la #21. Si te deja subir más de 20, reportalo.
-- Quitar una foto y verificar que se quitó.
+Probá: subir 3, después 10, intentar la #21 (debe bloquear). Quitar una y verificar.
 
 ### 6. Precio
 
-- **Precio por noche**
-- **Moneda**
+Precio por noche y Moneda.
 
-> No hay (todavía) precios por temporada, descuentos por estadía larga, ni reservas con checkout dinámico. **No los reportes como faltantes** — están planeados.
+> No hay (todavía) precios por temporada, descuentos por estadía larga ni reservas con pago dinámico. No los reportes — están planeados.
 
 ### 7. Contacto
 
-- **Email**
-- **Teléfono**
-- **Método preferido** (Email / Teléfono / WhatsApp)
+Email, Teléfono, Método preferido (Email / Teléfono / WhatsApp).
 
 ### 8. Publicar
 
-- Pantalla de revisión final.
-- Si te faltan campos obligatorios, ves **"Faltan datos obligatorios"** con la lista de qué completar.
-- Cuando todo esté listo, apretá **"Publicar"**.
-- Toast: **"¡Tu propiedad fue publicada!"**.
-- Andá al sitio público (en otra pestaña) y buscá tu alojamiento por nombre. ¿Aparece?
+- Pantalla de revisión final. Si faltan campos obligatorios, ves **"Faltan datos obligatorios"** con la lista.
+- Apretá **"Publicar"**. Notificación flotante: **"¡Tu propiedad fue publicada!"**.
+- Andá al sitio público en otra pestaña y buscá tu alojamiento por nombre. ¿Aparece?
 
 ## Qué reportar
 
 > 📋 **Reportá:**
 >
-> - Si el mini-form del sitio público falla al apretar Publicar
-> - Si el redirect al panel admin se rompe (página en blanco, error, no llegás)
-> - Si al volver al sitio público para comparar, los datos no se ven igual a los que cargaste en el admin
-> - Si en algún paso del wizard el botón "Siguiente" / "Guardar" no funciona
-> - Si refrescaste la página y se perdieron datos
-> - Si una foto no se subió (anotá tamaño y formato del archivo)
-> - Si publicaste pero no aparece en el sitio público después de 1 minuto
-> - Si el pin del mapa no se puede arrastrar o no marca bien
+> - El miniformulario falla al apretar Publicar
+> - La redirección al panel admin se rompe (página en blanco, error)
+> - Los datos en el sitio público no coinciden con los del admin
+> - Un botón "Siguiente" / "Guardar" no funciona
+> - Refrescaste y se perdieron datos
+> - Una foto no se subió (anotá tamaño y formato)
+> - Publicaste y no aparece en el sitio después de 1 minuto
+> - El pin del mapa no se arrastra o no marca bien
 
 ## Próximo paso
 
-Andá a **[Tu dashboard de host](/beta/host/dashboard/)** para revisar lo que creaste y editarlo.
+Andá a **[tu panel de control](/beta/host/dashboard/)** para revisar lo que creaste.

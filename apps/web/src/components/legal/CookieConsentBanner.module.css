@@ -4,6 +4,13 @@
 
 /* ── Banner wrapper (fixed bottom bar) ─────────────────────────────────────── */
 
+/* Backdrop scrim — uses the shared `.overlay-base .overlay-light` utility
+ * (see components.css) so the cookie consent dim matches every other drawer/
+ * sheet in the site. We only pin the z-index here. */
+.backdrop {
+    z-index: calc(var(--z-cookie-banner) - 1);
+}
+
 .banner {
     /* Reset <dialog> browser defaults */
     border: none;
@@ -17,10 +24,34 @@
     left: 0;
     right: 0;
     z-index: var(--z-cookie-banner);
-    background-color: var(--core-card);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -4px 24px oklch(0 0 0 / 0.1);
-    padding: var(--space-4, 16px) var(--space-container-x, 24px);
+    /* Warm brand surface instead of a flat white sheet so the banner reads
+     * as part of the site, not a system alert. */
+    background-color: var(--surface-warm, var(--core-card));
+    /* Round the top corners so the banner feels like a floating sheet. */
+    border-radius: var(--radius-card, 24px) var(--radius-card, 24px) 0 0;
+    box-shadow: 0 -8px 32px oklch(0 0 0 / 0.18), 0 -2px 8px oklch(0 0 0 / 0.06);
+    padding: var(--space-5, 20px) var(--space-container-x, 24px);
+    /* Slide up + fade in on first paint (respects reduced motion below). */
+    animation: cookie-banner-slide-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    /* Avoid sub-pixel jitter during the transform animation. */
+    will-change: transform, opacity;
+}
+
+@keyframes cookie-banner-slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .banner {
+        animation: none;
+    }
 }
 
 /* ── Inner layout ───────────────────────────────────────────────────────────── */
@@ -66,6 +97,13 @@
     color: var(--core-muted-foreground);
     margin: 0;
     line-height: 1.5;
+    /* Always-on line clamp so long translations never push buttons off the
+     * viewport. Desktop allows 3 lines; the mobile block below trims to 2. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
 }
 
 .learnMore {
@@ -99,16 +137,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-2, 8px) var(--space-4, 16px);
+    padding: var(--space-3, 12px) var(--space-5, 20px);
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.875rem);
-    font-weight: 500;
+    font-weight: 600;
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
-    min-height: 38px;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease,
+        transform var(--duration-fast, 0.2s) ease, box-shadow var(--duration-normal, 0.4s) ease;
+    min-height: 42px;
     border: 1px solid transparent;
 }
 
@@ -116,32 +156,41 @@
     background-color: var(--brand-accent);
     color: var(--accent-foreground);
     border-color: var(--brand-accent);
+    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.3);
 }
 
 .btnPrimary:hover {
-    opacity: 0.9;
+    background-color: var(--accent-hover, var(--brand-accent));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(from var(--brand-accent) l c h / 0.4);
 }
 
+/* "Personalizar" is the lowest-stakes choice — render it as a quiet text link
+ * so the eye lands on "Aceptar" / "Rechazar" first. */
 .btnSecondary {
     background-color: transparent;
     color: var(--brand-primary);
-    border-color: var(--brand-primary);
+    border-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    padding-inline: var(--space-2, 8px);
 }
 
 .btnSecondary:hover {
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
+    color: var(--primary-hover, var(--brand-primary));
+    text-decoration-thickness: 2px;
 }
 
 .btnGhost {
     background-color: transparent;
-    color: var(--core-muted-foreground);
-    border-color: var(--border);
+    color: var(--core-foreground);
+    border-color: oklch(from var(--core-foreground) l c h / 0.18);
 }
 
 .btnGhost:hover {
-    background-color: var(--surface-warm);
-    color: var(--core-foreground);
+    background-color: oklch(from var(--core-foreground) l c h / 0.06);
+    border-color: oklch(from var(--core-foreground) l c h / 0.3);
 }
 
 /* ── Category rows (customize view) ────────────────────────────────────────── */
@@ -252,50 +301,70 @@
     border-top-color: var(--border);
 }
 
-/* ── Compact mobile bottom-sheet variant (V-5) ─────────────────────────────── */
-/* At <768px, lay the banner out as a single compact row so the search bar
-   above it remains visible on first paint. Target total height ≤96px. */
+/* ── Mobile / tablet stack ─────────────────────────────────────────────────── */
+/* Below 768px the row layout would crush the buttons or push them off-screen,
+ * so we stack content + actions vertically. Actions get full width with a
+ * flex-wrap so any combination (2 or 3 buttons) reflows without overflow. */
 
 @media (max-width: 768px) {
     .banner {
-        padding: var(--space-3, 12px) var(--space-4, 16px);
+        padding: var(--space-4, 16px);
     }
 
     .inner {
-        flex-direction: row;
-        align-items: center;
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-3, 12px);
+    }
+
+    .content {
+        gap: var(--space-2, 8px);
+    }
+
+    .description {
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .actions {
+        width: 100%;
         flex-wrap: wrap;
         gap: var(--space-2, 8px);
     }
 
-    .content {
-        gap: var(--space-1, 4px);
+    /* Primary CTA stretches to full width — the most prominent action stays
+     * the easiest to hit; rejection stays equally available below/beside it. */
+    .btnPrimary {
+        flex: 1 1 100%;
+        order: 1;
     }
 
-    .description {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+    .btnGhost {
+        flex: 1 1 auto;
+        order: 2;
+    }
+
+    /* "Personalizar" stays as the quiet text-link — pin it last so it doesn't
+     * compete with the two real decisions. */
+    .btnSecondary {
+        flex: 0 0 auto;
+        order: 3;
+        margin-left: auto;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
     .btnPrimary,
     .btnSecondary,
     .btnGhost {
-        padding: 6px 12px;
-        min-height: 32px;
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+        min-height: 40px;
+        font-size: 0.8125rem;
     }
 
-    /* Hide the heading on narrow screens — the description is self-explanatory. */
+    /* Title stays visible at every breakpoint — just shrunk so it doesn't
+     * dominate a 320–480px banner. */
     .title {
-        display: none;
-    }
-
-    /* Trim the main-view button row to Aceptar + Personalizar.
-       Rechazar remains accessible inside the Personalizar (customize) panel. */
-    .rejectMain {
-        display: none;
+        font-size: 0.9375rem;
     }
 }

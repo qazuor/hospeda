@@ -57,176 +57,475 @@
 
 .card {
     display: block;
-    border-radius: var(--radius-card, 14px);
+    /* Same radius as AccommodationCard.astro (`var(--radius-md, 12px)`). */
+    border-radius: var(--radius-md, 12px);
     overflow: hidden;
     background-color: var(--core-card);
-    box-shadow: var(--shadow-card, 0 4px 14px rgb(0 0 0 / 0.06));
-    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
-        ease, outline-color var(--duration-normal, 0.4s) ease;
-    outline: 2px solid transparent;
-    outline-offset: 2px;
+    /* Same border + shadow setup as AccommodationCard.astro. */
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card, 0 2px 6px oklch(0 0 0 / 0.05), 0 6px 18px oklch(0 0 0 / 0.05));
+    transition: box-shadow 200ms ease-out;
 }
 
-.card:hover {
-    box-shadow: var(--shadow-card-hover, 0 8px 28px rgb(0 0 0 / 0.14));
-    transform: translateY(-2px);
-}
+/* Hover: only the image zooms (see `.cardImage` rule below) — the card frame
+ * itself stays still and keeps its border, matching AccommodationCard.astro's
+ * behavior on the listing grid. */
 
+/* Marker-hover sync: when the user hovers the matching map marker, deepen
+ * the shadow a touch so the matching card stands out without flashing a
+ * brand-color border (which felt out of place against the warm palette and
+ * was disorienting at first glance). */
 .cardHovered {
-    outline-color: var(--primary, #2563eb);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 0.1), 0 14px 32px oklch(0 0 0 / 0.14);
 }
 
+/* Strip native <button> chrome so the card-as-action looks identical to the
+ * previous <a>-wrapped layout. The element still focuses with Tab and fires
+ * onClick/Enter/Space natively. */
 .cardLink {
     display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    text-align: inherit;
     text-decoration: none;
     color: inherit;
+    font: inherit;
+    cursor: pointer;
 }
 
-.cardImageWrapper {
+.cardLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 12px);
+}
+
+/* ----- Card visual: mirrors AccommodationCard.astro ----- */
+
+/* Image area: same height as AccommodationCard mobile (200px). The desktop
+ * card uses a clamp; here the sidebar always renders at sidebar width so we
+ * keep a flat 200px for predictability. */
+.cardImageArea {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    height: 200px;
     overflow: hidden;
     background-color: var(--surface-warm, #faf6f0);
 }
 
-.cardImage {
+.cardImage,
+.cardImagePlaceholder {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
+    transition: transform 200ms ease-out;
+}
+
+.cardImagePlaceholder {
+    background: linear-gradient(135deg, var(--surface-warm) 0%, var(--core-card) 100%);
 }
 
 .card:hover .cardImage {
-    transform: scale(1.04);
+    transform: scale(1.08);
 }
 
-.cardTypeChip {
+/* Diagonal "Nuevo" status corner (top-left) — same geometry as
+ * AccommodationCard.astro (80×80 triangle, 14px font). */
+.cardStatusCorner {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    padding: 4px 10px;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: rgb(255 255 255 / 0.92);
-    color: var(--core-foreground);
-    font-size: 0.75rem;
-    font-weight: 500;
-    backdrop-filter: blur(4px);
-}
-
-.cardBody {
-    padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-4, 16px);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.cardTitleRow {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    justify-content: space-between;
-}
-
-.cardTitle {
-    margin: 0;
-    font-family: var(--font-heading, sans-serif);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--core-foreground);
-    line-height: 1.3;
-    flex: 1;
-    min-width: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
     overflow: hidden;
+    pointer-events: none;
 }
 
-.cardFeaturedBadge {
-    flex-shrink: 0;
-    padding: 3px 8px;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: var(--brand-accent);
-    color: white;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    line-height: 1.4;
+.cardStatusCorner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-top: 80px solid var(--corner-bg);
+    border-right: 80px solid transparent;
+}
+
+.cardStatusText {
+    position: absolute;
+    top: 16px;
+    left: 4px;
+    transform: rotate(-45deg);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22.4px;
+    color: var(--corner-text);
     white-space: nowrap;
 }
 
-.cardCity {
-    margin: 0;
-    font-size: 0.8125rem;
+/* Featured badge: same look as AccommodationCard.astro mobile (bottom-left
+ * above the wave so it doesn't collide with the actions column). Sidebar
+ * cards always render at ~mobile widths, so we keep the mobile placement
+ * regardless of viewport. */
+.cardFeaturedBadge {
+    position: absolute;
+    bottom: 48px;
+    left: 12px;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22.4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill, 9999px);
+    z-index: 2;
+}
+
+/* Wave separator at the bottom of the image. Same height as
+ * AccommodationCard.astro (40px). */
+.cardWave {
+    position: absolute;
+    /* -1px so the wave's bottom edge overlaps the content area by a pixel,
+     * hiding the antialias seam that sometimes shows between the SVG fill
+     * and the .cardContent background. */
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cardWave svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* (the .cardContent rule above already covers padding/gap; the -1px margin
+ * fix for the wave seam is folded into the main .cardContent block below) */
+
+/* Actions column (favorite + photo count) — same positioning as
+ * AccommodationCard.astro (top: 12px, right: 12px, gap: 8px). */
+.cardActions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    z-index: 3;
+}
+
+.cardPhotoCount {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: oklch(from var(--core-foreground) l c h / 0.55);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill, 9999px);
+    color: var(--primary-foreground, white);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+/* ----- Content area: same padding/gap as AccommodationCard mobile ----- */
+.cardContent {
+    /* Mobile-style: tight gap + 12px bottom padding. AccommodationCard uses
+     * `gap: 6px` + `padding-bottom: 12px` on mobile and `gap: 10px` +
+     * `padding-bottom: 20px` on desktop. Sidebar cards always render at the
+     * narrower mobile width, so we keep the mobile values. */
+    padding: 0 16px 12px;
+    /* -1px overlap with the wave above so antialias seams between the wave
+     * SVG fill and this background never become visible. */
+    margin-top: -1px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background-color: var(--core-card);
+}
+
+/* Category pill + location */
+.cardCategoryRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Mirrors `<AccommodationTypeBadge size="xs">` (brand-primary-dark pill,
+ * white uppercase 0.625rem label, 4px 10px padding). */
+.cardTypePill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary-dark);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.625rem;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.08), 0 2px 6px oklch(0 0 0 / 0.06);
+}
+
+.cardTypePillLabel {
+    line-height: 1;
+}
+
+.cardLocation {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.4;
     color: var(--core-muted-foreground);
 }
 
-.cardSummary {
+.cardLocation > svg {
+    flex-shrink: 0;
+}
+
+.cardLocation > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* Name */
+.cardName {
     margin: 0;
-    font-size: 0.8125rem;
-    line-height: 1.45;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 22px;
     color: var(--core-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Description — 3 lines on mobile/sidebar width (matches
+ * AccommodationCard.astro mobile rule). */
+.cardDescription {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 20.8px;
+    color: var(--core-muted-foreground);
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-.cardMeta {
+/* Amenities row */
+.cardAmenities {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2, 8px);
-    margin-top: 4px;
-}
-
-.cardRating {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.8125rem;
-    color: var(--core-foreground);
-}
-
-.cardRating > span:first-child {
-    color: var(--brand-accent);
-}
-
-.cardReviewsCount {
+    gap: 8px;
     color: var(--core-muted-foreground);
 }
 
-.cardPrice {
-    font-size: 0.9375rem;
-    font-weight: 600;
+.cardAmenity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cardAmenitiesMore {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+}
+
+/* Stars + rating */
+.cardStars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cardStarFilled {
+    color: var(--rating-star, var(--brand-accent));
+    display: inline-flex;
+}
+
+.cardStarEmpty {
+    color: var(--core-muted-foreground);
+    opacity: 0.4;
+    display: inline-flex;
+}
+
+.cardRatingValue {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 19.2px;
     color: var(--core-foreground);
+    margin-left: 4px;
+}
+
+/* Hide the reviews count next to stars on mobile, matching
+ * AccommodationCard.astro's mobile rule. The full label still lives inside
+ * the sheet header, just not on each card row. */
+.cardReviewsCount {
+    display: none;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 19.2px;
+    color: var(--core-muted-foreground);
+}
+
+/* Divider */
+.cardDivider {
+    height: 1px;
+    background-color: var(--border);
+    width: 100%;
+}
+
+/* Price + CTA: matches AccommodationCard.astro (4px top padding, default
+ * baseline-aligned price block + pill CTA). */
+.cardPriceRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 4px;
+    gap: 8px;
+}
+
+.cardPriceBlock {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.cardPriceLabel {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 17.6px;
+    color: var(--core-muted-foreground);
+}
+
+.cardPriceValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--brand-accent);
+}
+
+.cardCta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 19.2px;
+    color: var(--core-foreground);
+    background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 200ms ease-out;
+}
+
+.card:hover .cardCta {
+    opacity: 0.85;
 }
 
 /* ----- Mobile bottom sheet ----- */
 .sheetTrigger {
     position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    padding: 12px 24px;
+    /* Lift above the cookie banner (or any future bottom overlay) via the
+     * shared --bottom-safe-inset token defined in global.css. */
+    bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
+    /* Anchored to the right so the bottom row reads as
+     * [Filtros (izq)] ... [Tarjetas (der)] — view-toggle sits at the top of
+     * the map instead of competing for the bottom center. */
+    right: 1rem;
+    /* Cap so the CTA never spills past the viewport edge or runs into the
+     * filters trigger on narrow screens. Pairs with --bottom-safe-inset on
+     * the filters trigger to guarantee the bottom row stays inside the
+     * viewport regardless of label length / locale. */
+    max-width: calc(50vw - 12px);
+    z-index: 200;
+    padding: 12px 20px;
+    /* Truncate over-long labels (e.g. "View 1234 results" in en) instead of
+     * letting them wrap to two lines and push the pill off the viewport. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     border-radius: var(--radius-pill, 9999px);
-    background-color: var(--core-foreground);
+    /* Frosted-glass dark surface (see global.css → --frost-* tokens). The
+     * "open cards" CTA stays the dominant action over the map, so we keep
+     * the dark variant for visual hierarchy vs the lighter filters trigger. */
+    background-color: var(--frost-bg-dark);
+    backdrop-filter: blur(var(--frost-blur));
+    -webkit-backdrop-filter: blur(var(--frost-blur));
     color: white;
     font-family: var(--font-sans, sans-serif);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    border: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.4);
     cursor: pointer;
-    box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
-    transition: transform var(--duration-normal, 0.4s) ease;
+    box-shadow: 0 4px 18px oklch(0 0 0 / 0.25), 0 1px 3px oklch(0 0 0 / 0.08);
+    transition: transform var(--duration-fast, 0.2s) ease, background-color
+        var(--duration-fast, 0.2s) ease, opacity var(--duration-fast, 0.2s) ease;
 }
 
 .sheetTrigger:hover {
-    transform: translateX(-50%) translateY(-1px);
+    transform: translateY(-1px);
+    background-color: oklch(from var(--core-foreground) l c h / 0.82);
+}
+
+/* Tighten padding + label on very narrow phones so the full label
+ * ("Ver 100 resultados") stays visible instead of getting truncated. */
+@media (max-width: 360px) {
+    .sheetTrigger {
+        padding: 10px 14px;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Hide while a blocking overlay is open so the sheet trigger doesn't poke out
+ * from underneath the filters drawer / search panel / mobile menu. Same set
+ * of html flags the view-toggle already honors. */
+:global(html[data-filters-drawer-open]) .sheetTrigger,
+:global(html[data-search-panel-open]) .sheetTrigger,
+:global(html[data-mobile-menu-open]) .sheetTrigger {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sheetTrigger {
+        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+    }
 }
 
 .sheet {
@@ -303,7 +602,8 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background-color: rgb(0 0 0 / 0.4);
+    /* Shared scrim token — see global.css → --overlay-bg-light. */
+    background-color: var(--overlay-bg-light);
     border: none;
     cursor: pointer;
     padding: 0;

@@ -205,7 +205,9 @@ const isNew = data.createdAt
 						<span class="acc-card__price-label">{t('home.accommodations.price.perNight', '/noche')}</span>
 					</div>
 				) : (
-					<div></div>
+					<div class="acc-card__price-block">
+						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Consultar')}</span>
+					</div>
 				)}
 				<span class="acc-card__cta-btn">
 					{t('common.readMore', 'Ver más')} →
@@ -335,12 +337,6 @@ const isNew = data.createdAt
 		width: 100%;
 		height: 100%;
 		display: block;
-	}
-
-	@media (max-width: 480px) {
-		.acc-card__wave {
-			display: none;
-		}
 	}
 
 	/* Actions (favorite + photo count) — right-aligned column. Items have
@@ -658,17 +654,33 @@ const isNew = data.createdAt
 	 * amenities, stars, the numeric rating, or the price block.
 	 */
 	@media (max-width: 767px) {
+		.acc-card__image-area {
+			height: 200px;
+		}
+
 		.acc-card__content {
 			gap: 6px;
 			padding-bottom: 12px;
 		}
 
 		.acc-card__description {
-			-webkit-line-clamp: 1;
+			-webkit-line-clamp: 3;
 		}
 
 		.acc-card__reviews-count {
 			display: none;
+		}
+
+		/* In mobile the image area shrinks via clamp(160px,…); placing the
+		 * featured badge at bottom-right made it collide vertically with the
+		 * actions column (favorite + photo count). Top-left is occupied by
+		 * the "Nuevo" status corner, top-right by the actions column —
+		 * bottom-left, just above the wave, is the only quadrant left clear. */
+		.acc-card__featured-badge {
+			bottom: 48px;
+			left: 12px;
+			right: auto;
+			top: auto;
 		}
 	}
 </style>

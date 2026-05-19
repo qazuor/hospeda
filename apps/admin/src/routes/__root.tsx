@@ -17,6 +17,7 @@ import { ToastProvider } from '@/components/ui/ToastProvider';
 import { initializeSections } from '@/config/sections';
 import { env, validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
+import { initPostHog } from '@/lib/analytics/posthog-client';
 import { useSession } from '@/lib/auth-client';
 import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
@@ -71,6 +72,9 @@ validateAdminEnv();
 
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
+
+// Initialize PostHog analytics (only in production with valid VITE_POSTHOG_KEY)
+initPostHog();
 
 // Sections must be initialized lazily on the first render of RootDocument.
 // Top-level invocation breaks the Nitro/Rolldown SSR bundle: the bundler

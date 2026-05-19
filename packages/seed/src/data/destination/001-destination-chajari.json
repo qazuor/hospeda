@@ -3,8 +3,8 @@
     "id": "001-destination-chajari",
     "slug": "chajari",
     "name": "Chajarí",
-    "summary": "Pintoresca ciudad citrícola con encanto rural y tradiciones gauchas",
-    "description": "Chajarí es una encantadora ciudad ubicada en el nordeste de Entre Ríos, conocida por su producción citrícola y su fuerte tradición rural. Esta pintoresca ciudad combina el encanto del campo entrerriano con la calidez de su gente, ofreciendo una experiencia auténtica de la vida rural argentina. Con sus estancias, festivales folklóricos y paisajes rurales, Chajarí es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones gauchas de Entre Ríos.",
+    "summary": "Ciudad termal y citrícola del nordeste entrerriano, con playas del lago Salto Grande y herencia friulana.",
+    "description": "Chajarí es una ciudad del departamento Federación, en el nordeste de Entre Ríos, fundada en 1872 y reconocida como Capital Provincial de la Citricultura. Su economía y cultura giran en torno a la producción de naranjas y mandarinas, la elaboración artesanal del célebre salame de Chajarí y la herencia de los inmigrantes friulanos que la poblaron. A pocos kilómetros del centro se encuentra el moderno Complejo Termal de Chajarí, con aguas surgentes a 39 °C y piscinas de distintas temperaturas. Sobre el lago Salto Grande despliega playas, camping y una costanera ideales para deportes náuticos y descanso. Cada año celebra la Fiesta Nacional de la Citricultura, que combina música, tradición y producción regional.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3237",
+        "zipCode": "E3228",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "123",
         "city": "Chajarí",
         "coordinates": {
-            "lat": "-30.7500",
-            "long": "-57.9833"
+            "lat": "-30.7545",
+            "long": "-58.0127"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Chajarí - Tradición Rural y Citricultura | Entre Ríos",
-        "description": "Descubre Chajarí, ciudad rural con tradición gaucha y producción citrícola en Entre Ríos.",
-        "keywords": ["Chajarí", "Entre Ríos", "Rural", "Citricultura", "Tradición Gaucha", "Campo"]
+        "title": "Chajarí: termas, citricultura y Salto Grande | Entre Ríos",
+        "description": "Descubrí Chajarí, Entre Ríos: complejo termal, playas del lago Salto Grande, citricultura, salames artesanales y herencia friulana en el nordeste argentino.",
+        "keywords": [
+            "Chajarí",
+            "Entre Ríos",
+            "termas de Chajarí",
+            "lago Salto Grande",
+            "citricultura",
+            "salame de Chajarí",
+            "inmigración friulana",
+            "Litoral argentino"
+        ]
     },
     "tagIds": [
         "009-tag-citricultura",
@@ -56,11 +65,14 @@
         "015-tag-ecoturismo"
     ],
     "attractionIds": [
-        "037-attraction-estancia_turistica",
-        "013-attraction-centro_agropecuario",
-        "043-attraction-granja_educativa",
-        "049-attraction-mercado_agricola",
-        "062-attraction-parque_municipal"
+        "028-attraction-complejo_termal_principal",
+        "066-attraction-piscinas_termales",
+        "068-attraction-plantacion_citricos",
+        "086-attraction-tour_citricola",
+        "019-attraction-centro_interpretacion_citricola",
+        "069-attraction-playa_fluvial",
+        "070-attraction-plaza_festivales",
+        "031-attraction-costanera"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

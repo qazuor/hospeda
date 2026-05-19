@@ -1,6 +1,6 @@
 ---
 title: Cómo funciona el beta
-description: Duración, dedicación esperada y qué te pedimos como compromiso.
+description: Duración, dedicación esperada y compromiso.
 order: 2
 role: empezar
 section: Introducción
@@ -10,34 +10,32 @@ section: Introducción
 
 ## Duración
 
-**Depende de cuántas cosas vayamos encontrando.** Puede durar desde **2 semanas hasta 1 mes**. Si encontramos pocos errores, cerramos rápido. Si aparecen muchas cosas para arreglar, lo extendemos para asegurarnos de que esté bien antes del lanzamiento.
+**De 2 semanas a 1 mes**, depende de cuántas cosas encontremos. Pocos errores → cerramos rápido. Muchos → lo extendemos para que quede bien antes del lanzamiento.
 
-Te avisamos por WhatsApp cuando arranca y cuando lo damos por cerrado.
+Te avisamos por WhatsApp al arrancar y al cerrar.
 
 ## Cuánto tiempo le dedicás
 
-**Lo que más puedas.** No hay tope, mientras más pruebes, mejor para todos.
+**Lo que más puedas.** Mínimo **3 horas por semana**, repartidas o de un saque. Mejor repartido: en el celular tomando un café, en la compu una noche, en el colectivo. Cuanto más variado el contexto, más cosas raras encontramos.
 
-Como **mínimo te pedimos 3 horas por semana**. Pueden ser de un saque o repartidas en distintos momentos. Lo ideal es repartido: una vez en el celular tomando un café, otra en la computadora una noche, otra mientras viajás en colectivo. Cuanto más variado el contexto, más cosas raras vamos a encontrar.
+## Compromiso que te pedimos
 
-## Qué te pedimos como compromiso
-
-- **Probá las partes que te corresponden** (turista, y si te toca, host). Idealmente todas las features, pero **si no te da el tiempo, elegí las que más te interesen** y arrancá por ahí. Mejor 5 cosas probadas con detalle que 50 a las apuradas.
-- **Probá tanto en celular como en computadora**, si tenés ambos. Si solo tenés uno (especialmente si solo tenés celular), **no hay problema**, probá con lo que tengas.
-- **Reportá lo que encuentres**, aunque sea poco. Reportar 5 cosas pequeñas es mejor que no reportar nada.
-- **Dá la mayor cantidad de detalle posible** en los reportes. Mirá [Cómo reportar](/beta/reportar-bugs/como-reportar/).
-- **Estate atento al WhatsApp del grupo** por si te pedimos algo puntual o avisamos de algún cambio.
+- **Probá las partes de tu rol** (turista y, si te toca, propietario o anfitrión (host)). Si no te da, **5 cosas con detalle mejor que 50 a las apuradas**.
+- **En celular y compu** si tenés ambos. Sin compu, con celular alcanza.
+- **Reportá lo que encuentres**. 5 cosas chicas mejor que nada.
+- **Detalle al máximo**. Mirá [Cómo reportar](/beta/reportar-bugs/como-reportar/).
+- **Atento al WhatsApp** por avisos.
 
 ## Lo que NO te pedimos
 
-- No tenés que escribir reportes técnicos largos. Una foto y "esto se ve raro" alcanza. Pero si podés agregar más detalle, sería lo ideal.
-- No tenés que conocer términos como "bug", "frontend", "API", "deploy". Si los usás, perfecto. Si no, también.
-- No tenés que probar todas las features. Probá las que te interesen, dejá las que no.
+- No reportes técnicos largos. Foto + "esto se ve raro" alcanza.
+- No tenés que conocer términos como "bug", "frontend", "API".
+- No tenés que probar todo. Elegí lo que te interese.
 
 ## ¿Cobro algo?
 
-**No.** Es voluntario. Pero si descubrís algo importante o reportás varias cosas útiles, vamos a tener algún detalle de agradecimiento al final.
+**No**, es voluntario. Si reportás cosas útiles, va a haber algún detalle de agradecimiento al final.
 
 ## Próximo paso
 
-Si todavía no entraste, andá a **[Cómo entrar al sitio](/beta/empezar/como-entrar/)**.
+**[Cómo entrar al sitio](/beta/empezar/como-entrar/)**.

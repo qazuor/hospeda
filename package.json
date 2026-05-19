@@ -67,10 +67,6 @@
         "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
         "docs:check-links": "tsx scripts/check-links.ts",
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
-        "env:pull": "tsx scripts/env/pull.ts",
-        "env:push": "tsx scripts/env/push.ts",
-        "env:sync": "tsx scripts/env/sync.ts",
-        "env:check": "tsx scripts/env/check.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
@@ -147,6 +143,7 @@
             "svgo": ">=4.0.1",
             "next": ">=16.2.3",
             "drizzle-orm": ">=0.45.2",
+            "@opentelemetry/api": "1.9.1",
             "@remix-run/node": ">=2.17.2",
             "@remix-run/router": ">=1.23.2",
             "@remix-run/server-runtime": ">=2.17.3",

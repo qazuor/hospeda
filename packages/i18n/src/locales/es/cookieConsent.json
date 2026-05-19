@@ -1,14 +1,18 @@
 {
     "title": "Usamos cookies",
-    "description": "Hospeda utiliza cookies para garantizar el funcionamiento del sitio y, con tu consentimiento, para analizar cómo lo usás. Las cookies necesarias siempre están activas.",
+    "description": "Hospeda utiliza cookies para garantizar el funcionamiento del sitio y, con tu consentimiento, para reportar errores y analizar cómo lo usás. Las cookies necesarias siempre están activas.",
     "categories": {
         "necessary": {
             "label": "Necesarias",
             "description": "Cookies indispensables para el funcionamiento del sitio: sesión de usuario, preferencia de idioma y estado de consentimiento. No pueden deshabilitarse."
         },
+        "crashReporting": {
+            "label": "Reporte de errores",
+            "description": "Envía a Sentry los errores que ocurren mientras usás el sitio (sin información personal identificable). Nos permite arreglar bugs que te afectan. Recomendado dejarlo activo."
+        },
         "analytics": {
-            "label": "Análisis",
-            "description": "Nos ayudan a entender cómo los visitantes interactúan con el sitio (Sentry para monitoreo de errores). Solo se activan con tu consentimiento."
+            "label": "Análisis de uso",
+            "description": "Estadísticas anónimas sobre cómo los visitantes navegan el sitio (páginas más vistas, flujos de búsqueda). No incluye monitoreo de errores."
         },
         "marketing": {
             "label": "Marketing",

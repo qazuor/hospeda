@@ -26,6 +26,14 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
+    /**
+     * Free-text environment tag applied to all Sentry events from the web app
+     * (SSR and browser). Takes precedence over `import.meta.env.MODE` in the
+     * Sentry init. Required to separate staging from production in the Sentry
+     * dashboard — without it, Astro production builds always emit MODE=production
+     * regardless of which deployment they came from.
+     */
+    PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.
@@ -55,6 +63,19 @@ export const serverEnvBaseSchema = z.object({
      * log regardless of this flag.
      */
     PUBLIC_ENABLE_LOGGING: z.string().optional(),
+    /**
+     * PostHog Cloud project API key for the web app (SPEC-140). Public by
+     * design — ships in the browser bundle. Leave unset to disable PostHog
+     * init (no events sent, no cookies set, no network requests). Per-env
+     * values come from Coolify (one project key per staging/prod).
+     */
+    PUBLIC_POSTHOG_KEY: z.string().optional(),
+    /**
+     * PostHog ingestion endpoint for the web app (SPEC-140). Defaults to
+     * the US Cloud region in posthog-client.ts when unset. Override only
+     * if migrating to EU Cloud or self-hosted PostHog.
+     */
+    PUBLIC_POSTHOG_HOST: z.url().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

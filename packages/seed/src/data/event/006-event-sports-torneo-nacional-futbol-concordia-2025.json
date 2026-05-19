@@ -3,7 +3,7 @@
     "id": "006-event-sports-torneo-nacional-futbol-concordia-2025",
     "slug": "torneo-nacional-futbol-concordia-2025",
     "name": "Torneo Nacional de Fútbol Concordia 2025",
-    "summary": "Torneo de fútbol amateur con equipos de todo el país en el Club Atlético Concordia",
+    "summary": "Torneo amateur de tres dias con la participacion de mas de 32 equipos de todas las provincias del Litoral. Premio mayor, transmision por streaming, food trucks, sorteos y la posibilidad de jugar en el predio del Club Atletico Concordia.",
     "description": "El Torneo Nacional de Fútbol es un evento deportivo que reúne a equipos amateur de todo el país en la histórica ciudad de Concordia. Durante una semana, los mejores equipos compiten en el estadio del Club Atlético Concordia en un ambiente festivo y competitivo. Un evento que combina deporte, camaradería y turismo en una de las ciudades más bellas de Entre Ríos.",
     "category": "SPORTS",
     "date": {
@@ -11,7 +11,7 @@
         "end": "2026-09-12T18:00:00-03:00"
     },
     "authorId": "006-user-laura-vega",
-    "locationId": "005-eventLocation-victoria-puerto-victoria",
+    "locationId": "006-eventLocation-concordia-teatro-pedro-barbero",
     "organizerId": "005-eventOrganizer-productores-rurales",
     "pricing": {
         "isFree": false,

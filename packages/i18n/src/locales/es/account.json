@@ -207,6 +207,7 @@
             "removeFromCollection": "Quitar de colección",
             "removing": "Quitando...",
             "removeError": "Error al quitar el favorito de la colección",
+            "removeConfirm": "¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.",
             "fetchError": "No se pudo cargar la colección. Intentá de nuevo más tarde.",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
@@ -266,8 +267,10 @@
             "accommodation": "Alojamientos",
             "destination": "Destinos"
         },
-        "empty": "No tienes resenas todavia",
-        "emptyAction": "Visita alojamientos y destinos para dejar tus primeras resenas",
+        "empty": "Visitá un alojamiento y compartí tu experiencia para ayudar a otros viajeros.",
+        "emptyTitle": "Todavía no escribiste reseñas",
+        "emptyCta": "Explorar alojamientos",
+        "emptyAction": "Visitá alojamientos y destinos para dejar tus primeras reseñas",
         "loading": "Cargando...",
         "fetchError": "Error al cargar las resenas",
         "loadMore": "Cargar mas",
@@ -296,10 +299,10 @@
         }
     },
     "pages": {
-        "accountLabel": "Mi Cuenta",
+        "accountLabel": "Mi cuenta",
         "dashboard": {
-            "title": "Mi Cuenta",
-            "description": "Administra tu cuenta, favoritos, resenas y preferencias.",
+            "title": "Mi cuenta",
+            "description": "Administrá tu cuenta, favoritos, reseñas y preferencias.",
             "greeting": "Bienvenido",
             "dashboardLabel": "Dashboard",
             "viewLabel": "Ver",
@@ -471,7 +474,7 @@
         "heading": "Agregá una contraseña",
         "contextGoogle": "Te registraste con Google. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
         "contextFacebook": "Te registraste con Facebook. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
-        "contextOAuth": "Te registraste con una cuenta social. Si querés, podés agregar una contraseña para también iniciar sesión con email.",
+        "contextOAuth": "Agregá una contraseña a tu cuenta para poder iniciar sesión también con email y contraseña.",
         "fields": {
             "password": "Contraseña",
             "passwordPlaceholder": "Mínimo 8 caracteres",

@@ -153,10 +153,10 @@ Captured in engram with topic_key `spec/spec-122/master-plan-decisions`. Summary
 
 The master closes when ALL of the following are true:
 
-- [ ] SPEC-123 closed (qzpay foundation fixes merged + published)
-- [ ] SPEC-124 closed (qzpay subscription preapproval wire-up merged + published)
-- [ ] SPEC-125 closed (qzpay checkout adapter parity merged + published)
-- [ ] SPEC-126 closed (Hospeda subscription flow merged to staging)
+- [x] SPEC-123 closed (qzpay foundation fixes merged + published) — qzpay 1.4-1.6, drift fix 2026-05-17
+- [x] SPEC-124 closed (qzpay subscription preapproval wire-up merged + published) — qzpay 1.6+, drift fix 2026-05-17
+- [x] SPEC-125 closed (qzpay checkout adapter parity merged + published) — qzpay 1.6+, drift fix 2026-05-17
+- [x] SPEC-126 closed (Hospeda subscription flow merged to staging) — PR #1115 (2026-05-16)
 - [ ] SPEC-127 closed (addon.checkout migrated to qzpay path, mercadopago SDK no longer a direct dependency of apps/api)
 - [ ] SPEC-128 closed (dead code removed, E2E smoke passing, runbook published)
 - [ ] All 10 user-facing capabilities (above) verified end-to-end against MP sandbox

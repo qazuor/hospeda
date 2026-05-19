@@ -26,6 +26,7 @@ import NavigationProgress from '@/components/shared/navigation/NavigationProgres
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
+import PostHogScript from '@/components/analytics/PostHogScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
@@ -162,6 +163,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 				})();
 			`}</script>
 		)}
+
+		<!--
+		  PostHog analytics snippet (SPEC-140).
+		  Inline so window.posthog is stubbed before any island hydrates and
+		  calls trackEvent(). Renders nothing in dev mode or when the project
+		  key is unset (e.g. locally-built previews without the secret).
+		-->
+		<PostHogScript cspNonce={cspNonce} />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />

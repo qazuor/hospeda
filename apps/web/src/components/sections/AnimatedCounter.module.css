@@ -44,6 +44,28 @@
     margin-bottom: 5rem;
 }
 
+/* Below 1024px the connecting wavy line is hidden (handled in
+ * StatsSection.astro), so the large margin that reserved space for it
+ * leaves the number floating far below the icon. Tighten the gap and
+ * scale the whole counter down so the stats block doesn't dominate the
+ * page on mobile. */
+@media (max-width: 1023px) {
+    .iconCircle {
+        margin-bottom: 0.75rem;
+        width: 56px;
+        height: 56px;
+    }
+
+    .iconCircle svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .counterValue {
+        font-size: 1.75rem;
+    }
+}
+
 .iconFallback {
     font-family: var(--font-sans);
     font-weight: 700;

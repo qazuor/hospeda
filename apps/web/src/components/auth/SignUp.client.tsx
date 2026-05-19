@@ -13,6 +13,8 @@
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -167,6 +169,7 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 if (!path.startsWith('/')) {
                     path = `/${path}`;
                 }
+                trackEvent(WebEvents.SignupCompleted, { provider: 'email', locale });
                 window.location.replace(`${origin}${path}`);
             }
         } catch {

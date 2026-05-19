@@ -3,8 +3,8 @@
     "id": "002-destination-colon",
     "slug": "colon",
     "name": "Colón",
-    "summary": "Ciudad histórica con arquitectura colonial y portal de entrada a las termas",
-    "description": "Colón es una encantadora ciudad histórica situada en el centro-este de Entre Ríos, famosa por su impresionante arquitectura colonial y su importancia como puerto fluvial. Con sus calles empedradas, edificios históricos y el majestuoso Palacio San José, Colón ofrece un viaje al pasado argentino. La ciudad es conocida por sus termas, su rica tradición gastronómica y como punto de partida para explorar las termas de la región. Su ubicación estratégica sobre el río Uruguay la convierte en un destino perfecto para quienes buscan historia, cultura y relajación.",
+    "summary": "Ciudad ribereña sobre el río Uruguay famosa por sus playas de arena, su complejo termal y el carnaval entrerriano.",
+    "description": "Colón es una de las ciudades turísticas más visitadas de Entre Ríos, ubicada sobre la costa del río Uruguay, en el centro-este de la provincia. Sus extensos kilómetros de playas de arena fina y aguas dulces forman uno de los corredores fluviales más concurridos del país, con balnearios públicos y gratuitos. El Complejo Termal de Colón ofrece trece piscinas con aguas mineromedicinales entre 33 y 40 grados, ideales para la relajación familiar durante todo el año. La ciudad combina su costanera arbolada con una activa vida cultural, donde se destacan el Carnaval de Colón en verano y la Fiesta Nacional de la Artesanía en febrero. A pocos kilómetros se encuentran la Colonia San José, fundada por inmigrantes europeos en 1857, y el Parque Nacional El Palmar, lo que la convierte en una base perfecta para explorar el litoral entrerriano.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2840",
+        "zipCode": "3280",
         "country": "Argentina",
         "street": "Av. Costanera",
         "number": "456",
         "city": "Colón",
         "coordinates": {
-            "lat": "-32.2167",
-            "long": "-58.1414"
+            "lat": "-32.2170",
+            "long": "-58.1330"
         }
     },
     "media": {
@@ -146,23 +146,28 @@
         ]
     },
     "seo": {
-        "title": "Colón - Ciudad Histórica y Termas | Entre Ríos",
-        "description": "Descubre Colón, ciudad histórica con arquitectura colonial, termas y rica cultura en Entre Ríos.",
+        "title": "Colón, Entre Ríos: Playas, Termas y Carnaval",
+        "description": "Descubrí Colón, Entre Ríos: playas sobre el río Uruguay, complejo termal, carnaval y la Fiesta Nacional de la Artesanía.",
         "keywords": [
             "Colón",
             "Entre Ríos",
-            "Historia",
-            "Termas",
-            "Palacio San José",
-            "Arquitectura Colonial"
+            "Termas de Colón",
+            "Playas río Uruguay",
+            "Carnaval",
+            "Fiesta de la Artesanía",
+            "Parque Nacional El Palmar",
+            "Turismo Litoral"
         ]
     },
     "attractionIds": [
-        "059-attraction-palacio_historico",
-        "066-attraction-piscinas_termales",
-        "018-attraction-centro_historico",
-        "055-attraction-museo_historico",
-        "072-attraction-plaza_principal"
+        "028-attraction-complejo_termal_principal",
+        "069-attraction-playa_fluvial",
+        "031-attraction-costanera",
+        "080-attraction-sede_carnaval",
+        "040-attraction-feria_artesanal",
+        "065-attraction-pesca_deportiva",
+        "072-attraction-plaza_principal",
+        "018-attraction-centro_historico"
     ],
     "tagIds": [
         "022-tag-historia",
