@@ -25,20 +25,231 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Centro de Villaguay",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178321/hospeda/seed/required/destinations/014-destination-villaguay/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Centro de Villaguay"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Plaza principal de Villaguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178322/hospeda/seed/required/destinations/014-destination-villaguay/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en los alrededores de Villaguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178323/hospeda/seed/required/destinations/014-destination-villaguay/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178324/hospeda/seed/required/destinations/014-destination-villaguay/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178326/hospeda/seed/required/destinations/014-destination-villaguay/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178327/hospeda/seed/required/destinations/014-destination-villaguay/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178328/hospeda/seed/required/destinations/014-destination-villaguay/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178329/hospeda/seed/required/destinations/014-destination-villaguay/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178330/hospeda/seed/required/destinations/014-destination-villaguay/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178331/hospeda/seed/required/destinations/014-destination-villaguay/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178332/hospeda/seed/required/destinations/014-destination-villaguay/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178333/hospeda/seed/required/destinations/014-destination-villaguay/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178334/hospeda/seed/required/destinations/014-destination-villaguay/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178335/hospeda/seed/required/destinations/014-destination-villaguay/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178336/hospeda/seed/required/destinations/014-destination-villaguay/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178336/hospeda/seed/required/destinations/014-destination-villaguay/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178337/hospeda/seed/required/destinations/014-destination-villaguay/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178339/hospeda/seed/required/destinations/014-destination-villaguay/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178340/hospeda/seed/required/destinations/014-destination-villaguay/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178341/hospeda/seed/required/destinations/014-destination-villaguay/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178341/hospeda/seed/required/destinations/014-destination-villaguay/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178342/hospeda/seed/required/destinations/014-destination-villaguay/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178343/hospeda/seed/required/destinations/014-destination-villaguay/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178344/hospeda/seed/required/destinations/014-destination-villaguay/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178345/hospeda/seed/required/destinations/014-destination-villaguay/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/014-destination-villaguay/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

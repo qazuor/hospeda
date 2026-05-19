@@ -25,20 +25,213 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Centro histórico de Gualeguay",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177990/hospeda/seed/required/destinations/021-destination-gualeguay/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Centro histórico de Gualeguay"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Arquitectura histórica de Gualeguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177991/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Costas del río Gualeguay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177992/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177993/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177994/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177995/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177996/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177997/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177997/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177998/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177999/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178000/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178001/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178002/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178003/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178004/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178004/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178005/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178006/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178007/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178008/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178009/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178010/hospeda/seed/required/destinations/021-destination-gualeguay/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/021-destination-gualeguay/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

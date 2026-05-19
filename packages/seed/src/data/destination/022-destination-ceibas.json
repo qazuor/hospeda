@@ -25,20 +25,123 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Delta del Paraná en Ceibas",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177842/hospeda/seed/required/destinations/022-destination-ceibas/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Delta del Paraná en Ceibas"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Canales del delta cerca de Ceibas",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177843/hospeda/seed/required/destinations/022-destination-ceibas/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Fauna y flora del delta en Ceibas",
-                "moderationState": "REJECTED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177844/hospeda/seed/required/destinations/022-destination-ceibas/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177846/hospeda/seed/required/destinations/022-destination-ceibas/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177847/hospeda/seed/required/destinations/022-destination-ceibas/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177849/hospeda/seed/required/destinations/022-destination-ceibas/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177850/hospeda/seed/required/destinations/022-destination-ceibas/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177851/hospeda/seed/required/destinations/022-destination-ceibas/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177853/hospeda/seed/required/destinations/022-destination-ceibas/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177854/hospeda/seed/required/destinations/022-destination-ceibas/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177855/hospeda/seed/required/destinations/022-destination-ceibas/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177855/hospeda/seed/required/destinations/022-destination-ceibas/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177858/hospeda/seed/required/destinations/022-destination-ceibas/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
