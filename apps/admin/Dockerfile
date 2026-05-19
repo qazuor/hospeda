@@ -35,31 +35,40 @@ ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_POSTHOG_KEY
 ARG VITE_POSTHOG_HOST
-# HOSPEDA_GIT_SHA must precede VITE_SENTRY_RELEASE so the ARG default
-# expression below can reference it. Coolify should pass this as a Build
-# Variable mapped to $COOLIFY_COMMIT_SHA so each deploy gets a unique
-# release identifier in Sentry. Falling back to an unset SHA leaves the
-# downstream `|| 'development'` chain in sentry.config.ts to absorb the
-# empty value.
+# HOSPEDA_GIT_SHA + VITE_SENTRY_RELEASE drive the Sentry release tag baked
+# into the admin client bundle. The build-time resolution chain is:
+#   1. Explicit --build-arg from Coolify (manual override, if set).
+#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
+#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
+#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
+#      specifically so this file reaches the builder.
+#   3. Last resort: empty string. The downstream `|| 'development'` chain
+#      in apps/admin/src/lib/sentry/sentry.config.ts absorbs that case.
+# Resolution happens in the same RUN that triggers `pnpm turbo run build`
+# so the env vars are visible to Vite (which reads import.meta.env at
+# build time). Exporting in a prior RUN would not persist across layers.
 ARG HOSPEDA_GIT_SHA
-ARG VITE_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
+ARG VITE_SENTRY_RELEASE
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_API_URL=$VITE_API_URL \
     VITE_SITE_URL=$VITE_SITE_URL \
     VITE_BETTER_AUTH_URL=$VITE_BETTER_AUTH_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
-    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
-    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
     NITRO_PRESET=node-server
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY patches ./patches
 COPY apps apps
 COPY packages packages
+COPY .git/HEAD /tmp/git-head
 RUN pnpm install --frozen-lockfile
-RUN pnpm turbo run build --filter=admin
+RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
+    VITE_SENTRY_RELEASE="${VITE_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
+    export HOSPEDA_GIT_SHA VITE_SENTRY_RELEASE && \
+    echo "[build] Sentry release: ${VITE_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=admin
 
 # ----- runner stage ----------------------------------------------------------
 # Nitro's node-server preset bundles its own runtime deps inside .output/,
