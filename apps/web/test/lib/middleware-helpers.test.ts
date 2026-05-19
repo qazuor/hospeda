@@ -248,6 +248,19 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('blob:');
     });
 
+    it('should allow Astro client runtime inline style via SHA-256 hash', () => {
+        // The Astro client runtime injects an inline <style> at hydration with
+        // the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
+        // Hash-allowed in style-src because the injection happens via JS after
+        // the middleware nonce rewrite. The hash is stable (CSS is hardcoded
+        // in Astro's runtime), so a regression here would indicate Astro
+        // upstream changed the inlined CSS — bump the hash and update the
+        // comment in buildCspHeader.
+        const header = buildCspHeader({ nonce: 'x' });
+        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
+        expect(styleSrc).toContain("'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='");
+    });
+
     it('should allow inline style attributes via style-src-attr', () => {
         // Inline style="..." attributes (used for tokenized colors on cards
         // and per-card transition-delay in the stagger pattern) cannot use a
