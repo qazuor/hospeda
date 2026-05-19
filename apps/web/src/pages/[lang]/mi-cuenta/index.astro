@@ -22,10 +22,9 @@ import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
 import {
     UserIcon,
-    FavoriteIcon,
-    StarIcon,
-    CreditCardIcon,
-    SettingsIcon
+    SettingsIcon,
+    ChatIcon,
+    NewsletterIcon
 } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -55,7 +54,11 @@ const initials = user.name
     .join('')
     .toUpperCase();
 
-// Navigation cards (sidebar + main grid).
+// Sections grid. We intentionally exclude Favoritos, Reseñas and
+// Suscripción from this list — they already have dedicated stat
+// cards directly above with the same link. Listing them in both
+// places duplicated the navigation entry and made the dashboard feel
+// cluttered. Keep this grid for items the stats row does NOT cover.
 const navItems = [
     {
         label: t('account.pages.dashboard.nav.editProfile', 'Editar perfil'),
@@ -67,31 +70,13 @@ const navItems = [
         Icon: UserIcon
     },
     {
-        label: t('account.pages.dashboard.nav.myFavorites', 'Mis favoritos'),
-        href: buildUrl({ locale, path: 'mi-cuenta/favoritos' }),
+        label: t('account.pages.dashboard.nav.myMessages', 'Mis consultas'),
+        href: buildUrl({ locale, path: 'mi-cuenta/messages' }),
         description: t(
-            'account.pages.dashboard.nav.myFavoritesDesc',
-            'Alojamientos que guardaste para consultar más tarde'
+            'account.pages.dashboard.nav.myMessagesDesc',
+            'Conversaciones con anfitriones'
         ),
-        Icon: FavoriteIcon
-    },
-    {
-        label: t('account.pages.dashboard.nav.myReviews', 'Mis resenas'),
-        href: buildUrl({ locale, path: 'mi-cuenta/resenas' }),
-        description: t(
-            'account.pages.dashboard.nav.myReviewsDesc',
-            'Resenas que escribiste sobre alojamientos visitados'
-        ),
-        Icon: StarIcon
-    },
-    {
-        label: t('account.pages.dashboard.nav.mySubscription', 'Mi suscripcion'),
-        href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
-        description: t(
-            'account.pages.dashboard.nav.mySubscriptionDesc',
-            'Administrá tu plan y método de pago'
-        ),
-        Icon: CreditCardIcon
+        Icon: ChatIcon
     },
     {
         label: t('account.pages.dashboard.nav.preferences', 'Preferencias'),
@@ -101,6 +86,15 @@ const navItems = [
             'Configurá notificaciones, idioma y privacidad'
         ),
         Icon: SettingsIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.newsletter', 'Newsletter'),
+        href: buildUrl({ locale, path: 'mi-cuenta/newsletter' }),
+        description: t(
+            'account.pages.dashboard.nav.newsletterDesc',
+            'Gestioná tu suscripción al boletín'
+        ),
+        Icon: NewsletterIcon
     }
 ] as const;
 

@@ -5,7 +5,6 @@
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
-    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
@@ -31,7 +30,11 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
     description:
         'Returns a single accommodation owned by the authenticated user. Returns 404 if not found or not owned by the requesting user.',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_LISTING_VIEW],
+    // No permission gate: the handler enforces ownership in the service
+    // layer and returns 404 if the row belongs to a different user. The
+    // previous `ACCOMMODATION_LISTING_VIEW` requirement was the admin
+    // listing permission, not granted to default HOST users — so hosts
+    // could not even read their own properties through the web UI.
     requestParams: {
         id: AccommodationIdSchema
     },

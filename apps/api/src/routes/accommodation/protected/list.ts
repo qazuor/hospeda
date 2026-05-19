@@ -2,7 +2,7 @@
  * Protected list own accommodations endpoint
  * Returns only accommodations owned by the authenticated user.
  */
-import { AccommodationProtectedSchema, LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { AccommodationProtectedSchema, LifecycleStatusEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -25,7 +25,11 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
     description:
         'Returns a paginated list of accommodations owned by the authenticated user. Optionally filter by lifecycleState.',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_LISTING_VIEW],
+    // No permission gate: the handler filters strictly by `ownerId = actor.id`,
+    // so any authenticated user sees only their own listings. The previous
+    // `ACCOMMODATION_LISTING_VIEW` requirement was an admin-listing
+    // permission that is not part of the default HOST role, which made the
+    // page return 403 for the very users it was built for.
     requestQuery: {
         lifecycleState: z
             .enum([
@@ -35,7 +39,13 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
             ])
             .optional(),
         page: z.coerce.number().int().min(1).default(1).optional(),
-        pageSize: z.coerce.number().int().min(1).max(100).default(50).optional()
+        pageSize: z.coerce.number().int().min(1).max(100).default(50).optional(),
+        // Sort params accepted from the web UI listing page. Without these
+        // declared the strict OpenAPI validator returns 400 for the SSR
+        // call from /mi-cuenta/propiedades/ which sends
+        // sortBy=createdAt&sortOrder=desc.
+        sortBy: z.string().min(1).max(50).optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional()
     },
     responseSchema: AccommodationProtectedSchema,
     handler: async (

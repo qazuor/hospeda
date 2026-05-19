@@ -278,6 +278,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
     // ── Main fetch for active tab ──────────────────────────────────────────
 
+    // Pre-compute the fetch-error fallback string so the useCallback below
+    // can depend on a stable primitive (strings have value-based identity)
+    // instead of `t`, which `createTranslations(locale)` recreates on every
+    // render. Including `t` directly caused fetchBookmarks to change
+    // identity each render, re-firing the useEffect below and producing an
+    // infinite fetch loop — the API rate-limited the client with 429s.
+    const fetchErrorMsg = t('account.favorites.errors.fetchFailed', 'Error al cargar favoritos');
+
     const fetchBookmarks = useCallback(
         async (entityType: FavoritesEntityType, targetPage: number, signal: AbortSignal) => {
             setLoading(true);
@@ -293,16 +301,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                     signal
                 });
                 if (!res.ok) {
-                    throw new Error(
-                        t('account.favorites.errors.fetchFailed', 'Error al cargar favoritos')
-                    );
+                    throw new Error(fetchErrorMsg);
                 }
                 const body = (await res.json()) as BookmarksApiResponse;
                 if (!body.success) {
-                    throw new Error(
-                        body.error?.message ??
-                            t('account.favorites.errors.fetchFailed', 'Error al cargar favoritos')
-                    );
+                    throw new Error(body.error?.message ?? fetchErrorMsg);
                 }
                 const fetchedTotal = body.data?.total ?? 0;
                 setBookmarks([...(body.data?.bookmarks ?? [])]);
@@ -311,16 +314,13 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 setTabCounts((prev) => ({ ...prev, [entityType]: fetchedTotal }));
             } catch (err) {
                 if (err instanceof Error && err.name === 'AbortError') return;
-                const msg =
-                    err instanceof Error
-                        ? err.message
-                        : t('account.favorites.errors.fetchFailed', 'Error al cargar favoritos');
+                const msg = err instanceof Error ? err.message : fetchErrorMsg;
                 setError(msg);
             } finally {
                 setLoading(false);
             }
         },
-        [base, t]
+        [base, fetchErrorMsg]
     );
 
     useEffect(() => {

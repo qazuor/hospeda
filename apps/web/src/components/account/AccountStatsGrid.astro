@@ -36,12 +36,14 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
     <article class="account__stat-card">
         <div class="account__stat-card-header">
             <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
-            <FavoriteIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+            <span class="account__stat-icon" aria-hidden="true">
+                <FavoriteIcon size={20} weight="fill" aria-hidden="true" />
+            </span>
         </div>
         <p id="stat-favorites" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
         <p class="account__stat-desc">{statFavoritesDesc}</p>
         <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
-            {viewLabel} {statFavoritesLabel.toLowerCase()} &rarr;
+            {viewLabel} {statFavoritesLabel.toLowerCase()}
         </a>
     </article>
 
@@ -49,12 +51,14 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
     <article class="account__stat-card">
         <div class="account__stat-card-header">
             <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
-            <StarIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+            <span class="account__stat-icon" aria-hidden="true">
+                <StarIcon size={20} weight="fill" aria-hidden="true" />
+            </span>
         </div>
         <p id="stat-reviews" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
         <p class="account__stat-desc">{statReviewsDesc}</p>
         <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
-            {viewLabel} {statReviewsLabel.toLowerCase()} &rarr;
+            {viewLabel} {statReviewsLabel.toLowerCase()}
         </a>
     </article>
 
@@ -62,7 +66,9 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
     <article class="account__stat-card">
         <div class="account__stat-card-header">
             <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
-            <CreditCardIcon size={24} weight="regular" className="account__stat-icon" aria-hidden="true" />
+            <span class="account__stat-icon" aria-hidden="true">
+                <CreditCardIcon size={20} weight="regular" aria-hidden="true" />
+            </span>
         </div>
         <p id="stat-subscription" class="account__stat-value stat-value--loading" aria-live="polite">
             {statSubscriptionDesc}
@@ -78,7 +84,7 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
             {statSubscriptionStatus}
         </p>
         <a href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })} class="account__stat-link">
-            {viewLabel} {statSubscriptionLabel.toLowerCase()} &rarr;
+            {viewLabel} {statSubscriptionLabel.toLowerCase()}
         </a>
     </article>
 </div>
@@ -103,39 +109,61 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
     }
 
     .account__stat-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
         border-radius: var(--radius-card);
-        border: 1px solid var(--border);
+        border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
         background-color: var(--core-card);
         padding: var(--space-6, 1.5rem);
-        box-shadow: var(--shadow-card);
-        transition: box-shadow var(--duration-normal) ease;
+        box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+        transition: transform var(--duration-normal) ease,
+                    box-shadow var(--duration-normal) ease,
+                    border-color var(--duration-normal) ease;
     }
 
     .account__stat-card:hover {
-        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px oklch(from var(--core-foreground) l c h / 0.08);
+        border-color: oklch(from var(--brand-primary) l c h / 0.3);
     }
 
     .account__stat-card-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 0.75rem;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
     }
 
     .account__stat-card-title {
         margin: 0;
-        font-size: var(--text-body, 1.125rem);
+        font-family: var(--font-sans);
+        font-size: 0.8125rem;
         font-weight: 600;
-        color: var(--core-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--core-muted-foreground);
     }
 
+    /* Round tinted background tile for the stat's brand icon — sets the
+       card apart from plain text-only cards used elsewhere. */
     .account__stat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex-shrink: 0;
+        border-radius: var(--radius-pill);
+        background-color: oklch(from var(--brand-primary) l c h / 0.1);
         color: var(--brand-primary);
     }
 
     .account__stat-value {
-        margin: 0 0 0.5rem;
-        font-size: 1.875rem;
+        margin: 0 0 var(--space-2);
+        font-size: 2.25rem;
+        line-height: 1.1;
         font-family: var(--font-heading);
         font-weight: 700;
         color: var(--core-foreground);
@@ -150,15 +178,29 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
     .account__stat-link {
         display: inline-flex;
         align-items: center;
-        margin-top: 1rem;
+        margin-top: auto;
+        padding-top: var(--space-4);
         font-size: var(--text-body-sm);
-        font-weight: 500;
+        font-weight: 600;
         color: var(--brand-primary);
         text-decoration: none;
-        transition: color var(--duration-fast) ease;
+        transition: gap var(--duration-fast) ease,
+                    color var(--duration-fast) ease;
     }
 
-    .account__stat-link:hover {
-        text-decoration: underline;
+    .account__stat-link::after {
+        content: '\2192';
+        margin-left: 0.375rem;
+        transition: transform var(--duration-fast) ease;
+    }
+
+    /* Strip the trailing "→" rendered in the markup template — the
+       arrow is now a CSS-driven affordance that animates on hover. */
+    .account__stat-link {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .account__stat-card:hover .account__stat-link::after {
+        transform: translateX(2px);
     }
 </style>

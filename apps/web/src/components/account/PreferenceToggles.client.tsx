@@ -141,6 +141,19 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
 
     // ── Fetch current settings ─────────────────────────────────────────────
 
+    // Pre-compute the fetch-error fallback string here so the useCallback
+    // below can depend on it without depending on `t` itself.
+    // `createTranslations(locale)` returns a new object every render, so
+    // putting `t` in the deps would re-create fetchSettings every render,
+    // re-fire the useEffect below, and spam the API in an infinite loop
+    // (it was hitting the 429 rate limit on mount before this rewrite).
+    // The string returned from `t()` has value-based identity, so React
+    // sees the same dep across renders.
+    const fetchErrorMsg = t(
+        'account.preferences.errors.fetchFailed',
+        'Error al cargar preferencias'
+    );
+
     const fetchSettings = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -149,16 +162,11 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 credentials: 'include'
             });
             if (!res.ok) {
-                throw new Error(
-                    t('account.preferences.errors.fetchFailed', 'Error al cargar preferencias')
-                );
+                throw new Error(fetchErrorMsg);
             }
             const body = (await res.json()) as UserApiResponse;
             if (!body.success) {
-                throw new Error(
-                    body.error?.message ??
-                        t('account.preferences.errors.fetchFailed', 'Error al cargar preferencias')
-                );
+                throw new Error(body.error?.message ?? fetchErrorMsg);
             }
             const raw = body.data?.settings;
             setSettings({
@@ -178,15 +186,12 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 newsletter: raw?.newsletter ?? DEFAULT_SETTINGS.newsletter
             });
         } catch (err) {
-            const msg =
-                err instanceof Error
-                    ? err.message
-                    : t('account.preferences.errors.fetchFailed', 'Error al cargar preferencias');
+            const msg = err instanceof Error ? err.message : fetchErrorMsg;
             setError(msg);
         } finally {
             setLoading(false);
         }
-    }, [base, userId, t]);
+    }, [base, userId, fetchErrorMsg]);
 
     useEffect(() => {
         void fetchSettings();
