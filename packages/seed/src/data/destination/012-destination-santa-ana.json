@@ -3,8 +3,8 @@
     "id": "012-destination-santa-ana",
     "slug": "santa-ana",
     "name": "Santa Ana",
-    "summary": "Tranquila localidad rural con costas fluviales y vida campestre entrerriana",
-    "description": "Santa Ana es una pequeña localidad ubicada en el departamento Federación de Entre Ríos, emplazada sobre las costas del río Uruguay. Con un ritmo de vida tranquilo y apacible, Santa Ana ofrece a sus visitantes la experiencia auténtica del campo entrerriano, con actividades de pesca, contacto con la naturaleza y la calidez de su gente. Sus costas fluviales y sus paisajes rurales la convierten en un refugio ideal para quienes buscan descanso y tranquilidad lejos del bullicio urbano.",
+    "summary": "Pequeña localidad rural del departamento Federación sobre el perilago de Salto Grande, con playas, pesca y turismo de estancias.",
+    "description": "Santa Ana es una localidad del departamento Federación, en el norte de Entre Ríos, emplazada sobre el perilago de la represa hidroeléctrica de Salto Grande. Su jurisdicción fue profundamente modificada por la formación del lago artificial, lo que dio origen a extensas costas que hoy son escenario de algunas de las mejores playas del perilago. La pesca deportiva es uno de sus atractivos principales, practicada desde la costa o embarcado con guías locales, con especies como dorado, surubí, boga y patí. La oferta turística combina campings, playas tranquilas, turismo rural y de estancias, recorridos por campos productivos y el contacto directo con la vida campestre entrerriana, en un entorno apacible alejado de los grandes centros urbanos.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3206",
+        "zipCode": "3208",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "100",
         "city": "Santa Ana",
         "coordinates": {
-            "lat": "-31.6833",
-            "long": "-58.0833"
+            "lat": "-30.9000",
+            "long": "-57.9333"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Santa Ana - Tranquilidad Rural y Costa Fluvial | Entre Ríos",
-        "description": "Descubre Santa Ana, localidad rural con costas fluviales y vida campestre en Entre Ríos.",
-        "keywords": ["Santa Ana", "Entre Ríos", "Rural", "Pesca", "Naturaleza", "Tranquilidad"]
+        "title": "Santa Ana, Federación | Playas en Lago Salto Grande",
+        "description": "Descubrí Santa Ana, localidad del departamento Federación sobre el perilago de Salto Grande: playas, pesca deportiva, camping y turismo rural en Entre Ríos.",
+        "keywords": [
+            "Santa Ana",
+            "Federación",
+            "Entre Ríos",
+            "Salto Grande",
+            "pesca deportiva",
+            "perilago",
+            "turismo rural",
+            "playas"
+        ]
     },
     "tagIds": [
         "027-tag-naturaleza",
@@ -56,11 +65,12 @@
         "007-tag-camping"
     ],
     "attractionIds": [
-        "062-attraction-parque_municipal",
         "065-attraction-pesca_deportiva",
         "069-attraction-playa_fluvial",
+        "031-attraction-costanera",
+        "037-attraction-estancia_turistica",
         "072-attraction-plaza_principal",
-        "081-attraction-sendero_ecologico"
+        "053-attraction-muelle_pesquero"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

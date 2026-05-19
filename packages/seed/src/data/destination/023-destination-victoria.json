@@ -3,8 +3,8 @@
     "id": "023-destination-victoria",
     "slug": "victoria",
     "name": "Victoria",
-    "summary": "Ciudad portuaria entrerriana sobre el río Paraná, conocida por su santuario y sus playas",
-    "description": "Victoria es una histórica ciudad portuaria del oeste de Entre Ríos, ubicada a orillas del río Paraná frente a Rosario. Su economía y su identidad están profundamente ligadas al río: cuenta con un puerto activo, balnearios sobre el Paraná y un casco urbano caracterizado por la basílica del Santuario Nuestra Señora de Aránzazu, uno de los mayores atractivos religiosos de la región. La ciudad combina turismo termal, naturaleza isleña en el delta, y un calendario cultural propio, lo que la convierte en un destino versátil para visitantes que buscan tanto descanso como historia.",
+    "summary": "Victoria, la Ciudad de las Siete Colinas, es una pintoresca ciudad entrerriana sobre el Paraná, conocida por su casino, su abadía benedictina y su conexión con Rosario.",
+    "description": "Victoria, cabecera del Departamento Victoria en Entre Ríos, es conocida como la Ciudad de las Siete Colinas por el relieve ondulado sobre el que se asienta, poco habitual en el litoral argentino. Su perfil turístico combina patrimonio religioso, naturaleza y entretenimiento: la Abadía Benedictina del Niño Dios, fundada por monjes franceses en 1899, es uno de los hitos espirituales y arquitectónicos de la región. El Casino del Sol, uno de los más grandes del país, atrae visitantes durante todo el año junto a su complejo hotelero y de spa. Desde 2003, el Puente Rosario-Victoria, un complejo vial de casi 60 km con doce puentes menores sobre los humedales del Paraná, conectó a la ciudad con Rosario y transformó su economía y su turismo. Los humedales y el delta entrerriano que rodean a Victoria son escenario para la pesca deportiva, la navegación recreativa, los paseos en lancha y la observación de aves. El carnaval de Victoria, con su corsódromo propio, es uno de los más reconocidos del litoral.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3153",
+        "zipCode": "E3153",
         "country": "Argentina",
         "street": "Av. Costanera",
         "number": "1",
         "city": "Victoria",
         "coordinates": {
-            "lat": "-32.6167",
-            "long": "-60.1500"
+            "lat": "-32.6186",
+            "long": "-60.1561"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Victoria - Ciudad portuaria del Paraná | Entre Ríos",
-        "description": "Descubre Victoria, ciudad portuaria entrerriana frente al Paraná, con santuario, balnearios y delta.",
-        "keywords": ["Victoria", "Entre Ríos", "Paraná", "Santuario", "Termas", "Delta"]
+        "title": "Victoria, Entre Ríos | Ciudad de las Siete Colinas",
+        "description": "Descubrí Victoria, la Ciudad de las Siete Colinas: Casino del Sol, Abadía Benedictina, Puente Rosario-Victoria y humedales del Paraná.",
+        "keywords": [
+            "Victoria",
+            "Entre Ríos",
+            "Siete Colinas",
+            "Casino del Sol",
+            "Abadía Benedictina",
+            "Puente Rosario-Victoria",
+            "Humedales del Paraná",
+            "Carnaval Victoria"
+        ]
     },
     "tagIds": [
         "012-tag-delta",
@@ -56,9 +65,13 @@
         "022-tag-historia"
     ],
     "attractionIds": [
+        "011-attraction-casino",
+        "029-attraction-convento_historico",
+        "031-attraction-costanera",
         "044-attraction-humedales",
-        "032-attraction-delta_explorer",
+        "058-attraction-observacion_aves",
         "065-attraction-pesca_deportiva",
+        "080-attraction-sede_carnaval",
         "072-attraction-plaza_principal"
     ],
     "visibility": "PUBLIC",

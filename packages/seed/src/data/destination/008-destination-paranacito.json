@@ -3,8 +3,8 @@
     "id": "008-destination-paranacito",
     "slug": "paranacito",
     "name": "Villa Paranacito",
-    "summary": "Única ciudad insular de Argentina rodeada de naturaleza y delta",
-    "description": "Villa Paranacito es una única ciudad insular ubicada en el Delta del Paraná, en el extremo sur de Entre Ríos. Conocida como la única ciudad insular de Argentina, ofrece una experiencia única rodeada de naturaleza salvaje, canales, islas y fauna autóctona. Es el destino perfecto para el turismo de naturaleza, pesca, avistamiento de aves y aventuras en el delta. Su paisaje único y su tranquilidad la convierten en un escape perfecto de la vida urbana.",
+    "summary": "Cabecera del Departamento Islas del Ibicuy, en el Delta del Paraná entrerriano. Naturaleza, humedales, pesca y navegación.",
+    "description": "Villa Paranacito es la cabecera del Departamento Islas del Ibicuy, ubicada en el extremo sudeste de Entre Ríos, en la tercera sección del Delta del Paraná. Bañada por el río Paranacito y rodeada de arroyos, islas y humedales de gran diversidad biológica, es uno de los destinos más atractivos del bajo delta entrerriano. Su entorno natural permite paseos en lancha, yate o catamarán, recorridos por canales navegables, kayak, remo, esquí acuático y observación de aves autóctonas y migratorias. La pesca deportiva es una actividad central, con especies como pejerrey, dorado, surubí, bagre y sábalo, y cuenta con guías de pesca, marinas y embarcaderos. Cada año se celebra el Festival del Pejerrey Entrerriano. El distrito abarca cerca de 197.000 hectáreas de islas, arroyos y humedales del complejo deltaico.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2840",
+        "zipCode": "2823",
         "country": "Argentina",
         "street": "Av. Insular",
         "number": "777",
         "city": "Villa Paranacito",
         "coordinates": {
-            "lat": "-33.7167",
-            "long": "-58.6500"
+            "lat": "-33.7117",
+            "long": "-58.6956"
         }
     },
     "media": {
@@ -43,15 +43,27 @@
         ]
     },
     "seo": {
-        "title": "Villa Paranacito - Única ciudad insular de Argentina",
-        "description": "Descubre Villa Paranacito en Entre Ríos. Única ciudad insular de Argentina rodeada de naturaleza y delta",
-        "keywords": ["Villa Paranacito", "Entre Ríos", "insular", "delta", "naturaleza", "río"]
+        "title": "Villa Paranacito - Delta entrerriano, naturaleza y pesca",
+        "description": "Descubrí Villa Paranacito, cabecera de Islas del Ibicuy en el Delta del Paraná. Humedales, pesca, kayak, navegación y observación de aves.",
+        "keywords": [
+            "Villa Paranacito",
+            "Entre Ríos",
+            "Delta del Paraná",
+            "Islas del Ibicuy",
+            "pesca deportiva",
+            "humedales",
+            "kayak",
+            "naturaleza"
+        ]
     },
     "attractionIds": [
         "032-attraction-delta_explorer",
         "044-attraction-humedales",
         "065-attraction-pesca_deportiva",
-        "035-attraction-embarcadero_turistico"
+        "035-attraction-embarcadero_turistico",
+        "058-attraction-observacion_aves",
+        "007-attraction-canal_navegable",
+        "046-attraction-kayak_rio"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

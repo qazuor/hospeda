@@ -3,8 +3,8 @@
     "id": "022-destination-ceibas",
     "slug": "ceibas",
     "name": "Ceibas",
-    "summary": "Pequeña localidad del sur entrerriano con costas del Paraná y ecoturismo en el delta",
-    "description": "Ceibas es una pequeña localidad ubicada en el sur de Entre Ríos, en el departamento Islas del Ibicuy, emplazada sobre las costas del río Paraná. Con una ubicación privilegiada en el delta entrerriano, Ceibas ofrece un turismo de naturaleza único, con actividades de pesca, avistamiento de aves, kayak y navegación en canales del delta. La exuberante fauna y flora autóctona, junto con el silencio de sus paisajes de islas y humedales, convierten a Ceibas en un destino ideal para el ecoturismo y la desconexión total.",
+    "summary": "Pueblito del sur entrerriano sobre la RN12, célebre parada gastronómica camino a Buenos Aires y puerta de acceso al delta del Ibicuy.",
+    "description": "Ceibas es una pequeña localidad del Departamento Islas del Ibicuy, en el sur de Entre Ríos, atravesada por la Ruta Nacional 12 y punto donde nace la Ruta Nacional 14. Su ubicación estratégica, a unos 150 km de Buenos Aires por el puente Zárate-Brazo Largo, la convirtió en una clásica parada gastronómica para viajeros que recorren el corredor mesopotámico, con parrillas, casas de comidas y panaderías tradicionales junto a la ruta. Más allá de la mesa, Ceibas funciona como puerta de acceso al delta entrerriano y a humedales de gran riqueza, con su reserva natural que registra cerca de 300 especies de aves. Pesca deportiva, observación de fauna, paseos en lancha y kayak por canales del Paraná, safaris fotográficos y turismo rural completan la propuesta de un destino tranquilo y autentico, ideal para una escapada corta o una pausa prolongada en el viaje.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2831",
+        "zipCode": "2829",
         "country": "Argentina",
         "street": "Av. Costanera",
         "number": "100",
         "city": "Ceibas",
         "coordinates": {
-            "lat": "-33.4500",
-            "long": "-58.7500"
+            "lat": "-33.4953",
+            "long": "-58.7794"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Ceibas - Ecoturismo y Delta del Paraná | Entre Ríos",
-        "description": "Descubre Ceibas, localidad con ecoturismo en el delta del Paraná en el sur de Entre Ríos.",
-        "keywords": ["Ceibas", "Entre Ríos", "Delta", "Ecoturismo", "Pesca", "Naturaleza"]
+        "title": "Ceibas, Entre Ríos: parada gastronómica en la RN12 y delta",
+        "description": "Descubrí Ceibas, pueblito de Islas del Ibicuy sobre la RN12: parrillas tradicionales, casas de comidas y acceso al delta entrerriano y sus humedales.",
+        "keywords": [
+            "Ceibas",
+            "Entre Ríos",
+            "Islas del Ibicuy",
+            "RN12",
+            "parada gastronómica",
+            "delta entrerriano",
+            "pesca",
+            "observación de aves"
+        ]
     },
     "tagIds": [
         "012-tag-delta",
@@ -58,10 +67,10 @@
         "005-tag-aventura"
     ],
     "attractionIds": [
+        "063-attraction-parrilla_tradicional",
+        "009-attraction-casa_comidas",
         "044-attraction-humedales",
-        "032-attraction-delta_explorer",
-        "058-attraction-observacion_aves",
-        "046-attraction-kayak_rio",
+        "077-attraction-reserva_natural",
         "065-attraction-pesca_deportiva"
     ],
     "visibility": "PUBLIC",
