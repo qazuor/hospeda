@@ -18,6 +18,7 @@ import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbRestore } from './commands/db-restore.ts';
+import { dbSeed } from './commands/db-seed.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envDelete } from './commands/env-delete.ts';
 import { envList } from './commands/env-list.ts';
@@ -107,6 +108,12 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'db-restore',
         summary: 'Pick an R2 backup and restore it into the Postgres container (destructive).',
         run: dbRestore
+    },
+    {
+        name: 'db-seed',
+        summary:
+            'Run @repo/seed against the target DB (reset+required+example by default; destructive).',
+        run: dbSeed
     },
     {
         name: 'app-restart',
