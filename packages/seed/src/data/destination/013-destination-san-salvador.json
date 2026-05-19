@@ -3,8 +3,8 @@
     "id": "013-destination-san-salvador",
     "slug": "san-salvador",
     "name": "San Salvador",
-    "summary": "Ciudad agrícola con tradición citrícola y hospitalidad entrerriana",
-    "description": "San Salvador es una ciudad ubicada en el departamento Federación de Entre Ríos, reconocida por su fuerte actividad agrícola y producción citrícola. Con una comunidad activa y tradicional, San Salvador ofrece la experiencia genuina del interior entrerriano. Sus festivales locales, su gastronomía regional y los paisajes rurales que la rodean la convierten en un destino interesante para quienes quieren conocer la cultura y las tradiciones del campo entrerriano.",
+    "summary": "Capital Nacional del Arroz en Entre Ríos, centro de la cuenca arrocera argentina, con la tradicional Fiesta Nacional del Arroz y un paisaje rural marcado por plantaciones, molinos y arroceras.",
+    "description": "San Salvador es la cabecera del Departamento San Salvador, en la provincia de Entre Ríos, y ostenta el título de Capital Nacional del Arroz desde 1953. Desde mediados del siglo XX se consolidó como el principal polo arrocero de Argentina, concentrando una porción mayoritaria de la industria nacional vinculada al cereal, con molinos, secaderos y empresas arroceras distribuidas en su zona urbana y rural. Su identidad gira en torno a la Fiesta Nacional del Arroz, que reúne expo agroindustrial, desfile de maquinaria, elección de la Reina Nacional del Arroz, espectáculos populares y muestras gastronómicas. El entorno ofrece paisajes de campo entrerriano, plantaciones, caminos rurales y una vida urbana tranquila con plazas, parques y propuestas culturales que invitan a conocer el interior productivo de la Mesopotamia argentina.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,7 +13,7 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3232",
+        "zipCode": "3218",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "200",
@@ -43,15 +43,16 @@
         ]
     },
     "seo": {
-        "title": "San Salvador - Tradición y Citricultura | Hospeda",
-        "description": "Descubre San Salvador, ciudad agrícola con tradición citrícola en Entre Ríos.",
+        "title": "San Salvador, Capital Nacional del Arroz | Hospeda",
+        "description": "Descubrí San Salvador, Entre Ríos: Capital Nacional del Arroz, sede de la Fiesta Nacional del Arroz, con plantaciones, molinos y tradición agroindustrial.",
         "keywords": [
             "San Salvador",
             "Entre Ríos",
-            "Citricultura",
-            "Agricultura",
-            "Rural",
-            "Tradición"
+            "Capital Nacional del Arroz",
+            "Fiesta Nacional del Arroz",
+            "Arroceras",
+            "Turismo rural",
+            "Mesopotamia argentina"
         ]
     },
     "tagIds": [
@@ -65,9 +66,10 @@
     "attractionIds": [
         "013-attraction-centro_agropecuario",
         "049-attraction-mercado_agricola",
-        "068-attraction-plantacion_citricos",
-        "072-attraction-plaza_principal",
-        "062-attraction-parque_municipal"
+        "070-attraction-plaza_festivales",
+        "062-attraction-parque_municipal",
+        "056-attraction-museo_regional",
+        "072-attraction-plaza_principal"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

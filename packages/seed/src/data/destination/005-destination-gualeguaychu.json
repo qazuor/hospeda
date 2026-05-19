@@ -3,8 +3,8 @@
     "id": "005-destination-gualeguaychu",
     "slug": "gualeguaychu",
     "name": "Gualeguaychú",
-    "summary": "Capital Nacional del Carnaval y puerta de entrada a las termas de Entre Ríos",
-    "description": "Gualeguaychú es una hermosa ciudad ubicada en el sureste de Entre Ríos, famosa mundialmente por su espectacular Carnaval del País. Esta vibrante ciudad combina tradición y modernidad, ofreciendo desde el famoso Corsódromo hasta pintorescas costas sobre el río Gualeguaychú. Es conocida por sus termas, su rica historia, arquitectura colonial y como centro neurálgico del turismo entrerriano. La ciudad ofrece una amplia variedad de actividades culturales, gastronómicas y de entretenimiento, siendo un destino ideal tanto para familias como para jóvenes que buscan diversión y relax.",
+    "summary": "Capital Nacional del Carnaval, con corsódromo, termas, costanera sobre el río y playas fluviales en el sureste de Entre Ríos.",
+    "description": "Gualeguaychú es una ciudad del sureste de Entre Ríos, a orillas del río homónimo y cerca del río Uruguay, reconocida como Capital Nacional del Carnaval. Cada sábado entre enero y marzo, su Corsódromo, inaugurado en 1997 sobre el ex Parque de la Estación, reúne a decenas de miles de espectadores para los desfiles de comparsas. Fuera de la temporada de carnaval, la ciudad ofrece el Complejo Termal de Gualeguaychú sobre Ruta 42, una extensa costanera con paseos y balnearios, playas fluviales como Ñandubaysal sobre el río Uruguay, el Museo del Carnaval, talleres de carnaval donde se confeccionan trajes y carrozas, y un casco histórico con la Catedral San José y el Parque Unzué. La cercanía con Buenos Aires y Rosario la convierte en uno de los destinos más visitados de la provincia, combinando carnaval, termalismo, playa y cultura litoraleña.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -146,9 +146,18 @@
         ]
     },
     "seo": {
-        "title": "Gualeguaychú - Capital Nacional del Carnaval",
-        "description": "Descubre Gualeguaychú, la capital del carnaval argentino. Termas, cultura, gastronomía y entretenimiento en Entre Ríos.",
-        "keywords": ["Gualeguaychú", "Carnaval", "Entre Ríos", "Termas", "Argentina", "Turismo"]
+        "title": "Gualeguaychú - Capital Nacional del Carnaval, Entre Ríos",
+        "description": "Descubrí Gualeguaychú: carnaval en el Corsódromo, termas, costanera, playas sobre el río Uruguay y casco histórico en el sureste de Entre Ríos.",
+        "keywords": [
+            "Gualeguaychú",
+            "Carnaval del País",
+            "Corsódromo",
+            "Termas Gualeguaychú",
+            "Entre Ríos",
+            "Ñandubaysal",
+            "Costanera",
+            "Turismo Argentina"
+        ]
     },
     "tagIds": [
         "018-tag-festivales",
@@ -161,10 +170,13 @@
     ],
     "attractionIds": [
         "030-attraction-corsodromo",
+        "080-attraction-sede_carnaval",
+        "054-attraction-museo_carnaval",
+        "084-attraction-taller_carnaval",
         "028-attraction-complejo_termal_principal",
-        "018-attraction-centro_historico",
         "031-attraction-costanera",
-        "015-attraction-centro_cultural"
+        "069-attraction-playa_fluvial",
+        "018-attraction-centro_historico"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

@@ -3,8 +3,8 @@
     "id": "014-destination-villaguay",
     "slug": "villaguay",
     "name": "Villaguay",
-    "summary": "Ciudad cabecera con rica historia regional y entorno natural privilegiado",
-    "description": "Villaguay es la ciudad cabecera del departamento homónimo en Entre Ríos, reconocida por su historia regional y su entorno natural privilegiado. Bañada por el río Villaguay y rodeada de campos entrerrianos, la ciudad combina historia, cultura y naturaleza. Sus museos regionales, monumentos históricos y la calidez de su gente hacen de Villaguay un destino auténtico del interior entrerriano, ideal para quienes buscan conocer la verdadera identidad cultural de la provincia.",
+    "summary": "Ciudad cabecera en el centro geográfico de Entre Ríos, conocida como Ciudad de los Encuentros, con fuerte tradición ganadera y herencia de las colonias judías.",
+    "description": "Villaguay es la ciudad cabecera del departamento homónimo, ubicada en el centro geográfico de la provincia de Entre Ríos. Fundada formalmente el 20 de noviembre de 1823 durante la gobernación de Mansilla, su nombre proviene del guaraní y se asocia a interpretaciones como río del tigre. Equidistante del Paraná y del Uruguay, fue históricamente una posta entre el Arroyo de la China y la Bajada del Paraná. Desde 1880 recibió inmigración belga, italiana, alemana, sirio-libanesa y especialmente judía a través de la Jewish Colonization Association del Barón Hirsch, dando origen a colonias cercanas como Villa Clara, Villa Domínguez, Carmel e Ingeniero Sajaroff, hoy parte del Circuito de las Colonias Judías del Centro de Entre Ríos. La ciudad combina producción agropecuaria, cría de caballos criollos de prestigio nacional, balnearios sobre arroyos y ríos del entorno con arena limpia, y una intensa agenda de festivales que la consolidan como Ciudad de los Encuentros.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Villaguay - Historia Regional y Naturaleza | Entre Ríos",
-        "description": "Descubre Villaguay, ciudad cabecera con rica historia regional y entorno natural en Entre Ríos.",
-        "keywords": ["Villaguay", "Entre Ríos", "Historia", "Cultura", "Naturaleza", "Regional"]
+        "title": "Villaguay: Ciudad de los Encuentros, Entre Ríos",
+        "description": "Descubrí Villaguay, cabecera departamental en el corazón de Entre Ríos. Historia, colonias judías, tradición ganadera, balnearios y festivales.",
+        "keywords": [
+            "Villaguay",
+            "Entre Ríos",
+            "colonias judías",
+            "ganadería",
+            "balnearios",
+            "centro de Entre Ríos",
+            "Ciudad de los Encuentros",
+            "turismo rural"
+        ]
     },
     "tagIds": [
         "022-tag-historia",
@@ -56,11 +65,12 @@
         "017-tag-familia"
     ],
     "attractionIds": [
-        "055-attraction-museo_historico",
-        "056-attraction-museo_regional",
+        "062-attraction-parque_municipal",
+        "005-attraction-balneario_municipal",
         "072-attraction-plaza_principal",
-        "018-attraction-centro_historico",
-        "062-attraction-parque_municipal"
+        "012-attraction-catedral_principal",
+        "056-attraction-museo_regional",
+        "013-attraction-centro_agropecuario"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

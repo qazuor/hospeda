@@ -3,8 +3,8 @@
     "id": "015-destination-villa-elisa",
     "slug": "villa-elisa",
     "name": "Villa Elisa",
-    "summary": "Ciudad entrerriana con termas y naturaleza exuberante sobre el río Uruguay",
-    "description": "Villa Elisa es una encantadora ciudad ubicada en el departamento Colón de Entre Ríos, famosa por sus complejos termales y su cercanía al río Uruguay. Rodeada de una naturaleza exuberante, la ciudad ofrece una experiencia de relax y bienestar a sus visitantes. Sus termas de aguas minerales, sus playas fluviales y la tranquilidad de su entorno la convierten en un destino ideal para el turismo de salud y bienestar. También cuenta con una oferta gastronómica regional y artesanal que encanta a los viajeros.",
+    "summary": "Ciudad termal y agroturística del Departamento Colón, Entre Ríos, fundada en 1890 por inmigrantes suizos del Valais y saboyanos.",
+    "description": "Villa Elisa es una ciudad del Departamento Colón, en el este de Entre Ríos, fundada en 1890 por Héctor de Elía con familias de inmigrantes provenientes del Cantón de Valais (Suiza), Saboya (Francia) y Piamonte (Italia) que se habían asentado previamente en la Colonia San José. Su principal atractivo son las Termas de Villa Elisa, complejo de 41 hectáreas con diez piscinas de aguas mineromedicinales surgentes desde 1997 a unos 40 °C, spa, lago artificial y amplias áreas verdes. La economía local combina una fuerte tradición agropecuaria con cooperativas avícolas, lácteas y citrícolas, lo que dio lugar a una red de estancias y chacras dedicadas al agroturismo: cabalgatas, trekking, visitas a tambos, queserías y producciones rurales. El patrimonio histórico se preserva en el Museo Regional El Porvenir, antigua residencia del fundador. Reconocida por la OMT como uno de los Best Tourism Villages, Villa Elisa ofrece bienestar termal, cultura inmigrante y vida rural a pocos kilómetros del río Uruguay.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2843",
+        "zipCode": "3265",
         "country": "Argentina",
         "street": "Av. Termas",
         "number": "400",
         "city": "Villa Elisa",
         "coordinates": {
-            "lat": "-32.1625",
-            "long": "-58.4028"
+            "lat": "-32.1632",
+            "long": "-58.4008"
         }
     },
     "media": {
@@ -43,9 +43,18 @@
         ]
     },
     "seo": {
-        "title": "Villa Elisa - Termas y Naturaleza | Entre Ríos",
-        "description": "Descubre Villa Elisa, ciudad con termas y naturaleza exuberante en Entre Ríos.",
-        "keywords": ["Villa Elisa", "Entre Ríos", "Termas", "Naturaleza", "Relax", "Bienestar"]
+        "title": "Villa Elisa, Entre Ríos | Termas y Agroturismo",
+        "description": "Conocé Villa Elisa, ciudad termal del Departamento Colón fundada por inmigrantes suizos y saboyanos. Termas, estancias, queserías y patrimonio cultural.",
+        "keywords": [
+            "Villa Elisa",
+            "Termas Villa Elisa",
+            "Entre Ríos",
+            "Departamento Colón",
+            "agroturismo",
+            "inmigración suiza",
+            "Cantón Valais",
+            "turismo rural"
+        ]
     },
     "tagIds": [
         "038-tag-termas",
@@ -61,7 +70,10 @@
         "066-attraction-piscinas_termales",
         "085-attraction-termas_familiares",
         "022-attraction-centro_spa_termal",
-        "069-attraction-playa_fluvial"
+        "037-attraction-estancia_turistica",
+        "076-attraction-queseria_artesanal",
+        "043-attraction-granja_educativa",
+        "056-attraction-museo_regional"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
