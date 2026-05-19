@@ -67,7 +67,11 @@ import {
     createTestBillingCustomer,
     createTestSubscription
 } from '../../helpers/billing-factories.js';
-import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
+import {
+    invalidSignatureHeaders,
+    providerResponseFixtures,
+    signWebhookPayload
+} from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     type TestBillingPlansSeed,
@@ -431,5 +435,280 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
             .from(billingSubscriptions)
             .where(eq(billingSubscriptions.id, cheapSubscriptionId));
         expect(subs[0]?.planId).toBe(seed.cheap.planId);
+    });
+
+    // -----------------------------------------------------------------------
+    // Webhook activation — sub-commit 3
+    //
+    // Once the user pays the prorated delta in MercadoPago, MP sends a
+    // `payment.updated` IPN. The hospeda webhook handler fetches the full
+    // payment via paymentAdapter.payments.retrieve, inspects the
+    // metadata, and dispatches to `confirmPlanUpgrade` when
+    // `planChangeUpgradeId` is present and the payment status is
+    // approved/accredited (payment-logic.ts:412+ → 222).
+    //
+    // confirmPlanUpgrade then:
+    //   Step 1: billing.subscriptions.changePlan(planChangeUpgradeId, ...)
+    //           commits the local plan flip (sub.planId = newPlanId).
+    //   Step 2: paymentAdapter.subscriptions.update(...) propagates to
+    //           the MP preapproval — SKIPPED here because the test sub
+    //           has no mpSubscriptionId (the upgrade flow does not
+    //           require one for the local change; preapproval propagation
+    //           is best-effort).
+    //   Step 3: addon recalculation (best-effort).
+    //   Step 4: record the delta payment in billing_payments.
+    //
+    // The three tests below mirror the annual/monthly sub-commit 3
+    // webhook blocks adapted for the upgrade lifecycle (payment.updated
+    // event, metadata-based correlation by planChangeUpgradeId).
+    // -----------------------------------------------------------------------
+
+    /**
+     * Helper: drive the happy-path POST /change-plan to create the
+     * checkout row + capture the providerPaymentId that the webhook will
+     * deliver. Resets the stub config so each test's webhook assertions
+     * are independent of the create-time call.
+     */
+    async function createPendingUpgradeCheckout(): Promise<{
+        readonly providerPaymentId: string;
+        readonly deltaCentavos: number;
+    }> {
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_upgrade_for_activation',
+                url: 'https://stub.example/checkout/upgrade-activation',
+                status: 'pending'
+            })
+        );
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: seed.expensive.planId,
+            billingInterval: 'monthly'
+        });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            readonly data: { readonly deltaCentavos: number };
+        };
+        const deltaCentavos = body.data.deltaCentavos;
+        mpStub.config.reset();
+        return {
+            providerPaymentId: `pay_test_${randomUUID()}`,
+            deltaCentavos
+        };
+    }
+
+    /**
+     * Helper: build + sign an MP IPN payment.updated payload.
+     */
+    function buildSignedWebhookRequest(opts: {
+        readonly providerPaymentId: string;
+    }): {
+        readonly body: string;
+        readonly headers: Record<string, string>;
+    } {
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'payment',
+            action: 'payment.updated',
+            data: { id: opts.providerPaymentId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const headers = signWebhookPayload({ body });
+        return { body, headers };
+    }
+
+    it('webhook payment.updated with matching planChangeUpgradeId commits the plan flip', async () => {
+        // ARRANGE: pending upgrade checkout created via the happy path
+        // (yields a deltaCentavos figure the webhook will echo back).
+        const { providerPaymentId, deltaCentavos } = await createPendingUpgradeCheckout();
+
+        // ARRANGE: stub the three adapter calls qzpay-hono + the handler
+        // make. The payments.retrieve metadata carries the correlation
+        // keys the upgrade handler reads — they must mirror the values
+        // the upgrade service put into the checkout's metadata (see
+        // subscription-checkout.service.ts:669-677).
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_upgrade_activation',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: deltaCentavos / 100, // adapter returns major units
+                currency: 'ARS',
+                // extractPlanChangeUpgradeMetadata (webhooks/mercadopago/utils.ts:345)
+                // requires targetTransactionAmountMajor to be a real `number`,
+                // not a stringified one — qzpay's payment metadata is typed as
+                // Record<string, string> but the upgrade dispatch reads the
+                // numeric value directly; cast through unknown to satisfy
+                // both sides.
+                metadata: {
+                    planChangeUpgradeId: cheapSubscriptionId,
+                    oldPlanId: seed.cheap.planId,
+                    newPlanId: seed.expensive.planId,
+                    newPriceId: seed.expensive.monthlyPriceId,
+                    targetTransactionAmountMajor: 5000,
+                    deltaCentavos
+                } as unknown as Record<string, string>
+            })
+        );
+
+        // ACT: POST the signed webhook
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: webhook acknowledged
+        expect(response.status).toBe(200);
+
+        // ASSERT: the local plan flip committed. confirmPlanUpgrade Step 1
+        // calls billing.subscriptions.changePlan, which updates sub.planId
+        // in-place via the qzpay-drizzle storage adapter.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        // Status stays `active` (changePlan does not flip status; the user
+        // was already on an active subscription, just on a different plan).
+        expect(subs[0]?.status).toBe('active');
+
+        // ASSERT: each stub leg fired exactly once. payments.retrieve is
+        // the source of truth for the metadata that drives confirmPlanUpgrade;
+        // a missed call would mean the dispatcher never ran.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(1);
+        expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(1);
+    });
+
+    it('webhook with mismatched planChangeUpgradeId leaves the existing subscription untouched', async () => {
+        // ARRANGE: pending upgrade checkout (same as happy path)
+        const { providerPaymentId } = await createPendingUpgradeCheckout();
+
+        // ARRANGE: webhook carries a *different* planChangeUpgradeId —
+        // a well-formed UUID that does not match any sub in DB. The
+        // handler logs the miss and returns 200 without mutating
+        // anything (payment-logic.ts:236-243).
+        const mismatchedSubId = randomUUID();
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_upgrade_mismatch',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: 1000,
+                currency: 'ARS',
+                metadata: {
+                    planChangeUpgradeId: mismatchedSubId,
+                    oldPlanId: seed.cheap.planId,
+                    newPlanId: seed.expensive.planId,
+                    newPriceId: seed.expensive.monthlyPriceId,
+                    targetTransactionAmountMajor: 5000,
+                    deltaCentavos: 100000
+                } as unknown as Record<string, string>
+            })
+        );
+
+        // ACT
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: 200 (event acknowledged) but the real sub is unchanged.
+        expect(response.status).toBe(200);
+
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.planId).toBe(seed.cheap.planId);
+
+        // ASSERT: the mismatched id obviously creates no new subscription
+        // row either. confirmPlanUpgrade only mutates the row matched by
+        // the metadata id; an unknown id is a no-op.
+        const subsForMismatched = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, mismatchedSubId));
+        expect(subsForMismatched).toHaveLength(0);
+    });
+
+    it('webhook with invalid signature is rejected with 401 and produces no DB change', async () => {
+        // ARRANGE: pending upgrade checkout (same as happy path)
+        const { providerPaymentId } = await createPendingUpgradeCheckout();
+
+        // ACT: build a body but use wrong-hmac headers — Hospeda's
+        // webhookSignatureMiddleware (HMAC over the body with the test
+        // secret) rejects BEFORE the qzpay-hono handler runs.
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'payment',
+            action: 'payment.updated',
+            data: { id: providerPaymentId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
+
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...badHeaders
+            },
+            body
+        });
+
+        expect(response.status).toBe(401);
+
+        // ASSERT: sub unchanged (still on cheap plan).
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.planId).toBe(seed.cheap.planId);
+
+        // ASSERT: stub never reached (hospeda's middleware short-circuited).
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
+        expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     });
 });
