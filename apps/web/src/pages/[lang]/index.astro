@@ -19,6 +19,7 @@ import FeaturedAccommodationsSection from "@/components/sections/FeaturedAccommo
 import HeroSection from "@/components/sections/HeroSection.astro";
 import LatestArticlesSection from "@/components/sections/LatestArticlesSection.astro";
 import NextEventsSection from "@/components/sections/NextEventsSection.astro";
+import NextEventsSectionSkeleton from "@/components/skeletons/NextEventsSectionSkeleton.astro";
 import PartnersSection from "@/components/sections/PartnersSection.astro";
 import StatsSection from "@/components/sections/StatsSection.astro";
 import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
@@ -166,7 +167,9 @@ const categoryTiles = [
     <DestinationsSection locale={locale} />
 
     <!-- 5. Next Events -->
-    <NextEventsSection locale={locale} />
+    <NextEventsSection server:defer locale={locale}>
+        <NextEventsSectionSkeleton slot="fallback" />
+    </NextEventsSection>
 
     <!-- 6. About Us -->
     <AboutUsSection locale={locale} />
