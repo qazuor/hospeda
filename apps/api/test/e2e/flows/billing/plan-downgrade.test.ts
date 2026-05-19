@@ -67,9 +67,15 @@ vi.mock('@repo/billing', async (importOriginal) => {
 
 import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
+import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
+import {
+    clearEntitlementCache,
+    entitlementMiddleware,
+    getEntitlementCacheStats
+} from '../../../../src/middlewares/entitlement.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import {
@@ -382,5 +388,137 @@ describe('SPEC-143 T-143-12 — plan downgrade scheduling', () => {
             .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
         expect(subs[0]?.planId).toBe(seed.expensive.planId);
         expect(subs[0]?.scheduledPlanChange).toBeNull();
+    });
+
+    // -----------------------------------------------------------------------
+    // Entitlements unchanged after scheduling — sub-commit 3
+    //
+    // Pin the contract that scheduling a downgrade does NOT alter the
+    // user's entitlements: the local sub.plan_id is unchanged, so the
+    // entitlement middleware's loadEntitlements (which keys off the
+    // active sub's plan_id, NOT scheduledPlanChange.newPlanId) still
+    // surfaces the CURRENT (expensive) plan's entitlements. The cron
+    // `apply-scheduled-plan-changes` (T-143-13) is the only thing that
+    // commits the plan flip AND should invalidate the cache then.
+    //
+    // The mini-app probe pattern is identical to upgrade sub-commit 4:
+    // mount the REAL entitlementMiddleware against the real billing
+    // instance with a synthetic prelude that sets billingEnabled +
+    // billingCustomerId so loadEntitlements actually runs.
+    //
+    // Regression guard: cache size DELTA must be 0 across the schedule
+    // call. If a future refactor adds clearEntitlementCache to the
+    // downgrade scheduling path (would be a bug — there is nothing to
+    // re-cache yet), this delta becomes -1 and the test fails. The
+    // INVERSE of the upgrade sub-commit 4 guard.
+    //
+    // SCOPE NOTE: same as the annual/monthly/upgrade sub-commit 4 —
+    // validates the LOAD pipeline only. ENFORCEMENT (wiring
+    // requireEntitlement / gateXxx to production routes) is gap work
+    // tracked under SPEC-145.
+    // -----------------------------------------------------------------------
+
+    it('scheduling a downgrade does NOT change entitlements or invalidate the cache (cache delta = 0)', async () => {
+        // ARRANGE: mini-app probe that runs the REAL entitlementMiddleware
+        // against the real billing instance. The synthetic prelude sets
+        // billingEnabled + billingCustomerId so loadEntitlements actually
+        // runs.
+        const probeApp = new Hono();
+        probeApp.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', expensiveCustomerId);
+            return next();
+        });
+        probeApp.use(entitlementMiddleware());
+        probeApp.get('/probe', (c) => {
+            return c.json({
+                entitlements: Array.from(c.get('userEntitlements') ?? []),
+                limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                billingLoadFailed: c.get('billingLoadFailed') ?? false
+            });
+        });
+
+        // ARRANGE: ensure the cache singleton has no entry for this
+        // customer (prior tests in this file leave the singleton populated
+        // because the cache is process-wide and not cleared by
+        // testDb.clean()).
+        clearEntitlementCache(expensiveCustomerId);
+
+        // ACT 1: probe BEFORE scheduling. The sub is active on the
+        // expensive plan, so loadEntitlements returns the expensive
+        // plan's declared entitlements ('public:read' + 'expensive:feature')
+        // and limits (ads_per_month=100). The set lands in the cache.
+        const preRes = await probeApp.request('/probe');
+        expect(preRes.status).toBe(200);
+        const preBody = (await preRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(preBody.entitlements).toContain('public:read');
+        expect(preBody.entitlements).toContain('expensive:feature');
+        expect(preBody.limits.ads_per_month).toBe(100);
+        expect(preBody.billingLoadFailed).toBe(false);
+
+        // Snapshot cache size. The downgrade scheduling MUST NOT
+        // invalidate this entry, so the delta after the schedule call
+        // must be 0.
+        const cacheSizeBeforeSchedule = getEntitlementCacheStats().size;
+        expect(cacheSizeBeforeSchedule).toBeGreaterThanOrEqual(1);
+
+        // ACT 2: schedule the downgrade (handled by sub-commit 1 — we
+        // re-use the happy-path response shape here as a state mutation,
+        // not as the assertion target).
+        const scheduleRes = await client.post(
+            '/api/v1/protected/billing/subscriptions/change-plan',
+            {
+                newPlanId: seed.cheap.planId,
+                billingInterval: 'monthly'
+            }
+        );
+        expect(scheduleRes.status).toBe(200);
+
+        // ASSERT: cache size unchanged. The scheduling path writes
+        // scheduledPlanChange to the local sub but does NOT touch the
+        // entitlement cache, because the user's effective plan is still
+        // expensive until the cron applies the change. A non-zero delta
+        // here would indicate either an unintended cache invalidation
+        // (premature feature drop) or test infra leaking another
+        // customer's entry, both of which we want to surface.
+        const cacheSizeAfterSchedule = getEntitlementCacheStats().size;
+        expect(cacheSizeAfterSchedule).toBe(cacheSizeBeforeSchedule);
+
+        // ACT 3: probe AFTER scheduling. The cache hit returns the same
+        // expensive entitlements as before (no reload happens because
+        // the cache was not invalidated). Even if we forced a reload
+        // (e.g. clearEntitlementCache + re-request), the result would
+        // still be expensive entitlements because the middleware filters
+        // subs by status='active'|'trialing' and reads the active sub's
+        // plan_id (entitlement.ts:167) — which is still expensive.
+        const postRes = await probeApp.request('/probe');
+        expect(postRes.status).toBe(200);
+        const postBody = (await postRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(postBody.entitlements).toContain('public:read');
+        expect(postBody.entitlements).toContain('expensive:feature');
+        expect(postBody.limits.ads_per_month).toBe(100);
+
+        // ASSERT: sub.scheduledPlanChange IS populated (the schedule
+        // landed) AND sub.plan_id is still expensive. Pinning both
+        // facts together documents the invariant: the SCHEDULE exists,
+        // but the PLAN has not flipped yet. The cron is the only thing
+        // that can flip it.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.expensive.planId);
+        const scheduledPlanChange = subs[0]?.scheduledPlanChange as Record<string, unknown> | null;
+        expect(scheduledPlanChange?.newPlanId).toBe(seed.cheap.planId);
+        expect(scheduledPlanChange?.status).toBe('pending');
     });
 });
