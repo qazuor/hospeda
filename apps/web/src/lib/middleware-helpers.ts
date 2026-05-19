@@ -452,6 +452,16 @@ export function buildCspHeader({
         .map((h) => `https://${h}`)
         .join(' ');
 
+    // OAuth avatar hosts. Better Auth stores the provider-returned picture URL
+    // on `user.image`, and `@repo/auth-ui` renders it via plain `<img>`. These
+    // are NOT image-content hosts that flow through Astro <Image>, so they do
+    // not belong in `ALLOWED_REMOTE_HOSTS` (which doubles as the SSRF guard for
+    // server-side image fetches). Keep them as a separate explicit list:
+    //   - lh3.googleusercontent.com  → Google OAuth picture
+    //   - platform-lookaside.fbsbx.com → Facebook OAuth picture (Graph CDN)
+    const oauthAvatarHosts =
+        'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
+
     // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
     // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
     // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
@@ -481,7 +491,7 @@ export function buildCspHeader({
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: ${remoteImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
