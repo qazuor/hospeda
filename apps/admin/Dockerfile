@@ -8,21 +8,24 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
 
-# ----- deps stage ------------------------------------------------------------
-# Install ALL workspace deps. See apps/api/Dockerfile for the rationale on
-# copying full trees instead of individual package.json files.
-FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
-COPY apps apps
-COPY packages packages
-RUN pnpm install --frozen-lockfile
-
 # ----- build stage -----------------------------------------------------------
+# Install workspace deps AND run the turbo build in a single stage so we never
+# duplicate the ~4 GB monorepo node_modules tree on the build host's disk.
+# Previously this was split into `deps` + `build` and the `COPY --from=deps
+# /repo /repo` step doubled the working set to ~8 GB, which exhausted disk on
+# the Coolify VPS during the staging deploy on 2026-05-19 (exit code 255 mid
+# COPY). Docker still caches the install layer separately as long as the
+# lockfile + workspace trees don't change.
+#
 # Vite bakes VITE_*/HOSPEDA_API_URL into the admin bundle at build time.
 # Coolify injects the real values via --build-arg from the project's
 # build-time env config. The defaults are placeholders so local
 # `docker build` validation passes the Zod check; real values override.
+#
+# Full-tree COPY of apps/ and packages/ is intentional: listing every
+# workspace package.json individually was tried first but missed transitive
+# workspace deps (e.g. @repo/icons pulled in via @repo/feedback). This
+# trades a bit of layer cache for correctness.
 FROM base AS build
 ARG HOSPEDA_API_URL=https://api.placeholder.local
 ARG VITE_API_URL=https://api.placeholder.local
@@ -45,7 +48,11 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
     NITRO_PRESET=node-server
-COPY --from=deps /repo /repo
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
+COPY patches ./patches
+COPY apps apps
+COPY packages packages
+RUN pnpm install --frozen-lockfile
 RUN pnpm turbo run build --filter=admin
 
 # ----- runner stage ----------------------------------------------------------
