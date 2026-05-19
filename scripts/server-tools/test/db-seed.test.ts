@@ -77,20 +77,20 @@ describe('parseArgs(argv)', () => {
             expect(parseArgs(['--no-example']).example).toBe(false);
         });
 
-        it('--no-clean-images disables clean-images', () => {
-            expect(parseArgs(['--no-clean-images']).cleanImages).toBe(false);
+        it('--clean-images enables clean-images', () => {
+            expect(parseArgs(['--clean-images']).cleanImages).toBe(true);
         });
 
-        it('clean-images is ON by default', () => {
-            expect(parseArgs([]).cleanImages).toBe(true);
+        it('clean-images is OFF by default', () => {
+            expect(parseArgs([]).cleanImages).toBe(false);
         });
 
-        it('combines multiple --no-* flags', () => {
-            const parsed = parseArgs(['--no-reset', '--no-example', '--no-clean-images']);
+        it('combines multiple flags', () => {
+            const parsed = parseArgs(['--no-reset', '--no-example', '--clean-images']);
             expect(parsed.reset).toBe(false);
             expect(parsed.required).toBe(true);
             expect(parsed.example).toBe(false);
-            expect(parsed.cleanImages).toBe(false);
+            expect(parsed.cleanImages).toBe(true);
         });
     });
 

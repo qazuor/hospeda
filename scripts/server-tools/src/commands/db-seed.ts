@@ -50,30 +50,34 @@ import { getDbCredentials } from '../lib/target.ts';
 const HELP = `
 hops db-seed [--target=prod|staging]
              [--pull | --no-pull]
-             [--no-reset] [--no-required] [--no-example] [--no-clean-images]
+             [--no-reset] [--no-required] [--no-example]
+             [--clean-images]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour:
-  --reset, --required, --example, --clean-images are ON. The default
-  invocation is the equivalent of:
+  --reset, --required, --example are ON. --clean-images is OFF.
+  The default invocation is the equivalent of:
     pnpm --filter @repo/seed seed --reset --required --example
-  with the Cloudinary cleanup env vars forwarded from the toolkit's
-  .env.local. The seed's own \`--reset\` implies \`--clean-images\`
-  internally — see packages/seed/CLAUDE.md.
+  WITHOUT forwarding Cloudinary creds — so the seed's internal
+  \`--clean-images\` step (implied by \`--reset\`) logs "Cloudinary env
+  vars not configured — skipping remote deletion" and continues.
+  Cloudinary assets under hospeda/<env>/seed/ are preserved. Pass
+  \`--clean-images\` to opt into remote deletion (slow — re-uploads
+  the entire seed image pool on next reseed).
 
 Flags:
   --no-reset          Skip the database reset step (population only).
                       May fail on UNIQUE violations if rows already exist.
   --no-required       Skip the --required step (rare; tests / partial seeds).
   --no-example        Skip the --example step (required-only seed).
-  --no-clean-images   Do NOT forward Cloudinary creds to the seed.
-                      The seed still gets \`--clean-images\` (implied by
-                      \`--reset\`) but skips the remote deletion silently
-                      because the env vars are missing. Use when you do
-                      not want to touch Cloudinary at all (e.g. dry-run
-                      against a non-default Cloudinary account).
+  --clean-images      Opt INTO Cloudinary cleanup. Forwards the
+                      HOSPEDA_CLOUDINARY_* creds to the seed so it
+                      deletes every asset under hospeda/<env>/seed/
+                      before reseeding. Slow but produces a fully
+                      consistent state (no orphan assets pointing at
+                      rows that no longer exist).
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -93,14 +97,13 @@ Unattended examples:
 Required environment variables (in scripts/server-tools/.env.local):
   HOPS_<TARGET>_POSTGRES_UUID         Coolify Postgres service UUID for the target.
   HOPS_REPO_ROOT (optional)           Path to the hospeda checkout. Default ~/hospeda.
-  HOSPEDA_CLOUDINARY_CLOUD_NAME       Cloudinary cloud name (for cleanup).
-  HOSPEDA_CLOUDINARY_API_KEY          Cloudinary API key (for cleanup).
-  HOSPEDA_CLOUDINARY_API_SECRET       Cloudinary API secret (for cleanup).
 
-The three HOSPEDA_CLOUDINARY_* vars are required ONLY when clean-images
-is on (the default). Without them the seed logs a "Cloudinary env vars
-not configured — skipping remote deletion" line and continues; it does
-NOT abort. Pass --no-clean-images to suppress the warning entirely.
+When passing --clean-images, also set these three:
+  HOSPEDA_CLOUDINARY_CLOUD_NAME       Cloudinary cloud name.
+  HOSPEDA_CLOUDINARY_API_KEY          Cloudinary API key.
+  HOSPEDA_CLOUDINARY_API_SECRET       Cloudinary API secret.
+
+Without --clean-images these three are NOT read.
 
 The Postgres URL is derived automatically by inspecting the target's
 Postgres container (password from its env, host:port from \`docker port\`).
@@ -137,7 +140,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         reset: !args.includes('--no-reset'),
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
-        cleanImages: !args.includes('--no-clean-images'),
+        cleanImages: args.includes('--clean-images'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
@@ -179,11 +182,11 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
  * project env file is not present on the host — operators only need
  * to maintain the values in one place (the toolkit's local config).
  *
- * Logs a warning when `cleanImages` is true but the vars are missing,
- * because the operator clearly opted into cleanup but the values
+ * Logs a warning when `cleanImages` is opt-in (true) but the vars are
+ * missing — the operator clearly asked for cleanup but the values
  * aren't set up; without this warning the seed would silently skip
- * the deletion and leave orphan assets, which is what `--clean-images`
- * is supposed to prevent.
+ * the deletion and leave orphan assets, which is exactly what
+ * `--clean-images` is supposed to prevent.
  */
 export function collectCloudinaryEnv(cleanImages: boolean): Readonly<Record<string, string>> {
     if (!cleanImages) return {};
@@ -196,7 +199,7 @@ export function collectCloudinaryEnv(cleanImages: boolean): Readonly<Record<stri
     if (apiSecret) env.HOSPEDA_CLOUDINARY_API_SECRET = apiSecret;
     if (!cloudName || !apiKey || !apiSecret) {
         log.warn(
-            'Cloudinary cleanup is enabled but HOSPEDA_CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET are not all set in scripts/server-tools/.env.local. The seed will skip remote asset deletion (the local cache is still cleaned).'
+            '--clean-images requested but HOSPEDA_CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET are not all set in scripts/server-tools/.env.local. The seed will skip remote asset deletion (the local cache is still cleaned).'
         );
     }
     return env;
