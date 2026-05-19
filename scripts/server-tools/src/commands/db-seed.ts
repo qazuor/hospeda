@@ -52,20 +52,28 @@ hops db-seed [--target=prod|staging]
              [--pull | --no-pull]
              [--no-reset] [--no-required] [--no-example]
              [--clean-images]
+             [--no-build]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour:
-  --reset, --required, --example are ON. --clean-images is OFF.
-  The default invocation is the equivalent of:
-    pnpm --filter @repo/seed seed --reset --required --example
-  WITHOUT forwarding Cloudinary creds — so the seed's internal
-  \`--clean-images\` step (implied by \`--reset\`) logs "Cloudinary env
-  vars not configured — skipping remote deletion" and continues.
-  Cloudinary assets under hospeda/<env>/seed/ are preserved. Pass
-  \`--clean-images\` to opt into remote deletion (slow — re-uploads
-  the entire seed image pool on next reseed).
+  --reset, --required, --example, --build are ON. --clean-images is
+  OFF. The default invocation:
+    1. (optional) git pull \$HOPS_REPO_ROOT
+    2. pnpm turbo run build --filter=@repo/seed^...   (turbo-cached)
+    3. pnpm --filter @repo/seed seed --reset --required --example
+
+  Step 2 is required because the seed's workspace deps (@repo/db,
+  @repo/billing, etc.) export from \`./dist/index.js\`. Without it,
+  the seed crashes with ERR_MODULE_NOT_FOUND on the first import.
+  Turbo caches outputs, so subsequent runs are ~1-2s.
+
+  NODE_ENV is set to 'production' for --target=prod (billing seeds
+  use livemode: true) and 'development' for --target=staging.
+
+  Cloudinary assets under hospeda/<env>/seed/ are preserved by
+  default. Pass \`--clean-images\` to opt into remote deletion.
 
 Flags:
   --no-reset          Skip the database reset step (population only).
@@ -78,6 +86,10 @@ Flags:
                       before reseeding. Slow but produces a fully
                       consistent state (no orphan assets pointing at
                       rows that no longer exist).
+  --no-build          Skip the turbo build step. Only use when the
+                      workspace deps' dist/ outputs are already up to
+                      date (e.g. CI just built them). Without it, the
+                      seed will likely crash with ERR_MODULE_NOT_FOUND.
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -123,6 +135,7 @@ export interface ParsedArgs {
     readonly required: boolean;
     readonly example: boolean;
     readonly cleanImages: boolean;
+    readonly build: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
 }
@@ -141,6 +154,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
+        build: !args.includes('--no-build'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
@@ -167,6 +181,7 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     (parsed.required ? on : off).push('required');
     (parsed.example ? on : off).push('example');
     (parsed.cleanImages ? on : off).push('clean-images');
+    (parsed.build ? on : off).push('build');
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
@@ -214,19 +229,58 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
     log.ok('Repo updated.');
 }
 
+/**
+ * Build the workspace dependencies of `@repo/seed` via turbo so the
+ * tsx-driven seed can resolve them at runtime.
+ *
+ * Why this is needed: every `@repo/*` workspace dep of the seed
+ * (billing, config, db, logger, media, schemas, service-core, utils)
+ * declares its `exports."."` as `./dist/index.js`. The seed itself
+ * runs from `./src/index.ts` via `tsx`, but Node still resolves the
+ * deps through their declared exports — pointing at `dist/`. Without
+ * a build those files don't exist and the seed crashes with
+ * `ERR_MODULE_NOT_FOUND`.
+ *
+ * Turbo handles the dependency order (`^build`) and caches outputs,
+ * so subsequent runs are ~1-2s (just hash checks). The first run on
+ * a fresh VPS host takes ~30-60s.
+ *
+ * Filter syntax: `@repo/seed^...` builds every dependency of `@repo/seed`
+ * but NOT `@repo/seed` itself (the seed has no build script — its
+ * package.json points directly at `./src/index.ts`).
+ */
+async function buildSeedDependencies(repoRoot: string): Promise<void> {
+    log.info('Building workspace dependencies of @repo/seed (turbo, cached)...');
+    const result = await runner.run(
+        ['pnpm', 'turbo', 'run', 'build', '--filter=@repo/seed^...'],
+        {
+            cwd: repoRoot,
+            inherit: true
+        }
+    );
+    if (result.exitCode !== 0) {
+        die(
+            `Build failed (exit ${result.exitCode}). The seed cannot run without dist/ files for its workspace deps. Inspect the output above; if the issue is transient, pass --no-build to skip.`
+        );
+    }
+    log.ok('Dependencies built.');
+}
+
 async function runSeed(params: {
     readonly repoRoot: string;
     readonly databaseUrl: string;
     readonly seedArgs: ReadonlyArray<string>;
     readonly cloudinaryEnv: Readonly<Record<string, string>>;
+    readonly nodeEnv: 'production' | 'development';
 }): Promise<void> {
     log.info(`Running: pnpm ${params.seedArgs.join(' ')}`);
-    log.hint(`cwd: ${params.repoRoot}`);
+    log.hint(`cwd: ${params.repoRoot}  NODE_ENV: ${params.nodeEnv}`);
     const result = await runner.run(['pnpm', ...params.seedArgs], {
         cwd: params.repoRoot,
         inherit: true,
         env: {
             HOSPEDA_DATABASE_URL: params.databaseUrl,
+            NODE_ENV: params.nodeEnv,
             ...params.cloudinaryEnv
         }
     });
@@ -291,6 +345,17 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         log.hint('Skipping git pull.');
     }
 
+    // ── Build workspace deps ─────────────────────────────────────────
+    // The seed runs from `./src/index.ts` via tsx, but its workspace
+    // deps (`@repo/billing`, `@repo/db`, …) declare their exports as
+    // `./dist/index.js` — they must be built first. Turbo caches the
+    // output, so subsequent runs are essentially free.
+    if (parsed.build) {
+        await buildSeedDependencies(repoRoot);
+    } else {
+        log.hint('Skipping build (--no-build).');
+    }
+
     // ── Destructive confirmation (prod only by default) ──────────────
     // --reset is the destructive flag — drops every row before the run.
     // Confirm in prod unless --yes was passed. Staging is designed to be
@@ -327,8 +392,13 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     // ── Seed ─────────────────────────────────────────────────────────
+    // NODE_ENV controls billing seeds' `livemode`. For prod target we
+    // want livemode: true (real MercadoPago plans); for staging we
+    // want livemode: false (test mode plans the sandbox accepts).
     const cloudinaryEnv = collectCloudinaryEnv(parsed.cleanImages);
-    await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv });
+    const nodeEnv: 'production' | 'development' =
+        target === 'prod' ? 'production' : 'development';
+    await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv, nodeEnv });
 
     log.ok(`db-seed completed against ${target}.`);
     log.hint('Verify with `hops db-counts`.');

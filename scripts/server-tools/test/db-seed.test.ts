@@ -85,12 +85,21 @@ describe('parseArgs(argv)', () => {
             expect(parseArgs([]).cleanImages).toBe(false);
         });
 
+        it('build is ON by default', () => {
+            expect(parseArgs([]).build).toBe(true);
+        });
+
+        it('--no-build disables build', () => {
+            expect(parseArgs(['--no-build']).build).toBe(false);
+        });
+
         it('combines multiple flags', () => {
-            const parsed = parseArgs(['--no-reset', '--no-example', '--clean-images']);
+            const parsed = parseArgs(['--no-reset', '--no-example', '--clean-images', '--no-build']);
             expect(parsed.reset).toBe(false);
             expect(parsed.required).toBe(true);
             expect(parsed.example).toBe(false);
             expect(parsed.cleanImages).toBe(true);
+            expect(parsed.build).toBe(false);
         });
     });
 
@@ -130,6 +139,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -142,6 +152,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -154,6 +165,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: false,
             example: true,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -166,6 +178,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: false,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -178,6 +191,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: false,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -194,6 +208,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: false,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -208,6 +223,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: false,
             example: false,
             cleanImages: false,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -216,17 +232,18 @@ describe('buildSeedArgs(parsed)', () => {
 });
 
 describe('formatFlagSummary(parsed)', () => {
-    it('renders the full default as "+reset +required +example +clean-images"', () => {
+    it('renders the full default as "+reset +required +example +clean-images +build"', () => {
         expect(
             formatFlagSummary({
                 reset: true,
                 required: true,
                 example: true,
                 cleanImages: true,
+                build: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +example +clean-images');
+        ).toBe('+reset +required +example +clean-images +build');
     });
 
     it('mixes on / off when some flags are disabled', () => {
@@ -236,23 +253,25 @@ describe('formatFlagSummary(parsed)', () => {
                 required: true,
                 example: false,
                 cleanImages: true,
+                build: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +clean-images -example');
+        ).toBe('+reset +required +clean-images +build -example');
     });
 
-    it('renders all-off as "-reset -required -example -clean-images"', () => {
+    it('renders all-off as "-reset -required -example -clean-images -build"', () => {
         expect(
             formatFlagSummary({
                 reset: false,
                 required: false,
                 example: false,
                 cleanImages: false,
+                build: false,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('-reset -required -example -clean-images');
+        ).toBe('-reset -required -example -clean-images -build');
     });
 
     it('renders all-on as a single "+..." chunk (no leading "-" segment)', () => {
@@ -261,6 +280,7 @@ describe('formatFlagSummary(parsed)', () => {
             required: true,
             example: true,
             cleanImages: true,
+            build: true,
             pull: 'ask',
             skipConfirm: false
         });
@@ -278,10 +298,25 @@ describe('formatFlagSummary(parsed)', () => {
                 required: true,
                 example: true,
                 cleanImages: false,
+                build: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +example -clean-images');
+        ).toBe('+reset +required +example +build -clean-images');
+    });
+
+    it('shows -build when --no-build is passed', () => {
+        expect(
+            formatFlagSummary({
+                reset: true,
+                required: true,
+                example: true,
+                cleanImages: true,
+                build: false,
+                pull: 'ask',
+                skipConfirm: false
+            })
+        ).toBe('+reset +required +example +clean-images -build');
     });
 });
 
