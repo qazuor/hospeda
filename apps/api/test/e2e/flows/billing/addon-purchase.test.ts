@@ -102,9 +102,15 @@ vi.mock('mercadopago', () => {
 });
 
 import { billingAddonPurchases, billingCheckouts, billingSubscriptions, eq } from '@repo/db';
+import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
+import {
+    clearEntitlementCache,
+    entitlementMiddleware,
+    getEntitlementCacheStats
+} from '../../../../src/middlewares/entitlement.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import {
@@ -639,5 +645,163 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
         const afterSecond = await testDb.getDb().select().from(billingAddonPurchases);
         expect(afterSecond).toHaveLength(1);
         expect(afterSecond[0]?.id).toBe(insertedId);
+    });
+
+    // -----------------------------------------------------------------------
+    // Entitlement reload post-activation — sub-commit 4
+    //
+    // Pin the contract that confirmAddonPurchase INVALIDATES the entitlement
+    // cache for the affected customer. This is the FOURTH site of the
+    // `clearEntitlementCache` audit (annual activation ✓, monthly activation ✓,
+    // plan-upgrade confirmation — fix shipped in T-143-11, addon activation —
+    // this test). Mirrors the upgrade flow's sub-commit 4 cache delta = -1
+    // invariant.
+    //
+    // Why this matters: a regression that drops the clearEntitlementCache
+    // call from addon.checkout.ts:678 would leave the user with stale
+    // entitlements after the webhook lands — invisible bug, no error logs,
+    // the user just keeps seeing the pre-addon set until something else
+    // evicts the cache entry.
+    //
+    // SCOPE NOTE: the entitlement middleware DOES integrate addon
+    // entitlement adjustments — confirmAddonPurchase calls
+    // `applyAddonEntitlements` (line 683 in addon.checkout.ts) which
+    // mirrors the addon's grants into subscription metadata for the
+    // load-time path. The post-activation probe therefore sees the
+    // addon's `featured_listing` grant in `userEntitlements`. This is
+    // distinct from SPEC-145, which tracks the wiring of REQUIREMENT
+    // checks (gateXxx / requireEntitlement) into production routes — the
+    // LOAD pipeline integrates addons, but enforcement is still gap work.
+    // -----------------------------------------------------------------------
+
+    it('webhook payment.updated invalidates the entitlement cache for the affected customer (cache delta = -1)', async () => {
+        // ARRANGE — mini-app probe with the real entitlementMiddleware. The
+        // synthetic prelude sets billingEnabled + billingCustomerId so
+        // loadEntitlements actually runs against the real DB.
+        const probeApp = new Hono();
+        probeApp.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', customerId);
+            return next();
+        });
+        probeApp.use(entitlementMiddleware());
+        probeApp.get('/probe', (c) => {
+            return c.json({
+                entitlements: Array.from(c.get('userEntitlements') ?? []),
+                limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                billingLoadFailed: c.get('billingLoadFailed') ?? false
+            });
+        });
+
+        // ARRANGE — stubs for the webhook leg (same shape as sub-commit 3
+        // happy path). The webhook will activate the addon and trigger
+        // confirmAddonPurchase, which in turn calls clearEntitlementCache.
+        const providerPaymentId = `pay_test_entitlement_${Date.now()}`;
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_addon_entitlement',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: ADDON_PRICE_ARS_CENTAVOS,
+                currency: 'ARS',
+                metadata: {
+                    addonSlug: ADDON_SLUG,
+                    customerId,
+                    userId,
+                    type: 'addon_purchase'
+                }
+            })
+        );
+
+        // ARRANGE — clean slate for the cache singleton (process-wide,
+        // not cleared by testDb.clean()). After this clear, the next probe
+        // repopulates from scratch and we have a deterministic snapshot to
+        // compare against.
+        clearEntitlementCache(customerId);
+
+        // ACT 1 — probe BEFORE the webhook. The plan's base entitlements
+        // ('public:read') and limits (ads_per_month=5) land in the cache.
+        // The addon is NOT YET active in the DB, so `featured_listing` is
+        // absent from the entitlement set.
+        const preRes = await probeApp.request('/probe');
+        expect(preRes.status).toBe(200);
+        const preBody = (await preRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(preBody.entitlements).toContain('public:read');
+        expect(preBody.entitlements).not.toContain('featured_listing');
+        expect(preBody.limits.ads_per_month).toBe(5);
+        expect(preBody.billingLoadFailed).toBe(false);
+
+        const cacheSizeBeforeWebhook = getEntitlementCacheStats().size;
+        expect(cacheSizeBeforeWebhook).toBeGreaterThanOrEqual(1);
+
+        // ACT 2 — POST the signed webhook. confirmAddonPurchase runs and,
+        // as a side effect, invokes clearEntitlementCache(customerId).
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+        expect(webhookRes.status).toBe(200);
+
+        // ASSERT — cache delta = -1. This is the regression guard: any
+        // future refactor that drops the clearEntitlementCache call from
+        // confirmAddonPurchase will leave the customer's cache entry intact
+        // and flip this assertion to delta = 0.
+        const cacheSizeAfterWebhook = getEntitlementCacheStats().size;
+        expect(cacheSizeAfterWebhook).toBe(cacheSizeBeforeWebhook - 1);
+
+        // ASSERT — the addon row landed in DB with the expected JSONB
+        // adjustments. Once SPEC-145 wires entitlement_adjustments into the
+        // middleware, this row's shape is what it must consume to surface
+        // `featured_listing` for the customer.
+        const purchases = await testDb.getDb().select().from(billingAddonPurchases);
+        expect(purchases).toHaveLength(1);
+        const purchase = purchases[0];
+        expect(purchase?.status).toBe('active');
+        expect(purchase?.addonSlug).toBe(ADDON_SLUG);
+        const entitlementAdj = purchase?.entitlementAdjustments as Array<Record<string, unknown>>;
+        expect(entitlementAdj).toEqual([{ entitlementKey: 'featured_listing', granted: true }]);
+
+        // ACT 3 — probe AFTER the cache was invalidated. The middleware
+        // reloads from the DB and now surfaces the addon's
+        // `featured_listing` grant alongside the plan's base entitlements.
+        // This is the end-to-end "addon adjustments visible to the user"
+        // invariant — combined with cache delta = -1 above it documents
+        // the full flow: webhook → DB row → cache clear → next request
+        // reloads → entitlements include addon grants.
+        const postRes = await probeApp.request('/probe');
+        expect(postRes.status).toBe(200);
+        const postBody = (await postRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(postBody.entitlements).toContain('public:read');
+        expect(postBody.entitlements).toContain('featured_listing');
+        expect(postBody.billingLoadFailed).toBe(false);
+        // The addon's affectsLimitKey is null (visibility-boost-7d does not
+        // affect quotas), so ads_per_month should still equal the plan's
+        // base value. A different addon (e.g. extra-photos-20) would change
+        // a limit here — pin the unchanged value as a smoke check that no
+        // unrelated limits leaked in.
+        expect(postBody.limits.ads_per_month).toBe(5);
     });
 });
