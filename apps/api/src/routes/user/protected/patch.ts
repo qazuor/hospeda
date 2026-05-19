@@ -18,6 +18,28 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 import { userCache } from '../../../utils/user-cache';
 
 /**
+ * Body schema for the protected PATCH route. Identical to the general
+ * UserPatchInputSchema except that the `settings` field is constrained to
+ * the web-scoped allowlist (no `themeAdmin` / `languageAdmin`, no defaults).
+ *
+ * Why this matters: the canonical `UserSettingsSchema` declares
+ * `themeAdmin`/`languageAdmin` with `.default('system')`. When Hono's
+ * validator middleware ran the request body through `UserPatchInputSchema`
+ * (which embeds `UserSettingsSchema`), Zod silently injected those admin
+ * defaults — and the route's admin-leak check then fired a spurious 403
+ * for clients that never sent those keys. Using `UserSettingsWebPatchSchema`
+ * here means Zod sees only the four web-allowed keys; strict mode rejects
+ * admin keys at parse time (400) and never fills them as defaults.
+ *
+ * SPEC-096 / REQ-096-05 / T-032.
+ */
+const UserProtectedPatchInputSchema = UserPatchInputSchema.omit({
+    settings: true
+}).extend({
+    settings: UserSettingsWebPatchSchema.optional()
+});
+
+/**
  * Admin-only settings keys. If a protected (non-admin) user submits any of
  * these on a PATCH request, the request is rejected with 403 — the actor is
  * authenticated, so it is not a 401, but they lack the privilege to modify
@@ -74,7 +96,7 @@ export const protectedPatchUserRoute = createProtectedRoute({
         'Updates specific fields of user profile. Users can only update their own profile.',
     tags: ['Users'],
     requestParams: { id: UserIdSchema },
-    requestBody: UserPatchInputSchema,
+    requestBody: UserProtectedPatchInputSchema,
     responseSchema: UserProtectedSchema,
     // Ownership is enforced by UserService._canUpdate() which checks actor.id === entity.id
     handler: async (
@@ -85,9 +107,13 @@ export const protectedPatchUserRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
 
-        // Field-level permissions: protected (web) PATCH only accepts the
-        // four web-scoped settings keys. Admin-only keys → 403, unknown
-        // keys → 400 (SPEC-096 / REQ-096-05 / T-032).
+        // Field-level permissions: `UserProtectedPatchInputSchema` constrains
+        // `settings` to the four web-scoped keys at the Zod-validator layer
+        // (admin keys are rejected with 400 by strict-mode parsing). The
+        // post-parse runtime check below is kept as a defence-in-depth
+        // safety net — it currently cannot fire because Zod would have
+        // rejected an admin key earlier, but it documents the contract for
+        // future readers and guards against a schema regression.
         if (body && Object.prototype.hasOwnProperty.call(body, 'settings')) {
             validateProtectedSettings((body as { settings?: unknown }).settings);
         }

@@ -210,6 +210,15 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
 
     // ── Fetch all reviews (client-side pagination) ────────────────────────
 
+    // Pre-compute the fetch-error fallback string here so the useCallback
+    // below can depend on it without depending on `t` itself.
+    // `createTranslations(locale)` returns a new object every render, so
+    // putting `t` in the deps would re-create fetchReviews every render,
+    // re-fire the useEffect below, and spam the API in an infinite loop.
+    // The string returned from `t()` has value-based identity, so React
+    // sees the same dep across renders.
+    const fetchErrorMsg = t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas');
+
     const fetchReviews = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -218,26 +227,20 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                 credentials: 'include'
             });
             if (!res.ok) {
-                throw new Error(t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas'));
+                throw new Error(fetchErrorMsg);
             }
             const body = (await res.json()) as ReviewsApiResponse;
             if (!body.success) {
-                throw new Error(
-                    body.error?.message ??
-                        t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas')
-                );
+                throw new Error(body.error?.message ?? fetchErrorMsg);
             }
             setReviews(normaliseReviews(body.data));
         } catch (err) {
-            const msg =
-                err instanceof Error
-                    ? err.message
-                    : t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas');
+            const msg = err instanceof Error ? err.message : fetchErrorMsg;
             setError(msg);
         } finally {
             setLoading(false);
         }
-    }, [base, t]);
+    }, [base, fetchErrorMsg]);
 
     useEffect(() => {
         void fetchReviews();

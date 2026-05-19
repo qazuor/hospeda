@@ -269,7 +269,7 @@ export class UserBookmarkService extends BaseCrudService<
         actor: Actor,
         params: UserBookmarkSearchInput,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ bookmarks: UserBookmark[] }>> {
+    ): Promise<ServiceOutput<{ bookmarks: UserBookmark[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByUser',
             input: { ...params, actor },
@@ -283,11 +283,11 @@ export class UserBookmarkService extends BaseCrudService<
                     );
                 }
                 const { page, pageSize } = validated;
-                const { items } = await this.model.findAll(
+                const { items, total } = await this.model.findAll(
                     { userId: validated.userId, deletedAt: null },
                     { page, pageSize }
                 );
-                return { bookmarks: items };
+                return { bookmarks: items, total };
             }
         });
     }

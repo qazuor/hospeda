@@ -104,9 +104,25 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                     });
                     return;
                 }
-                const body = (await res.json()) as StatusResponse;
+                // API responses are wrapped in { success, data, metadata }.
+                // Unwrap `data` before storing — earlier the whole envelope
+                // was being treated as the status payload, leaving every
+                // field undefined and crashing StatusBadge with
+                // "Cannot read properties of undefined (reading 'className')".
+                const envelope = (await res.json()) as {
+                    readonly success?: boolean;
+                    readonly data?: StatusResponse;
+                };
                 if (!isMountedRef.current) return;
-                setIsland({ kind: 'ready', data: body });
+                const data = envelope.data;
+                if (!data) {
+                    setIsland({
+                        kind: 'error',
+                        message: t('newsletter.error', 'Ocurrió un error. Intentá de nuevo.')
+                    });
+                    return;
+                }
+                setIsland({ kind: 'ready', data });
             } catch (err) {
                 if ((err as Error).name === 'AbortError') return;
                 if (!isMountedRef.current) return;

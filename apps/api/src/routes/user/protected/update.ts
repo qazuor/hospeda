@@ -10,6 +10,20 @@ import {
     type UserUpdateInput,
     UserUpdateInputSchema
 } from '@repo/schemas';
+
+/**
+ * Body schema for the protected PUT route. Same shape as the general
+ * UserUpdateInputSchema, but the `settings` field is constrained to the
+ * web-scoped allowlist so Zod cannot inject admin defaults that would
+ * later cause a spurious 403. See `patch.ts` for the full rationale.
+ *
+ * SPEC-096 / REQ-096-05 / T-032.
+ */
+const UserProtectedUpdateInputSchema = UserUpdateInputSchema.omit({
+    settings: true
+}).extend({
+    settings: UserSettingsWebPatchSchema.optional()
+});
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -65,7 +79,7 @@ export const protectedUpdateUserRoute = createProtectedRoute({
     requestParams: {
         id: UserIdSchema
     },
-    requestBody: UserUpdateInputSchema,
+    requestBody: UserProtectedUpdateInputSchema,
     responseSchema: UserProtectedSchema,
     // Ownership is enforced by UserService._canUpdate() which checks actor.id === entity.id
     handler: async (
@@ -77,7 +91,10 @@ export const protectedUpdateUserRoute = createProtectedRoute({
         const { id } = params;
         const userData = body as UserUpdateInput;
 
-        // Field-level permissions: web-scoped allowlist on settings.
+        // Field-level permissions: `UserProtectedUpdateInputSchema` constrains
+        // `settings` to the web-scoped allowlist at the validator layer, so
+        // Zod rejects admin keys with 400 before this handler runs. The
+        // post-parse check below is kept as defence-in-depth only.
         // SPEC-096 / REQ-096-05 / T-032.
         if (body && Object.prototype.hasOwnProperty.call(body, 'settings')) {
             validateProtectedSettings((body as { settings?: unknown }).settings);

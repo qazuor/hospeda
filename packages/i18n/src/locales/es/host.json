@@ -142,5 +142,23 @@
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
         "secondaryCta": "Ver mis propiedades"
+    },
+    "miniForm": {
+        "fields": {
+            "type": "Tipo de alojamiento",
+            "typePlaceholder": "Elegí una opción"
+        },
+        "types": {
+            "APARTMENT": "Departamento",
+            "HOUSE": "Casa",
+            "COUNTRY_HOUSE": "Casa de campo",
+            "CABIN": "Cabaña",
+            "HOTEL": "Hotel",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Habitación",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }
