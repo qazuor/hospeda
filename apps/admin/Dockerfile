@@ -32,11 +32,17 @@ ARG VITE_API_URL=https://api.placeholder.local
 ARG VITE_SITE_URL=https://placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
 ARG VITE_SENTRY_DSN
-ARG VITE_SENTRY_RELEASE
 ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_POSTHOG_KEY
 ARG VITE_POSTHOG_HOST
+# HOSPEDA_GIT_SHA must precede VITE_SENTRY_RELEASE so the ARG default
+# expression below can reference it. Coolify should pass this as a Build
+# Variable mapped to $COOLIFY_COMMIT_SHA so each deploy gets a unique
+# release identifier in Sentry. Falling back to an unset SHA leaves the
+# downstream `|| 'development'` chain in sentry.config.ts to absorb the
+# empty value.
 ARG HOSPEDA_GIT_SHA
+ARG VITE_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_API_URL=$VITE_API_URL \
     VITE_SITE_URL=$VITE_SITE_URL \
