@@ -3,8 +3,8 @@
     "id": "016-destination-rosario-del-tala",
     "slug": "rosario-del-tala",
     "name": "Rosario del Tala",
-    "summary": "Ciudad histórica del interior entrerriano con tradición gaucha y vida rural",
-    "description": "Rosario del Tala es la ciudad cabecera del departamento Tala en Entre Ríos, conocida por su rica historia y sus tradiciones gauchas. Con un pasado de estancias y producción agropecuaria, la ciudad conserva el espíritu del campo entrerriano. Sus festivales folklóricos, sus artesanías regionales y los paisajes rurales que la rodean la convierten en un destino auténtico para los amantes de la cultura gaucha y la vida del campo. La pesca en los arroyos cercanos y las cabalgatas son actividades muy apreciadas por los visitantes.",
+    "summary": "Ciudad cabecera del Departamento Tala, a orillas del río Gualeguay, con tradición rural, balneario y vida ribereña.",
+    "description": "Rosario del Tala es la ciudad cabecera del Departamento Tala, en el centro-este de Entre Ríos, asentada sobre la margen oeste del río Gualeguay. Fundada el 7 de noviembre de 1799, conserva un casco histórico con la Parroquia Nuestra Señora del Rosario y la Plaza Libertad como ejes urbanos. Su principal atractivo natural es el Balneario Delio Panizza, con playas de arena blanca, barrancas y servicios para acampar, navegar en kayak, hacer stand-up paddle y practicar pesca deportiva. La ciudad ofrece además paseos por su costanera, propuestas de turismo rural en estancias del departamento, fiestas populares como la Fiesta del Pescador y el Festival Nacional de Folclore, y una gastronomía regional ligada al río y al campo entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,13 +13,13 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2756",
+        "zipCode": "E3174",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "500",
         "city": "Rosario del Tala",
         "coordinates": {
-            "lat": "-32.3000",
+            "lat": "-32.3167",
             "long": "-59.1500"
         }
     },
@@ -43,9 +43,17 @@
         ]
     },
     "seo": {
-        "title": "Rosario del Tala - Tradición Gaucha | Hospeda",
-        "description": "Descubre Rosario del Tala, ciudad con tradición gaucha y vida rural auténtica en Entre Ríos.",
-        "keywords": ["Rosario del Tala", "Entre Ríos", "Gaucho", "Rural", "Folklore", "Tradición"]
+        "title": "Rosario del Tala, Entre Ríos | Hospeda",
+        "description": "Descubre Rosario del Tala: balneario Delio Panizza sobre el río Gualeguay, costanera, plaza histórica, pesca y turismo rural en Entre Ríos.",
+        "keywords": [
+            "Rosario del Tala",
+            "Entre Ríos",
+            "río Gualeguay",
+            "balneario Delio Panizza",
+            "Departamento Tala",
+            "turismo rural",
+            "pesca deportiva"
+        ]
     },
     "tagIds": [
         "011-tag-cultura",
@@ -57,11 +65,12 @@
         "003-tag-artesanias"
     ],
     "attractionIds": [
-        "037-attraction-estancia_turistica",
-        "013-attraction-centro_agropecuario",
+        "065-attraction-pesca_deportiva",
+        "005-attraction-balneario_municipal",
+        "031-attraction-costanera",
         "072-attraction-plaza_principal",
-        "040-attraction-feria_artesanal",
-        "065-attraction-pesca_deportiva"
+        "045-attraction-iglesia_colonial",
+        "037-attraction-estancia_turistica"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

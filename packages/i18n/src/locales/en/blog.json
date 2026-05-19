@@ -69,7 +69,25 @@
         "viewLess": "View less",
         "sponsoredContent": "Sponsored content",
         "expiresOn": "This post expires on {{date}}",
-        "expiredOn": "Post expired on {{date}}"
+        "expiredOn": "Post expired on {{date}}",
+        "byline": "By {{name}}",
+        "updatedOn": "Updated on {{date}}",
+        "videosTitle": "Videos",
+        "badge": {
+            "news": "News",
+            "featured": "Featured"
+        },
+        "engagement": {
+            "likes": "{{count}} likes",
+            "likes_one": "{{count}} like",
+            "likes_zero": "No reactions yet",
+            "comments": "{{count}} comments",
+            "comments_one": "{{count}} comment",
+            "comments_zero": "No comments",
+            "shares": "{{count}} shares",
+            "shares_one": "{{count}} share",
+            "shares_zero": "Not shared yet"
+        }
     },
     "tagPage": {
         "title": "Posts tagged with \"{tag}\"",
