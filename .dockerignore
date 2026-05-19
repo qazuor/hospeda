@@ -22,19 +22,7 @@ build/
 **/.env.*
 
 # VCS and tooling metadata
-# NOTE: .git/ is intentionally NOT excluded. apps/web/Dockerfile and
-# apps/admin/Dockerfile read .git/HEAD inside the build to bake the
-# deploy SHA into the Sentry release tag. Two prior attempts to exclude
-# the directory while whitelisting just .git/HEAD failed in Coolify's
-# BuildKit version (both `.git` + `!.git/HEAD` and `.git/**` + `!.git/HEAD`
-# were silently dropped — BuildKit short-circuits the directory walk
-# once any exclusion is matched and the negation never runs).
-# Cost of shipping the full .git: Coolify clones with `--depth=1`, so the
-# directory is small (~MB range). Worth it for hosting-agnostic release
-# tagging that works without depending on Coolify variable expansion.
-# Only exclude .git/objects/info (build cache hint files that change
-# between clones for no real reason — keeps cache stable).
-.git/objects/info
+.git
 .github
 .husky
 .vscode
