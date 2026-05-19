@@ -47,18 +47,25 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
-import { billingSubscriptions, eq } from '@repo/db';
+import { and, billingSubscriptionEvents, billingSubscriptions, eq } from '@repo/db';
+import { NotificationType, type TrialEventPayload } from '@repo/notifications';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
-import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
+import { getQZPayBilling, resetBillingInstance } from '../../../../src/middlewares/billing.js';
 import {
     clearEntitlementCache,
-    entitlementMiddleware
+    entitlementMiddleware,
+    getEntitlementCacheStats
 } from '../../../../src/middlewares/entitlement.js';
+import { TrialService } from '../../../../src/services/trial.service.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
-import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
+import {
+    createTestBillingCustomer,
+    createTestSubscription
+} from '../../helpers/billing-factories.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import { createTestPlan, createTestUser } from '../../setup/seed-helpers.js';
 import { testDb } from '../../setup/test-database.js';
@@ -88,11 +95,16 @@ const TRIAL_DAYS = 14;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
-describe('SPEC-143 T-143-24 — trial activation', () => {
+describe('SPEC-143 trial lifecycle e2e', () => {
+    // Shared lifecycle for both T-143-24 (activation) and T-143-25
+    // (expiration cron) below. initializeDb() in @repo/db is
+    // idempotent — once the runtime client is bound to a pool, a
+    // second call returns the cached client. If each nested describe
+    // ran its own setup/teardown the second describe would inherit
+    // the torn-down pool and every query would crash with
+    // "Cannot use a pool after calling end on the pool". Hoisting
+    // beforeAll/afterAll up here is the simple fix.
     let app: ReturnType<typeof initApp>;
-    let client: E2EApiClient;
-    let userId: string;
-    let customerId: string;
 
     beforeAll(async () => {
         await testDb.setup();
@@ -104,182 +116,478 @@ describe('SPEC-143 T-143-24 — trial activation', () => {
         await testDb.teardown();
     });
 
-    beforeEach(async () => {
-        mpStub.config.reset();
+    describe('SPEC-143 T-143-24 — trial activation', () => {
+        let client: E2EApiClient;
+        let userId: string;
+        let customerId: string;
 
-        // Seed the trial plan with the exact name the trial service
-        // looks up. Entitlements + limits roughly mirror the production
-        // owner-basico contract so the entitlement-reload test below has
-        // something distinctive to assert.
-        await createTestPlan({
-            name: TRIAL_PLAN_NAME,
-            description: 'Owner trial plan (seed for T-143-24)',
-            entitlements: ['accommodation:publish', 'accommodation:edit'],
-            limits: { max_accommodations: 1, max_photos_per_accommodation: 5 },
-            metadata: {
-                slug: TRIAL_PLAN_NAME,
-                category: 'test-trial',
-                isDefault: false,
-                sortOrder: 1,
-                trialDays: TRIAL_DAYS,
-                hasTrial: true
-            }
+        beforeEach(async () => {
+            mpStub.config.reset();
+
+            // Seed the trial plan with the exact name the trial service
+            // looks up. Entitlements + limits roughly mirror the production
+            // owner-basico contract so the entitlement-reload test below has
+            // something distinctive to assert.
+            await createTestPlan({
+                name: TRIAL_PLAN_NAME,
+                description: 'Owner trial plan (seed for T-143-24)',
+                entitlements: ['accommodation:publish', 'accommodation:edit'],
+                limits: { max_accommodations: 1, max_photos_per_accommodation: 5 },
+                metadata: {
+                    slug: TRIAL_PLAN_NAME,
+                    category: 'test-trial',
+                    isDefault: false,
+                    sortOrder: 1,
+                    trialDays: TRIAL_DAYS,
+                    hasTrial: true
+                }
+            });
+
+            const user = await createTestUser({
+                email: `trial-lifecycle-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
+            });
+            userId = user.id;
+
+            const customer = await createTestBillingCustomer({
+                externalId: user.id,
+                email: user.email
+            });
+            customerId = customer.customerId;
+
+            const actor = createMockUserActor({ id: user.id });
+            client = new E2EApiClient(app, actor);
         });
 
-        const user = await createTestUser({
-            email: `trial-lifecycle-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
+        afterEach(async () => {
+            // Cache singleton lives outside the DB and outside testDb.clean(),
+            // so each test must evict its own entry to keep cross-test
+            // independence.
+            clearEntitlementCache(customerId);
+            await testDb.clean();
         });
-        userId = user.id;
 
-        const customer = await createTestBillingCustomer({
-            externalId: user.id,
-            email: user.email
-        });
-        customerId = customer.customerId;
+        it('creates a trialing subscription with trial_end ~14 days out', async () => {
+            // ACT
+            const response = await client.post('/api/v1/protected/billing/trial/start', {});
 
-        const actor = createMockUserActor({ id: user.id });
-        client = new E2EApiClient(app, actor);
-    });
-
-    afterEach(async () => {
-        // Cache singleton lives outside the DB and outside testDb.clean(),
-        // so each test must evict its own entry to keep cross-test
-        // independence.
-        clearEntitlementCache(customerId);
-        await testDb.clean();
-    });
-
-    it('creates a trialing subscription with trial_end ~14 days out', async () => {
-        // ACT
-        const response = await client.post('/api/v1/protected/billing/trial/start', {});
-
-        // ASSERT: response shape per startTrialResponseSchema, wrapped
-        // by ResponseFactory under `data`.
-        expect(response.status).toBe(200);
-        const body = (await response.json()) as {
-            readonly success: boolean;
-            readonly data: {
+            // ASSERT: response shape per startTrialResponseSchema, wrapped
+            // by ResponseFactory under `data`.
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as {
                 readonly success: boolean;
-                readonly subscriptionId: string | null;
-                readonly message?: string;
+                readonly data: {
+                    readonly success: boolean;
+                    readonly subscriptionId: string | null;
+                    readonly message?: string;
+                };
             };
-        };
-        expect(body.success).toBe(true);
-        expect(body.data.success).toBe(true);
-        expect(body.data.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+            expect(body.success).toBe(true);
+            expect(body.data.success).toBe(true);
+            expect(body.data.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);
 
-        // ASSERT: DB row landed in trialing status with trial_end ~14d.
-        const rows = await testDb
-            .getDb()
-            .select()
-            .from(billingSubscriptions)
-            .where(eq(billingSubscriptions.id, body.data.subscriptionId as string));
-        expect(rows).toHaveLength(1);
-        const row = rows[0];
-        expect(row).toBeDefined();
-        expect(row?.status).toBe('trialing');
-        expect(row?.customerId).toBe(customerId);
+            // ASSERT: DB row landed in trialing status with trial_end ~14d.
+            const rows = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.id, body.data.subscriptionId as string));
+            expect(rows).toHaveLength(1);
+            const row = rows[0];
+            expect(row).toBeDefined();
+            expect(row?.status).toBe('trialing');
+            expect(row?.customerId).toBe(customerId);
 
-        // Trial bounds: trialStart ~now, trialEnd ~ now + 14d. Allow one
-        // hour of drift on either side to absorb the small gap between
-        // server clock and test clock.
-        expect(row?.trialStart).toBeInstanceOf(Date);
-        expect(row?.trialEnd).toBeInstanceOf(Date);
-        const trialStartMs = (row?.trialStart as Date).getTime();
-        const trialEndMs = (row?.trialEnd as Date).getTime();
-        const expectedStartMs = Date.now();
-        const expectedEndMs = expectedStartMs + TRIAL_DAYS * ONE_DAY_MS;
-        expect(Math.abs(trialStartMs - expectedStartMs)).toBeLessThan(ONE_HOUR_MS);
-        expect(Math.abs(trialEndMs - expectedEndMs)).toBeLessThan(ONE_HOUR_MS);
-    });
-
-    it('returns 409 when the user already has a subscription (no duplicate trial)', async () => {
-        // ARRANGE: prime an active trial. Reuses the production path so
-        // any divergence between first-call and existing-sub-detection
-        // surfaces here too.
-        const firstResponse = await client.post('/api/v1/protected/billing/trial/start', {});
-        expect(firstResponse.status).toBe(200);
-
-        const subsBeforeSecondCall = await testDb
-            .getDb()
-            .select()
-            .from(billingSubscriptions)
-            .where(eq(billingSubscriptions.customerId, customerId));
-        expect(subsBeforeSecondCall).toHaveLength(1);
-
-        // ACT: second activation attempt for the same customer.
-        const response = await client.post('/api/v1/protected/billing/trial/start', {});
-
-        // ASSERT: 409 conflict per trial.ts:178-183 (startTrial returns
-        // null when an existing subscription is found, the route maps
-        // that to 409).
-        expect(response.status).toBe(409);
-
-        // ASSERT: no second subscription row was created. The existing
-        // subscription is untouched.
-        const subsAfter = await testDb
-            .getDb()
-            .select()
-            .from(billingSubscriptions)
-            .where(eq(billingSubscriptions.customerId, customerId));
-        expect(subsAfter).toHaveLength(1);
-        expect(subsAfter[0]?.id).toBe(subsBeforeSecondCall[0]?.id);
-        expect(subsAfter[0]?.status).toBe('trialing');
-    });
-
-    it('loads the trial plan entitlements and limits for the next request', async () => {
-        // ARRANGE: activate the trial.
-        const startResponse = await client.post('/api/v1/protected/billing/trial/start', {});
-        expect(startResponse.status).toBe(200);
-
-        // ARRANGE: Hono mini-app that runs the REAL entitlementMiddleware
-        // against the real billing instance. Synthetic prelude middleware
-        // sets billingEnabled + billingCustomerId so the entitlement
-        // middleware does not short-circuit before calling
-        // loadEntitlements. Same pattern as sub-commits 4 elsewhere and
-        // the entitlement-load.test.ts file (T-143-19).
-        const probeApp = new Hono();
-        probeApp.use((c, next) => {
-            c.set('billingEnabled', true);
-            c.set('billingCustomerId', customerId);
-            return next();
+            // Trial bounds: trialStart ~now, trialEnd ~ now + 14d. Allow one
+            // hour of drift on either side to absorb the small gap between
+            // server clock and test clock.
+            expect(row?.trialStart).toBeInstanceOf(Date);
+            expect(row?.trialEnd).toBeInstanceOf(Date);
+            const trialStartMs = (row?.trialStart as Date).getTime();
+            const trialEndMs = (row?.trialEnd as Date).getTime();
+            const expectedStartMs = Date.now();
+            const expectedEndMs = expectedStartMs + TRIAL_DAYS * ONE_DAY_MS;
+            expect(Math.abs(trialStartMs - expectedStartMs)).toBeLessThan(ONE_HOUR_MS);
+            expect(Math.abs(trialEndMs - expectedEndMs)).toBeLessThan(ONE_HOUR_MS);
         });
-        probeApp.use(entitlementMiddleware());
-        probeApp.get('/probe', (c) =>
-            c.json({
-                entitlements: Array.from(c.get('userEntitlements') ?? []),
-                limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
-                billingLoadFailed: c.get('billingLoadFailed') ?? false
-            })
-        );
 
-        // Fresh cache for this customer; the trial activation path does
-        // NOT clear the entitlement cache (it has no entry yet because
-        // the customer is brand-new), so this is a normal cache miss.
-        clearEntitlementCache(customerId);
+        it('returns 409 when the user already has a subscription (no duplicate trial)', async () => {
+            // ARRANGE: prime an active trial. Reuses the production path so
+            // any divergence between first-call and existing-sub-detection
+            // surfaces here too.
+            const firstResponse = await client.post('/api/v1/protected/billing/trial/start', {});
+            expect(firstResponse.status).toBe(200);
 
-        // ACT
-        const probeRes = await probeApp.request('/probe');
-        expect(probeRes.status).toBe(200);
-        const probeBody = (await probeRes.json()) as {
-            readonly entitlements: readonly string[];
-            readonly limits: Readonly<Record<string, number>>;
-            readonly billingLoadFailed: boolean;
-        };
+            const subsBeforeSecondCall = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.customerId, customerId));
+            expect(subsBeforeSecondCall).toHaveLength(1);
 
-        // ASSERT: trial-plan entitlements + limits surface. The
-        // entitlement middleware accepts `trialing` as an active status
-        // (entitlement.ts:167-169), so the load succeeds end-to-end.
-        expect(new Set(probeBody.entitlements)).toEqual(
-            new Set(['accommodation:publish', 'accommodation:edit'])
-        );
-        expect(probeBody.limits.max_accommodations).toBe(1);
-        expect(probeBody.limits.max_photos_per_accommodation).toBe(5);
-        expect(probeBody.billingLoadFailed).toBe(false);
+            // ACT: second activation attempt for the same customer.
+            const response = await client.post('/api/v1/protected/billing/trial/start', {});
 
-        // Sanity: the user id is captured in the actor and reaches the
-        // billing customer through externalId. This catches any
-        // regression where the trial route grabs the wrong customer id.
-        expect(userId).toBeDefined();
+            // ASSERT: 409 conflict per trial.ts:178-183 (startTrial returns
+            // null when an existing subscription is found, the route maps
+            // that to 409).
+            expect(response.status).toBe(409);
+
+            // ASSERT: no second subscription row was created. The existing
+            // subscription is untouched.
+            const subsAfter = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.customerId, customerId));
+            expect(subsAfter).toHaveLength(1);
+            expect(subsAfter[0]?.id).toBe(subsBeforeSecondCall[0]?.id);
+            expect(subsAfter[0]?.status).toBe('trialing');
+        });
+
+        it('loads the trial plan entitlements and limits for the next request', async () => {
+            // ARRANGE: activate the trial.
+            const startResponse = await client.post('/api/v1/protected/billing/trial/start', {});
+            expect(startResponse.status).toBe(200);
+
+            // ARRANGE: Hono mini-app that runs the REAL entitlementMiddleware
+            // against the real billing instance. Synthetic prelude middleware
+            // sets billingEnabled + billingCustomerId so the entitlement
+            // middleware does not short-circuit before calling
+            // loadEntitlements. Same pattern as sub-commits 4 elsewhere and
+            // the entitlement-load.test.ts file (T-143-19).
+            const probeApp = new Hono();
+            probeApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', customerId);
+                return next();
+            });
+            probeApp.use(entitlementMiddleware());
+            probeApp.get('/probe', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements') ?? []),
+                    limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                    billingLoadFailed: c.get('billingLoadFailed') ?? false
+                })
+            );
+
+            // Fresh cache for this customer; the trial activation path does
+            // NOT clear the entitlement cache (it has no entry yet because
+            // the customer is brand-new), so this is a normal cache miss.
+            clearEntitlementCache(customerId);
+
+            // ACT
+            const probeRes = await probeApp.request('/probe');
+            expect(probeRes.status).toBe(200);
+            const probeBody = (await probeRes.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Readonly<Record<string, number>>;
+                readonly billingLoadFailed: boolean;
+            };
+
+            // ASSERT: trial-plan entitlements + limits surface. The
+            // entitlement middleware accepts `trialing` as an active status
+            // (entitlement.ts:167-169), so the load succeeds end-to-end.
+            expect(new Set(probeBody.entitlements)).toEqual(
+                new Set(['accommodation:publish', 'accommodation:edit'])
+            );
+            expect(probeBody.limits.max_accommodations).toBe(1);
+            expect(probeBody.limits.max_photos_per_accommodation).toBe(5);
+            expect(probeBody.billingLoadFailed).toBe(false);
+
+            // Sanity: the user id is captured in the actor and reaches the
+            // billing customer through externalId. This catches any
+            // regression where the trial route grabs the wrong customer id.
+            expect(userId).toBeDefined();
+        });
     });
-});
+
+    describe('SPEC-143 T-143-25 — trial expiration cron', () => {
+        let trialPlanId: string;
+        let customerId: string;
+
+        beforeEach(async () => {
+            mpStub.config.reset();
+
+            const plan = await createTestPlan({
+                name: TRIAL_PLAN_NAME,
+                description: 'Owner trial plan (seed for T-143-25)',
+                entitlements: ['accommodation:publish', 'accommodation:edit'],
+                limits: { max_accommodations: 1, max_photos_per_accommodation: 5 },
+                metadata: {
+                    slug: TRIAL_PLAN_NAME,
+                    category: 'test-trial',
+                    isDefault: false,
+                    sortOrder: 1,
+                    trialDays: TRIAL_DAYS,
+                    hasTrial: true
+                }
+            });
+            trialPlanId = plan.planId;
+
+            const user = await createTestUser({
+                email: `trial-expiry-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
+            });
+            const customer = await createTestBillingCustomer({
+                externalId: user.id,
+                email: user.email
+            });
+            customerId = customer.customerId;
+        });
+
+        afterEach(async () => {
+            clearEntitlementCache(customerId);
+            await testDb.clean();
+        });
+
+        /**
+         * Seed a trialing subscription whose trial_end is already in the
+         * past. The factory does not surface `trialEnd` on its input shape,
+         * so we insert the row first and then UPDATE the column directly via
+         * Drizzle. Returns the subscription id.
+         */
+        async function seedExpiredTrialingSubscription(input: {
+            readonly trialEndDaysAgo: number;
+        }): Promise<string> {
+            const subscription = await createTestSubscription({
+                customerId,
+                planId: trialPlanId,
+                status: 'trialing'
+            });
+
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - (TRIAL_DAYS + input.trialEndDaysAgo));
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - input.trialEndDaysAgo);
+
+            await testDb
+                .getDb()
+                .update(billingSubscriptions)
+                .set({ trialStart, trialEnd })
+                .where(eq(billingSubscriptions.id, subscription.subscriptionId));
+
+            return subscription.subscriptionId;
+        }
+
+        it('cancels expired trialing subscription, records TRIAL_BLOCKED event, and clears entitlement cache', async () => {
+            // ARRANGE: trialing sub whose trial_end is 1 day in the past.
+            const subscriptionId = await seedExpiredTrialingSubscription({ trialEndDaysAgo: 1 });
+
+            // ARRANGE: prime the entitlement cache for this customer so the
+            // assertion below can prove the cron evicted it. Without this
+            // priming the cache size delta is ambiguous (could be 0 because
+            // there was nothing to evict).
+            const probeApp = new Hono();
+            probeApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', customerId);
+                return next();
+            });
+            probeApp.use(entitlementMiddleware());
+            probeApp.get('/probe', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements') ?? []),
+                    limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                    billingLoadFailed: c.get('billingLoadFailed') ?? false
+                })
+            );
+
+            const preProbeRes = await probeApp.request('/probe');
+            const preProbeBody = (await preProbeRes.json()) as {
+                readonly entitlements: readonly string[];
+            };
+            // The trialing sub is active for the loader (entitlement.ts:168
+            // accepts `trialing`), so the cache lands with the plan's
+            // entitlements seeded.
+            expect(preProbeBody.entitlements).toContain('accommodation:publish');
+            const cacheSizeBeforeCron = getEntitlementCacheStats().size;
+            expect(cacheSizeBeforeCron).toBeGreaterThanOrEqual(1);
+
+            // ACT: invoke the cron's underlying service call. This is the
+            // exact entry point apps/api/src/cron/jobs/trial-expiry.ts:124
+            // uses in production mode.
+            const billing = getQZPayBilling();
+            if (!billing) {
+                throw new Error('Billing instance not initialized — check the @repo/billing mock');
+            }
+            const trialService = new TrialService(billing);
+            const blockedCount = await trialService.blockExpiredTrials();
+
+            // ASSERT: exactly one trial was blocked.
+            expect(blockedCount).toBe(1);
+
+            // ASSERT: subscription is cancelled (QZPay does not support an
+            // `expired` status — the cancel path is what the service uses).
+            const subRows = await testDb
+                .getDb()
+                .select({ status: billingSubscriptions.status })
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.id, subscriptionId));
+            // qzpay-core writes 'canceled' (US spelling) on subscriptions.cancel
+            // (billing.ts:1380). The factory's TestSubscriptionStatus type
+            // accepts both 'cancelled' (UK) and treats them as the same logical
+            // state, but the production path is canonical 'canceled'.
+            expect(subRows[0]?.status).toBe('canceled');
+
+            // ASSERT: TRIAL_BLOCKED event row was inserted, with the
+            // expected trigger source. This event is the dedup guard for
+            // future cron runs — see the idempotency test below.
+            const eventRows = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptionEvents)
+                .where(
+                    and(
+                        eq(billingSubscriptionEvents.subscriptionId, subscriptionId),
+                        eq(billingSubscriptionEvents.eventType, BILLING_EVENT_TYPES.TRIAL_BLOCKED)
+                    )
+                );
+            expect(eventRows).toHaveLength(1);
+            expect(eventRows[0]?.triggerSource).toBe('block-expired-trials-cron');
+
+            // ASSERT: entitlement cache was cleared for this customer.
+            // Delta-of-1 to allow other tests' entries (singleton scope).
+            const cacheSizeAfterCron = getEntitlementCacheStats().size;
+            expect(cacheSizeAfterCron).toBe(cacheSizeBeforeCron - 1);
+
+            // ASSERT: a fresh probe re-loads from billing storage and sees
+            // an empty entitlement set (the now-cancelled sub is no longer
+            // an active subscription).
+            const postProbeRes = await probeApp.request('/probe');
+            const postProbeBody = (await postProbeRes.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Readonly<Record<string, number>>;
+                readonly billingLoadFailed: boolean;
+            };
+            expect(postProbeBody.entitlements).toEqual([]);
+            expect(postProbeBody.limits).toEqual({});
+            expect(postProbeBody.billingLoadFailed).toBe(false);
+        });
+
+        it('is idempotent — a second cron run after a successful block is a no-op', async () => {
+            // ARRANGE: seed and run the cron once to land in the "already
+            // blocked" state.
+            const subscriptionId = await seedExpiredTrialingSubscription({ trialEndDaysAgo: 2 });
+            const billing = getQZPayBilling();
+            if (!billing) {
+                throw new Error('Billing instance not initialized — check the @repo/billing mock');
+            }
+            const trialService = new TrialService(billing);
+            const firstBlocked = await trialService.blockExpiredTrials();
+            expect(firstBlocked).toBe(1);
+
+            // Snapshot the dedup state.
+            const subStatusAfterFirst = (
+                await testDb
+                    .getDb()
+                    .select({ status: billingSubscriptions.status })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, subscriptionId))
+            )[0]?.status;
+            const eventCountAfterFirst = (
+                await testDb
+                    .getDb()
+                    .select({ id: billingSubscriptionEvents.id })
+                    .from(billingSubscriptionEvents)
+                    .where(
+                        and(
+                            eq(billingSubscriptionEvents.subscriptionId, subscriptionId),
+                            eq(
+                                billingSubscriptionEvents.eventType,
+                                BILLING_EVENT_TYPES.TRIAL_BLOCKED
+                            )
+                        )
+                    )
+            ).length;
+            expect(subStatusAfterFirst).toBe('canceled');
+            expect(eventCountAfterFirst).toBe(1);
+
+            // ACT: second run. The trial-service filter (status='trialing')
+            // already excludes the now-cancelled sub before the dedup guard
+            // even fires, so the return value should be 0.
+            const secondBlocked = await trialService.blockExpiredTrials();
+
+            // ASSERT: nothing new was processed.
+            expect(secondBlocked).toBe(0);
+
+            // ASSERT: no duplicate event row landed. This catches a
+            // regression in the dedup guard (trial.service.ts:379-399) that
+            // would otherwise create N events on N cron runs.
+            const eventCountAfterSecond = (
+                await testDb
+                    .getDb()
+                    .select({ id: billingSubscriptionEvents.id })
+                    .from(billingSubscriptionEvents)
+                    .where(
+                        and(
+                            eq(billingSubscriptionEvents.subscriptionId, subscriptionId),
+                            eq(
+                                billingSubscriptionEvents.eventType,
+                                BILLING_EVENT_TYPES.TRIAL_BLOCKED
+                            )
+                        )
+                    )
+            ).length;
+            expect(eventCountAfterSecond).toBe(1);
+
+            // ASSERT: subscription status remains cancelled.
+            const subStatusAfterSecond = (
+                await testDb
+                    .getDb()
+                    .select({ status: billingSubscriptions.status })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, subscriptionId))
+            )[0]?.status;
+            expect(subStatusAfterSecond).toBe('canceled');
+        });
+
+        it('queues a TRIAL_EXPIRED notification with customer + plan + trialEnd payload', async () => {
+            // ARRANGE: trialing sub past its end date.
+            const subscriptionId = await seedExpiredTrialingSubscription({ trialEndDaysAgo: 3 });
+            const billing = getQZPayBilling();
+            if (!billing) {
+                throw new Error('Billing instance not initialized — check the @repo/billing mock');
+            }
+
+            // Capture the post-update trial_end from DB for an exact
+            // assertion against the notification payload.
+            const trialEndFromDb = (
+                await testDb
+                    .getDb()
+                    .select({ trialEnd: billingSubscriptions.trialEnd })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, subscriptionId))
+            )[0]?.trialEnd as Date | null;
+            expect(trialEndFromDb).toBeInstanceOf(Date);
+
+            // ARRANGE: construct TrialService with a spy notifier. The cron
+            // production path passes no notifier (trial-expiry.ts:60), so
+            // we exercise the in-service code at trial.service.ts:464-483
+            // directly through this constructor parameter. This catches
+            // regressions where the notification call is dropped or its
+            // payload changes shape.
+            const sendNotification = vi.fn<(payload: TrialEventPayload) => void>();
+            const trialService = new TrialService(billing, sendNotification);
+
+            // ACT
+            const blockedCount = await trialService.blockExpiredTrials();
+            expect(blockedCount).toBe(1);
+
+            // ASSERT: notifier invoked exactly once with the expected
+            // payload shape.
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            const payload = sendNotification.mock.calls[0]?.[0] as TrialEventPayload;
+            expect(payload).toBeDefined();
+            expect(payload.type).toBe(NotificationType.TRIAL_EXPIRED);
+            expect(payload.customerId).toBe(customerId);
+            expect(payload.planName).toBe(TRIAL_PLAN_NAME);
+            expect(payload.trialEndDate).toBe((trialEndFromDb as Date).toISOString());
+            // Recipient is the billing customer's email — whatever the
+            // factory wrote on the customer row (we passed the user's email
+            // through to createTestBillingCustomer).
+            expect(payload.recipientEmail).toMatch(/^trial-expiry-.+@example\.com$/);
+            // upgradeUrl is computed from env at runtime; just assert shape.
+            expect(payload.upgradeUrl).toMatch(/\/mi-cuenta\/suscripcion$/);
+        });
+    });
+}); // close parent describe('SPEC-143 trial lifecycle e2e')
