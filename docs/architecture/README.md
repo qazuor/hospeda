@@ -21,9 +21,9 @@ Welcome to Hospeda's architecture documentation. This section covers the system 
 
 ### Deployment & Operations
 
-- [Deployment Architecture](../deployment/architecture.md) - Infrastructure and hosting
+- [Deployment Overview](../deployment/README.md) - Infrastructure and hosting (Coolify on VPS)
 - [Environments](../deployment/environments.md) - Development, staging, production
-- [Monitoring](../deployment/monitoring.md) - Observability and metrics
+- [Monitoring Runbook](../runbooks/monitoring.md) - Observability and metrics
 
 ---
 
@@ -283,7 +283,7 @@ Understanding the system:
 Each app has detailed documentation:
 
 - [API Documentation](../../apps/api/docs/README.md)
-- [Web Documentation](../../apps/web/docs/README.md)
+- [Web Guidelines](../../apps/web/CLAUDE.md)
 - [Admin Documentation](../../apps/admin/docs/README.md)
 
 ### Package Documentation

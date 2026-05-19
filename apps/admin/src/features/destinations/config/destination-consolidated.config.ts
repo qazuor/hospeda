@@ -1,3 +1,4 @@
+import type { useTranslations } from '@repo/i18n';
 import type { ConsolidatedEntityConfig } from '../types/consolidated-config.types';
 import {
     createBasicInfoConsolidatedSection,
@@ -8,11 +9,14 @@ import {
 } from './sections';
 
 /**
- * Creates the complete consolidated configuration for destination entity
+ * Creates the complete consolidated configuration for destination entity.
  *
+ * @param t - Translation function from `useTranslations()`
  * @returns Consolidated entity configuration for destination
  */
-export const createDestinationConsolidatedConfig = (): ConsolidatedEntityConfig => {
+export const createDestinationConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): ConsolidatedEntityConfig => {
     return {
         sections: [
             createBasicInfoConsolidatedSection(),
@@ -22,10 +26,10 @@ export const createDestinationConsolidatedConfig = (): ConsolidatedEntityConfig 
             createStatisticsConsolidatedSection()
         ],
         metadata: {
-            title: 'Destino',
-            description: 'Gestionar detalles del destino',
-            entityName: 'Destino',
-            entityNamePlural: 'Destinos'
+            title: t('admin-entities.entities.destination.singular'),
+            description: t('admin-entities.entities.destination.description'),
+            entityName: t('admin-entities.entities.destination.singular'),
+            entityNamePlural: t('admin-entities.entities.destination.plural')
         }
     };
 };

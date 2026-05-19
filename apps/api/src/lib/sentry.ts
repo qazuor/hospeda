@@ -67,7 +67,13 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
 
     const resolvedDefaults: SentryConfig = {
         ...DEFAULT_CONFIG,
-        environment: env.NODE_ENV,
+        // SPEC-103 T-076: prefer HOSPEDA_SENTRY_ENVIRONMENT over NODE_ENV.
+        // NODE_ENV=production in both prod and staging keeps prod-like
+        // behavior (traces, profiles, no debug) but collapses Sentry
+        // events under one environment tag. The explicit var lets the
+        // operator set environment=staging on the staging container so
+        // Sentry separates events in the dashboard.
+        environment: env.HOSPEDA_SENTRY_ENVIRONMENT || env.NODE_ENV,
         tracesSampleRate: isDev ? 0.0 : 0.1,
         profilesSampleRate: isDev ? 0.0 : 0.1,
         project: env.HOSPEDA_SENTRY_PROJECT || 'hospeda'

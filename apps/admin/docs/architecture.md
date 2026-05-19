@@ -710,12 +710,6 @@ export function Button({ variant, size, className, ...props }) {
 
 ---
 
-## 🧪 Testing
-
-See [Testing Documentation](./development/testing.md) for complete guide.
-
----
-
 ## 📖 Additional Resources
 
 ### TanStack Documentation

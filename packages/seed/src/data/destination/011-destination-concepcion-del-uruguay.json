@@ -3,9 +3,9 @@
     "id": "011-destination-concepcion-del-uruguay",
     "slug": "concepcion-del-uruguay",
     "name": "Concepción del Uruguay",
-    "summary": "Primera capital histórica de Entre Ríos con rica arquitectura y tradición cultural",
-    "description": "Concepción del Uruguay es una histórica ciudad situada en el centro-oeste de Entre Ríos, conocida por ser la primera capital histórica de la provincia. Esta hermosa ciudad combina historia, arquitectura y tradición, ofreciendo desde magníficos edificios coloniales hasta un rico patrimonio cultural. Con su ubicación privilegiada sobre el río Uruguay, la ciudad se destaca por sus instituciones educativas, su arquitectura histórica, sus tradicionales festivales y su importante papel en la historia argentina. Es un destino perfecto para quienes buscan cultura, historia y contacto con las tradiciones entrerrianas.",
-    "isFeatured": false,
+    "summary": "Primera capital histórica de Entre Ríos, ciudad universitaria a orillas del río Uruguay con patrimonio jesuítico, playas en Banco Pelay e Isla del Puerto y cercanía al Palacio San José.",
+    "description": "Concepción del Uruguay, cabecera del Departamento Uruguay, es una de las ciudades más emblemáticas de Entre Ríos: fue la primera capital histórica de la provincia y cuna del Colegio del Uruguay 'Justo José de Urquiza', fundado en 1849 como el primer colegio laico y gratuito del país. Su casco histórico se organiza en torno a la Plaza Ramírez y a la imponente Basílica de la Inmaculada Concepción, donde descansan los restos del general Urquiza. A pocos kilómetros, el Palacio San José conserva la residencia del primer presidente constitucional argentino, hoy Monumento Histórico Nacional. La ciudad combina cultura y río: la zona portuaria, la costanera y la Isla del Puerto ofrecen paseos, gastronomía y playas de arena blanca como Banco Pelay, Itapé y Paso Vera. Completan la oferta el complejo Termas de la Esmeralda, museos, festivales y un movido carnaval, en un entorno ideal para combinar historia, naturaleza fluvial y descanso.",
+    "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
@@ -20,7 +20,7 @@
         "city": "Concepción del Uruguay",
         "coordinates": {
             "lat": "-32.4833",
-            "long": "-58.2333"
+            "long": "-58.2283"
         }
     },
     "media": {
@@ -353,15 +353,17 @@
         ]
     },
     "seo": {
-        "title": "Concepción del Uruguay - Primera Capital Histórica",
-        "description": "Descubre Concepción del Uruguay, primera capital histórica de Entre Ríos. Historia, arquitectura y tradición.",
+        "title": "Concepción del Uruguay | Primera Capital de Entre Ríos",
+        "description": "Visitá Concepción del Uruguay: Basílica de la Inmaculada, Colegio Histórico, Palacio San José, costanera, Isla del Puerto, Banco Pelay y Termas de la Esmeralda.",
         "keywords": [
             "Concepción del Uruguay",
             "Entre Ríos",
-            "Historia",
-            "Arquitectura",
-            "Primera Capital",
-            "Tradición"
+            "Palacio San José",
+            "Banco Pelay",
+            "Isla del Puerto",
+            "Colegio del Uruguay",
+            "Termas de la Esmeralda",
+            "Urquiza"
         ]
     },
     "tagIds": [
@@ -375,9 +377,12 @@
     "attractionIds": [
         "018-attraction-centro_historico",
         "012-attraction-catedral_principal",
+        "059-attraction-palacio_historico",
         "055-attraction-museo_historico",
         "072-attraction-plaza_principal",
-        "034-attraction-edificio_gubernamental"
+        "031-attraction-costanera",
+        "069-attraction-playa_fluvial",
+        "028-attraction-complejo_termal_principal"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

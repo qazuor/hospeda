@@ -1,11 +1,16 @@
 import * as Sentry from '@sentry/astro';
 
 const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
+// Prefer PUBLIC_SENTRY_ENVIRONMENT over MODE so staging and prod (both
+// MODE=production) end up in different Sentry environments. Falls back
+// to MODE when the explicit override is unset.
+const environment =
+    import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development';
 
 if (dsn) {
     Sentry.init({
         dsn,
-        environment: import.meta.env.MODE || 'development',
+        environment,
         release:
             import.meta.env.PUBLIC_SENTRY_RELEASE ||
             process.env.HOSPEDA_GIT_SHA ||

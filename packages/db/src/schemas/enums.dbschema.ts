@@ -17,6 +17,12 @@ import {
     MessageSenderTypeEnum,
     MessageStatusEnum,
     ModerationStatusEnum,
+    NewsletterCampaignLocaleFilterEnum,
+    NewsletterCampaignStatusEnum,
+    NewsletterChannelEnum,
+    NewsletterDeliveryStatusEnum,
+    NewsletterSourceEnum,
+    NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
     OwnerPromotionDiscountTypeEnum,
     PaymentStatusEnum,
@@ -103,6 +109,36 @@ export const RolePgEnum = pgEnum('role_enum', enumToTuple(RoleEnum));
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',
     enumToTuple(ModerationStatusEnum)
+);
+
+export const NewsletterCampaignLocaleFilterPgEnum = pgEnum(
+    'newsletter_campaign_locale_filter_enum',
+    enumToTuple(NewsletterCampaignLocaleFilterEnum)
+);
+
+export const NewsletterCampaignStatusPgEnum = pgEnum(
+    'newsletter_campaign_status_enum',
+    enumToTuple(NewsletterCampaignStatusEnum)
+);
+
+export const NewsletterChannelPgEnum = pgEnum(
+    'newsletter_channel_enum',
+    enumToTuple(NewsletterChannelEnum)
+);
+
+export const NewsletterDeliveryStatusPgEnum = pgEnum(
+    'newsletter_delivery_status_enum',
+    enumToTuple(NewsletterDeliveryStatusEnum)
+);
+
+export const NewsletterSourcePgEnum = pgEnum(
+    'newsletter_source_enum',
+    enumToTuple(NewsletterSourceEnum)
+);
+
+export const NewsletterSubscriberStatusPgEnum = pgEnum(
+    'newsletter_subscriber_status_enum',
+    enumToTuple(NewsletterSubscriberStatusEnum)
 );
 
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));

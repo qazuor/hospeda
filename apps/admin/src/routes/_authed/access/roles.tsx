@@ -9,6 +9,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import {
     EditIcon,
     GlobeIcon,
@@ -25,140 +26,56 @@ export const Route = createFileRoute('/_authed/access/roles')({
     component: RolesPage
 });
 
-interface RoleInfo {
-    label: string;
-    description: string;
-    level: 'critical' | 'high' | 'medium' | 'low';
+type RoleLevel = 'critical' | 'high' | 'medium' | 'low';
+
+interface RoleVisual {
+    level: RoleLevel;
     icon: typeof ShieldIcon;
-    capabilities: string[];
 }
 
-// Role descriptions and metadata
-const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
-    [RoleEnum.SUPER_ADMIN]: {
-        label: 'Super Admin',
-        description: 'Full system access with all permissions including system-level actions',
-        level: 'critical',
-        icon: ShieldAlertIcon,
-        capabilities: [
-            'Complete system control',
-            'User and role management',
-            'System configuration',
-            'Audit log access',
-            'All content management'
-        ]
-    },
-    [RoleEnum.ADMIN]: {
-        label: 'Admin',
-        description: 'Manages platform content, users, and most administrative functions',
-        level: 'high',
-        icon: ShieldIcon,
-        capabilities: [
-            'Content moderation',
-            'User management',
-            'Accommodation approval',
-            'Event management',
-            'Analytics access'
-        ]
-    },
-    [RoleEnum.CLIENT_MANAGER]: {
-        label: 'Client Manager',
-        description: 'Manages client accounts, billing, subscriptions, and business analytics',
-        level: 'high',
-        icon: UsersIcon,
-        capabilities: [
-            'Client account management',
-            'Subscription management',
-            'Billing and invoicing',
-            'Payment processing',
-            'Business analytics'
-        ]
-    },
-    [RoleEnum.EDITOR]: {
-        label: 'Editor',
-        description: 'Creates and edits events, posts, and editorial content',
-        level: 'medium',
-        icon: EditIcon,
-        capabilities: [
-            'Create events',
-            'Edit posts',
-            'Publish content',
-            'Manage media',
-            'Content scheduling'
-        ]
-    },
-    [RoleEnum.HOST]: {
-        label: 'Host',
-        description: 'Accommodation owner who manages their own listings',
-        level: 'medium',
-        icon: HomeIcon,
-        capabilities: [
-            'Manage own accommodations',
-            'Update availability',
-            'Upload photos',
-            'Respond to reviews',
-            'View booking analytics'
-        ]
-    },
-    [RoleEnum.USER]: {
-        label: 'User',
-        description: 'Registered user of the public portal with basic interaction capabilities',
-        level: 'low',
-        icon: UserIcon,
-        capabilities: [
-            'View content',
-            'Create reviews',
-            'Save favorites',
-            'Update profile',
-            'Contact hosts'
-        ]
-    },
-    [RoleEnum.SPONSOR]: {
-        label: 'Sponsor',
-        description:
-            'External business sponsor with access to sponsorship management and analytics',
-        level: 'low',
-        icon: UserIcon,
-        capabilities: ['Manage sponsorships', 'View sponsorship analytics', 'View invoices']
-    },
-    [RoleEnum.GUEST]: {
-        label: 'Guest',
-        description: 'Public visitor without authentication, limited to viewing public content',
-        level: 'low',
-        icon: GlobeIcon,
-        capabilities: [
-            'View public content',
-            'Browse accommodations',
-            'Search destinations',
-            'View events',
-            'Access public information'
-        ]
-    },
-    [RoleEnum.SYSTEM]: {
-        label: 'System',
-        description:
-            'Reserved non-loginable account used as assignedById for automated tag assignments (seeds, cron jobs, webhooks). Not visible in UI.',
-        level: 'low',
-        icon: ShieldIcon,
-        capabilities: ['Used internally for automated operations only']
-    }
+/**
+ * Per-role visual tokens (level + icon). Display labels, descriptions and
+ * capabilities come from `admin-pages.access.roles.catalog.<ROLE>.*` i18n keys.
+ */
+const ROLE_VISUALS: Record<RoleEnum, RoleVisual> = {
+    [RoleEnum.SUPER_ADMIN]: { level: 'critical', icon: ShieldAlertIcon },
+    [RoleEnum.ADMIN]: { level: 'high', icon: ShieldIcon },
+    [RoleEnum.CLIENT_MANAGER]: { level: 'high', icon: UsersIcon },
+    [RoleEnum.EDITOR]: { level: 'medium', icon: EditIcon },
+    [RoleEnum.HOST]: { level: 'medium', icon: HomeIcon },
+    [RoleEnum.USER]: { level: 'low', icon: UserIcon },
+    [RoleEnum.SPONSOR]: { level: 'low', icon: UserIcon },
+    [RoleEnum.GUEST]: { level: 'low', icon: GlobeIcon },
+    [RoleEnum.SYSTEM]: { level: 'low', icon: ShieldIcon }
 };
 
 // Badge variant mapping for role levels
-const LEVEL_VARIANTS: Record<
-    RoleInfo['level'],
-    'destructive' | 'default' | 'secondary' | 'outline'
-> = {
+const LEVEL_VARIANTS: Record<RoleLevel, 'destructive' | 'default' | 'secondary' | 'outline'> = {
     critical: 'destructive',
     high: 'default',
     medium: 'secondary',
     low: 'outline'
 };
 
+/** Max capabilities slots reserved per role in the i18n catalog (cap1..cap5). */
+const MAX_CAPABILITIES = 5;
+
 function RolesPage() {
     const { t } = useTranslations();
     // Get roles in hierarchical order
     const roles = Object.values(RoleEnum);
+
+    const resolveCapabilities = (role: RoleEnum): string[] => {
+        const result: string[] = [];
+        for (let i = 1; i <= MAX_CAPABILITIES; i++) {
+            const key =
+                `admin-pages.access.roles.catalog.${role}.capabilities.cap${i}` as TranslationKey;
+            const value = t(key);
+            if (value.startsWith('[MISSING:')) break;
+            result.push(value);
+        }
+        return result;
+    };
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.accessRoles">
@@ -173,8 +90,18 @@ function RolesPage() {
                 {/* Roles grid */}
                 <div className="grid gap-6 md:grid-cols-2">
                     {roles.map((role) => {
-                        const info = ROLE_INFO[role];
-                        const Icon = info.icon;
+                        const visual = ROLE_VISUALS[role];
+                        const Icon = visual.icon;
+                        const name = t(
+                            `admin-pages.access.roles.catalog.${role}.name` as TranslationKey
+                        );
+                        const description = t(
+                            `admin-pages.access.roles.catalog.${role}.description` as TranslationKey
+                        );
+                        const levelLabel = t(
+                            `admin-pages.access.roles.levels.${visual.level}` as TranslationKey
+                        );
+                        const capabilities = resolveCapabilities(role);
 
                         return (
                             <Card
@@ -188,15 +115,12 @@ function RolesPage() {
                                                 <Icon className="h-5 w-5 text-primary" />
                                             </div>
                                             <div>
-                                                <CardTitle className="text-lg">
-                                                    {info.label}
-                                                </CardTitle>
+                                                <CardTitle className="text-lg">{name}</CardTitle>
                                                 <Badge
-                                                    variant={LEVEL_VARIANTS[info.level]}
+                                                    variant={LEVEL_VARIANTS[visual.level]}
                                                     className="mt-1"
                                                 >
-                                                    {info.level.charAt(0).toUpperCase() +
-                                                        info.level.slice(1)}{' '}
+                                                    {levelLabel}{' '}
                                                     {t('admin-pages.access.roles.accessSuffix')}
                                                 </Badge>
                                             </div>
@@ -205,15 +129,15 @@ function RolesPage() {
                                 </CardHeader>
                                 <CardContent className="flex-1">
                                     <p className="mb-4 text-muted-foreground text-sm">
-                                        {info.description}
+                                        {description}
                                     </p>
 
                                     <div>
-                                        <h4 className="mb-2 font-medium text-sm">
+                                        <h3 className="mb-2 font-medium text-sm">
                                             {t('admin-pages.access.roles.keyCapabilities')}
-                                        </h4>
+                                        </h3>
                                         <ul className="space-y-1">
-                                            {info.capabilities.map((capability) => (
+                                            {capabilities.map((capability) => (
                                                 <li
                                                     key={capability}
                                                     className="flex items-start gap-2 text-muted-foreground text-sm"

@@ -67,7 +67,7 @@ export async function dbBackupNow(argv: ReadonlyArray<string>): Promise<void> {
     const user = credentials.user;
     const db = credentials.database;
 
-    const r2 = createR2Client();
+    const r2 = createR2Client(getActiveTarget());
     const timestamp = utcBackupTimestamp();
 
     const passphrase = get('BACKUP_PASSPHRASE');

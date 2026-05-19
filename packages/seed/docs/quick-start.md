@@ -421,7 +421,7 @@ pnpm seed --migrate --required
 - **[Creating Seeds Guide](./guides/creating-seeds.md)** - Comprehensive guide to seed creation
 - **[Dependencies Guide](./guides/dependencies.md)** - Managing foreign key relationships
 - **[API Reference](./api/seed-structure.md)** - Complete API documentation
-- **[Examples](./examples/)** - Working TypeScript examples
+- **Working examples** — see `packages/seed/src/seeders/` and `packages/seed/src/data/`
 
 ### Advanced Topics
 
@@ -472,7 +472,7 @@ You now know how to:
 <!-- markdownlint-disable-next-line MD036 -->
 **Total time: 5 minutes**
 
-For more advanced use cases, see the [Complete Guides](./guides/) and [Examples](./examples/).
+For more advanced use cases, see the [Creating Seeds Guide](./guides/creating-seeds.md), [Dependencies Guide](./guides/dependencies.md), and the source under `packages/seed/src/seeders/`.
 
 ---
 

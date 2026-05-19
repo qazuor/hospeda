@@ -1202,10 +1202,10 @@ import { WifiIcon, PoolIcon, ParkingIcon } from '@repo/icons';
 ## Related Documentation
 
 - **[Icons Catalog](./icons-catalog.md)** - Complete list of all 386 available icons
-- **[Usage Guide](../guides/usage-guide.md)** - Practical usage patterns and examples
-- **[Integration Guide](../guides/integration-guide.md)** - Framework-specific integration
-- **[Accessibility Guide](../guides/accessibility-guide.md)** - Accessibility best practices
-- **[Performance Guide](../guides/performance-guide.md)** - Performance optimization
+- **[Quick Start](../quick-start.md)** - Practical usage patterns and examples
+- **[Naming Conventions](../guides/naming.md)** - Icon naming policy
+- **[Accessibility](../guides/accessibility.md)** - Accessibility best practices
+- **[Optimization](../guides/optimization.md)** - Performance optimization
 
 ## Quick Reference
 
@@ -1247,4 +1247,4 @@ import { WifiIcon, PoolIcon, ParkingIcon } from '@repo/icons';
 
 ---
 
-**Need more examples?** Check the [Usage Guide](../guides/usage-guide.md) for real-world patterns and the [Icons Catalog](./icons-catalog.md) for all available icons.
+**Need more examples?** Check the [Quick Start](../quick-start.md) for real-world patterns and the [Icons Catalog](./icons-catalog.md) for all available icons.

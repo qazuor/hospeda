@@ -1118,6 +1118,6 @@ All files            |    98.5 |     95.2 |     100 |    98.5
 
 ## Related Documentation
 
-- **[Portal](../portal.md)**: Package overview
+- **[Docs Portal](../README.md)**: Package overview
 - **[Quick Start](../quick-start.md)**: Get started quickly
 - **[Schema Reference](../api/schema-reference.md)**: Complete API docs

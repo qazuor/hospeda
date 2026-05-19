@@ -26,6 +26,7 @@ import NavigationProgress from '@/components/shared/navigation/NavigationProgres
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
+import PostHogScript from '@/components/analytics/PostHogScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
@@ -163,6 +164,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			`}</script>
 		)}
 
+		<!--
+		  PostHog analytics snippet (SPEC-140).
+		  Inline so window.posthog is stubbed before any island hydrates and
+		  calls trackEvent(). Renders nothing in dev mode or when the project
+		  key is unset (e.g. locally-built previews without the secret).
+		-->
+		<PostHogScript cspNonce={cspNonce} />
+
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
 
@@ -180,6 +189,21 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 				}
 			</style>
 		</noscript>
+
+		<!--
+		  Cloudflare Web Analytics (manual snippet).
+		  We use the manual setup (NOT the auto-inject) so this <script> tag
+		  receives the per-request CSP nonce via our middleware-driven walker
+		  (SPEC-046 T-002). `strict-dynamic` in script-src then propagates
+		  trust to the loaded beacon.min.js. The beacon POSTs Core Web Vitals
+		  telemetry to https://cloudflareinsights.com — that host must be
+		  present in `connect-src` (added in buildCspHeader, SPEC-046 follow-up).
+		-->
+		<script
+			defer
+			src="https://static.cloudflareinsights.com/beacon.min.js"
+			data-cf-beacon='{"token": "2dbd11c61c6a461f9b75acf4a0877a83"}'
+		></script>
 	</head>
 	<body>
 		<NavigationProgress />
@@ -194,6 +218,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ScrollToTop locale={locale} />
 		<CookieConsentBanner
 			client:idle
+			transition:persist="cookie-consent-banner"
 			locale={locale}
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>

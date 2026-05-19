@@ -205,3 +205,26 @@ export const requireBilling: MiddlewareHandler = async (c, next) => {
 export function getQZPayBilling(): QZPayBilling | null {
     return getBillingInstance();
 }
+
+/**
+ * TEST-ONLY: Clear the cached billing singleton so the next call to
+ * {@link getQZPayBilling} reconstructs it (picking up freshly-mocked
+ * dependencies). Required by SPEC-143 e2e tests that swap
+ * `createMercadoPagoAdapter` via `vi.mock` AFTER another test has already
+ * triggered initialization (which would cache the real adapter).
+ *
+ * Throws when invoked outside `NODE_ENV === 'test'` to prevent accidental
+ * use in production deployments — the cached singleton is load-bearing
+ * for connection-pool reuse and metric continuity, dropping it under live
+ * traffic would create a thundering-herd reconnect.
+ *
+ * @throws Error when NODE_ENV is not 'test'
+ */
+export function resetBillingInstance(): void {
+    if (process.env.NODE_ENV !== 'test') {
+        throw new Error(
+            'resetBillingInstance is test-only and must not be called outside NODE_ENV=test'
+        );
+    }
+    billingInstance = null;
+}

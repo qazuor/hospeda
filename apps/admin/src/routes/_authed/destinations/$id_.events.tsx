@@ -4,8 +4,8 @@
  * Displays events associated with a specific destination.
  */
 
-import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
 import { Badge } from '@/components/ui/badge';
+import { DestinationSubTabLayout } from '@/features/destinations/components/DestinationSubTabLayout';
 import { useDestinationQuery } from '@/features/destinations/hooks/useDestinationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDate } from '@repo/i18n';
@@ -51,12 +51,10 @@ function DestinationEventsPage() {
     };
 
     return (
-        <div className="space-y-4">
-            <PageTabs
-                tabs={destinationTabs}
-                basePath={`/destinations/${id}`}
-            />
-
+        <DestinationSubTabLayout
+            destinationId={id}
+            entityName={destination?.name}
+        >
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.events')}</h2>
 
@@ -121,6 +119,6 @@ function DestinationEventsPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </DestinationSubTabLayout>
     );
 }

@@ -28,8 +28,9 @@
 .root--mobile .option {
     flex: 1;
     justify-content: center;
-    padding: 10px 0;
+    padding: 7px 0;
     border-radius: 0;
+    font-size: 13px;
 }
 
 .option {

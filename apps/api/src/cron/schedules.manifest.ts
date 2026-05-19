@@ -43,6 +43,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'apply-scheduled-plan-changes',
+        schedule: '*/15 * * * *',
+        description:
+            'Apply due scheduled plan changes (SPEC-141 D7 downgrade) on subscriptions whose period_end has passed.'
+    },
+    {
         name: 'archive-abandoned-drafts',
         schedule: '0 3 * * *',
         description: 'Archive accommodation drafts left untouched past the retention window.'
@@ -86,6 +92,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'media-orphan-cleanup',
         schedule: '0 0 * * 0',
         description: 'Weekly sweep of orphaned media assets (no parent entity).'
+    },
+    {
+        name: 'newsletter-close-campaigns',
+        schedule: '*/5 * * * *',
+        description:
+            'Close newsletter campaigns whose deliveries have all resolved (status sending → sent).'
     },
     {
         name: 'notification-log-purge',

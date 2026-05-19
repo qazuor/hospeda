@@ -28,7 +28,7 @@ function SponsorDashboardPage() {
 
     if (error) {
         return (
-            <SidebarPageLayout>
+            <SidebarPageLayout titleKey="admin-pages.sponsor.dashboard.title">
                 <Card>
                     <CardContent className="py-8">
                         <div className="text-center">
@@ -44,17 +44,12 @@ function SponsorDashboardPage() {
     }
 
     return (
-        <SidebarPageLayout>
+        <SidebarPageLayout titleKey="admin-pages.sponsor.dashboard.title">
             <div className="space-y-6">
-                {/* Page header */}
-                <div>
-                    <h2 className="mb-2 font-bold text-2xl">
-                        {t('admin-pages.sponsor.dashboard.title')}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        {t('admin-pages.sponsor.dashboard.subtitle')}
-                    </p>
-                </div>
+                {/* Page subtitle (h1 is rendered by SidebarPageLayout) */}
+                <p className="text-muted-foreground">
+                    {t('admin-pages.sponsor.dashboard.subtitle')}
+                </p>
 
                 {/* Summary cards */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

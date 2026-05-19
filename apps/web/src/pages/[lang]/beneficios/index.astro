@@ -12,6 +12,7 @@ import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { FavoriteIcon, HomeIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -40,6 +41,16 @@ const ownerBenefits = [
 	{ titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
 ] as const;
 
+// Split titles to underline the last word with a handwritten accent.
+const splitLastWord = (full: string): { main: string; accent: string } => {
+	const words = full.trim().split(/\s+/);
+	const accent = words.pop() ?? full;
+	return { main: words.join(' '), accent };
+};
+
+const touristHeading = splitLastWord(t('benefits.tourist.title', 'Beneficios para turistas'));
+const ownerHeading = splitLastWord(t('benefits.owner.title', 'Beneficios para propietarios'));
+
 const benefitsTitle = t('benefits.title', 'Beneficios');
 const benefitsDescription = t(
 	'benefits.description',
@@ -66,13 +77,56 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		inLanguage={inLanguageMap[locale]}
 	/>
 	<!-- Tourist Benefits -->
-	<section class="benefits-section section">
+	<section class="benefits-section benefits-section--tourist section">
+		<div class="benefits-section__decoratives" aria-hidden="true">
+			<span class="benefits-section__watermark benefits-section__watermark--tourist">
+				<FavoriteIcon size={200} weight="duotone" />
+			</span>
+			<svg
+				class="benefits-section__wave benefits-section__wave--tourist"
+				viewBox="0 0 800 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 0 40 Q 100 10, 200 35 T 400 30 T 600 35 T 800 28"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="benefits-section__dot benefits-section__dot--t1"></span>
+			<span class="benefits-section__dot benefits-section__dot--t2"></span>
+			<span class="benefits-section__dot benefits-section__dot--t3"></span>
+			<span class="benefits-section__dot benefits-section__dot--t4"></span>
+		</div>
 		<div class="benefits-section__container">
 			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.tourist.tagline', 'Para viajeros')}</p>
-			<h1 class="benefits-section__title" data-reveal="up">{t('benefits.tourist.title', 'Beneficios para turistas')}</h1>
+			<h1 class="benefits-section__title" data-reveal="up">
+				{touristHeading.main && <>{touristHeading.main}{' '}</>}
+				<span class="benefits-section__title-accent benefits-section__title-accent--tourist">
+					{touristHeading.accent}
+					<svg
+						class="benefits-section__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h1>
 			<div class="benefits-section__grid">
 				{touristBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="benefits-card__icon" aria-hidden="true">
 							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
 								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
@@ -94,13 +148,56 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	</section>
 
 	<!-- Owner Benefits -->
-	<section class="benefits-section section section--warm">
+	<section class="benefits-section benefits-section--owner section section--warm">
+		<div class="benefits-section__decoratives" aria-hidden="true">
+			<span class="benefits-section__watermark benefits-section__watermark--owner">
+				<HomeIcon size={200} weight="duotone" />
+			</span>
+			<svg
+				class="benefits-section__wave benefits-section__wave--owner"
+				viewBox="0 0 800 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 0 28 Q 100 50, 200 30 T 400 32 T 600 28 T 800 35"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="benefits-section__dot benefits-section__dot--o1"></span>
+			<span class="benefits-section__dot benefits-section__dot--o2"></span>
+			<span class="benefits-section__dot benefits-section__dot--o3"></span>
+			<span class="benefits-section__dot benefits-section__dot--o4"></span>
+		</div>
 		<div class="benefits-section__container">
 			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.owner.tagline', 'Para propietarios')}</p>
-			<h2 class="benefits-section__title" data-reveal="up">{t('benefits.owner.title', 'Beneficios para propietarios')}</h2>
+			<h2 class="benefits-section__title" data-reveal="up">
+				{ownerHeading.main && <>{ownerHeading.main}{' '}</>}
+				<span class="benefits-section__title-accent benefits-section__title-accent--owner">
+					{ownerHeading.accent}
+					<svg
+						class="benefits-section__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h2>
 			<div class="benefits-section__grid">
 				{ownerBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="benefits-card__icon" aria-hidden="true">
 							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
 								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-accent) l c h / 0.1)" />
@@ -182,6 +279,162 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	.benefits-section__cta {
 		margin-top: var(--space-8);
+	}
+
+	/* ─── Decoratives (per-section personality) ─────────────────────────── */
+
+	.benefits-section {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.benefits-section__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.benefits-section__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Handwritten underline under the last word of the title */
+	.benefits-section__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.benefits-section__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
+	.benefits-section__title-accent--tourist .benefits-section__title-underline {
+		color: var(--brand-primary);
+	}
+
+	.benefits-section__title-accent--owner .benefits-section__title-underline {
+		color: var(--brand-accent);
+	}
+
+	/* Watermark: oversized icon in a corner, very low opacity */
+	.benefits-section__watermark {
+		position: absolute;
+		display: inline-flex;
+		opacity: 0.05;
+	}
+
+	.benefits-section__watermark--tourist {
+		bottom: -40px;
+		right: -50px;
+		color: var(--brand-primary);
+		transform: rotate(-14deg);
+	}
+
+	.benefits-section__watermark--owner {
+		top: -30px;
+		left: -50px;
+		color: var(--brand-accent);
+		transform: rotate(18deg);
+	}
+
+	/* Dashed wavy line crossing the section */
+	.benefits-section__wave {
+		position: absolute;
+		width: 60%;
+		height: 60px;
+		opacity: 0.35;
+	}
+
+	.benefits-section__wave--tourist {
+		top: 12%;
+		left: -5%;
+		color: var(--brand-primary);
+	}
+
+	.benefits-section__wave--owner {
+		bottom: 14%;
+		right: -5%;
+		color: var(--brand-accent);
+	}
+
+	/* Ambient dots — varied sizes and opacities */
+	.benefits-section__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+
+	.benefits-section__dot--t1 {
+		top: 22%;
+		right: 10%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+	.benefits-section__dot--t2 {
+		top: 60%;
+		left: 6%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.22);
+	}
+	.benefits-section__dot--t3 {
+		bottom: 18%;
+		right: 22%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+	}
+	.benefits-section__dot--t4 {
+		top: 40%;
+		right: 4%;
+		width: 8px;
+		height: 8px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.3);
+	}
+
+	.benefits-section__dot--o1 {
+		top: 18%;
+		left: 10%;
+		width: 10px;
+		height: 10px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.benefits-section__dot--o2 {
+		bottom: 25%;
+		left: 22%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+	}
+	.benefits-section__dot--o3 {
+		top: 35%;
+		right: 8%;
+		width: 8px;
+		height: 8px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+	}
+	.benefits-section__dot--o4 {
+		bottom: 12%;
+		left: 5%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.28);
+	}
+
+	@media (max-width: 900px) {
+		.benefits-section__watermark,
+		.benefits-section__wave {
+			display: none;
+		}
 	}
 
 </style>

@@ -3,9 +3,9 @@
     "id": "004-destination-federacion",
     "slug": "federacion",
     "name": "Federación",
-    "summary": "Destino termal por excelencia con el complejo termal más grande de Argentina",
-    "description": "Federación es una pequeña pero encantadora ciudad ubicada en el norte de Entre Ríos, mundialmente reconocida por albergar el complejo termal más grande de Argentina. Con sus aguas termales naturales, modernas instalaciones y un entorno natural privilegiado, Federación se ha convertido en el destino termal más popular del país. La ciudad ofrece una perfecta combinación de relajación, entretenimiento y contacto con la naturaleza, con actividades para toda la familia en un ambiente tranquilo y revitalizante.",
-    "isFeatured": true,
+    "summary": "Ciudad termal a orillas del lago Salto Grande, reconstruida tras la inundación de 1979 y reconocida como capital del termalismo argentino.",
+    "description": "Federación es una ciudad del norte de Entre Ríos ubicada a orillas del embalse de Salto Grande, sobre el río Uruguay. Su historia es única en el país: en 1979, con el llenado del embalse de la represa binacional Salto Grande, la vieja Federación quedó sumergida y el 82% de su población fue reubicada algunos kilómetros al noroeste, donde se inauguró la actual Nueva Federación el 25 de marzo de ese año. Desde 1997 funciona su Parque Termal, pionero en aprovechar las aguas del Acuífero Guaraní, que la convirtió en uno de los destinos termales más visitados de Argentina. La ciudad combina relax y bienestar con playas sobre el lago, una extensa avenida costanera de unos 8 km, paseos náuticos, museos dedicados a la memoria de la antigua ciudad y un entorno natural ideal para el turismo familiar.",
+    "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3186",
+        "zipCode": "3206",
         "country": "Argentina",
         "street": "Av. Termas",
         "number": "321",
         "city": "Federación",
         "coordinates": {
-            "lat": "-31.0167",
-            "long": "-57.8833"
+            "lat": "-30.9833",
+            "long": "-57.9167"
         }
     },
     "media": {
@@ -173,9 +173,18 @@
         ]
     },
     "seo": {
-        "title": "Federación - Complejo Termal Más Grande de Argentina",
-        "description": "Descubre Federación, el destino termal más importante de Argentina. Relax y bienestar en Entre Ríos.",
-        "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
+        "title": "Federación, Entre Ríos: termas y lago Salto Grande",
+        "description": "Descubrí Federación, capital del termalismo argentino: Parque Termal, playas del lago Salto Grande, costanera y la ciudad reubicada en 1979.",
+        "keywords": [
+            "Federación",
+            "Termas de Federación",
+            "Entre Ríos",
+            "Lago Salto Grande",
+            "Parque Termal",
+            "Nueva Federación",
+            "Acuífero Guaraní",
+            "Turismo termal"
+        ]
     },
     "tagIds": [
         "038-tag-termas",
@@ -188,10 +197,13 @@
     ],
     "attractionIds": [
         "028-attraction-complejo_termal_principal",
-        "002-attraction-aqua_parque_termal",
-        "023-attraction-centro_wellness",
-        "083-attraction-spa_natural",
-        "085-attraction-termas_familiares"
+        "066-attraction-piscinas_termales",
+        "085-attraction-termas_familiares",
+        "031-attraction-costanera",
+        "069-attraction-playa_fluvial",
+        "055-attraction-museo_historico",
+        "075-attraction-puerto_deportivo",
+        "077-attraction-reserva_natural"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

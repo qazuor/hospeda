@@ -1,10 +1,15 @@
-import { UserModel, safeIlike, users as userTable } from '@repo/db';
+import { UserModel, accounts, eq, getDb, safeIlike, users as userTable } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type { EntityFilters, User } from '@repo/schemas';
 import {
+    type CompleteProfileBody,
+    CompleteProfileBodySchema,
+    type CompleteProfileResponse,
     PermissionEnum,
     ServiceErrorCode,
+    type SetPasswordResponse,
+    type SkipSetPasswordResponse,
     type UserAddPermissionInput,
     UserAddPermissionInputSchema,
     UserAdminSearchSchema,
@@ -26,6 +31,7 @@ import {
     UserUpdateInputSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
@@ -694,6 +700,290 @@ export class UserService extends BaseCrudService<
                         hasPreviousPage: page > 1
                     }
                 };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-113 — Profile completion flow methods
+    // -----------------------------------------------------------------------
+
+    /**
+     * Checks whether a user needs to set a password.
+     *
+     * Returns TRUE when the user has at least one OAuth account row
+     * (`providerId IN ('google','facebook')`) AND zero credential account rows
+     * (`providerId = 'credential'`).  Used internally by `completeProfile` to
+     * compute the `requiresSetPassword` response flag.
+     *
+     * @param userId - The user's UUID.
+     * @returns TRUE if the user is OAuth-only (no credential account row).
+     */
+    private async _userRequiresSetPassword(userId: string): Promise<boolean> {
+        const db = getDb();
+        const userAccounts = await db
+            .select({ providerId: accounts.providerId })
+            .from(accounts)
+            .where(eq(accounts.userId, userId));
+
+        const hasOAuthAccount = userAccounts.some((a) =>
+            ['google', 'facebook'].includes(a.providerId)
+        );
+        const hasCredentialAccount = userAccounts.some((a) => a.providerId === 'credential');
+
+        return hasOAuthAccount && !hasCredentialAccount;
+    }
+
+    /**
+     * Completes the post-signup profile for an authenticated user.
+     *
+     * Persists the supplied form fields (displayName, firstName, phone, locale,
+     * newsletterOptIn) to the user row and flips `profileCompleted = true`.
+     * The caller MUST be acting on their own account — this method verifies
+     * `actor.id === input.userId` and throws FORBIDDEN otherwise.
+     *
+     * Phone is stored in `contactInfo.mobilePhone`.
+     * Locale is stored in `settings.languageWeb`.
+     * `newsletterOptIn` is intentionally NOT persisted here — the route layer
+     * delegates newsletter subscription to `NewsletterSubscriberService` before
+     * calling this method.
+     *
+     * @param actor - The actor performing the action.
+     * @param input - Validated form fields plus the target userId.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ profileCompleted: true, requiresSetPassword: boolean }`.
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
+     */
+    public async completeProfile(
+        actor: Actor,
+        input: { userId: string } & CompleteProfileBody,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<CompleteProfileResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'completeProfile',
+            input: { ...input, actor },
+            schema: CompleteProfileBodySchema.extend({ userId: UserSchema.shape.id }),
+            ctx,
+            execute: async (
+                {
+                    userId,
+                    firstName,
+                    lastName,
+                    displayName,
+                    birthDate,
+                    imageUrl,
+                    phone,
+                    locale,
+                    bio,
+                    website,
+                    occupation,
+                    socialNetworks,
+                    location
+                },
+                actor,
+                execCtx
+            ) => {
+                // Self-only guard — actor may only complete their own profile.
+                if (actor.id !== userId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: can only complete your own profile'
+                    );
+                }
+
+                const existing = await this.model.findById(userId, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                // Derive display name server-side when client did not override it.
+                // Defense-in-depth: do not trust the client to always send the derived value.
+                const resolvedDisplayName =
+                    displayName?.trim() || `${firstName.trim()} ${lastName.trim()}`.trim();
+
+                // Merge phone into existing contactInfo (shallow merge).
+                const existingContactInfo = (existing.contactInfo as Record<string, unknown>) ?? {};
+                const contactInfo = phone
+                    ? { ...existingContactInfo, mobilePhone: phone }
+                    : existingContactInfo;
+
+                // Merge locale into existing settings (shallow merge).
+                const existingSettings = (existing.settings as Record<string, unknown>) ?? {};
+                const settings = locale
+                    ? { ...existingSettings, languageWeb: locale }
+                    : existingSettings;
+
+                // Merge bio/website/occupation into existing profile JSONB (shallow merge).
+                const existingProfile = (existing.profile as Record<string, unknown>) ?? {};
+                const hasProfileFields =
+                    bio !== undefined || website !== undefined || occupation !== undefined;
+                const profile = hasProfileFields
+                    ? {
+                          ...existingProfile,
+                          ...(bio !== undefined && { bio }),
+                          ...(website !== undefined && { website }),
+                          ...(occupation !== undefined && { occupation })
+                      }
+                    : existingProfile;
+
+                // Merge social networks into existing JSONB (shallow merge).
+                const existingSocial = (existing.socialNetworks as Record<string, unknown>) ?? {};
+                const resolvedSocialNetworks = socialNetworks
+                    ? { ...existingSocial, ...socialNetworks }
+                    : existingSocial;
+
+                // The JSONB columns (socialNetworks, location) and the
+                // string-vs-Date birthDate are intentionally permissive at
+                // runtime — Drizzle stores whatever the column accepts. We
+                // cast to Partial<User> at the model.update boundary because
+                // the Zod-derived User type tightens each JSONB field to its
+                // full schema (SocialNetwork, FullLocationType) while we
+                // accept partial onboarding subsets here.
+                // birthDate is converted to Date since the column is typed
+                // as timestamp and Drizzle expects a Date, not the ISO
+                // string the HTTP body carries.
+                const patch = {
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    displayName: resolvedDisplayName,
+                    profileCompleted: true,
+                    ...(Object.keys(contactInfo).length > 0 && { contactInfo }),
+                    ...(Object.keys(settings).length > 0 && { settings }),
+                    ...(Object.keys(profile).length > 0 && { profile }),
+                    ...(Object.keys(resolvedSocialNetworks).length > 0 && {
+                        socialNetworks: resolvedSocialNetworks
+                    }),
+                    ...(birthDate !== undefined && { birthDate: new Date(birthDate) }),
+                    ...(imageUrl !== undefined && { image: imageUrl }),
+                    ...(location !== undefined && { location })
+                } as Partial<User>;
+
+                const updated = await this.model.update({ id: userId }, patch, execCtx?.tx);
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update user profile'
+                    );
+                }
+
+                const requiresSetPassword = await this._userRequiresSetPassword(userId);
+
+                return { profileCompleted: true as const, requiresSetPassword };
+            }
+        });
+    }
+
+    /**
+     * Records that an OAuth-only user has been shown the set-password prompt
+     * and chose to skip it.
+     *
+     * Flips `setPasswordPrompted = true` without creating any credential account
+     * row.  Subsequent middleware checks will see this flag and not redirect the
+     * user again.
+     *
+     * The caller MUST be acting on their own account.
+     *
+     * @param actor - The actor performing the action.
+     * @param input - Object containing the target userId.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ setPasswordPrompted: true, credentialCreated: false }`.
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
+     */
+    public async skipSetPassword(
+        actor: Actor,
+        input: { userId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<SkipSetPasswordResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'skipSetPassword',
+            input: { ...input, actor },
+            schema: z.object({ userId: UserSchema.shape.id }),
+            ctx,
+            execute: async ({ userId }, actor, execCtx) => {
+                if (actor.id !== userId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: can only skip set-password for your own account'
+                    );
+                }
+
+                const existing = await this.model.findById(userId, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const updated = await this.model.update(
+                    { id: userId },
+                    { setPasswordPrompted: true } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update set_password_prompted flag'
+                    );
+                }
+
+                return { setPasswordPrompted: true as const, credentialCreated: false as const };
+            }
+        });
+    }
+
+    /**
+     * Records that the set-password flow completed successfully for a user.
+     *
+     * Called AFTER the route layer has invoked Better Auth's `setPassword`
+     * endpoint (which creates the `credential` account row).  This method
+     * only flips `setPasswordPrompted = true` on the user row so subsequent
+     * middleware checks do not re-prompt the user.
+     *
+     * The caller MUST be acting on their own account.
+     *
+     * @param actor - The actor performing the action.
+     * @param input - Object containing the target userId.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ setPasswordPrompted: true, credentialCreated: true }`.
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
+     */
+    public async markSetPasswordDone(
+        actor: Actor,
+        input: { userId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<SetPasswordResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markSetPasswordDone',
+            input: { ...input, actor },
+            schema: z.object({ userId: UserSchema.shape.id }),
+            ctx,
+            execute: async ({ userId }, actor, execCtx) => {
+                if (actor.id !== userId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: can only mark set-password done for your own account'
+                    );
+                }
+
+                const existing = await this.model.findById(userId, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const updated = await this.model.update(
+                    { id: userId },
+                    { setPasswordPrompted: true } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update set_password_prompted flag'
+                    );
+                }
+
+                return { setPasswordPrompted: true as const, credentialCreated: true as const };
             }
         });
     }

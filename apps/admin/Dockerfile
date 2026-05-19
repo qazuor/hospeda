@@ -8,37 +8,67 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
 
-# ----- deps stage ------------------------------------------------------------
-# Install ALL workspace deps. See apps/api/Dockerfile for the rationale on
-# copying full trees instead of individual package.json files.
-FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
-COPY patches ./patches
-COPY apps apps
-COPY packages packages
-RUN pnpm install --frozen-lockfile
-
 # ----- build stage -----------------------------------------------------------
+# Install workspace deps AND run the turbo build in a single stage so we never
+# duplicate the ~4 GB monorepo node_modules tree on the build host's disk.
+# Previously this was split into `deps` + `build` and the `COPY --from=deps
+# /repo /repo` step doubled the working set to ~8 GB, which exhausted disk on
+# the Coolify VPS during the staging deploy on 2026-05-19 (exit code 255 mid
+# COPY). Docker still caches the install layer separately as long as the
+# lockfile + workspace trees don't change.
+#
 # Vite bakes VITE_*/HOSPEDA_API_URL into the admin bundle at build time.
 # Coolify injects the real values via --build-arg from the project's
 # build-time env config. The defaults are placeholders so local
 # `docker build` validation passes the Zod check; real values override.
+#
+# Full-tree COPY of apps/ and packages/ is intentional: listing every
+# workspace package.json individually was tried first but missed transitive
+# workspace deps (e.g. @repo/icons pulled in via @repo/feedback). This
+# trades a bit of layer cache for correctness.
 FROM base AS build
 ARG HOSPEDA_API_URL=https://api.placeholder.local
 ARG VITE_API_URL=https://api.placeholder.local
 ARG VITE_SITE_URL=https://placeholder.local
 ARG VITE_BETTER_AUTH_URL=https://api.placeholder.local/api/auth
-ARG VITE_SENTRY_RELEASE
+ARG VITE_SENTRY_DSN
+ARG VITE_SENTRY_ENVIRONMENT
+ARG VITE_POSTHOG_KEY
+ARG VITE_POSTHOG_HOST
+# HOSPEDA_GIT_SHA + VITE_SENTRY_RELEASE drive the Sentry release tag baked
+# into the admin client bundle. The build-time resolution chain is:
+#   1. Explicit --build-arg from Coolify (manual override, if set).
+#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
+#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
+#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
+#      specifically so this file reaches the builder.
+#   3. Last resort: empty string. The downstream `|| 'development'` chain
+#      in apps/admin/src/lib/sentry/sentry.config.ts absorbs that case.
+# Resolution happens in the same RUN that triggers `pnpm turbo run build`
+# so the env vars are visible to Vite (which reads import.meta.env at
+# build time). Exporting in a prior RUN would not persist across layers.
 ARG HOSPEDA_GIT_SHA
+ARG VITE_SENTRY_RELEASE
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_API_URL=$VITE_API_URL \
     VITE_SITE_URL=$VITE_SITE_URL \
     VITE_BETTER_AUTH_URL=$VITE_BETTER_AUTH_URL \
-    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
-    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
+    VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
+    VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
+    VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
+    VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
     NITRO_PRESET=node-server
-COPY --from=deps /repo /repo
-RUN pnpm turbo run build --filter=admin
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
+COPY patches ./patches
+COPY apps apps
+COPY packages packages
+COPY .git/HEAD /tmp/git-head
+RUN pnpm install --frozen-lockfile
+RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
+    VITE_SENTRY_RELEASE="${VITE_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
+    export HOSPEDA_GIT_SHA VITE_SENTRY_RELEASE && \
+    echo "[build] Sentry release: ${VITE_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=admin
 
 # ----- runner stage ----------------------------------------------------------
 # Nitro's node-server preset bundles its own runtime deps inside .output/,

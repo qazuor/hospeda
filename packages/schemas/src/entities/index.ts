@@ -11,6 +11,7 @@ export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';
 export * from './exchangeRate/index.js';
 export * from './feature/index.js';
+export * from './newsletter/index.js';
 export * from './ownerPromotion/index.js';
 export * from './permission/index.js';
 export * from './post/index.js';

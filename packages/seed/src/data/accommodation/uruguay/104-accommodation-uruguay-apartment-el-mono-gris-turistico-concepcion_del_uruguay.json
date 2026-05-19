@@ -20,8 +20,15 @@
         "whatsapp": "https://wa.me/5493442612345"
     },
     "price": {
-        "price": 22000,
-        "currency": "ARS"
+        "price": 27500,
+        "currency": "ARS",
+        "discounts": {
+            "lastMinute": {
+                "price": 19,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -35,34 +42,70 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop",
-            "caption": "El Mono Gris - Living",
-            "description": "Vista del monoambiente moderno y luminoso",
+            "url": "https://images.pexels.com/photos/5417293/pexels-photo-5417293.jpeg",
+            "caption": "Living con alfombra",
+            "description": "Sala contemporánea con mobiliario, alfombra y decoración cuidada",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop",
-                "caption": "Living comedor",
-                "description": "Espacio principal con sommier y living integrado",
+                "url": "https://images.pexels.com/photos/33636640/pexels-photo-33636640.jpeg",
+                "caption": "Sala con cocina abierta",
+                "description": "Living del apartamento integrado con cocina en diseño minimalista",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&h=800&fit=crop",
-                "caption": "Cocina",
-                "description": "Cocina integrada completamente equipada",
+                "url": "https://images.pexels.com/photos/19916700/pexels-photo-19916700.jpeg",
+                "caption": "Vista del apartamento",
+                "description": "Vista aérea del living del apartamento con sillones y mesa baja",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=1200&h=800&fit=crop",
-                "caption": "Baño",
-                "description": "Baño privado con ducha",
+                "url": "https://images.pexels.com/photos/7031708/pexels-photo-7031708.jpeg",
+                "caption": "Living con TV",
+                "description": "Sala acogedora con sillón mullido y TV en pared del apartamento",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&h=800&fit=crop",
-                "caption": "Detalle interior",
-                "description": "Detalles del diseño moderno del monoambiente",
+                "url": "https://images.pexels.com/photos/11296222/pexels-photo-11296222.jpeg",
+                "caption": "Living del apartamento",
+                "description": "Ambiente principal con sillón gris, plantas y decoración contemporánea",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/37252339/pexels-photo-37252339.jpeg",
+                "caption": "Living minimalista",
+                "description": "Sala de diseño minimalista con líneas limpias y luz natural abundante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19899060/pexels-photo-19899060.jpeg",
+                "caption": "Sala con sillón y mesas",
+                "description": "Living con sillón, mesas auxiliares y butaca en ambiente acogedor",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7214732/pexels-photo-7214732.jpeg",
+                "caption": "Living con pared de ladrillo",
+                "description": "Sala contemporánea con pared de ladrillo a la vista y zona de TV",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36887747/pexels-photo-36887747.jpeg",
+                "caption": "Sala con sillón beige",
+                "description": "Living moderno con sillón color beige y detalles de decoración contemporáneos",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6681824/pexels-photo-6681824.jpeg",
+                "caption": "Rincón junto a la ventana",
+                "description": "Sillón cómodo con muebles de madera junto a la ventana del living",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/30765736/pexels-photo-30765736.jpeg",
+                "caption": "Living con balcón ajardinado",
+                "description": "Apartamento moderno con balcón con plantas y vista al exterior",
                 "moderationState": "APPROVED"
             }
         ]

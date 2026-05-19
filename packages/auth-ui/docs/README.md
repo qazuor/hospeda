@@ -70,6 +70,6 @@ All components use shared types (`AuthSession`, `SessionUser`, `AuthResult`) def
 
 ## Related Resources
 
-- [Authentication Guide](../../../docs/guides/authentication.md)
+- [Authentication Guide](../../../docs/security/authentication.md)
 - [@repo/i18n](../../i18n/docs/README.md) .. Translations used by auth components
 - [Better Auth Documentation](https://www.better-auth.com/docs)

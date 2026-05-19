@@ -52,4 +52,57 @@ describe('SignIn.client.tsx', () => {
             expect(src).toContain('aria-busy="true"');
         });
     });
+
+    // SPEC-120 — OAuth failure banner wiring.
+    describe('OAuth error banner (SPEC-120)', () => {
+        it('declares the initialOAuthError prop on SignInProps', () => {
+            expect(src).toContain('initialOAuthError');
+            expect(src).toMatch(/readonly\s+code:\s*string/);
+            expect(src).toMatch(/description\?:\s*string/);
+            expect(src).toMatch(/provider\?:\s*string/);
+        });
+
+        it('exposes a providerLabel helper that maps brand ids', () => {
+            expect(src).toContain('function providerLabel');
+            expect(src).toContain("'Google'");
+            expect(src).toContain("'Facebook'");
+        });
+
+        it('destructures initialOAuthError in the component signature', () => {
+            expect(src).toMatch(/initialOAuthError\s*}\s*:\s*SignInProps/);
+        });
+
+        it('resolves the OAuth banner via the i18n catalog with provider interpolation', () => {
+            expect(src).toContain('auth-ui.signIn.errors.oauth.');
+            expect(src).toContain('provider: providerName');
+        });
+
+        it('falls back to the `unknown` key when the specific code is missing', () => {
+            expect(src).toContain('auth-ui.signIn.errors.oauth.unknown');
+            expect(src).toContain('[MISSING:');
+        });
+
+        it('writes error_description to console.warn (never to UI)', () => {
+            expect(src).toContain('console.warn(`[OAuth]');
+        });
+
+        it('strips OAuth query params on hydration via history.replaceState', () => {
+            expect(src).toContain('history.replaceState');
+            expect(src).toContain("'error'");
+            expect(src).toContain("'error_description'");
+            expect(src).toContain("'provider'");
+        });
+
+        it('strips the URL hash too (handles Facebook #_=_ legacy bug)', () => {
+            expect(src).toMatch(/url\.hash\s*=\s*''/);
+        });
+
+        it('preserves unrelated query params (e.g. returnUrl) during cleanup', () => {
+            // The cleanup loop only deletes a fixed allowlist of OAuth keys
+            // before calling replaceState; it must not blow away the whole
+            // search string.
+            expect(src).toContain('url.searchParams.delete');
+            expect(src).not.toContain("url.search = ''");
+        });
+    });
 });

@@ -1750,7 +1750,7 @@ app.route('/reviews', reviewRoutes);
 - Create React components for the entity
 - Use TanStack Query for data fetching
 - Add forms with TanStack Form
-- See: [Web Development Guide](../../apps/web/docs/development/README.md)
+- See: [Web App Guidelines](../../apps/web/CLAUDE.md)
 
 ### 2. Add Advanced Features
 

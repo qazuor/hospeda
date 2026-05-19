@@ -379,9 +379,9 @@ export class ProductModel extends BaseModel<Product> {
 
 | Method | Description | Link |
 |--------|-------------|------|
-| `buildWhereClause(filters, table)` | Build dynamic WHERE clause | [Docs](./api/query-builder.md#buildwhereclause) |
-| `getDb()` | Get database client | [Docs](./api/client.md#getdb) |
-| `initializeDb(pool)` | Initialize database | [Docs](./api/client.md#initializedb) |
+| `buildWhereClause(filters, table)` | Build dynamic WHERE clause | [Docs](./api/query-methods.md#buildwhereclause) |
+| `getDb()` | Get database client | See the package [CLAUDE.md](../CLAUDE.md#initializing-the-database) |
+| `initializeDb(pool)` | Initialize database | See the package [CLAUDE.md](../CLAUDE.md#initializing-the-database) |
 
 ### Relations API
 
@@ -393,11 +393,11 @@ export class ProductModel extends BaseModel<Product> {
 
 | Function | Description | Link |
 |----------|-------------|------|
-| `getEnumValues(enumName)` | Get enum values | [Docs](./api/utils.md#getenumvalues) |
-| `enumToArray(enum)` | Convert enum to array | [Docs](./api/utils.md#enumtoarray) |
-| `DbError` | Custom database error class | [Docs](./api/utils.md#dberror) |
+| `getEnumValues(enumName)` | Get enum values | See `packages/db/src/utils/enum-helpers.ts` |
+| `enumToArray(enum)` | Convert enum to array | See `packages/db/src/utils/enum-helpers.ts` |
+| `DbError` | Custom database error class | See `packages/db/src/utils/error-handler.ts` |
 
-**→ [Complete API Reference](./api/README.md)**
+**→ Full API surface:** [BaseModel](./api/BaseModel.md) · [Query Methods](./api/query-methods.md) · [Relations](./api/relations.md)
 
 ---
 
@@ -405,27 +405,23 @@ export class ProductModel extends BaseModel<Product> {
 
 ### Getting Started
 
-- [Quick Start](./quick-start.md) - 5-minute introduction
-- [Installation & Setup](./guides/installation.md) - Detailed setup guide
-- [Basic CRUD Operations](./guides/basic-crud.md) - Create, read, update, delete
+- [Quick Start](./quick-start.md) - 5-minute introduction (covers installation and basic CRUD)
 
 ### Development
 
 - [Creating Models](./guides/creating-models.md) - Build custom models
-- [Defining Schemas](./guides/defining-schemas.md) - Drizzle schema patterns
+- [Drizzle Schemas](./guides/drizzle-schemas.md) - Drizzle schema patterns
 - [Working with Relations](./guides/relations.md) - Entity relationships
 - [Using Transactions](./guides/transactions.md) - Atomic operations
 - [Soft Delete & Restore](./guides/soft-delete.md) - Deletion patterns
 
 ### Advanced
 
-- [Custom Queries](./guides/custom-queries.md) - Beyond BaseModel
 - [Query Optimization](./guides/optimization.md) - Performance tuning
 - [Testing Models](./guides/testing.md) - Test strategies
 - [Migrations](./guides/migrations.md) - Schema evolution
-- [Error Handling](./guides/error-handling.md) - Robust error management
-
-**→ [All Development Guides](./guides/README.md)**
+- [Production Migration Runbook](./guides/production-migration-runbook.md) - Production rollout
+- [Deployment](./guides/deployment.md) - Operations
 
 ---
 
@@ -551,7 +547,7 @@ export class ProductModel extends BaseModel<Product> {
 }
 ```
 
-**→ [More Examples](./examples/README.md)**
+**→ [More Examples](../examples/README.md)**
 
 ---
 
@@ -678,7 +674,7 @@ initializeDb(pool);
 - Use `EXPLAIN ANALYZE` to profile queries
 - Consider pagination for large result sets
 
-**→ [Complete Troubleshooting Guide](./guides/troubleshooting.md)**
+**→ For common issues, see the [Production Migration Runbook](./guides/production-migration-runbook.md) or the package [CLAUDE.md](../CLAUDE.md#common-gotchas).**
 
 ---
 
@@ -713,4 +709,4 @@ See the main project [CLAUDE.md](../../../CLAUDE.md) for development guidelines 
 
 ---
 
-**Need help?** Check the [Quick Start Guide](./quick-start.md) or review [common examples](./examples/README.md).
+**Need help?** Check the [Quick Start Guide](./quick-start.md) or review [common examples](../examples/README.md).

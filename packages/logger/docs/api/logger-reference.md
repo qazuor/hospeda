@@ -967,4 +967,4 @@ export async function requestLogger(c: Context, next: Next) {
 - [Log Levels API](./log-levels.md) - Detailed log level documentation
 - [Quick Start Guide](../quick-start.md) - Get started quickly
 - [Scoped Loggers Guide](../guides/scoped-loggers.md) - Advanced category usage
-- [Examples](../examples/) - Working code examples
+- [Basic Logging Example](../examples/basic-logging.ts) - Working `.ts` code (also `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts`)

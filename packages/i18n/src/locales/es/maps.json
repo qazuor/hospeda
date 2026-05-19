@@ -15,7 +15,9 @@
         "resultsCount_one": "{{count}} alojamiento",
         "resultsCount_other": "{{count}} alojamientos",
         "emptyState": "No hay alojamientos en esta zona. Probá ajustar los filtros o mover el mapa.",
-        "openSheet": "Ver lista",
+        "openSheet": "Ver tarjetas",
+        "openSheetCount_one": "Ver {{count}} resultado",
+        "openSheetCount_other": "Ver {{count}} resultados",
         "closeSheet": "Cerrar"
     }
 }

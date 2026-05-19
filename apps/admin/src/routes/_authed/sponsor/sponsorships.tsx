@@ -197,21 +197,17 @@ function SponsorSponsorshipsPage() {
     const total = data?.pagination?.total || 0;
 
     return (
-        <SidebarPageLayout>
+        <SidebarPageLayout titleKey="admin-pages.sponsor.sponsorships.title">
             <div className="space-y-6">
-                {/* Page header */}
-                <div>
-                    <h2 className="mb-2 font-bold text-2xl">
-                        {t('admin-pages.sponsor.sponsorships.title')}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        {t('admin-pages.sponsor.sponsorships.subtitle')}
-                    </p>
-                </div>
+                {/* Page subtitle (h1 rendered by SidebarPageLayout) */}
+                <p className="text-muted-foreground">
+                    {t('admin-pages.sponsor.sponsorships.subtitle')}
+                </p>
 
                 {/* Filters */}
                 <div className="flex gap-2">
                     <select
+                        aria-label={t('admin-pages.sponsor.sponsorships.filterStatusLabel')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.sponsorshipStatus || 'all'}
                         onChange={(e) =>
@@ -240,6 +236,7 @@ function SponsorSponsorshipsPage() {
                     </select>
 
                     <select
+                        aria-label={t('admin-pages.sponsor.sponsorships.filterTypeLabel')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.targetType || 'all'}
                         onChange={(e) =>

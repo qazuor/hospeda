@@ -335,7 +335,7 @@ QZPay handles idempotency automatically. If seeing duplicate processing:
 
 - [QZPay Documentation](https://github.com/qazuor/qzpay)
 - [MercadoPago IPN Documentation](https://www.mercadopago.com/developers/en/docs/your-integrations/notifications/ipn)
-- [Billing Service Documentation](../../../packages/billing/README.md)
+- [Billing Service Documentation](../../../../packages/billing/README.md)
 
 ## Code References
 

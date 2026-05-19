@@ -14,6 +14,7 @@
 
 import type { MiddlewareHandler } from 'hono';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
+import { isGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
 import { getQZPayBilling } from './billing';
 
@@ -73,8 +74,12 @@ export const billingCustomerMiddleware = (): MiddlewareHandler => {
         // Get actor from context (set by actor middleware)
         const actor = c.get('actor');
 
-        // No authenticated user - skip billing customer sync
-        if (!actor?.id) {
+        // No actor or guest actor — skip the billing customer lookup entirely.
+        // GUEST actors carry the sentinel UUID '00000000-0000-4000-8000-000000000000'
+        // and never have a billing customer record. Doing the lookup wastes 10-50ms
+        // per request and emits misleading "No billing customer found for authenticated
+        // user" log lines on every public/healthcheck request. (SPEC-116)
+        if (!actor || isGuestActor(actor) || !actor.id) {
             c.set('billingCustomerId', null);
             await next();
             return;

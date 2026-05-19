@@ -23,6 +23,38 @@ export interface SignInProps {
     readonly redirectTo: string;
     /** Whether to show OAuth provider buttons. Defaults to true. */
     readonly showOAuth?: boolean;
+    /**
+     * Signal from the page that the previous OAuth round-trip failed.
+     *
+     * Populated by `signin.astro` from the `?error=...&provider=...` query
+     * string Better Auth + the API wrapper put on the redirect. When set,
+     * the island renders a localized banner via the existing `error` state
+     * and writes the raw provider description to `console.warn` for local
+     * debugging. The query string is then stripped via `history.replaceState`
+     * so a page reload does not re-show the banner.
+     *
+     * @see SPEC-120
+     */
+    readonly initialOAuthError?: {
+        readonly code: string;
+        readonly description?: string;
+        readonly provider?: string;
+    };
+}
+
+/**
+ * Human-readable label for an OAuth provider id.
+ *
+ * Provider brand names are the same in every locale, so we don't route them
+ * through i18n. Falls back to an empty string when the provider is missing —
+ * the i18n strings under `auth-ui.signIn.errors.oauth.*` still read fine
+ * because `{{provider}}` interpolates to nothing in that case.
+ */
+function providerLabel(provider: string | undefined): string {
+    if (!provider) return '';
+    if (provider === 'google') return 'Google';
+    if (provider === 'facebook') return 'Facebook';
+    return provider.charAt(0).toUpperCase() + provider.slice(1);
 }
 
 /**
@@ -36,7 +68,7 @@ export interface SignInProps {
  * <SignIn client:load locale={locale} redirectTo="/es/mi-cuenta/" showOAuth={true} />
  * ```
  */
-export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
+export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError }: SignInProps) {
     const { t } = createTranslations(locale);
 
     const [email, setEmail] = useState('');
@@ -50,6 +82,57 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
         setIsClientReady(true);
     }, []);
 
+    // SPEC-120: hydrate OAuth banner from SSR-supplied initialOAuthError and
+    // sanitize the URL so the banner does not survive a reload. Runs once.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: SSR-stable values, mount-only effect
+    useEffect(() => {
+        if (initialOAuthError) {
+            const { code, description, provider } = initialOAuthError;
+            const providerName = providerLabel(provider);
+
+            // Try the specific code key first; fall back to the generic
+            // `unknown` key when the specific one is missing from the
+            // catalog. The fallback covers future or provider-specific codes
+            // we have not yet enumerated.
+            const specificKey = `auth-ui.signIn.errors.oauth.${code}`;
+            const candidate = t(specificKey, undefined, { provider: providerName });
+            const isMissing = candidate.startsWith('[MISSING:') || candidate === specificKey;
+            const message = isMissing
+                ? t('auth-ui.signIn.errors.oauth.unknown', undefined, {
+                      provider: providerName
+                  })
+                : candidate;
+
+            setError(message);
+
+            // error_description is provider-supplied free-form text (varies
+            // between providers, never i18n-translated). Surface it to the
+            // local browser dev console for debugging without contaminating
+            // the UI.
+            console.warn(`[OAuth] ${code}:`, description ?? '(no description)');
+        }
+
+        // Always strip OAuth-related query params and any trailing hash.
+        // Facebook appends `#_=_` to all its OAuth redirects (legacy bug);
+        // a naive `?...` strip would leave that dangling.
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        let modified = false;
+        for (const key of ['error', 'error_description', 'provider']) {
+            if (url.searchParams.has(key)) {
+                url.searchParams.delete(key);
+                modified = true;
+            }
+        }
+        if (url.hash) {
+            url.hash = '';
+            modified = true;
+        }
+        if (modified) {
+            window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        }
+    }, []);
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
@@ -61,7 +144,26 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             if (result.error) {
                 setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesión'));
             } else {
-                window.location.replace(redirectTo);
+                // Mirror the OAuth host-strip+re-attach below. The
+                // server-built `redirectTo` can carry `https://localhost`
+                // when Astro Node runs behind a reverse proxy that does
+                // not forward the original Host header — and the browser
+                // then can't navigate to that URL. Strip the host (if
+                // any) and reattach the browser's real origin.
+                const origin = window.location.origin;
+                let path = redirectTo || '/';
+                if (path.startsWith('http')) {
+                    try {
+                        const parsed = new URL(path);
+                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                    } catch {
+                        path = '/';
+                    }
+                }
+                if (!path.startsWith('/')) {
+                    path = `/${path}`;
+                }
+                window.location.replace(`${origin}${path}`);
             }
         } catch {
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
@@ -134,7 +236,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
-            aria-label={t('auth.signIn.submit', 'Iniciar Sesión')}
+            aria-label={t('auth.signIn.submit', 'Iniciar sesión')}
         >
             {error && (
                 <div
@@ -196,7 +298,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                 label={
                     isLoading
                         ? t('auth.signIn.loading', 'Ingresando...')
-                        : t('auth.signIn.submit', 'Iniciar Sesión')
+                        : t('auth.signIn.submit', 'Iniciar sesión')
                 }
                 disabled={isLoading}
                 aria={{ busy: isLoading }}

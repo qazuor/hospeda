@@ -30,6 +30,10 @@ function MyAccommodations() {
     );
 
     const accommodations = data?.accommodations ?? [];
+    const newAccommodationLabel = t('admin-entities.list.new').replace(
+        '{entity}',
+        t('admin-entities.entities.accommodation.singular')
+    );
 
     const goToView = (id: string) => {
         navigate({ to: '/accommodations/$id', params: { id } });
@@ -50,7 +54,7 @@ function MyAccommodations() {
                     <Link to="/accommodations/new">
                         <Button size="sm">
                             <AddIcon className="mr-2 h-4 w-4" />
-                            {t('admin-entities.list.new')}
+                            {newAccommodationLabel}
                         </Button>
                     </Link>
                 </div>
@@ -101,7 +105,7 @@ function MyAccommodations() {
                             <Link to="/accommodations/new">
                                 <Button>
                                     <AddIcon className="mr-2 h-4 w-4" />
-                                    {t('admin-entities.list.new')}
+                                    {newAccommodationLabel}
                                 </Button>
                             </Link>
                         </CardContent>

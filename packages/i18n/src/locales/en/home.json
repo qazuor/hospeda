@@ -35,7 +35,7 @@
         "emptyState": "No accommodations available at this time",
         "emptyAction": "View all accommodations",
         "noReviews": "No reviews",
-        "seeAllAction": "View all accommodations →"
+        "seeAllAction": "View all accommodations"
     },
     "accommodations": {
         "badge": {
@@ -44,7 +44,8 @@
         },
         "price": {
             "from": "From",
-            "perNight": "/night"
+            "perNight": "/night",
+            "consult": "Inquire"
         },
         "amenities": {
             "label": "Amenities"
@@ -63,7 +64,7 @@
         "accentSubtitle": "Don't miss out",
         "emptyState": "No upcoming events at this time",
         "emptyAction": "View all events",
-        "viewAll": "View all events →"
+        "viewAll": "View all events"
     },
     "latestPosts": {
         "title": "Latest articles",
@@ -73,7 +74,7 @@
         "emptyAction": "View all articles",
         "tagline": "Stay informed, get inspired, discover",
         "subtitle": "Stories, guides and secrets of the Litoral region to inspire your next adventure.",
-        "viewAll": "View all articles →"
+        "viewAll": "View all articles"
     },
     "testimonials": {
         "title": "What our users say",
@@ -164,7 +165,7 @@
         "accentSubtitle": "About us",
         "title": "The best accommodations and information for your vacation",
         "description": "Since 2022, we connect travelers with the best accommodations in Concepción del Uruguay and the Entre Ríos coast. Our team works to help you discover the most authentic corners of the region, with up-to-date information and experiences verified by our community.",
-        "experienceBadge": "2 years of experience",
+        "experienceBadge": "Discover the Litoral",
         "primaryPhotoAlt": "Accommodations and landscapes of the Argentine Litoral",
         "travelerPhotoAlt": "Travelers enjoying the Entre Ríos coast"
     },

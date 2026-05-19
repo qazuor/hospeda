@@ -20,10 +20,6 @@
         "facebook": "https://facebook.com/retiroapacible",
         "twitter": "https://twitter.com/retiroapacible"
     },
-    "price": {
-        "price": 15000,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-33.7056",
@@ -34,40 +30,52 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-            "caption": "Cabaña apacible",
-            "description": "Vista exterior de la cabaña con entorno verde",
+            "url": "https://images.pexels.com/photos/5994751/pexels-photo-5994751.jpeg",
+            "caption": "Cabaña iluminada de noche",
+            "description": "Cabaña iluminada desde el interior durante el atardecer en el bosque",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la cabaña",
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Interior con detalles de madera",
+                "description": "Ambiente cálido con revestimientos de madera y mobiliario rústico",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
-                "caption": "Interior",
-                "description": "Área de living y cocina",
+                "url": "https://images.pexels.com/photos/4406354/pexels-photo-4406354.jpeg",
+                "caption": "Cabaña en el valle",
+                "description": "Cabaña de troncos en valle verde rodeada de pinos y vegetación",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio principal",
+                "url": "https://images.pexels.com/photos/33567174/pexels-photo-33567174.jpeg",
+                "caption": "Cabaña tradicional",
+                "description": "Antigua cabaña de madera enclavada en bosque verde y húmedo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/12566236/pexels-photo-12566236.jpeg",
+                "caption": "Cabaña rústica",
+                "description": "Cabaña de madera estilo rústico en entorno arbolado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/14771408/pexels-photo-14771408.jpeg",
+                "caption": "Cabaña en paisaje rural",
+                "description": "Cabaña de madera en paisaje rural con cielo despejado y horizonte abierto",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
-                "caption": "Altillo",
-                "description": "Espacio con camas individuales",
+                "caption": "Altillo de la cabaña",
+                "description": "Entrepiso de madera de la cabaña con cama y vista al living",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla",
-                "description": "Parrilla exterior cubierta",
+                "url": "https://images.pexels.com/photos/751546/pexels-photo-751546.jpeg",
+                "caption": "Cabaña rural",
+                "description": "Cabaña de madera con encanto rústico en entorno rural sereno y verde",
                 "moderationState": "APPROVED"
             }
         ]

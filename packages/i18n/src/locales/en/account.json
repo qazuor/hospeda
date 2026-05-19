@@ -207,6 +207,7 @@
             "removeFromCollection": "Remove from collection",
             "removing": "Removing...",
             "removeError": "Error removing favorite from collection",
+            "removeConfirm": "Remove this favorite from the collection? It will stay in your saved items.",
             "fetchError": "Could not load the collection. Please try again later.",
             "prevPage": "Previous page",
             "nextPage": "Next page",
@@ -266,7 +267,9 @@
             "accommodation": "Accommodations",
             "destination": "Destinations"
         },
-        "empty": "You have no reviews yet",
+        "empty": "Visit an accommodation and share your experience to help other travelers.",
+        "emptyTitle": "You haven't written any reviews yet",
+        "emptyCta": "Browse accommodations",
         "emptyAction": "Visit accommodations and destinations to leave your first reviews",
         "loading": "Loading...",
         "fetchError": "Error loading reviews",
@@ -376,6 +379,128 @@
                 "title": "Cancel subscription?",
                 "confirm": "Yes, cancel subscription"
             }
+        }
+    },
+    "newsletter": {
+        "title": "Newsletter",
+        "statusLabel": "Status",
+        "statusActive": "Active",
+        "statusPending": "Pending verification",
+        "statusUnsubscribed": "Not subscribed",
+        "statusBounced": "Invalid email",
+        "statusComplained": "Cancelled",
+        "subscribedSince": "Subscribed since",
+        "cancelButton": "Cancel subscription",
+        "subscribeButton": "Subscribe",
+        "pendingBanner": "Check your email to confirm your subscription.",
+        "resendVerification": "Resend confirmation email",
+        "confirmCancelTitle": "Cancel subscription?",
+        "confirmCancelYes": "Yes, cancel",
+        "confirmCancelNo": "No, stay subscribed"
+    },
+    "profileCompletion": {
+        "pageTitle": "Complete your profile",
+        "pageDescription": "Complete your information to start using Hospeda",
+        "heading": "Welcome to Hospeda!",
+        "subheading": "Before continuing, complete your profile so we can personalize your experience.",
+        "avatar": {
+            "alt": "Avatar",
+            "hint": "Your profile picture",
+            "change": "Change photo",
+            "urlLabel": "Avatar URL"
+        },
+        "fields": {
+            "firstName": "First name",
+            "firstNamePlaceholder": "Your first name",
+            "lastName": "Last name",
+            "lastNamePlaceholder": "Your last name",
+            "displayName": "What should we call you?",
+            "displayNamePlaceholder": "First Last",
+            "displayNameHelper": "Auto-derived from your first and last name, you can edit it.",
+            "birthDate": "Date of birth",
+            "birthDateHint": "Optional.",
+            "phone": "Phone",
+            "phonePlaceholder": "555 123-4567",
+            "phoneHint": "Optional. Include the country code.",
+            "phoneCodeLabel": "Country code",
+            "locale": "Preferred language",
+            "localeEs": "Español",
+            "localeEn": "English",
+            "localePt": "Português",
+            "newsletter": "I want to receive news and promotions by email",
+            "terms": "I accept the",
+            "termsLink": "terms and conditions",
+            "bio": "Bio",
+            "bioPlaceholder": "Tell us a bit about yourself (10-300 characters)",
+            "website": "Website",
+            "occupation": "Occupation",
+            "occupationPlaceholder": "Your job or profession",
+            "socialNetworks": "Social networks",
+            "location": "Location",
+            "locationCountry": "Country",
+            "locationCountryDefault": "— Select —",
+            "locationRegion": "State / Province",
+            "locationRegionPlaceholder": "California",
+            "locationCity": "City",
+            "locationCityPlaceholder": "Los Angeles"
+        },
+        "moreDetails": {
+            "toggle": "More details",
+            "optional": "optional"
+        },
+        "submit": "Complete profile",
+        "submitting": "Saving...",
+        "errors": {
+            "firstNameRequired": "First name is required.",
+            "firstNameMax": "First name cannot exceed 50 characters.",
+            "lastNameRequired": "Last name is required.",
+            "lastNameMax": "Last name cannot exceed 50 characters.",
+            "displayNameRequired": "Full name is required.",
+            "displayNameMin": "Name must be at least 2 characters.",
+            "displayNameMax": "Name cannot exceed 50 characters.",
+            "phoneFormat": "Enter a valid phone number with country code.",
+            "termsRequired": "You must accept the terms to continue.",
+            "bioMin": "Bio must be at least 10 characters.",
+            "bioMax": "Bio cannot exceed 300 characters.",
+            "websiteUrl": "Enter a valid URL (e.g. https://mysite.com).",
+            "occupationMin": "Occupation must be at least 2 characters.",
+            "occupationMax": "Occupation cannot exceed 100 characters.",
+            "submitFailed": "Could not complete profile. Please try again."
+        }
+    },
+    "setPassword": {
+        "pageTitle": "Add password",
+        "pageDescription": "Add a password to sign in with email",
+        "heading": "Add a password",
+        "contextGoogle": "You signed up with Google. If you want, you can add a password to also sign in with email.",
+        "contextFacebook": "You signed up with Facebook. If you want, you can add a password to also sign in with email.",
+        "contextOAuth": "Add a password to your account so you can also sign in with email and password.",
+        "fields": {
+            "password": "Password",
+            "passwordPlaceholder": "Minimum 8 characters",
+            "passwordHint": "Minimum 8 characters.",
+            "confirmPassword": "Confirm password",
+            "confirmPasswordPlaceholder": "Repeat your password"
+        },
+        "strength": {
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong"
+        },
+        "submit": "Set password",
+        "submitting": "Saving...",
+        "skip": "Skip for now",
+        "skipModalTitle": "Skip for now?",
+        "skipModalBody": "You can set it later from your profile. Continue?",
+        "skipModalConfirm": "Yes, skip",
+        "skipModalCancel": "Cancel",
+        "successToast": "Password set successfully",
+        "errors": {
+            "passwordMin": "Password must be at least 8 characters.",
+            "passwordWeak": "Password must be at least 8 characters with uppercase, lowercase, numbers and a special character.",
+            "confirmMismatch": "Passwords do not match.",
+            "submitFailed": "Could not set password. Please try again.",
+            "skipFailed": "Could not skip this step. Please try again."
         }
     }
 }

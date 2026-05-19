@@ -14,6 +14,7 @@ import {
     getAppResourceName,
     getDbCredentials,
     getDbResourceName,
+    getR2Config,
     resolveTarget
 } from '../src/lib/target.ts';
 
@@ -28,7 +29,15 @@ const ENV_KEYS_TOUCHED = [
     'HOPS_STAGING_PG_USER',
     'HOPS_STAGING_PG_DB',
     'PG_USER',
-    'PG_DB'
+    'PG_DB',
+    'R2_ACCOUNT_ID',
+    'R2_ACCESS_KEY_ID',
+    'R2_SECRET_ACCESS_KEY',
+    'R2_BUCKET',
+    'R2_STAGING_ACCOUNT_ID',
+    'R2_STAGING_ACCESS_KEY_ID',
+    'R2_STAGING_SECRET_ACCESS_KEY',
+    'R2_STAGING_BUCKET'
 ] as const;
 
 let originalEnv: Record<string, string | undefined>;
@@ -251,6 +260,93 @@ describe('getDbCredentials(target)', () => {
             process.env.PG_DB = 'legacy_db';
             process.env.HOPS_PROD_PG_DB = 'targeted_db';
             expect(getDbCredentials('prod').database).toBe('targeted_db');
+        });
+    });
+});
+
+describe('getR2Config(target)', () => {
+    describe('prod target reads unprefixed R2_* vars', () => {
+        it('returns all four values when every var is set', () => {
+            process.env.R2_ACCOUNT_ID = 'prod-account';
+            process.env.R2_ACCESS_KEY_ID = 'prod-key';
+            process.env.R2_SECRET_ACCESS_KEY = 'prod-secret';
+            process.env.R2_BUCKET = 'hospeda-backups';
+            expect(getR2Config('prod')).toEqual({
+                accountId: 'prod-account',
+                accessKeyId: 'prod-key',
+                secretAccessKey: 'prod-secret',
+                bucket: 'hospeda-backups'
+            });
+        });
+
+        it('throws naming the missing prod var', () => {
+            process.env.R2_ACCESS_KEY_ID = 'prod-key';
+            process.env.R2_SECRET_ACCESS_KEY = 'prod-secret';
+            process.env.R2_BUCKET = 'hospeda-backups';
+            // R2_ACCOUNT_ID missing
+            expect(() => getR2Config('prod')).toThrow(/R2_ACCOUNT_ID/);
+        });
+
+        it('does NOT fall back to R2_STAGING_* values', () => {
+            process.env.R2_STAGING_ACCOUNT_ID = 'staging-account';
+            process.env.R2_STAGING_ACCESS_KEY_ID = 'staging-key';
+            process.env.R2_STAGING_SECRET_ACCESS_KEY = 'staging-secret';
+            process.env.R2_STAGING_BUCKET = 'hospeda-staging-backups';
+            // No R2_* set
+            expect(() => getR2Config('prod')).toThrow(/R2_ACCOUNT_ID/);
+        });
+    });
+
+    describe('staging target reads R2_STAGING_* vars', () => {
+        it('returns all four values when every var is set', () => {
+            process.env.R2_STAGING_ACCOUNT_ID = 'staging-account';
+            process.env.R2_STAGING_ACCESS_KEY_ID = 'staging-key';
+            process.env.R2_STAGING_SECRET_ACCESS_KEY = 'staging-secret';
+            process.env.R2_STAGING_BUCKET = 'hospeda-staging-backups';
+            expect(getR2Config('staging')).toEqual({
+                accountId: 'staging-account',
+                accessKeyId: 'staging-key',
+                secretAccessKey: 'staging-secret',
+                bucket: 'hospeda-staging-backups'
+            });
+        });
+
+        it('throws naming the missing staging var', () => {
+            process.env.R2_STAGING_ACCOUNT_ID = 'staging-account';
+            process.env.R2_STAGING_ACCESS_KEY_ID = 'staging-key';
+            process.env.R2_STAGING_SECRET_ACCESS_KEY = 'staging-secret';
+            // R2_STAGING_BUCKET missing
+            expect(() => getR2Config('staging')).toThrow(/R2_STAGING_BUCKET/);
+        });
+
+        it('does NOT fall back to prod R2_* values', () => {
+            process.env.R2_ACCOUNT_ID = 'prod-account';
+            process.env.R2_ACCESS_KEY_ID = 'prod-key';
+            process.env.R2_SECRET_ACCESS_KEY = 'prod-secret';
+            process.env.R2_BUCKET = 'hospeda-backups';
+            // No R2_STAGING_* set
+            expect(() => getR2Config('staging')).toThrow(/R2_STAGING_ACCOUNT_ID/);
+        });
+    });
+
+    describe('isolation between targets', () => {
+        it('prod and staging configs are completely independent', () => {
+            process.env.R2_ACCOUNT_ID = 'prod-account';
+            process.env.R2_ACCESS_KEY_ID = 'prod-key';
+            process.env.R2_SECRET_ACCESS_KEY = 'prod-secret';
+            process.env.R2_BUCKET = 'hospeda-backups';
+            process.env.R2_STAGING_ACCOUNT_ID = 'staging-account';
+            process.env.R2_STAGING_ACCESS_KEY_ID = 'staging-key';
+            process.env.R2_STAGING_SECRET_ACCESS_KEY = 'staging-secret';
+            process.env.R2_STAGING_BUCKET = 'hospeda-staging-backups';
+
+            const prod = getR2Config('prod');
+            const staging = getR2Config('staging');
+
+            expect(prod.accountId).toBe('prod-account');
+            expect(staging.accountId).toBe('staging-account');
+            expect(prod.bucket).toBe('hospeda-backups');
+            expect(staging.bucket).toBe('hospeda-staging-backups');
         });
     });
 });

@@ -826,7 +826,7 @@ Or use `pnpm db:studio` and inspect visually.
 
 ## Phase 5: GitHub Actions secrets
 
-The CD workflows ([`cd-production.yml`](../../.github/workflows/cd-production.yml), [`cd-staging.yml`](../../.github/workflows/cd-staging.yml)) and the CI workflow ([`ci.yml`](../../.github/workflows/ci.yml)) consume a small set of secrets from the GitHub repository.
+Continuous Deployment is triggered manually from the Coolify dashboard (no GitHub CD workflow exists post-Vercel teardown). The CI workflow ([`ci.yml`](../../.github/workflows/ci.yml)) still runs on PR and main, consuming a small set of secrets from the GitHub repository.
 
 ### Steps
 

@@ -1157,6 +1157,6 @@ export type User = z.infer<typeof UserSchema>;
 
 ## Related Documentation
 
-- **[Portal](../portal.md)**: Package overview
+- **[Docs Portal](../README.md)**: Package overview
 - **[Quick Start](../quick-start.md)**: Get started quickly
-- **[Type Inference](../concepts/type-inference.md)**: Type system deep dive
+- **[Type Inference](../api/type-inference.md)**: Type system deep dive

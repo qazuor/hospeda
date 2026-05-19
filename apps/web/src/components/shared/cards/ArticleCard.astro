@@ -79,7 +79,7 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
 
 <article
     class="article-card"
-    style={`--card-accent: ${categoryColor.text};`}
+    data-post-category={data.category}
 >
     <a href={articleUrl} class="article-card__link" aria-label={data.title}>
         <CardImage

@@ -868,7 +868,7 @@ This violates our RO-RO pattern. See:
 
 ```markdown
 Here's how we handle this pattern in `UserService`:
-[Link to UserService](../packages/service-core/src/services/user.service.ts#L45-L67)
+[Link to UserService](../../packages/service-core/src/services/user/user.service.ts#L45-L67)
 ```
 
 ## Common Review Comments

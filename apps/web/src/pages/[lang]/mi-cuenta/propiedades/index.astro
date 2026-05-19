@@ -112,7 +112,19 @@ const isEmpty = properties.length === 0;
         </a>
     </div>
 
-    {!isEmpty ? (
+    {fetchError ? (
+        <!-- Error state (e.g. API down or permission denied). Showing this
+             distinctly avoids the previous contradictory UI where the empty
+             state and the fetch error were rendered together. -->
+        <div class="props-page__error" role="alert">
+            <p class="props-page__error-title">
+                {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
+            </p>
+            <a href={Astro.url.pathname} class="props-page__cta-btn props-page__cta-btn--centered">
+                {t('host.properties.error.retry', 'Reintentar')}
+            </a>
+        </div>
+    ) : !isEmpty ? (
         <!-- Properties grid -->
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
@@ -162,12 +174,6 @@ const isEmpty = properties.length === 0;
             </div>
 
             <p class="props-page__empty-title">{emptyTitle}</p>
-
-            {fetchError && (
-                <p class="props-page__empty-error">
-                    {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intenta recargar la página.')}
-                </p>
-            )}
 
             <a href={publishNewUrl} class="props-page__cta-btn props-page__cta-btn--centered">
                 {emptyCta}
@@ -298,6 +304,26 @@ const isEmpty = properties.length === 0;
     .props-page__empty-error {
         font-family: var(--font-sans);
         font-size: var(--text-caption, 0.875rem);
+        color: oklch(0.55 0.22 25);
+        margin: 0;
+    }
+
+    /* ── Error state (fetch failed) ── */
+    .props-page__error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid oklch(0.85 0.05 25 / 0.4);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .props-page__error-title {
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
         color: oklch(0.55 0.22 25);
         margin: 0;
     }

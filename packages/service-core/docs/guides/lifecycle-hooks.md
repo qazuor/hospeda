@@ -1039,4 +1039,4 @@ describe('Article Lifecycle Hooks', () => {
 
 - **[Custom Logic Guide](./custom-logic.md)** - Advanced business methods
 - **[Testing Guide](./testing.md)** - Comprehensive testing
-- **[Examples](../examples/)** - Working code examples
+- Working code examples in `packages/service-core/src/examples/` (especially `with-hooks.ts`)

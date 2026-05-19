@@ -1,0 +1,34 @@
+{
+    "specId": "SPEC-143",
+    "title": "Billing Testing Coverage (e2e + manual smoke)",
+    "type": "testing",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-05-17T23:55:00Z",
+    "approved": "2026-05-17T23:55:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "testing",
+        "e2e",
+        "mercadopago",
+        "smoke",
+        "observability",
+        "runbooks",
+        "go-live-gate"
+    ],
+    "extractedFrom": "SPEC-141 post-launch follow-ups gap analysis (engram #532)",
+    "dependsOn": [],
+    "blocks": ["real-money-go-live"],
+    "firstAllocatedViaEngramProtocol": true,
+    "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+    "branch": "spec/SPEC-143-billing-testing-coverage",
+    "base": "staging",
+    "effortEstimateHours": "50-65",
+    "engramRefs": {
+        "proposal": "#532",
+        "reservation": "#537",
+        "collisionContext": "#536"
+    }
+}

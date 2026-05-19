@@ -1,3 +1,4 @@
+import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -11,6 +12,20 @@ export default defineConfig({
     dts: true,
     bundle: true,
     tsconfig: './tsconfig.json',
+    // Sentry source maps upload (build-time only).
+    // Gated on SENTRY_AUTH_TOKEN so local builds without the token still
+    // succeed — the plugin only registers when the token is present. Org
+    // and project slugs are hardcoded; the auth token is org-scoped and
+    // shared across hospeda-web/hospeda-admin/hospeda-api.
+    esbuildPlugins: process.env.SENTRY_AUTH_TOKEN
+        ? [
+              sentryEsbuildPlugin({
+                  org: 'qazuor',
+                  project: 'hospeda-api',
+                  authToken: process.env.SENTRY_AUTH_TOKEN
+              })
+          ]
+        : undefined,
     // Externalised packages: bundling these breaks at runtime because
     // they either ship only as CommonJS (using dynamic require()), or
     // pull in CJS-only transitive deps (e.g. react-dom/server uses
@@ -32,7 +47,8 @@ export default defineConfig({
         '@react-email/components',
         '@react-email/render',
         'resend',
-        'ioredis'
+        'ioredis',
+        'node-cron'
     ],
     noExternal: [
         /@repo\/.*/,

@@ -32,8 +32,60 @@ export const SESSION_OPTIONAL_SEGMENTS = ['feedback', 'alojamientos', 'guest', '
  */
 export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
 
+/**
+ * Top-level URL prefix for the private beta tester documentation site.
+ * Pages under this prefix:
+ * - skip locale enforcement (the docs are Spanish-only, no `/{lang}/` namespace);
+ * - skip session parsing and auth protection (access is via secret URL only);
+ * - receive a `X-Robots-Tag: noindex, nofollow` response header;
+ * - render an isolated `BetaDocLayout` (does NOT extend `BaseLayout`).
+ *
+ * Lifetime: this entire surface is removed when the beta period ends.
+ */
+export const BETA_PREFIX = '/beta' as const;
+
 /** Type representing a protected route segment. */
 export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];
 
 /** Type representing an auth route segment. */
 export type AuthSegment = (typeof AUTH_SEGMENTS)[number];
+
+// ---------------------------------------------------------------------------
+// SPEC-113: Profile completion flow routes
+// ---------------------------------------------------------------------------
+
+/**
+ * Sub-path of the profile completion form (under /{locale}/mi-cuenta/).
+ * Whitelisted in the middleware guard so the user can actually submit the form.
+ */
+export const PROFILE_COMPLETION_SEGMENT = 'completar-perfil' as const;
+
+/**
+ * Sub-path of the set-password form (under /{locale}/mi-cuenta/).
+ * Whitelisted in the middleware guard so the user can submit or skip.
+ */
+export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
+
+/**
+ * Role values that skip the profile completion + set-password checks.
+ * Admins and super-admins bypass the flow per spec §3.5.
+ */
+export const PROFILE_COMPLETION_BYPASS_ROLES = ['admin', 'super_admin'] as const;
+
+/** Type for roles that bypass profile completion. */
+export type ProfileCompletionBypassRole = (typeof PROFILE_COMPLETION_BYPASS_ROLES)[number];
+
+/**
+ * Path segments that live under `SESSION_OPTIONAL_SEGMENTS` (auth NOT required
+ * at middleware level) but DO need to enforce the profile-completion guard
+ * when the visitor IS signed in.
+ *
+ * Spec §3.4 mandates that "any other protected route" funnels the user back
+ * to the completion form. Segments like `publicar` aren't in
+ * `PROTECTED_SEGMENTS` because anonymous visitors are allowed to land on
+ * them (the page itself shows a sign-in prompt), but a signed-in user with
+ * `profile_completed = FALSE` must still be bounced back to
+ * `completar-perfil`. Without this list, a user who closed the tab mid-form
+ * could sneak into the host onboarding flow.
+ */
+export const PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS = ['publicar'] as const;

@@ -11,3 +11,4 @@ export * from './feedback/index.js';
 export * from './contact/index.js';
 export * from './subscription/index.js';
 export * from './conversation/index.js';
+export * from './newsletter/index.js';

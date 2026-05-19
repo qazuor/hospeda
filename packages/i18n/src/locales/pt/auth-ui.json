@@ -22,7 +22,19 @@
             "accountNotFound": "Conta não encontrada",
             "tooManyAttempts": "Muitas tentativas. Tente novamente mais tarde",
             "networkError": "Erro de conexão. Verifique sua internet",
-            "unknownError": "Erro desconhecido. Tente novamente"
+            "unknownError": "Erro desconhecido. Tente novamente",
+            "oauth": {
+                "access_denied": "Você cancelou o login com {{provider}}. Tente novamente ou use outro método.",
+                "redirect_uri_mismatch": "Há um problema de configuração com {{provider}}. Por favor, entre em contato.",
+                "invalid_request": "A solicitação para {{provider}} é inválida. Tente novamente em alguns minutos.",
+                "unauthorized_client": "Nosso aplicativo não está autorizado em {{provider}}. Por favor, entre em contato.",
+                "unsupported_response_type": "Há um problema técnico com {{provider}}. Por favor, entre em contato.",
+                "invalid_scope": "As permissões solicitadas a {{provider}} não são válidas. Por favor, entre em contato.",
+                "server_error": "{{provider}} está com problemas. Tente novamente em alguns minutos.",
+                "temporarily_unavailable": "{{provider}} não está disponível no momento. Tente novamente em alguns minutos.",
+                "oauth_state_mismatch": "Sua sessão expirou durante o login. Tente novamente.",
+                "unknown": "Não foi possível completar o login com {{provider}}. Tente novamente mais tarde."
+            }
         }
     },
     "signUp": {
@@ -56,6 +68,20 @@
             "resendCode": "Reenviar código",
             "changeEmail": "Alterar e-mail"
         },
+        "strength": {
+            "weak": "Fraca",
+            "medium": "Média",
+            "strong": "Forte"
+        },
+        "showPassword": "Mostrar senha",
+        "hidePassword": "Ocultar senha",
+        "rules": {
+            "length": "Pelo menos 8 caracteres",
+            "upper": "Pelo menos uma letra maiúscula",
+            "lower": "Pelo menos uma letra minúscula",
+            "digit": "Pelo menos um número",
+            "special": "Pelo menos um caractere especial"
+        },
         "errors": {
             "emailRequired": "O e-mail é obrigatório",
             "passwordRequired": "A senha é obrigatória",
@@ -65,7 +91,7 @@
             "passwordTooShort": "A senha deve ter pelo menos 8 caracteres",
             "passwordsDoNotMatch": "As senhas não coincidem",
             "emailAlreadyExists": "Já existe uma conta com este e-mail",
-            "weakPassword": "A senha é muito fraca",
+            "weakPassword": "A senha não atende aos requisitos de segurança",
             "networkError": "Erro de conexão. Verifique sua internet",
             "unknownError": "Erro desconhecido. Tente novamente"
         }
@@ -125,7 +151,18 @@
         },
         "resetPassword": {
             "title": "Redefinir senha",
-            "description": "Defina uma nova senha para sua conta Hospeda"
+            "description": "Defina uma nova senha para sua conta Hospeda",
+            "tokenError": {
+                "expired": {
+                    "title": "Este link expirou",
+                    "description": "Os links de redefinição têm validade curta por segurança. Solicite um novo e tente novamente."
+                },
+                "invalid": {
+                    "title": "Este link não é mais válido",
+                    "description": "É possível que já tenha sido usado ou modificado. Solicite um novo link para continuar."
+                },
+                "requestNewLinkCta": "Solicitar novo link"
+            }
         },
         "verifyEmail": {
             "title": "Verificar email",

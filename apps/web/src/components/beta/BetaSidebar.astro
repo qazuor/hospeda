@@ -1,0 +1,339 @@
+---
+/**
+ * @file BetaSidebar.astro
+ * @description Sidebar navigation for the beta docs site.
+ *
+ * Builds the nav tree at build time from the `beta` Content Collection and
+ * groups entries by role. Each role becomes a collapsible `<details>`
+ * disclosure with accordion behavior: only one group can be open at a time.
+ * The group containing the active URL is opened by default on every page
+ * load — opening another group manually closes the previous one.
+ */
+
+import { getCollection } from 'astro:content';
+import { buildBetaNav } from '@/lib/beta-nav';
+
+interface Props {
+    readonly currentSlug?: string;
+}
+
+const { currentSlug } = Astro.props;
+
+const docs = await getCollection('beta', (entry) => !entry.data.draft);
+const groups = buildBetaNav(docs);
+
+/**
+ * Detect which group owns the active page so we can render it open by default
+ * (server-side). Client-side script overrides this with persisted state.
+ */
+const activeRole = groups.find((group) =>
+    group.entries.some((entry) => entry.id === currentSlug)
+)?.role;
+---
+
+<aside class="beta-sidebar" aria-label="Navegación de documentación beta">
+    <nav class="beta-sidebar__nav">
+        <a href="/beta/" class:list={['beta-sidebar__home', { 'beta-sidebar__home--active': currentSlug === 'index' || !currentSlug }]}>
+            <span class="beta-sidebar__home-icon" aria-hidden="true">←</span>
+            Bienvenida
+        </a>
+
+        {groups.map((group) => {
+            const isActiveGroup = group.role === activeRole;
+            return (
+                <details
+                    class="beta-sidebar__group"
+                    data-beta-group={group.role}
+                    open={isActiveGroup}
+                >
+                    <summary class="beta-sidebar__group-title">
+                        <span class="beta-sidebar__group-label">
+                            {group.label}
+                            {group.subtitle && (
+                                <span class="beta-sidebar__group-subtitle">{group.subtitle}</span>
+                            )}
+                        </span>
+                        <span class="beta-sidebar__group-chevron" aria-hidden="true">›</span>
+                    </summary>
+                    <div class="beta-sidebar__sections">
+                        {group.sections.map((section) => {
+                            const showSectionHeader =
+                                group.sections.length > 1 && section.label.length > 0;
+                            return (
+                                <div class="beta-sidebar__section">
+                                    {showSectionHeader && (
+                                        <h4 class="beta-sidebar__section-title">{section.label}</h4>
+                                    )}
+                                    <ul class="beta-sidebar__list">
+                                        {section.entries.map((entry) => {
+                                            const isActive = entry.id === currentSlug;
+                                            const audienceAttr = entry.audience?.join(' ');
+                                            return (
+                                                <li
+                                                    class="beta-sidebar__item"
+                                                    data-audience={audienceAttr}
+                                                >
+                                                    <a
+                                                        href={entry.url}
+                                                        class:list={[
+                                                            'beta-sidebar__link',
+                                                            { 'beta-sidebar__link--active': isActive }
+                                                        ]}
+                                                        aria-current={isActive ? 'page' : undefined}
+                                                    >
+                                                        {entry.title}
+                                                    </a>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </details>
+            );
+        })}
+    </nav>
+</aside>
+
+<script>
+    /**
+     * Accordion behavior: at most one group is open at any given time. The
+     * group of the current URL is opened by the server on each page load
+     * (via the `open` attribute), so navigation always lands with the right
+     * group expanded. Clicking another group's summary closes the previously
+     * open one.
+     */
+    function initBetaSidebar() {
+        const groups = Array.from(
+            document.querySelectorAll<HTMLDetailsElement>('[data-beta-group]')
+        );
+        if (groups.length === 0) return;
+
+        groups.forEach((group) => {
+            group.addEventListener('toggle', () => {
+                if (!group.open) return;
+                for (const other of groups) {
+                    if (other !== group && other.open) {
+                        other.open = false;
+                    }
+                }
+            });
+        });
+    }
+
+    initBetaSidebar();
+    document.addEventListener('astro:page-load', initBetaSidebar);
+</script>
+
+<style>
+    .beta-sidebar {
+        align-self: start;
+        position: sticky;
+        top: calc(var(--beta-header-offset, 64px) + 0.5rem);
+        max-height: calc(100vh - var(--beta-header-offset, 64px) - 1rem);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .beta-sidebar__nav {
+        padding: var(--space-3, 0.75rem) 0.25rem var(--space-5, 1.25rem);
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .beta-sidebar__home {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        border-radius: var(--radius-button, 8px);
+        transition: background-color 0.15s ease, color 0.15s ease;
+        margin-bottom: 0.5rem;
+    }
+
+    .beta-sidebar__home:hover {
+        background: var(--surface-warm);
+        color: var(--core-foreground);
+    }
+
+    .beta-sidebar__home--active {
+        color: var(--brand-primary);
+        font-weight: 600;
+    }
+
+    .beta-sidebar__home-icon {
+        font-size: 0.9rem;
+    }
+
+    .beta-sidebar__group {
+        display: block;
+        border-radius: var(--radius-button, 8px);
+    }
+
+    .beta-sidebar__group-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-family: var(--font-heading);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--core-foreground);
+        padding: 0.5rem 0.75rem;
+        margin: 0;
+        cursor: pointer;
+        user-select: none;
+        border-radius: var(--radius-button, 8px);
+        list-style: none;
+        transition: background-color 0.15s ease;
+    }
+
+    /* Hide native disclosure marker across browsers */
+    .beta-sidebar__group-title::-webkit-details-marker {
+        display: none;
+    }
+
+    .beta-sidebar__group-title::marker {
+        content: '';
+    }
+
+    .beta-sidebar__group-title:hover {
+        background: var(--surface-warm);
+    }
+
+    .beta-sidebar__group-title:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .beta-sidebar__group-label {
+        flex: 1;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .beta-sidebar__group-subtitle {
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 500;
+        font-style: italic;
+        color: var(--core-muted-foreground);
+        letter-spacing: 0;
+    }
+
+    .beta-sidebar__group-chevron {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        line-height: 1;
+        color: var(--core-muted-foreground);
+        transform: rotate(90deg);
+        transition: transform 0.2s ease;
+        cursor: pointer;
+    }
+
+    .beta-sidebar__group[open] > .beta-sidebar__group-title .beta-sidebar__group-chevron {
+        transform: rotate(-90deg);
+    }
+
+    .beta-sidebar__sections {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        padding: 0.4rem 0 0.5rem;
+    }
+
+    .beta-sidebar__section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .beta-sidebar__section-title {
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--core-foreground);
+        padding: 0.5rem 0.75rem 0.4rem;
+        margin: 0 0.25rem 0.3rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .beta-sidebar__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .beta-sidebar__link {
+        display: block;
+        padding: 0.4rem 0.75rem 0.4rem 1.25rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.35;
+        color: var(--core-foreground);
+        text-decoration: none;
+        border-left: 2px solid transparent;
+        border-radius: 0 var(--radius-button, 8px) var(--radius-button, 8px) 0;
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .beta-sidebar__link:hover {
+        background: var(--surface-warm);
+        color: var(--brand-primary);
+    }
+
+    .beta-sidebar__link--active {
+        background: var(--surface-warm);
+        color: var(--brand-primary);
+        font-weight: 600;
+        border-left-color: var(--brand-accent);
+    }
+
+    /**
+     * Audience-based filtering of sidebar entries.
+     *
+     * The userType lives on `<html data-beta-audience="...">`, set early by an
+     * inline script in BetaDocLayout (no FOUC). Four values: default, host,
+     * editor, admin. Rules below hide entire role groups or individual entries
+     * that do not match the current userType.
+     *
+     * `pago-real` is always shown by product decision — no rules touch it.
+     */
+
+    /* default → hide host and admin-editor groups entirely */
+    :root[data-beta-audience="default"] .beta-sidebar__group[data-beta-group="host"],
+    :root[data-beta-audience="default"] .beta-sidebar__group[data-beta-group="admin-editor"] {
+        display: none;
+    }
+
+    /* host → hide admin-editor group entirely */
+    :root[data-beta-audience="host"] .beta-sidebar__group[data-beta-group="admin-editor"] {
+        display: none;
+    }
+
+    /* editor → admin-editor group is visible, but only entries that include
+       `editor` in their declared audience. Entries with audience="admin" only
+       are hidden. Entries without an explicit audience are kept (defensive). */
+    :root[data-beta-audience="editor"]
+        .beta-sidebar__group[data-beta-group="admin-editor"]
+        .beta-sidebar__item[data-audience]:not([data-audience~="editor"]) {
+        display: none;
+    }
+</style>

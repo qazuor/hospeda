@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-146",
+    "title": "Sentry release wiring + SDK version alignment",
+    "type": "fix",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-05-18T00:00:00Z",
+    "discoveredDuring": "2026-05-18 staging Sentry health check after SPEC-140 verification",
+    "tags": ["sentry", "monitoring", "observability", "web", "admin"],
+    "effortEstimateHours": "0.5-1",
+    "firstAllocatedViaEngramProtocol": true
+}

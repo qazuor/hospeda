@@ -22,8 +22,72 @@
         "twitter": "https://twitter.com/suenonaturalapartmentok"
     },
     "price": {
-        "price": 13000,
-        "currency": "ARS"
+        "price": 90000,
+        "currency": "ARS",
+        "additionalFees": {
+            "extraBed": {
+                "price": 5500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "securityDeposit": {
+                "price": 220000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": false,
+                "isIncluded": false
+            },
+            "extraGuest": {
+                "price": 23,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerNight": true,
+                "isPerGuest": true,
+                "isOptional": true
+            },
+            "parking": {
+                "price": 2000,
+                "currency": "ARS",
+                "isPerNight": true
+            },
+            "earlyCheckin": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "others": [
+                {
+                    "name": "Alquiler de bicicletas",
+                    "price": 2000,
+                    "isPerNight": true,
+                    "isPerGuest": true,
+                    "currency": "ARS",
+                    "isOptional": true
+                }
+            ]
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 16,
+                "currency": "ARS",
+                "isPercent": true
+            },
+            "monthly": {
+                "price": 17,
+                "currency": "ARS",
+                "isPercent": true
+            },
+            "others": [
+                {
+                    "name": "Grupo de 6 o más",
+                    "price": 15,
+                    "currency": "ARS",
+                    "isPercent": true
+                }
+            ]
+        }
     },
     "location": {
         "coordinates": {
@@ -37,34 +101,58 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-            "caption": "Interior del apartamento",
-            "description": "Vista del área de estar y cocina",
+            "url": "https://images.pexels.com/photos/7214732/pexels-photo-7214732.jpeg",
+            "caption": "Living con pared de ladrillo",
+            "description": "Sala contemporánea con pared de ladrillo a la vista y zona de TV",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-                "caption": "Living",
-                "description": "Espacio integrado de living y cocina",
+                "url": "https://images.pexels.com/photos/9494898/pexels-photo-9494898.jpeg",
+                "caption": "Living amplio",
+                "description": "Sala espaciosa del apartamento con sillón grande y mobiliario actual",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/37252339/pexels-photo-37252339.jpeg",
+                "caption": "Living minimalista",
+                "description": "Sala de diseño minimalista con líneas limpias y luz natural abundante",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/7511701/pexels-photo-7511701.jpeg",
+                "caption": "Living acogedor",
+                "description": "Sala cálida con sillón, plantas de interior y luz natural suave",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
-                "caption": "Baño",
-                "description": "Baño completo",
+                "url": "https://images.pexels.com/photos/11296215/pexels-photo-11296215.jpeg",
+                "caption": "Living con iluminación cálida",
+                "description": "Sala de estar amplia con sillones, mesa baja y lámparas de pie",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/29003510/pexels-photo-29003510.jpeg",
+                "caption": "Ambiente principal luminoso",
+                "description": "Sala elegante con luz natural entrando por los ventanales",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7031708/pexels-photo-7031708.jpeg",
+                "caption": "Living con TV",
+                "description": "Sala acogedora con sillón mullido y TV en pared del apartamento",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6077368/pexels-photo-6077368.jpeg",
+                "caption": "Ambiente luminoso",
+                "description": "Sala amplia con grandes ventanas y mucha luz natural durante el día",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6681824/pexels-photo-6681824.jpeg",
+                "caption": "Rincón junto a la ventana",
+                "description": "Sillón cómodo con muebles de madera junto a la ventana del living",
                 "moderationState": "APPROVED"
             }
         ]

@@ -38,7 +38,11 @@
 @media (max-width: 768px) {
     .split {
         grid-template-columns: minmax(0, 1fr);
-        height: clamp(440px, calc(100vh - 160px), 700px);
+        /* Inherit height from the parent (.acc-listing-map) instead of capping
+         * with a clamp — the mobile fullscreen map view sets the container to
+         * exactly fill the viewport below the navbar + wave bar, so any extra
+         * cap here would leave whitespace under the map. */
+        height: 100%;
     }
 
     .sidebarPane {

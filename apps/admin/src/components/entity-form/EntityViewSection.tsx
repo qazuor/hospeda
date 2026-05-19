@@ -3,7 +3,12 @@ import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyFiel
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import {
+    loadAccommodationsByIds,
     loadDestinationsByIds,
+    loadEventLocationsByIds,
+    loadEventOrganizersByIds,
+    loadEventsByIds,
+    loadPostSponsorshipsByIds,
     loadUsersByIds
 } from '@/components/entity-form/fields/entity-selects/utils';
 import { GridLayout } from '@/components/entity-form/layouts';
@@ -157,7 +162,10 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         field.type === FieldTypeEnum.USER_SELECT ||
                         field.type === FieldTypeEnum.ACCOMMODATION_SELECT ||
                         field.type === FieldTypeEnum.EVENT_SELECT ||
+                        field.type === FieldTypeEnum.EVENT_LOCATION_SELECT ||
+                        field.type === FieldTypeEnum.EVENT_ORGANIZER_SELECT ||
                         field.type === FieldTypeEnum.POST_SELECT ||
+                        field.type === FieldTypeEnum.POST_SPONSORSHIP_SELECT ||
                         field.type === FieldTypeEnum.FEATURE_SELECT ||
                         field.type === FieldTypeEnum.AMENITY_SELECT ||
                         field.type === FieldTypeEnum.TAG_SELECT
@@ -177,6 +185,16 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         loadByIdsFn = loadDestinationsByIds;
                     } else if (field.type === FieldTypeEnum.USER_SELECT) {
                         loadByIdsFn = loadUsersByIds;
+                    } else if (field.type === FieldTypeEnum.ACCOMMODATION_SELECT) {
+                        loadByIdsFn = loadAccommodationsByIds;
+                    } else if (field.type === FieldTypeEnum.EVENT_SELECT) {
+                        loadByIdsFn = loadEventsByIds;
+                    } else if (field.type === FieldTypeEnum.EVENT_LOCATION_SELECT) {
+                        loadByIdsFn = loadEventLocationsByIds;
+                    } else if (field.type === FieldTypeEnum.EVENT_ORGANIZER_SELECT) {
+                        loadByIdsFn = loadEventOrganizersByIds;
+                    } else if (field.type === FieldTypeEnum.POST_SPONSORSHIP_SELECT) {
+                        loadByIdsFn = loadPostSponsorshipsByIds;
                     }
 
                     if (!loadByIdsFn) continue;
@@ -286,7 +304,10 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 case FieldTypeEnum.USER_SELECT:
                 case FieldTypeEnum.ACCOMMODATION_SELECT:
                 case FieldTypeEnum.EVENT_SELECT:
+                case FieldTypeEnum.EVENT_LOCATION_SELECT:
+                case FieldTypeEnum.EVENT_ORGANIZER_SELECT:
                 case FieldTypeEnum.POST_SELECT:
+                case FieldTypeEnum.POST_SPONSORSHIP_SELECT:
                 case FieldTypeEnum.FEATURE_SELECT:
                 case FieldTypeEnum.AMENITY_SELECT:
                 case FieldTypeEnum.TAG_SELECT:
@@ -441,7 +462,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
                             {title && (
-                                <h3
+                                <h2
                                     className={cn(
                                         'font-semibold leading-none tracking-tight',
                                         mode === 'card' && 'text-lg',
@@ -450,7 +471,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                                     )}
                                 >
                                     {title}
-                                </h3>
+                                </h2>
                             )}
 
                             {/* Section Actions */}

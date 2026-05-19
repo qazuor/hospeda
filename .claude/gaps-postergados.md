@@ -126,7 +126,7 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 | Gap | Severidad | Descripción |
 |-----|-----------|-------------|
 | GAP-042-12 | HIGH | SPEC-046 en draft, bloquea transición a Phase 2 |
-| GAP-042-15 | HIGH | Sin staging environment (SPEC-025 pendiente) |
+| GAP-042-15 | ~~HIGH~~ DONE | ~~Sin staging environment (SPEC-025 pendiente)~~ — SPEC-025 closed 2026-05-17, staging live since VPS migration 2026-05-07 |
 | GAP-042-07 | MEDIUM | Sin monitoreo/alerting de CSP violations en Sentry |
 | GAP-042-43 | MEDIUM | Sentry CSP violation collection no verificada E2E |
 

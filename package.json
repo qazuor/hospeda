@@ -67,10 +67,6 @@
         "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
         "docs:check-links": "tsx scripts/check-links.ts",
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
-        "env:pull": "tsx scripts/env/pull.ts",
-        "env:push": "tsx scripts/env/push.ts",
-        "env:sync": "tsx scripts/env/sync.ts",
-        "env:check": "tsx scripts/env/check.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
@@ -135,6 +131,8 @@
             "undici": ">=7.24.0 <8",
             "vite@^6.0.0": ">=6.4.2",
             "vite@^7.0.0": ">=7.3.2",
+            "vite@^8.0.0": "^8.0.13",
+            "@sentry/vite-plugin": ">=5.3.0",
             "markdown-it": ">=14.1.1",
             "diff": ">=8.0.3",
             "defu": ">=6.1.5",
@@ -145,6 +143,7 @@
             "svgo": ">=4.0.1",
             "next": ">=16.2.3",
             "drizzle-orm": ">=0.45.2",
+            "@opentelemetry/api": "1.9.1",
             "@remix-run/node": ">=2.17.2",
             "@remix-run/router": ">=1.23.2",
             "@remix-run/server-runtime": ">=2.17.3",
@@ -152,7 +151,8 @@
             "@tanstack/form-core": "0.42.1",
             "csstype": "3.1.3",
             "@types/react": "19.1.10",
-            "@types/react-dom": "19.1.7"
+            "@types/react-dom": "19.1.7",
+            "@vitejs/plugin-react": "^4.7.0"
         },
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"

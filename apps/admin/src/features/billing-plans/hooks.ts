@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import { ApiError, reportError } from '@/lib/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import type { CreatePlanPayload, UpdatePlanPayload } from './types';
@@ -69,10 +70,20 @@ function transformPlanRecord(record: unknown): ParsedPlanRecord {
     const parseResult = QZPayPlanRecordSchema.safeParse(record);
 
     if (!parseResult.success) {
-        console.warn('[billing-plans] Failed to parse plan record:', parseResult.error.flatten());
-        throw new Error(
-            `Invalid plan record from API: ${parseResult.error.issues.map((i) => i.message).join(', ')}`
-        );
+        // Surface as 502 so the friendly-error helper maps it to a generic
+        // "invalid server response" message. Full Zod issues go to Sentry via
+        // `details.zodIssues` — never to the user-facing UI.
+        const apiError = new ApiError('Plan record failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST',
+            details: { zodIssues: parseResult.error.issues }
+        });
+        reportError({
+            error: apiError,
+            source: 'billing-plans/transformPlanRecord',
+            tags: { feature: 'billing', stage: 'response-parse' }
+        });
+        throw apiError;
     }
 
     const parsed = parseResult.data;

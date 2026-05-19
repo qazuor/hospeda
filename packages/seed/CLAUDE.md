@@ -102,6 +102,36 @@ Example seeds include:
 - Test events
 - Example reviews
 
+### Accommodation Image Pool (SPEC-119)
+
+Example accommodation seeds draw their `media.featuredImage` and `media.gallery[]`
+URLs from a curated type-specific pool, NOT from arbitrary stock photos:
+
+- Source of truth: [`src/data/accommodation/_image-pool.ts`](src/data/accommodation/_image-pool.ts) — `IMAGE_POOL_BY_TYPE` const, 25 URLs per accommodation type × 8 types = 200 curated URLs.
+- Documentation: [`docs/image-pool.md`](docs/image-pool.md) — rotation conventions, how to add a URL, how to remove one.
+- Lint script: `pnpm lint:image-pool` — verifies every URL in every accommodation JSON belongs to its type pool. Run before committing changes to accommodation seeds.
+- Refresh script: `scripts/refresh-accommodation-images.ts` — deterministic per-accommodation assignment (featured cyclic by id position, gallery random subset 5-24 photos). Re-runnable without drift.
+
+### Accommodation Pricing Tiers (SPEC-119)
+
+Example accommodations use four realism tiers for the `price` field:
+
+- Tier 0 (~25%): `price` key omitted entirely (host did not publish a price)
+- Tier 1 (~25%): `{ price, currency }` only
+- Tier 2 (~30%): base + 1-2 `additionalFees` OR 1 discount
+- Tier 3 (~20%): base + 3-5 fees + 1-2 discounts (with ≥1 `others[]` custom entry)
+
+Assignment is deterministic (seeded by `accommodation.id`) and runs via
+`scripts/apply-pricing-tiers.ts`. ARS value ranges per type and fee shapes are
+documented in `scripts/apply-pricing-tiers.ts` itself (see `BASE_RANGE_BY_TYPE`
+and `buildFee`).
+
+Invariants are enforced by tests in
+[`test/accommodation-seeds-realism.test.ts`](test/accommodation-seeds-realism.test.ts):
+image pool membership, camping gallery uniqueness, featured uniqueness within
+type, tier distribution, gallery count variance, fee field coverage, and
+`others[]` coverage. Run via `pnpm test`.
+
 ## Creating Seeders
 
 ### Basic Seeder

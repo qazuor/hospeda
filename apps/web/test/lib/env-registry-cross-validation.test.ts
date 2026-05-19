@@ -22,9 +22,14 @@ const REGISTRY_KEYS_FOR_WEB = new Set<string>(
  * Registry vars that are intentionally NOT validated by serverEnvSchema.
  */
 const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
-    // Optional client-side flag — not validated by server schema; consumed by
-    // the client-side logger directly via import.meta.env at runtime.
-    'PUBLIC_ENABLE_LOGGING'
+    // (PUBLIC_ENABLE_LOGGING was previously here as an exception — registered
+    // post-Astro 6 audit: now validated by serverEnvSchema and read through
+    // getEnv() in lib/env.ts instead of raw import.meta.env.)
+
+    // Build-time only — consumed by @sentry/astro during the web build to
+    // upload source maps. Not read by the runtime, so it is deliberately
+    // absent from serverEnvSchema.
+    'SENTRY_AUTH_TOKEN'
 ]);
 
 /**

@@ -1,8 +1,12 @@
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { useAmenityPage } from '@/features/amenities/hooks/useAmenityPage';
+import { useDeleteAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
+import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { createFileRoute } from '@tanstack/react-router';
+import { PermissionEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 /**
  * Amenity View Route Configuration
@@ -19,24 +23,40 @@ export const Route = createFileRoute('/_authed/content/accommodation-amenities/$
  */
 function AmenityViewPage() {
     const { id } = Route.useParams();
-
-    // Use the hook at the top level
+    const navigate = useNavigate();
+    const { t } = useTranslations();
     const entityData = useAmenityPage(id);
 
+    const amenity = entityData.entity as { name?: string } | undefined;
+
     return (
-        <EntityPageBase
-            entityType="amenity"
-            entityId={id}
-            initialMode="view"
-            entityData={entityData}
-        >
-            <EntityViewContent
+        <div className="space-y-4">
+            <div className="flex justify-end">
+                <DeleteRowButton
+                    entityId={id}
+                    entityName={amenity?.name || id}
+                    entityLabel={t('admin-entities.entities.amenity.singular')}
+                    permission={PermissionEnum.AMENITY_DELETE}
+                    useDeleteMutation={useDeleteAmenityMutation}
+                    variant="full"
+                    entityGender="f"
+                    onDeleted={() => navigate({ to: '/content/accommodation-amenities' })}
+                />
+            </div>
+            <EntityPageBase
                 entityType="amenity"
                 entityId={id}
-                sections={entityData.sections}
-                entity={entityData.entity || {}}
-                userPermissions={entityData.userPermissions}
-            />
-        </EntityPageBase>
+                initialMode="view"
+                entityData={entityData}
+            >
+                <EntityViewContent
+                    entityType="amenity"
+                    entityId={id}
+                    sections={entityData.sections}
+                    entity={entityData.entity || {}}
+                    userPermissions={entityData.userPermissions}
+                />
+            </EntityPageBase>
+        </div>
     );
 }

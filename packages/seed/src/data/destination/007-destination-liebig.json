@@ -2,9 +2,9 @@
     "$schema": "../../schemas/destination.schema.json",
     "id": "007-destination-liebig",
     "slug": "liebig",
-    "name": "Liebig",
-    "summary": "Histórica ciudad industrial con patrimonio del frigorífico anglo",
-    "description": "Liebig es una histórica ciudad ubicada en el este de Entre Ríos, conocida por su importante patrimonio industrial relacionado con el antiguo frigorífico Liebig's. Esta ciudad conserva la memoria de la época dorada de la industria frigorífica argentina, con edificios históricos y testimonios del pasado industrial. Es un destino interesante para quienes buscan conocer la historia industrial argentina y disfrutar de un ambiente tranquilo junto al río Uruguay.",
+    "name": "Pueblo Liebig",
+    "summary": "Pueblo histórico de origen industrial inglés a orillas del río Uruguay, en el Departamento Colón, declarado Patrimonio Histórico Provincial y Bien Industrial de la Nación.",
+    "description": "Pueblo Liebig es una pequeña localidad del Departamento Colón, en Entre Ríos, ubicada a unos 10 km al norte de la ciudad de Colón sobre la costa del río Uruguay. Nació a comienzos del siglo XX en torno al frigorífico de la Liebig's Extract of Meat Company Limited, instalado en 1903 sobre un antiguo saladero, que llegó a ser conocido como la cocina más grande del mundo por su producción de extracto de carne y corned beef exportado a Europa durante las guerras mundiales. La compañía construyó alrededor de 250 viviendas de estilo inglés para sus obreros y directivos, calles empedradas, hidrantes rojos y un trazado urbano que aún conserva cerca del 87% de sus fachadas originales protegidas por ordenanza. Hoy el pueblo combina su patrimonio industrial con la tranquilidad del entorno fluvial: se pueden recorrer las casas obreras, la antigua fábrica, el museo dedicado a la historia del frigorífico y disfrutar de paseos por la costa del río Uruguay. Fue declarado Patrimonio Histórico Provincial en 2014 y Bien Industrial de la Nación en 2017.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,52 +13,220 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3283",
+        "zipCode": "3281",
         "country": "Argentina",
         "street": "Av. Industrial",
         "number": "555",
-        "city": "Liebig",
+        "city": "Pueblo Liebig",
         "coordinates": {
-            "lat": "-32.0667",
+            "lat": "-32.2167",
             "long": "-58.2000"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Liebig",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178058/hospeda/seed/required/destinations/007-destination-liebig/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/007-destination-liebig/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Liebig"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Liebig",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178059/hospeda/seed/required/destinations/007-destination-liebig/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Liebig",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178060/hospeda/seed/required/destinations/007-destination-liebig/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178063/hospeda/seed/required/destinations/007-destination-liebig/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178065/hospeda/seed/required/destinations/007-destination-liebig/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178069/hospeda/seed/required/destinations/007-destination-liebig/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178073/hospeda/seed/required/destinations/007-destination-liebig/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178075/hospeda/seed/required/destinations/007-destination-liebig/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178077/hospeda/seed/required/destinations/007-destination-liebig/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178078/hospeda/seed/required/destinations/007-destination-liebig/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178078/hospeda/seed/required/destinations/007-destination-liebig/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178079/hospeda/seed/required/destinations/007-destination-liebig/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178080/hospeda/seed/required/destinations/007-destination-liebig/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178081/hospeda/seed/required/destinations/007-destination-liebig/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178082/hospeda/seed/required/destinations/007-destination-liebig/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178083/hospeda/seed/required/destinations/007-destination-liebig/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178084/hospeda/seed/required/destinations/007-destination-liebig/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178085/hospeda/seed/required/destinations/007-destination-liebig/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178086/hospeda/seed/required/destinations/007-destination-liebig/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178087/hospeda/seed/required/destinations/007-destination-liebig/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Liebig - Histórica ciudad industrial con patrimonio anglo",
-        "description": "Descubre Liebig en Entre Ríos. Histórica ciudad industrial con patrimonio del frigorífico anglo",
+        "title": "Pueblo Liebig - Patrimonio industrial inglés en Entre Ríos",
+        "description": "Descubrí Pueblo Liebig, en el Departamento Colón, Entre Ríos: pueblo histórico nacido del frigorífico Liebig's, casas inglesas y costa del río Uruguay.",
         "keywords": [
-            "Liebig",
+            "Pueblo Liebig",
             "Entre Ríos",
-            "industrial",
-            "historia",
-            "frigorífico",
-            "patrimonio",
-            "río"
+            "patrimonio industrial",
+            "frigorífico Liebig",
+            "Departamento Colón",
+            "río Uruguay",
+            "turismo histórico"
         ]
     },
     "attractionIds": [
-        "037-attraction-estancia_turistica",
-        "082-attraction-sitio_arqueologico",
-        "013-attraction-centro_agropecuario",
+        "010-attraction-casa_historica",
+        "018-attraction-centro_historico",
+        "055-attraction-museo_historico",
+        "056-attraction-museo_regional",
+        "031-attraction-costanera",
         "081-attraction-sendero_ecologico"
     ],
     "visibility": "PUBLIC",

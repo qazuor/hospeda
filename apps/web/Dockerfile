@@ -31,34 +31,60 @@ ARG HOSPEDA_ADMIN_URL=https://admin.placeholder.local
 ARG PUBLIC_API_URL=https://api.placeholder.local
 ARG PUBLIC_SITE_URL=https://placeholder.local
 ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
-ARG PUBLIC_SENTRY_RELEASE
+# HOSPEDA_GIT_SHA + PUBLIC_SENTRY_RELEASE drive the Sentry release tag baked
+# into the client bundle. The build-time resolution chain is:
+#   1. Explicit --build-arg from Coolify (manual override, if set).
+#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
+#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
+#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
+#      specifically so this file reaches the builder.
+#   3. Last resort: empty string. The downstream `|| 'development'` chain
+#      in apps/web/sentry.client.config.ts absorbs that case.
+# We resolve in a single RUN so the resulting env vars are visible to
+# `astro build` (Astro reads `import.meta.env.PUBLIC_*` from the process
+# environment at build time). Exporting in a prior RUN would not persist.
 ARG HOSPEDA_GIT_SHA
+ARG PUBLIC_SENTRY_RELEASE
+ARG PUBLIC_SENTRY_ENVIRONMENT
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
     HOSPEDA_ADMIN_URL=$HOSPEDA_ADMIN_URL \
     PUBLIC_API_URL=$PUBLIC_API_URL \
     PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_ADMIN_URL=$PUBLIC_ADMIN_URL \
-    PUBLIC_SENTRY_RELEASE=$PUBLIC_SENTRY_RELEASE \
-    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
+    PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT
 COPY --from=deps /repo /repo
-RUN pnpm turbo run build --filter=hospeda-web
+COPY .git/HEAD /tmp/git-head
+RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
+    PUBLIC_SENTRY_RELEASE="${PUBLIC_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
+    export HOSPEDA_GIT_SHA PUBLIC_SENTRY_RELEASE && \
+    echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=hospeda-web
+
+# ----- prune stage -----------------------------------------------------------
+# `pnpm deploy` resolves workspace deps as real packages and ships only prod
+# deps into a self-contained directory at /prod/web. Unlike the API (which
+# bundles everything into dist/index.cjs via tsup), Astro Node standalone
+# keeps most deps external and resolves them from node_modules at runtime, so
+# this stage is what determines the runner image size for the web app.
+#
+# See apps/api/Dockerfile for the broader rationale (and the staging incident
+# on 2026-05-19 that motivated the switch).
+FROM base AS pruned
+COPY --from=build /repo /repo
+RUN pnpm deploy --filter=hospeda-web --prod /prod/web
 
 # ----- runner stage ----------------------------------------------------------
-# Preserve the monorepo directory layout (/repo/...) so pnpm's relative
-# symlinks resolve at runtime. See apps/api/Dockerfile runner stage for full
-# rationale. Astro Node standalone still expects workspace deps to be
-# resolvable from apps/web/node_modules, hence the full layout copy.
+# Self-contained app at /app. Astro Node standalone reads dist/client/ for
+# static assets and dist/server/entry.mjs is the SSR entry — both shipped by
+# pnpm deploy as part of the app's files.
 FROM node:22-alpine AS runner
-WORKDIR /repo
+WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=4321
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=build /repo/node_modules ./node_modules
-COPY --from=build /repo/packages ./packages
-COPY --from=build /repo/apps/web ./apps/web
-WORKDIR /repo/apps/web
+COPY --from=pruned /prod/web ./
 EXPOSE 4321
 CMD ["node", "dist/server/entry.mjs"]

@@ -5,13 +5,21 @@
  * Standalone component — no dependency on @repo/auth-ui.
  * Calls auth-client.ts directly, styled with CSS Modules + web2 design tokens.
  * Validates password length client-side before submitting.
+ *
+ * The `name` field has been intentionally removed (SPEC-113). Name collection
+ * happens in the post-signup profile completion form, where users provide
+ * structured firstName + lastName instead of a single free-text name.
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { StrongPasswordRegex } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import styles from './SignUp.module.css';
 
@@ -40,7 +48,10 @@ export interface SignUpProps {
 }
 
 /**
- * Sign-up form with name, email, password and optional OAuth providers.
+ * Sign-up form with email, password and optional OAuth providers.
+ *
+ * The `name` field is intentionally omitted — name is collected later in the
+ * profile completion form (SPEC-113) as structured firstName + lastName.
  *
  * Validates password length (min 8 chars) before calling the API.
  * After a successful registration it redirects via `window.location.replace`.
@@ -53,13 +64,43 @@ export interface SignUpProps {
 export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }: SignUpProps) {
     const { t } = createTranslations(locale);
 
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isClientReady, setIsClientReady] = useState(false);
+
+    /**
+     * i18n strings for the PasswordField component. Built from the same
+     * `t()` helper so the keys stay consistent with the rest of the form.
+     */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('auth.signUp.showPassword', 'Mostrar contraseña'),
+        hidePassword: t('auth.signUp.hidePassword', 'Ocultar contraseña'),
+        strength: {
+            weak: t('auth.signUp.strength.weak', 'Débil'),
+            medium: t('auth.signUp.strength.medium', 'Media'),
+            strong: t('auth.signUp.strength.strong', 'Fuerte')
+        },
+        rules: {
+            length: t('auth.signUp.rules.length', 'Al menos 8 caracteres'),
+            upper: t('auth.signUp.rules.upper', 'Una letra mayúscula (A-Z)'),
+            lower: t('auth.signUp.rules.lower', 'Una letra minúscula (a-z)'),
+            digit: t('auth.signUp.rules.digit', 'Un número (0-9)'),
+            special: t('auth.signUp.rules.special', 'Un carácter especial (@$!%*?&)')
+        }
+    };
+
+    /** Confirm field reuses the visibility toggle but skips the rules block. */
+    const confirmI18n: PasswordFieldI18n = {
+        showPassword: passwordI18n.showPassword,
+        hidePassword: passwordI18n.hidePassword,
+        strength: passwordI18n.strength
+    };
 
     useEffect(() => {
         setIsClientReady(true);
@@ -68,23 +109,68 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
+        setPasswordError(null);
+        setConfirmError(null);
 
-        if (password.length < 8) {
-            setError(t('auth.signUp.passwordHint', 'Mínimo 8 caracteres'));
+        // Enforce the full strong-password contract client-side so the
+        // user sees rule violations as inline field errors instead of
+        // a back-end 400 with a vague generic message.
+        if (!StrongPasswordRegex.test(password)) {
+            setPasswordError(
+                t(
+                    'auth.signUp.errors.passwordWeak',
+                    'La contraseña debe cumplir todas las reglas (8+ caracteres, mayúscula, minúscula, número y carácter especial).'
+                )
+            );
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setConfirmError(
+                t('auth.signUp.errors.passwordsDoNotMatch', 'Las contraseñas no coinciden.')
+            );
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const result = await signUp.email({ email, password, name });
+            // Sign up WITHOUT a `name` field — Better Auth's required `name`
+            // is satisfied with an empty string here; the profile completion
+            // form (SPEC-113) collects firstName + lastName and updates the
+            // user's display_name afterwards.
+            const result = await signUp.email({ email, password, name: '' });
 
             if (result.error) {
                 setError(
                     result.error.message ?? t('auth.signUp.error', 'Error al crear la cuenta')
                 );
             } else {
-                window.location.replace(redirectTo);
+                // Mirror the OAuth host-strip+re-attach below. The
+                // server-built `redirectTo` can carry `https://localhost`
+                // when Astro Node runs behind a reverse proxy that does
+                // not forward the original Host header (observed
+                // 2026-05-14 during SPEC-103 T-012 smoke: POST /sign-up
+                // returned 200 but the subsequent navigation went to
+                // https://localhost/es/auth/verify-email-sent and
+                // failed). Strip the host (if any) and reattach the
+                // browser's real origin so the navigation always lands
+                // on whatever host the user opened.
+                const origin = window.location.origin;
+                let path = redirectTo || '/';
+                if (path.startsWith('http')) {
+                    try {
+                        const parsed = new URL(path);
+                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                    } catch {
+                        path = '/';
+                    }
+                }
+                if (!path.startsWith('/')) {
+                    path = `/${path}`;
+                }
+                trackEvent(WebEvents.SignupCompleted, { provider: 'email', locale });
+                window.location.replace(`${origin}${path}`);
             }
         } catch {
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
@@ -149,7 +235,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
                 <div className={styles.skeletonField} />
                 <div className={styles.skeletonField} />
-                <div className={styles.skeletonField} />
                 <div className={styles.skeletonButton} />
             </div>
         );
@@ -173,27 +258,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
 
             <div className={styles.field}>
                 <label
-                    htmlFor="signup-name"
-                    className={styles.label}
-                >
-                    {t('auth.signUp.name', 'Nombre completo')}
-                </label>
-                <input
-                    id="signup-name"
-                    type="text"
-                    className={styles.input}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t('auth.signUp.namePlaceholder', 'Tu nombre')}
-                    required
-                    autoComplete="name"
-                    aria-required="true"
-                    disabled={isLoading}
-                />
-            </div>
-
-            <div className={styles.field}>
-                <label
                     htmlFor="signup-email"
                     className={styles.label}
                 >
@@ -213,34 +277,40 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 />
             </div>
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="signup-password"
-                    className={styles.label}
-                >
-                    {t('auth.signUp.password', 'Contraseña')}
-                </label>
-                <input
-                    id="signup-password"
-                    type="password"
-                    className={styles.input}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    aria-required="true"
-                    aria-describedby="signup-password-hint"
-                    disabled={isLoading}
-                />
-                <span
-                    id="signup-password-hint"
-                    className={styles.hint}
-                >
-                    {t('auth.signUp.passwordHint', 'Mínimo 8 caracteres')}
-                </span>
-            </div>
+            <PasswordField
+                id="signup-password"
+                label={t('auth.signUp.password', 'Contraseña')}
+                value={password}
+                onChange={(value) => {
+                    setPassword(value);
+                    if (passwordError) setPasswordError(null);
+                    if (confirmError) setConfirmError(null);
+                }}
+                placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                showStrength
+                showRuleChecklist
+                error={passwordError ?? undefined}
+                i18n={passwordI18n}
+            />
+
+            <PasswordField
+                id="signup-confirm-password"
+                label={t('auth.signUp.confirmPassword', 'Confirmar contraseña')}
+                value={confirmPassword}
+                onChange={(value) => {
+                    setConfirmPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
+                placeholder={t('auth.signUp.confirmPasswordPlaceholder', 'Repetí tu contraseña')}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                error={confirmError ?? undefined}
+                i18n={confirmI18n}
+            />
 
             <GradientButton
                 as="button"

@@ -45,7 +45,7 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="empty" actionUrl={buildUrl({ locale, path: `destinos/${slug}` })} />}
 	{!hasError && cards.length > 0 && (
-		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}><AccommodationCard data={card} locale={locale} /></div>))}</div>
+		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><AccommodationCard data={card} locale={locale} /></div>))}</div>
 	)}
 	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
 </ListingLayout>

@@ -15,10 +15,12 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import FeaturedArticleCard from '@/components/shared/cards/FeaturedArticleCard.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { postsApi, toArticleCardProps } from '@/lib/api';
 import type { ArticleCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
 import { isAllowedRemoteHost } from '@/lib/media';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
     /** Active locale used to resolve translations and URLs. */
@@ -74,8 +76,6 @@ const isSparse = posts.length < 2;
             title={t('home.latestPosts.title', 'Últimos artículos')}
             subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
             alignment="left"
-            actionLabel={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
-            actionHref={buildUrl({ locale, path: '/publicaciones/' })}
         />
 
         {posts.length === 0 ? (
@@ -90,29 +90,43 @@ const isSparse = posts.length < 2;
                 <PostIcon size={48} weight="duotone" />
             </EmptyState>
         ) : (
-            <div class="articles__layout">
-                <!-- Featured card: full-width top row -->
-                {featured && (
-                    <div class="articles__featured-row" data-reveal="up" style="transition-delay: 0ms">
-                        <FeaturedArticleCard data={featured} locale={locale} isTrending={true} />
-                    </div>
-                )}
+            <>
+                <div class="articles__layout">
+                    <!-- Featured card: full-width top row -->
+                    {featured && (
+                        <div class="articles__featured-row" data-reveal="up" {...revealStagger({ index: 0 })}>
+                            <FeaturedArticleCard data={featured} locale={locale} isTrending={true} />
+                        </div>
+                    )}
 
-                <!-- Secondary cards: adaptive columns based on count -->
-                {secondary.length > 0 && (
-                    <div class:list={['articles__secondary-row', `articles__secondary-row--${secondary.length}col`]}>
-                        {secondary.map((post, i) => (
-                            <div
-                                class="articles__secondary-item"
-                                data-reveal="up"
-                                style={`transition-delay: ${(i + 1) * 100}ms`}
-                            >
-                                <ArticleCard data={post} locale={locale} />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                    <!-- Secondary cards: adaptive columns based on count -->
+                    {secondary.length > 0 && (
+                        <div class:list={['articles__secondary-row', `articles__secondary-row--${secondary.length}col`]}>
+                            {secondary.map((post, i) => (
+                                <div
+                                    class="articles__secondary-item"
+                                    data-reveal="up"
+                                    {...revealStagger({ index: i + 1 })}
+                                >
+                                    <ArticleCard data={post} locale={locale} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <!-- "See all" CTA below the grid. The SectionHeader no longer
+                     carries an action button. -->
+                <div class="articles__see-all">
+                    <GradientButton
+                        href={buildUrl({ locale, path: '/publicaciones/' })}
+                        label={t('home.latestPosts.viewAll', 'Ver todos los artículos')}
+                        variant="outline-primary"
+                        size="sm"
+                        icon="true"
+                    />
+                </div>
+            </>
         )}
 
     </div>
@@ -165,4 +179,10 @@ const isSparse = posts.length < 2;
     }
 
     /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
+
+    .articles__see-all {
+        display: flex;
+        justify-content: center;
+        margin-top: var(--space-card-gap, 2rem);
+    }
 </style>

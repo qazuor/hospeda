@@ -1,0 +1,84 @@
+---
+/**
+ * @file BetaToc.astro
+ * @description Right-rail table of contents for a beta doc. Renders the
+ * heading anchors emitted by Astro's `render(doc)` (depth 2-3 only).
+ */
+
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+    readonly headings: ReadonlyArray<MarkdownHeading>;
+}
+
+const { headings } = Astro.props;
+
+const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+const hasToc = tocHeadings.length > 1;
+---
+
+{hasToc && (
+    <aside class="beta-toc" aria-label="Índice de la página">
+        <p class="beta-toc__title">En esta página</p>
+        <ul class="beta-toc__list">
+            {tocHeadings.map((heading) => (
+                <li
+                    class:list={[
+                        'beta-toc__item',
+                        `beta-toc__item--depth-${heading.depth}`
+                    ]}
+                >
+                    <a href={`#${heading.slug}`} class="beta-toc__link">
+                        {heading.text}
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </aside>
+)}
+
+<style>
+    .beta-toc {
+        position: sticky;
+        top: calc(var(--beta-header-offset, 80px) + 1rem);
+        font-family: var(--font-sans);
+    }
+
+    .beta-toc__title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--core-muted-foreground);
+        margin: 0 0 0.65rem;
+    }
+
+    .beta-toc__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .beta-toc__item--depth-3 {
+        padding-left: 0.85rem;
+    }
+
+    .beta-toc__link {
+        display: block;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        border-left: 2px solid transparent;
+        transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .beta-toc__link:hover {
+        color: var(--brand-primary);
+        border-left-color: var(--brand-primary);
+    }
+</style>

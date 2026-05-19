@@ -13,6 +13,7 @@
  * @rendering SSR
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
 import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
@@ -180,7 +181,7 @@ function resolveEntityHref(entityType: string, entityId: string): string {
 }
 
 // API base URL for the remove-bookmark island
-const apiBase = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiBase = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={pageTitle} activeSection="favoritos">

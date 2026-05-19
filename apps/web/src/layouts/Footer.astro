@@ -21,9 +21,10 @@
  */
 
 import { Image } from "astro:assets";
-import GradientButton from "@/components/shared/ui/GradientButton.astro";
+import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
+import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -35,6 +36,17 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t } = createTranslations(locale);
+
+// Auth state for the NewsletterForm island (SPEC-101 T-101-33). The App.Locals
+// type does not yet declare `user` — narrowed cast matches the workaround used
+// in MobileMenuIsland.astro and the verify/unsubscribe pages.
+const locals = Astro.locals as { user?: { id: string; email: string } | null };
+const isAuthenticated = Boolean(locals.user);
+const userEmail = locals.user?.email;
+
+// Public API base URL the island fetches against. Validated at startup
+// by serverEnvSchema, so getApiUrl() never throws here.
+const apiUrl = getApiUrl();
 
 const currentYear = new Date().getFullYear();
 
@@ -225,33 +237,21 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     {t("footer.newsletterShortTitle", "Recibí novedades")}
                 </h3>
                 <p class="footer__newsletter-desc">
-                    {t("footer.newsletterShortDescription", "Novedades y ofertas en tu correo.")}
+                    {t("footer.newsletterShortDescription", "Recibí novedades, ofertas exclusivas y guías de viaje del Litoral en tu correo.")}
                 </p>
             </div>
-            <form
-                class="footer__newsletter"
-                data-prevent-submit
-            >
-                <label for="newsletter-email" class="sr-only">
-                    {t("footer.newsletterEmailPlaceholder")}
-                </label>
-                <input
-                    id="newsletter-email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    class="footer__newsletter-input"
-                    placeholder={t("footer.newsletterEmailPlaceholder")}
-                    aria-label={t("footer.newsletterEmailPlaceholder")}
-                />
-                <GradientButton
-                    as="button"
-                    label={t("footer.subscribeShort", "Suscribirme")}
-                    variant="accent"
-                    size="sm"
-                    class="footer__newsletter-btn"
-                />
-            </form>
+            {/* SPEC-101 T-101-33: live double opt-in flow. The island
+                handles all 6 states (idle-guest, idle-auth, pending,
+                pending-verification, already-active, error). Hydration
+                is deferred via client:visible so the footer above the
+                fold paints without blocking on the island JS. */}
+            <NewsletterForm
+                client:visible
+                isAuthenticated={isAuthenticated}
+                userEmail={userEmail}
+                apiUrl={apiUrl}
+                locale={locale}
+            />
         </div>
     </section>
 
@@ -431,11 +431,15 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         gap: clamp(2rem, 4vw, 3.5rem);
     }
 
-    /* Brand block — vertical stack on all sizes */
+    /* Brand block — vertical stack on all sizes. On mobile every footer
+       zone is center-aligned, so the brand stack centers its children too;
+       tablet+ realigns to flex-start. */
     .footer__brand {
         display: flex;
         flex-direction: column;
         gap: 1.25rem;
+        align-items: center;
+        text-align: center;
     }
 
     .footer__logo {
@@ -487,12 +491,20 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     .footer__newsletter-inner {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 1rem;
+        /* Centered compact block: bloque limitado y centrado en el footer.
+           En mobile va column (texto arriba / form abajo); el media query
+           desktop lo pasa a row (texto + form lado a lado con gap chico). */
+        max-width: 52rem;
+        margin-inline: auto;
+        text-align: center;
     }
 
     .footer__newsletter-text {
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 0.25rem;
     }
 
@@ -567,12 +579,20 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         cursor: pointer;
         display: flex;
         align-items: center;
+        /* Title hugs the left edge, chevron lands on the right — classic
+           accordion affordance and lines up with the link list below it. */
         justify-content: space-between;
+        gap: 0.5rem;
         font-family: var(--font-heading);
-        font-size: var(--text-h4);
-        font-weight: 500;
+        /* Title is a clearly different role from the links it groups:
+           bolder weight, brand-accent color, uppercase + letter-spacing so
+           it reads as a section label rather than a clickable link. */
+        font-size: 0.875rem;
+        font-weight: 700;
         line-height: 1.2;
-        color: var(--footer-fg);
+        color: var(--brand-accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
         padding-block: 0.25rem;
     }
 
@@ -582,21 +602,31 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     }
 
     .footer__nav-heading::after {
-        content: "+";
-        font-size: 1.25rem;
-        font-weight: 400;
+        /* Down-pointing chevron flips to up when the accordion is open —
+           a clearer expand/collapse affordance than the previous "+". */
+        content: "\25BE"; /* ▾ */
+        font-size: 0.875rem;
+        line-height: 1;
         color: var(--footer-fg-muted);
         transition: transform var(--duration-normal) ease;
     }
 
     .footer__nav-col[open] .footer__nav-heading::after {
-        transform: rotate(45deg);
+        transform: rotate(180deg);
     }
 
     .footer__nav-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.625rem;
+        /* Mobile default: links arranged in 2 columns inside each accordion
+           so the open accordion takes about half the vertical space it
+           needed when links were stacked one per row. Items hug the left
+           edge of each cell (centering the whole list felt visually off
+           even though the surrounding mobile footer is centered). The
+           tablet+ media query below switches back to a single-column
+           flex stack. */
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.625rem;
         list-style: none;
         padding: 0.75rem 0 0.5rem 0;
         margin: 0;
@@ -644,6 +674,10 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         display: flex;
         align-items: center;
         gap: 0.625rem;
+        /* Mobile: center each icon + label pair inside its grid cell.
+           Tablet+ leaves them flush-start so the 4-column inline row reads
+           as a left-aligned strip alongside the payment logos. */
+        justify-content: center;
     }
 
     .footer__trust-icon {
@@ -679,6 +713,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         display: flex;
         flex-wrap: wrap;
         align-items: center;
+        justify-content: center;
         gap: 1.25rem;
         list-style: none;
         padding: 0;
@@ -813,18 +848,38 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             align-items: start;
         }
 
-        /* Newsletter strip: text on the left, form inline on the right */
+        /* Undo mobile-only centering: brand block returns to flex-start
+           left-aligned, and trust items hug the start so the 4-column
+           inline strip reads from left to right. */
+        .footer__brand {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .footer__trust-item {
+            justify-content: flex-start;
+        }
+
+        /* Desktop: texto + form lado a lado dentro del bloque centrado.
+           El bloque sigue centrado en el footer (max-width + margin auto en
+           el default); acá solo lo pasamos a row con un gap chico para que
+           título/desc lean junto al input, sin un hueco grande entre ellos. */
         .footer__newsletter-inner {
             flex-direction: row;
             align-items: center;
-            justify-content: space-between;
-            gap: clamp(2rem, 5vw, 4rem);
+            gap: 2.25rem;
+            text-align: left;
+        }
+
+        .footer__newsletter-text {
+            align-items: flex-start;
+            flex: 0 0 auto;
+            max-width: 22rem;
         }
 
         .footer__newsletter {
             flex-direction: row;
             align-items: center;
-            min-width: min(28rem, 100%);
         }
 
         .footer__newsletter-btn {
@@ -848,8 +903,12 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             margin-bottom: 0.875rem;
             font-size: var(--text-body);
             font-weight: 600;
+            color: var(--footer-fg);
             text-transform: none;
             letter-spacing: 0;
+            /* Revert mobile heading centering so the column titles align with
+               their links on tablet+. */
+            justify-content: flex-start;
         }
 
         .footer__nav-heading::after {
@@ -860,8 +919,16 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             display: flex;
         }
 
+        /* Tablet+ reverts the mobile 2-column grid back to a vertical stack
+           inside each nav section (the section columns themselves already
+           sit side-by-side in `.footer__nav` above). Drop the centering
+           set on mobile too. */
         .footer__nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
             padding: 0;
+            text-align: left;
         }
 
         /* Trust signals: 4 columns inline */

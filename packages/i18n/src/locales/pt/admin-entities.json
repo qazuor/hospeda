@@ -116,7 +116,28 @@
         "organizer": "Organizador",
         "startDate": "Data de Início",
         "endDate": "Data de Fim",
-        "actions": "Ações"
+        "actions": "Ações",
+        "title": "Título",
+        "displayName": "Nome Visível",
+        "fullName": "Nome Completo",
+        "role": "Função",
+        "authProvider": "Provedor de Autenticação",
+        "builtIn": "Predefinido",
+        "department": "Departamento",
+        "neighborhood": "Bairro",
+        "placeName": "Nome do Local",
+        "icon": "Ícone",
+        "weight": "Peso",
+        "published": "Publicado",
+        "readingTime": "Tempo de Leitura",
+        "sponsor": "Patrocinador",
+        "sponsorship": "Patrocínio",
+        "eventsCount": "Eventos",
+        "destinationsCount": "Destinos",
+        "postsCount": "Publicações",
+        "relatedAccommodation": "Rel. Hospedagem",
+        "relatedDestination": "Rel. Destino",
+        "relatedEvent": "Rel. Evento"
     },
     "actions": {
         "view": "Ver",
@@ -177,6 +198,7 @@
         "created": "{entity} criado com sucesso",
         "updated": "{entity} atualizado com sucesso",
         "deleted": "{entity} excluído com sucesso",
+        "deletedFeminine": "{entity} excluída com sucesso",
         "archived": "{entity} arquivado com sucesso",
         "restored": "{entity} restaurado com sucesso",
         "published": "{entity} publicado com sucesso",
@@ -249,16 +271,20 @@
         "lifecycle": {
             "draft": "Rascunho",
             "active": "Ativo",
-            "archived": "Arquivado"
+            "inactive": "Inativo",
+            "archived": "Arquivado",
+            "deleted": "Deletado"
         },
         "moderation": {
             "pending": "Pendente",
             "approved": "Aprovado",
-            "rejected": "Rejeitado"
+            "rejected": "Rejeitado",
+            "underReview": "Em revisão"
         },
         "visibility": {
             "public": "Público",
             "private": "Privado",
+            "hidden": "Oculto",
             "restricted": "Restrito"
         },
         "publishStatus": {
@@ -281,6 +307,14 @@
             "motel": "Motel",
             "resort": "Resort"
         },
+        "amenity": {
+            "basic": "Básica",
+            "comfort": "Conforto",
+            "luxury": "Luxo",
+            "technology": "Tecnologia",
+            "recreation": "Recreação",
+            "business": "Negócios"
+        },
         "event": {
             "concert": "Show",
             "festival": "Festival",
@@ -289,7 +323,52 @@
             "workshop": "Oficina",
             "sports": "Esportes",
             "theater": "Teatro",
+            "music": "Música",
+            "gastronomy": "Gastronomia",
+            "nature": "Natureza",
+            "culture": "Cultura",
             "other": "Outro"
+        },
+        "postCategory": {
+            "events": "Eventos",
+            "culture": "Cultura",
+            "gastronomy": "Gastronomia",
+            "nature": "Natureza",
+            "tourism": "Turismo",
+            "general": "Geral",
+            "sport": "Esporte",
+            "carnival": "Carnaval",
+            "nightlife": "Vida Noturna",
+            "history": "História",
+            "traditions": "Tradições",
+            "wellness": "Bem-estar",
+            "family": "Família",
+            "tips": "Dicas",
+            "art": "Arte",
+            "beach": "Praia",
+            "rural": "Rural",
+            "festivals": "Festivais"
+        },
+        "sponsor": {
+            "postSponsor": "Patrocinador de Publicação",
+            "advertiser": "Anunciante",
+            "host": "Anfitrião"
+        },
+        "userRole": {
+            "superAdmin": "Super Admin",
+            "admin": "Administrador",
+            "editor": "Editor",
+            "host": "Anfitrião",
+            "user": "Usuário",
+            "guest": "Convidado",
+            "system": "Sistema"
+        },
+        "authProvider": {
+            "local": "Local",
+            "google": "Google",
+            "facebook": "Facebook",
+            "github": "GitHub",
+            "betterAuth": "Better Auth"
         }
     },
     "viewFields": {

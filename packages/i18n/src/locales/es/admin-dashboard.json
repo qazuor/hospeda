@@ -9,7 +9,9 @@
         "posts": "Publicaciones",
         "accommodations": "Alojamientos",
         "events": "Eventos",
-        "destinations": "Destinos"
+        "destinations": "Destinos",
+        "attractions": "Atracciones",
+        "users": "Usuarios"
     },
     "charts": {
         "traffic": "Tráfico (últimos 7 días)",

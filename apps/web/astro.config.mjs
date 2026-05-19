@@ -63,7 +63,12 @@ export default defineConfig({
     output: 'server',
     trailingSlash: 'always',
     adapter: node({
-        mode: 'standalone'
+        mode: 'standalone',
+        // Astro 6 + @astrojs/node 10: serve response headers (including any
+        // attached by middleware) for prerendered pages too. Pays off once
+        // CSP migrates from middleware response.headers.set() to native
+        // security.csp (follow-up SPEC).
+        staticHeaders: true
     }),
 
     prefetch: {
@@ -71,7 +76,8 @@ export default defineConfig({
     },
 
     server: {
-        port: 4321
+        port: Number(process.env.PORT) || 4321,
+        host: process.env.HOST || undefined
     },
     image: {
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
@@ -88,21 +94,62 @@ export default defineConfig({
         ]
     },
     integrations: [
+        // Sentry runtime config lives in `sentry.client.config.ts` and
+        // `sentry.server.config.ts` (auto-discovered by @sentry/astro).
+        // Here we only configure build-time concerns: which org/project the
+        // source maps belong to, and the auth token used to upload them.
+        // `dsn` is intentionally NOT passed here (deprecated path in
+        // @sentry/astro >= 10; would warn at every build).
         ...(process.env.PUBLIC_SENTRY_DSN
             ? [
                   sentry({
-                      dsn: process.env.PUBLIC_SENTRY_DSN,
-                      sourceMapsUploadOptions: {
-                          enabled: Boolean(process.env.SENTRY_AUTH_TOKEN)
-                      }
+                      org: 'qazuor',
+                      project: 'hospeda-web',
+                      authToken: process.env.SENTRY_AUTH_TOKEN
                   })
               ]
             : []),
         react(),
         sitemap({
             filter: (page) => {
-                const excludePatterns = ['/auth/', '/mi-cuenta/', '/busqueda/', '/feedback/'];
+                const excludePatterns = [
+                    '/auth/',
+                    '/mi-cuenta/',
+                    '/busqueda/',
+                    '/feedback/',
+                    '/beta/'
+                ];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
+            },
+            // Inject hreflang alternates for each entry so search engines know
+            // the three locales (es/en/pt) are translations of the same page.
+            // Improves international SEO for the Argentina-Litoral market.
+            // Skips XML paths (e.g. customPages-injected sitemap-of-sitemaps)
+            // since hreflang on a sitemap file is not meaningful.
+            serialize(item) {
+                const siteUrl = HOSPEDA_SITE_URL.replace(/\/$/, '');
+                const url = new URL(item.url);
+                if (url.pathname.endsWith('.xml')) {
+                    return item;
+                }
+                const localeMatch = url.pathname.match(/^\/(en|pt)(\/|$)/);
+                const pathWithoutLocale = localeMatch
+                    ? url.pathname.replace(/^\/(en|pt)/, '')
+                    : url.pathname;
+                const normalizedPath = pathWithoutLocale === '' ? '/' : pathWithoutLocale;
+                const links = [
+                    { lang: 'es', url: `${siteUrl}${normalizedPath}` },
+                    {
+                        lang: 'en',
+                        url: `${siteUrl}/en${normalizedPath === '/' ? '/' : normalizedPath}`
+                    },
+                    {
+                        lang: 'pt',
+                        url: `${siteUrl}/pt${normalizedPath === '/' ? '/' : normalizedPath}`
+                    },
+                    { lang: 'x-default', url: `${siteUrl}${normalizedPath}` }
+                ];
+                return { ...item, links };
             },
             // Include the dynamic sitemap (published entities × 3 locales) so
             // sitemap-index.xml lists it alongside the statically-generated sitemap.

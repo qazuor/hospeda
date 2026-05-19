@@ -1,14 +1,18 @@
 {
     "title": "Usamos cookies",
-    "description": "A Hospeda usa cookies para garantir o funcionamento do site e, com o seu consentimento, para analisar como você o utiliza. Os cookies necessários estão sempre ativos.",
+    "description": "A Hospeda usa cookies para garantir o funcionamento do site e, com o seu consentimento, para reportar erros e analisar como você o utiliza. Os cookies necessários estão sempre ativos.",
     "categories": {
         "necessary": {
             "label": "Necessários",
             "description": "Cookies indispensáveis para o funcionamento do site: sessão do usuário, preferência de idioma e estado de consentimento. Não podem ser desativados."
         },
+        "crashReporting": {
+            "label": "Relatório de erros",
+            "description": "Envia para o Sentry os erros que ocorrem enquanto você usa o site (sem informação pessoal identificável). Permite-nos corrigir bugs que afetam você. Recomendamos deixar ativo."
+        },
         "analytics": {
-            "label": "Análise",
-            "description": "Nos ajudam a entender como os visitantes interagem com o site (Sentry para monitoramento de erros). Só são ativados com o seu consentimento."
+            "label": "Análise de uso",
+            "description": "Estatísticas anônimas sobre como os visitantes navegam o site (páginas mais vistas, fluxos de busca). Não inclui monitoramento de erros."
         },
         "marketing": {
             "label": "Marketing",

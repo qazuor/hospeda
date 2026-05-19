@@ -15,19 +15,66 @@
  * @module routes/billing/plan-change
  */
 
-import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
-import { BILLING_EVENT_TYPES, withServiceTransaction } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
-import { clearEntitlementCache } from '../../middlewares/entitlement';
-import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service';
+import {
+    SubscriptionCheckoutError,
+    initiatePaidPlanUpgrade
+} from '../../services/subscription-checkout.service';
+import {
+    SubscriptionDowngradeError,
+    scheduleSubscriptionDowngrade
+} from '../../services/subscription-downgrade.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
+import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
+
+/**
+ * Map a `SubscriptionCheckoutError` from the upgrade service to an
+ * `HTTPException`. Kept colocated with the plan-change handler because
+ * it shares the error union with `start-paid.ts`'s mapper — see that
+ * file for the full mapping rationale.
+ */
+function mapUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
+    switch (err.code) {
+        case 'PLAN_NOT_FOUND':
+        case 'NO_MATCHING_PRICE':
+        case 'CUSTOMER_NOT_FOUND':
+        case 'SUBSCRIPTION_NOT_FOUND':
+            return new HTTPException(404, { message: err.message });
+        case 'SAME_PLAN':
+        case 'NOT_AN_UPGRADE':
+            return new HTTPException(422, { message: err.message });
+        case 'MISSING_INIT_POINT':
+            return new HTTPException(500, { message: err.message });
+        default:
+            return new HTTPException(500, { message: err.message });
+    }
+}
+
+/**
+ * Map a `SubscriptionDowngradeError` from the schedule service to an
+ * `HTTPException`. Mirrors the upgrade mapper above — the two flows
+ * have distinct error unions so they cannot share a mapper.
+ */
+function mapDowngradeErrorToHttp(err: SubscriptionDowngradeError): HTTPException {
+    switch (err.code) {
+        case 'SUBSCRIPTION_NOT_FOUND':
+        case 'PLAN_NOT_FOUND':
+        case 'NO_MATCHING_PRICE':
+            return new HTTPException(404, { message: err.message });
+        case 'SAME_PLAN':
+        case 'NOT_A_DOWNGRADE':
+            return new HTTPException(422, { message: err.message });
+        default:
+            return new HTTPException(500, { message: err.message });
+    }
+}
 
 /**
  * Mapped QZPay interval with count for multi-month periods.
@@ -214,115 +261,123 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
         const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
 
-        // 9. Capture oldPlanId BEFORE changePlan() mutates the subscription record
-        const oldPlanId = activeSubscription.planId;
-
-        // 10. Change the plan with appropriate proration behavior
-        const result = await billing.subscriptions.changePlan(activeSubscription.id, {
-            newPlanId,
-            newPriceId: targetPrice.id,
-            prorationBehavior: isUpgrade ? 'create_prorations' : 'none',
-            applyAt: isUpgrade ? 'immediately' : 'period_end'
-        });
-
-        // 11. Recalculate addon limits for the new plan (Flow B — AC-3.8).
-        //     This is the PRIMARY trigger. Runs after QZPay confirms the plan change.
-        //     Failures are logged and non-blocking: the plan change already succeeded.
-        //
-        //     NOTE: billing.subscriptions.changePlan() (step 10) is an external API call
-        //     to QZPay and cannot be rolled back via SQL transaction. Only the local DB
-        //     operations (addon recalculation) are wrapped in withServiceTransaction so
-        //     partial local writes are atomically rolled back on failure.
-        //
-        // SPEC-064 OP-2: If local transaction fails after QZPay plan change succeeds,
-        // we log a PLAN_CHANGE_LOCAL_FAILED compensating event. The webhook safety net
-        // in subscription-logic.ts provides eventual consistency — when QZPay sends
-        // subsequent webhooks, the handlers reconcile local DB state with QZPay state.
-        const subscriptionId = result.subscription.id;
-        try {
-            await withServiceTransaction(async (ctx) => {
-                await handlePlanChangeAddonRecalculation({
-                    customerId: billingCustomerId,
-                    oldPlanId,
-                    newPlanId,
-                    billing,
-                    // ctx.tx is always defined inside withServiceTransaction
-                    // biome-ignore lint/style/noNonNullAssertion: tx is guaranteed by withServiceTransaction
-                    db: ctx.tx!
+        // SPEC-141 D7 — upgrade branch. The local subscription is NOT
+        // mutated here: the user is redirected to MP to pay the prorated
+        // delta, and `confirmPlanUpgrade` (payment-logic.ts) commits the
+        // plan change once the payment.updated webhook lands. Returning
+        // a `pending_payment` response keeps the legacy synchronous
+        // downgrade flow below intact.
+        if (isUpgrade) {
+            if (qzpayInterval !== 'month' && qzpayInterval !== 'year') {
+                // mapBillingIntervalToQZPay only emits 'month'|'year' for the
+                // intervals SUPPORTED_INTERVALS allows; this guard exists to
+                // narrow the type for `initiatePaidPlanUpgrade` and to
+                // surface a clear error if a future caller widens the union.
+                throw new HTTPException(422, {
+                    message: `Upgrade flow does not support interval '${qzpayInterval}'`
                 });
-            });
-        } catch (recalcError) {
-            const recalcMessage =
-                recalcError instanceof Error ? recalcError.message : String(recalcError);
-
-            // Log compensating event OUTSIDE the (now rolled-back) transaction.
-            // This insert uses the top-level db connection so it persists even though
-            // the local transaction failed.
-            const db = getDb();
-            await db.insert(billingSubscriptionEvents).values({
-                subscriptionId,
-                eventType: BILLING_EVENT_TYPES.PLAN_CHANGE_LOCAL_FAILED,
-                triggerSource: 'plan-change-compensating',
-                metadata: {
-                    oldPlanId,
+            }
+            try {
+                const upgradeResult = await initiatePaidPlanUpgrade({
+                    customerId: billingCustomerId,
+                    currentSubscriptionId: activeSubscription.id,
                     newPlanId,
-                    error: recalcMessage,
-                    timestamp: new Date().toISOString()
+                    billingInterval: qzpayInterval,
+                    intervalCount: qzpayIntervalCount,
+                    billing,
+                    urls: {
+                        successUrl: `${env.HOSPEDA_SITE_URL}/billing/return`,
+                        cancelUrl: `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`,
+                        notificationUrl: `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`
+                    },
+                    statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                });
+
+                apiLogger.info(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: activeSubscription.id,
+                        oldPlanId: activeSubscription.planId,
+                        newPlanId,
+                        deltaCentavos: upgradeResult.deltaCentavos
+                    },
+                    'Plan upgrade initiated, awaiting prorated delta payment'
+                );
+
+                return {
+                    status: 'pending_payment' as const,
+                    checkoutUrl: upgradeResult.checkoutUrl,
+                    localSubscriptionId: upgradeResult.localSubscriptionId,
+                    expiresAt: upgradeResult.expiresAt,
+                    newPlanId: upgradeResult.newPlanId,
+                    deltaCentavos: upgradeResult.deltaCentavos
+                };
+            } catch (upgradeError) {
+                if (upgradeError instanceof SubscriptionCheckoutError) {
+                    throw mapUpgradeErrorToHttp(upgradeError);
                 }
+                throw upgradeError;
+            }
+        }
+
+        // SPEC-141 D7 — downgrade branch.
+        //
+        // The legacy synchronous flow (billing.subscriptions.changePlan
+        // immediately + addon recalc + MP preapproval propagation) is
+        // replaced by writing a `scheduledPlanChange` on the local sub.
+        // When `applyAt` (= currentPeriodEnd) is reached, the
+        // `apply-scheduled-plan-changes` cron commits the actual
+        // changePlan + MP propagate + addon recalc. The user keeps the
+        // current plan's entitlements for the rest of the billing cycle
+        // — which is the correct behaviour because they already paid
+        // for it.
+        try {
+            const scheduleResult = await scheduleSubscriptionDowngrade({
+                currentSubscriptionId: activeSubscription.id,
+                newPlanId,
+                billingInterval: qzpayInterval as 'month' | 'year',
+                intervalCount: qzpayIntervalCount,
+                billing,
+                requestedBy: actor.id
             });
 
-            // Don't re-throw — the QZPay plan change already succeeded.
-            // The webhook safety net provides eventual consistency.
-            apiLogger.error(
+            apiLogger.info(
                 {
                     customerId: billingCustomerId,
-                    subscriptionId,
-                    oldPlanId,
-                    newPlanId,
-                    error: recalcMessage
+                    subscriptionId: scheduleResult.subscriptionId,
+                    previousPlanId: scheduleResult.previousPlanId,
+                    newPlanId: scheduleResult.newPlanId,
+                    applyAt: scheduleResult.applyAt,
+                    replacedPriorSchedule: scheduleResult.replacedPriorSchedule
                 },
-                'Plan change local transaction failed, compensating event logged'
+                'Plan downgrade scheduled, awaiting apply-scheduled-plan-changes cron'
             );
+
+            // SPEC-064 T-051: Audit log for billing plan change.
+            // Logs at request-time (when the user expressed intent) — the
+            // cron logs its own audit event when the change actually
+            // applies.
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: 'subscription_plan',
+                resourceId: scheduleResult.subscriptionId
+            });
+
+            return {
+                status: 'scheduled' as const,
+                subscriptionId: scheduleResult.subscriptionId,
+                previousPlanId: scheduleResult.previousPlanId,
+                newPlanId: scheduleResult.newPlanId,
+                effectiveAt: scheduleResult.applyAt
+            };
+        } catch (downgradeError) {
+            if (downgradeError instanceof SubscriptionDowngradeError) {
+                throw mapDowngradeErrorToHttp(downgradeError);
+            }
+            throw downgradeError;
         }
-
-        // 12. Map to response format
-        const response: {
-            subscriptionId: string;
-            previousPlanId: string;
-            newPlanId: string;
-            effectiveAt: string;
-            proratedAmount?: number;
-            status: 'active' | 'scheduled';
-        } = {
-            subscriptionId: result.subscription.id,
-            previousPlanId: oldPlanId,
-            newPlanId,
-            effectiveAt: result.proration?.effectiveDate
-                ? result.proration.effectiveDate.toISOString()
-                : new Date().toISOString(),
-            status: isUpgrade ? 'active' : 'scheduled'
-        };
-
-        // Add prorated amount only for upgrades
-        if (isUpgrade && result.proration) {
-            response.proratedAmount = result.proration.chargeAmount - result.proration.creditAmount;
-        }
-
-        // Clear entitlement cache to reflect plan change immediately
-        clearEntitlementCache(billingCustomerId);
-
-        // SPEC-064 T-051: Audit log for billing plan change.
-        // Use actor.id (authenticated user) for cross-audit traceability;
-        // resourceId carries the subscription ID which links back to the customer.
-        auditLog({
-            auditEvent: AuditEventType.BILLING_MUTATION,
-            actorId: actor.id,
-            action: 'update',
-            resourceType: 'subscription_plan',
-            resourceId: result.subscription.id
-        });
-
-        return response;
     } catch (error) {
         // Re-throw HTTP exceptions as-is
         if (error instanceof HTTPException) {

@@ -132,6 +132,7 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
                             maxHeight && 'overflow-y-auto'
                         )}
                         style={{ maxHeight }}
+                        tabIndex={maxHeight ? 0 : undefined}
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized with DOMPurify
                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
                     />

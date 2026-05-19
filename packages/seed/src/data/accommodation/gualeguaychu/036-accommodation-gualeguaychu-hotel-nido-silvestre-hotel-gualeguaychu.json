@@ -17,8 +17,45 @@
         "preferredPhone": "MOBILE"
     },
     "price": {
-        "price": 23000,
-        "currency": "ARS"
+        "price": 47500,
+        "currency": "ARS",
+        "additionalFees": {
+            "tax": {
+                "price": 9,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerStay": true
+            },
+            "lateCheckout": {
+                "price": 3500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "pets": {
+                "price": 2000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "bedlinen": {
+                "price": 2500,
+                "currency": "ARS",
+                "isPerStay": true
+            },
+            "towels": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "weekly": {
+                "price": 12,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -30,40 +67,46 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada y jardín del hotel",
-            "description": "Vista exterior de Nido Silvestre Hotel rodeado de verde",
+            "url": "https://images.pexels.com/photos/34559240/pexels-photo-34559240.jpeg",
+            "caption": "Habitación de lujo",
+            "description": "Habitación amplia con diseño contemporáneo y mobiliario premium",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista frontal del hotel",
+                "url": "https://images.pexels.com/photos/5378699/pexels-photo-5378699.jpeg",
+                "caption": "Pareja en el lobby",
+                "description": "Pareja caminando por un lobby lujoso del hotel con detalles elegantes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Piscina",
-                "description": "Área de piscina y solárium",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "url": "https://images.pexels.com/photos/13722872/pexels-photo-13722872.jpeg",
                 "caption": "Habitación doble",
-                "description": "Habitación con camas individuales",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Habitación triple",
-                "description": "Habitación con cama matrimonial y una individual",
+                "description": "Habitación del hotel con cama doble y diseño moderno cuidado",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador con vista al jardín",
+                "caption": "Lobby bar",
+                "description": "Bar elegante del hotel con iluminación tenue y ambiente sofisticado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/36816426/pexels-photo-36816426.jpeg",
+                "caption": "Habitación matrimonial",
+                "description": "Habitación con cama doble, lámparas suaves y diseño elegante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación superior",
+                "description": "Habitación contemporánea minimalista con iluminación cálida",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7512139/pexels-photo-7512139.jpeg",
+                "caption": "Recepción del hotel",
+                "description": "Vista aérea de la recepción moderna del hotel con huéspedes en el lobby",
                 "moderationState": "APPROVED"
             }
         ]

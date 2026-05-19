@@ -484,8 +484,8 @@ For issues, questions, or contributions:
 
 - [Drizzle ORM Documentation](https://orm.drizzle.team)
 - [Faker.js Documentation](https://fakerjs.dev)
-- [Hospeda Architecture Docs](../../../docs/architecture/)
-- [Database Schema Reference](../../db/docs/)
+- [Hospeda Architecture Docs](../../../docs/architecture/README.md)
+- [Database Schema Reference](../../db/docs/README.md)
 
 ---
 

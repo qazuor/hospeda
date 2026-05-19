@@ -80,4 +80,4 @@ Dark mode is toggled via a `ThemeToggle` React island in the header. Theme prefe
 
 ## Related Documentation
 
-- [Branding and Theming Guide](../../docs/guides/branding-and-theming.md)
+- [Web App Style Guide](../../apps/web/STYLE_GUIDE.md) — design tokens, colors, typography, component patterns

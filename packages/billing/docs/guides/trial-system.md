@@ -52,4 +52,4 @@ After a paid subscription payment fails:
 
 For the full trial system implementation including API endpoints, cron jobs, and state transitions, see:
 
-- [Trial System (API Documentation)](../../../apps/api/docs/trial-system.md)
+- [Trial System (API Documentation)](../../../../apps/api/docs/trial-system.md)

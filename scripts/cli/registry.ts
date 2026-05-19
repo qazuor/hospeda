@@ -338,9 +338,8 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
     },
 
     // ── Environment (1) ──────────────────────────────────────
-    // env:pull / env:push / env:sync / env:check are deprecated — they
-    // targeted Vercel which is gone (Phase 16.4). Use hops env-* on the
-    // VPS instead. See docs/guides/env-management.md.
+    // Remote env management lives in hops env-* on the VPS — see
+    // docs/guides/env-management.md.
     {
         id: 'env:check:registry',
         description: 'Validate env schemas match @repo/config registry (local)',

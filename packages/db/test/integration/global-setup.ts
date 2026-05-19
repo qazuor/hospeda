@@ -108,20 +108,31 @@ export async function setup(): Promise<void> {
         );
     }
 
-    // 5. Apply triggers, materialized views, CHECK constraints. Failure here
-    //    is non-fatal: the core tx-propagation tests do not depend on them.
-    const extrasScript = resolve(pkgDir, 'scripts/apply-postgres-extras.sh');
+    // 5. Apply triggers, materialized views, CHECK constraints. Use the Node
+    //    variant (apply-postgres-extras.mjs) which uses the `pg` driver and
+    //    has no dependency on the `psql` CLI being installed on the runner.
+    //    The shell variant requires postgresql-client which is NOT present
+    //    on GitHub Actions ubuntu-latest images by default — switching to
+    //    the .mjs keeps CI green without an extra apt-get install step
+    //    (SPEC-108 T-108-03).
+    //    Failure here is non-fatal: the core tx-propagation tests do not
+    //    depend on them, and tests that DO require triggers/views should
+    //    gate on the boolean exported below.
+    const extrasScript = resolve(pkgDir, 'scripts/apply-postgres-extras.mjs');
     try {
-        execFileSync('bash', [extrasScript, getTestConnectionString()], {
+        execFileSync('node', [extrasScript], {
             cwd: pkgDir,
+            env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
             stdio: 'pipe',
             timeout: 60_000
         });
+        process.env.HOSPEDA_TEST_POSTGRES_EXTRAS_APPLIED = '1';
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         console.warn(
-            `[integration-setup] apply-postgres-extras.sh failed (non-fatal).\n  Error: ${msg}\n  Tests that require triggers/views should skip via it.skipIf().`
+            `[integration-setup] apply-postgres-extras.mjs failed (non-fatal).\n  Error: ${msg}\n  Tests that require triggers/views should skip via it.skipIf().`
         );
+        process.env.HOSPEDA_TEST_POSTGRES_EXTRAS_APPLIED = '0';
     }
 
     // 6. Export connection string for worker forks to inherit via fork() env.

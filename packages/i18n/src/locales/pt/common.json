@@ -52,6 +52,8 @@
     "loading": "Carregando...",
     "no": "Não",
     "optional": "Opcional",
+    "photos_one": "{{count}} foto",
+    "photos_other": "{{count}} fotos",
     "pricePerNight": "por noite",
     "readMore": "Ler mais",
     "required": "Obrigatório",

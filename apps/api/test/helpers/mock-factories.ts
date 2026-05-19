@@ -100,6 +100,7 @@ export function createMockSubscription(overrides?: Partial<QZPaySubscription>): 
         providerSubscriptionIds: {},
         promoCodeId: null,
         metadata: {},
+        scheduledPlanChange: null,
         livemode: false,
         createdAt: now,
         updatedAt: now,

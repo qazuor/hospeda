@@ -23,9 +23,22 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
         // Load config at request time so process.env overrides (tests) are respected
         const config = { ...getValidationConfig(), ...options.config } as ValidationConfig;
         try {
-            // Auto-skip validation for basic public endpoints
+            // Auto-skip validation for basic public endpoints + webhook receivers.
+            //
+            // External webhook providers (Brevo, MercadoPago, etc.) authenticate
+            // via signature / shared-secret headers and frequently omit `User-Agent`
+            // or send `Content-Type: application/json` variants that the generic
+            // validator rejects. Each webhook handler does its own auth check; the
+            // framework-level validation here is overhead with no security benefit
+            // for those routes. Adding `/api/v1/public/webhooks` covers the brevo
+            // dispatch webhook (SPEC-101) plus any future receivers mounted under
+            // the same prefix.
             const path = c.req.path;
-            const publicPaths = ['/api/v1/health', '/api/v1/public/health'];
+            const publicPaths = [
+                '/api/v1/health',
+                '/api/v1/public/health',
+                '/api/v1/public/webhooks'
+            ];
             const isPublicPath = publicPaths.some((publicPath) => path.startsWith(publicPath));
 
             // Allow routes to opt-out of validation via route options.

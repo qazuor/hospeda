@@ -8,6 +8,7 @@
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { RefreshIcon, ChatIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
@@ -30,59 +31,112 @@ const feedbackParams = new URLSearchParams({
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 
 const showDevDetails = isDevelopment();
+const destructiveColor = 'oklch(0.55 0.2 30)';
 ---
 
 <ErrorLayout locale={locale} title={t('error.500.title')} description={t('error.500.description')} noindex={true}>
-	<!-- Illustrated icon -->
-	<div class="err500-illustration" aria-hidden="true">
-		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<circle cx="60" cy="60" r="54" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.12" />
-			<circle cx="60" cy="60" r="40" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.08" />
-			<circle cx="60" cy="60" r="20" stroke="var(--destructive, #ef4444)" stroke-width="2" fill="oklch(from var(--destructive, #ef4444) l c h / 0.06)" />
-			<circle cx="60" cy="60" r="8" stroke="var(--destructive, #ef4444)" stroke-width="2" fill="none" />
-			<line x1="60" y1="50" x2="60" y2="58" stroke="var(--destructive, #ef4444)" stroke-width="2.5" stroke-linecap="round" />
-			<circle cx="60" cy="64" r="1.5" fill="var(--destructive, #ef4444)" />
-			<circle cx="60" cy="30" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="60" cy="90" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="30" cy="60" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
-			<circle cx="90" cy="60" r="3" fill="var(--destructive, #ef4444)" opacity="0.15" />
+	<StatusPage
+		variant="error"
+		title={t('error.500.heading')}
+		description={t('error.500.message')}
+		hideBlob
+	>
+		<svg
+			slot="illustration"
+			width="120"
+			height="120"
+			viewBox="0 0 120 120"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<circle cx="60" cy="60" r="54" stroke={destructiveColor} stroke-width="1.5" opacity="0.12" />
+			<circle cx="60" cy="60" r="40" stroke={destructiveColor} stroke-width="1.5" opacity="0.08" />
+			<circle cx="60" cy="60" r="20" stroke={destructiveColor} stroke-width="2" fill={`oklch(from ${destructiveColor} l c h / 0.06)`} />
+			<circle cx="60" cy="60" r="8" stroke={destructiveColor} stroke-width="2" fill="none" />
+			<line x1="60" y1="50" x2="60" y2="58" stroke={destructiveColor} stroke-width="2.5" stroke-linecap="round" />
+			<circle cx="60" cy="64" r="1.5" fill={destructiveColor} />
+			<circle cx="60" cy="30" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="60" cy="90" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="30" cy="60" r="3" fill={destructiveColor} opacity="0.15" />
+			<circle cx="90" cy="60" r="3" fill={destructiveColor} opacity="0.15" />
 		</svg>
-	</div>
 
-	<div class="err500-code" aria-hidden="true">500</div>
-
-	<h1 class="err500-title">{t('error.500.heading')}</h1>
-	<p class="err500-message">{t('error.500.message')}</p>
-
-	<div class="err500-actions">
-		<GradientButton as="button" id="retry-btn" label={t('error.500.retry')} variant="primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			as="button"
+			id="retry-btn"
+			label={t('error.500.retry')}
+			variant="primary"
+			shape="rounded"
+		>
 			<RefreshIcon slot="leading" size={18} />
 		</GradientButton>
-		<GradientButton href={feedbackWithParams} label="Reportar problema" variant="outline-primary" shape="rounded">
+		<GradientButton
+			slot="actions"
+			href={feedbackWithParams}
+			label="Reportar problema"
+			variant="outline-primary"
+			shape="rounded"
+		>
 			<ChatIcon slot="leading" size={18} />
 		</GradientButton>
-	</div>
 
-	<a href={homeUrl} class="err500-home-link">
-		{t('error.500.goHome')}
-	</a>
+		<a slot="footer" href={homeUrl}>
+			{t('error.500.goHome')}
+		</a>
 
-	{showDevDetails && (
-		<details class="err500-dev">
-			<summary class="err500-dev__summary">Detalles del error (dev)</summary>
-			<div class="err500-dev__content">
-				<p><strong>URL:</strong> {Astro.url.href}</p>
-				<p><strong>Method:</strong> {Astro.request.method}</p>
-				<p><strong>Timestamp:</strong> {new Date().toISOString()}</p>
-				<p class="err500-dev__hint">Revisá la terminal del dev server para el stack trace completo.</p>
-			</div>
-		</details>
-	)}
+		{showDevDetails && (
+			<details slot="extras" class="err500-dev">
+				<summary class="err500-dev__summary">Detalles del error (dev)</summary>
+				<div class="err500-dev__content">
+					<p><strong>URL:</strong> {Astro.url.href}</p>
+					<p><strong>Method:</strong> {Astro.request.method}</p>
+					<p><strong>Timestamp:</strong> {new Date().toISOString()}</p>
+					<p class="err500-dev__hint">Revisá la terminal del dev server para el stack trace completo.</p>
+				</div>
+			</details>
+		)}
+	</StatusPage>
 </ErrorLayout>
+
+<style>
+	.err500-dev {
+		width: 100%;
+		text-align: left;
+	}
+	.err500-dev__summary {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		cursor: pointer;
+		user-select: none;
+		padding: 0.5rem;
+		border-radius: var(--radius-button, 8px);
+	}
+	.err500-dev__summary:hover {
+		background-color: oklch(0.62 0.2 30 / 0.06);
+	}
+	.err500-dev__content {
+		margin-top: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: oklch(0.62 0.2 30 / 0.05);
+		border: 1px solid oklch(0.62 0.2 30 / 0.12);
+		border-radius: var(--radius-button, 8px);
+		font-family: monospace;
+		font-size: 0.75rem;
+		color: var(--core-muted-foreground);
+	}
+	.err500-dev__content p { margin: 0 0 0.25rem; }
+	.err500-dev__content strong { color: var(--core-foreground); }
+	.err500-dev__hint {
+		margin-top: 0.75rem !important;
+		font-style: italic;
+		opacity: 0.7;
+	}
+</style>
 
 <script>
 	document.getElementById('retry-btn')?.addEventListener('click', () => {
 		window.location.reload();
 	});
 </script>
-

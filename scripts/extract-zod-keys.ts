@@ -512,7 +512,9 @@ async function main(): Promise<void> {
         warnings
     };
 
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(inventory, null, 4), 'utf8');
+    // Append a trailing newline so the file matches the POSIX text-file convention used by
+    // the committed inventory; without it, every `--verify` run produced spurious git diff noise.
+    fs.writeFileSync(OUTPUT_FILE, `${JSON.stringify(inventory, null, 4)}\n`, 'utf8');
 
     if (verifyMode) {
         const results = verifyKeysAgainstLocales(allKeys);

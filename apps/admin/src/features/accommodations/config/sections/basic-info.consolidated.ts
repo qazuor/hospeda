@@ -39,6 +39,25 @@ export const createBasicInfoConsolidatedSection = (
             },
             typeConfig: {}
         },
+        // Required by AccommodationSchema (10-300 chars). Add Spanish strings
+        // inline until fields.accommodation.summary.* keys ship (SPEC-117 D-ACCOM.1).
+        {
+            id: 'summary',
+            type: FieldTypeEnum.TEXTAREA,
+            required: true,
+            modes: ['view', 'edit', 'create'],
+            label: 'Resumen',
+            description: 'Descripción breve del alojamiento (10-300 caracteres)',
+            placeholder: 'Una frase atractiva para tarjetas y resultados de búsqueda...',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
+            },
+            typeConfig: {
+                minRows: 2,
+                maxLength: 300
+            }
+        },
         {
             id: 'description',
             type: FieldTypeEnum.TEXTAREA,

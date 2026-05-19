@@ -66,15 +66,41 @@
     box-shadow: var(--shadow-card, 0 4px 14px rgb(0 0 0 / 0.18));
 }
 
+/* Beefier close button so it's tappable and doesn't disappear behind the
+ * FavoriteButton in the popup header. We re-anchor it (top:6/right:6) and
+ * give it a translucent disc background so it reads against any popup
+ * content. */
+/* Anchor the close button on the same 32px-tall baseline as the chips,
+ * the featured badge and the favorite button so the entire header row
+ * reads as one strip of equal-height pills.
+ * top:16 = body padding-top, matching the header row's own top edge. */
 .popup :global(.leaflet-popup-close-button) {
-    color: var(--core-foreground);
-    padding: 8px 8px 0 0;
-    font-size: 1.25rem;
-    z-index: 2;
+    position: absolute;
+    top: 16px !important;
+    right: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--core-foreground) !important;
+    font-size: 1.5rem !important;
+    line-height: 1 !important;
+    border-radius: 9999px !important;
+    background-color: rgb(255 255 255 / 0.95) !important;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.18);
+    z-index: 3;
+    transition: background-color 150ms ease-out, transform 150ms ease-out;
+}
+
+.popup :global(.leaflet-popup-close-button:hover) {
+    background-color: #fff;
+    transform: scale(1.05);
 }
 
 .popupCard {
-    /* Fixed width so the wrapper expands and the image+text don't get clipped
+    /* Fixed width so the wrapper expands and the body doesn't get clipped
      * by Leaflet's default min-width / auto-sizing. */
     width: 280px;
     display: flex;
@@ -82,68 +108,80 @@
     background-color: var(--core-card);
 }
 
-.popupImageWrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
+/* Header row inside the body: type chip + featured badge on the left,
+ * favorite button on the right (the thumbnail used to host these — now
+ * they live in the body so the popup stays compact). The trailing
+ * padding-right reserves space for the Leaflet close button anchored at
+ * top-right of the wrapper, so the favorite + close never overlap. */
+.popupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 8px);
+    min-height: 32px;
+    padding-right: 40px;
+}
+
+.popupHeaderChips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    min-width: 0;
     overflow: hidden;
-    background-color: var(--surface-warm, #faf6f0);
-}
-
-.popupImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.popupTypeChip {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    padding: 4px 10px;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: rgb(255 255 255 / 0.92);
-    color: var(--core-foreground);
-    font-size: 0.75rem;
-    font-weight: 500;
-    backdrop-filter: blur(4px);
-}
-
-/**
- * SPEC-098 T-044: Wrapper that pins the FavoriteButton to the top-right
- * corner of the popup thumbnail, above the type chip layer (z-index 2).
- */
-.popupFavoriteBtn {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    z-index: 2;
 }
 
 .popupBody {
-    padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-4, 16px);
+    padding: var(--space-4, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 8px);
+    gap: 8px;
 }
 
-.popupTitleRow {
+/* Kill the global `p { margin: 1em 0 }` (and equivalent on headings) that
+ * sneaks in when the popup is portaled into Leaflet's overlay layer outside
+ * the scoped Astro tree — without this the title/city/summary lines pile up
+ * ~17px of vertical margin each and the body gap looks 4x bigger than the
+ * 8px we wrote. */
+.popupBody h3,
+.popupBody p {
+    margin: 0;
+}
+
+/* Title + city + summary should read as one tightly packed block. Title
+ * and city share a 2px gap inside this wrapper; the surrounding body gap
+ * (8px) handles the separation to the summary that follows. */
+.popupTitleBlock {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.popupTypeChip {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-secondary, oklch(0.95 0.02 80));
+    color: var(--core-foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .popupTitle {
     font-family: var(--font-heading, sans-serif);
-    font-size: 1rem;
+    font-size: 1.0625rem;
     font-weight: 600;
     color: var(--core-foreground);
     margin: 0;
-    line-height: 1.3;
-    flex: 1;
-    min-width: 0;
+    line-height: 1.25;
     /* Clamp to 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -153,7 +191,10 @@
 
 .popupFeaturedBadge {
     flex-shrink: 0;
-    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 8px;
     border-radius: var(--radius-pill, 9999px);
     background-color: var(--brand-accent);
     color: white;
@@ -161,7 +202,7 @@
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    line-height: 1.4;
+    line-height: 1;
     white-space: nowrap;
 }
 
@@ -169,6 +210,7 @@
     margin: 0;
     font-size: 0.8125rem;
     color: var(--core-muted-foreground);
+    line-height: 1.3;
 }
 
 .popupSummary {
@@ -188,12 +230,14 @@
     color: var(--core-muted-foreground);
 }
 
-.popupMeta {
+/* Footer row: price aligned left, "Ver más →" CTA aligned right, on the
+ * same baseline. Rating (when present) renders ABOVE this row as its own
+ * line. */
+.popupFooter {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2, 8px);
-    flex-wrap: wrap;
 }
 
 .popupRating {
@@ -218,21 +262,207 @@
     color: var(--core-foreground);
 }
 
-.popupCta {
-    margin-top: var(--space-1, 4px);
-    display: inline-block;
-    text-align: center;
-    padding: 8px 12px;
-    border-radius: var(--radius-button, 8px);
-    background-color: var(--brand-accent);
-    color: white;
-    font-size: 0.875rem;
+/* CTA matches `AccommodationCard.astro` (.acc-card__cta-btn) so the popup
+ * footer link reads exactly like the "Ver más →" pill used elsewhere in the
+ * listing. We pin color via :link/:visited because Leaflet portals the popup
+ * outside the React tree and global `a` styles win otherwise. */
+.popupCta,
+.popupCta:link,
+.popupCta:visited {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: var(--font-sans);
     font-weight: 500;
+    font-size: 12px;
+    line-height: 19.2px;
+    color: var(--core-foreground);
+    background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
     text-decoration: none;
-    transition: background-color var(--duration-normal, 0.4s) ease;
+    white-space: nowrap;
+    transition: opacity 200ms ease-out;
 }
 
 .popupCta:hover {
-    background-color: var(--accent-hover, #d97706);
-    color: white;
+    opacity: 0.85;
+    color: var(--core-foreground);
+    text-decoration: none;
+}
+
+/* ----- Selected item pulse (cards sidebar click on desktop) -----
+ * Rendered via a Leaflet divIcon (regular HTML), not a Circle path, so we
+ * have full CSS control over the animation. Two expanding rings (staggered
+ * with a 0.8s delay) plus a steady center dot. The icon is anchored at
+ * (0, 0) and absolutely positions its children around that point. */
+.pulseIcon {
+    /* Leaflet positions the icon at its top-left; we want the visual center
+     * to land on the marker coord, so we anchor the rings/core absolutely
+     * with negative margins relative to (0, 0). */
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.pulseCore,
+.pulseRing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+}
+
+.pulseCore {
+    width: 14px;
+    height: 14px;
+    background-color: var(--primary, #2563eb);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+.pulseRing {
+    width: 14px;
+    height: 14px;
+    background-color: var(--primary, #2563eb);
+    animation: listing-map-pulse-ring 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.pulseRingDelayed {
+    animation-delay: 0.9s;
+}
+
+@keyframes listing-map-pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.6);
+        opacity: 0.7;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(5);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pulseRing,
+    .pulseRingDelayed {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/* ----- Accommodation item pill (Airbnb-style) -----
+ * Each item in the cluster renders a Marker with a divIcon that uses this
+ * pill instead of the default teardrop icon. The pill sits over its
+ * matching privacy Circle, carries the accommodation name (+ price when
+ * present), and clicks open the same popup that used to live on the Circle.
+ *
+ * The Leaflet `divIcon` is configured with iconSize/iconAnchor [0,0], so we
+ * position the inner pill absolutely with a translate(-50%, -100%) — its
+ * bottom-center sits exactly on the lat/lng coord, like a map "label".
+ */
+.itemPill {
+    /* Disable Leaflet's default icon background. */
+    background: transparent;
+    border: none;
+    pointer-events: none;
+}
+
+.itemPillInner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* Sit the pill's bottom-center on the marker coord (above the Circle's
+     * center). */
+    transform: translate(-50%, -100%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    max-width: 220px;
+    padding: 6px 14px;
+    font-family: var(--font-sans);
+    line-height: 1.2;
+    color: var(--core-foreground);
+    background-color: var(--core-card, #fff);
+    border: 1px solid oklch(0 0 0 / 0.08);
+    /* Slightly softer corner radius on the stacked variant; the single-line
+     * pill keeps its fully rounded look via the base rule. */
+    border-radius: 9999px;
+    box-shadow: 0 2px 6px oklch(0 0 0 / 0.12), 0 6px 16px oklch(0 0 0 / 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Restore interactivity (parent disables it for the Leaflet default
+     * icon). */
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+}
+
+/* When the pill stacks name + price on two lines we soften the radius so the
+ * rectangle doesn't look pinched at the corners. */
+.itemPillStacked {
+    border-radius: 12px;
+    padding: 6px 14px 7px;
+}
+
+.itemPillName {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.itemPillPrice {
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--brand-accent);
+}
+
+.itemPillInner:hover,
+.itemPillHovered {
+    transform: translate(-50%, calc(-100% - 2px));
+    box-shadow: 0 4px 10px oklch(0 0 0 / 0.18), 0 10px 24px oklch(0 0 0 / 0.14);
+    background-color: var(--core-card, #fff);
+    border-color: oklch(from var(--brand-accent) l c h / 0.4);
+}
+
+/* ----- Cluster icon sizing override -----
+ * `leaflet.markercluster` hard-codes 40x40 outer / 30x30 inner / 12px font for
+ * its cluster divIcon. Bump everything ~40% so the count circles read better
+ * on both desktop and mobile, without losing the library's color buckets
+ * (small/medium/large stay differentiated via the existing background fills).
+ *
+ * The library writes width/height and the centering margin INLINE on the
+ * outer element (driven by the divIcon's iconSize=[40,40]), so we need
+ * `!important` to win against those inline styles. The library also fixes
+ * the anchor at -20px from the lat/lng pixel; when the outer grows to 56px
+ * the new visual center sits 28px from the top-left, which would shift
+ * +8px down/right. We compensate with -28px margins (instead of the -20px
+ * the library writes), re-anchoring the visual center on the cluster point.
+ *
+ * The inner div + span are left to CSS (no inline styles from the library),
+ * so they don't need `!important`.
+ */
+:global(.marker-cluster) {
+    width: 64px !important;
+    height: 64px !important;
+    margin-left: -32px !important;
+    margin-top: -32px !important;
+    border-radius: 32px;
+}
+
+:global(.marker-cluster div) {
+    width: 50px;
+    height: 50px;
+    margin-left: 7px;
+    margin-top: 7px;
+    font-size: 16px;
+    border-radius: 25px;
+    font-weight: 600;
+}
+
+:global(.marker-cluster span) {
+    line-height: 50px;
 }

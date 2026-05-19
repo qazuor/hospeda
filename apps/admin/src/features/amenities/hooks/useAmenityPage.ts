@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createAmenityConsolidatedConfig } from '../config';
 import { useAmenityQuery, useUpdateAmenityMutation } from './useAmenityQuery';
@@ -14,6 +15,7 @@ import { useAmenityQuery, useUpdateAmenityMutation } from './useAmenityQuery';
  */
 export const useAmenityPage = (entityId: string) => {
     const navigate = useNavigate();
+    const { t } = useTranslations();
 
     // State for mode (view/edit)
     const [mode, setMode] = useState<'view' | 'edit'>('view');
@@ -25,7 +27,7 @@ export const useAmenityPage = (entityId: string) => {
 
     // Consolidated configuration
     const entityConfig = useMemo(() => {
-        const consolidatedConfig = createAmenityConsolidatedConfig();
+        const consolidatedConfig = createAmenityConsolidatedConfig(t);
 
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
         const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
@@ -35,7 +37,7 @@ export const useAmenityPage = (entityId: string) => {
             editSections,
             metadata: consolidatedConfig.metadata
         };
-    }, []);
+    }, [t]);
 
     // Permissions configuration - static
     const permissions = useMemo(

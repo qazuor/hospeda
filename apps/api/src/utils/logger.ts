@@ -42,7 +42,7 @@ const apiLogger = logger.registerCategory('API', 'API', {
     truncateLongText: safeGetEnvBoolean('API_LOG_TRUNCATE_TEXT', true),
     truncateLongTextAt: safeGetEnvNumber('API_LOG_TRUNCATE_AT', 1000),
     save: safeGetEnvBoolean('API_LOG_SAVE', false),
-    expandObjectLevels: safeGetEnvBoolean('API_LOG_EXPAND_OBJECTS', false) ? -1 : 0,
+    expandObjectLevels: safeGetEnvBoolean('API_LOG_EXPAND_OBJECTS', true) ? -1 : 0,
     stringifyObj: safeGetEnvBoolean('API_LOG_STRINGIFY', false)
 });
 

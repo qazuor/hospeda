@@ -16,6 +16,7 @@ import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignIn } from '@/components/auth/SignIn.client';
+import { HomeIcon, LocationIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -30,7 +31,7 @@ const t = createT(locale);
 const title = t('auth-ui.pages.signin.title', 'Iniciar sesión');
 const description = t(
     'auth-ui.pages.signin.description',
-    'Inicia sesion en tu cuenta de Hospeda'
+    'Iniciá sesión en tu cuenta de Hospeda'
 );
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -59,6 +60,41 @@ const isSafeRelativePath =
 const returnPath = isSafeRelativePath ? rawReturn : buildUrl({ locale, path: 'mi-cuenta' });
 const redirectTo = new URL(returnPath, Astro.url.origin).href;
 
+// SPEC-120: pick up OAuth failure signal from the API redirect.
+//
+// Better Auth `^1.4.18` redirects to errorCallbackURL with `?error=<code>`
+// (and optionally `&error_description=...`) when the OAuth flow fails — user
+// cancel, provider rejection, or any RFC 6749 §4.1.2.1 error. The API wrapper
+// also injects `&provider=<name>` so the banner can name the provider.
+//
+// We validate each value with a strict allowlist regex before forwarding to
+// the island: these come straight from a user-controlled redirect chain and
+// flow into both i18n key lookups and console.warn output. An unexpected
+// `error` code falls back to `'unknown'` (the i18n catch-all key).
+const rawErrorCode = Astro.url.searchParams.get('error');
+const oauthErrorCode = rawErrorCode
+    ? /^[a-z_]{1,64}$/.test(rawErrorCode)
+        ? rawErrorCode
+        : 'unknown'
+    : undefined;
+
+const rawErrorDescription = Astro.url.searchParams.get('error_description');
+const oauthErrorDescription = rawErrorDescription
+    ? rawErrorDescription.slice(0, 200)
+    : undefined;
+
+const rawProvider = Astro.url.searchParams.get('provider');
+const oauthProvider =
+    rawProvider && /^[a-z]{1,32}$/.test(rawProvider) ? rawProvider : undefined;
+
+const initialOAuthError = oauthErrorCode
+    ? {
+          code: oauthErrorCode,
+          description: oauthErrorDescription,
+          provider: oauthProvider
+      }
+    : undefined;
+
 // Localized secondary link labels via i18n
 const noAccountLabel = t('auth-ui.signIn.dontHaveAccount', "Don't have an account?");
 const signUpLabel = t('auth-ui.signIn.signUpLink', 'Sign Up');
@@ -66,8 +102,26 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
+    <div slot="decoratives" class="signin-deco" aria-hidden="true">
+        <div class="signin-deco__blob"></div>
+        <span class="signin-deco__shape signin-deco__shape--home">
+            <HomeIcon size={84} weight="duotone" />
+        </span>
+        <span class="signin-deco__badge signin-deco__badge--pin">
+            <LocationIcon size="md" weight="duotone" />
+        </span>
+        <span class="signin-deco__dot signin-deco__dot--1"></span>
+        <span class="signin-deco__dot signin-deco__dot--2"></span>
+    </div>
+
     <div class="auth-page-content">
-            <SignIn client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
+            <SignIn
+                client:load
+                locale={locale}
+                redirectTo={redirectTo}
+                showOAuth={true}
+                initialOAuthError={initialOAuthError}
+            />
 
             <div class="auth-page__links">
                 <a
@@ -90,6 +144,90 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
             </div>
     </div>
 </AuthLayout>
+
+<style is:global>
+    /* Decoratives — rendered inside the AuthLayout 'decoratives' slot, outside .auth-card. */
+    .signin-deco {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .signin-deco__blob {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: clamp(360px, 60vw, 720px);
+        height: clamp(360px, 60vw, 720px);
+        border-radius: 50%;
+        background: radial-gradient(
+            circle at 50% 50%,
+            oklch(from var(--brand-primary) l c h / 0.16),
+            oklch(from var(--brand-accent) l c h / 0.06) 55%,
+            transparent 75%
+        );
+        filter: blur(4px);
+    }
+
+    .signin-deco__shape {
+        position: absolute;
+        display: inline-flex;
+    }
+
+    .signin-deco__shape--home {
+        top: 14%;
+        left: 8%;
+        color: var(--brand-primary);
+        opacity: 0.35;
+        transform: rotate(-12deg);
+    }
+
+    .signin-deco__badge {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        color: var(--brand-accent);
+    }
+
+    .signin-deco__badge--pin {
+        bottom: 18%;
+        right: 10%;
+    }
+
+    .signin-deco__dot {
+        position: absolute;
+        border-radius: 50%;
+    }
+    .signin-deco__dot--1 {
+        top: 28%;
+        right: 14%;
+        width: 12px;
+        height: 12px;
+        background-color: oklch(from var(--brand-primary) l c h / 0.28);
+    }
+    .signin-deco__dot--2 {
+        bottom: 28%;
+        left: 12%;
+        width: 9px;
+        height: 9px;
+        background-color: oklch(from var(--brand-accent) l c h / 0.3);
+    }
+
+    @media (max-width: 700px) {
+        .signin-deco__shape,
+        .signin-deco__badge {
+            display: none;
+        }
+    }
+</style>
 
 <style>
     .auth-page {

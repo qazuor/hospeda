@@ -76,13 +76,18 @@ describe('formatter', () => {
             expect(parsed).toHaveProperty('a');
             const inner = parsed.a as Record<string, unknown>;
             expect(inner).toHaveProperty('b');
-            // At level 2, 'c' should be collapsed to [Object]
-            expect(inner.b).toBe('[Object]');
+            // At level 2 the depth budget is exhausted at 'b' — its value is
+            // serialized compactly (JSON.stringify) instead of collapsed to
+            // a literal '[Object]', so operators still see the content.
+            expect(inner.b).toBe(JSON.stringify({ c: 'deep' }));
         });
 
-        it('should return "[Object]" when expandLevels=0', () => {
-            const obj = { a: 1 };
-            expect(formatValue(obj, 0, false)).toBe('[Object]');
+        it('should serialize compactly when expandLevels=0 (no indent, but content visible)', () => {
+            const obj = { a: 1, b: 'two' };
+            // Was '[Object]' before — now returns JSON.stringify output to
+            // keep the operator-visible content while still respecting the
+            // "do not expand" intent (one-line, no indent).
+            expect(formatValue(obj, 0, false)).toBe(JSON.stringify(obj));
         });
 
         it('should return full JSON when expandLevels=-1 (no limit)', () => {
@@ -530,6 +535,47 @@ describe('formatter', () => {
             expect(redactSensitiveData(true)).toBe(true);
             expect(redactSensitiveData(null)).toBe(null);
             expect(redactSensitiveData(undefined)).toBe(undefined);
+        });
+
+        it('should extract Error fields (name, message, stack) instead of producing an empty object', () => {
+            const err = new Error('boom');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.name).toBe('Error');
+            expect(result.message).toBe('boom');
+            expect(typeof result.stack).toBe('string');
+            expect(result.stack).toContain('boom');
+        });
+
+        it('should preserve Error subclass names (e.g. TypeError)', () => {
+            const err = new TypeError('bad input');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.name).toBe('TypeError');
+            expect(result.message).toBe('bad input');
+        });
+
+        it('should serialize Error.cause when present', () => {
+            const inner = new Error('inner reason');
+            const outer = new Error('outer wrap', { cause: inner });
+            const result = redactSensitiveData(outer) as Record<string, unknown>;
+            expect(result.message).toBe('outer wrap');
+            const cause = result.cause as Record<string, unknown>;
+            expect(cause.message).toBe('inner reason');
+        });
+
+        it('should redact sensitive content inside Error.message', () => {
+            const err = new Error('Failed to send to user@example.com');
+            const result = redactSensitiveData(err) as Record<string, unknown>;
+            expect(result.message).toContain('[REDACTED]');
+            expect(result.message).not.toContain('user@example.com');
+        });
+
+        it('should serialize Error to JSON with all fields (was {} before fix)', () => {
+            const err = new Error('boom');
+            const result = redactSensitiveData(err);
+            const json = JSON.stringify(result);
+            expect(json).toContain('"name":"Error"');
+            expect(json).toContain('"message":"boom"');
+            expect(json).toContain('"stack"');
         });
     });
 });

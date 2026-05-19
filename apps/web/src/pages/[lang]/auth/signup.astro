@@ -17,6 +17,7 @@ import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignUp } from '@/components/auth/SignUp.client';
+import { SparkleIcon, UsersIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -29,7 +30,7 @@ if (Astro.locals.user) {
 const t = createT(locale);
 
 const title = t('auth-ui.pages.signup.title', 'Crear cuenta');
-const description = t('auth-ui.pages.signup.description', 'Crea tu cuenta en Hospeda');
+const description = t('auth-ui.pages.signup.description', 'Creá tu cuenta en Hospeda');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -62,6 +63,19 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
+    <div slot="decoratives" class="signup-deco" aria-hidden="true">
+        <div class="signup-deco__blob"></div>
+        <span class="signup-deco__shape signup-deco__shape--sparkle">
+            <SparkleIcon size={84} weight="duotone" />
+        </span>
+        <span class="signup-deco__badge signup-deco__badge--users">
+            <UsersIcon size="md" weight="duotone" />
+        </span>
+        <span class="signup-deco__dot signup-deco__dot--1"></span>
+        <span class="signup-deco__dot signup-deco__dot--2"></span>
+        <span class="signup-deco__dot signup-deco__dot--3"></span>
+    </div>
+
     <SignUp
         client:load
         locale={locale}
@@ -81,6 +95,97 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
         </a>
     </div>
 </AuthLayout>
+
+<style is:global>
+    /* Decoratives — rendered inside the AuthLayout 'decoratives' slot, outside .auth-card. */
+    .signup-deco {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .signup-deco__blob {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: clamp(360px, 60vw, 720px);
+        height: clamp(360px, 60vw, 720px);
+        border-radius: 50%;
+        background: radial-gradient(
+            circle at 40% 40%,
+            oklch(from var(--brand-accent) l c h / 0.16),
+            oklch(from var(--brand-primary) l c h / 0.06) 55%,
+            transparent 75%
+        );
+        filter: blur(4px);
+    }
+
+    .signup-deco__shape {
+        position: absolute;
+        display: inline-flex;
+    }
+
+    .signup-deco__shape--sparkle {
+        top: 12%;
+        right: 9%;
+        color: var(--brand-accent);
+        opacity: 0.4;
+        transform: rotate(15deg);
+    }
+
+    .signup-deco__badge {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        color: var(--brand-primary);
+    }
+
+    .signup-deco__badge--users {
+        bottom: 16%;
+        left: 8%;
+    }
+
+    .signup-deco__dot {
+        position: absolute;
+        border-radius: 50%;
+    }
+    .signup-deco__dot--1 {
+        top: 30%;
+        left: 10%;
+        width: 10px;
+        height: 10px;
+        background-color: oklch(from var(--brand-primary) l c h / 0.28);
+    }
+    .signup-deco__dot--2 {
+        top: 22%;
+        left: 22%;
+        width: 7px;
+        height: 7px;
+        background-color: oklch(from var(--brand-accent) l c h / 0.32);
+    }
+    .signup-deco__dot--3 {
+        bottom: 26%;
+        right: 14%;
+        width: 11px;
+        height: 11px;
+        background-color: oklch(from var(--brand-accent) l c h / 0.25);
+    }
+
+    @media (max-width: 700px) {
+        .signup-deco__shape,
+        .signup-deco__badge {
+            display: none;
+        }
+    }
+</style>
 
 <style>
     .auth-page {

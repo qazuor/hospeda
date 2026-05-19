@@ -262,9 +262,9 @@ function BillingOwnerPromotionsPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">
+                    <h1 className="mb-2 font-bold text-2xl">
                         {t('admin-billing.ownerPromotions.title')}
-                    </h2>
+                    </h1>
                     <p className="text-muted-foreground">
                         {t('admin-billing.ownerPromotions.description')}
                     </p>
@@ -274,6 +274,7 @@ function BillingOwnerPromotionsPage() {
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex gap-2">
                         <select
+                            aria-label={t('admin-billing.ownerPromotions.filters.allStatuses')}
                             className="rounded-md border px-3 py-2 text-sm"
                             value={filters.lifecycleState ?? 'all'}
                             onChange={(e) =>
@@ -301,6 +302,7 @@ function BillingOwnerPromotionsPage() {
                         </select>
 
                         <select
+                            aria-label={t('admin-billing.ownerPromotions.filters.allTypes')}
                             className="rounded-md border px-3 py-2 text-sm"
                             value={filters.discountType || 'all'}
                             onChange={(e) =>

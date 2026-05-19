@@ -17,8 +17,16 @@
         "homeEmail": "info@senderocalmadohouse.com.ar"
     },
     "price": {
-        "price": 17000,
-        "currency": "ARS"
+        "price": 95000,
+        "currency": "ARS",
+        "additionalFees": {
+            "tax": {
+                "price": 16,
+                "currency": "ARS",
+                "isPercent": true,
+                "isPerStay": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -30,40 +38,64 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
-            "caption": "Casa en San José",
-            "description": "Vista exterior de Sendero Calmado House",
+            "url": "https://images.pexels.com/photos/6510949/pexels-photo-6510949.jpeg",
+            "caption": "Casa con frente azul",
+            "description": "Casa familiar con fachada azul y jardín delantero",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la propiedad",
+                "url": "https://images.pexels.com/photos/30707539/pexels-photo-30707539.jpeg",
+                "caption": "Casa rojiza con encanto",
+                "description": "Casa de ladrillo rojo en barrio suburbano con árboles maduros alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
-                "caption": "Living comedor",
-                "description": "Espacio integrado de living y comedor",
+                "url": "https://images.pexels.com/photos/10486072/pexels-photo-10486072.jpeg",
+                "caption": "Casa en barrio tranquilo",
+                "description": "Casa de dos plantas en barrio residencial bajo cielo despejado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/4469136/pexels-photo-4469136.jpeg",
+                "caption": "Casa estilo americano",
+                "description": "Casa familiar amplia con estilo americano y entrada para auto",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
-                "caption": "Dormitorio",
-                "description": "Uno de los dormitorios",
+                "url": "https://images.pexels.com/photos/4832503/pexels-photo-4832503.jpeg",
+                "caption": "Casa suburbana",
+                "description": "Casa moderna de dos plantas con jardín delantero prolijo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla",
-                "description": "Parrilla exterior",
+                "url": "https://images.pexels.com/photos/35705942/pexels-photo-35705942.jpeg",
+                "caption": "Casa moderna entre pinos",
+                "description": "Casa moderna rodeada de pinos con arquitectura contemporánea cuidada",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/32802992/pexels-photo-32802992.jpeg",
+                "caption": "Casa suburbana con jardín",
+                "description": "Casa suburbana elegante con jardín cuidado y entrada delantera",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4469137/pexels-photo-4469137.jpeg",
+                "caption": "Casa familiar",
+                "description": "Casa amplia con frente de ladrillo y jardín de pasto verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33350028/pexels-photo-33350028.jpeg",
+                "caption": "Casa moderna con auto",
+                "description": "Casa suburbana moderna con auto estacionado en la entrada para vehículo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/209315/pexels-photo-209315.jpeg",
+                "caption": "Casa con jardín cuidado",
+                "description": "Casa de paredes marrones con jardín cuidado y vegetación delantera",
                 "moderationState": "APPROVED"
             }
         ]

@@ -2,11 +2,12 @@
 /**
  * @file AuthLayout.astro
  * @description Focused layout for authentication pages (signin, signup, forgot-password, etc.).
- * Standalone HTML shell with minimal header (logo only) and centered card content.
- * No footer, no nav, no distractions.
+ * Standalone HTML shell with minimal header (logo only), centered card content,
+ * and a minimal copyright footer.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import Logo from '@/components/shared/navigation/Logo.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
@@ -19,13 +20,23 @@ interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
+	/**
+	 * When true the slot is rendered directly inside .auth-content,
+	 * skipping the centered .auth-card wrapper. Use for pages that bring
+	 * their own full layout (status pages, etc.) and want to manage their
+	 * own card-or-not styling.
+	 */
+	readonly bareSlot?: boolean;
 }
 
 const {
 	locale,
 	title = 'Hospeda',
 	description = 'Ingresá a tu cuenta',
+	bareSlot = false,
 } = Astro.props;
+
+const { t } = createTranslations(locale);
 
 const cspNonce = Astro.locals.cspNonce ?? '';
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
@@ -69,11 +80,25 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</header>
 
 		<!-- Centered auth card -->
-		<main id="main-content" class="auth-content">
-			<div class="auth-card">
+		<main id="main-content" class="auth-content" data-bare-slot={bareSlot ? 'true' : 'false'}>
+			<slot name="decoratives" />
+			{bareSlot ? (
 				<slot />
-			</div>
+			) : (
+				<div class="auth-card">
+					<slot />
+				</div>
+			)}
 		</main>
+
+		<!-- Minimal copyright footer -->
+		<footer class="auth-footer">
+			<div class="auth-footer__container">
+				<p class="auth-footer__copyright">
+					&copy; {new Date().getFullYear()} Hospeda. {t('footer.allRightsReserved', 'Todos los derechos reservados')}.
+				</p>
+			</div>
+		</footer>
 
 		<ToastViewport client:idle />
 	</body>
@@ -102,14 +127,28 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	}
 
 	.auth-content {
+		position: relative;
 		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: var(--space-8) var(--space-6);
+		padding-inline: var(--space-6);
+		overflow: hidden;
+	}
+
+	/* Status-style pages (verify-email-sent, etc.) own their own vertical
+	   padding via the StatusPage component. Aligning the slot to the top
+	   keeps content position consistent across pages with different
+	   content heights. */
+	.auth-content[data-bare-slot='true'] {
+		align-items: flex-start;
+		justify-content: center;
+		padding-inline: 0;
 	}
 
 	.auth-card {
+		position: relative;
+		z-index: 1;
 		width: 100%;
 		max-width: 480px;
 		background-color: var(--core-card);
@@ -124,5 +163,25 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			background-color: transparent;
 			padding: var(--space-4);
 		}
+	}
+
+	/* Minimal copyright footer — same shape as ErrorLayout for visual parity. */
+	.auth-footer {
+		padding: 1.5rem 0;
+		margin-top: auto;
+	}
+
+	.auth-footer__container {
+		max-width: var(--container-max, 1350px);
+		margin: 0 auto;
+		padding: 0 1.5rem;
+		text-align: center;
+	}
+
+	.auth-footer__copyright {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
 	}
 </style>

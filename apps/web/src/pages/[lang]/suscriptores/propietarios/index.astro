@@ -13,7 +13,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { MapIcon, SettingsIcon, ShieldIcon } from '@repo/icons';
+import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, StarIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 interface BenefitDefinition {
@@ -72,6 +72,12 @@ const faqs = [
 	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
 ] as const;
 
+// Split heading to underline the last word with a handwritten accent.
+const heroHeadingFull = t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros');
+const heroHeadingWords = heroHeadingFull.trim().split(/\s+/);
+const heroHeadingAccent = heroHeadingWords.pop() ?? heroHeadingFull;
+const heroHeadingMain = heroHeadingWords.join(' ');
+
 const faqJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'FAQPage',
@@ -98,7 +104,26 @@ const faqJsonLd = {
 		<div class="owners-hero__container">
 			<div class="owners-hero__text" data-reveal="up">
 				<p class="owners-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
-				<h1 class="owners-hero__title">{t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros')}</h1>
+				<h1 class="owners-hero__title">
+					{heroHeadingMain && <>{heroHeadingMain}{' '}</>}
+					<span class="owners-hero__title-accent">
+						{heroHeadingAccent}
+						<svg
+							class="owners-hero__title-underline"
+							viewBox="0 0 200 18"
+							preserveAspectRatio="none"
+							aria-hidden="true"
+						>
+							<path
+								d="M 4 12 Q 50 2, 100 10 T 196 8"
+								stroke="currentColor"
+								stroke-width="4"
+								stroke-linecap="round"
+								fill="none"
+							/>
+						</svg>
+					</span>
+				</h1>
 				<p class="owners-hero__desc">
 					{t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
 				</p>
@@ -110,6 +135,7 @@ const faqJsonLd = {
 				/>
 			</div>
 			<div class="owners-hero__image" data-reveal="scale" aria-hidden="true">
+				<div class="owners-hero__image-blob"></div>
 				<img
 					src="/assets/images/shapes/hero-icon-hotel.svg"
 					alt=""
@@ -118,18 +144,51 @@ const faqJsonLd = {
 					width="520"
 					height="420"
 				/>
+				<span class="owners-hero__shape owners-hero__shape--star">
+					<StarIcon size={88} weight="duotone" />
+				</span>
+				<span class="owners-hero__badge owners-hero__badge--home">
+					<HomeIcon size="sm" weight="duotone" />
+				</span>
+				<span class="owners-hero__dot owners-hero__dot--1"></span>
+				<span class="owners-hero__dot owners-hero__dot--2"></span>
+				<span class="owners-hero__dot owners-hero__dot--3"></span>
 			</div>
 		</div>
 	</section>
 
 	<!-- Benefits -->
 	<section class="owners-benefits section">
+		<div class="owners-benefits__decoratives" aria-hidden="true">
+			<span class="owners-benefits__watermark">
+				<ShieldIcon size={180} weight="duotone" />
+			</span>
+			<svg
+				class="owners-benefits__wave"
+				viewBox="0 0 800 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 0 30 Q 100 5, 200 30 T 400 30 T 600 30 T 800 30"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="owners-benefits__dot owners-benefits__dot--1"></span>
+			<span class="owners-benefits__dot owners-benefits__dot--2"></span>
+			<span class="owners-benefits__dot owners-benefits__dot--3"></span>
+			<span class="owners-benefits__dot owners-benefits__dot--4"></span>
+		</div>
 		<div class="owners-benefits__container">
 			<p class="owners-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline', '¿Por qué Hospeda?')}</p>
 			<h2 class="owners-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
 			<div class="owners-benefits__grid">
 				{benefits.map((b, i) => (
-					<div class="owners-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="owners-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<div class="owners-benefit-card__icon" aria-hidden="true">
 							<b.Icon size={28} weight="regular" />
 						</div>
@@ -147,8 +206,23 @@ const faqJsonLd = {
 			<p class="owners-steps__tagline" data-reveal="up">{t('owners.steps.tagline', 'Es así de fácil')}</p>
 			<h2 class="owners-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
 			<div class="owners-steps__grid">
+				<svg
+					class="owners-steps__path"
+					viewBox="0 0 1200 80"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M 80 50 Q 280 0, 480 45 T 880 35 T 1120 45"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-dasharray="4 8"
+						stroke-linecap="round"
+						fill="none"
+					/>
+				</svg>
 				{steps.map((s, i) => (
-					<div class="owners-step" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="owners-step" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<span class="owners-step__num">{s.num}</span>
 						<h3 class="owners-step__title">{t(s.titleKey, s.titleFb)}</h3>
 						<p class="owners-step__desc">{t(s.descKey, s.descFb)}</p>
@@ -160,6 +234,7 @@ const faqJsonLd = {
 
 	<!-- FAQ -->
 	<section class="owners-faq section">
+		<span class="owners-faq__watermark" aria-hidden="true">?</span>
 		<div class="owners-faq__container">
 			<p class="owners-faq__tagline" data-reveal="up">{t('owners.faq.tagline', 'Resolvé tus dudas')}</p>
 			<h2 class="owners-faq__title" data-reveal="up">{t('owners.faq.title', 'Preguntas frecuentes')}</h2>
@@ -176,6 +251,27 @@ const faqJsonLd = {
 
 	<!-- CTA -->
 	<section class="owners-cta section section--dark">
+		<div class="owners-cta__decoratives" aria-hidden="true">
+			<div class="owners-cta__blob"></div>
+			<svg
+				class="owners-cta__route"
+				viewBox="0 0 200 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 4 30 Q 50 5, 100 28 T 188 32"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 6"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="owners-cta__pin">
+				<LocationIcon size="md" weight="duotone" />
+			</span>
+		</div>
 		<div class="owners-cta__container" data-reveal="up">
 			<p class="owners-cta__tagline">{t('owners.cta.tagline', '¿Listo para empezar?')}</p>
 			<h2 class="owners-cta__title">{t('owners.cta.title', 'Publicá tu alojamiento hoy')}</h2>
@@ -229,17 +325,160 @@ const faqJsonLd = {
 		margin: 0 0 var(--space-6);
 	}
 
+	.owners-hero__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.owners-hero__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		color: var(--brand-accent);
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
 	.owners-hero__image {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
+	.owners-hero__image-blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(280px, 38vw, 520px);
+		height: clamp(280px, 38vw, 520px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 40% 40%,
+			oklch(from var(--brand-primary) l c h / 0.18),
+			oklch(from var(--brand-accent) l c h / 0.08) 55%,
+			transparent 75%
+		);
+		filter: blur(2px);
+		pointer-events: none;
+		z-index: 0;
+	}
+
 	.owners-hero__image-illustration {
+		position: relative;
+		z-index: 1;
 		width: 100%;
 		max-width: 520px;
 		height: auto;
 		filter: drop-shadow(0 12px 32px oklch(from var(--brand-primary) l c h / 0.15));
+	}
+
+	/* Shape: large decorative icon, no pill, low opacity. Acts as ambient art. */
+	.owners-hero__shape {
+		position: absolute;
+		z-index: 2;
+		display: inline-flex;
+		pointer-events: none;
+		animation: owners-hero-float-slow 8s ease-in-out infinite;
+	}
+
+	.owners-hero__shape--star {
+		top: 4%;
+		left: -2%;
+		color: var(--brand-accent);
+		opacity: 0.4;
+		transform: rotate(-15deg);
+		animation-delay: 0s;
+	}
+
+	/* Badge: small icon inside a card-style pill with shadow. Acts as a featured spotlight. */
+	.owners-hero__badge {
+		position: absolute;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		animation: owners-hero-float 6s ease-in-out infinite;
+	}
+
+	.owners-hero__badge--home {
+		bottom: 12%;
+		right: 4%;
+		color: var(--brand-primary);
+		animation-delay: 1.5s;
+	}
+
+	/* Dots: tiny ambient circles distributed around the hero. */
+	.owners-hero__dot {
+		position: absolute;
+		z-index: 2;
+		border-radius: 50%;
+		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+		pointer-events: none;
+	}
+
+	.owners-hero__dot--1 {
+		top: 30%;
+		right: 12%;
+		width: 10px;
+		height: 10px;
+	}
+
+	.owners-hero__dot--2 {
+		bottom: 28%;
+		left: 8%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+
+	.owners-hero__dot--3 {
+		top: 60%;
+		right: 28%;
+		width: 8px;
+		height: 8px;
+	}
+
+	@keyframes owners-hero-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+
+	@keyframes owners-hero-float-slow {
+		0%, 100% {
+			transform: rotate(-15deg) translateY(0);
+		}
+		50% {
+			transform: rotate(-15deg) translateY(-14px);
+		}
+	}
+
+	@media (max-width: 900px) {
+		.owners-hero__shape,
+		.owners-hero__badge,
+		.owners-hero__dot {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.owners-hero__shape,
+		.owners-hero__badge {
+			animation: none;
+		}
 	}
 
 	/* Benefits */
@@ -433,6 +672,204 @@ const faqJsonLd = {
 		max-width: 55ch;
 		margin: 0 auto var(--space-6);
 		line-height: 1.6;
+	}
+
+	/* Benefits decoratives */
+	.owners-benefits {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.owners-benefits__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.owners-benefits__watermark {
+		position: absolute;
+		bottom: -30px;
+		right: -40px;
+		color: var(--brand-primary);
+		opacity: 0.05;
+		display: inline-flex;
+		transform: rotate(-12deg);
+	}
+
+	.owners-benefits__wave {
+		position: absolute;
+		top: 28%;
+		left: -5%;
+		width: 65%;
+		height: 60px;
+		color: var(--brand-accent);
+		opacity: 0.35;
+	}
+
+	.owners-benefits__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+
+	.owners-benefits__dot--1 {
+		top: 15%;
+		left: 8%;
+		width: 10px;
+		height: 10px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+	}
+
+	.owners-benefits__dot--2 {
+		top: 22%;
+		right: 12%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+
+	.owners-benefits__dot--3 {
+		bottom: 18%;
+		left: 18%;
+		width: 8px;
+		height: 8px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.3);
+	}
+
+	.owners-benefits__dot--4 {
+		bottom: 30%;
+		right: 22%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+	}
+
+	.owners-benefits__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Steps path */
+	.owners-steps {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.owners-steps__grid {
+		position: relative;
+	}
+
+	.owners-steps__path {
+		position: absolute;
+		top: 24%;
+		left: 0;
+		width: 100%;
+		height: 80px;
+		color: var(--brand-primary);
+		opacity: 0.35;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.owners-step {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* FAQ watermark */
+	.owners-faq {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.owners-faq__watermark {
+		position: absolute;
+		top: -8%;
+		right: -4%;
+		font-family: var(--font-decorative);
+		font-size: clamp(12rem, 22vw, 26rem);
+		font-weight: 700;
+		color: var(--brand-primary);
+		opacity: 0.06;
+		line-height: 0.85;
+		pointer-events: none;
+		user-select: none;
+		z-index: 0;
+	}
+
+	.owners-faq__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* CTA decoratives */
+	.owners-cta {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.owners-cta__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.owners-cta__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(360px, 50vw, 720px);
+		height: clamp(360px, 50vw, 720px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 50% 50%,
+			oklch(from var(--brand-accent) l c h / 0.22),
+			oklch(from var(--brand-primary) l c h / 0.12) 55%,
+			transparent 75%
+		);
+		filter: blur(4px);
+	}
+
+	.owners-cta__route {
+		position: absolute;
+		top: 22%;
+		right: 6%;
+		width: clamp(140px, 18vw, 220px);
+		height: clamp(48px, 6vw, 70px);
+		color: var(--brand-accent);
+		opacity: 0.55;
+	}
+
+	.owners-cta__pin {
+		position: absolute;
+		top: calc(22% + clamp(36px, 4.5vw, 52px));
+		right: 5%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		color: var(--brand-accent);
+	}
+
+	.owners-cta__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	@media (max-width: 900px) {
+		.owners-benefits__watermark,
+		.owners-benefits__wave,
+		.owners-steps__path,
+		.owners-cta__route,
+		.owners-cta__pin {
+			display: none;
+		}
 	}
 
 	/* Responsive */

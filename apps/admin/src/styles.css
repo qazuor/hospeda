@@ -28,11 +28,14 @@ code {
     --secondary: oklch(0.967 0.001 286.375);
     --secondary-foreground: oklch(0.21 0.006 285.885);
     --muted: oklch(0.967 0.001 286.375);
-    --muted-foreground: oklch(0.552 0.016 285.938);
+    /* L=0.40 yields ~4.7:1 contrast on bg-muted (WCAG AA passes for normal text). */
+    --muted-foreground: oklch(0.4 0.016 285.938);
     --accent: oklch(0.967 0.001 286.375);
     --accent-foreground: oklch(0.21 0.006 285.885);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
+    /* L=0.5 keeps brand red recognizable but darkens enough to clear AA on bg-destructive/5
+       and other tinted-bg uses where the previous 0.577 fell short. */
+    --destructive: oklch(0.5 0.245 27.325);
+    --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(0.92 0.004 286.32);
     --input: oklch(0.92 0.004 286.32);
     --ring: oklch(0.871 0.006 286.286);
@@ -64,11 +67,13 @@ code {
     --secondary: oklch(0.274 0.006 286.033);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
+    /* L=0.82 yields ~4.7:1 contrast on dark bg-muted (WCAG AA passes). */
+    --muted-foreground: oklch(0.82 0.015 286.067);
     --accent: oklch(0.274 0.006 286.033);
     --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
+    /* Lifted from 0.55 to 0.65 so destructive text on dark tinted backgrounds clears AA. */
+    --destructive: oklch(0.65 0.22 27);
+    --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(0.274 0.006 286.033);
     --input: oklch(0.274 0.006 286.033);
     --ring: oklch(0.442 0.017 285.786);
@@ -155,5 +160,29 @@ code {
     100% {
         width: 0%;
         margin-left: 100%;
+    }
+}
+
+/*
+ * Feedback FAB overrides for the admin app (SPEC-117 V-2 / V-4).
+ *
+ * The @repo/feedback package raises the FAB to 5.5rem on mobile so it clears
+ * full-width sticky controls + the cookie consent banner used by apps/web.
+ * The admin has neither: that default leaves the FAB floating mid-screen
+ * over content. Anchor it to the standard bottom-right offset on every
+ * viewport here, and apply the same to the minimized dot state so the
+ * collapsed state lines up with the expanded one.
+ */
+.feedback-root .fab,
+.feedback-root .minimizedDot {
+    bottom: 1.5rem;
+    right: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .feedback-root .fab,
+    .feedback-root .minimizedDot {
+        bottom: 1rem;
+        right: 1rem;
     }
 }

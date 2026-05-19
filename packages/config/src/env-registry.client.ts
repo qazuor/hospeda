@@ -80,6 +80,22 @@ export const CLIENT_WEB_ENV_VARS = [
             'Etiqueta de versión libre por deploy. Recomendado: conectala al SHA del commit deployado (por ejemplo vía HOSPEDA_COMMIT_SHA en CI/CD) así cada deploy es un release único ("abc123def456"). Evitá strings semver tipo "1.0.0" porque cada preview/staging tendría colisión en el mismo release en Sentry.'
     },
     {
+        name: 'PUBLIC_SENTRY_ENVIRONMENT',
+        description: 'Sentry environment tag for the web app (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry para la web (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Free-text label applied to all Sentry events from the web app (both SSR and browser). Set to `production` on hospeda-web-prod and `staging` on hospeda-web-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Astro production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry del web app (SSR y browser). Poné `production` en hospeda-web-prod y `staging` en hospeda-web-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Astro en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
+    },
+    {
         name: 'PUBLIC_ENABLE_LOGGING',
         description: 'Enable verbose client-side logging in the web app',
         descriptionEs: 'Activa el logging verboso del lado cliente en la web',
@@ -128,6 +144,59 @@ export const CLIENT_WEB_ENV_VARS = [
             'Same value as HOSPEDA_ADMIN_URL but exposed to the browser. Local: http://localhost:3000. Production: https://admin.hospeda.com.ar.',
         howToObtainEs:
             'El mismo valor que HOSPEDA_ADMIN_URL pero expuesto al navegador. Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar.'
+    },
+    {
+        name: 'PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL',
+        description:
+            'WhatsApp broadcast channel invite URL exposed to the browser. When set, the web WhatsAppCTA component renders a join CTA; when unset, the block is hidden.',
+        descriptionEs:
+            'URL de invitación al canal de WhatsApp expuesta al navegador. Si está seteada, el componente WhatsAppCTA de la web muestra un CTA para sumarse; si no, se oculta.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://whatsapp.com/channel/0029Va6S3oPxxxxxxxxxxxx',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Mirror of HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (server-side, for the welcome email). WhatsApp → Channels → your channel → Channel link → copy the public invite URL. Leave unset to hide the CTA entirely.',
+        howToObtainEs:
+            'Mirror del valor server-side HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (que usa el email de bienvenida). WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA.'
+    },
+    {
+        name: 'PUBLIC_POSTHOG_KEY',
+        description:
+            'PostHog Cloud project API key for the web app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
+        descriptionEs:
+            'API key del proyecto PostHog Cloud para la app web (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        apps: ['web'],
+        category: 'client-web',
+        helpUrl: 'https://us.posthog.com',
+        howToObtain:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-web-prod` (or `hospeda-web-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Marked secret for log hygiene even though PostHog treats project keys as public ingestion keys (they ship to every browser).',
+        howToObtainEs:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-web-prod` (o `hospeda-web-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". Marcada como secret por higiene de logs aunque PostHog las trata como keys públicas de ingestión (viajan a todos los browsers).'
+    },
+    {
+        name: 'PUBLIC_POSTHOG_HOST',
+        description:
+            'PostHog ingestion endpoint for the web app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
+        descriptionEs:
+            'Endpoint de ingestión de PostHog para la app web. Default región US Cloud. Override para EU Cloud o self-hosted.',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://us.i.posthog.com',
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Leave unset to use the default.',
+        howToObtainEs:
+            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. Dejalo sin setear para usar el default.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
@@ -359,6 +428,23 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este>/. Lo usa la herramienta de upload de source maps.'
     },
     {
+        name: 'VITE_SENTRY_ENVIRONMENT',
+        description:
+            'Sentry environment tag for the admin dashboard (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry para el admin (production | staging | development) — separa eventos prod y staging cuando ambos corren con MODE=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['admin'],
+        category: 'client-admin',
+        howToObtain:
+            'Free-text label applied to all Sentry events from the admin. Set to `production` on hospeda-admin-prod and `staging` on hospeda-admin-staging. Takes precedence over import.meta.env.MODE in the Sentry init — without it, Vite production builds always tag events as `production` regardless of which deployment they came from, mixing staging and prod in the same Sentry environment bucket. NOTE: must be passed as a Docker build-arg too (the admin Dockerfile bakes VITE_* into the bundle at build time). Mirror of HOSPEDA_SENTRY_ENVIRONMENT (API).',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry del admin. Poné `production` en hospeda-admin-prod y `staging` en hospeda-admin-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Vite en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. OJO: hay que pasarla también como build-arg de Docker (el Dockerfile del admin embebe los VITE_* en el bundle en build-time). Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
+    },
+    {
         name: 'VITE_DEBUG_LAZY_SECTIONS',
         description: 'Enable verbose logging for lazy-loaded section components',
         descriptionEs: 'Activa logs verbosos para componentes de sección con carga lazy',
@@ -498,5 +584,41 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'Default true — colored console output. Set false when piping logs to files/CI to avoid ANSI escape garbage.',
         howToObtainEs:
             'Por defecto true; salida coloreada en la consola. Poné false cuando mandás logs a archivos o CI para evitar caracteres de escape ANSI feos.'
+    },
+    {
+        name: 'VITE_POSTHOG_KEY',
+        description:
+            'PostHog Cloud project API key for the admin app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
+        descriptionEs:
+            'API key del proyecto PostHog Cloud para la app admin (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        apps: ['admin'],
+        category: 'client-admin',
+        helpUrl: 'https://us.posthog.com',
+        howToObtain:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-admin-prod` (or `hospeda-admin-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
+        howToObtainEs:
+            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-admin-prod` (o `hospeda-admin-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
+    },
+    {
+        name: 'VITE_POSTHOG_HOST',
+        description:
+            'PostHog ingestion endpoint for the admin app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
+        descriptionEs:
+            'Endpoint de ingestión de PostHog para la app admin. Default región US Cloud. Override para EU Cloud o self-hosted.',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://us.i.posthog.com',
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['admin'],
+        category: 'client-admin',
+        howToObtain:
+            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
+        howToObtainEs:
+            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

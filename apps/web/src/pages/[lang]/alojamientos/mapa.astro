@@ -21,7 +21,8 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getAccommodationTypeLabel } from '@/lib/colors';
+import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
+import { formatPrice } from '@/lib/format-utils';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 
@@ -259,12 +260,30 @@ for (const key of TYPE_KEYS) {
 }
 const detailHrefById: Record<string, string> = {};
 const reviewsLabelById: Record<string, string> = {};
+const photosLabelById: Record<string, string> = {};
+const priceLabelById: Record<string, string> = {};
 for (const card of cards) {
 	detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
 	if (card.reviewsCount > 0) {
-		reviewsLabelById[card.id] = `(${tPlural('review.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+		reviewsLabelById[card.id] = `(${tPlural('review.list.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
+	}
+	if ((card.photoCount ?? 0) > 0) {
+		photosLabelById[card.id] = tPlural('common.photos', card.photoCount ?? 0, { count: card.photoCount ?? 0 });
+	}
+	if (card.price?.amount != null && card.price?.currency) {
+		priceLabelById[card.id] = formatPrice({
+			amount: card.price.amount,
+			currency: card.price.currency,
+			locale,
+		});
 	}
 }
+
+// Sidebar cards (mobile bottom sheet / desktop pane) mirror AccommodationCard
+// visually. The page resolves all the locale-aware copy + status colors once
+// here so the island can stay i18n-agnostic.
+const newColors = getBadgeStatusColor({ status: 'new' });
+const featuredColors = getBadgeStatusColor({ status: 'featured' });
 ---
 
 <ListingLayout
@@ -334,7 +353,7 @@ for (const card of cards) {
 	)}
 
 	{!hasError && cards.length > 0 && mapHasItems && (
-		<div class="acc-listing-map">
+		<div class="acc-listing-map" id="acc-listing-map">
 			<AccommodationsListingMap
 				client:only="react"
 				initialItems={cards}
@@ -344,7 +363,19 @@ for (const card of cards) {
 				typeLabels={typeLabels}
 				detailHrefById={detailHrefById}
 				reviewsLabelById={reviewsLabelById}
-				featuredLabel={t('maps.featuredBadge', 'Destacado')}
+				photosLabelById={photosLabelById}
+				priceLabelById={priceLabelById}
+				featuredLabel={t('home.accommodations.badge.featured', 'Destacado')}
+				newLabel={t('home.accommodations.badge.new', 'Nuevo')}
+				newBg={newColors.bg}
+				newText={newColors.text}
+				featuredBg={featuredColors.bg}
+				featuredText={featuredColors.text}
+				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
+				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
+				priceConsultLabel={t('home.accommodations.price.consult', 'Consultar')}
+				ctaLabel={`${t('common.readMore', 'Ver más')} →`}
+				amenitiesLabel={t('home.accommodations.amenities.label', 'Amenidades')}
 				showSidebar={true}
 				isAuthenticated={isAuthenticated}
 				locale={locale}
@@ -353,7 +384,9 @@ for (const card of cards) {
 					resultsCountOne: t('maps.sidebar.resultsCount_one', '{{count}} alojamiento'),
 					resultsCountOther: t('maps.sidebar.resultsCount_other', '{{count}} alojamientos'),
 					emptyState: t('maps.sidebar.emptyState', 'No hay alojamientos en esta zona.'),
-					openSheet: t('maps.sidebar.openSheet', 'Ver lista'),
+					openSheet: t('maps.sidebar.openSheet', 'Ver tarjetas'),
+					openSheetCountOne: t('maps.sidebar.openSheetCount_one', 'Ver {{count}} resultado'),
+					openSheetCountOther: t('maps.sidebar.openSheetCount_other', 'Ver {{count}} resultados'),
 					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
 				}}
 				i18nStrings={{
@@ -374,6 +407,7 @@ for (const card of cards) {
 		margin: var(--space-4, 16px) 0;
 		background-color: var(--surface-warm, #faf6f0);
 		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid transparent;
 	}
 	.view-toggle__btn {
 		font-family: var(--font-sans);
@@ -395,19 +429,28 @@ for (const card of cards) {
 		cursor: default;
 	}
 
-	/* Mobile: fixed bottom tab bar — see alojamientos/index.astro for the
-	 * full rationale (Airbnb/Booking pattern, z-index choices, hide rules). */
+	/* Mobile: float the toggle over the top of the fullscreen map, centered.
+	 * The bottom row of the map view is reserved for Filtros (left) + Ver
+	 * tarjetas (right), so the Lista/Mapa selector hovers near the top
+	 * instead of competing for the bottom-center slot. */
 	@media (max-width: 767px) {
 		.view-toggle {
 			position: fixed;
-			bottom: 1.5rem;
+			top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 77px) + 8px);
 			left: 50%;
 			transform: translateX(-50%);
-			z-index: 150;
+			z-index: 200;
 			margin: 0;
-			box-shadow: 0 4px 16px oklch(0 0 0 / 0.18);
+			/* Frosted-glass surface — see global.css → --frost-* tokens. */
+			background-color: var(--frost-bg-light);
+			backdrop-filter: blur(var(--frost-blur));
+			-webkit-backdrop-filter: blur(var(--frost-blur));
+			border-color: var(--frost-border);
+			box-shadow: 0 4px 12px oklch(0 0 0 / 0.12), 0 1px 3px oklch(0 0 0 / 0.06);
 		}
 
+		/* Hide while a blocking overlay is open — same set the sheet trigger
+		 * and filters trigger already honor. */
 		:global(html[data-filters-drawer-open]) .view-toggle,
 		:global(html[data-search-panel-open]) .view-toggle,
 		:global(html[data-mobile-menu-open]) .view-toggle {
@@ -421,9 +464,153 @@ for (const card of cards) {
 		min-height: 600px;
 		margin: var(--space-4, 16px) 0 var(--space-6, 24px);
 	}
+	/* Mobile: turn the map into a near-fullscreen pane so the user lands on
+	 * a real map view instead of a strip under the header. Height fills the
+	 * viewport below the navbar and the compact wave bar; --wave-bar-compact
+	 * is published by the auto-scroll script after measuring the bar in its
+	 * compact state. The fallback (88px) keeps the layout sane on first
+	 * paint before measurement.
+	 *
+	 * Width breaks out of the parent container padding via the classic
+	 * full-bleed trick so the map uses 100% of the viewport width.
+	 */
 	@media (max-width: 768px) {
 		.acc-listing-map {
-			min-height: 480px;
+			/* Default to the wave bar's expected compact height (77px without
+			 * the decorative SVG — see the :global(.wave-header__wave) rule
+			 * below). Keeping a static value avoids a layout flash between
+			 * first paint and the moment the script publishes the measured
+			 * value, which left a tile-less gray strip in the map. */
+			height: calc(
+				100svh - var(--navbar-height, 80px) - var(--wave-bar-compact, 77px)
+			);
+			min-height: 0;
+			margin: 0;
+			width: 100vw;
+			margin-left: calc(50% - 50vw);
+			margin-right: calc(50% - 50vw);
+			/* Clip the inner React island's content (disclaimer + warm bg
+			 * fringes) to the box so they don't show below the map. */
+			overflow: hidden;
+		}
+
+		/* Make the React island (astro-island custom element) propagate the
+		 * full height down to the .root / leaflet container — without this,
+		 * astro-island defaults to display:inline-like behavior and the inner
+		 * `.root { height: 100% }` collapses to its content height instead of
+		 * filling .acc-listing-map. */
+		.acc-listing-map :global(astro-island) {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+
+		/* Mobile fullscreen map: drop the rounded corners and translucent
+		 * disclaimer pane from the desktop card look. We still need the
+		 * disclaimer copy visible somewhere, so it's painted as a small
+		 * overlay pinned to the top-right corner instead. */
+		.acc-listing-map :global([class*="root"]) {
+			border-radius: 0;
+			box-shadow: none;
+		}
+		.acc-listing-map :global([class*="disclaimer"]) {
+			position: absolute;
+			/* Slot the disclaimer below the floating Lista/Mapa toggle on
+			 * mobile (toggle ends ~57px into the map) so the two never
+			 * overlap, even on a 320px viewport where horizontal room is
+			 * tight. Top-LEFT keeps the right side clear for the user. */
+			top: 64px;
+			left: 8px;
+			max-width: 50%;
+			padding: 6px 10px;
+			font-size: 0.625rem;
+			line-height: 1.3;
+			border-radius: var(--radius-button, 8px);
+			border: none;
+			background-color: oklch(from var(--core-card) l c h / 0.92);
+			backdrop-filter: blur(4px);
+			-webkit-backdrop-filter: blur(4px);
+			z-index: 500;
+			pointer-events: none;
+		}
+
+		/* Hide the decorative wave SVG on the fullscreen-map view: its bottom
+		 * half is transparent and would reveal the page background between
+		 * the bar and the map. Booking/Airbnb-style flat handoff instead. */
+		:global(.wave-header__wave) {
+			display: none;
 		}
 	}
 </style>
+
+<script>
+	/*
+	 * Mobile fullscreen-map setup. On narrow viewports the map page collapses
+	 * to: navbar + compact wave header + map filling the rest of the viewport.
+	 * Steps on every astro:page-load (so View Transitions still trigger it):
+	 *   1. Tag the wave header with `data-locked-compact` so the observer in
+	 *      WaveHeader.astro keeps the bar permanently compact for this page.
+	 *      Without this lock, scrolling back near the top would expand the bar
+	 *      and reveal the breadcrumbs row that we want hidden.
+	 *   2. Wait one frame for the compact class + CSS transition to apply,
+	 *      then measure the bar and publish its height as
+	 *      `--wave-bar-compact`. The map's CSS uses that var to size itself
+	 *      so the bottom edge lands exactly at the viewport bottom.
+	 *   3. Smooth-scroll so the map top lands flush below the compact bar
+	 *      (only if the user landed at the top — respect restored scroll on
+	 *      back navigation).
+	 */
+	function setupMobileFullscreenMap() {
+		if (window.matchMedia('(min-width: 768px)').matches) return;
+		const waveHeader = document.querySelector<HTMLElement>('.wave-header');
+		const mapEl = document.getElementById('acc-listing-map');
+		if (!waveHeader || !mapEl) return;
+
+		// Opt out of the browser's automatic scroll restoration on this page:
+		// we always want the map fullscreen landing, even on reload. Otherwise
+		// the restored scroll position fires between DOMContentLoaded and our
+		// setTimeout below, leaving the map a strip below the fold.
+		if ('scrollRestoration' in history) {
+			history.scrollRestoration = 'manual';
+		}
+
+		// Lock the wave header in compact mode. The observer inside
+		// WaveHeader.astro respects this flag (it both bails on init and
+		// re-asserts compact on every intersection callback) so the bar can't
+		// expand back out when scrollY lands at the top.
+		waveHeader.dataset.lockedCompact = 'true';
+		waveHeader.classList.add('wave-header--compact');
+
+		const navbarHeight =
+			parseFloat(
+				getComputedStyle(document.documentElement).getPropertyValue('--navbar-height')
+			) || 80;
+
+		// Wait for the CSS transition (~300ms) before measuring.
+		window.setTimeout(() => {
+			const bar = waveHeader.querySelector<HTMLElement>('.wave-header__bar');
+			const barHeight = bar?.offsetHeight ?? 88;
+			document.documentElement.style.setProperty(
+				'--wave-bar-compact',
+				`${barHeight}px`
+			);
+
+			const target =
+				mapEl.getBoundingClientRect().top +
+				window.scrollY -
+				navbarHeight -
+				barHeight;
+			window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+		}, 340);
+	}
+
+	// Fire on first paint (DOMContentLoaded) and on every SPA navigation
+	// (astro:page-load). The fullscreen-map setup is idempotent so re-runs
+	// are safe — the data attribute and class are no-ops when already set.
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', setupMobileFullscreenMap, { once: true });
+	} else {
+		setupMobileFullscreenMap();
+	}
+	document.addEventListener('astro:page-load', setupMobileFullscreenMap);
+</script>

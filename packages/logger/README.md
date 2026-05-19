@@ -360,10 +360,7 @@ This package is part of the Hospeda monorepo and follows the same license.
 
 ## Related Documentation
 
-- [Sentry Setup Guide](../../docs/monitoring/sentry-setup-guide.md)
-
-**Next Steps:**
-
-- Read the [Quick Start Guide](./docs/quick-start.md) to get started
-- Explore the [Complete Documentation](./docs/README.md) for advanced features
-- Check out the [Examples](./docs/examples/) for real-world patterns
+- [Quick Start Guide](./docs/quick-start.md) - 5-minute introduction
+- [Complete Documentation](./docs/README.md) - Architecture and full reference
+- [Sentry rotation in production](../../docs/deployment/checklist.md) - Sentry DSN handling
+- Working `.ts` examples in `packages/logger/docs/examples/` (`basic-logging.ts`, `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts`)

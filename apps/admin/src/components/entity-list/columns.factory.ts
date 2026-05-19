@@ -33,7 +33,7 @@ import {
     type EntityType,
     ListOrientation
 } from '@/components/table/DataTable';
-import type { ColumnConfig, LinkHandler } from './types';
+import type { ColumnConfig, ColumnTFunction, LinkHandler } from './types';
 
 // Re-export types and constants for backward compatibility
 export type {
@@ -43,9 +43,9 @@ export type {
     NameColumnOptions
 } from './columns.factory.types';
 export {
-    VISIBILITY_BADGE_OPTIONS,
-    LIFECYCLE_STATE_BADGE_OPTIONS,
-    MODERATION_STATE_BADGE_OPTIONS
+    getVisibilityBadgeOptions,
+    getLifecycleStateBadgeOptions,
+    getModerationStateBadgeOptions
 } from './columns.factory.types';
 
 import type {
@@ -54,20 +54,25 @@ import type {
     NameColumnOptions
 } from './columns.factory.types';
 import {
-    LIFECYCLE_STATE_BADGE_OPTIONS,
-    MODERATION_STATE_BADGE_OPTIONS,
-    VISIBILITY_BADGE_OPTIONS
+    getLifecycleStateBadgeOptions,
+    getModerationStateBadgeOptions,
+    getVisibilityBadgeOptions
 } from './columns.factory.types';
 
 // Note: TData in NameColumnOptions is intentionally unused but kept for future type safety
 // when we add more specific type constraints
 
 /**
- * Creates a column factory for a specific entity type
+ * Creates a column factory for a specific entity type.
+ *
+ * The factory needs the translation function (`t` from `useTranslations()`) so
+ * every default header and badge label is resolved via `admin-entities.*`
+ * i18n keys. Call sites must thread `t` through `createColumns(t)`.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Generic type for row data
 export const createEntityColumnsFactory = <TData extends { id: string; [key: string]: any }>(
-    config: ColumnFactoryConfig
+    config: ColumnFactoryConfig,
+    t: ColumnTFunction
 ) => {
     const { entityType, basePath, primaryColor = BadgeColor.BLUE } = config;
 
@@ -77,7 +82,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         nameColumn: (options: NameColumnOptions<TData> = {}): ColumnConfig<TData> => {
             const {
-                header = 'Name',
+                header = t('admin-entities.columns.name'),
                 accessorKey = 'name',
                 linkField = 'id',
                 enableSorting = true
@@ -311,11 +316,11 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
             } = {}
         ): ColumnConfig<TData> => ({
             id: 'visibility',
-            header: 'Visibility',
+            header: t('admin-entities.columns.visibility'),
             accessorKey: 'visibility',
             enableSorting: true,
             columnType: ColumnType.BADGE,
-            badgeOptions: VISIBILITY_BADGE_OPTIONS,
+            badgeOptions: getVisibilityBadgeOptions(t),
             startVisibleOnTable: options.startVisibleOnTable,
             startVisibleOnGrid: options.startVisibleOnGrid
         }),
@@ -330,11 +335,11 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
             } = {}
         ): ColumnConfig<TData> => ({
             id: 'lifecycleState',
-            header: 'Status',
+            header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
             columnType: ColumnType.BADGE,
-            badgeOptions: LIFECYCLE_STATE_BADGE_OPTIONS,
+            badgeOptions: getLifecycleStateBadgeOptions(t),
             startVisibleOnTable: options.startVisibleOnTable ?? false,
             startVisibleOnGrid: options.startVisibleOnGrid ?? true
         }),
@@ -349,11 +354,11 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
             } = {}
         ): ColumnConfig<TData> => ({
             id: 'moderationState',
-            header: 'Moderation',
+            header: t('admin-entities.columns.moderation'),
             accessorKey: 'moderationState',
             enableSorting: true,
             columnType: ColumnType.BADGE,
-            badgeOptions: MODERATION_STATE_BADGE_OPTIONS,
+            badgeOptions: getModerationStateBadgeOptions(t),
             startVisibleOnTable: options.startVisibleOnTable ?? false,
             startVisibleOnGrid: options.startVisibleOnGrid ?? false
         }),
@@ -363,7 +368,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         isFeaturedColumn: (): ColumnConfig<TData> => ({
             id: 'isFeatured',
-            header: 'Featured',
+            header: t('admin-entities.columns.featured'),
             accessorKey: 'isFeatured',
             enableSorting: true,
             columnType: ColumnType.BOOLEAN
@@ -374,7 +379,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         ratingColumn: (accessorKey = 'averageRating'): ColumnConfig<TData> => ({
             id: 'averageRating',
-            header: 'Rating',
+            header: t('admin-entities.columns.rating'),
             accessorKey,
             enableSorting: true,
             columnType: ColumnType.NUMBER
@@ -385,7 +390,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         reviewsCountColumn: (accessorKey = 'reviewsCount'): ColumnConfig<TData> => ({
             id: 'reviewsCount',
-            header: 'Reviews',
+            header: t('admin-entities.columns.reviewsCount'),
             accessorKey,
             enableSorting: true,
             columnType: ColumnType.NUMBER
@@ -396,7 +401,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         createdAtColumn: (): ColumnConfig<TData> => ({
             id: 'createdAt',
-            header: 'Created',
+            header: t('admin-entities.columns.createdAt'),
             accessorKey: 'createdAt',
             enableSorting: true,
             columnType: ColumnType.TIME_AGO
@@ -407,7 +412,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         featuredImageColumn: (accessorKey = 'media.featuredImage'): ColumnConfig<TData> => ({
             id: 'featuredImage',
-            header: 'Featured Image',
+            header: t('admin-entities.columns.featuredImage'),
             accessorKey,
             enableSorting: false,
             columnType: ColumnType.IMAGE,
@@ -420,7 +425,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
          */
         mediaGalleryColumn: (accessorKey = 'media.gallery'): ColumnConfig<TData> => ({
             id: 'gallery',
-            header: 'Gallery',
+            header: t('admin-entities.columns.gallery'),
             accessorKey,
             enableSorting: false,
             columnType: ColumnType.GALLERY,
@@ -434,42 +439,42 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
         commonColumns: (): readonly ColumnConfig<TData>[] => [
             {
                 id: 'isFeatured',
-                header: 'Featured',
+                header: t('admin-entities.columns.featured'),
                 accessorKey: 'isFeatured',
                 enableSorting: true,
                 columnType: ColumnType.BOOLEAN
             },
             {
                 id: 'visibility',
-                header: 'Visibility',
+                header: t('admin-entities.columns.visibility'),
                 accessorKey: 'visibility',
                 enableSorting: true,
                 columnType: ColumnType.BADGE,
-                badgeOptions: VISIBILITY_BADGE_OPTIONS
+                badgeOptions: getVisibilityBadgeOptions(t)
             },
             {
                 id: 'lifecycleState',
-                header: 'Status',
+                header: t('admin-entities.columns.status'),
                 accessorKey: 'lifecycleState',
                 enableSorting: true,
                 columnType: ColumnType.BADGE,
-                badgeOptions: LIFECYCLE_STATE_BADGE_OPTIONS,
+                badgeOptions: getLifecycleStateBadgeOptions(t),
                 startVisibleOnTable: false,
                 startVisibleOnGrid: true
             },
             {
                 id: 'moderationState',
-                header: 'Moderation',
+                header: t('admin-entities.columns.moderation'),
                 accessorKey: 'moderationState',
                 enableSorting: true,
                 columnType: ColumnType.BADGE,
-                badgeOptions: MODERATION_STATE_BADGE_OPTIONS,
+                badgeOptions: getModerationStateBadgeOptions(t),
                 startVisibleOnTable: false,
                 startVisibleOnGrid: false
             },
             {
                 id: 'createdAt',
-                header: 'Created',
+                header: t('admin-entities.columns.createdAt'),
                 accessorKey: 'createdAt',
                 enableSorting: true,
                 columnType: ColumnType.TIME_AGO
@@ -482,14 +487,14 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
         ratingColumns: (): readonly ColumnConfig<TData>[] => [
             {
                 id: 'averageRating',
-                header: 'Rating',
+                header: t('admin-entities.columns.rating'),
                 accessorKey: 'averageRating',
                 enableSorting: true,
                 columnType: ColumnType.NUMBER
             },
             {
                 id: 'reviewsCount',
-                header: 'Reviews',
+                header: t('admin-entities.columns.reviewsCount'),
                 accessorKey: 'reviewsCount',
                 enableSorting: true,
                 columnType: ColumnType.NUMBER
@@ -505,7 +510,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
         ): readonly ColumnConfig<TData>[] => [
             {
                 id: 'featuredImage',
-                header: 'Featured Image',
+                header: t('admin-entities.columns.featuredImage'),
                 accessorKey: featuredImageKey,
                 enableSorting: false,
                 columnType: ColumnType.IMAGE,
@@ -514,7 +519,7 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
             },
             {
                 id: 'gallery',
-                header: 'Gallery',
+                header: t('admin-entities.columns.gallery'),
                 accessorKey: galleryKey,
                 enableSorting: false,
                 columnType: ColumnType.GALLERY,

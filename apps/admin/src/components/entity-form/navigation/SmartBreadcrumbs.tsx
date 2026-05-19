@@ -54,17 +54,21 @@ const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolea
         return 'text-primary font-semibold';
     }
 
+    // Colors bumped one step darker on light mode (600 -> 700) and one step
+    // brighter on dark mode (400 -> 300) to clear WCAG AA contrast (4.5:1)
+    // against the white/dark backgrounds where these section pills render.
+    // 'disabled' raised from /50 to /70 so the muted text stays readable.
     switch (status) {
         case 'complete':
-            return 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300';
+            return 'text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200';
         case 'error':
             return 'text-destructive hover:text-destructive/80';
         case 'partial':
-            return 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300';
+            return 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200';
         case 'empty':
             return 'text-muted-foreground hover:text-foreground';
         case 'disabled':
-            return 'text-muted-foreground/50 cursor-not-allowed';
+            return 'text-muted-foreground/70 cursor-not-allowed';
         default:
             return 'text-muted-foreground hover:text-foreground';
     }

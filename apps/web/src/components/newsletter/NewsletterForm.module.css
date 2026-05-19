@@ -1,0 +1,257 @@
+/**
+ * NewsletterForm.module.css
+ * Scoped styles for the NewsletterForm React island.
+ *
+ * Context: this island lives inside the footer which uses a dark surface
+ * (--footer-bg or equivalent dark token). Foreground tokens are chosen to
+ * contrast against that dark background.
+ *
+ * All values reference CSS custom properties from global.css — no hardcoded
+ * color values or magic numbers. Spacing uses --space-* tokens; typography
+ * uses --font-*, --text-* tokens.
+ */
+
+/* ---- Screen-reader only utility ---- */
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---- Root wrapper ---- */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    /* Cap the form width on desktop. The parent footer row is flex with
+       space-between, so without this the form stretched edge-to-edge of
+       the right column. On mobile the parent column is narrower than
+       28rem so the form stays fluid. */
+    max-width: 28rem;
+}
+
+/* ---- Form ---- */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+/* ---- Input row (input + button side-by-side) ---- */
+
+.inputRow {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+/* ---- Input wrapper (positions the lock badge) ---- */
+
+.inputWrapper {
+    position: relative;
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+/* ---- Lock badge for guest state ---- */
+
+.lockBadge {
+    position: absolute;
+    inset-block: 0;
+    left: var(--space-3, 0.75rem);
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+/* ---- Email input ---- */
+
+.emailInput {
+    width: 100%;
+    height: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    padding-left: calc(var(--space-4, 1rem) + 1.5rem); /* extra room for lock badge */
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    /* On a dark footer surface, use a slightly lighter background */
+    background-color: oklch(from var(--core-foreground) l c h / 0.08);
+    color: var(--core-card, #fff);
+    border: 1px solid oklch(from var(--core-card, #fff) l c h / 0.25);
+    border-radius: var(--radius-button, 8px);
+    outline: none;
+    transition: border-color var(--duration-fast, 150ms) ease, box-shadow
+        var(--duration-fast, 150ms) ease;
+}
+
+/* The lock badge sits BEFORE the input in the DOM, so a `~ .lockBadge`
+   sibling selector on .emailInput never matches (general-sibling combinator
+   only looks forward). Use :has() on the shared wrapper to detect the
+   badge's presence and gate the extra padding from there. When there's no
+   badge we fall back to the normal padding. */
+.inputWrapper:not(:has(.lockBadge)) .emailInput {
+    padding-left: var(--space-4, 1rem);
+}
+
+.emailInput::placeholder {
+    color: oklch(from var(--core-card, #fff) l c h / 0.5);
+}
+
+.emailInput:focus {
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-accent) l c h / 0.3);
+}
+
+.emailInput[aria-invalid="true"] {
+    border-color: var(--destructive, oklch(0.55 0.22 25));
+}
+
+.emailInput[readonly],
+.emailInput:disabled {
+    opacity: 0.75;
+    cursor: default;
+}
+
+/* ---- Submit button ---- */
+
+.submitButton {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 600;
+    color: var(--core-card, #fff);
+    background-color: var(--brand-accent);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast, 150ms) ease, transform
+        var(--duration-fast, 150ms) ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
+    transform: translateY(-1px);
+}
+
+.submitButton:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.submitButton:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ---- Loading spinner ---- */
+
+.spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid oklch(from var(--core-card, #fff) l c h / 0.3);
+    border-top-color: var(--core-card, #fff);
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---- Inline error message ---- */
+
+.errorMessage {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.15);
+    border-left: 3px solid var(--destructive, oklch(0.55 0.22 25));
+    border-radius: var(--radius-button, 8px);
+    color: oklch(0.9 0.05 25); /* lighter red for dark bg readability */
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    line-height: 1.5;
+}
+
+/* ---- Consent note ---- */
+
+.consentNote {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.75rem);
+    color: oklch(from var(--core-card, #fff) l c h / 0.55);
+    line-height: 1.5;
+}
+
+/* ---- Banner (pending-verification / already-active) ---- */
+
+.banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-4, 1rem);
+    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+    border-radius: var(--radius-button, 8px);
+}
+
+.bannerIcon {
+    flex-shrink: 0;
+    font-size: 1.125rem;
+    line-height: 1;
+    margin-top: 0.1em;
+}
+
+.bannerText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-card, #fff);
+    line-height: 1.5;
+}
+
+/* ---- Manage link (already-active state) ---- */
+
+.manageLink {
+    display: inline-block;
+    margin-top: var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    font-weight: 600;
+    color: var(--brand-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: opacity var(--duration-fast, 150ms) ease;
+}
+
+.manageLink:hover {
+    opacity: 0.8;
+}
+
+.manageLink:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}

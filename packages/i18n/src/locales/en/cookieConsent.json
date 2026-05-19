@@ -1,14 +1,18 @@
 {
     "title": "We use cookies",
-    "description": "Hospeda uses cookies to ensure the site works and, with your consent, to analyze how you use it. Necessary cookies are always active.",
+    "description": "Hospeda uses cookies to ensure the site works and, with your consent, to report errors and analyze how you use it. Necessary cookies are always active.",
     "categories": {
         "necessary": {
             "label": "Necessary",
             "description": "Cookies essential for the site to function: user session, language preference, and consent state. These cannot be disabled."
         },
+        "crashReporting": {
+            "label": "Crash reporting",
+            "description": "Sends errors that occur while you use the site to Sentry (without personally identifiable information). Lets us fix bugs that affect you. Recommended to keep enabled."
+        },
         "analytics": {
-            "label": "Analytics",
-            "description": "Help us understand how visitors interact with the site (Sentry for error monitoring). Only activated with your consent."
+            "label": "Usage analytics",
+            "description": "Anonymous statistics about how visitors navigate the site (most-viewed pages, search flows). Does not include error monitoring."
         },
         "marketing": {
             "label": "Marketing",

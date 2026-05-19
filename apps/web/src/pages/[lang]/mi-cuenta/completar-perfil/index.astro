@@ -1,0 +1,64 @@
+---
+/**
+ * @file completar-perfil/index.astro
+ * @description Post-signup profile completion page (SPEC-113 T-113-04).
+ *
+ * Renders the ProfileCompletion React island which collects baseline profile data
+ * (full name, optional phone, optional locale, optional newsletter, required terms).
+ * On submit the island posts to POST /api/v1/protected/profile/complete and
+ * redirects to either `agregar-contrasena/` or `mi-cuenta/`.
+ *
+ * Auth: protected by middleware (redirects unauthenticated users to sign-in).
+ * This route is whitelisted in the middleware guard so it cannot be
+ * caught in a redirect loop (see middleware.ts Step 7.5).
+ *
+ * @route    /[lang]/mi-cuenta/completar-perfil/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { ProfileCompletion } from '@/components/account/ProfileCompletion.client';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Auth guard: middleware should have redirected already, but this is the safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const t = createT(locale);
+const apiUrl = getApiUrl();
+
+const title = t('account.profileCompletion.pageTitle', 'Completá tu perfil');
+const description = t(
+    'account.profileCompletion.pageDescription',
+    'Completá tu información para empezar a usar Hospeda'
+);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={true}
+    />
+
+    <ProfileCompletion
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        initialDisplayName={user.name}
+    />
+</BaseLayout>

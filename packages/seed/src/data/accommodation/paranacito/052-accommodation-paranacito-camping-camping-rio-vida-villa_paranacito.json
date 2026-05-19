@@ -23,8 +23,40 @@
         "twitter": "https://twitter.com/campingriovida"
     },
     "price": {
-        "price": 7500,
-        "currency": "ARS"
+        "price": 6000,
+        "currency": "ARS",
+        "additionalFees": {
+            "earlyCheckin": {
+                "price": 4000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "lateCheckin": {
+                "price": 1000,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "luggageStorage": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            },
+            "cleaning": {
+                "price": 500,
+                "currency": "ARS",
+                "isPerStay": true
+            }
+        },
+        "discounts": {
+            "lastMinute": {
+                "price": 15,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,58 +68,40 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-            "caption": "Vista del camping",
-            "description": "Área de acampe con vista a los arroyos del Delta",
+            "url": "https://images.pexels.com/photos/14036357/pexels-photo-14036357.jpeg",
+            "caption": "Campamento con tarp",
+            "description": "Carpa con techo extendido para sombra en un sector arbolado del predio",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-                "caption": "Zona de carpas",
-                "description": "Espacios para acampar bajo árboles nativos",
-                "moderationState": "APPROVED"
-            },
-            {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
-                "caption": "Domos equipados",
-                "description": "Alojamiento en domos para mayor comodidad",
+                "caption": "Carpa bajo cielo estrellado",
+                "description": "Vista nocturna del área de acampe con tipi iluminado y la Vía Láctea de fondo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/803226/pexels-photo-803226.jpeg",
-                "caption": "Atardecer en el río",
-                "description": "Espectacular puesta de sol desde el muelle principal",
+                "url": "https://images.pexels.com/photos/20708782/pexels-photo-20708782.jpeg",
+                "caption": "Campamento en el monte",
+                "description": "Sector de acampe enclavado en bosque verde con varias carpas armadas",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Fogón comunitario",
-                "description": "Área central para fogones y reuniones nocturnas",
+                "url": "https://images.pexels.com/photos/8985295/pexels-photo-8985295.jpeg",
+                "caption": "Acampe con vista",
+                "description": "Campamento al pie de un cerro rodeado de vegetación y árboles verdes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5473180/pexels-photo-5473180.jpeg",
-                "caption": "Cocina comunitaria",
-                "description": "Espacio compartido para preparación de comidas",
+                "url": "https://images.pexels.com/photos/18755614/pexels-photo-18755614.jpeg",
+                "caption": "Mesa y sombra",
+                "description": "Mesas y árboles del camping al atardecer en sector común del predio",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
-                "caption": "Sanitarios",
-                "description": "Instalaciones de baños y duchas",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg",
-                "caption": "Kayak en los arroyos",
-                "description": "Actividad de kayak por los canales del delta",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
-                "caption": "Pesca desde el muelle",
-                "description": "Pesca en los arroyos que rodean la isla",
+                "url": "https://images.pexels.com/photos/8993120/pexels-photo-8993120.jpeg",
+                "caption": "Carpa verde en pradera",
+                "description": "Carpa verde solitaria sobre pasto verde en un área abierta del predio",
                 "moderationState": "APPROVED"
             }
         ],

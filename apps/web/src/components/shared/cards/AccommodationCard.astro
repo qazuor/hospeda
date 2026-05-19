@@ -13,7 +13,6 @@ import {
 	StarIcon,
 } from '@repo/icons';
 import { resolveAmenityIcon } from './accommodation-card-icons';
-import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
@@ -41,7 +40,7 @@ interface Props {
 }
 
 const { data, locale, isAuthenticated = false, linkQuery } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
 const detailUrl = linkQuery ? `${baseDetailUrl}?${linkQuery}` : baseDetailUrl;
@@ -62,8 +61,6 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = data.createdAt
 	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
 	: false;
-const featuredColors = getBadgeStatusColor({ status: 'featured' });
-const newColors = getBadgeStatusColor({ status: 'new' });
 
 ---
 
@@ -103,7 +100,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				<div
 					class="acc-card__status-corner"
 					aria-hidden="true"
-					style={`--corner-bg: ${newColors.bg}; --corner-text: ${newColors.text};`}
 				>
 					<span class="acc-card__status-text">{t('home.accommodations.badge.new', 'Nuevo')}</span>
 				</div>
@@ -113,7 +109,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			{data.isFeatured && (
 				<div
 					class="acc-card__featured-badge"
-					style={`background-color: ${featuredColors.bg}; color: ${featuredColors.text};`}
 				>
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
 				</div>
@@ -141,9 +136,9 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					isAuthenticated={isAuthenticated}
 				/>
 				{(data.photoCount ?? 0) > 0 && (
-					<div class="acc-card__photo-count">
-						<GalleryIcon size={16} weight="fill" aria-hidden="true" />
-						<span>{data.photoCount}</span>
+					<div class="acc-card__photo-count" aria-hidden="true">
+						<GalleryIcon size={18} weight="fill" aria-hidden="true" />
+						<span>{tPlural('common.photos', data.photoCount ?? 0)}</span>
 					</div>
 				)}
 			</div>
@@ -210,7 +205,9 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 						<span class="acc-card__price-label">{t('home.accommodations.price.perNight', '/noche')}</span>
 					</div>
 				) : (
-					<div></div>
+					<div class="acc-card__price-block">
+						<span class="acc-card__price-value">{t('home.accommodations.price.consult', 'Consultar')}</span>
+					</div>
 				)}
 				<span class="acc-card__cta-btn">
 					{t('common.readMore', 'Ver más')} →
@@ -287,7 +284,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		left: 0;
 		width: 0;
 		height: 0;
-		border-top: 80px solid var(--corner-bg);
+		/* Status corner uses the "new" badge colors. They are constants so we
+		 * bake them directly instead of threading through inline style=
+		 * (SPEC-046 GAP-046-09a). */
+		border-top: 80px solid var(--hospeda-forest);
 		border-right: 80px solid transparent;
 	}
 
@@ -300,21 +300,27 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		font-weight: 700;
 		font-size: 14px;
 		line-height: 22.4px;
-		color: var(--corner-text);
+		color: var(--primary-foreground);
 		white-space: nowrap;
 	}
 
-	/* Featured badge */
+	/* Featured badge — right edge matches the actions column above
+	 * (12px from card edge) so favorite, photo-count and featured stack
+	 * along the same vertical guideline. */
 	.acc-card__featured-badge {
 		position: absolute;
 		bottom: 48px;
-		right: 16px;
+		right: 12px;
 		font-family: var(--font-sans);
 		font-weight: 700;
 		font-size: 14px;
 		line-height: 22.4px;
 		padding: 4px 10px;
 		border-radius: 9999px;
+		/* Featured badge uses constant accent colors (status='featured').
+		 * Baked in to avoid inline style= per SPEC-046 GAP-046-09a. */
+		background-color: var(--brand-accent);
+		color: var(--primary-foreground);
 	}
 
 	/* Wave separator */
@@ -333,13 +339,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		display: block;
 	}
 
-	@media (max-width: 480px) {
-		.acc-card__wave {
-			display: none;
-		}
-	}
-
-	/* Actions (favorite + photo count) */
+	/* Actions (favorite + photo count) — right-aligned column. Items have
+	 * different widths (40px circle button vs. "N fotos" pill) so flex-end
+	 * keeps both flush with the card's right edge, matching the featured
+	 * badge below. */
 	.acc-card__actions {
 		position: absolute;
 		top: 12px;
@@ -347,7 +350,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		align-items: center;
+		align-items: flex-end;
 	}
 
 	.acc-card__fav-btn {
@@ -373,18 +376,21 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		outline-offset: 2px;
 	}
 
+	/* Photo-count pill: always visible. Bigger + labeled (e.g. "9 fotos")
+	 * so the meaning reads at a glance, but keeps the original translucent
+	 * surface so it doesn't overpower the photo. */
 	.acc-card__photo-count {
 		display: flex;
 		align-items: center;
-		gap: 4px;
+		gap: 6px;
 		background-color: oklch(from var(--core-foreground) l c h / 0.55);
-		padding: 4px 8px;
+		padding: 6px 12px;
 		border-radius: 9999px;
 		color: var(--primary-foreground);
 		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 11px;
-		line-height: 16px;
+		font-weight: 600;
+		font-size: 13px;
+		line-height: 1.2;
 	}
 
 	/* CONTENT AREA */
@@ -397,26 +403,46 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		flex: 1;
 	}
 
-	/* Category + Location row */
+	/* Category + Location row. The category badge is a bounded enum label
+	 * (CASA, HOTEL, etc.) so it never needs to shrink — flex-shrink: 0
+	 * keeps it intact. The location is the unbounded text (city names
+	 * like "Concepción del Uruguay") so it absorbs the remaining width
+	 * and ellipsises when it would overflow. min-width: 0 on the row is
+	 * required for the inner ellipsis to engage inside a flex layout. */
 	.acc-card__category-row {
 		display: flex;
 		align-items: center;
 		gap: 10px;
+		min-width: 0;
 	}
 
+	.acc-card__category-row > :global(.acc-type-badge) {
+		flex-shrink: 0;
+	}
+
+	/* Destino: plain inline label, no surface. Reads as supporting text
+	 * to the category pill instead of a second competing badge. */
 	.acc-card__location-bar {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background-color: var(--surface-warm, oklch(0.96 0.02 60));
-		padding: 8px 24px 8px 16px;
-		border-radius: var(--radius-sm, 8px);
+		min-width: 0;
 		font-family: var(--font-sans);
 		font-weight: 500;
 		font-size: 12px;
-		line-height: 19.2px;
-		color: var(--core-foreground);
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+	}
+
+	.acc-card__location-bar > :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.acc-card__location-bar > span {
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
+		min-width: 0;
 	}
 
 	/* Name */
@@ -628,17 +654,33 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	 * amenities, stars, the numeric rating, or the price block.
 	 */
 	@media (max-width: 767px) {
+		.acc-card__image-area {
+			height: 200px;
+		}
+
 		.acc-card__content {
 			gap: 6px;
 			padding-bottom: 12px;
 		}
 
 		.acc-card__description {
-			-webkit-line-clamp: 1;
+			-webkit-line-clamp: 3;
 		}
 
 		.acc-card__reviews-count {
 			display: none;
+		}
+
+		/* In mobile the image area shrinks via clamp(160px,…); placing the
+		 * featured badge at bottom-right made it collide vertically with the
+		 * actions column (favorite + photo count). Top-left is occupied by
+		 * the "Nuevo" status corner, top-right by the actions column —
+		 * bottom-left, just above the wave, is the only quadrant left clear. */
+		.acc-card__featured-badge {
+			bottom: 48px;
+			left: 12px;
+			right: auto;
+			top: auto;
 		}
 	}
 </style>

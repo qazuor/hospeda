@@ -5,7 +5,9 @@
  */
 
 import {
+    abandonedPendingSubsJob,
     addonExpiryJob,
+    applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
     cloudinaryE2eCleanupJob,
@@ -15,11 +17,13 @@ import {
     dunningJob,
     exchangeRateFetchJob,
     mediaOrphanCleanupJob,
+    newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
     searchIndexRefreshJob,
     trialExpiryJob,
+    trialPreEndNotifJob,
     webhookRetryJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -44,7 +48,11 @@ export const cronJobs: CronJobDefinition[] = [
     cloudinaryE2eCleanupJob,
     conversationNotificationJob,
     conversationTokenReminderJob,
-    conversationTokenCleanupJob
+    conversationTokenCleanupJob,
+    newsletterCloseCampaignsJob,
+    trialPreEndNotifJob,
+    abandonedPendingSubsJob,
+    applyScheduledPlanChangesJob
 ];
 
 /**

@@ -23,7 +23,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -306,8 +306,8 @@ paginationParams.delete('page');
 	{!hasError && cards.length > 0 && (
 		<div class="events-grid">
 			{cards.map((card, i) => (
-				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-					<EventCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
+				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+					<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
 				</div>
 			))}
 		</div>
@@ -328,9 +328,7 @@ paginationParams.delete('page');
 <style>
 	.events-grid {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
 		gap: var(--space-card-gap);
 	}
-	@media (max-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
-	@media (max-width: 640px)  { .events-grid { grid-template-columns: 1fr; } }
 </style>

@@ -1,0 +1,614 @@
+---
+/**
+ * @file BetaDocLayout.astro
+ * @description Standalone HTML shell for the private beta tester docs site.
+ *
+ * **Why isolated**: This layout deliberately does NOT extend `BaseLayout`. It
+ * has its own `<head>`, header, sidebar and footer. If the main site
+ * (`Header.astro`, `Footer.astro`, etc.) regresses, the beta docs keep
+ * working. Shared surface is limited to CSS tokens (`global.css`), fonts,
+ * and the `@repo/icons` package.
+ *
+ * **Why no i18n**: Beta docs are Spanish-only by product decision (40
+ * Argentine testers). The route lives outside the `/{lang}/` namespace and
+ * middleware skips locale enforcement for `/beta/*`.
+ */
+
+import BetaFooter from '@/components/beta/BetaFooter.astro';
+import BetaHeader from '@/components/beta/BetaHeader.astro';
+import BetaSidebar from '@/components/beta/BetaSidebar.astro';
+import FontsLoader from '@/components/shared/FontsLoader.astro';
+import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
+import '@/styles/global.css';
+
+interface Props {
+    readonly title: string;
+    readonly description?: string;
+    readonly currentSlug?: string;
+    readonly hideToc?: boolean;
+}
+
+const {
+    title,
+    description = 'Documentación privada para beta testers de Hospeda.',
+    currentSlug,
+    hideToc = false
+} = Astro.props;
+
+const isGlosario = currentSlug === 'empezar/glosario';
+
+const cspNonce = Astro.locals.cspNonce ?? '';
+const pageTitle = `${title} · Beta Hospeda`;
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description} />
+        <meta name="robots" content="noindex, nofollow" />
+        <title>{pageTitle}</title>
+
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+        <FontsLoader cspNonce={cspNonce} />
+        <ThemeFoucScript cspNonce={cspNonce} />
+
+        <script is:inline nonce={cspNonce}>
+            /**
+             * Beta docs audience selector — sets `<html data-beta-audience>`
+             * before paint so the sidebar CSS hides irrelevant items without
+             * FOUC. Reads `?userType=X` from the URL, persists it to
+             * localStorage, removes the query, and applies the stored value.
+             *
+             * Valid values: 'default' | 'host' | 'editor' | 'admin'.
+             * Anything else is ignored. Default state hides host and
+             * admin-editor groups in the sidebar; pago-real is always shown.
+             */
+            (function () {
+                var ALLOWED = ['default', 'host', 'editor', 'admin'];
+                var STORAGE_KEY = 'beta-audience';
+                var root = document.documentElement;
+
+                function isValid(value) {
+                    return ALLOWED.indexOf(value) !== -1;
+                }
+
+                try {
+                    var url = new URL(window.location.href);
+                    var fromQuery = url.searchParams.get('userType');
+                    if (fromQuery && isValid(fromQuery)) {
+                        localStorage.setItem(STORAGE_KEY, fromQuery);
+                        url.searchParams.delete('userType');
+                        var clean = url.pathname + url.search + url.hash;
+                        window.history.replaceState({}, '', clean);
+                    }
+                    var stored = localStorage.getItem(STORAGE_KEY);
+                    root.dataset.betaAudience = isValid(stored) ? stored : 'default';
+                } catch (err) {
+                    root.dataset.betaAudience = 'default';
+                }
+            })();
+        </script>
+
+
+        <script is:inline nonce={cspNonce}>
+            if (document.fonts.status !== 'loaded') {
+                document.documentElement.classList.add('fonts-loading');
+            }
+            document.fonts.ready.then(function () {
+                document.documentElement.classList.remove('fonts-loading');
+            });
+        </script>
+        <style is:inline nonce={cspNonce}>
+            .fonts-loading body {
+                opacity: 0;
+            }
+            body {
+                transition: opacity 0.2s ease;
+            }
+        </style>
+    </head>
+    <body class="beta-doc-body">
+        <BetaHeader />
+
+        <div class="beta-doc-shell" data-beta-shell>
+            <div class="beta-doc-shell__sidebar" id="beta-sidebar-drawer">
+                <BetaSidebar currentSlug={currentSlug} />
+            </div>
+
+            <main id="main-content" class="beta-doc-main">
+                <article class="beta-doc-article">
+                    {!isGlosario && (
+                        <aside class="beta-glosario-hint" aria-label="Acceso al glosario">
+                            <span class="beta-glosario-hint__icon" aria-hidden="true">📖</span>
+                            <span class="beta-glosario-hint__text">
+                                ¿No entendés alguna palabra? Mirá el{' '}
+                                <a href="/beta/empezar/glosario/">glosario</a>.
+                            </span>
+                        </aside>
+                    )}
+                    <slot />
+                </article>
+            </main>
+
+            {!hideToc && (
+                <div class="beta-doc-shell__toc">
+                    <slot name="toc" />
+                </div>
+            )}
+        </div>
+
+        <BetaFooter />
+
+        <dialog class="beta-lightbox" id="beta-lightbox" aria-label="Imagen ampliada">
+            <button type="button" class="beta-lightbox__close" data-beta-lightbox-close aria-label="Cerrar imagen ampliada">
+                <span aria-hidden="true">×</span>
+            </button>
+            <img class="beta-lightbox__img" alt="" />
+            <p class="beta-lightbox__caption"></p>
+        </dialog>
+    </body>
+</html>
+
+<script>
+    /**
+     * Lightbox for `.beta-figure img` — opens the image in a native <dialog>
+     * with caption pulled from the sibling <figcaption>. Closes with the X
+     * button, the Escape key, or clicking on the backdrop.
+     */
+    function initBetaLightbox() {
+        const dialog = document.getElementById('beta-lightbox') as HTMLDialogElement | null;
+        if (!dialog) return;
+
+        const imgEl = dialog.querySelector<HTMLImageElement>('.beta-lightbox__img');
+        const captionEl = dialog.querySelector<HTMLParagraphElement>('.beta-lightbox__caption');
+        const closeBtn = dialog.querySelector<HTMLButtonElement>('[data-beta-lightbox-close]');
+        if (!imgEl || !captionEl) return;
+
+        const figures = document.querySelectorAll<HTMLImageElement>('.beta-figure img');
+        figures.forEach((img) => {
+            // Avoid double-binding when astro:page-load fires on the same DOM
+            if (img.dataset.lightboxBound === 'true') return;
+            img.dataset.lightboxBound = 'true';
+
+            img.addEventListener('click', () => {
+                imgEl.src = img.currentSrc || img.src;
+                imgEl.alt = img.alt;
+                const caption = img.closest('.beta-figure')?.querySelector('figcaption');
+                captionEl.textContent = caption?.textContent?.trim() ?? '';
+                captionEl.hidden = captionEl.textContent.length === 0;
+                dialog.showModal();
+            });
+        });
+
+        closeBtn?.addEventListener('click', () => dialog.close());
+
+        // Click outside the image (on the backdrop) OR on the image itself closes
+        dialog.addEventListener('click', (event) => {
+            if (event.target === dialog || event.target === imgEl) {
+                dialog.close();
+            }
+        });
+    }
+
+    initBetaLightbox();
+    document.addEventListener('astro:page-load', initBetaLightbox);
+</script>
+
+<style is:global>
+    :root {
+        --beta-header-offset: 64px;
+    }
+
+    .beta-doc-body {
+        background: var(--core-background);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .beta-no-scroll {
+        overflow: hidden;
+    }
+
+    .beta-doc-shell {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-5, 1.25rem);
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: var(--space-5, 1.25rem);
+        position: relative;
+    }
+
+    .beta-doc-shell__sidebar {
+        min-width: 0;
+    }
+
+    .beta-doc-shell__toc {
+        min-width: 0;
+    }
+
+    .beta-doc-main {
+        min-width: 0;
+    }
+
+    .beta-doc-article {
+        max-width: 760px;
+    }
+
+    @media (min-width: 960px) {
+        .beta-doc-shell {
+            grid-template-columns: 240px minmax(0, 1fr) 200px;
+            gap: var(--space-6, 2rem);
+        }
+    }
+
+    @media (max-width: 959px) {
+        .beta-doc-shell__sidebar {
+            display: none;
+        }
+        .beta-doc-shell__toc {
+            display: none;
+        }
+        .beta-doc-shell--drawer-open .beta-doc-shell__sidebar {
+            display: block;
+            position: fixed;
+            inset: var(--beta-header-offset) 0 0 0;
+            z-index: 40;
+            background: var(--core-background);
+            padding: var(--space-4, 1rem);
+            overflow-y: auto;
+            border-top: 1px solid var(--border);
+        }
+    }
+
+    .beta-doc-article h1,
+    .beta-doc-article h2,
+    .beta-doc-article h3,
+    .beta-doc-article h4 {
+        font-family: var(--font-heading);
+        color: var(--core-foreground);
+        line-height: 1.2;
+        margin-top: 1.8em;
+        margin-bottom: 0.6em;
+        scroll-margin-top: calc(var(--beta-header-offset, 80px) + 1rem);
+    }
+
+    .beta-doc-article h1 {
+        font-size: clamp(1.75rem, 3vw, 2.25rem);
+        margin-top: 0;
+    }
+
+    .beta-doc-article h2 {
+        font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+    }
+
+    .beta-doc-article h3 {
+        font-size: 1.15rem;
+    }
+
+    .beta-doc-article p,
+    .beta-doc-article ul,
+    .beta-doc-article ol {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--core-foreground);
+    }
+
+    .beta-doc-article ul,
+    .beta-doc-article ol {
+        padding-left: 1.5rem;
+        margin: 0.75rem 0 1.1rem;
+    }
+
+    .beta-doc-article li {
+        margin: 0.3rem 0;
+    }
+
+    .beta-doc-article li > ul,
+    .beta-doc-article li > ol {
+        margin: 0.3rem 0 0.4rem;
+    }
+
+    .beta-doc-article li::marker {
+        color: var(--brand-accent);
+    }
+
+    .beta-doc-article p {
+        margin: 0.75rem 0 1rem;
+    }
+
+    .beta-doc-article code {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 0.9em;
+        background: var(--surface-warm);
+        padding: 0.1em 0.35em;
+        border-radius: var(--radius-button, 8px);
+    }
+
+    .beta-doc-article pre {
+        background: var(--surface-warm);
+        padding: var(--space-3, 0.75rem);
+        border-radius: var(--radius-md, 10px);
+        overflow-x: auto;
+    }
+
+    .beta-doc-article pre code {
+        background: transparent;
+        padding: 0;
+    }
+
+    .beta-doc-article a {
+        color: var(--brand-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .beta-doc-article a:hover {
+        color: var(--brand-accent);
+    }
+
+    .beta-doc-article blockquote {
+        border-left: 3px solid var(--brand-accent);
+        padding: 0.25rem 0 0.25rem 1rem;
+        margin: 1.25rem 0;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+    }
+
+    .beta-callout {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        padding: 1rem 1.15rem;
+        margin: 1.5rem 0;
+        border-radius: var(--radius-md, 10px);
+        border: 1px solid transparent;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .beta-callout__icon {
+        flex-shrink: 0;
+        font-size: 1.25rem;
+        line-height: 1.3;
+    }
+
+    .beta-callout__body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .beta-callout__body > :first-child {
+        margin-top: 0;
+    }
+
+    .beta-callout__body > :last-child {
+        margin-bottom: 0;
+    }
+
+    .beta-callout__title {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.01em;
+    }
+
+    .beta-callout--warning {
+        background: oklch(from var(--brand-accent) l c h / 0.12);
+        border-color: oklch(from var(--brand-accent) l c h / 0.4);
+        color: var(--core-foreground);
+    }
+
+    .beta-callout--warning .beta-callout__title {
+        color: var(--brand-accent);
+    }
+
+    .beta-callout--info {
+        background: oklch(from var(--brand-primary) l c h / 0.1);
+        border-color: oklch(from var(--brand-primary) l c h / 0.35);
+        color: var(--core-foreground);
+    }
+
+    .beta-callout--info .beta-callout__title {
+        color: var(--brand-primary);
+    }
+
+    .beta-callout--compact {
+        padding: 0.55rem 0.85rem;
+        margin: 1rem 0 1.25rem;
+        font-size: 0.875rem;
+        align-items: center;
+    }
+
+    .beta-callout--compact .beta-callout__icon {
+        font-size: 1rem;
+    }
+
+    .beta-figure {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 1.75rem 0;
+        padding: 0;
+    }
+
+    .beta-figure img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--radius-md, 10px);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.06));
+        background: var(--surface-warm);
+        cursor: zoom-in;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .beta-figure img:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .beta-lightbox {
+        width: 95vw;
+        max-width: 1800px;
+        max-height: 95vh;
+        margin: auto;
+        padding: 0;
+        border: none;
+        border-radius: var(--radius-md, 10px);
+        background: var(--core-background);
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+    }
+
+    .beta-lightbox::backdrop {
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(4px);
+    }
+
+    .beta-lightbox__img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: calc(95vh - 3rem);
+        object-fit: contain;
+        cursor: zoom-out;
+        background: var(--surface-warm);
+    }
+
+    .beta-lightbox__caption {
+        margin: 0;
+        padding: 0.65rem 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        font-style: italic;
+        text-align: center;
+        color: var(--core-muted-foreground);
+        background: var(--core-background);
+        border-top: 1px solid var(--border);
+    }
+
+    .beta-lightbox__caption[hidden] {
+        display: none;
+    }
+
+    .beta-lightbox__close {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        border: none;
+        background: rgba(0, 0, 0, 0.65);
+        color: white;
+        font-size: 1.6rem;
+        line-height: 1;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 2;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .beta-lightbox__close:hover {
+        background: rgba(0, 0, 0, 0.85);
+        transform: scale(1.05);
+    }
+
+    .beta-lightbox__close:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .beta-figure figcaption {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        text-align: center;
+        padding: 0 0.5rem;
+    }
+
+    /* Pair: desktop + mobile shown side by side on wide viewports */
+    .beta-figure-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin: 1.75rem 0;
+    }
+
+    @media (min-width: 720px) {
+        .beta-figure-group {
+            grid-template-columns: 2fr 1fr;
+            align-items: start;
+        }
+    }
+
+    .beta-figure-group > .beta-figure {
+        margin: 0;
+    }
+
+    .beta-doc-article table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.25rem 0;
+        font-size: 0.9rem;
+    }
+
+    .beta-doc-article th,
+    .beta-doc-article td {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .beta-doc-article th {
+        font-weight: 600;
+        background: var(--surface-warm);
+    }
+
+    .beta-glosario-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 10px);
+        background: var(--surface-warm);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .beta-glosario-hint__icon {
+        flex-shrink: 0;
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .beta-glosario-hint__text {
+        line-height: 1.5;
+    }
+
+    .beta-glosario-hint a {
+        color: var(--brand-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .beta-glosario-hint a:hover {
+        color: var(--brand-accent);
+    }
+</style>

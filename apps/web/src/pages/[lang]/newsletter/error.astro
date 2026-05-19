@@ -1,0 +1,116 @@
+---
+/**
+ * @file [lang]/newsletter/error.astro
+ * @description Verification error page (SPEC-101 T-101-37).
+ *
+ * Where the API redirects when a verify / unsubscribe token is bad:
+ *   GET /api/v1/public/newsletter/error/?reason={token_expired|invalid_token}
+ *
+ * The page reads the `reason` query and renders a friendly message
+ * (no tech jargon) plus a recovery action:
+ *   - token_expired + authenticated → resend button (POST /resend-verification)
+ *   - token_expired + guest         → sign-in link (with redirect back here)
+ *   - invalid_token (any auth)      → generic "this link is no longer valid"
+ *
+ * Server-rendered, noindex. The resend action below the headline is a
+ * tiny inline form that POSTs to the protected endpoint and reloads.
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { AlertCircleIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const rawReason = (Astro.url.searchParams.get('reason') ?? '').trim();
+const reason: 'token_expired' | 'invalid_token' =
+    rawReason === 'token_expired' ? 'token_expired' : 'invalid_token';
+
+// App.Locals does not declare `user` yet — same workaround as
+// MobileMenuIsland.astro / desuscripto.astro.
+const locals = Astro.locals as { user?: { id: string; email: string } | null };
+const isAuthenticated = Boolean(locals.user);
+
+const titleKey =
+    reason === 'token_expired'
+        ? 'newsletter.errorPage.tokenExpiredTitle'
+        : 'newsletter.errorPage.invalidTokenTitle';
+const titleFb =
+    reason === 'token_expired' ? 'El enlace expiró' : 'Enlace inválido';
+
+const descriptionKey =
+    reason === 'token_expired'
+        ? 'newsletter.errorPage.tokenExpiredDescription'
+        : 'newsletter.errorPage.invalidTokenDescription';
+const descriptionFb =
+    reason === 'token_expired'
+        ? 'El enlace de confirmación expiró. Podés solicitar uno nuevo.'
+        : 'El enlace de confirmación no es válido.';
+
+const pageTitle = t(titleKey, titleFb);
+const pageDescription = t(descriptionKey, descriptionFb);
+
+const resendLabel = t('newsletter.errorPage.resendButton', 'Reenviar email de confirmación');
+const signInHref = `/${lang}/auth/signin/?redirect=${encodeURIComponent(
+    `/${lang}/newsletter/error/?reason=${reason}`
+)}`;
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="error"
+        Icon={AlertCircleIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        {reason === 'token_expired' && (
+            <Fragment slot="actions">
+                {isAuthenticated ? (
+                    <form
+                        method="post"
+                        action="/api/v1/protected/newsletter/resend-verification"
+                        class="newsletter-error__resend"
+                    >
+                        <button class="newsletter-error__button" type="submit">
+                            {resendLabel}
+                        </button>
+                    </form>
+                ) : (
+                    <a class="newsletter-error__button" href={signInHref}>
+                        {resendLabel}
+                    </a>
+                )}
+            </Fragment>
+        )}
+    </StatusPage>
+</DefaultLayout>
+
+<style>
+    .newsletter-error__resend {
+        margin: 0;
+    }
+
+    .newsletter-error__button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
+        border: none;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+        font-size: var(--text-button, 0.9375rem);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>

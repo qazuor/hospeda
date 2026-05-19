@@ -2,10 +2,13 @@
  * Admin batch event endpoint
  * Retrieves multiple events by IDs
  */
-import { EventAdminSchema, EventBatchRequestSchema, PermissionEnum } from '@repo/schemas';
+import {
+    EventAdminBatchResponseSchema,
+    EventBatchRequestSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -24,7 +27,7 @@ export const adminEventBatchRoute = createAdminRoute({
     tags: ['Events'],
     requiredPermissions: [PermissionEnum.EVENT_VIEW_ALL],
     requestBody: EventBatchRequestSchema,
-    responseSchema: z.array(EventAdminSchema.nullable()),
+    responseSchema: EventAdminBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { ids, fields } = body as { ids: string[]; fields?: string[] };

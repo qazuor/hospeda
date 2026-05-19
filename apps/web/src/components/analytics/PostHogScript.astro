@@ -1,0 +1,110 @@
+---
+/**
+ * @file PostHogScript.astro
+ * @description Inline PostHog snippet for the web app (SPEC-140 — fix B).
+ *
+ * Why a snippet, not a React island:
+ * Mixing posthog-js via ESM bundle + array.js auto-loader leaves the SDK in a
+ * half-initialised state where `window.posthog` is undefined and events never
+ * reach `/e/`. The official PostHog Astro guide
+ * (https://posthog.com/docs/libraries/astro) recommends this exact snippet
+ * pattern so `window.posthog` is the canonical entry point and the SDK's own
+ * loader manages the bootstrap.
+ *
+ * What this script does on every page render:
+ * 1. Reads `PUBLIC_POSTHOG_KEY` + `PUBLIC_POSTHOG_HOST` from the Astro env
+ *    and passes them via `define:vars` to the inline script.
+ * 2. Skips entirely in dev mode (so `pnpm dev` never sends events).
+ * 3. Skips when the key is empty (so locally-built preview / staging
+ *    environments without the secret stay quiet).
+ * 4. Loads the official PostHog stub which fetches `array.js` asynchronously
+ *    and upgrades `window.posthog` to the real SDK.
+ * 5. Reads the `cookie-consent` cookie SYNCHRONOUSLY and inits PostHog with
+ *    `localStorage+cookie` persistence if `analytics === true`, otherwise
+ *    `memory` (cookieless fallback — still captures pageviews but never
+ *    persists `ph_*` cookies or localStorage entries).
+ * 6. Subscribes to the `cookie-consent:changed` window event dispatched by
+ *    `saveConsent()` in `cookie-consent.ts` so persistence mode can switch
+ *    mid-session via `posthog.set_config(...)` without a page reload.
+ *
+ * Call sites (search, accommodation detail, signup, contact-host, newsletter)
+ * use `trackEvent()` from `@/lib/analytics/posthog-client` which is a thin
+ * wrapper around `window.posthog?.capture(...)`.
+ */
+
+interface Props {
+    /** The per-request CSP nonce (so the inline script passes strict-dynamic). */
+    readonly cspNonce: string;
+}
+
+const { cspNonce } = Astro.props;
+
+// Read env vars at template time. `import.meta.env.PUBLIC_*` is baked in at
+// build time by Astro, so each Coolify resource (staging vs prod) gets its
+// own project key from Coolify's env panel.
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY ?? '';
+const posthogHost = import.meta.env.PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+const isDev = import.meta.env.DEV === true;
+
+// Compute whether to render the snippet at all. Templates without the key
+// render an empty fragment so the page never ships an empty <script> tag.
+const shouldRender = !isDev && posthogKey.length > 0;
+
+// Build the snippet body as a plain string and inject it via `set:html`.
+// We CANNOT use the JSX expression form `<script>{\`...\`}</script>` here:
+// inside an Astro `<script is:inline define:vars={...}>`, Astro wraps the
+// element children in an IIFE that prepends the var declarations. JSX
+// expression braces in that wrapped body are emitted literally, so the
+// snippet ends up parsed as `{ \`...\` }` — a JS block containing a
+// dangling template literal that evaluates and discards the snippet body.
+// `set:html` bypasses the JSX path and writes the string directly inside
+// the <script> tag, where Astro's `define:vars` wrapper composes it
+// correctly. See regression test in apps/web/test/lib/analytics/.
+const snippetBody = `
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me Te Ee Re capture De calculateEventProperties Oe register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Ce $e createPersonProfile Ie opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing _t debug L getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+
+(function () {
+    var analyticsAllowed = false;
+    try {
+        var found = document.cookie.split('; ').find(function (c) {
+            return c.indexOf('cookie-consent=') === 0;
+        });
+        if (found) {
+            var parsed = JSON.parse(decodeURIComponent(found.slice('cookie-consent='.length)));
+            analyticsAllowed = !!(parsed && parsed.analytics === true);
+        }
+    } catch (e) {}
+
+    window.posthog.init(posthogKey, {
+        api_host: posthogHost,
+        person_profiles: 'identified_only',
+        capture_pageview: true,
+        autocapture: true,
+        disable_session_recording: true,
+        persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
+        respect_dnt: true
+    });
+
+    window.addEventListener('cookie-consent:changed', function (event) {
+        var detail = event && event.detail;
+        var allowed = !!(detail && detail.analytics === true);
+        if (window.posthog && typeof window.posthog.set_config === 'function') {
+            window.posthog.set_config({
+                persistence: allowed ? 'localStorage+cookie' : 'memory'
+            });
+        }
+    });
+})();
+`;
+---
+
+{
+    shouldRender && (
+        <script
+            is:inline
+            nonce={cspNonce}
+            define:vars={{ posthogKey, posthogHost }}
+            set:html={snippetBody}
+        />
+    )
+}

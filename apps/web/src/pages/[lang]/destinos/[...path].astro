@@ -10,7 +10,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
@@ -36,6 +36,7 @@ import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { renderContent } from '@/lib/render-content';
 import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -323,10 +324,18 @@ const breadcrumbJsonLdItems = [
 	}))
 ];
 
-// Whether the destination's plain `description` field carries HTML (the
-// editor stores Tiptap-rendered HTML). We assume description is plain text
-// and rely on the optional contentHtml field for rich content.
-const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml : null;
+// Description rendering — `dest.contentHtml` (TipTap-rendered HTML, when
+// present) takes precedence; otherwise `description` may be markdown or plain
+// text. `renderContent` normalizes all three into safe HTML for `set:html`.
+// (Previously the `contentHtml` branch piped raw HTML directly into `set:html`
+// without sanitization — pre-existing XSS hole, fixed here.)
+const rawDescription = typeof dest.contentHtml === 'string' && dest.contentHtml.length > 0
+	? dest.contentHtml
+	: description;
+const safeDescriptionHtml = renderContent({
+	raw: rawDescription,
+	siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+});
 ---
 
 <DetailLayout
@@ -379,14 +388,12 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 			)}
 		</div>
 
-		<!-- Description (rich HTML if available, else plain text) -->
-		<div class="dest-detail__section dest-detail__description">
-			{richDescription ? (
-				<div set:html={richDescription} />
-			) : (
-				<p>{description}</p>
-			)}
-		</div>
+		<!-- Description (markdown / HTML / plain text → sanitized HTML) -->
+		{safeDescriptionHtml && (
+			<div class="dest-detail__section dest-detail__description">
+				<div set:html={safeDescriptionHtml} />
+			</div>
+		)}
 
 		<!-- Photo gallery (extras beyond the hero) -->
 		{galleryImages.length > 0 && (
@@ -434,7 +441,7 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 			{accCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
 					{accCards.map((card, i) => (
-						<div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 							<AccommodationCard data={card} locale={locale} />
 						</div>
 					))}
@@ -472,8 +479,8 @@ const richDescription = typeof dest.contentHtml === 'string' ? dest.contentHtml 
 			{eventCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
 					{eventCards.map((card, i) => (
-						<div data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
-							<EventCard data={card} locale={locale} />
+						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+							<EventCardHorizontal data={card} locale={locale} />
 						</div>
 					))}
 				</div>

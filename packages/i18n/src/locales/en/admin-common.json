@@ -175,7 +175,9 @@
             "conflict": "A conflict occurred. The resource may have been modified.",
             "validation": "Validation error. Please check the form fields.",
             "tooManyRequests": "Too many requests. Please wait a moment.",
-            "serverError": "Server error. Please try again later."
+            "serverError": "Server error. Please try again later.",
+            "serviceUnavailable": "This service is not configured yet. Contact the system administrator.",
+            "invalidResponse": "The server response is not valid. Please retry in a few seconds."
         }
     },
     "entityForm": {
@@ -246,5 +248,19 @@
         "srSuccess": "Form submitted successfully",
         "srFailed": "Form submission failed: {{error}}",
         "srHasErrors": "Form has {{count}} validation errors"
+    },
+    "entityPage": {
+        "viewTitle": "{entity}",
+        "editTitle": "Edit {entity}",
+        "viewDescription": "{entity} details",
+        "editDescription": "Modify {entity} details",
+        "notAvailable": "Not available",
+        "none": "None",
+        "actions": {
+            "back": "Back",
+            "edit": "Edit",
+            "view": "View",
+            "cancel": "Cancel"
+        }
     }
 }

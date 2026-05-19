@@ -3,8 +3,8 @@
     "id": "008-destination-paranacito",
     "slug": "paranacito",
     "name": "Villa Paranacito",
-    "summary": "Única ciudad insular de Argentina rodeada de naturaleza y delta",
-    "description": "Villa Paranacito es una única ciudad insular ubicada en el Delta del Paraná, en el extremo sur de Entre Ríos. Conocida como la única ciudad insular de Argentina, ofrece una experiencia única rodeada de naturaleza salvaje, canales, islas y fauna autóctona. Es el destino perfecto para el turismo de naturaleza, pesca, avistamiento de aves y aventuras en el delta. Su paisaje único y su tranquilidad la convierten en un escape perfecto de la vida urbana.",
+    "summary": "Cabecera del Departamento Islas del Ibicuy, en el Delta del Paraná entrerriano. Naturaleza, humedales, pesca y navegación.",
+    "description": "Villa Paranacito es la cabecera del Departamento Islas del Ibicuy, ubicada en el extremo sudeste de Entre Ríos, en la tercera sección del Delta del Paraná. Bañada por el río Paranacito y rodeada de arroyos, islas y humedales de gran diversidad biológica, es uno de los destinos más atractivos del bajo delta entrerriano. Su entorno natural permite paseos en lancha, yate o catamarán, recorridos por canales navegables, kayak, remo, esquí acuático y observación de aves autóctonas y migratorias. La pesca deportiva es una actividad central, con especies como pejerrey, dorado, surubí, bagre y sábalo, y cuenta con guías de pesca, marinas y embarcaderos. Cada año se celebra el Festival del Pejerrey Entrerriano. El distrito abarca cerca de 197.000 hectáreas de islas, arroyos y humedales del complejo deltaico.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,45 +13,250 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2840",
+        "zipCode": "2823",
         "country": "Argentina",
         "street": "Av. Insular",
         "number": "777",
         "city": "Villa Paranacito",
         "coordinates": {
-            "lat": "-33.7167",
-            "long": "-58.6500"
+            "lat": "-33.7117",
+            "long": "-58.6956"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Villa Paranacito",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178087/hospeda/seed/required/destinations/008-destination-paranacito/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Villa Paranacito"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Villa Paranacito",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178088/hospeda/seed/required/destinations/008-destination-paranacito/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Villa Paranacito",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178089/hospeda/seed/required/destinations/008-destination-paranacito/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178090/hospeda/seed/required/destinations/008-destination-paranacito/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178092/hospeda/seed/required/destinations/008-destination-paranacito/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178093/hospeda/seed/required/destinations/008-destination-paranacito/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178094/hospeda/seed/required/destinations/008-destination-paranacito/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178096/hospeda/seed/required/destinations/008-destination-paranacito/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178097/hospeda/seed/required/destinations/008-destination-paranacito/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178098/hospeda/seed/required/destinations/008-destination-paranacito/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178099/hospeda/seed/required/destinations/008-destination-paranacito/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178100/hospeda/seed/required/destinations/008-destination-paranacito/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178101/hospeda/seed/required/destinations/008-destination-paranacito/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178102/hospeda/seed/required/destinations/008-destination-paranacito/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178103/hospeda/seed/required/destinations/008-destination-paranacito/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178103/hospeda/seed/required/destinations/008-destination-paranacito/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178105/hospeda/seed/required/destinations/008-destination-paranacito/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178106/hospeda/seed/required/destinations/008-destination-paranacito/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178106/hospeda/seed/required/destinations/008-destination-paranacito/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178107/hospeda/seed/required/destinations/008-destination-paranacito/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178108/hospeda/seed/required/destinations/008-destination-paranacito/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178109/hospeda/seed/required/destinations/008-destination-paranacito/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178110/hospeda/seed/required/destinations/008-destination-paranacito/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/008-destination-paranacito/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Villa Paranacito - Única ciudad insular de Argentina",
-        "description": "Descubre Villa Paranacito en Entre Ríos. Única ciudad insular de Argentina rodeada de naturaleza y delta",
-        "keywords": ["Villa Paranacito", "Entre Ríos", "insular", "delta", "naturaleza", "río"]
+        "title": "Villa Paranacito - Delta entrerriano, naturaleza y pesca",
+        "description": "Descubrí Villa Paranacito, cabecera de Islas del Ibicuy en el Delta del Paraná. Humedales, pesca, kayak, navegación y observación de aves.",
+        "keywords": [
+            "Villa Paranacito",
+            "Entre Ríos",
+            "Delta del Paraná",
+            "Islas del Ibicuy",
+            "pesca deportiva",
+            "humedales",
+            "kayak",
+            "naturaleza"
+        ]
     },
     "attractionIds": [
         "032-attraction-delta_explorer",
         "044-attraction-humedales",
         "065-attraction-pesca_deportiva",
-        "035-attraction-embarcadero_turistico"
+        "035-attraction-embarcadero_turistico",
+        "058-attraction-observacion_aves",
+        "007-attraction-canal_navegable",
+        "046-attraction-kayak_rio"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

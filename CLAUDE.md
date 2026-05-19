@@ -106,9 +106,7 @@ pnpm build:api        # Build API for production
 
 # Environment
 pnpm env:check:registry  # Local: confirm app schemas match @repo/config registry (CI gate)
-# Note: pnpm env:pull / env:push / env:sync / env:check are deprecated stubs.
-# They targeted Vercel (gone after Phase 16.4). Use hops env-* on the VPS for
-# remote env management. Full workflow: docs/guides/env-management.md.
+# Remote env management lives in hops env-* on the VPS (see docs/guides/env-management.md).
 ```
 
 ### Coding Standards
@@ -182,6 +180,32 @@ ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch
 
 `main` is the validated baseline; `staging` is the integration line. Never branch features from `main`, never PR features into `main`. The only exception is a production hotfix (branch from `main`, fix, PR to `main`, then back-merge `main` → `staging`).
 
+#### Post-merge: a merged PR is DONE — new work needs a new branch + new PR
+
+When a PR is merged, GitHub closes it. Pushing additional commits to the same branch DOES NOT reopen the PR — those commits become orphans living on a branch with no review surface. This is silent — git accepts the push, you only notice later when the work isn't anywhere.
+
+**Rules to prevent orphan commits:**
+
+1. Before pushing to any branch that has had a PR opened against it, ALWAYS check whether the PR is still open:
+
+   ```bash
+   GITHUB_TOKEN= gh pr list --head <branch-name> --state all --json number,state,title
+   ```
+
+   If the PR is `MERGED` or `CLOSED`, the branch is done. Pushing more commits to it goes nowhere.
+
+2. If you discover a bug or follow-up after the original PR merged, treat it as new work:
+
+   ```bash
+   git fetch origin staging
+   git checkout -b fix/SPEC-NNN-<followup-slug> origin/staging
+   # cherry-pick or re-author the fix here
+   git push -u origin fix/SPEC-NNN-<followup-slug>
+   GITHUB_TOKEN= gh pr create --base staging --head fix/SPEC-NNN-<followup-slug> ...
+   ```
+
+3. Claude operating rule: BEFORE running `git push` on a branch you previously opened a PR from, run `gh pr list --head <branch>` and verify state. If `MERGED`/`CLOSED`, STOP and tell the user "the PR is closed — I need to cut a new branch for this follow-up". Never silently push to a closed-PR branch and assume the user will notice.
+
 ### Biome Lint Gotchas
 
 Common biome errors that block commits:
@@ -236,7 +260,7 @@ Common biome errors that block commits:
 
 See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference and [docs/guides/env-management.md](docs/guides/env-management.md) for the operational workflow (local dev + Coolify prod). Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
 
-The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). The legacy `pnpm env:check / env:pull / env:push / env:sync` commands are deprecated stubs that targeted the Vercel API (gone after Phase 16.4); they print a pointer to the new workflow and exit.
+The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check:registry` to validate that app schemas are in sync with the registry (this is the CI gate; runs three per-app vitest suites). Remote env management is done via `hops env-*` on the VPS (see `docs/guides/env-management.md`).
 
 ### Adding a new environment variable (workflow)
 
@@ -350,6 +374,28 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 - **NEVER** start working on code without first checking if there's a relevant spec/task
 - When a spec is first worked on, update its status from `draft` → `in-progress`
 - If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications
+
+### Index Sync Rules (CRITICAL — read every session that touches specs/tasks)
+
+There are TWO index files that must stay in sync:
+
+- `.claude/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
+- `.claude/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
+
+The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
+
+**Rules:**
+
+1. **When you archive a spec** (flip `status` to `completed` + `archived: true` in `specs/index.json`), you MUST in the same change flip the matching entry in `tasks/index.json`:
+   - `status` → `completed`
+   - `progress` → full (e.g. `99/99` not `94/99`)
+   - `archived: true`
+   - `archivedAt: <ISO date>`
+   - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
+2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
+3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
+4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.claude/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
+5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .claude/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
 
 ### Spec Files Location
 

@@ -82,7 +82,7 @@ describe('useAuthTranslations', () => {
             const translated = result.current.t('auth-ui.signIn.title');
 
             // Assert - should use fallback
-            expect(translated).toBe('Iniciar Sesión');
+            expect(translated).toBe('Iniciar sesión');
         });
     });
 
@@ -109,10 +109,10 @@ describe('useAuthTranslations', () => {
             const { result } = renderHook(() => useAuthTranslations());
 
             // Assert
-            expect(result.current.t('auth-ui.signIn.title')).toBe('Iniciar Sesión');
-            expect(result.current.t('auth-ui.signUp.title')).toBe('Crear Cuenta');
-            expect(result.current.t('auth-ui.userMenu.signOut')).toBe('Cerrar Sesión');
-            expect(result.current.t('auth-ui.signOut.button')).toBe('Cerrar Sesión');
+            expect(result.current.t('auth-ui.signIn.title')).toBe('Iniciar sesión');
+            expect(result.current.t('auth-ui.signUp.title')).toBe('Crear cuenta');
+            expect(result.current.t('auth-ui.userMenu.signOut')).toBe('Cerrar sesión');
+            expect(result.current.t('auth-ui.signOut.button')).toBe('Cerrar sesión');
             expect(result.current.t('auth-ui.common.loading')).toBe('Cargando...');
         });
 
@@ -152,7 +152,7 @@ describe('useAuthTranslations', () => {
             const translated = result.current.t('auth-ui.signIn.title', { extra: 'value' });
 
             // Assert - params don't affect static text
-            expect(translated).toBe('Iniciar Sesión');
+            expect(translated).toBe('Iniciar sesión');
         });
     });
 

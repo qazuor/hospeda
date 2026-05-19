@@ -6,6 +6,7 @@
  * @rendering SSG (prerender)
  */
 
+import { getSiteUrl } from '@/lib/env';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { ContactForm } from '@/components/ContactForm.client';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
@@ -115,7 +116,7 @@ const socialLinks = [
 ];
 
 // ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const contactPageJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'ContactPage',
@@ -234,7 +235,7 @@ const contactPageJsonLd = {
 							href={channel.href}
 							class={`contact-channel contact-channel--${channel.key}`}
 							data-reveal="up"
-							style={`transition-delay: ${i * 100}ms`}
+							data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
 							{...(channel.external && { target: '_blank', rel: 'noopener noreferrer' })}
 						>
 							<span class="contact-channel__icon" aria-hidden="true">
@@ -274,7 +275,7 @@ const contactPageJsonLd = {
 				</div>
 
 				<div class="contact-visit__sidebar">
-					<article class="contact-visit-card" data-reveal="up" style="transition-delay: 100ms">
+					<article class="contact-visit-card" data-reveal="up" data-stagger-index="1" data-stagger-step="100">
 						<header class="contact-visit-card__header">
 							<span class="contact-visit-card__icon" aria-hidden="true">
 								<ClockIcon size="md" weight="duotone" />
@@ -296,7 +297,7 @@ const contactPageJsonLd = {
 						</p>
 					</article>
 
-					<article class="contact-visit-card" data-reveal="up" style="transition-delay: 200ms">
+					<article class="contact-visit-card" data-reveal="up" data-stagger-index="2" data-stagger-step="100">
 						<header class="contact-visit-card__header">
 							<span class="contact-visit-card__icon" aria-hidden="true">
 								<InstagramIcon size="md" weight="duotone" />

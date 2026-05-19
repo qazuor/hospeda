@@ -15,21 +15,17 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.triggerHero {
-    color: #fff;
-    background-color: rgba(255 255 255 / 0.12);
-    border-color: rgba(255 255 255 / 0.25);
-}
-
-.triggerHero:hover {
-    background-color: rgba(255 255 255 / 0.18);
-}
-
+/* Both hero and scrolled variants paint over a light navbar background
+   in this design (the hero section uses --brand-secondary, a near-white
+   tint, behind the transparent navbar), so they share the same readable
+   foreground look. */
+.triggerHero,
 .triggerScrolled {
     color: var(--core-foreground);
     border-color: oklch(from var(--core-foreground) l c h / 0.15);
 }
 
+.triggerHero:hover,
 .triggerScrolled:hover {
     background-color: oklch(from var(--core-foreground) l c h / 0.05);
 }

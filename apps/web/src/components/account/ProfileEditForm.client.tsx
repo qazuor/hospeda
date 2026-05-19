@@ -2,10 +2,20 @@
  * @file ProfileEditForm.client.tsx
  * @description React island for editing a user's public profile.
  *
- * Validates input client-side using `ProfileEditSchema` from `@repo/schemas`.
- * On submit, optionally uploads a new avatar via the media endpoint (T-036),
- * then PATCHes the user profile. Uses only native HTML form + React state —
- * no react-hook-form (web-app convention: native forms only).
+ * Orchestrator: owns ALL state + handlers + submit, then delegates
+ * rendering to five pure subcomponents:
+ *   1. ProfileEditAvatarSection    (image preview + change button)
+ *   2. ProfileEditPersonalSection  (displayName, firstName, lastName,
+ *                                   birthDate, phone, bio)
+ *   3. ProfileEditExtrasSection    (website, occupation)
+ *   4. ProfileEditSocialSection    (facebook/instagram/twitter/linkedin/youtube)
+ *   5. ProfileEditLocationSection  (country, province, city, addressLine1,
+ *                                   postalCode)
+ *
+ * Validates with `ProfileEditSchema` from `@repo/schemas`. On submit,
+ * uploads any pending avatar via the media endpoint, then PATCHes the
+ * user via `/api/v1/protected/users/:id`. Uses only native HTML form +
+ * React state — no react-hook-form (web-app convention: native forms).
  *
  * Hydration: caller must use `client:load`.
  */
@@ -14,22 +24,31 @@ import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import type { ProfileEditInput } from '@repo/schemas';
 import { ProfileEditSchema } from '@repo/schemas';
 import { useRef, useState } from 'react';
+import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
+import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
+import { type ProfileEditFieldErrors, parseZodErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
+import { ProfileEditLocationSection } from './ProfileEditLocationSection';
+import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
+import { ProfileEditSocialSection } from './ProfileEditSocialSection';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-/** Accepted image MIME types for avatar upload */
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-
-/** Max avatar file size (5 MB) */
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** Minimal user shape needed to pre-populate the form */
+/** Profile JSONB block (subset of UserProfileSchema). */
+export interface ProfileEditUserProfile {
+    readonly bio?: string | null;
+    readonly website?: string | null;
+    readonly occupation?: string | null;
+}
+
+/** Pre-population shape — mirrors what the page.astro fetches from the API. */
 export interface ProfileEditUser {
     readonly id: string;
     readonly displayName?: string | null;
@@ -37,24 +56,27 @@ export interface ProfileEditUser {
     readonly lastName?: string | null;
     readonly avatarUrl?: string | null;
     readonly phone?: string | null;
-    readonly profile?: {
-        readonly bio?: string | null;
-    } | null;
+    readonly birthDate?: string | null;
+    readonly profile?: ProfileEditUserProfile | null;
+    readonly website?: string | null;
+    readonly facebookUrl?: string | null;
+    readonly instagramUrl?: string | null;
+    readonly twitterUrl?: string | null;
+    readonly linkedinUrl?: string | null;
+    readonly youtubeUrl?: string | null;
+    readonly addressLine1?: string | null;
+    readonly city?: string | null;
+    readonly province?: string | null;
+    readonly country?: string | null;
+    readonly postalCode?: string | null;
 }
 
 interface ProfileEditFormProps {
-    /** Pre-populated user data */
     readonly initialUser: ProfileEditUser;
-    /** Active locale for i18n */
     readonly locale: SupportedLocale;
-    /** API base URL (PUBLIC_API_URL from env) */
     readonly apiUrl: string;
 }
 
-/** Validated field errors keyed by field name */
-type FieldErrors = Partial<Record<keyof ProfileEditInput, string>>;
-
-/** API response wrapper shape */
 interface ApiResponse<T> {
     readonly success: boolean;
     readonly data?: T;
@@ -64,30 +86,12 @@ interface ApiResponse<T> {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolve field-level Zod error messages into a simple record.
- * Accepts generic Zod issue shape (path is PropertyKey[] in Zod v4).
- */
-function parseZodErrors(issues: { path: PropertyKey[]; message: string }[]): FieldErrors {
-    const errors: Partial<Record<string, string>> = {};
-    for (const issue of issues) {
-        const key = String(issue.path[0] ?? '');
-        if (key) errors[key] = issue.message;
-    }
-    return errors as FieldErrors;
-}
-
-/**
- * Upload a file to the media endpoint.
- *
- * @returns The uploaded image URL.
+ * Upload a file to the media endpoint and return the persisted URL.
  */
 async function uploadAvatarFile({
     file,
     base
-}: {
-    readonly file: File;
-    readonly base: string;
-}): Promise<string> {
+}: { readonly file: File; readonly base: string }): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -114,50 +118,117 @@ async function uploadAvatarFile({
     return url;
 }
 
+/**
+ * Drop keys whose value is `undefined`. `ProfileEditSchema` is a
+ * `z.strictObject`, so unknown keys cause validation failures — but a
+ * field literally set to `undefined` still counts as a present key in
+ * JS (`{a: undefined}` has key `a`). Filtering them out keeps the
+ * payload compatible with the strict schema while letting the caller
+ * write the natural `value || undefined` pattern.
+ */
+function omitUndefined(input: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(input)) {
+        if (v !== undefined) out[k] = v;
+    }
+    return out;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
- * Profile edit form island.
+ * Profile edit form island. Pre-fills from the server-fetched user,
+ * validates with `ProfileEditSchema`, uploads avatar then PATCHes the
+ * profile.
  *
- * Validates fields with `ProfileEditSchema`, supports avatar preview + upload
- * before saving, and patches the user via the protected API.
+ * @param props - Component props (see {@link ProfileEditFormProps})
  */
 export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditFormProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // ── Form state ────────────────────────────────────────────────────────
+    // ── Form state — personal ─────────────────────────────────────────────
 
     const [displayName, setDisplayName] = useState(initialUser.displayName ?? '');
     const [firstName, setFirstName] = useState(initialUser.firstName ?? '');
     const [lastName, setLastName] = useState(initialUser.lastName ?? '');
-    const [bio, setBio] = useState(initialUser.profile?.bio ?? '');
+    const [birthDate, setBirthDate] = useState(initialUser.birthDate ?? '');
     const [phone, setPhone] = useState(initialUser.phone ?? '');
+    const [bio, setBio] = useState(initialUser.profile?.bio ?? '');
 
-    // avatarUrl tracks the final persisted URL; previewUrl is the blob: URL
+    // ── Form state — extras ───────────────────────────────────────────────
+
+    const [website, setWebsite] = useState(
+        initialUser.website ?? initialUser.profile?.website ?? ''
+    );
+    const [occupation, setOccupation] = useState(initialUser.profile?.occupation ?? '');
+
+    // ── Form state — social ───────────────────────────────────────────────
+
+    const [facebookUrl, setFacebookUrl] = useState(initialUser.facebookUrl ?? '');
+    const [instagramUrl, setInstagramUrl] = useState(initialUser.instagramUrl ?? '');
+    const [twitterUrl, setTwitterUrl] = useState(initialUser.twitterUrl ?? '');
+    const [linkedinUrl, setLinkedinUrl] = useState(initialUser.linkedinUrl ?? '');
+    const [youtubeUrl, setYoutubeUrl] = useState(initialUser.youtubeUrl ?? '');
+
+    // ── Form state — location ─────────────────────────────────────────────
+
+    const [country, setCountry] = useState(initialUser.country ?? '');
+    const [province, setProvince] = useState(initialUser.province ?? '');
+    const [city, setCity] = useState(initialUser.city ?? '');
+    const [addressLine1, setAddressLine1] = useState(initialUser.addressLine1 ?? '');
+    const [postalCode, setPostalCode] = useState(initialUser.postalCode ?? '');
+
+    // ── Avatar state ──────────────────────────────────────────────────────
+
     const [avatarUrl, setAvatarUrl] = useState<string>(initialUser.avatarUrl ?? '');
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
 
-    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    // ── Form meta ─────────────────────────────────────────────────────────
+
+    const [fieldErrors, setFieldErrors] = useState<ProfileEditFieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    // Active preview image: local blob first, then persisted URL, then null
     const activeImageUrl = previewUrl ?? (avatarUrl || null);
-    const initials = getInitials({ name: initialUser.displayName, email: undefined });
+    const initials = getInitials({
+        name: displayName || initialUser.displayName,
+        email: undefined
+    });
 
-    // ── Avatar handling ───────────────────────────────────────────────────
+    /**
+     * Wrap a setter so updating the value also clears that field's
+     * inline error (matches the UX from before the polish refactor —
+     * users get instant feedback that they've addressed the issue).
+     */
+    function bindChange(
+        field: keyof ProfileEditFieldErrors,
+        setter: (value: string) => void
+    ): (value: string) => void {
+        return (value) => {
+            setter(value);
+            if (fieldErrors[field]) {
+                setFieldErrors((prev) => {
+                    if (!prev[field]) return prev;
+                    const next = { ...prev };
+                    delete next[field];
+                    return next;
+                });
+            }
+        };
+    }
 
-    function handleAvatarButtonClick() {
+    // ── Avatar handlers ───────────────────────────────────────────────────
+
+    function handleAvatarButtonClick(): void {
         fileInputRef.current?.click();
     }
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>): void {
         const file = e.target.files?.[0];
-        // Reset so same file can be re-selected
         e.target.value = '';
         if (!file) return;
 
@@ -170,50 +241,53 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             return;
         }
 
-        // Revoke any prior blob URL
         if (previewUrl) URL.revokeObjectURL(previewUrl);
-
         const blobUrl = URL.createObjectURL(file);
         setPreviewUrl(blobUrl);
         setAvatarFile(file);
     }
 
-    // ── Form validation ───────────────────────────────────────────────────
-
-    function validateForm(): ProfileEditInput | null {
-        const result = ProfileEditSchema.safeParse({
-            displayName: displayName.trim(),
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            bio: bio.trim() || undefined,
-            avatarUrl: avatarUrl || undefined,
-            phone: phone.trim() || undefined
-        });
-
-        if (!result.success) {
-            setFieldErrors(parseZodErrors(result.error.issues));
-            return null;
-        }
-
-        setFieldErrors({});
-        return result.data;
-    }
-
     // ── Submit ────────────────────────────────────────────────────────────
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setFormError(null);
 
-        const validated = validateForm();
-        if (!validated) return;
+        const parsed = ProfileEditSchema.safeParse(
+            omitUndefined({
+                displayName: displayName.trim(),
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                bio: bio.trim() || undefined,
+                avatarUrl: avatarUrl || undefined,
+                phone: phone.trim() || undefined,
+                birthDate: birthDate || undefined,
+                website: website.trim() || undefined,
+                occupation: occupation.trim() || undefined,
+                facebookUrl: facebookUrl.trim() || undefined,
+                instagramUrl: instagramUrl.trim() || undefined,
+                twitterUrl: twitterUrl.trim() || undefined,
+                linkedinUrl: linkedinUrl.trim() || undefined,
+                youtubeUrl: youtubeUrl.trim() || undefined,
+                addressLine1: addressLine1.trim() || undefined,
+                city: city.trim() || undefined,
+                province: province.trim() || undefined,
+                country: country.trim() || undefined,
+                postalCode: postalCode.trim() || undefined
+            })
+        );
 
+        if (!parsed.success) {
+            setFieldErrors(parseZodErrors(parsed.error.issues));
+            return;
+        }
+
+        setFieldErrors({});
         setSubmitting(true);
 
         try {
-            let finalAvatarUrl = validated.avatarUrl;
+            let finalAvatarUrl = parsed.data.avatarUrl;
 
-            // T-036: upload pending avatar file before saving profile
             if (avatarFile) {
                 setAvatarUploading(true);
                 try {
@@ -230,14 +304,104 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 }
             }
 
+            // Build payload — required fields always; optional fields only
+            // when they differ from the initial value (avoids clobbering
+            // server state with stale empty strings).
+            //
+            // SPEC-113 follow-up: the User entity in the DB stores several
+            // groups of fields inside JSONB columns instead of as separate
+            // top-level columns. The form surface uses flat field names
+            // (phone, country, facebookUrl, …) for UX reasons; the PATCH
+            // payload has to nest them so the API actually persists them.
+            //
+            //   - phone        → contactInfo.mobilePhone
+            //   - website      → profile.website (and contactInfo.website)
+            //   - bio/occupation → profile.{bio, occupation}
+            //   - country/province/city/addressLine1/postalCode → location.*
+            //   - facebookUrl/instagramUrl/… → socialNetworks.{facebook, …}
             const payload: Record<string, unknown> = {
-                displayName: validated.displayName,
-                firstName: validated.firstName,
-                lastName: validated.lastName
+                displayName: parsed.data.displayName,
+                firstName: parsed.data.firstName,
+                lastName: parsed.data.lastName
             };
-            if (validated.bio !== undefined) payload.bio = validated.bio;
             if (finalAvatarUrl !== undefined) payload.image = finalAvatarUrl;
-            if (validated.phone !== undefined) payload.phone = validated.phone;
+            if (parsed.data.birthDate !== undefined) {
+                payload.birthDate = parsed.data.birthDate;
+            }
+
+            // ── profile JSONB (bio, website, occupation) ──────────────────
+            // Send the FULL profile block whenever any of its fields
+            // changed, so the API receives a self-consistent JSONB value
+            // regardless of whether it shallow-merges or replaces.
+            const bioTrim = bio.trim();
+            const websiteTrim = website.trim();
+            const occupationTrim = occupation.trim();
+            const originalWebsite = (
+                initialUser.website ??
+                initialUser.profile?.website ??
+                ''
+            ).trim();
+            const profileChanged =
+                bioTrim !== (initialUser.profile?.bio ?? '').trim() ||
+                websiteTrim !== originalWebsite ||
+                occupationTrim !== (initialUser.profile?.occupation ?? '').trim();
+            if (profileChanged) {
+                const profilePatch: Record<string, string> = {};
+                if (bioTrim.length > 0) profilePatch.bio = bioTrim;
+                if (websiteTrim.length > 0) profilePatch.website = websiteTrim;
+                if (occupationTrim.length > 0) profilePatch.occupation = occupationTrim;
+                payload.profile = profilePatch;
+            }
+
+            // ── contactInfo JSONB (mobilePhone) ───────────────────────────
+            if (phone.trim() !== (initialUser.phone ?? '').trim()) {
+                // Phone in DB is required-when-present per ContactInfoSchema,
+                // so we omit the key entirely on clear; otherwise we set
+                // contactInfo.mobilePhone to the new value.
+                if (phone.trim().length > 0) {
+                    payload.contactInfo = { mobilePhone: phone.trim() };
+                }
+            }
+
+            // ── socialNetworks JSONB ──────────────────────────────────────
+            const socialPatch: Record<string, string> = {};
+            const socialMap: ReadonlyArray<{
+                form: string;
+                jsonKey: 'facebook' | 'instagram' | 'twitter' | 'linkedIn' | 'youtube';
+                original: string | null | undefined;
+            }> = [
+                { form: facebookUrl, jsonKey: 'facebook', original: initialUser.facebookUrl },
+                { form: instagramUrl, jsonKey: 'instagram', original: initialUser.instagramUrl },
+                { form: twitterUrl, jsonKey: 'twitter', original: initialUser.twitterUrl },
+                { form: linkedinUrl, jsonKey: 'linkedIn', original: initialUser.linkedinUrl },
+                { form: youtubeUrl, jsonKey: 'youtube', original: initialUser.youtubeUrl }
+            ];
+            let socialChanged = false;
+            for (const { form, jsonKey, original } of socialMap) {
+                const trimmed = form.trim();
+                if (trimmed !== (original ?? '').trim()) socialChanged = true;
+                if (trimmed.length > 0) socialPatch[jsonKey] = trimmed;
+            }
+            if (socialChanged) {
+                payload.socialNetworks = socialPatch;
+            }
+
+            // ── location JSONB ────────────────────────────────────────────
+            const locationPatch: Record<string, string> = {};
+            const locationChanged =
+                country.trim() !== (initialUser.country ?? '').trim() ||
+                province.trim() !== (initialUser.province ?? '').trim() ||
+                city.trim() !== (initialUser.city ?? '').trim() ||
+                addressLine1.trim() !== (initialUser.addressLine1 ?? '').trim() ||
+                postalCode.trim() !== (initialUser.postalCode ?? '').trim();
+            if (country.trim().length > 0) locationPatch.country = country.trim();
+            if (province.trim().length > 0) locationPatch.region = province.trim();
+            if (city.trim().length > 0) locationPatch.city = city.trim();
+            if (addressLine1.trim().length > 0) locationPatch.addressLine1 = addressLine1.trim();
+            if (postalCode.trim().length > 0) locationPatch.postalCode = postalCode.trim();
+            if (locationChanged) {
+                payload.location = locationPatch;
+            }
 
             const res = await fetch(`${base}/api/v1/protected/users/${initialUser.id}`, {
                 method: 'PATCH',
@@ -289,284 +453,77 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             noValidate
             aria-label={t('account.pages.editProfile.title', 'Editar perfil')}
         >
-            {/* ── Avatar section (T-036) ─────────────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="avatar-section-title"
-            >
-                <h3
-                    className={styles.sectionTitle}
-                    id="avatar-section-title"
-                >
-                    {t('account.pages.editProfile.avatarSection', 'Foto de perfil')}
-                </h3>
-                <div className={styles.avatarRow}>
-                    <div
-                        className={styles.avatarPreviewWrap}
-                        aria-hidden="true"
-                    >
-                        {activeImageUrl ? (
-                            <img
-                                src={activeImageUrl}
-                                alt=""
-                                className={styles.avatarPreviewImg}
-                            />
-                        ) : (
-                            <div className={styles.avatarPreviewInitials}>{initials}</div>
-                        )}
-                    </div>
-                    <div className={styles.avatarActions}>
-                        <button
-                            type="button"
-                            className={styles.avatarUploadBtn}
-                            onClick={handleAvatarButtonClick}
-                            disabled={avatarUploading || submitting}
-                        >
-                            {t('account.avatar.changeButton', 'Cambiar foto')}
-                        </button>
-                        {avatarUploading && (
-                            <span className={styles.avatarUploading}>
-                                {t('account.avatar.uploading', 'Subiendo…')}
-                            </span>
-                        )}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                            className={styles.avatarHiddenInput}
-                            onChange={handleFileChange}
-                            aria-label={t(
-                                'account.avatar.fileInputLabel',
-                                'Seleccionar imagen de perfil'
-                            )}
-                        />
-                    </div>
-                </div>
-            </section>
+            <ProfileEditAvatarSection
+                activeImageUrl={activeImageUrl}
+                initials={initials}
+                avatarUploading={avatarUploading}
+                submitting={submitting}
+                fileInputRef={fileInputRef}
+                t={t}
+                onChangeClick={handleAvatarButtonClick}
+                onFileChange={handleFileChange}
+            />
 
-            {/* ── Personal info ──────────────────────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="personal-section-title"
-            >
-                <h3
-                    className={styles.sectionTitle}
-                    id="personal-section-title"
-                >
-                    {t('account.pages.editProfile.personalSection', 'Información personal')}
-                </h3>
-                <div className={styles.grid}>
-                    {/* displayName */}
-                    <div className={`${styles.field} ${styles.fullWidth}`}>
-                        <label
-                            className={styles.label}
-                            htmlFor="displayName"
-                        >
-                            {t('account.editProfile.fields.displayName', 'Nombre visible')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <input
-                            id="displayName"
-                            type="text"
-                            className={`${styles.input} ${fieldErrors.displayName ? styles.inputError : ''}`}
-                            value={displayName}
-                            onChange={(e) => {
-                                setDisplayName(e.target.value);
-                                if (fieldErrors.displayName) {
-                                    setFieldErrors((prev) => ({ ...prev, displayName: undefined }));
-                                }
-                            }}
-                            aria-required="true"
-                            aria-describedby={
-                                fieldErrors.displayName ? 'displayName-error' : undefined
-                            }
-                            maxLength={100}
-                            autoComplete="nickname"
-                        />
-                        {fieldErrors.displayName && (
-                            <p
-                                id="displayName-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {fieldErrors.displayName}
-                            </p>
-                        )}
-                    </div>
+            <ProfileEditPersonalSection
+                displayName={displayName}
+                firstName={firstName}
+                lastName={lastName}
+                birthDate={birthDate}
+                phone={phone}
+                bio={bio}
+                fieldErrors={fieldErrors}
+                submitting={submitting}
+                t={t}
+                onDisplayNameChange={bindChange('displayName', setDisplayName)}
+                onFirstNameChange={bindChange('firstName', setFirstName)}
+                onLastNameChange={bindChange('lastName', setLastName)}
+                onBirthDateChange={bindChange('birthDate', setBirthDate)}
+                onPhoneChange={bindChange('phone', setPhone)}
+                onBioChange={bindChange('bio', setBio)}
+            />
 
-                    {/* firstName */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="firstName"
-                        >
-                            {t('account.editProfile.fields.firstName', 'Nombre')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <input
-                            id="firstName"
-                            type="text"
-                            className={`${styles.input} ${fieldErrors.firstName ? styles.inputError : ''}`}
-                            value={firstName}
-                            onChange={(e) => {
-                                setFirstName(e.target.value);
-                                if (fieldErrors.firstName) {
-                                    setFieldErrors((prev) => ({ ...prev, firstName: undefined }));
-                                }
-                            }}
-                            aria-required="true"
-                            aria-describedby={fieldErrors.firstName ? 'firstName-error' : undefined}
-                            maxLength={100}
-                            autoComplete="given-name"
-                        />
-                        {fieldErrors.firstName && (
-                            <p
-                                id="firstName-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {fieldErrors.firstName}
-                            </p>
-                        )}
-                    </div>
+            <ProfileEditExtrasSection
+                website={website}
+                occupation={occupation}
+                fieldErrors={fieldErrors}
+                submitting={submitting}
+                t={t}
+                onWebsiteChange={bindChange('website', setWebsite)}
+                onOccupationChange={bindChange('occupation', setOccupation)}
+            />
 
-                    {/* lastName */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="lastName"
-                        >
-                            {t('account.editProfile.fields.lastName', 'Apellido')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <input
-                            id="lastName"
-                            type="text"
-                            className={`${styles.input} ${fieldErrors.lastName ? styles.inputError : ''}`}
-                            value={lastName}
-                            onChange={(e) => {
-                                setLastName(e.target.value);
-                                if (fieldErrors.lastName) {
-                                    setFieldErrors((prev) => ({ ...prev, lastName: undefined }));
-                                }
-                            }}
-                            aria-required="true"
-                            aria-describedby={fieldErrors.lastName ? 'lastName-error' : undefined}
-                            maxLength={100}
-                            autoComplete="family-name"
-                        />
-                        {fieldErrors.lastName && (
-                            <p
-                                id="lastName-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {fieldErrors.lastName}
-                            </p>
-                        )}
-                    </div>
+            <ProfileEditSocialSection
+                facebookUrl={facebookUrl}
+                instagramUrl={instagramUrl}
+                twitterUrl={twitterUrl}
+                linkedinUrl={linkedinUrl}
+                youtubeUrl={youtubeUrl}
+                fieldErrors={fieldErrors}
+                submitting={submitting}
+                t={t}
+                onFacebookChange={bindChange('facebookUrl', setFacebookUrl)}
+                onInstagramChange={bindChange('instagramUrl', setInstagramUrl)}
+                onTwitterChange={bindChange('twitterUrl', setTwitterUrl)}
+                onLinkedinChange={bindChange('linkedinUrl', setLinkedinUrl)}
+                onYoutubeChange={bindChange('youtubeUrl', setYoutubeUrl)}
+            />
 
-                    {/* phone */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="phone"
-                        >
-                            {t('account.editProfile.fields.phone', 'Teléfono')}
-                        </label>
-                        <input
-                            id="phone"
-                            type="tel"
-                            className={`${styles.input} ${fieldErrors.phone ? styles.inputError : ''}`}
-                            value={phone}
-                            onChange={(e) => {
-                                setPhone(e.target.value);
-                                if (fieldErrors.phone) {
-                                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
-                                }
-                            }}
-                            aria-describedby={fieldErrors.phone ? 'phone-error' : 'phone-hint'}
-                            autoComplete="tel"
-                        />
-                        {fieldErrors.phone ? (
-                            <p
-                                id="phone-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {fieldErrors.phone}
-                            </p>
-                        ) : (
-                            <p
-                                id="phone-hint"
-                                className={styles.hint}
-                            >
-                                {t(
-                                    'account.editProfile.fields.phoneHint',
-                                    'Formato E.164: +541134567890'
-                                )}
-                            </p>
-                        )}
-                    </div>
+            <ProfileEditLocationSection
+                country={country}
+                province={province}
+                city={city}
+                addressLine1={addressLine1}
+                postalCode={postalCode}
+                fieldErrors={fieldErrors}
+                submitting={submitting}
+                t={t}
+                onCountryChange={bindChange('country', setCountry)}
+                onProvinceChange={bindChange('province', setProvince)}
+                onCityChange={bindChange('city', setCity)}
+                onAddressLine1Change={bindChange('addressLine1', setAddressLine1)}
+                onPostalCodeChange={bindChange('postalCode', setPostalCode)}
+            />
 
-                    {/* bio */}
-                    <div className={`${styles.field} ${styles.fullWidth}`}>
-                        <label
-                            className={styles.label}
-                            htmlFor="bio"
-                        >
-                            {t('account.editProfile.fields.bio', 'Biografía')}
-                        </label>
-                        <textarea
-                            id="bio"
-                            className={`${styles.textarea} ${fieldErrors.bio ? styles.inputError : ''}`}
-                            value={bio}
-                            onChange={(e) => {
-                                setBio(e.target.value);
-                                if (fieldErrors.bio) {
-                                    setFieldErrors((prev) => ({ ...prev, bio: undefined }));
-                                }
-                            }}
-                            aria-describedby={fieldErrors.bio ? 'bio-error' : 'bio-hint'}
-                            maxLength={1000}
-                            rows={4}
-                        />
-                        {fieldErrors.bio ? (
-                            <p
-                                id="bio-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {fieldErrors.bio}
-                            </p>
-                        ) : (
-                            <p
-                                id="bio-hint"
-                                className={styles.hint}
-                            >
-                                {bio.length}/1000
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Feedback banner ────────────────────────────────────── */}
             {formError && (
                 <div
                     className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
@@ -577,7 +534,6 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 </div>
             )}
 
-            {/* ── Submit ─────────────────────────────────────────────── */}
             <div className={styles.submitRow}>
                 <button
                     type="submit"

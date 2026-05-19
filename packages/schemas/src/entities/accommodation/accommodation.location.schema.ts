@@ -58,6 +58,9 @@ export type AccommodationLocationType = z.infer<typeof AccommodationLocationSche
  * AccommodationSchema via object spread.
  */
 export const AccommodationLocationFields = {
-    location: AccommodationLocationSchema.optional()
+    // Nullable in DB; the column is null until an admin/host fills the location.
+    // Without .nullish() the API rejects fresh rows in the create response
+    // (SPEC-117 D-ACCOM.4).
+    location: AccommodationLocationSchema.nullish()
 } as const;
 export type AccommodationLocationFieldsType = typeof AccommodationLocationFields;

@@ -1359,6 +1359,6 @@ if (result.error) {
 
 **Related Documentation:**
 
-- [ServiceOutput API](../api/ServiceOutput.md)
+- [ServiceOutput API](../../packages/service-core/docs/api/ServiceOutput.md)
 - [Testing Strategy](../testing/strategy.md)
-- [Code Standards](../development/code-standards.md)
+- [Code Standards](../../.claude/docs/code-standards.md)

@@ -15,6 +15,11 @@ import {
     EventProtectedSchema,
     EventPublicSchema
 } from '../event/event.access.schema.js';
+import {
+    PostSponsorAdminSchema,
+    PostSponsorProtectedSchema,
+    PostSponsorPublicSchema
+} from '../postSponsor/postSponsor.access.schema.js';
 import { PublicPostTagSchema } from '../tag/post-tag.public.schema.js';
 import {
     UserAdminSchema,
@@ -74,7 +79,8 @@ const PostSponsorshipAdminRelationSchema = PostSponsorshipProtectedRelationSchem
     createdById: z.string().uuid().nullable().optional(),
     updatedById: z.string().uuid().nullable().optional(),
     deletedById: z.string().uuid().nullable().optional(),
-    adminInfo: z.record(z.string(), z.unknown()).optional()
+    // Use .nullish() (not .optional()) because Drizzle returns `null` for empty JSONB columns.
+    adminInfo: z.record(z.string(), z.unknown()).nullish()
 });
 
 /**
@@ -155,7 +161,7 @@ export const PostPublicSchema = PostSchema.pick({
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipPublicRelationSchema.extend({
-        sponsor: UserPublicSchema.nullish()
+        sponsor: PostSponsorPublicSchema.nullish()
     }).nullish()
 });
 
@@ -216,7 +222,7 @@ export const PostProtectedSchema = PostSchema.pick({
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipProtectedRelationSchema.extend({
-        sponsor: UserProtectedSchema.nullish()
+        sponsor: PostSponsorProtectedSchema.nullish()
     }).nullish()
 });
 
@@ -245,7 +251,7 @@ export const PostAdminSchema = PostSchema.extend({
      * Inlined to avoid circular import with postSponsorship.access.schema.ts.
      */
     sponsorship: PostSponsorshipAdminRelationSchema.extend({
-        sponsor: UserAdminSchema.nullish()
+        sponsor: PostSponsorAdminSchema.nullish()
     }).nullish()
 });
 

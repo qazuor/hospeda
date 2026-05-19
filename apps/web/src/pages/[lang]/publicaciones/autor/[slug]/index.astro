@@ -109,7 +109,7 @@ const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 		<>
 			<div class="author-page__grid">
 				{articleCards.map((card, i) => (
-					<div data-reveal="up" style={`transition-delay: ${i * 80}ms`}>
+					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
 						<ArticleCard data={card} locale={locale} />
 					</div>
 				))}

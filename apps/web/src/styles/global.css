@@ -1,5 +1,6 @@
 /* --- Component styles (must precede all non-import statements per CSS spec) --- */
 @import "./components.css";
+@import "./css-var-themes.css";
 
 /* ==========================================================================
    Hospeda Web2 — Global Styles
@@ -70,7 +71,12 @@
     --hospeda-sky-light: oklch(0.88 0.06 259);
     --hospeda-river: oklch(0.63 0.19 259);
     --hospeda-forest: oklch(0.5 0.14 155);
-    --hospeda-sand: oklch(0.93 0.03 85);
+    /* Warm terra/clay tone. Previous value oklch(0.93 0.03 85) was so close to
+       white that pills using this token at 0.15 alpha rendered as invisible
+       ghosts over the card background. Lowered lightness + bumped chroma so
+       category badges (HISTORY / TRADITIONS / ART) and accommodation pills
+       that reference it stay readable. */
+    --hospeda-sand: oklch(0.7 0.12 75);
 
     /* --- Social proof avatar gradient stops --- */
     --avatar-1-from: oklch(0.25 0.08 255);
@@ -135,7 +141,7 @@
     --text-body-xs: 0.8125rem;
     --text-meta: 0.8125rem;
     --text-caption: 0.75rem;
-    --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+    --text-tagline: clamp(1.25rem, 1rem + 1vw, 1.75rem);
     --text-nav: 0.875rem;
     --text-button: 1rem;
 
@@ -154,8 +160,9 @@
     --duration-fast: 0.2s;
     --duration-normal: 0.4s;
     --duration-slow: 0.5s;
-    --duration-reveal: 1s;
+    --duration-reveal: 450ms;
     --ease-bounce: cubic-bezier(0.1, 0, 0.3, 1);
+    --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
 
     /* --- Z-index --- */
     --z-content: 10;
@@ -172,11 +179,37 @@
     /* --- Layout (runtime tokens overridden by JS) --- */
     --navbar-height: 80px;
     --cookie-banner-height: 0px;
+    /* Semantic alias consumed by every fixed-bottom UI element (FABs, floating
+     * toggles, sheet triggers) so they lift above any bottom-anchored global
+     * overlay without each one having to know about specific overlays.
+     * Today it resolves to the cookie banner height; future banners can sum
+     * into this token via JS without touching individual components. */
+    --bottom-safe-inset: var(--cookie-banner-height, 0px);
 
     /* --- Hover / state variants (derived) --- */
     --primary-hover: oklch(from var(--brand-primary) calc(l - 0.05) c h);
     --accent-hover: oklch(from var(--brand-accent) calc(l - 0.05) c h);
     --brand-primary-dark: oklch(from var(--brand-primary) calc(l - 0.1) c h);
+
+    /* --- Overlays (shared scrims) ---------------------------------------------
+     * One source of truth for every dim/blur behind a dialog, drawer, sheet,
+     * mobile menu, or cookie banner. Components consume these via the
+     * `.overlay-base` + `.overlay-{strong|light}` utility classes in
+     * components.css. Change a value here to retune every overlay at once. */
+    --overlay-bg-strong: oklch(0 0 0 / 0.7);
+    --overlay-bg-light: oklch(0 0 0 / 0.45);
+    --overlay-blur: 4px;
+
+    /* --- Frosted surfaces -----------------------------------------------------
+     * For floating UI (toggles, filter FABs, sheet triggers) that sits above
+     * page content. Pairs a translucent surface with a backdrop blur so the
+     * controls keep contrast over photos / maps / cards without going opaque.
+     * Use `.frosted-light` / `.frosted-dark` from components.css instead of
+     * setting these directly on a component. */
+    --frost-bg-light: oklch(from var(--core-card) l c h / 0.72);
+    --frost-bg-dark: oklch(from var(--core-foreground) l c h / 0.7);
+    --frost-blur: 14px;
+    --frost-border: oklch(from var(--core-foreground) l c h / 0.08);
 
     /* --- Layout --- */
     --container-max: 1350px;
@@ -328,6 +361,19 @@ img,
 svg {
     display: block;
     max-width: 100%;
+}
+
+/* --- Animation utilities --- */
+/*
+ * Initial collapsed/hidden state for reveal animations. Apply this class
+ * instead of inline width and opacity attributes so the page does not emit
+ * style-src-attr-violating attributes during SSR (SPEC-046 GAP-046-09a).
+ * Runtime scripts that animate the element override these via DOM API
+ * with higher specificity, so behavior is unchanged.
+ */
+.is-reveal-initial {
+    width: 0%;
+    opacity: 0;
 }
 
 /* --- Accessibility utilities --- */

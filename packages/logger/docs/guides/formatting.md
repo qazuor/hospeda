@@ -1321,8 +1321,7 @@ const prodLogger = logger.registerCategory('prod', {
 ## Related Documentation
 
 - [Scoped Loggers](./scoped-loggers.md) - Category-based logging
-- [Configuration](../configuration.md) - Global configuration
-- [API Reference](../api/logger.md) - Complete API docs
+- [API Reference](../api/logger-reference.md) - Complete API docs
 
 ---
 

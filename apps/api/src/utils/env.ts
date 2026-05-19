@@ -350,6 +350,22 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .optional()
         .transform((v) => v !== 'false'),
+    /**
+     * Statement descriptor that appears on the cardholder's bank statement
+     * after a MercadoPago payment. MP rejects descriptors longer than 11
+     * characters and recommends uppercase ASCII (letters, digits, spaces) so
+     * the value renders consistently across issuers.
+     *
+     * Validated at startup. Tunable via env so the value can be adjusted
+     * during MP homologation without a code deploy.
+     */
+    HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: z
+        .string()
+        .regex(
+            /^[A-Z0-9 ]{1,11}$/,
+            'Statement descriptor must be 1-11 ASCII uppercase letters, digits or spaces'
+        )
+        .default('HOSPEDA'),
 
     /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the
@@ -382,10 +398,34 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_BREVO_PRELAUNCH_NEWSLETTER_LIST_ID: z.coerce.number().int().positive().optional(),
 
+    // Newsletter (SPEC-101)
+    /** HMAC-SHA256 secret for verification + unsubscribe tokens. Min 32 bytes. */
+    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32).optional(),
+    /** Previous HMAC secret, accepted during the rotation window. */
+    HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV: z.string().min(32).optional(),
+    /** Static secret Brevo echoes in X-Sib-Webhook-Token. Min 10 bytes. */
+    HOSPEDA_BREVO_WEBHOOK_SECRET: z.string().min(10).optional(),
+    /** Rolling window (days) for the per-subscriber send frequency soft cap. */
+    HOSPEDA_NEWSLETTER_SOFTCAP_DAYS: z.coerce.number().int().min(1).max(365).default(7),
+    /** Recipients per Brevo `messageVersions` batch call (Brevo limit 100). */
+    HOSPEDA_NEWSLETTER_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(100),
+    /** BullMQ worker concurrency for the newsletter dispatch queue. */
+    HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(5),
+    /** WhatsApp channel invite URL. When unset, the welcome-email CTA is hidden. */
+    HOSPEDA_NEWSLETTER_WA_CHANNEL_URL: z.string().url().optional(),
+
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
+    /**
+     * Sentry environment tag. When set, takes precedence over NODE_ENV
+     * for Sentry event tagging — lets prod and staging both run with
+     * NODE_ENV=production (preserving prod-like behavior like
+     * tracesSampleRate>0) while still separating events in the Sentry
+     * dashboard. Recommended values: `production`, `staging`.
+     */
+    HOSPEDA_SENTRY_ENVIRONMENT: z.string().optional(),
 
     // Media / Cloudinary
     /** Cloudinary cloud name (cloud_name in Cloudinary dashboard) */

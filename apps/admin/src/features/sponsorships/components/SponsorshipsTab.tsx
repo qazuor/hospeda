@@ -7,6 +7,7 @@ import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table
 import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { CreateSponsorshipDialog } from '@/features/sponsorships/components/CreateSponsorshipDialog';
 import {
     useSponsorshipsQuery,
     useUpdateSponsorshipStatusMutation
@@ -29,6 +30,7 @@ export function SponsorshipsTab() {
         targetType?: string;
         lifecycleState?: LifecycleStatusEnum;
     }>({});
+    const [createOpen, setCreateOpen] = useState(false);
 
     const { data, isLoading, error } = useSponsorshipsQuery({
         page,
@@ -215,6 +217,7 @@ export function SponsorshipsTab() {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex gap-2">
                     <select
+                        aria-label={t('admin-billing.sponsorships.filters.allStatuses')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.sponsorshipStatus || 'all'}
                         onChange={(e) =>
@@ -243,6 +246,7 @@ export function SponsorshipsTab() {
                     </select>
 
                     <select
+                        aria-label={t('admin-billing.sponsorships.filters.allTypes')}
                         className="rounded-md border px-3 py-2 text-sm"
                         value={filters.targetType || 'all'}
                         onChange={(e) =>
@@ -292,11 +296,16 @@ export function SponsorshipsTab() {
                     </select>
                 </div>
 
-                <Button>
+                <Button onClick={() => setCreateOpen(true)}>
                     <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.sponsorship')}
                 </Button>
             </div>
+
+            <CreateSponsorshipDialog
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+            />
 
             {/* Table */}
             <DataTable

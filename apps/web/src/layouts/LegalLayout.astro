@@ -7,6 +7,7 @@
  * Used by: privacy policy, terms and conditions.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -32,7 +33,7 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
 
 const resolvedTitle = title ?? 'Hospeda';

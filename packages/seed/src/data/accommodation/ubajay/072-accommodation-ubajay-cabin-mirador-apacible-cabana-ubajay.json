@@ -19,10 +19,6 @@
     "socialNetworks": {
         "twitter": "https://twitter.com/miradorapaciblecabana"
     },
-    "price": {
-        "price": 15500,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-32.3665",
@@ -33,46 +29,46 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-            "caption": "Cabaña con vistas",
-            "description": "Vista exterior de la cabaña con entorno rural",
+            "url": "https://images.pexels.com/photos/11293209/pexels-photo-11293209.jpeg",
+            "caption": "Cabaña en invierno",
+            "description": "Cabaña de troncos en bosque nevado durante el invierno",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la cabaña",
+                "url": "https://images.pexels.com/photos/17804250/pexels-photo-17804250.jpeg",
+                "caption": "Cabaña en bosque denso",
+                "description": "Cabaña de troncos rodeada de bosque denso y vegetación frondosa",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
-                "caption": "Interior",
-                "description": "Área de living y cocina",
+                "url": "https://images.pexels.com/photos/13807232/pexels-photo-13807232.jpeg",
+                "caption": "Cabaña en el campo",
+                "description": "Cabaña ubicada en campo abierto con árboles alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio principal",
+                "url": "https://images.pexels.com/photos/12566236/pexels-photo-12566236.jpeg",
+                "caption": "Cabaña rústica",
+                "description": "Cabaña de madera estilo rústico en entorno arbolado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
-                "caption": "Altillo",
-                "description": "Espacio con camas individuales",
+                "url": "https://images.pexels.com/photos/4406354/pexels-photo-4406354.jpeg",
+                "caption": "Cabaña en el valle",
+                "description": "Cabaña de troncos en valle verde rodeada de pinos y vegetación",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla",
-                "description": "Parrilla exterior cubierta",
+                "url": "https://images.pexels.com/photos/15586348/pexels-photo-15586348.jpeg",
+                "caption": "Cabaña entre el verde",
+                "description": "Cabaña de madera rodeada de vegetación y flores",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
-                "caption": "Vista",
-                "description": "Vista del campo desde la cabaña",
+                "url": "https://images.pexels.com/photos/5994751/pexels-photo-5994751.jpeg",
+                "caption": "Cabaña iluminada de noche",
+                "description": "Cabaña iluminada desde el interior durante el atardecer en el bosque",
                 "moderationState": "APPROVED"
             }
         ]

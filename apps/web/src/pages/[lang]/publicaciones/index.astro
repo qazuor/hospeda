@@ -2,8 +2,7 @@
 /**
  * @file publicaciones/index.astro
  * @description Blog posts listing page with filter sidebar, ArticleCard grid,
- * pagination, skeleton fallback on API error, and section--warm wrapper with
- * decorative SVG.
+ * and pagination.
  *
  * Rendering strategy: SSR + ISR 24h.
  * Pagination is URL-based (server-side), so there is NO client-side loading
@@ -158,19 +157,10 @@ const postCategoryChips = [
 	{hasError && (
 		<>
 			<ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />
-			<div class="posts-section posts-section--warm" aria-hidden="true">
-				<!-- Decorative blob SVG (top-right) -->
-				<div class="posts-section__decorative posts-section__decorative--top-right" aria-hidden="true">
-					<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<ellipse cx="160" cy="160" rx="160" ry="140" fill="var(--brand-accent)" opacity="0.07" />
-						<ellipse cx="200" cy="130" rx="100" ry="80" fill="var(--brand-primary)" opacity="0.05" />
-					</svg>
-				</div>
-				<div class="posts-grid">
-					{Array.from({ length: pageSize }).map(() => (
-						<ArticleCardSkeleton />
-					))}
-				</div>
+			<div class="posts-grid" aria-hidden="true">
+				{Array.from({ length: pageSize }).map(() => (
+					<ArticleCardSkeleton />
+				))}
 			</div>
 		</>
 	)}
@@ -194,32 +184,14 @@ const postCategoryChips = [
 		/>
 	)}
 
-	{/* Posts grid wrapped in warm section with decorative SVG */}
 	{!hasError && cards.length > 0 && (
-		<section class="posts-section posts-section--warm">
-			<!-- Decorative blob SVG (top-right, positioned absolute) -->
-			<div class="posts-section__decorative posts-section__decorative--top-right" aria-hidden="true">
-				<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<ellipse cx="160" cy="160" rx="160" ry="140" fill="var(--brand-accent)" opacity="0.07" />
-					<ellipse cx="200" cy="130" rx="100" ry="80" fill="var(--brand-primary)" opacity="0.05" />
-				</svg>
-			</div>
-
-			<!-- Decorative blob SVG (bottom-left) -->
-			<div class="posts-section__decorative posts-section__decorative--bottom-left" aria-hidden="true">
-				<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<ellipse cx="120" cy="120" rx="120" ry="100" fill="var(--brand-primary)" opacity="0.05" />
-				</svg>
-			</div>
-
-			<div class="posts-grid">
-				{cards.map((card, i) => (
-					<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
-						<ArticleCard data={card} locale={locale} />
-					</div>
-				))}
-			</div>
-		</section>
+		<div class="posts-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+					<ArticleCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
 	)}
 
 	{totalPages > 1 && (
@@ -228,53 +200,7 @@ const postCategoryChips = [
 </ListingLayout>
 
 <style>
-	/* === Warm section wrapper for the posts grid === */
-	.posts-section {
-		position: relative;
-		border-radius: var(--radius-card);
-		padding: var(--space-section-sm, 3rem) 0;
-		overflow: hidden;
-	}
-
-	/* Warm tinted background — matches section--warm token */
-	.posts-section--warm {
-		background-color: var(--surface-warm);
-		/* Generous padding inside the warm zone */
-		padding: 2rem 1.5rem;
-	}
-
-	/* Decorative blobs: absolute positioned, pointer-events off, hidden on mobile */
-	.posts-section__decorative {
-		position: absolute;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.posts-section__decorative--top-right {
-		top: -60px;
-		right: -80px;
-		width: 320px;
-		height: 320px;
-	}
-
-	.posts-section__decorative--bottom-left {
-		bottom: -40px;
-		left: -60px;
-		width: 240px;
-		height: 240px;
-	}
-
-	/* Hide decoratives on mobile to keep layout clean */
-	@media (max-width: 768px) {
-		.posts-section__decorative {
-			display: none;
-		}
-	}
-
-	/* === Posts grid (relative so it renders above decoratives) === */
 	.posts-grid {
-		position: relative;
-		z-index: 1;
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-card-gap);

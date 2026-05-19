@@ -585,13 +585,117 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 			overflow-wrap: anywhere;
 		}
 		.hero__bottom { margin-top: 0; }
-		.hero__visual { display: none; }
+
+		/* The tagline sits directly on the photo (no gradient above it),
+		   so without help its mid-saturation brand-primary blue gets
+		   lost. A light halo around the letters lifts the tagline off
+		   the image without changing the brand color. Two stacked
+		   shadows give a softer, rounder glow than a single tight one. */
+		.hero__tagline {
+			text-shadow:
+				0 0 6px oklch(from var(--core-card) l c h / 0.75),
+				0 0 14px oklch(from var(--core-card) l c h / 0.55);
+		}
+
+		/* Mobile: the desktop blob doesn't translate to a narrow viewport.
+		   Instead, repurpose the rotating photo as a full-bleed background
+		   that covers the whole hero behind the content, and overlay a
+		   brand-secondary gradient that fades from opaque at the bottom
+		   (where search + secondary CTA need a flat surface) to fully
+		   transparent at the top (where the tagline + title sit directly
+		   over the photo). Floating icons, the small accent blob and the
+		   light-blue blob fill are all hidden — they only make sense at
+		   the full-size desktop composition. */
+		.hero__content,
+		.hero__bottom { position: relative; z-index: 2; }
+		/* Drop the container's positioned context so the visual anchors
+		   to .hero directly. With the hero as containing block we can
+		   express the photo's extent in section coords:
+		   - top: 0 → starts at hero's content top (which equals
+		     viewport y=0 since .hero has margin-top:-76 + padding-top:130
+		     and the navbar is transparent over the hero).
+		   - bottom: 400px → ends ~400px above the hero's bottom edge.
+		     That distance approximates the combined height of
+		     .hero__bottom (social proof + search + CTA + wave breathing
+		     room) on common mobile widths, so the photo's bottom sits
+		     right above the search form. Adjust this number if the photo
+		     overlaps or leaves a gap. */
+		.hero__container { position: static; }
+		.hero__visual {
+			display: block;
+			position: absolute;
+			top: 0;
+			bottom: 320px;
+			left: 0;
+			right: 0;
+			width: auto;
+			height: auto;
+			/* The 1024px breakpoint sets max-height: 280px and max-width:
+			   500px for the tablet stacked layout; both have to be lifted
+			   here so the absolute top/bottom values actually drive the
+			   element's size on mobile. */
+			max-width: none;
+			max-height: none;
+			margin: 0;
+			pointer-events: none;
+			z-index: 0;
+			overflow: hidden;
+		}
+		.hero__blob-container {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+		}
+		.hero__blob-image {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			/* Drop the desktop blob clip-path so the photo fills the entire
+			   hero rectangle rather than a stylised silhouette. */
+			clip-path: none;
+		}
+		.hero__blob-image :global(img) {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+		.hero__blob-bg { display: none; }
+		.hero__blob-accent { display: none; }
 		.floating-icon { display: none; }
+		/* Gradient overlay placed INSIDE the visual (as ::after) instead
+		   of on .hero itself: .hero__container has z-index: 15 which
+		   creates a new stacking context, so a .hero::before would have
+		   sat behind the visual no matter the z-index. As an ::after the
+		   gradient stacks above the blob-image via DOM order within the
+		   same parent. Opaque brand-secondary from bottom up to ~35%
+		   (covers search + CTA strip), fading to transparent at the top
+		   (tagline + title read over the photo). */
+		.hero__visual::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(
+				to top,
+				var(--brand-secondary) 0%,
+				var(--brand-secondary) 35%,
+				transparent 100%
+			);
+			pointer-events: none;
+			z-index: 1;
+		}
 	}
 
 	@media (max-width: 480px) {
 		.hero__container {
 			padding: 0 16px;
+		}
+		/* Match the smaller container padding-inline so the photo still
+		   reaches the viewport edges without overshooting. */
+		.hero__visual {
+			left: -16px;
+			right: -16px;
 		}
 	}
 

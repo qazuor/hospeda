@@ -49,8 +49,12 @@ export const PurchaseAddonSchema = z.object({
 export const PurchaseAddonResponseSchema = z.object({
     /** The checkout URL to redirect the user to */
     checkoutUrl: z.string().url('Invalid checkout URL'),
-    /** The addon order ID (format: addon_<slug>_<timestamp>) */
-    orderId: z.string().regex(/^addon_[\w-]+_\d+$/, 'Invalid addon order ID format'),
+    /** The addon order ID (format: addon_<slug>_<uuid>; SPEC-109 fix #5/#6
+     * switched the suffix from epoch-ms to a v4 UUID so MP's
+     * X-Idempotency-Key can re-use it. The regex permits either shape to
+     * stay backwards-compatible with any historical timestamp-format ids
+     * that may still live in audit logs or external references. */
+    orderId: z.string().regex(/^addon_[\w-]+_[\w-]+$/, 'Invalid addon order ID format'),
     /** The addon identifier */
     addonId: z.string(),
     /** Amount in ARS cents */

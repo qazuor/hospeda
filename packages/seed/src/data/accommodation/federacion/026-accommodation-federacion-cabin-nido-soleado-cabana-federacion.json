@@ -22,8 +22,16 @@
         "twitter": "https://twitter.com/nidosoleadocabanaok"
     },
     "price": {
-        "price": 16000,
-        "currency": "ARS"
+        "price": 96500,
+        "currency": "ARS",
+        "additionalFees": {
+            "lateCheckin": {
+                "price": 1500,
+                "currency": "ARS",
+                "isPerStay": true,
+                "isOptional": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -35,40 +43,70 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-            "caption": "Cabaña luminosa",
-            "description": "Vista exterior de la cabaña con amplias ventanas",
+            "url": "https://images.pexels.com/photos/13807232/pexels-photo-13807232.jpeg",
+            "caption": "Cabaña en el campo",
+            "description": "Cabaña ubicada en campo abierto con árboles alrededor",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la cabaña",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
-                "caption": "Interior",
-                "description": "Área de living y cocina",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio principal",
+                "url": "https://images.pexels.com/photos/1365110/pexels-photo-1365110.jpeg",
+                "caption": "Cabaña en verano",
+                "description": "Vieja cabaña de troncos en paisaje veraniego con árboles alrededor",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
-                "caption": "Altillo",
-                "description": "Espacio con camas individuales",
+                "caption": "Altillo de la cabaña",
+                "description": "Entrepiso de madera de la cabaña con cama y vista al living",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
-                "caption": "Parrilla",
-                "description": "Parrilla exterior cubierta",
+                "url": "https://images.pexels.com/photos/751546/pexels-photo-751546.jpeg",
+                "caption": "Cabaña rural",
+                "description": "Cabaña de madera con encanto rústico en entorno rural sereno y verde",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/17041194/pexels-photo-17041194.jpeg",
+                "caption": "Cabaña con pradera",
+                "description": "Cabaña en paisaje veraniego con pasto verde y árboles altos",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/31493936/pexels-photo-31493936.jpeg",
+                "caption": "Cabaña con sol filtrado",
+                "description": "Cabaña de madera con sol que se filtra entre los árboles del bosque",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2294125/pexels-photo-2294125.jpeg",
+                "caption": "Cabaña con ventanales",
+                "description": "Imponente cabaña de troncos con grandes ventanales de vidrio al exterior",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5994751/pexels-photo-5994751.jpeg",
+                "caption": "Cabaña iluminada de noche",
+                "description": "Cabaña iluminada desde el interior durante el atardecer en el bosque",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/13354350/pexels-photo-13354350.jpeg",
+                "caption": "Cabaña ideal para descanso",
+                "description": "Cabaña de troncos en bosque sereno, perfecta para descansar de la rutina",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1518757/pexels-photo-1518757.jpeg",
+                "caption": "Cabaña escondida",
+                "description": "Cabaña de troncos escondida entre árboles densos en entorno rural",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/15586348/pexels-photo-15586348.jpeg",
+                "caption": "Cabaña entre el verde",
+                "description": "Cabaña de madera rodeada de vegetación y flores",
                 "moderationState": "APPROVED"
             }
         ]

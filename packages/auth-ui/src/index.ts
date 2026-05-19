@@ -1,5 +1,6 @@
 export * from './forgot-password-form';
 export * from './hooks/use-auth-translations';
+export * from './password-field';
 export * from './reset-password-form';
 export * from './sign-in-form';
 export * from './sign-out-button';

@@ -46,6 +46,7 @@ export const namespaces = [
     // Admin namespaces
     'admin-auth',
     'admin-billing',
+    'admin-newsletter',
     'admin-nav',
     'admin-dashboard',
     'admin-menu',
@@ -120,6 +121,7 @@ import adminEntitiesEs from './locales/es/admin-entities.json';
 import adminFiltersEs from './locales/es/admin-filters.json';
 import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
+import adminNewsletterEs from './locales/es/admin-newsletter.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
@@ -167,6 +169,7 @@ import adminEntitiesEn from './locales/en/admin-entities.json';
 import adminFiltersEn from './locales/en/admin-filters.json';
 import adminMenuEn from './locales/en/admin-menu.json';
 import adminNavEn from './locales/en/admin-nav.json';
+import adminNewsletterEn from './locales/en/admin-newsletter.json';
 import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
@@ -214,6 +217,7 @@ import adminEntitiesPt from './locales/pt/admin-entities.json';
 import adminFiltersPt from './locales/pt/admin-filters.json';
 import adminMenuPt from './locales/pt/admin-menu.json';
 import adminNavPt from './locales/pt/admin-nav.json';
+import adminNewsletterPt from './locales/pt/admin-newsletter.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
@@ -285,6 +289,7 @@ const rawTranslations = {
         fields: fieldsEs,
         'admin-auth': adminAuthEs,
         'admin-billing': adminBillingEs,
+        'admin-newsletter': adminNewsletterEs,
         'admin-nav': adminNavEs,
         'admin-dashboard': adminDashboardEs,
         'admin-menu': adminMenuEs,
@@ -332,6 +337,7 @@ const rawTranslations = {
         fields: fieldsEn,
         'admin-auth': adminAuthEn,
         'admin-billing': adminBillingEn,
+        'admin-newsletter': adminNewsletterEn,
         'admin-nav': adminNavEn,
         'admin-dashboard': adminDashboardEn,
         'admin-menu': adminMenuEn,
@@ -379,6 +385,7 @@ const rawTranslations = {
         fields: fieldsPt,
         'admin-auth': adminAuthPt,
         'admin-billing': adminBillingPt,
+        'admin-newsletter': adminNewsletterPt,
         'admin-nav': adminNavPt,
         'admin-dashboard': adminDashboardPt,
         'admin-menu': adminMenuPt,

@@ -1488,5 +1488,5 @@ pnpm test:watch
 **Related Documentation:**
 
 - [Testing Strategy](./strategy.md)
-- [Code Standards](../development/code-standards.md)
+- [Code Standards](../../.claude/docs/code-standards.md)
 - [Architecture Patterns](../architecture/patterns.md)

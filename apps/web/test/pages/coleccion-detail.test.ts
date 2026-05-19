@@ -219,8 +219,8 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
             expect(pageSrc).toContain('locale={locale}');
         });
 
-        it('reads apiBase from PUBLIC_API_URL env var', () => {
-            expect(pageSrc).toContain('PUBLIC_API_URL');
+        it('reads apiBase via the validated getApiUrl() helper', () => {
+            expect(pageSrc).toContain('getApiUrl()');
         });
     });
 

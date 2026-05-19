@@ -24,17 +24,18 @@ function SponsorCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'sponsor',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.sponsor.description'),
         entityName,
         entityNamePlural,
         basePath: '/sponsors',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Patrocinador creado',
+        successToastMessage: 'El patrocinador se creó exitosamente',
+        errorToastTitle: 'Error al crear el patrocinador',
+        errorMessage: 'No pudimos crear el patrocinador. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +43,8 @@ function SponsorCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={PostSponsorCreateInputSchema}
-                createConsolidatedConfig={createSponsorConsolidatedConfig}
+                createConsolidatedConfig={() => createSponsorConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

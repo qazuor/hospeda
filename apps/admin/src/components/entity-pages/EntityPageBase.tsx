@@ -7,7 +7,7 @@ import {
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
@@ -150,6 +150,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     if (isLoading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
+                {/* sr-only h1 so the page always has a heading-1 for screen readers
+                    and axe page-has-heading-one, even during the data load. */}
+                <h1 className="sr-only">{t('admin-common.states.loading')}</h1>
                 <div className="text-center">
                     <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                     <p className="mt-2 text-muted-foreground text-sm">
@@ -201,7 +204,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         id: `${entityType}-${entityId}`,
         entityType,
         title: (entityConfig.metadata?.title as string) || entityName,
-        description: (entityConfig.metadata?.description as string) || `View ${entityType} details`,
+        description:
+            (entityConfig.metadata?.description as string) ||
+            t('admin-common.entityPage.viewDescription').replace('{entity}', entityType),
         entityName: (entityConfig.metadata?.entityName as string) || entityType,
         entityNamePlural: (entityConfig.metadata?.entityNamePlural as string) || `${entityType}s`,
         sections: currentSections, // ✅ Usar secciones filtradas por modo actual
@@ -226,19 +231,36 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         }
     };
 
+    // Always-present accessible page title. The visible heading below is rendered
+    // as h2 with h1-like styling to avoid duplicate-h1 warnings while ensuring
+    // axe page-has-heading-one always passes — even during any micro-window
+    // between loading and happy-path render where the visible heading isn't yet
+    // mounted.
+    const pageTitleText =
+        mode === 'view'
+            ? entityName
+            : t('admin-common.entityPage.editTitle').replace('{entity}', entityName);
+
     return (
         <div className={`space-y-6 ${className || ''}`}>
+            <h1 className="sr-only">{pageTitleText}</h1>
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-2xl">
-                                {mode === 'view' ? entityName : `Edit ${entityName}`}
-                            </CardTitle>
+                            <h2 className="font-semibold text-2xl leading-none tracking-tight">
+                                {pageTitleText}
+                            </h2>
                             <p className="text-muted-foreground">
                                 {mode === 'view'
-                                    ? `View ${completeEntityConfig.entityName} details`
-                                    : `Modify ${completeEntityConfig.entityName} details`}
+                                    ? t('admin-common.entityPage.viewDescription').replace(
+                                          '{entity}',
+                                          completeEntityConfig.entityName
+                                      )
+                                    : t('admin-common.entityPage.editDescription').replace(
+                                          '{entity}',
+                                          completeEntityConfig.entityName
+                                      )}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -254,7 +276,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="arrow-left"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        Back
+                                        {t('admin-common.entityPage.actions.back')}
                                     </Button>
                                     {canEdit && (
                                         <Button
@@ -266,7 +288,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                                 name="edit"
                                                 className="mr-2 h-4 w-4"
                                             />
-                                            Edit
+                                            {t('admin-common.entityPage.actions.edit')}
                                         </Button>
                                     )}
                                 </>
@@ -281,7 +303,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="eye"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        View
+                                        {t('admin-common.entityPage.actions.view')}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -292,7 +314,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                             name="close"
                                             className="mr-2 h-4 w-4"
                                         />
-                                        Cancel
+                                        {t('admin-common.entityPage.actions.cancel')}
                                     </Button>
                                 </>
                             )}

@@ -1038,9 +1038,8 @@ it('should not log passwords', () => {
 
 ## Related Documentation
 
-- [API Reference](../api/logger.md) - Logger API documentation
+- [API Reference](../api/logger-reference.md) - Logger API documentation
 - [Scoped Loggers](./scoped-loggers.md) - Category-based logging
-- [Best Practices](../best-practices.md) - General best practices
 
 ---
 

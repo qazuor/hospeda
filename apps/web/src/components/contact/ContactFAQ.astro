@@ -64,7 +64,7 @@ const items = [
 			class="contact-faq__item"
 			role="listitem"
 			data-reveal="up"
-			style={`transition-delay: ${i * 80}ms`}
+			data-stagger-index={Math.min(i, 6)} data-stagger-step="80"
 		>
 			<summary class="contact-faq__summary">
 				<span class="contact-faq__question">{item.question}</span>

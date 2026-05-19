@@ -1,0 +1,61 @@
+---
+/**
+ * @file agregar-contrasena/index.astro
+ * @description OAuth-only set-password page (SPEC-113 T-113-05 §3.6).
+ *
+ * Shown after profile completion for users who authenticated via Google or
+ * Facebook and have no credential account.  Renders the SetPassword React island
+ * which offers two CTAs: set a password or skip.
+ *
+ * This route is whitelisted in the middleware guard so skip/submit requests
+ * are never caught in a redirect loop.
+ *
+ * @route    /[lang]/mi-cuenta/agregar-contrasena/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { SetPassword } from '@/components/account/SetPassword.client';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Auth guard: middleware should have redirected already, but this is the safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const t = createT(locale);
+const apiUrl = getApiUrl();
+
+const title = t('account.setPassword.pageTitle', 'Agregar contraseña');
+const description = t(
+    'account.setPassword.pageDescription',
+    'Agregá una contraseña para iniciar sesión con email'
+);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={true}
+    />
+
+    <SetPassword
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+    />
+</BaseLayout>

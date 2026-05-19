@@ -1271,5 +1271,5 @@ export default defineConfig({
 
 **Related Documentation**:
 
-- [Code Standards](../development/code-standards.md)
+- [Code Standards](../../.claude/docs/code-standards.md)
 - [Architecture Patterns](../architecture/patterns.md)

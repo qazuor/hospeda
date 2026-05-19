@@ -53,8 +53,14 @@ const ADMIN_ONLY_RULES: ReadonlyArray<{
     { segment: 'customers', methods: new Set(['POST', 'DELETE']) },
 
     // Subscription creation/modification are admin operations
-    // (Users manage subscriptions via /trial/start and /subscriptions/change-plan)
-    { segment: 'subscriptions', methods: new Set(['POST', 'PUT', 'DELETE']) },
+    // (Users manage their own subscriptions via the custom endpoints listed in
+    //  allowedSubPaths — start-paid is the entry point for paid subscriptions,
+    //  change-plan upgrades/downgrades an existing subscription.)
+    {
+        segment: 'subscriptions',
+        methods: new Set(['POST', 'PUT', 'DELETE']),
+        allowedSubPaths: new Set(['start-paid', 'change-plan'])
+    },
 
     // Invoice creation and voiding are admin operations
     // Pay (/invoices/:id/pay) is allowed for users to pay their own invoices
@@ -107,11 +113,24 @@ function isAdminOnlyOperation(path: string, method: string): boolean {
             continue;
         }
 
-        // Check if there's an allowed sub-path exception
+        // Check if there's an allowed sub-path exception. Two formats are
+        // recognized:
+        //   - `segment/<subPath>` (e.g. /subscriptions/start-paid) — the
+        //     custom user-facing endpoints mounted alongside qzpay's pre-built
+        //     routes. Sub-path is at `segmentIndex + 1`.
+        //   - `segment/:id/<subPath>` (e.g. /invoices/abc/pay) — the qzpay
+        //     built-in pattern where the action operates on a specific id.
+        //     Sub-path is at `segmentIndex + 2`.
+        // Both positions are checked so the rule covers both shapes without
+        // ambiguity.
         if (rule.allowedSubPaths) {
-            const subPath = segments[segmentIndex + 2]; // segment/:id/subPath
+            const directSubPath = segments[segmentIndex + 1];
+            const indirectSubPath = segments[segmentIndex + 2];
 
-            if (subPath && rule.allowedSubPaths.has(subPath)) {
+            if (
+                (directSubPath && rule.allowedSubPaths.has(directSubPath)) ||
+                (indirectSubPath && rule.allowedSubPaths.has(indirectSubPath))
+            ) {
                 continue;
             }
         }

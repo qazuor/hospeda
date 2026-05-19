@@ -1,11 +1,11 @@
-import type { ColumnConfig } from '@/components/entity-list/types';
+import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
 import type { Event } from '../schemas/events.schemas';
 
-export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
+export const createEventsColumns = (t: ColumnTFunction): readonly ColumnConfig<Event>[] => [
     {
         id: 'name',
-        header: 'Name',
+        header: t('admin-entities.columns.name'),
         accessorKey: 'name',
         enableSorting: true,
         columnType: ColumnType.ENTITY,
@@ -20,52 +20,84 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
     },
     {
         id: 'category',
-        header: 'Category',
+        header: t('admin-entities.columns.category'),
         accessorKey: 'category',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         badgeOptions: [
-            { value: 'CULTURE', label: 'Culture', color: BadgeColor.YELLOW },
-            { value: 'SPORTS', label: 'Sports', color: BadgeColor.ORANGE },
-            { value: 'FESTIVAL', label: 'Festival', color: BadgeColor.PURPLE },
-            { value: 'WORKSHOP', label: 'Workshop', color: BadgeColor.CYAN },
-            { value: 'MUSIC', label: 'Music', color: BadgeColor.BLUE },
-            { value: 'GASTRONOMY', label: 'Gastronomy', color: BadgeColor.PINK },
-            { value: 'NATURE', label: 'Nature', color: BadgeColor.GREEN },
-            { value: 'OTHER', label: 'Other', color: BadgeColor.GRAY }
+            {
+                value: 'CULTURE',
+                label: t('admin-entities.types.event.culture'),
+                color: BadgeColor.YELLOW
+            },
+            {
+                value: 'SPORTS',
+                label: t('admin-entities.types.event.sports'),
+                color: BadgeColor.ORANGE
+            },
+            {
+                value: 'FESTIVAL',
+                label: t('admin-entities.types.event.festival'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'WORKSHOP',
+                label: t('admin-entities.types.event.workshop'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'MUSIC',
+                label: t('admin-entities.types.event.music'),
+                color: BadgeColor.BLUE
+            },
+            {
+                value: 'GASTRONOMY',
+                label: t('admin-entities.types.event.gastronomy'),
+                color: BadgeColor.PINK
+            },
+            {
+                value: 'NATURE',
+                label: t('admin-entities.types.event.nature'),
+                color: BadgeColor.GREEN
+            },
+            {
+                value: 'OTHER',
+                label: t('admin-entities.types.event.other'),
+                color: BadgeColor.GRAY
+            }
         ]
     },
     {
         id: 'organizer',
-        header: 'Organizer',
+        header: t('admin-entities.columns.organizer'),
         accessorKey: 'organizerName',
         enableSorting: true,
         columnType: ColumnType.STRING
     },
     {
         id: 'startDate',
-        header: 'Start Date',
+        header: t('admin-entities.columns.startDate'),
         accessorKey: 'date.start',
         enableSorting: true,
         columnType: ColumnType.DATE
     },
     {
         id: 'location',
-        header: 'Location',
+        header: t('admin-entities.columns.location'),
         accessorKey: 'locationName',
         enableSorting: true,
         columnType: ColumnType.STRING
     },
     {
         id: 'ticketPrice',
-        header: 'Price',
+        header: t('admin-entities.columns.price'),
         accessorKey: 'pricing.price',
         enableSorting: true,
         columnType: ColumnType.PRICE
     },
     {
         id: 'featuredImage',
-        header: 'Featured Image',
+        header: t('admin-entities.columns.featuredImage'),
         accessorKey: 'media.featuredImage',
         enableSorting: false,
         columnType: ColumnType.IMAGE,
@@ -74,7 +106,7 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
     },
     {
         id: 'tags',
-        header: 'Tags',
+        header: t('admin-entities.columns.tags'),
         accessorKey: 'tags',
         enableSorting: false,
         columnType: ColumnType.LIST,
@@ -85,41 +117,69 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
     },
     {
         id: 'isFeatured',
-        header: 'Featured',
+        header: t('admin-entities.columns.featured'),
         accessorKey: 'isFeatured',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },
     {
         id: 'visibility',
-        header: 'Visibility',
+        header: t('admin-entities.columns.visibility'),
         accessorKey: 'visibility',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         badgeOptions: [
-            { value: 'PUBLIC', label: 'Public', color: BadgeColor.PURPLE },
-            { value: 'PRIVATE', label: 'Private', color: BadgeColor.CYAN },
-            { value: 'HIDDEN', label: 'Hidden', color: BadgeColor.PINK }
+            {
+                value: 'PUBLIC',
+                label: t('admin-entities.states.visibility.public'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'PRIVATE',
+                label: t('admin-entities.states.visibility.private'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'HIDDEN',
+                label: t('admin-entities.states.visibility.hidden'),
+                color: BadgeColor.PINK
+            }
         ]
     },
     {
         id: 'lifecycleState',
-        header: 'Status',
+        header: t('admin-entities.columns.status'),
         accessorKey: 'lifecycleState',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         startVisibleOnTable: false,
         startVisibleOnGrid: true,
         badgeOptions: [
-            { value: 'ACTIVE', label: 'Active', color: BadgeColor.CYAN },
-            { value: 'INACTIVE', label: 'Inactive', color: BadgeColor.PURPLE },
-            { value: 'ARCHIVED', label: 'Archived', color: BadgeColor.PINK },
-            { value: 'DELETED', label: 'Deleted', color: BadgeColor.GREEN }
+            {
+                value: 'ACTIVE',
+                label: t('admin-entities.states.lifecycle.active'),
+                color: BadgeColor.CYAN
+            },
+            {
+                value: 'INACTIVE',
+                label: t('admin-entities.states.lifecycle.inactive'),
+                color: BadgeColor.PURPLE
+            },
+            {
+                value: 'ARCHIVED',
+                label: t('admin-entities.states.lifecycle.archived'),
+                color: BadgeColor.PINK
+            },
+            {
+                value: 'DELETED',
+                label: t('admin-entities.states.lifecycle.deleted'),
+                color: BadgeColor.GREEN
+            }
         ]
     },
     {
         id: 'createdAt',
-        header: 'Created',
+        header: t('admin-entities.columns.createdAt'),
         accessorKey: 'createdAt',
         enableSorting: true,
         columnType: ColumnType.TIME_AGO

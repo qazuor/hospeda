@@ -244,7 +244,7 @@ If you're building features or integrating with the admin:
 
 ### Platform Documentation
 
-- **[Web App Documentation](../../../web/docs/README.md)** - Public website
+- **[Web App Guidelines](../../../web/CLAUDE.md)** - Public website
 - **[Database Schema](../../../../packages/db/docs/README.md)** - Data structure
 - **[Project Guidelines](../../../../CLAUDE.md)** - Development standards
 

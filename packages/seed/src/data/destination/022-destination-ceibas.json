@@ -3,8 +3,8 @@
     "id": "022-destination-ceibas",
     "slug": "ceibas",
     "name": "Ceibas",
-    "summary": "Pequeña localidad del sur entrerriano con costas del Paraná y ecoturismo en el delta",
-    "description": "Ceibas es una pequeña localidad ubicada en el sur de Entre Ríos, en el departamento Islas del Ibicuy, emplazada sobre las costas del río Paraná. Con una ubicación privilegiada en el delta entrerriano, Ceibas ofrece un turismo de naturaleza único, con actividades de pesca, avistamiento de aves, kayak y navegación en canales del delta. La exuberante fauna y flora autóctona, junto con el silencio de sus paisajes de islas y humedales, convierten a Ceibas en un destino ideal para el ecoturismo y la desconexión total.",
+    "summary": "Pueblito del sur entrerriano sobre la RN12, célebre parada gastronómica camino a Buenos Aires y puerta de acceso al delta del Ibicuy.",
+    "description": "Ceibas es una pequeña localidad del Departamento Islas del Ibicuy, en el sur de Entre Ríos, atravesada por la Ruta Nacional 12 y punto donde nace la Ruta Nacional 14. Su ubicación estratégica, a unos 150 km de Buenos Aires por el puente Zárate-Brazo Largo, la convirtió en una clásica parada gastronómica para viajeros que recorren el corredor mesopotámico, con parrillas, casas de comidas y panaderías tradicionales junto a la ruta. Más allá de la mesa, Ceibas funciona como puerta de acceso al delta entrerriano y a humedales de gran riqueza, con su reserva natural que registra cerca de 300 especies de aves. Pesca deportiva, observación de fauna, paseos en lancha y kayak por canales del Paraná, safaris fotográficos y turismo rural completan la propuesta de un destino tranquilo y autentico, ideal para una escapada corta o una pausa prolongada en el viaje.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,39 +13,151 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2831",
+        "zipCode": "2829",
         "country": "Argentina",
         "street": "Av. Costanera",
         "number": "100",
         "city": "Ceibas",
         "coordinates": {
-            "lat": "-33.4500",
-            "long": "-58.7500"
+            "lat": "-33.4953",
+            "long": "-58.7794"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Delta del Paraná en Ceibas",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177842/hospeda/seed/required/destinations/022-destination-ceibas/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Delta del Paraná en Ceibas"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Canales del delta cerca de Ceibas",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177843/hospeda/seed/required/destinations/022-destination-ceibas/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Fauna y flora del delta en Ceibas",
-                "moderationState": "REJECTED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177844/hospeda/seed/required/destinations/022-destination-ceibas/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177846/hospeda/seed/required/destinations/022-destination-ceibas/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177847/hospeda/seed/required/destinations/022-destination-ceibas/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177849/hospeda/seed/required/destinations/022-destination-ceibas/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177850/hospeda/seed/required/destinations/022-destination-ceibas/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177851/hospeda/seed/required/destinations/022-destination-ceibas/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177853/hospeda/seed/required/destinations/022-destination-ceibas/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177854/hospeda/seed/required/destinations/022-destination-ceibas/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177855/hospeda/seed/required/destinations/022-destination-ceibas/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177855/hospeda/seed/required/destinations/022-destination-ceibas/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177858/hospeda/seed/required/destinations/022-destination-ceibas/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/022-destination-ceibas/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Ceibas - Ecoturismo y Delta del Paraná | Entre Ríos",
-        "description": "Descubre Ceibas, localidad con ecoturismo en el delta del Paraná en el sur de Entre Ríos.",
-        "keywords": ["Ceibas", "Entre Ríos", "Delta", "Ecoturismo", "Pesca", "Naturaleza"]
+        "title": "Ceibas, Entre Ríos: parada gastronómica en la RN12 y delta",
+        "description": "Descubrí Ceibas, pueblito de Islas del Ibicuy sobre la RN12: parrillas tradicionales, casas de comidas y acceso al delta entrerriano y sus humedales.",
+        "keywords": [
+            "Ceibas",
+            "Entre Ríos",
+            "Islas del Ibicuy",
+            "RN12",
+            "parada gastronómica",
+            "delta entrerriano",
+            "pesca",
+            "observación de aves"
+        ]
     },
     "tagIds": [
         "012-tag-delta",
@@ -58,10 +170,10 @@
         "005-tag-aventura"
     ],
     "attractionIds": [
+        "063-attraction-parrilla_tradicional",
+        "009-attraction-casa_comidas",
         "044-attraction-humedales",
-        "032-attraction-delta_explorer",
-        "058-attraction-observacion_aves",
-        "046-attraction-kayak_rio",
+        "077-attraction-reserva_natural",
         "065-attraction-pesca_deportiva"
     ],
     "visibility": "PUBLIC",

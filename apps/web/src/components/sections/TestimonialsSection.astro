@@ -86,7 +86,10 @@ const optimizedReviews = await Promise.all(
 <style>
     .testimonials-section {
         background-color: var(--core-background);
-        padding-block: var(--space-section);
+        /* Tighter than the default --space-section: the section content is
+           a header + a single-row carousel, so 120px top+bottom dwarfs it.
+           Scales 48px..72px with viewport. */
+        padding-block: clamp(3rem, 6vw, 4.5rem);
     }
 
     .testimonials-section__container {

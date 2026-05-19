@@ -187,7 +187,7 @@ Each app has its own `CLAUDE.md` with development instructions and a `docs/` dir
 |-----|-----------|------|
 | Admin (TanStack Start dashboard) | [apps/admin/CLAUDE.md](../apps/admin/CLAUDE.md) | [apps/admin/docs/](../apps/admin/docs/README.md) |
 | API (Hono REST server) | [apps/api/CLAUDE.md](../apps/api/CLAUDE.md) | [apps/api/docs/](../apps/api/docs/README.md) |
-| Web (Astro frontend) | [apps/web/CLAUDE.md](../apps/web/CLAUDE.md) | [apps/web/docs/](../apps/web/docs/README.md) |
+| Web (Astro frontend) | [apps/web/CLAUDE.md](../apps/web/CLAUDE.md) | [apps/web/STYLE_GUIDE.md](../apps/web/STYLE_GUIDE.md) (no docs/ dir yet) |
 
 ## Package Documentation
 

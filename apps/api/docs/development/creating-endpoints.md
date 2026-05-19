@@ -762,7 +762,7 @@ pnpm build
 - [Route Factories Guide](route-factories.md) - Learn factory patterns in depth
 - [Middleware System](middleware.md) - Add custom middleware
 - [Actor System](actor-system.md) - Implement authorization
-- [Testing Guide](../testing.md) - Write tests for your endpoints
+- [Testing Guide](../TESTING_GUIDE.md) - Write tests for your endpoints
 
 ---
 

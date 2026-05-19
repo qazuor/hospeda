@@ -21,10 +21,6 @@
         "instagram": "https://instagram.com/casatermasar",
         "twitter": "https://twitter.com/casatermasar"
     },
-    "price": {
-        "price": 28000,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-31.0159",
@@ -35,64 +31,154 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
-            "caption": "Fachada principal",
-            "description": "Entrada principal de Casa Termas con su jardín florido",
+            "url": "https://images.pexels.com/photos/4469137/pexels-photo-4469137.jpeg",
+            "caption": "Casa familiar",
+            "description": "Casa amplia con frente de ladrillo y jardín de pasto verde",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
-                "caption": "Frente de la casa",
-                "description": "Vista frontal de la propiedad con jardín",
+                "url": "https://images.pexels.com/photos/10486072/pexels-photo-10486072.jpeg",
+                "caption": "Casa en barrio tranquilo",
+                "description": "Casa de dos plantas en barrio residencial bajo cielo despejado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
-                "caption": "Living comedor",
-                "description": "Amplio espacio de living comedor con vista al jardín",
+                "url": "https://images.pexels.com/photos/31602311/pexels-photo-31602311.jpeg",
+                "caption": "Casa de ladrillo rojo",
+                "description": "Casa suburbana de ladrillo rojo con jardín delantero en día soleado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
-                "caption": "Cocina equipada",
-                "description": "Cocina completa con electrodomésticos modernos",
+                "url": "https://images.pexels.com/photos/32802992/pexels-photo-32802992.jpeg",
+                "caption": "Casa suburbana con jardín",
+                "description": "Casa suburbana elegante con jardín cuidado y entrada delantera",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1648771/pexels-photo-1648771.jpeg",
-                "caption": "Dormitorio principal",
-                "description": "Habitación principal con cama queen y baño en suite",
+                "url": "https://images.pexels.com/photos/33327061/pexels-photo-33327061.jpeg",
+                "caption": "Casa con follaje otoñal",
+                "description": "Casa suburbana con árboles otoñales y luz cálida en horario de tarde",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
-                "caption": "Segundo dormitorio",
-                "description": "Dormitorio con cama matrimonial",
+                "url": "https://images.pexels.com/photos/8134846/pexels-photo-8134846.jpeg",
+                "caption": "Casa con entrada amplia",
+                "description": "Casa contemporánea con entrada amplia, jardín cuidado y diseño actual",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/3935363/pexels-photo-3935363.jpeg",
-                "caption": "Tercer dormitorio",
-                "description": "Habitación con dos camas individuales",
+                "url": "https://images.pexels.com/photos/30707539/pexels-photo-30707539.jpeg",
+                "caption": "Casa rojiza con encanto",
+                "description": "Casa de ladrillo rojo en barrio suburbano con árboles maduros alrededor",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Baño principal",
-                "description": "Baño en suite con ducha",
+                "url": "https://images.pexels.com/photos/6952009/pexels-photo-6952009.jpeg",
+                "caption": "Casa amarilla con árboles",
+                "description": "Casa amarilla rodeada de árboles verdes ideal para descanso",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
-                "caption": "Galería con asador",
-                "description": "Espacio exterior cubierto con parrilla y mesa",
+                "url": "https://images.pexels.com/photos/209315/pexels-photo-209315.jpeg",
+                "caption": "Casa con jardín cuidado",
+                "description": "Casa de paredes marrones con jardín cuidado y vegetación delantera",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997963/pexels-photo-5997963.jpeg",
-                "caption": "Jardín",
-                "description": "Área verde con reposeras y espacios de descanso",
+                "url": "https://images.pexels.com/photos/33350028/pexels-photo-33350028.jpeg",
+                "caption": "Casa moderna con auto",
+                "description": "Casa suburbana moderna con auto estacionado en la entrada para vehículo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5587965/pexels-photo-5587965.jpeg",
+                "caption": "Barrio residencial",
+                "description": "Vista aérea de casas suburbanas en barrio residencial tranquilo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35705942/pexels-photo-35705942.jpeg",
+                "caption": "Casa moderna entre pinos",
+                "description": "Casa moderna rodeada de pinos con arquitectura contemporánea cuidada",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7031408/pexels-photo-7031408.jpeg",
+                "caption": "Casa con piedra y madera",
+                "description": "Casa suburbana privada con fachada de piedra y madera en barrio tranquilo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4832522/pexels-photo-4832522.jpeg",
+                "caption": "Casa moderna",
+                "description": "Vivienda moderna con frente prolijo y entrada para vehículo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/209274/pexels-photo-209274.jpeg",
+                "caption": "Casa pintada en dos tonos",
+                "description": "Casa familiar con frente pintado en blanco y marrón en barrio tranquilo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6510949/pexels-photo-6510949.jpeg",
+                "caption": "Casa con frente azul",
+                "description": "Casa familiar con fachada azul y jardín delantero",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Casa con luces encendidas",
+                "description": "Casa de dos plantas iluminada al anochecer con garage doble",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4832503/pexels-photo-4832503.jpeg",
+                "caption": "Casa suburbana",
+                "description": "Casa moderna de dos plantas con jardín delantero prolijo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33253271/pexels-photo-33253271.jpeg",
+                "caption": "Casa vintage verde",
+                "description": "Casa vintage de ladrillo verde con autos al frente en barrio tranquilo",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/30278097/pexels-photo-30278097.jpeg",
+                "caption": "Casa minimalista",
+                "description": "Casa de diseño minimalista con detalles de madera y jardín cuidado",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4469136/pexels-photo-4469136.jpeg",
+                "caption": "Casa estilo americano",
+                "description": "Casa familiar amplia con estilo americano y entrada para auto",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5353883/pexels-photo-5353883.jpeg",
+                "caption": "Frente de casa familiar",
+                "description": "Vista frontal de casa familiar con entrada para vehículo y jardín delantero",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4290722/pexels-photo-4290722.jpeg",
+                "caption": "Frente con jardín",
+                "description": "Casa con jardín cuidado y entrada para auto",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5563473/pexels-photo-5563473.jpeg",
+                "caption": "Casa contemporánea",
+                "description": "Casa moderna con ventanales amplios y terraza al frente",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4469146/pexels-photo-4469146.jpeg",
+                "caption": "Casa de dos plantas",
+                "description": "Casa de ladrillo de dos plantas con jardín y árboles maduros",
                 "moderationState": "APPROVED"
             }
         ],

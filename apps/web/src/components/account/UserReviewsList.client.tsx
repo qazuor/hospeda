@@ -11,6 +11,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './UserReviewsList.module.css';
 
@@ -153,20 +154,38 @@ function normaliseReviews(data: ReviewsApiResponse['data']): ReviewItem[] {
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyReviews({ label }: { readonly label: string }) {
+interface EmptyReviewsProps {
+    readonly title: string;
+    readonly description: string;
+    readonly ctaLabel: string;
+    readonly ctaHref: string;
+}
+
+function EmptyReviews({ title, description, ctaLabel, ctaHref }: EmptyReviewsProps) {
     return (
-        <div
-            style={{
-                textAlign: 'center',
-                padding: 'var(--space-10, 40px) var(--space-6, 24px)',
-                color: 'var(--core-muted-foreground)',
-                fontFamily: 'var(--font-sans)',
-                background: 'var(--core-card)',
-                borderRadius: 'var(--radius-card)',
-                border: '1px dashed var(--border)'
-            }}
-        >
-            <p style={{ margin: 0 }}>{label}</p>
+        <div className={styles.emptyState}>
+            <div
+                className={styles.emptyIcon}
+                aria-hidden="true"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    width="32"
+                    height="32"
+                    fill="currentColor"
+                    role="presentation"
+                >
+                    <path d="M12 2.5l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2.5z" />
+                </svg>
+            </div>
+            <h3 className={styles.emptyTitle}>{title}</h3>
+            <p className={styles.emptyText}>{description}</p>
+            <a
+                className={styles.emptyCta}
+                href={ctaHref}
+            >
+                {ctaLabel}
+            </a>
         </div>
     );
 }
@@ -191,6 +210,15 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
 
     // ── Fetch all reviews (client-side pagination) ────────────────────────
 
+    // Pre-compute the fetch-error fallback string here so the useCallback
+    // below can depend on it without depending on `t` itself.
+    // `createTranslations(locale)` returns a new object every render, so
+    // putting `t` in the deps would re-create fetchReviews every render,
+    // re-fire the useEffect below, and spam the API in an infinite loop.
+    // The string returned from `t()` has value-based identity, so React
+    // sees the same dep across renders.
+    const fetchErrorMsg = t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas');
+
     const fetchReviews = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -199,26 +227,20 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                 credentials: 'include'
             });
             if (!res.ok) {
-                throw new Error(t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas'));
+                throw new Error(fetchErrorMsg);
             }
             const body = (await res.json()) as ReviewsApiResponse;
             if (!body.success) {
-                throw new Error(
-                    body.error?.message ??
-                        t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas')
-                );
+                throw new Error(body.error?.message ?? fetchErrorMsg);
             }
             setReviews(normaliseReviews(body.data));
         } catch (err) {
-            const msg =
-                err instanceof Error
-                    ? err.message
-                    : t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas');
+            const msg = err instanceof Error ? err.message : fetchErrorMsg;
             setError(msg);
         } finally {
             setLoading(false);
         }
-    }, [base, t]);
+    }, [base, fetchErrorMsg]);
 
     useEffect(() => {
         void fetchReviews();
@@ -251,7 +273,15 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
 
     if (reviews.length === 0) {
         return (
-            <EmptyReviews label={t('account.reviews.empty', 'Todavía no escribiste reseñas.')} />
+            <EmptyReviews
+                title={t('account.reviews.emptyTitle', 'Todavía no escribiste reseñas')}
+                description={t(
+                    'account.reviews.empty',
+                    'Visitá un alojamiento y compartí tu experiencia para ayudar a otros viajeros.'
+                )}
+                ctaLabel={t('account.reviews.emptyCta', 'Explorar alojamientos')}
+                ctaHref={buildUrl({ locale, path: 'alojamientos' })}
+            />
         );
     }
 

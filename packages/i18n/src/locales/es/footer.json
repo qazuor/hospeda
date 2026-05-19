@@ -26,7 +26,7 @@
     "newsletterTitle": "Mantente informado",
     "newsletterShortTitle": "Recibí novedades",
     "newsletterDescription": "Recibí novedades, eventos, ofertas de alojamientos y notas de interés en tu correo o whatsapp.",
-    "newsletterShortDescription": "Novedades y ofertas en tu correo.",
+    "newsletterShortDescription": "Recibí novedades, ofertas exclusivas y guías de viaje del Litoral en tu correo.",
     "popularDestinations": "Destinos populares",
     "destinationCdu": "Concepción del Uruguay",
     "destinationGualeguaychu": "Gualeguaychú",
@@ -78,5 +78,18 @@
     "bottom": {
         "rights": "Todos los derechos reservados",
         "legalSeparator": "·"
+    },
+    "newsletter": {
+        "title": "Suscribite al newsletter",
+        "emailPlaceholder": "Tu email",
+        "subscribeButton": "Suscribirme",
+        "loadingText": "Enviando...",
+        "pendingMessage": "Revisá tu email para confirmar tu suscripción.",
+        "alreadySubscribed": "Ya estás suscripto.",
+        "manageLink": "Gestionar suscripción",
+        "errorMessage": "No pudimos procesar tu suscripción. Intentá de nuevo.",
+        "alreadyPendingMessage": "Ya enviamos un email de confirmación. Revisá tu bandeja de entrada o spam.",
+        "consentNote": "Al suscribirte aceptás recibir nuestro newsletter y métricas de entrega básicas.",
+        "guestLockLabel": "Iniciá sesión para suscribirte"
     }
 }

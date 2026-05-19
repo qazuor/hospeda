@@ -3,8 +3,8 @@
     "id": "009-destination-san-jose",
     "slug": "san-jose",
     "name": "San José",
-    "summary": "Tranquila ciudad colonial con arquitectura histórica y tradición",
-    "description": "San José es una apacible ciudad colonial ubicada en el centro de Entre Ríos, conocida por su arquitectura histórica y sus tradiciones bien preservadas. Con sus calles tranquilas, edificios coloniales y ambiente familiar, San José ofrece una experiencia auténtica de la vida en el interior argentino. Es ideal para quienes buscan tranquilidad, historia local y contacto con las tradiciones entrerrianas en un ambiente relajado.",
+    "summary": "Primera colonia agrícola organizada de Argentina (1857), fundada por inmigrantes suizos, saboyanos y piamonteses, con rico patrimonio inmigrante en el departamento Colón.",
+    "description": "San José, en el departamento Colón de Entre Ríos, fue la primera colonia agrícola organizada de la República Argentina, fundada en 1857 bajo el impulso del general Justo José de Urquiza con familias inmigrantes suizas, saboyanas y piamontesas. La ciudad conserva un valioso patrimonio cultural y arquitectónico vinculado a esa gesta colonizadora: casas de piedra, iglesias coloniales y el Museo Histórico Regional de la Colonia San José (creado en 1957 en el centenario del pueblo, ubicado en Urquiza 1127), que reúne objetos, herramientas y documentos de los primeros colonos. En las cercanías se encuentra el Molino Forclaz, monumento histórico nacional construido entre 1888 y 1890 por el inmigrante suizo Juan Bautista Forclaz, símbolo del esfuerzo de la colonia. Vecina del Palacio San José (residencia de Urquiza) y a pocos kilómetros de la ciudad turística de Colón sobre el río Uruguay, San José ofrece una experiencia auténtica que combina historia inmigrante, tradiciones agrícolas, gastronomía regional y paisajes del litoral entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,14 +13,14 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3264",
+        "zipCode": "3283",
         "country": "Argentina",
         "street": "Av. Colonial",
         "number": "888",
         "city": "San José",
         "coordinates": {
-            "lat": "-32.0500",
-            "long": "-58.7667"
+            "lat": "-32.2167",
+            "long": "-58.2167"
         }
     },
     "media": {
@@ -182,22 +182,27 @@
         ]
     },
     "seo": {
-        "title": "San José - Tranquila ciudad colonial con historia",
-        "description": "Descubre San José en Entre Ríos. Tranquila ciudad colonial con arquitectura histórica y tradición",
+        "title": "San José Entre Ríos - Primera colonia agrícola suiza",
+        "description": "San José, primera colonia agrícola organizada del país (1857): patrimonio inmigrante suizo, Museo Histórico Regional y cercanía al Molino Forclaz.",
         "keywords": [
-            "San José",
-            "Entre Ríos",
-            "colonial",
-            "historia",
-            "arquitectura",
-            "tranquilidad"
+            "San José Entre Ríos",
+            "Colonia San José",
+            "inmigración suiza",
+            "departamento Colón",
+            "Museo Histórico Regional",
+            "Molino Forclaz",
+            "turismo Entre Ríos",
+            "patrimonio inmigrante"
         ]
     },
     "attractionIds": [
+        "056-attraction-museo_regional",
+        "055-attraction-museo_historico",
         "045-attraction-iglesia_colonial",
-        "018-attraction-centro_historico",
+        "010-attraction-casa_historica",
+        "052-attraction-monumento_historico",
         "072-attraction-plaza_principal",
-        "050-attraction-mercado_central"
+        "040-attraction-feria_artesanal"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

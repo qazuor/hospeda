@@ -24,7 +24,9 @@ import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations and build internal URLs. */
@@ -61,14 +63,12 @@ const bottomEvents = remainingEvents.slice(2, 5);
 <section class="section">
   <div class="section__container">
 
-    <!-- Section header with inline view-all action -->
+    <!-- Section header: action moved below the grid (see __see-all). -->
     <SectionHeader
       tagline={t('home.upcomingEvents.accentSubtitle')}
       title={t('home.upcomingEvents.title')}
       subtitle={t('home.upcomingEvents.description')}
       alignment="left"
-      actionLabel={t('home.upcomingEvents.viewAll')}
-      actionHref={buildUrl({ locale, path: '/eventos/' })}
     />
 
     {eventItems.length === 0 ? (
@@ -83,32 +83,46 @@ const bottomEvents = remainingEvents.slice(2, 5);
         <EventIcon size={48} weight="duotone" />
       </EmptyState>
     ) : (
-      <div class="events__bento">
+      <>
+        <div class="events__bento">
 
-        <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
-        <div class="events__grid-top">
-          <div class="events__grid-featured" data-reveal="left">
-            <EventCardFeatured data={featuredEvent} locale={locale} />
-          </div>
-          {topEvents.map((event, i) => (
-            <div data-reveal="right" style={`transition-delay: ${(i + 1) * 100}ms`}>
-              <EventCardHorizontal data={event} locale={locale} />
+          <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
+          <div class="events__grid-top">
+            <div class="events__grid-featured" data-reveal="left">
+              <EventCardFeatured data={featuredEvent} locale={locale} />
             </div>
-          ))}
-        </div>
-
-        <!-- Bottom row: up to 3 horizontal cards in a 3-column grid -->
-        {bottomEvents.length > 0 && (
-          <div class="events__grid-bottom">
-            {bottomEvents.map((event, i) => (
-              <div data-reveal="up" style={`transition-delay: ${(i + 3) * 100}ms`}>
+            {topEvents.map((event, i) => (
+              <div data-reveal="right" {...revealStagger({ index: i + 1 })}>
                 <EventCardHorizontal data={event} locale={locale} />
               </div>
             ))}
           </div>
-        )}
 
-      </div>
+          <!-- Bottom row: up to 3 horizontal cards in a 3-column grid -->
+          {bottomEvents.length > 0 && (
+            <div class="events__grid-bottom">
+              {bottomEvents.map((event, i) => (
+                <div data-reveal="up" {...revealStagger({ index: i + 3 })}>
+                  <EventCardHorizontal data={event} locale={locale} />
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+        <!-- "See all" CTA below the grid. The SectionHeader no longer
+             carries an action button. -->
+        <div class="events__see-all">
+          <GradientButton
+            href={buildUrl({ locale, path: '/eventos/' })}
+            label={t('home.upcomingEvents.viewAll')}
+            variant="outline-primary"
+            size="sm"
+            icon="true"
+          />
+        </div>
+      </>
     )}
 
   </div>
@@ -186,4 +200,10 @@ const bottomEvents = remainingEvents.slice(2, 5);
   }
 
   /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
+
+  .events__see-all {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-card-gap, 2rem);
+  }
 </style>

@@ -18,10 +18,6 @@
         "preferredEmail": "WORK",
         "preferredPhone": "HOME"
     },
-    "price": {
-        "price": 22000,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-33.0149",
@@ -34,56 +30,56 @@
         "featuredImage": {
             "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
             "caption": "Lobby del hotel",
-            "description": "Elegante recepción y área de estar del Hotel Plaza",
+            "description": "Lobby amplio con arquitectura clásica y techo abovedado",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
-                "caption": "Recepción",
-                "description": "Área de recepción con personal atento 24 horas",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación estándar",
-                "description": "Cómodas habitaciones con decoración contemporánea",
+                "url": "https://images.pexels.com/photos/7512139/pexels-photo-7512139.jpeg",
+                "caption": "Recepción del hotel",
+                "description": "Vista aérea de la recepción moderna del hotel con huéspedes en el lobby",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación superior",
-                "description": "Habitaciones amplias con área de descanso",
+                "description": "Habitación contemporánea minimalista con iluminación cálida",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg",
-                "caption": "Suite",
-                "description": "Suites elegantes con espacios separados",
+                "url": "https://images.pexels.com/photos/13722872/pexels-photo-13722872.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación del hotel con cama doble y diseño moderno cuidado",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/244133/pexels-photo-244133.jpeg",
-                "caption": "Restaurante El Dorado",
-                "description": "Restaurante con gastronomía regional",
+                "url": "https://images.pexels.com/photos/29649745/pexels-photo-29649745.jpeg",
+                "caption": "Lobby con araña",
+                "description": "Lobby elegante del hotel con araña de cristal y mobiliario clásico",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Lobby bar",
-                "description": "Bar con selección de cócteles y cafetería",
+                "url": "https://images.pexels.com/photos/35103156/pexels-photo-35103156.jpeg",
+                "caption": "Habitación acogedora",
+                "description": "Habitación del hotel de diseño moderno con detalles acogedores",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Fachada",
-                "description": "Fachada exterior del Hotel Plaza",
+                "url": "https://images.pexels.com/photos/14841133/pexels-photo-14841133.jpeg",
+                "caption": "Lobby con araña moderna",
+                "description": "Lobby elegante con araña de diseño moderno y mobiliario contemporáneo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/189333/pexels-photo-189333.jpeg",
-                "caption": "Sala de reuniones",
-                "description": "Espacio para eventos y reuniones de negocios",
+                "url": "https://images.pexels.com/photos/28102352/pexels-photo-28102352.jpeg",
+                "caption": "Lobby con sillones",
+                "description": "Sillones en el lobby moderno del hotel para descansar y esperar",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/35664333/pexels-photo-35664333.jpeg",
+                "caption": "Habitación con cabecero floral",
+                "description": "Habitación elegante del hotel con cabecero de motivos florales",
                 "moderationState": "APPROVED"
             }
         ]

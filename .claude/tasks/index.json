@@ -25,9 +25,12 @@
         {
             "specId": "SPEC-029",
             "title": "Web Homepage Redesign: New Visual Identity",
-            "status": "pending",
+            "status": "obsolete",
             "progress": "0/47",
-            "path": "SPEC-029-web-homepage-redesign"
+            "path": "SPEC-029-web-homepage-redesign",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Superseded by SPEC-048 (Web2 Homepage Componentization) and SPEC-065 (Figma to Code Homepage) which shipped the homepage redesign. Marked obsolete."
         },
         {
             "specId": "SPEC-032",
@@ -48,26 +51,32 @@
         {
             "specId": "SPEC-036-gaps",
             "title": "SPEC-036 Gaps Remediation - Zod Validation i18n",
-            "status": "pending",
+            "status": "obsolete",
             "progress": "0/29",
             "path": "SPEC-036-gaps-remediation",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-036 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-026-GAPS",
             "title": "Security Testing Gaps Remediation",
-            "status": "pending",
+            "status": "obsolete",
             "progress": "0/34",
             "path": "SPEC-026-security-testing-gaps",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-026 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-038",
             "title": "Addon Entitlements Architecture Fix",
-            "status": "pending",
-            "progress": "0/15",
+            "status": "completed",
+            "progress": "15/15",
             "path": "SPEC-038-addon-entitlements-architecture",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-034",
@@ -80,18 +89,22 @@
         {
             "specId": "SPEC-020-GAPS",
             "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
-            "status": "pending",
+            "status": "obsolete",
             "progress": "0/17",
             "path": "SPEC-020-gaps-remediation",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-020 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-044",
             "title": "Addon Purchase Schema Cleanup",
-            "status": "pending",
-            "progress": "0/21",
+            "status": "completed",
+            "progress": "21/21",
             "path": "SPEC-044-addon-purchase-schema-cleanup",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-042",
@@ -112,34 +125,42 @@
         {
             "specId": "SPEC-043-GAPS",
             "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
-            "status": "pending",
-            "progress": "0/65",
+            "status": "completed",
+            "progress": "65/65",
             "path": "SPEC-043-gaps-remediation",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json (as SPEC-043-gaps lowercase) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-042-GAPS",
             "title": "CSP Security Gaps Remediation",
-            "status": "pending",
-            "progress": "0/27",
+            "status": "completed",
+            "progress": "27/27",
             "path": "SPEC-042-gaps-remediation",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json (as SPEC-042-gaps lowercase) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-034-GAPS",
             "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
-            "status": "pending",
+            "status": "obsolete",
             "progress": "0/28",
             "path": "SPEC-034-gaps-remediation",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-034 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-040",
             "title": "Critical Package Coverage - auth-ui, billing, logger, email",
-            "status": "pending",
-            "progress": "0/35",
+            "status": "completed",
+            "progress": "35/35",
             "path": "SPEC-040-critical-package-coverage",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-041",
@@ -160,10 +181,12 @@
         {
             "specId": "SPEC-049",
             "title": "Admin List Filtering: adminList() Method for BaseCrudService",
-            "status": "pending",
-            "progress": "0/64",
+            "status": "completed",
+            "progress": "64/64",
             "path": "SPEC-049-admin-list-filtering",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-065",
@@ -184,10 +207,12 @@
         {
             "specId": "SPEC-058",
             "title": "Align BaseModel Interface with Implementation",
-            "status": "pending",
-            "progress": "0/18",
+            "status": "completed",
+            "progress": "18/18",
             "path": "SPEC-058-basemodel-interface-alignment",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-075",
@@ -213,18 +238,22 @@
         {
             "specId": "SPEC-060-gaps",
             "title": "SPEC-060 Gap Remediation — All 56 Gaps",
-            "status": "in-progress",
-            "progress": "5/58",
+            "status": "completed",
+            "progress": "58/58",
             "path": "SPEC-060-gaps",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commits 9d81f1a87 + daa7c57f7) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-059",
             "title": "Service-Layer Transaction Support & Concurrency Safety",
-            "status": "in-progress",
-            "progress": "7/32",
+            "status": "completed",
+            "progress": "32/32",
             "path": "SPEC-059-service-layer-transaction-support",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commit d5f08de3a + aabd94a99) but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-068",
@@ -245,18 +274,22 @@
         {
             "specId": "SPEC-066",
             "title": "getById Relation Loading Consistency",
-            "status": "pending",
-            "progress": "0/7",
+            "status": "completed",
+            "progress": "7/7",
             "path": "SPEC-066-getbyid-relation-loading",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-063",
             "title": "Lifecycle State Standardization",
-            "status": "in-progress",
-            "progress": "34/63",
+            "status": "completed",
+            "progress": "63/63",
             "path": "SPEC-063-lifecycle-state-standardization",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-078",
@@ -269,10 +302,12 @@
         {
             "specId": "SPEC-064",
             "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
-            "status": "pending",
-            "progress": "0/35",
+            "status": "completed",
+            "progress": "35/35",
             "path": "SPEC-064-billing-transaction-safety",
-            "archived": true
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
         },
         {
             "specId": "SPEC-080",
@@ -293,9 +328,12 @@
         {
             "specId": "SPEC-092",
             "title": "End-to-End Test Suite for Pre-Beta Validation",
-            "status": "in-progress",
-            "progress": "94/99",
-            "path": "SPEC-092-e2e-test-suite"
+            "status": "completed",
+            "progress": "99/99",
+            "path": "SPEC-092-e2e-test-suite",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 — bumped to full since spec is closed."
         },
         {
             "specId": "SPEC-098",
@@ -307,9 +345,110 @@
         {
             "specId": "SPEC-103",
             "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
-            "status": "in-progress",
-            "progress": "26/92",
-            "path": "SPEC-103-vps-migration-post-merge-cleanup"
+            "status": "completed",
+            "progress": "92/92",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 — bumped to full since spec is closed."
+        },
+        {
+            "specId": "SPEC-119",
+            "title": "Accommodation Example Seeds Realism",
+            "status": "completed",
+            "progress": "35/35",
+            "path": "SPEC-119-accommodation-example-seeds-realism",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-111",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "status": "completed",
+            "progress": "9/9",
+            "path": "SPEC-111-astro-server-islands-fix",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "archiveNote": "Completed via Astro 6.3.3 bump (commit 64c77925c). Drift fix per audit 2026-05-17."
+        },
+        {
+            "specId": "SPEC-130",
+            "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+            "status": "completed",
+            "progress": "5/5",
+            "path": "SPEC-130-deprecate-vercel-env-stubs",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-130-deprecate-vercel-env-stubs",
+            "branch": "spec/SPEC-130-deprecate-vercel-env-stubs",
+            "startedAt": "2026-05-18T03:50:00Z",
+            "completedAt": "2026-05-18T02:31:16.000Z",
+            "completionRef": "PR #1142 (commit d5a1353fd91c7c65eee9f1ba9bf49a197b4d4635)",
+            "archived": true,
+            "archivedAt": "2026-05-18T02:31:16.000Z"
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests"
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-132-zod-4-cross-package-migration"
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "status": "draft",
+            "progress": "0/5",
+            "path": "SPEC-133-evaluate-astro-env"
+        },
+        {
+            "specId": "SPEC-046",
+            "title": "CSP Post-Deployment Verification",
+            "status": "completed",
+            "progress": "14/15 (T-015 deferred to SPEC-142)",
+            "path": "SPEC-046-csp-post-deploy-verification",
+            "completedAt": "2026-05-17T18:30:00.000Z",
+            "followUpSpec": "SPEC-142"
+        },
+        {
+            "specId": "SPEC-141",
+            "title": "Subscription post-launch follow-ups (annual + plan changes)",
+            "status": "completed",
+            "progress": "full (4 phases shipped)",
+            "path": "SPEC-141-subscription-post-launch-followups",
+            "completedAt": "2026-05-17T23:15:41.000Z",
+            "completionRef": "PR #1139 (merge commit 7c27b995a)",
+            "archived": true,
+            "archiveNote": "Backfilled 2026-05-17T23:50Z after merge. Collision with prior SPEC-141-admin-design-token-contrast resolved by renumbering that draft to SPEC-144."
+        },
+        {
+            "specId": "SPEC-143",
+            "title": "Billing Testing Coverage (e2e + manual smoke)",
+            "status": "in_progress",
+            "progress": "13/65",
+            "path": "SPEC-143-billing-testing-coverage",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+            "branch": "spec/SPEC-143-billing-testing-coverage",
+            "startedAt": "2026-05-17T23:55:00Z",
+            "followUpSpec": "SPEC-145"
+        },
+        {
+            "specId": "SPEC-145",
+            "title": "Billing Entitlements and Limits Enforcement",
+            "status": "reserved",
+            "progress": "0/0",
+            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+            "worktree": null,
+            "branch": null,
+            "dependsOn": ["SPEC-143"],
+            "reservedAt": "2026-05-18T22:00:00Z",
+            "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         }
     ],
     "standalone": {

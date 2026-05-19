@@ -170,6 +170,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+
+        // NEWSLETTER: All permissions (SPEC-101)
+        PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
+        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+
         PermissionEnum.SEO_MANAGE,
 
         // ACCESS: All permissions
@@ -432,6 +439,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+
+        // NEWSLETTER: All permissions (SPEC-101)
+        PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
+        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+
         PermissionEnum.SEO_MANAGE,
 
         // ACCESS: All permissions

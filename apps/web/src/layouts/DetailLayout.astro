@@ -7,6 +7,7 @@
  * Used by: accommodation detail, destination detail, event detail, post detail, attraction detail.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
@@ -33,7 +34,7 @@ const {
 	ogImage,
 } = Astro.props;
 
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
 
 const resolvedTitle = title ?? 'Hospeda';
@@ -52,7 +53,7 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	<slot name="head-extra" slot="head" />
 
 	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
-	<WaveHeader paddingTop="2rem">
+	<WaveHeader paddingTop="detail">
 		{showBreadcrumbs && (
 			<slot name="breadcrumbs" slot="breadcrumbs" />
 		)}

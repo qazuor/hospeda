@@ -7,6 +7,7 @@
  * Used by: accommodations, events, posts listings, destination sub-pages.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
@@ -30,7 +31,7 @@ const {
 	filterPosition = 'left',
 } = Astro.props;
 
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
 
 const resolvedTitle = title ?? 'Hospeda';
@@ -51,7 +52,7 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 	<slot name="head-extra" slot="head" />
 
 	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
-	<WaveHeader paddingTop="3rem">
+	<WaveHeader paddingTop="listing">
 		<slot name="breadcrumbs" slot="breadcrumbs" />
 		<slot name="page-header" slot="content" />
 

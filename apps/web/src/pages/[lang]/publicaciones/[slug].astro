@@ -19,6 +19,7 @@ import PostRelatedEntityCard from '@/components/post/PostRelatedEntityCard.astro
 import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import TagChips from '@/components/TagChips.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -28,9 +29,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getPostCategoryColor } from '@/lib/colors';
 import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
-import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -48,10 +48,62 @@ const summary = String(post.summary || post.excerpt || '');
 const category = String(post.category || '');
 const publishedAt = String(post.publishedAt || post.createdAt || '');
 const updatedAt = post.updatedAt ? String(post.updatedAt) : undefined;
-const featuredImage = String(post.featuredImage || '/assets/images/placeholder-blog.svg');
 const readingTime = Number(post.readingTimeMinutes || 0);
 const authorObj = post.author as Record<string, unknown> | undefined;
 const categoryColors = getPostCategoryColor(category.toLowerCase());
+
+// --- Media (gallery + videos) ---
+// Real shape per PostPublicSchema + seed: `media.featuredImage.url`, `media.gallery[].url`,
+// `media.videos[].url`. An older implementation read the cover as a top-level flat string,
+// which never existed on the schema — hence the placeholder always won.
+interface RawMediaImage {
+	url?: string;
+	caption?: string;
+	description?: string;
+}
+interface RawMediaVideo {
+	url?: string;
+	caption?: string;
+	description?: string;
+}
+interface RawMedia {
+	featuredImage?: RawMediaImage | null;
+	gallery?: ReadonlyArray<RawMediaImage> | null;
+	videos?: ReadonlyArray<RawMediaVideo> | null;
+}
+const mediaObj = (post.media ?? null) as RawMedia | null;
+const featuredImage = mediaObj?.featuredImage?.url || '/assets/images/placeholder-blog.svg';
+const hasRealFeatured = Boolean(mediaObj?.featuredImage?.url);
+
+const galleryImages: ReadonlyArray<{ readonly url: string; readonly alt: string; readonly caption?: string }> = (() => {
+	const items: Array<{ url: string; alt: string; caption?: string }> = [];
+	if (mediaObj?.featuredImage?.url) {
+		items.push({
+			url: mediaObj.featuredImage.url,
+			alt: mediaObj.featuredImage.caption ?? title,
+			caption: mediaObj.featuredImage.caption,
+		});
+	}
+	if (Array.isArray(mediaObj?.gallery)) {
+		for (const img of mediaObj.gallery as ReadonlyArray<RawMediaImage>) {
+			if (img?.url) {
+				items.push({
+					url: img.url,
+					alt: img.caption ?? title,
+					caption: img.caption,
+				});
+			}
+		}
+	}
+	return items;
+})();
+
+const postVideos: ReadonlyArray<{ readonly url: string; readonly caption?: string; readonly description?: string }> = (() => {
+	if (!Array.isArray(mediaObj?.videos)) return [];
+	return (mediaObj?.videos as ReadonlyArray<RawMediaVideo>)
+		.filter((v): v is RawMediaVideo & { url: string } => Boolean(v?.url))
+		.map((v) => ({ url: v.url, caption: v.caption, description: v.description }));
+})();
 
 // SPEC-086 D-024: user-tags (`post.tags`) are an internal subsystem with no
 // public web UI — DO NOT render them as public links.
@@ -70,7 +122,6 @@ const postTags: readonly { readonly id: string; readonly name: string; readonly 
 
 const rawAuthorAvatar = String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || '');
 const authorAvatar = rawAuthorAvatar ? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' }) : '';
-const authorSlug = authorObj?.slug ? String(authorObj.slug) : null;
 
 const authorForCard = authorObj
 	? {
@@ -118,10 +169,12 @@ const expiryDateLabel = postExpiresAt
     ? new Date(postExpiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 
-// --- Sanitize content ---
+// --- Render content (markdown → HTML, then sanitize) ---
+// Body fields may arrive as markdown (seed format), HTML (TipTap admin output),
+// or plain text. `renderContent` handles all three through a single pipeline.
 const siteOrigin = Astro.site?.href ?? Astro.url.origin;
-const safeContentHtml = sanitizeHtml({
-	html: String(post.contentHtml || post.content || summary),
+const safeContentHtml = renderContent({
+	raw: String(post.contentHtml || post.content || summary),
 	siteOrigin,
 });
 
@@ -248,9 +301,11 @@ const breadcrumbItems = [
 	<Fragment slot="page-header">
 		<PostDetailHeader
 			title={title}
+			summary={summary}
 			category={category}
 			categoryColor={{ bg: categoryColors.bg, text: categoryColors.text }}
 			publishedAt={publishedAt}
+			updatedAt={updatedAt ?? null}
 			readingTimeMinutes={readingTime}
 			bookmarkCount={bookmarkCount}
 			postId={postId}
@@ -258,6 +313,16 @@ const breadcrumbItems = [
 			isAuthenticated={isAuthenticated}
 			initialIsFavorited={initialIsFavorited}
 			initialBookmarkId={initialBookmarkId}
+			author={authorForCard ? {
+				id: authorForCard.id,
+				name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' ') || '',
+				slug: authorForCard.slug,
+			} : null}
+			likes={Number(post.likes ?? 0)}
+			comments={Number(post.comments ?? 0)}
+			shares={Number(post.shares ?? 0)}
+			isFeatured={Boolean(post.isFeatured)}
+			isNews={Boolean(post.isNews)}
 		/>
 	</Fragment>
 
@@ -271,19 +336,18 @@ const breadcrumbItems = [
 	)}
 
 	<article class="post-detail">
-		<!-- Cover image -->
-		<div class="post-detail__cover">
-			{featuredImage && !featuredImage.includes('placeholder') ? (
-				<Image
-					src={featuredImage}
-					alt={title}
-					width={1200}
-					height={675}
-					format="webp"
-					loading="eager"
-					class="post-detail__cover-img"
+		<!-- Cover + gallery -->
+		{hasRealFeatured && galleryImages.length > 0 ? (
+			<div class="post-detail__gallery">
+				<ImageGallery
+					images={galleryImages}
+					variant="cover-plus-grid"
+					locale={locale}
+					client:visible
 				/>
-			) : (
+			</div>
+		) : (
+			<div class="post-detail__cover">
 				<img
 					src={featuredImage}
 					alt={title}
@@ -292,11 +356,37 @@ const breadcrumbItems = [
 					width="1200"
 					height="675"
 				/>
-			)}
-		</div>
+			</div>
+		)}
 
 		<!-- Post body -->
-		<PostContent safeContentHtml={safeContentHtml} summary={summary} />
+		<PostContent safeContentHtml={safeContentHtml} />
+
+		<!-- Videos (if any) -->
+		{postVideos.length > 0 && (
+			<section class="post-detail__videos" aria-label={t('blog.detail.videosTitle', 'Videos')}>
+				<h2 class="post-detail__videos-title">{t('blog.detail.videosTitle', 'Videos')}</h2>
+				<div class="post-detail__videos-grid">
+					{postVideos.map((video) => (
+						<figure class="post-detail__video">
+							<div class="post-detail__video-frame">
+								<video
+									src={video.url}
+									controls
+									preload="metadata"
+									class="post-detail__video-el"
+								>
+									<track kind="captions" />
+								</video>
+							</div>
+							{video.caption && (
+								<figcaption class="post-detail__video-caption">{video.caption}</figcaption>
+							)}
+						</figure>
+					))}
+				</div>
+			</section>
+		)}
 
 		<!-- PostTags (SPEC-086): public SEO taxonomy linking to tag-filtered listings -->
 		{postTags.length > 0 && (
@@ -404,6 +494,57 @@ const breadcrumbItems = [
 		width: 100%;
 		aspect-ratio: 16 / 9;
 		object-fit: cover;
+	}
+
+	.post-detail__gallery {
+		margin-bottom: var(--space-6, 1.5rem);
+	}
+
+	.post-detail__videos {
+		margin-top: var(--space-8, 2rem);
+		padding-top: var(--space-6, 1.5rem);
+		border-top: 1px solid var(--border);
+	}
+
+	.post-detail__videos-title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: 1.35rem;
+		color: var(--core-foreground);
+		margin: 0 0 1.25rem;
+	}
+
+	.post-detail__videos-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: var(--space-card-gap, 1.5rem);
+	}
+
+	.post-detail__video {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.post-detail__video-frame {
+		border-radius: var(--radius-card);
+		overflow: hidden;
+		background-color: var(--surface-warm);
+	}
+
+	.post-detail__video-el {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		display: block;
+	}
+
+	.post-detail__video-caption {
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+		text-align: center;
 	}
 
 	.post-detail__tags {

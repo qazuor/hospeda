@@ -45,7 +45,10 @@ vi.mock('../../src/routes/webhooks/mercadopago/event-handler', () => ({
 
 import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
-import { handleSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-handler';
+import {
+    handleSubscriptionPreapprovalEvent,
+    handleSubscriptionUpdated
+} from '../../src/routes/webhooks/mercadopago/subscription-handler';
 import { processSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-logic';
 import {
     getWebhookDependencies,
@@ -249,5 +252,86 @@ describe('handleSubscriptionUpdated', () => {
         // (the event handler upstream will mark it as failed + add to dead letter queue)
         expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
         expect(cleanupRequestProviderEventId).not.toHaveBeenCalled();
+    });
+});
+
+// ===========================================================================
+// handleSubscriptionPreapprovalEvent — SPEC-126 D3
+// ===========================================================================
+
+describe('handleSubscriptionPreapprovalEvent (SPEC-126 D3)', () => {
+    it('is exported as the same function as the legacy handleSubscriptionUpdated alias', () => {
+        // The router registers both subscription_preapproval.created and
+        // subscription_preapproval.updated to this single handler. The
+        // backwards-compat alias must point at the exact same function so
+        // existing imports continue to work.
+        expect(handleSubscriptionPreapprovalEvent).toBe(handleSubscriptionUpdated);
+    });
+
+    it('handles subscription_preapproval.created events (initial activation)', async () => {
+        // Arrange — simulate the event MP fires the first time a user
+        // authorizes the recurring charge. MP status='authorized' arrives in
+        // the payload; processSubscriptionUpdated will fetch the full
+        // preapproval, map authorized -> active, and flip the local sub from
+        // incomplete/pending_provider -> active.
+        const createdEvent = makeSubscriptionEvent({
+            id: 'mp-event-created-1',
+            type: 'subscription_preapproval.created',
+            data: { id: 'preapproval-new-1', status: 'authorized' }
+        });
+        const deps = makeWebhookDeps();
+
+        vi.mocked(getWebhookDependencies).mockReturnValue(
+            deps as unknown as ReturnType<typeof getWebhookDependencies>
+        );
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: true,
+            statusChanged: true,
+            newStatus: 'active'
+        });
+        vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
+
+        // Act
+        await handleSubscriptionPreapprovalEvent(makeMockContext() as never, createdEvent);
+
+        // Assert — the same dispatch path that handles .updated events
+        // is invoked for .created events too. processSubscriptionUpdated
+        // receives the event with type='subscription_preapproval.created'
+        // and source='webhook'.
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        const callArg = vi.mocked(processSubscriptionUpdated).mock.calls[0]?.[0];
+        expect(callArg?.event.type).toBe('subscription_preapproval.created');
+        expect(callArg?.source).toBe('webhook');
+        expect(callArg?.providerEventId).toBe('mp-event-created-1');
+        expect(markEventProcessedByProviderId).toHaveBeenCalledWith({
+            providerEventId: 'mp-event-created-1'
+        });
+    });
+
+    it('still handles subscription_preapproval.updated events (status sync)', async () => {
+        // Defense-in-depth: the rename to handleSubscriptionPreapprovalEvent
+        // must not regress the existing .updated dispatch.
+        const updatedEvent = makeSubscriptionEvent({
+            id: 'mp-event-updated-1',
+            type: 'subscription_preapproval.updated',
+            data: { id: 'preapproval-existing-1', status: 'paused' }
+        });
+        const deps = makeWebhookDeps();
+
+        vi.mocked(getWebhookDependencies).mockReturnValue(
+            deps as unknown as ReturnType<typeof getWebhookDependencies>
+        );
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: true,
+            statusChanged: true,
+            newStatus: 'paused'
+        });
+        vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
+
+        await handleSubscriptionPreapprovalEvent(makeMockContext() as never, updatedEvent);
+
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        const callArg = vi.mocked(processSubscriptionUpdated).mock.calls[0]?.[0];
+        expect(callArg?.event.type).toBe('subscription_preapproval.updated');
     });
 });

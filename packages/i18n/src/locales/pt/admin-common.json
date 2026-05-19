@@ -175,7 +175,9 @@
             "conflict": "Ocorreu um conflito. O recurso pode ter sido modificado.",
             "validation": "Erro de validação. Verifique os campos do formulário.",
             "tooManyRequests": "Muitas solicitações. Aguarde um momento.",
-            "serverError": "Erro do servidor. Tente novamente mais tarde."
+            "serverError": "Erro do servidor. Tente novamente mais tarde.",
+            "serviceUnavailable": "Este serviço ainda não está configurado. Entre em contato com o administrador do sistema.",
+            "invalidResponse": "A resposta do servidor não é válida. Tente novamente em alguns segundos."
         }
     },
     "entityForm": {
@@ -246,5 +248,19 @@
         "srSuccess": "Formulário enviado com sucesso",
         "srFailed": "Falha ao enviar formulário: {{error}}",
         "srHasErrors": "O formulário tem {{count}} erros de validação"
+    },
+    "entityPage": {
+        "viewTitle": "{entity}",
+        "editTitle": "Editar {entity}",
+        "viewDescription": "Detalhes de {entity}",
+        "editDescription": "Modificar detalhes de {entity}",
+        "notAvailable": "Não disponível",
+        "none": "Nenhuma",
+        "actions": {
+            "back": "Voltar",
+            "edit": "Editar",
+            "view": "Ver",
+            "cancel": "Cancelar"
+        }
     }
 }

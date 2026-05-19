@@ -288,6 +288,8 @@
             "statusCancelled": "Cancelado",
             "filterAllStatuses": "Todos los estados",
             "filterAllTypes": "Todos los tipos",
+            "filterStatusLabel": "Filtrar por estado",
+            "filterTypeLabel": "Filtrar por tipo",
             "viewDetails": "Ver detalles",
             "dialog": {
                 "details": "Detalles del patrocinio",
@@ -360,6 +362,66 @@
     },
     "access": {
         "permissions": {
+            "categories": {
+                "ACCOMMODATION": "Alojamiento",
+                "ACCOMMODATION_LISTING": "Listado de Alojamiento",
+                "ACCOMMODATION_LISTING_PLAN": "Plan de Listado de Alojamiento",
+                "ACCOMMODATION_REVIEW": "Reseña de Alojamiento",
+                "AD_PRICING_CATALOG": "Catálogo de Precios de Anuncios",
+                "ATTRACTION": "Atracción",
+                "CLIENT_ACCESS_RIGHT": "Derecho de Acceso de Cliente",
+                "CONVERSATION": "Conversación",
+                "CREDIT_NOTE": "Nota de Crédito",
+                "DESTINATION": "Destino",
+                "DESTINATION_REVIEW": "Reseña de Destino",
+                "DISCOUNT_CODE_USAGE": "Uso de Código de Descuento",
+                "EVENT": "Evento",
+                "EVENT_LOCATION": "Ubicación de Evento",
+                "EVENT_ORGANIZER": "Organizador de Evento",
+                "EXCHANGE_RATE": "Tipo de Cambio",
+                "INVOICE": "Factura",
+                "INVOICE_LINE": "Línea de Factura",
+                "METRICS": "Métricas",
+                "PAYMENT": "Pago",
+                "PAYMENT_METHOD": "Método de Pago",
+                "PERMISSION": "Permiso",
+                "POST": "Publicación",
+                "POST_SPONSOR": "Patrocinador de Publicación",
+                "POST_SPONSORSHIP": "Patrocinio de Publicación",
+                "PURCHASE": "Compra",
+                "REFUND": "Reembolso",
+                "REVALIDATION": "Revalidación",
+                "USER": "Usuario",
+                "USER_BOOKMARK": "Favorito",
+                "USER_BOOKMARK_COLLECTION": "Colección de Favoritos",
+                "CLIENT": "Cliente",
+                "PRODUCT": "Producto",
+                "SUBSCRIPTION": "Suscripción",
+                "SUBSCRIPTION_ITEM": "Ítem de Suscripción",
+                "PROMOTION": "Promoción",
+                "DISCOUNT_CODE": "Código de Descuento",
+                "CAMPAIGN": "Campaña",
+                "SERVICE_LISTING": "Listado de Servicio",
+                "BENEFIT_LISTING": "Listado de Beneficio",
+                "BENEFIT_PARTNER": "Socio de Beneficio",
+                "BENEFIT_LISTING_PLAN": "Plan de Listado de Beneficio",
+                "TOURIST_SERVICE": "Servicio Turístico",
+                "SERVICE_LISTING_PLAN": "Plan de Listado de Servicio",
+                "NEWSLETTER_CAMPAIGN": "Campaña de Newsletter",
+                "NEWSLETTER_SUBSCRIBER": "Suscriptor de Newsletter",
+                "NOTIFICATION": "Notificación",
+                "SERVICE_ORDER": "Orden de Servicio",
+                "PROFESSIONAL_SERVICE": "Servicio Profesional",
+                "PROFESSIONAL_SERVICE_ORDER": "Orden de Servicio Profesional",
+                "BILLING": "Facturación",
+                "PUBLIC": "Público",
+                "SPONSORSHIP": "Patrocinio",
+                "OWNER_PROMOTION": "Promoción de Propietario",
+                "FEATURED_ACCOMMODATION": "Alojamiento Destacado",
+                "SYSTEM": "Sistema",
+                "ACCESS": "Acceso",
+                "MEDIA": "Medios"
+            },
             "pageDescription": "Esta página muestra todas las categorías de permisos disponibles en el sistema. Los permisos están organizados por dominio y controlan el acceso a características y recursos específicos. Los detalles individuales de permisos se gestionan a través de asignaciones de roles.",
             "totalCategories": "Total de Categorías",
             "permissionCategories": "Categorías de permisos",
@@ -382,7 +444,108 @@
             "keyCapabilities": "Capacidades Clave:",
             "accessSuffix": "Acceso",
             "infoNote": "Nota",
-            "infoNoteDesc": "Los detalles de permisos individuales se gestionan a través de la página de Permisos. Los usuarios pueden ser asignados a roles desde la sección de Gestión de Usuarios."
+            "infoNoteDesc": "Los detalles de permisos individuales se gestionan a través de la página de Permisos. Los usuarios pueden ser asignados a roles desde la sección de Gestión de Usuarios.",
+            "levels": {
+                "critical": "Crítico",
+                "high": "Alto",
+                "medium": "Medio",
+                "low": "Bajo"
+            },
+            "catalog": {
+                "SUPER_ADMIN": {
+                    "name": "Super Admin",
+                    "description": "Acceso total al sistema con todos los permisos, incluidas las acciones a nivel sistema",
+                    "capabilities": {
+                        "cap1": "Control total del sistema",
+                        "cap2": "Gestión de usuarios y roles",
+                        "cap3": "Configuración del sistema",
+                        "cap4": "Acceso al registro de auditoría",
+                        "cap5": "Gestión completa del contenido"
+                    }
+                },
+                "ADMIN": {
+                    "name": "Administrador",
+                    "description": "Gestiona el contenido de la plataforma, los usuarios y la mayoría de funciones administrativas",
+                    "capabilities": {
+                        "cap1": "Moderación de contenido",
+                        "cap2": "Gestión de usuarios",
+                        "cap3": "Aprobación de alojamientos",
+                        "cap4": "Gestión de eventos",
+                        "cap5": "Acceso a analíticas"
+                    }
+                },
+                "CLIENT_MANAGER": {
+                    "name": "Gestor de Clientes",
+                    "description": "Administra cuentas de clientes, facturación, suscripciones y analíticas de negocio",
+                    "capabilities": {
+                        "cap1": "Gestión de cuentas de cliente",
+                        "cap2": "Gestión de suscripciones",
+                        "cap3": "Facturación y facturas",
+                        "cap4": "Procesamiento de pagos",
+                        "cap5": "Analíticas de negocio"
+                    }
+                },
+                "EDITOR": {
+                    "name": "Editor",
+                    "description": "Crea y edita eventos, publicaciones y contenido editorial",
+                    "capabilities": {
+                        "cap1": "Crear eventos",
+                        "cap2": "Editar publicaciones",
+                        "cap3": "Publicar contenido",
+                        "cap4": "Gestionar medios",
+                        "cap5": "Programar contenido"
+                    }
+                },
+                "HOST": {
+                    "name": "Anfitrión",
+                    "description": "Propietario de alojamiento que gestiona sus propios listados",
+                    "capabilities": {
+                        "cap1": "Gestionar sus alojamientos",
+                        "cap2": "Actualizar disponibilidad",
+                        "cap3": "Subir fotos",
+                        "cap4": "Responder reseñas",
+                        "cap5": "Ver analíticas de reservas"
+                    }
+                },
+                "USER": {
+                    "name": "Usuario",
+                    "description": "Usuario registrado del portal público con capacidades básicas de interacción",
+                    "capabilities": {
+                        "cap1": "Ver contenido",
+                        "cap2": "Crear reseñas",
+                        "cap3": "Guardar favoritos",
+                        "cap4": "Actualizar perfil",
+                        "cap5": "Contactar anfitriones"
+                    }
+                },
+                "SPONSOR": {
+                    "name": "Patrocinador",
+                    "description": "Empresa externa con acceso a gestión y analíticas de patrocinios",
+                    "capabilities": {
+                        "cap1": "Gestionar patrocinios",
+                        "cap2": "Ver analíticas de patrocinios",
+                        "cap3": "Ver facturas"
+                    }
+                },
+                "GUEST": {
+                    "name": "Invitado",
+                    "description": "Visitante público sin autenticación, limitado a ver contenido público",
+                    "capabilities": {
+                        "cap1": "Ver contenido público",
+                        "cap2": "Navegar alojamientos",
+                        "cap3": "Buscar destinos",
+                        "cap4": "Ver eventos",
+                        "cap5": "Acceder a información pública"
+                    }
+                },
+                "SYSTEM": {
+                    "name": "Sistema",
+                    "description": "Cuenta no logueable reservada para asignaciones automáticas (seeds, cron jobs, webhooks). No visible en la UI.",
+                    "capabilities": {
+                        "cap1": "Usado internamente solo para operaciones automatizadas"
+                    }
+                }
+            }
         },
         "users": {
             "loadingData": "Cargando datos del usuario...",
@@ -590,6 +753,10 @@
                 "perNight": "Por Noche",
                 "perGuest": "Por Huésped"
             }
+        },
+        "amenities": {
+            "empty": "Este alojamiento no tiene amenidades asignadas.",
+            "editCta": "Agregar amenidad"
         },
         "reviews": {
             "noReviews": "Aún no hay reseñas para este alojamiento.",

@@ -22,6 +22,7 @@ export * from './owner-promotion';
 export * from './tag/tag.service';
 export * from './tag/post-tag.service';
 export * from './tag/post-tag.permissions';
+export * from './newsletter';
 export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';

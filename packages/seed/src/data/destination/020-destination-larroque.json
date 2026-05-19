@@ -3,8 +3,8 @@
     "id": "020-destination-larroque",
     "slug": "larroque",
     "name": "Larroque",
-    "summary": "Ciudad sur entrerriana con playas fluviales y pesca deportiva sobre el Gualeguaychú",
-    "description": "Larroque es una ciudad ubicada en el sur de Entre Ríos, en el departamento Gualeguaychú, emplazada sobre las costas del río Gualeguaychú. La ciudad es conocida por sus playas fluviales de arenas blancas, la pesca deportiva y los deportes náuticos. Con infraestructura turística en crecimiento, Larroque ofrece a los visitantes un destino de verano ideal, con balnearios, camping y actividades acuáticas. Su tranquilidad y la belleza natural de su entorno fluvial la convierten en una opción perfecta para el turismo familiar y de aventura.",
+    "summary": "Pueblo agropecuario del sur entrerriano, nacido alrededor de la estación de ferrocarril en 1909, con patrimonio ferroviario y entorno rural tranquilo.",
+    "description": "Larroque es una pequeña localidad del Departamento Gualeguaychú, en el sur de la provincia de Entre Ríos, ubicada a unos 50 km de Gualeguaychú, 30 km de Gualeguay y 43 km de Urdinarrain. El pueblo nació el 1 de diciembre de 1909 con la inauguración de la Estación del Ferrocarril Central Entrerriano Dr. Alberto Larroque, alrededor de la cual se asentaron pobladores rurales. Hoy mantiene un perfil netamente agropecuario, con calles tranquilas, una plaza central y la iglesia parroquial como hitos urbanos. Su principal atractivo cultural es el Museo de la Estación, instalado en la antigua sala de espera del ferrocarril, rodeado por un parque de dos hectáreas con sala de teatro. A pocos kilómetros, sobre el río Gualeguay, se encuentra el Paso Corralito, un paraje natural con playas de arena, pesca y actividades náuticas. Larroque es un destino ideal para quienes buscan turismo rural, historia local y descanso en un entorno de pueblo chico.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,39 +13,258 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2823",
+        "zipCode": "E2854",
         "country": "Argentina",
         "street": "Av. Costanera",
         "number": "100",
         "city": "Larroque",
         "coordinates": {
-            "lat": "-33.0333",
-            "long": "-59.0000"
+            "lat": "-33.0383",
+            "long": "-59.0114"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Playas fluviales de Larroque",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178036/hospeda/seed/required/destinations/020-destination-larroque/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/020-destination-larroque/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Playas fluviales de Larroque"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Río Gualeguaychú en Larroque",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178037/hospeda/seed/required/destinations/020-destination-larroque/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Balneario de Larroque",
-                "moderationState": "REJECTED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178038/hospeda/seed/required/destinations/020-destination-larroque/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178039/hospeda/seed/required/destinations/020-destination-larroque/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178040/hospeda/seed/required/destinations/020-destination-larroque/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178040/hospeda/seed/required/destinations/020-destination-larroque/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178041/hospeda/seed/required/destinations/020-destination-larroque/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178042/hospeda/seed/required/destinations/020-destination-larroque/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178043/hospeda/seed/required/destinations/020-destination-larroque/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178044/hospeda/seed/required/destinations/020-destination-larroque/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178045/hospeda/seed/required/destinations/020-destination-larroque/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178046/hospeda/seed/required/destinations/020-destination-larroque/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178046/hospeda/seed/required/destinations/020-destination-larroque/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178047/hospeda/seed/required/destinations/020-destination-larroque/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178048/hospeda/seed/required/destinations/020-destination-larroque/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178049/hospeda/seed/required/destinations/020-destination-larroque/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178050/hospeda/seed/required/destinations/020-destination-larroque/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178051/hospeda/seed/required/destinations/020-destination-larroque/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178052/hospeda/seed/required/destinations/020-destination-larroque/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178052/hospeda/seed/required/destinations/020-destination-larroque/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178053/hospeda/seed/required/destinations/020-destination-larroque/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178054/hospeda/seed/required/destinations/020-destination-larroque/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178055/hospeda/seed/required/destinations/020-destination-larroque/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178056/hospeda/seed/required/destinations/020-destination-larroque/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178057/hospeda/seed/required/destinations/020-destination-larroque/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/020-destination-larroque/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Larroque - Playas Fluviales y Pesca Deportiva | Entre Ríos",
-        "description": "Descubre Larroque, ciudad con playas fluviales y pesca deportiva sobre el río Gualeguaychú.",
-        "keywords": ["Larroque", "Entre Ríos", "Playas", "Pesca", "Deportes Acuáticos", "Verano"]
+        "title": "Larroque, Entre Ríos | Pueblo Ferroviario y Turismo Rural",
+        "description": "Larroque, pueblo agropecuario de Entre Ríos: historia ferroviaria, Museo de la Estación y Paso Corralito sobre el río Gualeguay.",
+        "keywords": [
+            "Larroque",
+            "Entre Ríos",
+            "Departamento Gualeguaychú",
+            "Turismo rural",
+            "Museo de la Estación",
+            "Paso Corralito",
+            "Pueblo ferroviario"
+        ]
     },
     "tagIds": [
         "031-tag-playas",
@@ -58,11 +277,11 @@
         "040-tag-verano"
     ],
     "attractionIds": [
-        "069-attraction-playa_fluvial",
-        "005-attraction-balneario_municipal",
-        "065-attraction-pesca_deportiva",
-        "046-attraction-kayak_rio",
-        "072-attraction-plaza_principal"
+        "072-attraction-plaza_principal",
+        "045-attraction-iglesia_colonial",
+        "055-attraction-museo_historico",
+        "062-attraction-parque_municipal",
+        "013-attraction-centro_agropecuario"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

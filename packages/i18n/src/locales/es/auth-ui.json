@@ -1,18 +1,18 @@
 {
     "signIn": {
-        "title": "Iniciar Sesión",
-        "subtitle": "Accede a tu cuenta",
+        "title": "Iniciar sesión",
+        "subtitle": "Accedé a tu cuenta",
         "email": "Correo electrónico",
         "password": "Contraseña",
         "emailPlaceholder": "tu@email.com",
         "passwordPlaceholder": "Tu contraseña",
-        "signInButton": "Iniciar Sesión",
+        "signInButton": "Iniciar sesión",
         "signInWithGoogle": "Continuar con Google",
         "signInWithFacebook": "Continuar con Facebook",
         "or": "o",
         "loading": "Iniciando sesión...",
-        "dontHaveAccount": "¿No tienes cuenta?",
-        "signUpLink": "Regístrate aquí",
+        "dontHaveAccount": "¿No tenés cuenta?",
+        "signUpLink": "Registrate acá",
         "forgotPassword": "¿Olvidaste tu contraseña?",
         "errors": {
             "invalidCredentials": "Credenciales inválidas",
@@ -20,14 +20,26 @@
             "passwordRequired": "La contraseña es requerida",
             "invalidEmail": "Correo electrónico inválido",
             "accountNotFound": "Cuenta no encontrada",
-            "tooManyAttempts": "Demasiados intentos. Inténtalo más tarde",
-            "networkError": "Error de conexión. Verifica tu internet",
-            "unknownError": "Error desconocido. Inténtalo de nuevo"
+            "tooManyAttempts": "Demasiados intentos. Intentalo más tarde",
+            "networkError": "Error de conexión. Verificá tu internet",
+            "unknownError": "Error desconocido. Intentalo de nuevo",
+            "oauth": {
+                "access_denied": "Cancelaste el inicio de sesión con {{provider}}. Intentá de nuevo o usá otro método.",
+                "redirect_uri_mismatch": "Hay un problema de configuración con {{provider}}. Por favor, contactanos.",
+                "invalid_request": "La solicitud a {{provider}} es inválida. Intentá de nuevo en unos minutos.",
+                "unauthorized_client": "Nuestra aplicación no está autorizada en {{provider}}. Por favor, contactanos.",
+                "unsupported_response_type": "Hay un problema técnico con {{provider}}. Por favor, contactanos.",
+                "invalid_scope": "Los permisos solicitados a {{provider}} no son válidos. Por favor, contactanos.",
+                "server_error": "{{provider}} está teniendo problemas. Intentá de nuevo en unos minutos.",
+                "temporarily_unavailable": "{{provider}} no está disponible en este momento. Intentá de nuevo en unos minutos.",
+                "oauth_state_mismatch": "Tu sesión expiró durante el inicio de sesión. Intentá de nuevo.",
+                "unknown": "No pudimos completar el inicio de sesión con {{provider}}. Intentá de nuevo más tarde."
+            }
         }
     },
     "signUp": {
-        "title": "Crear Cuenta",
-        "subtitle": "Únete a nuestra plataforma",
+        "title": "Crear cuenta",
+        "subtitle": "Sumate a nuestra plataforma",
         "firstName": "Nombre",
         "lastName": "Apellido",
         "email": "Correo electrónico",
@@ -37,24 +49,38 @@
         "lastNamePlaceholder": "Tu apellido",
         "emailPlaceholder": "tu@email.com",
         "passwordPlaceholder": "Mínimo 8 caracteres",
-        "confirmPasswordPlaceholder": "Confirma tu contraseña",
-        "signUpButton": "Crear Cuenta",
+        "confirmPasswordPlaceholder": "Confirmá tu contraseña",
+        "signUpButton": "Crear cuenta",
         "signUpWithGoogle": "Registrarse con Google",
         "signUpWithFacebook": "Registrarse con Facebook",
         "or": "o",
         "loading": "Creando cuenta...",
-        "alreadyHaveAccount": "¿Ya tienes cuenta?",
-        "signInLink": "Inicia sesión aquí",
-        "termsAcceptance": "Al registrarte, aceptas nuestros {termsLink} y {privacyLink}",
+        "alreadyHaveAccount": "¿Ya tenés cuenta?",
+        "signInLink": "Iniciá sesión acá",
+        "termsAcceptance": "Al registrarte, aceptás nuestros {termsLink} y {privacyLink}",
         "termsOfService": "Términos de Servicio",
         "privacyPolicy": "Política de Privacidad",
         "emailVerification": {
-            "title": "Verifica tu correo",
-            "description": "Te hemos enviado un código de verificación a {email}",
+            "title": "Verificá tu correo",
+            "description": "Te enviamos un código de verificación a {email}",
             "codePlaceholder": "Código de verificación",
             "verifyButton": "Verificar",
             "resendCode": "Reenviar código",
             "changeEmail": "Cambiar correo"
+        },
+        "strength": {
+            "weak": "Débil",
+            "medium": "Media",
+            "strong": "Fuerte"
+        },
+        "showPassword": "Mostrar contraseña",
+        "hidePassword": "Ocultar contraseña",
+        "rules": {
+            "length": "Al menos 8 caracteres",
+            "upper": "Al menos una mayúscula",
+            "lower": "Al menos una minúscula",
+            "digit": "Al menos un número",
+            "special": "Al menos un carácter especial"
         },
         "errors": {
             "emailRequired": "El correo electrónico es requerido",
@@ -65,20 +91,20 @@
             "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
             "passwordsDoNotMatch": "Las contraseñas no coinciden",
             "emailAlreadyExists": "Ya existe una cuenta con este correo",
-            "weakPassword": "La contraseña es muy débil",
-            "networkError": "Error de conexión. Verifica tu internet",
-            "unknownError": "Error desconocido. Inténtalo de nuevo"
+            "weakPassword": "La contraseña no cumple los requisitos de seguridad",
+            "networkError": "Error de conexión. Verificá tu internet",
+            "unknownError": "Error desconocido. Intentalo de nuevo"
         }
     },
     "userMenu": {
         "welcome": "Bienvenido",
-        "profile": "Mi Perfil",
+        "profile": "Mi perfil",
         "settings": "Configuración",
-        "dashboard": "Panel de Control",
-        "myAccommodations": "Mis Alojamientos",
+        "dashboard": "Panel de control",
+        "myAccommodations": "Mis alojamientos",
         "notifications": "Notificaciones",
         "help": "Ayuda",
-        "signOut": "Cerrar Sesión",
+        "signOut": "Cerrar sesión",
         "loading": "Cargando...",
         "errors": {
             "loadingProfile": "Error al cargar perfil",
@@ -86,11 +112,11 @@
         }
     },
     "signOut": {
-        "button": "Cerrar Sesión",
+        "button": "Cerrar sesión",
         "loading": "Cerrando sesión...",
         "confirmation": {
             "title": "¿Cerrar sesión?",
-            "description": "¿Estás seguro que quieres cerrar tu sesión?",
+            "description": "¿Seguro que querés cerrar tu sesión?",
             "confirm": "Sí, cerrar sesión",
             "cancel": "Cancelar"
         },
@@ -113,22 +139,33 @@
     "pages": {
         "signin": {
             "title": "Iniciar sesión",
-            "description": "Inicia sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos"
+            "description": "Iniciá sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos"
         },
         "signup": {
             "title": "Registrarse",
-            "description": "Crea tu cuenta en Hospeda para gestionar tus reservas y descubrir nuevos alojamientos"
+            "description": "Creá tu cuenta en Hospeda para gestionar tus reservas y descubrir nuevos alojamientos"
         },
         "forgotPassword": {
             "title": "Recuperar contraseña",
-            "description": "Recupera tu contraseña de Hospeda. Te enviaremos un enlace para restablecer tu contraseña"
+            "description": "Recuperá tu contraseña de Hospeda. Te enviamos un enlace para restablecerla"
         },
         "resetPassword": {
             "title": "Restablecer contraseña",
-            "description": "Establece una nueva contraseña para tu cuenta de Hospeda"
+            "description": "Establecé una nueva contraseña para tu cuenta de Hospeda",
+            "tokenError": {
+                "expired": {
+                    "title": "Este enlace expiró",
+                    "description": "Los enlaces de restablecimiento tienen una vigencia limitada por seguridad. Solicitá uno nuevo y volvé a intentarlo."
+                },
+                "invalid": {
+                    "title": "Este enlace ya no es válido",
+                    "description": "Es posible que ya lo hayas usado o que haya sido modificado. Solicitá uno nuevo para continuar."
+                },
+                "requestNewLinkCta": "Solicitar nuevo enlace"
+            }
         },
         "verifyEmail": {
-            "title": "Verificar email",
+            "title": "Verificar correo",
             "description": "Verificando tu dirección de correo electrónico en Hospeda"
         }
     }

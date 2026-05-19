@@ -21,10 +21,6 @@
         "instagram": "https://instagram.com/paraisoapacible",
         "twitter": "https://twitter.com/paraisoapacible"
     },
-    "price": {
-        "price": 3800,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-31.0419",
@@ -35,34 +31,88 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
-            "caption": "Camping a orillas del río",
-            "description": "Vista del área de acampe con acceso al río",
+            "url": "https://images.pexels.com/photos/15925118/pexels-photo-15925118.jpeg",
+            "caption": "Carpa entre árboles",
+            "description": "Carpa naranja y azul instalada entre la arboleda del camping",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
-                "caption": "Río",
-                "description": "Acceso al río Uruguay",
+                "url": "https://images.pexels.com/photos/104664/pexels-photo-104664.jpeg",
+                "caption": "Carpa azul sobre el césped",
+                "description": "Parcela con carpa familiar instalada sobre pasto al borde del monte",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4268158/pexels-photo-4268158.jpeg",
+                "caption": "Carpas en la ladera",
+                "description": "Grupo de carpas sobre la ladera con vista despejada al horizonte",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5993943/pexels-photo-5993943.jpeg",
+                "caption": "Armando la carpa",
+                "description": "Acampante terminando de montar la carpa amarilla bajo los árboles",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/33102150/pexels-photo-33102150.jpeg",
+                "caption": "Carpa naranja al aire libre",
+                "description": "Carpa naranja instalada en parcela soleada lista para recibir huéspedes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/20468085/pexels-photo-20468085.jpeg",
+                "caption": "Carpas en valle",
+                "description": "Varias carpas distribuidas en un valle abierto al amanecer",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/12623152/pexels-photo-12623152.jpeg",
+                "caption": "Campamento con fogón",
+                "description": "Carpas y fogón en un claro rodeado de bosque verde y frondoso",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/14036357/pexels-photo-14036357.jpeg",
+                "caption": "Campamento con tarp",
+                "description": "Carpa con techo extendido para sombra en un sector arbolado del predio",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/15331106/pexels-photo-15331106.jpeg",
+                "caption": "Carpa en el bosque",
+                "description": "Carpa solitaria en medio del bosque rodeada de pasto y árboles",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8985295/pexels-photo-8985295.jpeg",
+                "caption": "Acampe con vista",
+                "description": "Campamento al pie de un cerro rodeado de vegetación y árboles verdes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/34034355/pexels-photo-34034355.jpeg",
+                "caption": "Carpa entre el verde",
+                "description": "Carpa amarilla rodeada de vegetación frondosa típica del Litoral",
                 "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
-                "caption": "Acampe",
-                "description": "Espacio para carpas con sombra",
+                "caption": "Carpa bajo cielo estrellado",
+                "description": "Vista nocturna del área de acampe con tipi iluminado y la Vía Láctea de fondo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-                "caption": "Parcelas",
-                "description": "Vista de las parcelas",
+                "url": "https://images.pexels.com/photos/9159974/pexels-photo-9159974.jpeg",
+                "caption": "Carpa azul entre árboles",
+                "description": "Carpa azul instalada entre árboles altos en un sector arbolado del camping",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
-                "caption": "Baños",
-                "description": "Instalaciones sanitarias",
+                "url": "https://images.pexels.com/photos/11320367/pexels-photo-11320367.jpeg",
+                "caption": "Dos carpas en pradera",
+                "description": "Par de carpas instaladas sobre pasto verde en sector tranquilo del predio",
                 "moderationState": "APPROVED"
             }
         ]

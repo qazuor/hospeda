@@ -44,6 +44,12 @@ type ApiSelectProps = {
     error?: string;
     /** Maximum number of items to fetch (default: 1000) */
     limit?: number;
+    /**
+     * Query string parameter name used for the page-size limit.
+     * Defaults to `'limit'` for back-compat with qzpay-hono billing routes.
+     * Admin tier routes reject `limit` and require `'pageSize'`.
+     */
+    paramName?: string;
     /** Transform function for API response */
     transformResponse?: (data: unknown) => ApiSelectOption[];
     /** Custom function to get option label */
@@ -90,6 +96,7 @@ export const ApiSelect: FC<ApiSelectProps> = ({
     className = '',
     error,
     limit = 100,
+    paramName = 'limit',
     transformResponse = defaultTransformResponse,
     getOptionLabel = (option) => option.name,
     getOptionValue = (option) => option.id
@@ -100,11 +107,11 @@ export const ApiSelect: FC<ApiSelectProps> = ({
         isError,
         error: queryError
     } = useQuery<ApiSelectOption[]>({
-        queryKey: [...queryKey, 'limit', limit],
+        queryKey: [...queryKey, paramName, limit],
         queryFn: async (): Promise<ApiSelectOption[]> => {
-            // Add limit parameter to get all results
+            // Append limit/pageSize parameter to fetch options (param name depends on route convention).
             const separator = endpoint.includes('?') ? '&' : '?';
-            const endpointWithLimit = `${endpoint}${separator}limit=${limit}`;
+            const endpointWithLimit = `${endpoint}${separator}${paramName}=${limit}`;
 
             const { data } = await fetchApi<unknown>({
                 path: endpointWithLimit,

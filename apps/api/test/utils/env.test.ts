@@ -861,4 +861,96 @@ describe('Environment Configuration', () => {
             expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_SECRET).toBeUndefined();
         });
     });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-109 Phase 1 — HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+    // ---------------------------------------------------------------------------
+
+    describe('HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR', () => {
+        it('defaults to "HOSPEDA" when not set', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: undefined
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            expect(envModule.env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR).toBe('HOSPEDA');
+        });
+
+        it('accepts a valid override (uppercase letters and spaces, ≤11 chars)', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA AR'
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            expect(envModule.env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR).toBe('HOSPEDA AR');
+        });
+
+        it('accepts digits within the descriptor', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA 24'
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            expect(envModule.env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR).toBe('HOSPEDA 24');
+        });
+
+        it('rejects lowercase characters', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR.safeParse(
+                    'hospeda'
+                );
+
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects values longer than 11 characters', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR.safeParse(
+                    'HOSPEDAPLATFORM'
+                );
+
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects non-ASCII characters', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR.safeParse(
+                    'HOSPEDÁ'
+                );
+
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects empty string', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR.safeParse('');
+
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts the boundary value of exactly 11 characters', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR.safeParse(
+                    'HOSPEDA1234' // 11 chars
+                );
+
+            expect(result.success).toBe(true);
+        });
+    });
 });

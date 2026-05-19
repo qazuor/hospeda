@@ -574,10 +574,10 @@ console.log(`Metrics overhead: ${overhead}ms`);
 
 ## 📚 Related Documentation
 
-- [Environment Variables](./ENVIRONMENT_VARIABLES.md) - Metrics configuration
+- [Environment Variables](../../../docs/guides/environment-variables.md) - Metrics configuration
 - [Performance Testing](./TESTING_GUIDE.md#performance-testing) - Testing metrics
-- [Middleware System](./COMPLETE_API_GUIDE.md#middleware-system) - Integration details
-- [Route Factory System](./ROUTE_FACTORY_SYSTEM.md) - Automatic metrics collection
+- [Middleware Guide](./development/middleware.md) - Integration details
+- [Route Factories](./development/route-factories.md) - Automatic metrics collection
 
 ---
 

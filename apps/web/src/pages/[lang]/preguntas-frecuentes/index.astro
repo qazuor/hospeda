@@ -158,6 +158,16 @@ const faqJsonLd = {
 
 const contactHref = buildUrl({ locale, path: '/contacto/' });
 const whatsappHref = 'https://wa.me/5493442453797';
+
+// Split titles to underline the last word with a handwritten accent.
+const splitLastWord = (full: string): { main: string; accent: string } => {
+	const words = full.trim().split(/\s+/);
+	const accent = words.pop() ?? full;
+	return { main: words.join(' '), accent };
+};
+
+const heroHeading = splitLastWord(t('faq.hero.title'));
+const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 ---
 
 <DefaultLayout
@@ -173,9 +183,50 @@ const whatsappHref = 'https://wa.me/5493442453797';
 
 	<!-- ───── Hero ───────────────────────────────────────────────────────── -->
 	<section class="faq-hero section section--warm">
+		<div class="faq-hero__decoratives" aria-hidden="true">
+			<span class="faq-hero__watermark">?</span>
+			<div class="faq-hero__blob"></div>
+			<svg
+				class="faq-hero__trail"
+				viewBox="0 0 200 80"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 4 60 Q 60 8, 110 40 T 196 24"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="faq-hero__dot faq-hero__dot--1"></span>
+			<span class="faq-hero__dot faq-hero__dot--2"></span>
+			<span class="faq-hero__dot faq-hero__dot--3"></span>
+		</div>
 		<div class="faq-hero__container" data-reveal="up">
 			<p class="faq-hero__tagline">{t('faq.hero.tagline')}</p>
-			<h1 class="faq-hero__title">{t('faq.hero.title')}</h1>
+			<h1 class="faq-hero__title">
+				{heroHeading.main && <>{heroHeading.main}{' '}</>}
+				<span class="faq-hero__title-accent">
+					{heroHeading.accent}
+					<svg
+						class="faq-hero__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h1>
 			<p class="faq-hero__subtitle">{t('faq.hero.subtitle')}</p>
 
 			<div class="faq-hero__cta">
@@ -236,7 +287,7 @@ const whatsappHref = 'https://wa.me/5493442453797';
 							class="faq-item"
 							role="listitem"
 							data-reveal="up"
-							style={`transition-delay: ${Math.min(i, 6) * 60}ms`}
+							data-stagger-index={Math.min(i, 6)} data-stagger-step="60"
 						>
 							<summary class="faq-item__summary">
 								<span class="faq-item__question">{item.question}</span>
@@ -256,9 +307,48 @@ const whatsappHref = 'https://wa.me/5493442453797';
 
 	<!-- ───── Still need help CTA ────────────────────────────────────────── -->
 	<section class="faq-still section">
+		<div class="faq-still__decoratives" aria-hidden="true">
+			<div class="faq-still__blob"></div>
+			<svg
+				class="faq-still__wave"
+				viewBox="0 0 600 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 0 30 Q 100 5, 200 30 T 400 30 T 600 28"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="faq-still__dot faq-still__dot--1"></span>
+			<span class="faq-still__dot faq-still__dot--2"></span>
+		</div>
 		<div class="faq-still__container" data-reveal="up">
 			<p class="faq-still__tagline">{t('faq.stillNeedHelp.tagline')}</p>
-			<h2 class="faq-still__title">{t('faq.stillNeedHelp.title')}</h2>
+			<h2 class="faq-still__title">
+				{stillHeading.main && <>{stillHeading.main}{' '}</>}
+				<span class="faq-still__title-accent">
+					{stillHeading.accent}
+					<svg
+						class="faq-still__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h2>
 			<p class="faq-still__subtitle">{t('faq.stillNeedHelp.subtitle')}</p>
 
 			<div class="faq-still__actions">
@@ -651,6 +741,171 @@ const whatsappHref = 'https://wa.me/5493442453797';
 		.faq-still__actions {
 			flex-direction: row;
 			align-items: center;
+		}
+	}
+
+	/* ─── Decoratives ───────────────────────────────────────────────────── */
+
+	.faq-still {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.faq-hero__decoratives,
+	.faq-still__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.faq-hero__container,
+	.faq-still__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Underline */
+	.faq-hero__title-accent,
+	.faq-still__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.faq-hero__title-underline,
+	.faq-still__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		color: var(--brand-accent);
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
+	/* Hero: oversized "?" watermark — thematic for FAQ */
+	.faq-hero__watermark {
+		position: absolute;
+		top: -10%;
+		right: -3%;
+		font-family: var(--font-decorative);
+		font-size: clamp(14rem, 24vw, 28rem);
+		font-weight: 700;
+		color: var(--brand-primary);
+		opacity: 0.07;
+		line-height: 0.85;
+		user-select: none;
+		pointer-events: none;
+	}
+
+	.faq-hero__blob {
+		position: absolute;
+		top: 50%;
+		left: 12%;
+		transform: translateY(-50%);
+		width: clamp(280px, 36vw, 480px);
+		height: clamp(280px, 36vw, 480px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 40% 40%,
+			oklch(from var(--brand-primary) l c h / 0.14),
+			oklch(from var(--brand-accent) l c h / 0.06) 55%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.faq-hero__trail {
+		position: absolute;
+		top: 22%;
+		left: 5%;
+		width: clamp(130px, 16vw, 200px);
+		height: 80px;
+		color: var(--brand-accent);
+		opacity: 0.4;
+		transform: rotate(-12deg);
+	}
+
+	.faq-hero__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+	.faq-hero__dot--1 {
+		top: 28%;
+		right: 14%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+	.faq-hero__dot--2 {
+		bottom: 22%;
+		left: 8%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.faq-hero__dot--3 {
+		bottom: 30%;
+		right: 8%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+	}
+
+	/* Still Need Help CTA */
+	.faq-still__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(320px, 42vw, 540px);
+		height: clamp(320px, 42vw, 540px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 50% 50%,
+			oklch(from var(--brand-accent) l c h / 0.18),
+			oklch(from var(--brand-primary) l c h / 0.08) 55%,
+			transparent 75%
+		);
+		filter: blur(3px);
+	}
+
+	.faq-still__wave {
+		position: absolute;
+		top: 18%;
+		left: -3%;
+		width: 60%;
+		height: 60px;
+		color: var(--brand-primary);
+		opacity: 0.35;
+	}
+
+	.faq-still__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+	.faq-still__dot--1 {
+		top: 28%;
+		right: 12%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.faq-still__dot--2 {
+		bottom: 18%;
+		left: 18%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+
+	@media (max-width: 900px) {
+		.faq-hero__trail,
+		.faq-hero__watermark,
+		.faq-still__wave {
+			display: none;
 		}
 	}
 </style>

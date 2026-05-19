@@ -22,7 +22,7 @@
         "twitter": "https://twitter.com/senderotranquilocountryhouse"
     },
     "price": {
-        "price": 28000,
+        "price": 155500,
         "currency": "ARS"
     },
     "location": {
@@ -35,46 +35,52 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-            "caption": "Casa de campo",
-            "description": "Vista exterior de Sendero Tranquilo Country House",
+            "url": "https://images.pexels.com/photos/567186/pexels-photo-567186.jpeg",
+            "caption": "Casona de piedra",
+            "description": "Antigua casa rural en piedra rodeada de verde y árboles",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
+                "url": "https://images.pexels.com/photos/17648544/pexels-photo-17648544.jpeg",
+                "caption": "Casa quinta con campos",
+                "description": "Casa rural pintoresca con techo a dos aguas rodeada de campos verdes",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19937378/pexels-photo-19937378.jpeg",
+                "caption": "Casa rural rústica",
+                "description": "Casa quinta rústica rodeada de naturaleza serena y árboles cercanos",
+                "moderationState": "APPROVED"
+            },
+            {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-                "caption": "Exterior",
-                "description": "Fachada de la casa",
+                "caption": "Casa de campo con jardín",
+                "description": "Frente de la casa quinta con galería y arboleda al fondo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
-                "caption": "Living",
-                "description": "Living-comedor",
+                "url": "https://images.pexels.com/photos/32150698/pexels-photo-32150698.jpeg",
+                "caption": "Casa rural soleada",
+                "description": "Casa rural pintoresca rodeada de vegetación en día soleado de verano",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/17249891/pexels-photo-17249891.jpeg",
+                "caption": "Casa rural pintoresca",
+                "description": "Casa rural con arquitectura rústica en campo soleado y vegetación verde",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
-                "caption": "Dormitorio",
-                "description": "Uno de los dormitorios",
+                "url": "https://images.pexels.com/photos/5543266/pexels-photo-5543266.jpeg",
+                "caption": "Casa de campo con cerco blanco",
+                "description": "Casa rural pintoresca con cerco blanco y vegetación abundante",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
-                "caption": "Asador",
-                "description": "Área de asador con galería",
-                "moderationState": "APPROVED"
-            },
-            {
-                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
-                "caption": "Jardín",
-                "description": "Jardín amplio",
+                "url": "https://images.pexels.com/photos/33623258/pexels-photo-33623258.jpeg",
+                "caption": "Casa quinta con campo",
+                "description": "Casa de campo con tierras alrededor y vista despejada al horizonte",
                 "moderationState": "APPROVED"
             }
         ]

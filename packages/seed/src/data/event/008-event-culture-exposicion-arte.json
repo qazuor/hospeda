@@ -3,7 +3,7 @@
     "id": "008-event-culture-exposicion-arte",
     "slug": "exposicion-arte",
     "name": "Exposición de Arte",
-    "summary": "Evento culture - Exposición de Arte",
+    "summary": "Muestra colectiva con artistas del Litoral.",
     "description": "Descripción detallada del evento Exposición de Arte. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
     "category": "CULTURE",
     "authorId": "admin-user",

@@ -18,7 +18,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
-import { getAdminUrlOrThrow } from '@/lib/env';
+import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
+import { webLogger as logger } from '@/lib/logger';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
 
@@ -45,6 +46,30 @@ const pageDescription = t(
 // Public env vars are safe to send to the client island.
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 const adminUrl = getAdminUrlOrThrow();
+
+// Resolve admin panel access server-side so the form can branch the
+// post-create redirect: HOST users without `access.panelAdmin` would
+// otherwise land on /auth/forbidden after being sent to /admin/*.
+let canAccessAdminPanel = false;
+try {
+    const cookieHeader = Astro.request.headers.get('cookie');
+    if (cookieHeader) {
+        const meResponse = await fetch(`${getApiUrl()}/api/v1/public/auth/me`, {
+            headers: { cookie: cookieHeader }
+        });
+        if (meResponse.ok) {
+            const json = (await meResponse.json()) as {
+                data?: { actor?: { permissions?: ReadonlyArray<string> } };
+            };
+            const permissions = json.data?.actor?.permissions ?? [];
+            canAccessAdminPanel = permissions.includes('access.panelAdmin');
+        }
+    }
+} catch (error) {
+    logger.warn({ error }, 'publicar/nueva: failed to resolve admin panel access');
+}
+
+const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
 ---
 
 <MarketingLayout
@@ -87,6 +112,8 @@ const adminUrl = getAdminUrlOrThrow();
                 locale={locale}
                 apiUrl={apiUrl}
                 adminUrl={adminUrl}
+                accountPropertiesUrl={accountPropertiesUrl}
+                canAccessAdminPanel={canAccessAdminPanel}
             />
         </div>
     </section>

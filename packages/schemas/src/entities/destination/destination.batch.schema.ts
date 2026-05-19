@@ -32,6 +32,17 @@ export const DestinationBatchRequestSchema = z.object({
 });
 
 /**
+ * Batch item schema for destination operations
+ * Represents a single destination in a batch response. All fields are optional
+ * except `id` and `name`, which the batch handler always includes (selector
+ * baseline). Callers using `fields` get a partial object, while callers without
+ * `fields` get the full destination.
+ */
+export const DestinationBatchItemSchema = DestinationSchema.partial().required({
+    id: true
+});
+
+/**
  * Batch response schema for destination operations
  * Returns an array of destinations or null for not found items
  *
@@ -44,10 +55,11 @@ export const DestinationBatchRequestSchema = z.object({
  * ];
  * ```
  */
-export const DestinationBatchResponseSchema = z.array(DestinationSchema.nullable());
+export const DestinationBatchResponseSchema = z.array(DestinationBatchItemSchema.nullable());
 
 /**
  * Type definitions for batch operations
  */
 export type DestinationBatchRequest = z.infer<typeof DestinationBatchRequestSchema>;
+export type DestinationBatchItem = z.infer<typeof DestinationBatchItemSchema>;
 export type DestinationBatchResponse = z.infer<typeof DestinationBatchResponseSchema>;

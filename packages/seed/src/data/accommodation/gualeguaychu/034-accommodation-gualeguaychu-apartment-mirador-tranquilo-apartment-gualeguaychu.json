@@ -20,10 +20,6 @@
     "socialNetworks": {
         "twitter": "https://twitter.com/miradortranquiloapartment"
     },
-    "price": {
-        "price": 13000,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-33.0015",
@@ -36,40 +32,64 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-            "caption": "Interior del apartamento",
-            "description": "Vista del área de estar y cocina",
+            "url": "https://images.pexels.com/photos/17832175/pexels-photo-17832175.jpeg",
+            "caption": "Loft con escalera",
+            "description": "Apartamento tipo loft con escalera interior y mobiliario moderno",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
-                "caption": "Living",
-                "description": "Espacio integrado de living y cocina",
+                "url": "https://images.pexels.com/photos/6681824/pexels-photo-6681824.jpeg",
+                "caption": "Rincón junto a la ventana",
+                "description": "Sillón cómodo con muebles de madera junto a la ventana del living",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Dormitorio",
-                "description": "Dormitorio con cama doble",
+                "url": "https://images.pexels.com/photos/36887747/pexels-photo-36887747.jpeg",
+                "caption": "Sala con sillón beige",
+                "description": "Living moderno con sillón color beige y detalles de decoración contemporáneos",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
-                "caption": "Cocina",
-                "description": "Cocina equipada",
+                "url": "https://images.pexels.com/photos/34818757/pexels-photo-34818757.jpeg",
+                "caption": "Sala elegante",
+                "description": "Living de diseño elegante con detalles modernos y luz cálida",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
-                "caption": "Baño",
-                "description": "Baño completo",
+                "url": "https://images.pexels.com/photos/14505912/pexels-photo-14505912.jpeg",
+                "caption": "Living totalmente equipado",
+                "description": "Sala completa con sofá, mesas y decoración lista para los huéspedes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg",
-                "caption": "Vista parcial",
-                "description": "Vista parcial a la ciudad/zonas verdes desde la ventana",
+                "url": "https://images.pexels.com/photos/7614615/pexels-photo-7614615.jpeg",
+                "caption": "Sala con ventanal",
+                "description": "Living moderno con grandes ventanas y mucha luz natural",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/37252339/pexels-photo-37252339.jpeg",
+                "caption": "Living minimalista",
+                "description": "Sala de diseño minimalista con líneas limpias y luz natural abundante",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/19674451/pexels-photo-19674451.jpeg",
+                "caption": "Living en piso alto",
+                "description": "Sala de apartamento en piso alto con vista despejada y mobiliario moderno",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/8089172/pexels-photo-8089172.jpeg",
+                "caption": "Living integrado con cocina",
+                "description": "Diseño minimalista con living y cocina abierta del apartamento",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/11296215/pexels-photo-11296215.jpeg",
+                "caption": "Living con iluminación cálida",
+                "description": "Sala de estar amplia con sillones, mesa baja y lámparas de pie",
                 "moderationState": "APPROVED"
             }
         ]

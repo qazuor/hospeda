@@ -6,12 +6,18 @@
  * rather than being hardcoded here so they have a single source of truth.
  */
 
+import * as Sentry from '@sentry/astro';
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
 import {
     AUTH_SEGMENTS,
+    BETA_PREFIX,
+    PROFILE_COMPLETION_BYPASS_ROLES,
+    PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
+    PROFILE_COMPLETION_SEGMENT,
     PROTECTED_SEGMENTS,
     SESSION_OPTIONAL_SEGMENTS,
+    SET_PASSWORD_SEGMENT,
     STATIC_PREFIXES
 } from './routes';
 
@@ -140,6 +146,37 @@ export function isSessionOptionalRoute({ path }: { path: string }): boolean {
 }
 
 /**
+ * Checks if a URL path is a session-optional route that ALSO requires the
+ * profile-completion guard to fire when the visitor is signed in (SPEC-113).
+ *
+ * Distinct from `isSessionOptionalRoute` so guests still pass through these
+ * routes unhindered, but authenticated users with `profile_completed = false`
+ * get bounced to `completar-perfil/` exactly like they would from a fully
+ * protected route. See `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`
+ * for the segment list.
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is in the completion-required session-optional list
+ */
+export function isProfileCompletionRequiredSessionOptionalRoute({
+    path
+}: {
+    readonly path: string;
+}): boolean {
+    if (!path) {
+        return false;
+    }
+    const trimmedPath = path.startsWith('/') ? path.slice(1) : path;
+    const segments = trimmedPath.split('/');
+    if (segments.length < 2) {
+        return false;
+    }
+    return (PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(
+        segments[1] ?? ''
+    );
+}
+
+/**
  * Checks if a URL path is a static asset or system route that should bypass middleware.
  *
  * Bypasses:
@@ -200,6 +237,27 @@ export function isServerIslandRoute({ path }: { path: string }): boolean {
 }
 
 /**
+ * Checks if a URL path belongs to the private beta tester documentation site.
+ * Beta routes live under `/beta` (no `/{lang}/` namespace, Spanish-only).
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is a beta docs route
+ *
+ * @example
+ * ```ts
+ * isBetaRoute({ path: '/beta/' })                    // true
+ * isBetaRoute({ path: '/beta/turista/crear-cuenta/' }) // true
+ * isBetaRoute({ path: '/es/alojamientos/' })         // false
+ * ```
+ */
+export function isBetaRoute({ path }: { path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+    return path === BETA_PREFIX || path.startsWith(`${BETA_PREFIX}/`);
+}
+
+/**
  * Builds a redirect URL to the login page with a return URL parameter.
  *
  * @param params - Object with locale and the current URL to redirect back to after login
@@ -249,6 +307,17 @@ export interface SessionUser {
 }
 
 /**
+ * Profile completion flags for a given user.
+ * Returned by GET /api/v1/protected/profile/status (SPEC-113 T-113-06).
+ */
+export interface ProfileStatus {
+    readonly profileCompleted: boolean;
+    readonly setPasswordPrompted: boolean;
+    readonly hasOAuthAccount: boolean;
+    readonly hasCredentialAccount: boolean;
+}
+
+/**
  * Middleware-specific API URL resolver that reads from process.env.
  * Uses process.env instead of import.meta.env because middleware runs
  * at request time on the server, where import.meta.env may not be
@@ -288,34 +357,54 @@ export async function parseSessionUser({
 
     const apiUrl = getMiddlewareApiUrl();
 
-    try {
-        const response = await fetch(`${apiUrl}/api/auth/get-session`, {
-            headers: {
-                cookie: cookieHeader
+    // Instrument the Better Auth round-trip so we can measure p50/p95 in
+    // Sentry and decide whether server-side session caching (SPEC-111 §4.3
+    // candidate) is worth the architectural cost. Span is a no-op when
+    // Sentry is not initialized (PUBLIC_SENTRY_DSN unset).
+    return Sentry.startSpan(
+        {
+            name: 'web.middleware.parseSessionUser',
+            op: 'http.client',
+            attributes: {
+                'http.url': `${apiUrl}/api/auth/get-session`,
+                'http.method': 'GET'
             }
-        });
+        },
+        async (span) => {
+            try {
+                const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+                    headers: {
+                        cookie: cookieHeader
+                    }
+                });
 
-        if (!response.ok) {
-            return null;
+                span?.setAttribute('http.response.status_code', response.status);
+
+                if (!response.ok) {
+                    return null;
+                }
+
+                const data = (await response.json()) as {
+                    user?: { id?: string; name?: string; email?: string };
+                };
+
+                if (!data?.user?.id || !data?.user?.email) {
+                    return null;
+                }
+
+                return {
+                    id: data.user.id,
+                    name: data.user.name || '',
+                    email: data.user.email
+                };
+            } catch {
+                span?.setStatus({ code: 2, message: 'internal_error' });
+                webLogger.warn('[middleware] Failed to validate session against Better Auth API');
+
+                return null;
+            }
         }
-
-        const data = (await response.json()) as {
-            user?: { id?: string; name?: string; email?: string };
-        };
-
-        if (!data?.user?.id || !data?.user?.email) {
-            return null;
-        }
-
-        return {
-            id: data.user.id,
-            name: data.user.name || '',
-            email: data.user.email
-        };
-    } catch {
-        webLogger.warn('[middleware] Failed to validate session against Better Auth API');
-        return null;
-    }
+    );
 }
 
 /**
@@ -353,18 +442,25 @@ export function buildCspHeader({
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
+    // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
+    // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
+    // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
+    // 'strict-dynamic' which makes host allowlists a no-op for scripts loaded
+    // via the nonce-tagged bootstrapper — the hosts here are documentation +
+    // safety net if 'strict-dynamic' is ever removed.
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org`,
+        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
+        "frame-src 'none'",
         "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',
@@ -378,6 +474,189 @@ export function buildCspHeader({
 
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';
+
+// ---------------------------------------------------------------------------
+// SPEC-113: Profile completion guard helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks if the current URL path is the profile completion form itself.
+ * This is whitelisted in the guard so the form can actually be submitted.
+ *
+ * Matches: /{locale}/mi-cuenta/completar-perfil/ (and any sub-paths)
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is the completar-perfil route
+ */
+export function isProfileCompletionRoute({ path }: { path: string }): boolean {
+    if (!path) return false;
+    const segments = path.replace(/^\//, '').split('/');
+    // /{locale}/mi-cuenta/completar-perfil/...
+    return (
+        segments.length >= 3 &&
+        (PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '') &&
+        segments[2] === PROFILE_COMPLETION_SEGMENT
+    );
+}
+
+/**
+ * Checks if the current URL path is the set-password form itself.
+ * This is whitelisted in the guard so the form can be submitted or skipped.
+ *
+ * Matches: /{locale}/mi-cuenta/agregar-contrasena/ (and any sub-paths)
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is the agregar-contrasena route
+ */
+export function isSetPasswordRoute({ path }: { path: string }): boolean {
+    if (!path) return false;
+    const segments = path.replace(/^\//, '').split('/');
+    // /{locale}/mi-cuenta/agregar-contrasena/...
+    return (
+        segments.length >= 3 &&
+        (PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '') &&
+        segments[2] === SET_PASSWORD_SEGMENT
+    );
+}
+
+/**
+ * Checks if the given role should bypass the profile completion + set-password
+ * guard per spec §3.5 (admin and super_admin roles skip the flow).
+ *
+ * @param params - Object with the role string
+ * @returns True when the role is exempt from profile completion checks
+ */
+export function isProfileCompletionBypassRole({ role }: { role: string }): boolean {
+    return (PROFILE_COMPLETION_BYPASS_ROLES as readonly string[]).includes(role);
+}
+
+/**
+ * Builds the redirect URL for the profile completion form.
+ *
+ * @param params - Object with locale
+ * @returns Absolute path to `/{locale}/mi-cuenta/completar-perfil/`
+ */
+export function buildProfileCompletionRedirect({ locale }: { locale: SupportedLocale }): string {
+    return `/${locale}/mi-cuenta/${PROFILE_COMPLETION_SEGMENT}/`;
+}
+
+/**
+ * Builds the redirect URL for the set-password form.
+ *
+ * @param params - Object with locale
+ * @returns Absolute path to `/{locale}/mi-cuenta/agregar-contrasena/`
+ */
+export function buildSetPasswordRedirect({ locale }: { locale: SupportedLocale }): string {
+    return `/${locale}/mi-cuenta/${SET_PASSWORD_SEGMENT}/`;
+}
+
+/**
+ * Checks whether the currently authenticated user holds an admin or super_admin
+ * role that grants them a bypass of the profile completion guard (spec §3.5).
+ *
+ * Calls GET /api/v1/public/auth/me to obtain the actor's role.  Only called
+ * when a redirect would otherwise be issued, so the extra HTTP call is rare.
+ *
+ * Returns false on any error so we default to requiring profile completion
+ * (safer: an admin getting the completion form once is a better outcome than
+ * a regular user never being redirected).
+ *
+ * @param params - Object with the raw Cookie request header value (or null)
+ * @returns True if the user's role grants a bypass of the completion flow
+ */
+export async function isAdminBypassUser({
+    cookieHeader
+}: {
+    cookieHeader: string | null;
+}): Promise<boolean> {
+    if (!cookieHeader) {
+        return false;
+    }
+
+    const apiUrl = getMiddlewareApiUrl();
+
+    try {
+        const response = await fetch(`${apiUrl}/api/v1/public/auth/me`, {
+            headers: {
+                cookie: cookieHeader
+            }
+        });
+
+        if (!response.ok) {
+            return false;
+        }
+
+        const data = (await response.json()) as {
+            data?: { actor?: { role?: string } };
+        };
+
+        const role = data?.data?.actor?.role ?? '';
+        return isProfileCompletionBypassRole({ role });
+    } catch {
+        webLogger.warn('[middleware] Failed to fetch actor role from /auth/me for bypass check');
+        return false;
+    }
+}
+
+/**
+ * Fetches profile completion status from the API for a given user session.
+ *
+ * Calls GET /api/v1/protected/profile/status — an endpoint that requires an
+ * authenticated session (cookie forwarded) and returns the four completion
+ * flags used by the middleware guard (SPEC-113 T-113-06).
+ *
+ * Returns null on any network error so the middleware can fail-open
+ * (allow through) rather than blocking every user on an API outage.
+ *
+ * @param params - Object with the raw Cookie request header value (or null)
+ * @returns Profile status flags, or null if the request fails
+ */
+export async function parseProfileStatus({
+    cookieHeader
+}: {
+    cookieHeader: string | null;
+}): Promise<ProfileStatus | null> {
+    if (!cookieHeader) {
+        return null;
+    }
+
+    const apiUrl = getMiddlewareApiUrl();
+
+    try {
+        const response = await fetch(`${apiUrl}/api/v1/protected/profile/status`, {
+            headers: {
+                cookie: cookieHeader
+            }
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const data = (await response.json()) as {
+            data?: {
+                profileCompleted?: boolean;
+                setPasswordPrompted?: boolean;
+                hasOAuthAccount?: boolean;
+                hasCredentialAccount?: boolean;
+            };
+        };
+
+        if (!data?.data) {
+            return null;
+        }
+
+        return {
+            profileCompleted: data.data.profileCompleted ?? false,
+            setPasswordPrompted: data.data.setPasswordPrompted ?? false,
+            hasOAuthAccount: data.data.hasOAuthAccount ?? false,
+            hasCredentialAccount: data.data.hasCredentialAccount ?? false
+        };
+    } catch {
+        webLogger.warn('[middleware] Failed to fetch profile status from API');
+        return null;
+    }
+}
 
 /**
  * Default noindex host (used when `HOSPEDA_NOINDEX_HOSTS` is unset).

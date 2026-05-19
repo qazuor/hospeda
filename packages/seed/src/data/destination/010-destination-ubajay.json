@@ -3,8 +3,8 @@
     "id": "010-destination-ubajay",
     "slug": "ubajay",
     "name": "Ubajay",
-    "summary": "Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
-    "description": "Ubajay es una pequeña y encantadora ciudad rural ubicada en el centro-este de Entre Ríos, conocida por su ambiente campestre y su fuerte tradición agropecuaria. Con sus paisajes rurales, estancias tradicionales y la calidez de su gente, Ubajay ofrece una experiencia auténtica de la vida rural entrerriana. Es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones del campo argentino.",
+    "summary": "Pueblo rural sobre la RN14 en el departamento Colón, vecino al Parque Nacional El Palmar y de tradición agropecuaria y forestal.",
+    "description": "Ubajay es una pequeña localidad rural del departamento Colón, en el centro-este de Entre Ríos, ubicada sobre la Ruta Nacional 14 a aproximadamente 5 km del acceso al Parque Nacional El Palmar y a unos 54 km de la ciudad de Colón. Fundada en 1915 con la llegada del Ferrocarril Nordeste Argentino y vinculada a las colonias judías impulsadas por la Jewish Colonization Association del barón Hirsch, conserva una fuerte impronta agropecuaria: su economía gira en torno a la explotación maderera y la forestación, complementadas por la agricultura (principalmente soja) y la ganadería, con varios aserraderos activos en la zona. Su perfil tranquilo, los paisajes de palmares de yatay y la cercanía a uno de los parques nacionales más visitados de la Mesopotamia la convierten en una base ideal para quienes buscan naturaleza, turismo rural y descanso lejos del bullicio.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,45 +13,276 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3271",
+        "zipCode": "3287",
         "country": "Argentina",
         "street": "Av. Rural",
         "number": "999",
         "city": "Ubajay",
         "coordinates": {
-            "lat": "-31.8000",
-            "long": "-58.3167"
+            "lat": "-31.7945",
+            "long": "-58.3168"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Ubajay",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178231/hospeda/seed/required/destinations/010-destination-ubajay/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Ubajay"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Ubajay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178232/hospeda/seed/required/destinations/010-destination-ubajay/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Ubajay",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178233/hospeda/seed/required/destinations/010-destination-ubajay/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178234/hospeda/seed/required/destinations/010-destination-ubajay/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178235/hospeda/seed/required/destinations/010-destination-ubajay/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178236/hospeda/seed/required/destinations/010-destination-ubajay/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178237/hospeda/seed/required/destinations/010-destination-ubajay/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178237/hospeda/seed/required/destinations/010-destination-ubajay/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178239/hospeda/seed/required/destinations/010-destination-ubajay/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178240/hospeda/seed/required/destinations/010-destination-ubajay/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178241/hospeda/seed/required/destinations/010-destination-ubajay/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178242/hospeda/seed/required/destinations/010-destination-ubajay/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178243/hospeda/seed/required/destinations/010-destination-ubajay/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178243/hospeda/seed/required/destinations/010-destination-ubajay/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178245/hospeda/seed/required/destinations/010-destination-ubajay/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178245/hospeda/seed/required/destinations/010-destination-ubajay/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178247/hospeda/seed/required/destinations/010-destination-ubajay/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178249/hospeda/seed/required/destinations/010-destination-ubajay/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178250/hospeda/seed/required/destinations/010-destination-ubajay/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178251/hospeda/seed/required/destinations/010-destination-ubajay/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178252/hospeda/seed/required/destinations/010-destination-ubajay/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178253/hospeda/seed/required/destinations/010-destination-ubajay/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178254/hospeda/seed/required/destinations/010-destination-ubajay/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178254/hospeda/seed/required/destinations/010-destination-ubajay/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178255/hospeda/seed/required/destinations/010-destination-ubajay/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178256/hospeda/seed/required/destinations/010-destination-ubajay/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/010-destination-ubajay/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Ubajay - Pequeña ciudad rural con encanto campestre",
-        "description": "Descubre Ubajay en Entre Ríos. Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
-        "keywords": ["Ubajay", "Entre Ríos", "rural", "campestre", "agropecuario", "tranquilidad"]
+        "title": "Ubajay, Entre Ríos: portal al Parque Nacional El Palmar",
+        "description": "Ubajay, pueblo rural del departamento Colón sobre la RN14, a 5 km del Parque Nacional El Palmar: palmares de yatay y turismo rural en Entre Ríos.",
+        "keywords": [
+            "Ubajay",
+            "Entre Ríos",
+            "departamento Colón",
+            "Parque Nacional El Palmar",
+            "RN14",
+            "turismo rural",
+            "palmares de yatay",
+            "Litoral"
+        ]
     },
     "attractionIds": [
         "013-attraction-centro_agropecuario",
-        "043-attraction-granja_educativa",
         "037-attraction-estancia_turistica",
-        "081-attraction-sendero_ecologico"
+        "043-attraction-granja_educativa",
+        "077-attraction-reserva_natural",
+        "081-attraction-sendero_ecologico",
+        "058-attraction-observacion_aves"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

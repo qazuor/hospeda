@@ -4,8 +4,25 @@
  * @description Account editProfile page.
  * @route /{lang}/mi-cuenta/editar/
  * @rendering SSR
+ *
+ * Loads the full protected user (including the SPEC-113 polish fields:
+ * birthDate, website, occupation, social networks, postal address, and
+ * the `profile` JSONB blob) by calling `GET /api/v1/protected/users/:id`
+ * server-side. Falls back to the Better Auth session shape when the API
+ * call fails so the page still renders.
+ *
+ * SPEC-113 follow-up: the canonical storage for several profile fields
+ * is the JSONB columns on the `users` table — NOT the top-level columns
+ * the response schema advertises. We read each field from JSONB and fall
+ * back to the (typically empty) top-level shape so existing data shows up:
+ *
+ *   - `phone`         ← `data.contactInfo?.mobilePhone`
+ *   - `website`       ← `data.profile?.website` (or `data.contactInfo?.website`)
+ *   - `country/...`   ← `data.location?.{country, region, city}`
+ *   - `facebookUrl/…` ← `data.socialNetworks?.{facebook, instagram, …}`
  */
 
+import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
@@ -21,18 +38,137 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.editProfile.title', 'Editar perfil');
-const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiUrl = getApiUrl();
 
-/** Shape passed to ProfileEditForm. Better Auth sessions expose name/image/email. */
-const initialUser = {
+/**
+ * Build an empty fallback user shape. Used when the API call fails so
+ * the form still renders something the user can save (the PATCH will
+ * succeed even if the GET didn't — they're independent).
+ */
+const fallbackUser = {
 	id: user.id,
 	displayName: user.name ?? null,
-	firstName: user.name?.split(' ')[0] ?? null,
-	lastName: user.name?.split(' ').slice(1).join(' ') || null,
+	firstName: null as string | null,
+	lastName: null as string | null,
 	avatarUrl: user.image ?? null,
-	phone: null,
-	profile: null,
+	phone: null as string | null,
+	birthDate: null as string | null,
+	profile: null as {
+		bio?: string | null;
+		website?: string | null;
+		occupation?: string | null;
+	} | null,
+	website: null as string | null,
+	facebookUrl: null as string | null,
+	instagramUrl: null as string | null,
+	twitterUrl: null as string | null,
+	linkedinUrl: null as string | null,
+	youtubeUrl: null as string | null,
+	addressLine1: null as string | null,
+	city: null as string | null,
+	province: null as string | null,
+	country: null as string | null,
+	postalCode: null as string | null
 };
+
+let initialUser = fallbackUser;
+
+try {
+	// Forward the incoming Cookie header so Better Auth picks up the
+	// session on the API side. Without this the call comes through as
+	// anonymous and the protected endpoint returns 401.
+	const cookieHeader = Astro.request.headers.get('cookie') ?? '';
+	const response = await fetch(`${apiUrl}/api/v1/protected/users/${user.id}`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+			...(cookieHeader ? { Cookie: cookieHeader } : {})
+		}
+	});
+
+	if (response.ok) {
+		const body = (await response.json()) as {
+			success?: boolean;
+			data?: Record<string, unknown> | null;
+		};
+		const data = body?.data;
+		if (data && typeof data === 'object') {
+			// Helper — coerce unknown JSONB column to a flat record.
+			const asRecord = (value: unknown): Record<string, unknown> | null =>
+				value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+
+			const contactInfo = asRecord(data.contactInfo);
+			const socialNetworks = asRecord(data.socialNetworks);
+			const location = asRecord(data.location);
+			const profile = asRecord(data.profile);
+
+			// Helper — read a top-level field first, then a JSONB fallback.
+			const pickString = (top: unknown, jsonbValue: unknown): string | null => {
+				if (typeof top === 'string' && top.length > 0) return top;
+				if (typeof jsonbValue === 'string' && jsonbValue.length > 0) return jsonbValue;
+				return null;
+			};
+
+			// Normalize birthDate to YYYY-MM-DD so it slots straight into a
+			// native <input type="date">. The API returns either an ISO
+			// timestamp (string) or a Date — coerce both safely.
+			let birthDate: string | null = null;
+			const rawBirth = data.birthDate;
+			if (typeof rawBirth === 'string' && rawBirth.length > 0) {
+				birthDate = rawBirth.slice(0, 10);
+			} else if (rawBirth instanceof Date) {
+				birthDate = rawBirth.toISOString().slice(0, 10);
+			}
+
+			initialUser = {
+				...fallbackUser,
+				id: (data.id as string) ?? user.id,
+				displayName: pickString(data.displayName, null) ?? user.name ?? null,
+				firstName: pickString(data.firstName, null),
+				lastName: pickString(data.lastName, null),
+				avatarUrl:
+					pickString(data.avatarUrl, null) ?? pickString(data.image, null) ?? user.image ?? null,
+
+				// Contact — `phone` lives in contactInfo.mobilePhone (JSONB).
+				phone: pickString(data.phone, contactInfo?.mobilePhone),
+
+				birthDate,
+				profile: profile as typeof fallbackUser.profile,
+
+				// Website may be in `profile.website` (collected during the
+				// profile completion form) or in `contactInfo.website`.
+				website: pickString(
+					data.website,
+					profile?.website ?? contactInfo?.website
+				),
+
+				// Socials live in the `socialNetworks` JSONB column with
+				// short keys (facebook / instagram / …). The form surface
+				// uses the longer "<network>Url" naming.
+				facebookUrl: pickString(data.facebookUrl, socialNetworks?.facebook),
+				instagramUrl: pickString(data.instagramUrl, socialNetworks?.instagram),
+				twitterUrl: pickString(data.twitterUrl, socialNetworks?.twitter),
+				linkedinUrl: pickString(data.linkedinUrl, socialNetworks?.linkedIn),
+				youtubeUrl: pickString(data.youtubeUrl, socialNetworks?.youtube),
+
+				// Postal address lives in the `location` JSONB column with
+				// keys { country, region, city, ... }. Map `region` ↔ `province`.
+				addressLine1: pickString(data.addressLine1, location?.addressLine1),
+				city: pickString(data.city, location?.city),
+				province: pickString(data.province, location?.region),
+				country: pickString(data.country, location?.country),
+				postalCode: pickString(data.postalCode, location?.postalCode)
+			};
+		}
+	}
+	// Non-OK responses fall through to fallbackUser silently — the form
+	// can still POST a PATCH and surface a meaningful error if the user
+	// is genuinely unauthorized.
+} catch {
+	// Network error — same fallback. Page should not 500 because the
+	// edit endpoint is GET-degraded; the PATCH path is the source of
+	// truth.
+}
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">

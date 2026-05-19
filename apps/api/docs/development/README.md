@@ -251,7 +251,7 @@ pnpm db:fresh
 1. [Debugging Techniques](debugging.md)
 2. [Performance Optimization](performance.md)
 3. [Deployment Guide](deployment.md)
-4. [Complex Examples](../examples/)
+4. Runnable `.ts` examples in `apps/api/src/examples/` (`crud-endpoint.ts`, `list-endpoint.ts`, `custom-endpoint.ts`, `complex-logic.ts`)
 
 ---
 

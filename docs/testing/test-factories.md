@@ -1131,4 +1131,4 @@ export const factories = {
 **Related Documentation**:
 
 - [Testing Strategy](./strategy.md)
-- [Test Organization](../development/test-organization.md)
+- [Testing Standards](../../.claude/docs/testing-standards.md)

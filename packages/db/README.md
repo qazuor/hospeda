@@ -27,7 +27,7 @@ This package provides a fully-typed, modular, and extensible database layer for 
 
 - [Quick Start Guide](./docs/quick-start.md) - Get started in 5 minutes
 - [API Reference](./docs/api/BaseModel.md) - Complete API documentation
-- [Development Guides](./docs/guides/README.md) - In-depth tutorials
+- [Development Guides](./docs/README.md#guides) - In-depth tutorials (creating models, schemas, relations, migrations, transactions, soft delete, testing, optimization, deployment)
 
 ---
 
@@ -295,5 +295,5 @@ src/
 
 ## Related Documentation
 
-- [Database Migrations Guide](../../docs/guides/database-migrations.md)
+- [Database Migrations Guide](./docs/guides/migrations.md)
 - [ADR-004: Drizzle over Prisma](../../docs/decisions/ADR-004-drizzle-over-prisma.md)

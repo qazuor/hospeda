@@ -1,0 +1,90 @@
+---
+/**
+ * @file [lang]/newsletter/confirmado.astro
+ * @description Verification success page (SPEC-101 T-101-35).
+ *
+ * Landing page the API redirects the user to after a successful double
+ * opt-in flow:
+ *   GET /api/v1/public/newsletter/verify?token=… → 302 → here.
+ *
+ * Server-rendered. No client-side JavaScript required. The only
+ * interactive piece is the WhatsAppCTA block (analytics hook), which
+ * the component manages itself.
+ *
+ * Marked noindex — no SEO value, post-action landing.
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { CheckCircleIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const pageTitle = t(
+    'newsletter.verify.successTitle',
+    '¡Bienvenido! Tu suscripción fue confirmada.'
+);
+const pageDescription = t(
+    'newsletter.verify.successDescription',
+    'A partir de ahora recibirás novedades de Hospeda en tu email.'
+);
+const homeLink = t('newsletter.verify.homeLink', 'Ir al sitio');
+const preferencesLink = t('newsletter.verify.preferencesLink', 'Gestionar preferencias');
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="success"
+        Icon={CheckCircleIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <WhatsAppCTA slot="extras" locale={lang} source="verification_success" />
+
+        <a slot="actions" class="newsletter-confirm__link-primary" href={`/${lang}/`}>
+            {homeLink}
+        </a>
+        <a
+            slot="actions"
+            class="newsletter-confirm__link-secondary"
+            href={`/${lang}/mi-cuenta/newsletter/`}
+        >
+            {preferencesLink}
+        </a>
+    </StatusPage>
+</DefaultLayout>
+
+<style>
+    .newsletter-confirm__link-primary,
+    .newsletter-confirm__link-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
+        border-radius: var(--radius-button, 8px);
+        font-size: var(--text-button, 0.9375rem);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .newsletter-confirm__link-primary {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+    }
+
+    .newsletter-confirm__link-secondary {
+        background-color: transparent;
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-primary);
+    }
+</style>

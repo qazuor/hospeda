@@ -12,6 +12,7 @@ import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { LocationIcon, TreeIcon, UsersIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -23,6 +24,17 @@ export const getStaticPaths = (() => {
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// Split title to underline the last word with a handwritten accent.
+const splitLastWord = (full: string): { main: string; accent: string } => {
+	const words = full.trim().split(/\s+/);
+	const accent = words.pop() ?? full;
+	return { main: words.join(' '), accent };
+};
+
+const heroHeading = splitLastWord(t('about.hero.title', 'Conectamos viajeros con el Litoral'));
+const regionHeading = splitLastWord(t('about.region.title', 'Concepción del Uruguay'));
+const ctaHeading = splitLastWord(t('about.cta.title', 'Descubrí el Litoral'));
 
 const aboutTitle = t('about.title', 'Quiénes somos');
 const aboutDescription = t(
@@ -51,9 +63,48 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	/>
 	<!-- Hero -->
 	<section class="about-hero section section--warm">
+		<div class="about-hero__decoratives" aria-hidden="true">
+			<div class="about-hero__blob"></div>
+			<svg
+				class="about-hero__trail"
+				viewBox="0 0 200 80"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 4 60 Q 60 8, 110 40 T 196 24"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 7"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="about-hero__dot about-hero__dot--1"></span>
+			<span class="about-hero__dot about-hero__dot--2"></span>
+		</div>
 		<div class="about-hero__container" data-reveal="up">
 			<p class="about-hero__tagline">{t('about.hero.tagline', 'Nuestra historia')}</p>
-			<h1 class="about-hero__title">{t('about.hero.title', 'Conectamos viajeros con el Litoral')}</h1>
+			<h1 class="about-hero__title">
+				{heroHeading.main && <>{heroHeading.main}{' '}</>}
+				<span class="about-hero__title-accent">
+					{heroHeading.accent}
+					<svg
+						class="about-hero__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h1>
 			<p class="about-hero__subtitle">
 				{t('about.hero.subtitle', 'Hospeda nació con la misión de hacer visible la riqueza turística de Concepción del Uruguay y el Litoral Entrerriano.')}
 			</p>
@@ -62,6 +113,21 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	<!-- Mission -->
 	<section class="about-mission section">
+		<svg
+			class="about-mission__wave"
+			viewBox="0 0 800 60"
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M 0 30 Q 100 5, 200 30 T 400 30 T 600 30 T 800 30"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-dasharray="3 7"
+				stroke-linecap="round"
+				fill="none"
+			/>
+		</svg>
 		<div class="about-mission__container">
 			<p class="about-mission__tagline" data-reveal="up">{t('about.mission.tagline', 'Nuestra misión')}</p>
 			<h2 class="about-mission__title" data-reveal="up">{t('about.mission.title', '¿Qué hacemos?')}</h2>
@@ -73,16 +139,39 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	<!-- Values -->
 	<section class="about-values section section--warm">
+		<div class="about-values__decoratives" aria-hidden="true">
+			<span class="about-values__watermark">
+				<UsersIcon size={200} weight="duotone" />
+			</span>
+			<span class="about-values__dot about-values__dot--1"></span>
+			<span class="about-values__dot about-values__dot--2"></span>
+			<span class="about-values__dot about-values__dot--3"></span>
+		</div>
 		<div class="about-values__container">
 			<p class="about-values__tagline" data-reveal="up">{t('about.values.tagline', 'Lo que nos define')}</p>
 			<h2 class="about-values__title" data-reveal="up">{t('about.values.title', 'Nuestros valores')}</h2>
 			<div class="about-values__grid">
+				<svg
+					class="about-values__connector"
+					viewBox="0 0 1200 80"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M 100 40 Q 350 5, 600 45 T 1100 35"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-dasharray="4 8"
+						stroke-linecap="round"
+						fill="none"
+					/>
+				</svg>
 				{[
 					{ titleKey: 'about.values.transparency.title', titleFb: 'Transparencia', descKey: 'about.values.transparency.desc', descFb: 'Sin comisiones ocultas ni costos sorpresa. Precios claros desde el primer momento.' },
 					{ titleKey: 'about.values.simplicity.title', titleFb: 'Simplicidad', descKey: 'about.values.simplicity.desc', descFb: 'Herramientas fáciles de usar tanto para viajeros como para propietarios.' },
 					{ titleKey: 'about.values.community.title', titleFb: 'Comunidad', descKey: 'about.values.community.desc', descFb: 'Creemos en el turismo como motor de desarrollo local y regional.' },
 				].map((value, i) => (
-					<div class="about-values__card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+					<div class="about-values__card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
 						<h3 class="about-values__card-title">{t(value.titleKey, value.titleFb)}</h3>
 						<p class="about-values__card-desc">{t(value.descKey, value.descFb)}</p>
 					</div>
@@ -93,9 +182,51 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	<!-- Regional -->
 	<section class="about-region section">
+		<div class="about-region__decoratives" aria-hidden="true">
+			<span class="about-region__watermark">
+				<TreeIcon size={220} weight="duotone" />
+			</span>
+			<svg
+				class="about-region__river"
+				viewBox="0 0 1200 80"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 0 40 Q 200 5, 400 35 T 800 25 T 1200 45"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-dasharray="5 9"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="about-region__bubble about-region__bubble--1"></span>
+			<span class="about-region__bubble about-region__bubble--2"></span>
+			<span class="about-region__bubble about-region__bubble--3"></span>
+		</div>
 		<div class="about-region__container" data-reveal="up">
 			<p class="about-region__tagline">{t('about.region.tagline', 'Nuestro hogar')}</p>
-			<h2 class="about-region__title">{t('about.region.title', 'Concepción del Uruguay')}</h2>
+			<h2 class="about-region__title">
+				{regionHeading.main && <>{regionHeading.main}{' '}</>}
+				<span class="about-region__title-accent">
+					{regionHeading.accent}
+					<svg
+						class="about-region__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h2>
 			<p class="about-region__text">
 				{t('about.region.text', 'Ubicada a orillas del río Uruguay, Concepción del Uruguay es una ciudad con historia, naturaleza y gastronomía. Capital histórica de Entre Ríos, ofrece playas, termas, carnavales y una rica vida cultural.')}
 			</p>
@@ -104,9 +235,49 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	<!-- CTA -->
 	<section class="about-cta section section--warm">
+		<div class="about-cta__decoratives" aria-hidden="true">
+			<div class="about-cta__blob"></div>
+			<svg
+				class="about-cta__route"
+				viewBox="0 0 200 60"
+				preserveAspectRatio="none"
+				aria-hidden="true"
+			>
+				<path
+					d="M 4 30 Q 50 5, 100 28 T 188 32"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-dasharray="3 6"
+					stroke-linecap="round"
+					fill="none"
+				/>
+			</svg>
+			<span class="about-cta__pin">
+				<LocationIcon size="md" weight="duotone" />
+			</span>
+		</div>
 		<div class="about-cta__container" data-reveal="up">
 			<p class="about-cta__tagline">{t('about.cta.tagline', '¿Listo para explorar?')}</p>
-			<h2 class="about-cta__title">{t('about.cta.title', 'Descubrí el Litoral')}</h2>
+			<h2 class="about-cta__title">
+				{ctaHeading.main && <>{ctaHeading.main}{' '}</>}
+				<span class="about-cta__title-accent">
+					{ctaHeading.accent}
+					<svg
+						class="about-cta__title-underline"
+						viewBox="0 0 200 18"
+						preserveAspectRatio="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M 4 12 Q 50 2, 100 10 T 196 8"
+							stroke="currentColor"
+							stroke-width="4"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</span>
+			</h2>
 			<GradientButton
 				href={buildUrl({ locale, path: 'alojamientos' })}
 				label={t('about.cta.button', 'Ver alojamientos')}
@@ -198,6 +369,282 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	@media (max-width: 768px) {
 		.about-values__grid {
 			grid-template-columns: 1fr;
+		}
+	}
+
+	/* ─── Decoratives ───────────────────────────────────────────────────── */
+
+	.about-hero,
+	.about-mission,
+	.about-values,
+	.about-region,
+	.about-cta {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.about-hero__decoratives,
+	.about-values__decoratives,
+	.about-region__decoratives,
+	.about-cta__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.about-hero__container,
+	.about-mission__container,
+	.about-values__container,
+	.about-region__container,
+	.about-cta__container {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Shared underline style */
+	.about-hero__title-accent,
+	.about-region__title-accent,
+	.about-cta__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.about-hero__title-underline,
+	.about-region__title-underline,
+	.about-cta__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
+	.about-hero__title-underline { color: var(--brand-accent); }
+	.about-region__title-underline { color: var(--brand-primary); }
+	.about-cta__title-underline { color: var(--brand-accent); }
+
+	/* Hero decoratives */
+	.about-hero__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(360px, 50vw, 640px);
+		height: clamp(360px, 50vw, 640px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 35% 35%,
+			oklch(from var(--brand-primary) l c h / 0.15),
+			oklch(from var(--brand-accent) l c h / 0.08) 55%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.about-hero__trail {
+		position: absolute;
+		top: 18%;
+		right: 6%;
+		width: clamp(130px, 16vw, 200px);
+		height: 80px;
+		color: var(--brand-accent);
+		opacity: 0.4;
+		transform: rotate(8deg);
+	}
+
+	.about-hero__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+	.about-hero__dot--1 {
+		top: 30%;
+		left: 8%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+	.about-hero__dot--2 {
+		bottom: 22%;
+		right: 10%;
+		width: 10px;
+		height: 10px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+
+	/* Mission wave */
+	.about-mission__wave {
+		position: absolute;
+		top: 28%;
+		left: -8%;
+		width: 70%;
+		height: 60px;
+		color: var(--brand-primary);
+		opacity: 0.3;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	/* Values: watermark + connector + dots */
+	.about-values__watermark {
+		position: absolute;
+		bottom: -40px;
+		right: -50px;
+		display: inline-flex;
+		color: var(--brand-accent);
+		opacity: 0.05;
+		transform: rotate(-12deg);
+	}
+
+	.about-values__grid {
+		position: relative;
+	}
+
+	.about-values__connector {
+		position: absolute;
+		top: 32%;
+		left: 0;
+		width: 100%;
+		height: 80px;
+		color: var(--brand-accent);
+		opacity: 0.35;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.about-values__card {
+		position: relative;
+		z-index: 1;
+	}
+
+	.about-values__dot {
+		position: absolute;
+		border-radius: 50%;
+	}
+	.about-values__dot--1 {
+		top: 18%;
+		left: 8%;
+		width: 12px;
+		height: 12px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+	}
+	.about-values__dot--2 {
+		top: 50%;
+		right: 6%;
+		width: 9px;
+		height: 9px;
+		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+	}
+	.about-values__dot--3 {
+		bottom: 14%;
+		left: 22%;
+		width: 14px;
+		height: 14px;
+		background-color: oklch(from var(--brand-primary) l c h / 0.22);
+	}
+
+	/* Region: tree watermark + dashed river + bubbles */
+	.about-region__watermark {
+		position: absolute;
+		top: -40px;
+		left: -40px;
+		display: inline-flex;
+		color: oklch(0.55 0.13 145);
+		opacity: 0.07;
+		transform: rotate(-8deg);
+	}
+
+	.about-region__river {
+		position: absolute;
+		bottom: 18%;
+		left: -3%;
+		width: 106%;
+		height: 80px;
+		color: var(--brand-primary);
+		opacity: 0.4;
+		pointer-events: none;
+	}
+
+	.about-region__bubble {
+		position: absolute;
+		border-radius: 50%;
+		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+	}
+	.about-region__bubble--1 {
+		top: 25%;
+		right: 12%;
+		width: 14px;
+		height: 14px;
+	}
+	.about-region__bubble--2 {
+		top: 55%;
+		right: 22%;
+		width: 9px;
+		height: 9px;
+	}
+	.about-region__bubble--3 {
+		bottom: 30%;
+		left: 12%;
+		width: 11px;
+		height: 11px;
+	}
+
+	/* CTA: blob + mini-route + pin */
+	.about-cta__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(320px, 45vw, 560px);
+		height: clamp(320px, 45vw, 560px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 50% 50%,
+			oklch(from var(--brand-accent) l c h / 0.18),
+			oklch(from var(--brand-primary) l c h / 0.08) 55%,
+			transparent 75%
+		);
+		filter: blur(3px);
+	}
+
+	.about-cta__route {
+		position: absolute;
+		top: 22%;
+		right: 6%;
+		width: clamp(140px, 18vw, 220px);
+		height: clamp(48px, 6vw, 70px);
+		color: var(--brand-primary);
+		opacity: 0.55;
+	}
+
+	.about-cta__pin {
+		position: absolute;
+		top: calc(22% + clamp(36px, 4.5vw, 52px));
+		right: 5%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		color: var(--brand-primary);
+	}
+
+	@media (max-width: 900px) {
+		.about-hero__trail,
+		.about-mission__wave,
+		.about-values__watermark,
+		.about-values__connector,
+		.about-region__watermark,
+		.about-region__river,
+		.about-cta__route,
+		.about-cta__pin {
+			display: none;
 		}
 	}
 </style>

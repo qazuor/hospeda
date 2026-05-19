@@ -24,17 +24,19 @@ function FeatureCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'feature',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        // 'Característica' is feminine (SPEC-117 D-POSTS.3 family).
+        title: 'Nueva Característica',
         description: t('admin-entities.entities.feature.description'),
         entityName,
         entityNamePlural,
         basePath: '/content/accommodation-features',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1/2 — title ≠ body and feminine gender.
+        successToastTitle: 'Característica creada',
+        successToastMessage: 'La característica se creó exitosamente',
+        errorToastTitle: 'Error al crear la característica',
+        errorMessage: 'No pudimos crear la característica. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +44,8 @@ function FeatureCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={FeatureCreateInputSchema}
-                createConsolidatedConfig={createFeatureConsolidatedConfig}
+                createConsolidatedConfig={() => createFeatureConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

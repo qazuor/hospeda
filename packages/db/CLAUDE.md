@@ -663,7 +663,7 @@ For full details, constraint definitions, and verification queries see:
 - [ADR-006: Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
 - [ADR-017: PostgreSQL-Specific Features via Manual Migrations](../../docs/decisions/ADR-017-postgres-specific-features.md)
 - [Triggers and Constraints Manifest](docs/triggers-manifest.md)
-- [Database Migrations Guide](../../docs/guides/database-migrations.md)
+- [Database Migrations Guide](docs/guides/migrations.md)
 
 <claude-mem-context>
 # Recent Activity

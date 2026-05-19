@@ -14,7 +14,9 @@
  */
 
 // Import job definitions
+export { abandonedPendingSubsJob } from './abandoned-pending-subs.job.js';
 export { trialExpiryJob } from './trial-expiry.js';
+export { trialPreEndNotifJob } from './trial-pre-end-notif.job.js';
 export { webhookRetryJob } from './webhook-retry.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { addonExpiryJob } from './addon-expiry.job.js';
@@ -30,3 +32,5 @@ export { cloudinaryE2eCleanupJob } from './cloudinary-e2e-cleanup.job.js';
 export { conversationNotificationJob } from './conversation-notification.job.js';
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
+export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
+export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';

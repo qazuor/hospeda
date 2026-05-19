@@ -3,8 +3,8 @@
     "id": "018-destination-caseros",
     "slug": "caseros",
     "name": "Caseros",
-    "summary": "Ciudad con historia criolla y entorno natural sobre las costas del Gualeguaychú",
-    "description": "Caseros es una ciudad ubicada en el departamento Uruguay de Entre Ríos, con una rica historia criolla y un entorno natural privilegiado. Emplazada cerca del río Gualeguaychú, la ciudad ofrece actividades de pesca, deportes náuticos y contacto con la naturaleza. Con sus festividades tradicionales y su gastronomía regional, Caseros invita a sus visitantes a sumergirse en la cultura entrerriana auténtica. Sus playas fluviales y parques son ideales para el esparcimiento familiar durante el verano.",
+    "summary": "Pueblo ferroviario del departamento Uruguay, puerta de entrada al Palacio San José, residencia histórica del general Justo José de Urquiza.",
+    "description": "Caseros es una pequeña localidad del departamento Uruguay, en Entre Ríos, ubicada sobre la Ruta Provincial 39 a 23 km de Concepción del Uruguay y a solo 6 km del Palacio San José, Museo y Monumento Histórico Nacional que fuera residencia del primer presidente constitucional argentino, Justo José de Urquiza. Su origen está ligado a la estación del Ferrocarril Central Entrerriano y al inmigrante italiano Nicolás Mugherli, quien instaló el almacén de ramos generales y el molino harinero San Nicolás que dio impulso a la colonia. Hoy el pueblo conserva su impronta ferroviaria y rural, con el predio del ferrocarril reconvertido en museo y centro cultural, la Parroquia San Miguel Arcángel, plazas arboladas, grutas y templetes religiosos, y un entorno de campo entrerriano ideal para una escapada tranquila.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,39 +13,132 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2820",
+        "zipCode": "3262",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "200",
         "city": "Caseros",
         "coordinates": {
-            "lat": "-32.4667",
-            "long": "-58.4833"
+            "lat": "-32.4500",
+            "long": "-58.5000"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Costas fluviales de Caseros",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177827/hospeda/seed/required/destinations/018-destination-caseros/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/018-destination-caseros/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Costas fluviales de Caseros"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Orillas del río en Caseros",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177829/hospeda/seed/required/destinations/018-destination-caseros/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Centro de Caseros",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177831/hospeda/seed/required/destinations/018-destination-caseros/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177831/hospeda/seed/required/destinations/018-destination-caseros/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177833/hospeda/seed/required/destinations/018-destination-caseros/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177835/hospeda/seed/required/destinations/018-destination-caseros/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177837/hospeda/seed/required/destinations/018-destination-caseros/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177838/hospeda/seed/required/destinations/018-destination-caseros/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177838/hospeda/seed/required/destinations/018-destination-caseros/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177840/hospeda/seed/required/destinations/018-destination-caseros/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177841/hospeda/seed/required/destinations/018-destination-caseros/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/018-destination-caseros/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Caseros - Historia Criolla y Costa Fluvial | Entre Ríos",
-        "description": "Descubre Caseros, ciudad con historia criolla y naturaleza fluvial en Entre Ríos.",
-        "keywords": ["Caseros", "Entre Ríos", "Historia", "Pesca", "Naturaleza", "Fluvial"]
+        "title": "Caseros, Entre Ríos: pueblo del Palacio San José",
+        "description": "Visita Caseros, Entre Ríos: pueblo ferroviario del departamento Uruguay, a 6 km del Palacio San José, residencia histórica del general Urquiza.",
+        "keywords": [
+            "Caseros",
+            "Entre Ríos",
+            "Palacio San José",
+            "Urquiza",
+            "departamento Uruguay",
+            "turismo histórico",
+            "pueblos entrerrianos"
+        ]
     },
     "tagIds": [
         "022-tag-historia",
@@ -57,11 +150,11 @@
         "040-tag-verano"
     ],
     "attractionIds": [
-        "069-attraction-playa_fluvial",
-        "065-attraction-pesca_deportiva",
-        "005-attraction-balneario_municipal",
+        "010-attraction-casa_historica",
+        "055-attraction-museo_historico",
         "072-attraction-plaza_principal",
-        "062-attraction-parque_municipal"
+        "045-attraction-iglesia_colonial",
+        "013-attraction-centro_agropecuario"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

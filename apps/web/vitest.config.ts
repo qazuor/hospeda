@@ -1,110 +1,113 @@
-import { getViteConfig } from 'astro/config';
+import { resolve } from 'node:path';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig(
-    getViteConfig({
-        test: {
-            globals: true,
-            environment: 'jsdom',
-            setupFiles: ['./test/setup.ts'],
-            pool: 'forks',
-            poolOptions: {
-                forks: {
-                    maxForks: 3
-                }
-            },
-            // 15s instead of the 5s default. Dynamic `await import()` of
-            // React components plus v8 coverage instrumentation routinely
-            // pushes the import+render path over 5s on the GitHub Actions
-            // shared runners when 4 shards execute in parallel, even though
-            // each test finishes in <500ms locally. Raising the budget
-            // removes the flake without masking genuine hangs.
-            testTimeout: 15000,
-            css: {
-                modules: {
-                    classNameStrategy: 'non-scoped'
-                }
-            },
-            include: [
-                'test/**/*.test.ts',
-                'test/**/*.test.tsx',
-                'src/**/*.test.ts',
-                'src/**/*.test.tsx'
-            ],
-            coverage: {
-                provider: 'v8',
-                reporter: ['text', 'json', 'html'],
-                thresholds: {
-                    // The web app intentionally favors integration / E2E
-                    // coverage over per-component unit tests because most
-                    // user-facing surfaces are Astro SSR components and
-                    // React islands that require a real Astro pipeline to
-                    // render. Unit thresholds stay conservative; the
-                    // CI script in .github/workflows/ci.yml enforces the
-                    // package-level lines floor.
-                    lines: 55,
-                    functions: 60,
-                    branches: 70,
-                    statements: 55
-                },
-                exclude: [
-                    'node_modules/',
-                    'dist/',
-                    'test/',
-                    '**/*.d.ts',
-                    '**/*.config.*',
-                    '.astro/',
-                    'public/',
-                    '**/*.astro.mjs',
-                    '**/*.mjs',
-                    '**/*.js',
-                    '**/chunks/**',
-                    '**/pages/**',
-                    '**/server/**',
-                    '**/client/**',
-                    '**/_astro/**',
-                    '**/_functions/**',
-                    // Astro components and layouts cannot be rendered by
-                    // Vitest's jsdom environment (Astro requires its own
-                    // SSR pipeline). They are validated through source
-                    // assertions where critical, but cannot contribute to
-                    // line/function coverage.
-                    '**/*.astro',
-                    'src/layouts/',
-                    // Skeleton components are decorative-only Astro stubs.
-                    '**/skeletons/',
-                    // Type-only modules: no executable code to cover.
-                    'src/data/types.ts',
-                    'src/data/types-ui.ts',
-                    'src/lib/api/types.ts',
-                    'src/lib/listing-summary/summary.types.ts',
-                    // Barrel re-export modules: every symbol re-exported is
-                    // covered through its source file; the barrel itself
-                    // never executes its own statements when consumers
-                    // import directly.
-                    'src/lib/api/index.ts',
-                    'src/lib/listing-summary/index.ts',
-                    // Thin fetch wrappers around the API. Each function is a
-                    // typed call to the global `fetch` and is exercised by
-                    // page-level and integration tests (which are themselves
-                    // excluded under `**/pages/**`). Unit-testing them would
-                    // duplicate fetch mocks already covered upstream.
-                    'src/lib/api/endpoints.ts',
-                    'src/lib/api/endpoints-protected.ts',
-                    // Browser-side singletons that wrap external SDKs.
-                    // Cannot be meaningfully unit-tested without mocking the
-                    // entire underlying client; covered through page tests.
-                    'src/lib/auth-client.ts',
-                    'src/lib/cookie-consent.ts',
-                    // Render helpers / DOM glue exercised through layout
-                    // and page integration paths.
-                    'src/lib/accommodation-card-utils.ts',
-                    'src/lib/icon-map.ts',
-                    'src/lib/tiptap-renderer.ts',
-                    'src/scripts/dom-helpers.ts',
-                    'src/data/available-features.ts'
-                ]
-            }
+// SPEC-111: Astro 6 + @astrojs/react 5 bring @vitejs/plugin-react 5 transitively.
+// plugin-react v5 dropped auto resolve.dedupe for react/react-dom — combined
+// with React 19 + Vitest this produces "Invalid hook call" because the test
+// and component end up with distinct React instances. `getViteConfig` from
+// astro/config re-injects plugin-react v5 internally even with a pnpm override,
+// so we bypass it entirely and build a minimal Vite config sufficient for
+// component tests in jsdom. Aliases mirror astro.config.mjs.
+const rootDir = resolve(__dirname, '../../');
+
+export default defineConfig({
+    plugins: [react()],
+    resolve: {
+        dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+        alias: {
+            // Astro virtual modules: provide minimal stubs so React island
+            // tests that import view-transitions helpers don't fail to resolve.
+            'astro:transitions/client': resolve(
+                __dirname,
+                'test/stubs/astro-transitions-client.ts'
+            ),
+            '@': resolve(__dirname, 'src'),
+            '@repo/config': resolve(rootDir, 'packages/config/src'),
+            '@repo/icons': resolve(rootDir, 'packages/icons/src'),
+            '@repo/utils': resolve(rootDir, 'packages/utils/src'),
+            '@repo/logger': resolve(rootDir, 'packages/logger/src'),
+            '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
+            '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
+            '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
         }
-    })
-);
+    },
+    optimizeDeps: {
+        include: [
+            'react',
+            'react-dom',
+            'react-dom/client',
+            'react/jsx-runtime',
+            'react/jsx-dev-runtime'
+        ]
+    },
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./test/setup.ts'],
+        pool: 'forks',
+        poolOptions: {
+            forks: {
+                maxForks: 3
+            }
+        },
+        testTimeout: 15000,
+        css: {
+            modules: {
+                classNameStrategy: 'non-scoped'
+            }
+        },
+        include: [
+            'test/**/*.test.ts',
+            'test/**/*.test.tsx',
+            'src/**/*.test.ts',
+            'src/**/*.test.tsx',
+            'integrations/**/*.test.ts'
+        ],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
+            thresholds: {
+                lines: 55,
+                functions: 60,
+                branches: 70,
+                statements: 55
+            },
+            exclude: [
+                'node_modules/',
+                'dist/',
+                'test/',
+                '**/*.d.ts',
+                '**/*.config.*',
+                '.astro/',
+                'public/',
+                '**/*.astro.mjs',
+                '**/*.mjs',
+                '**/*.js',
+                '**/chunks/**',
+                '**/pages/**',
+                '**/server/**',
+                '**/client/**',
+                '**/_astro/**',
+                '**/_functions/**',
+                '**/*.astro',
+                'src/layouts/',
+                '**/skeletons/',
+                'src/data/types.ts',
+                'src/data/types-ui.ts',
+                'src/lib/api/types.ts',
+                'src/lib/listing-summary/summary.types.ts',
+                'src/lib/api/index.ts',
+                'src/lib/listing-summary/index.ts',
+                'src/lib/api/endpoints.ts',
+                'src/lib/api/endpoints-protected.ts',
+                'src/lib/auth-client.ts',
+                'src/lib/cookie-consent.ts',
+                'src/lib/accommodation-card-utils.ts',
+                'src/lib/icon-map.ts',
+                'src/scripts/dom-helpers.ts',
+                'src/data/available-features.ts'
+            ]
+        }
+    }
+});

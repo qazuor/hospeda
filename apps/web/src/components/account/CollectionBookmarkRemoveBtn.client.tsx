@@ -46,6 +46,14 @@ export function CollectionBookmarkRemoveBtn({
     const [error, setError] = useState<string | null>(null);
 
     async function handleRemove() {
+        const confirmMessage = t(
+            'account.favorites.collections.removeConfirm',
+            '¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.'
+        );
+        if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) {
+            return;
+        }
+
         setRemoving(true);
         setError(null);
 
@@ -94,8 +102,8 @@ export function CollectionBookmarkRemoveBtn({
                 style={{
                     padding: '4px 12px',
                     backgroundColor: 'transparent',
-                    color: 'oklch(0.6 0.2 25)',
-                    border: '1px solid oklch(0.6 0.2 25)',
+                    color: 'var(--destructive)',
+                    border: '1px solid var(--destructive)',
                     borderRadius: 'var(--radius-button, 8px)',
                     fontFamily: 'var(--font-sans)',
                     fontSize: '0.8125rem',
@@ -119,7 +127,7 @@ export function CollectionBookmarkRemoveBtn({
                     style={{
                         marginTop: '4px',
                         fontSize: '0.75rem',
-                        color: 'oklch(0.6 0.2 25)',
+                        color: 'var(--destructive)',
                         fontFamily: 'var(--font-sans)'
                     }}
                 >

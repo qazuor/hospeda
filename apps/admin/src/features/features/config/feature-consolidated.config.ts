@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import {
     createBasicInfoConsolidatedSection,
     createFlagsConsolidatedSection,
@@ -20,9 +21,13 @@ export interface FeatureConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Feature entity
+ * Creates the complete consolidated configuration for the Feature entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createFeatureConsolidatedConfig = (): FeatureConsolidatedConfig => ({
+export const createFeatureConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): FeatureConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createFlagsConsolidatedSection(),
@@ -30,8 +35,8 @@ export const createFeatureConsolidatedConfig = (): FeatureConsolidatedConfig => 
     ],
     metadata: {
         entityType: 'feature',
-        entityName: 'Característica',
-        entityNamePlural: 'Características',
+        entityName: t('admin-entities.entities.feature.singular'),
+        entityNamePlural: t('admin-entities.entities.feature.plural'),
         baseRoute: '/content/accommodation-features'
     }
 });

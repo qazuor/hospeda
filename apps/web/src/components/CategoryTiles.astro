@@ -58,7 +58,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
                     href={href}
                     class="category-tiles__tile"
                     data-reveal="up"
-                    style={`transition-delay: ${Math.min(i, 6) * 80}ms`}
+                    data-stagger-index={Math.min(i, 6)} data-stagger-step="80"
                 >
                     {/* Visual area: image or icon */}
                     <div class="category-tiles__visual" aria-hidden="true">
@@ -100,7 +100,9 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
        ======================================================== */
     .category-tiles {
         background-color: var(--surface-warm);
-        padding-block: var(--space-section, 120px);
+        /* Tighter than the default --space-section: this section uses compact tiles,
+           so 120px top+bottom dwarfs the content. Scales 48px..72px with viewport. */
+        padding-block: clamp(3rem, 6vw, 4.5rem);
     }
 
     .category-tiles__container {
@@ -112,7 +114,8 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
     /* Section tagline */
     .category-tiles__tagline {
         font-family: var(--font-decorative);
-        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        font-size: var(--text-tagline);
+        font-weight: 700;
         color: var(--brand-accent);
         text-align: center;
         margin-bottom: var(--space-2, 8px);
@@ -126,7 +129,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         font-weight: 700;
         color: var(--core-foreground);
         text-align: center;
-        margin-bottom: var(--space-10, 40px);
+        margin-bottom: var(--space-7, 28px);
         line-height: 1.2;
     }
 
@@ -238,5 +241,49 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         color: var(--core-muted-foreground);
         line-height: 1.45;
         margin: 0;
+    }
+
+    /* ========================================================
+       Mobile (<=640px): denser 2-column grid with smaller tiles
+       so the section doesn't dominate the home page. The default
+       flex sizing left each tile full-width, which produced 7
+       tall tiles stacked vertically. Forcing 2 per row plus a
+       shorter visual area and trimmed padding/typography cuts
+       the section's height roughly in half.
+       ======================================================== */
+    @media (max-width: 640px) {
+        .category-tiles__grid {
+            gap: 0.75rem;
+        }
+
+        .category-tiles__tile {
+            flex: 0 0 calc(50% - 0.375rem);
+            max-width: calc(50% - 0.375rem);
+        }
+
+        .category-tiles__visual {
+            height: 80px;
+        }
+
+        .category-tiles__content {
+            padding: 0.625rem 0.75rem 0.75rem;
+            gap: 0.25rem;
+        }
+
+        .category-tiles__tile-title {
+            font-size: 0.875rem;
+            line-height: 1.25;
+        }
+
+        .category-tiles__tile-desc {
+            font-size: 0.75rem;
+            line-height: 1.35;
+            /* Cap descriptions at 2 lines so the tile height stays
+               consistent regardless of copy length. */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     }
 </style>

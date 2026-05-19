@@ -27,6 +27,7 @@
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/utils": "workspace:*",
         "ioredis": "^5.4.0",
         "react": "^19.1.1"
     },

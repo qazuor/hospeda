@@ -44,10 +44,17 @@ export const AttractionBatchRequestSchema = z.object({
  * ];
  * ```
  */
-export const AttractionBatchResponseSchema = z.array(AttractionSchema.nullable());
+/**
+ * Batch item schema for attraction operations
+ * All fields are optional except `id` (the handler always emits it).
+ */
+export const AttractionBatchItemSchema = AttractionSchema.partial().required({ id: true });
+
+export const AttractionBatchResponseSchema = z.array(AttractionBatchItemSchema.nullable());
 
 /**
  * Type definitions for batch operations
  */
 export type AttractionBatchRequest = z.infer<typeof AttractionBatchRequestSchema>;
+export type AttractionBatchItem = z.infer<typeof AttractionBatchItemSchema>;
 export type AttractionBatchResponse = z.infer<typeof AttractionBatchResponseSchema>;

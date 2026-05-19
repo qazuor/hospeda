@@ -2,14 +2,22 @@ import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, type QZPayProviderProps, QZPayThemeProvider } from '@qazuor/qzpay-react';
 import { TanstackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import {
+    HeadContent,
+    Link,
+    Outlet,
+    Scripts,
+    createRootRoute,
+    useRouterState
+} from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { initializeSections } from '@/config/sections';
 import { env, validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
+import { initPostHog } from '@/lib/analytics/posthog-client';
 import { useSession } from '@/lib/auth-client';
 import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
@@ -65,6 +73,9 @@ validateAdminEnv();
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
 
+// Initialize PostHog analytics (only in production with valid VITE_POSTHOG_KEY)
+initPostHog();
+
 // Sections must be initialized lazily on the first render of RootDocument.
 // Top-level invocation breaks the Nitro/Rolldown SSR bundle: the bundler
 // emits the call before the `sections` array is assigned, producing
@@ -117,7 +128,44 @@ function NotFoundComponent() {
     );
 }
 
+const BASE_TITLE = 'Hospeda Admin';
+
+/**
+ * Maps the first path segment of an admin route to a human-readable section
+ * label used to compose the document title. Keeps lookup O(1) and avoids
+ * coupling the title to the i18n bundle (the admin app currently runs in a
+ * single static locale, so this stays in sync with admin-menu.json by value).
+ */
+const SECTION_LABELS: Record<string, string> = {
+    dashboard: 'Panel de Control',
+    accommodations: 'Alojamientos',
+    destinations: 'Destinos',
+    events: 'Eventos',
+    posts: 'Publicaciones',
+    access: 'Acceso',
+    content: 'Contenido',
+    billing: 'Facturación',
+    sponsors: 'Patrocinadores',
+    settings: 'Configuración',
+    tags: 'Etiquetas',
+    analytics: 'Analíticas',
+    notifications: 'Notificaciones',
+    newsletter: 'Newsletter',
+    conversations: 'Conversaciones',
+    auth: 'Autenticación',
+    dev: 'Dev'
+};
+
+const titleForPath = (pathname: string): string => {
+    const segment = pathname.split('/').filter(Boolean)[0];
+    const label = segment ? SECTION_LABELS[segment] : undefined;
+    return label ? `${label} · ${BASE_TITLE}` : BASE_TITLE;
+};
+
 export const Route = createRootRoute({
+    head: () => ({
+        meta: [{ title: BASE_TITLE }]
+    }),
     component: () => {
         return (
             <RootDocument>
@@ -127,6 +175,23 @@ export const Route = createRootRoute({
     },
     notFoundComponent: NotFoundComponent
 });
+
+/**
+ * Keeps `document.title` aligned with the active route so each admin page
+ * surfaces a distinct, descriptive title to screen readers and browser tabs
+ * (fixes SPEC-136 F-003 across all 105 routes without per-route head wiring).
+ */
+function DocumentTitle() {
+    const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.title = titleForPath(pathname);
+        }
+    }, [pathname]);
+
+    return null;
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
     // Lazy section registration: ensures the `sections` array is fully
@@ -153,15 +218,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
                         gcTime: 30 * 60 * 1000, // 30 minutes - cache garbage collection time
                         retry: (failureCount, error) => {
-                            // Don't retry on 4xx errors (client errors)
+                            // Skip retries on any response that carries a status code.
+                            // 4xx (including 429 rate-limit) and 5xx will not succeed on
+                            // retry in this admin: 4xx is permanent per the request, and
+                            // most 5xx are schema-mismatch or misconfigured billing
+                            // service responses that retrying just amplifies (SPEC-117
+                            // M-2 — every API failure used to produce 4 visible network
+                            // entries). Only retry genuine network failures (no status).
                             if (error instanceof Error && 'status' in error) {
                                 const status = (error as { status: number }).status;
-                                if (status >= 400 && status < 500) {
+                                if (typeof status === 'number' && status >= 400) {
                                     return false;
                                 }
                             }
-                            // Retry up to 3 times for other errors
-                            return failureCount < 3;
+                            // Network errors / unknown shape: retry up to 2 times.
+                            return failureCount < 2;
                         },
                         refetchOnWindowFocus: false // Avoid unnecessary refetches
                     },
@@ -192,7 +263,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
 
     return (
-        <html lang="en">
+        <html lang={env.VITE_DEFAULT_LOCALE}>
             <head>
                 <HeadContent />
                 <link
@@ -201,6 +272,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 />
             </head>
             <body>
+                <DocumentTitle />
                 <QZPayProvider billing={billing}>
                     <QZPayThemeProvider theme={adminQzpayTheme}>
                         <QueryClientProvider client={queryClient}>
@@ -222,23 +294,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         </QueryClientProvider>
                     </QZPayThemeProvider>
                 </QZPayProvider>
-                <FeedbackErrorBoundary
-                    appSource="admin"
-                    apiUrl={env.VITE_API_URL}
-                    feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
-                    deployVersion={env.VITE_APP_VERSION}
-                >
-                    <FeedbackFAB
-                        apiUrl={env.VITE_API_URL}
+                {import.meta.env.VITE_FEEDBACK_ENABLED !== 'false' && (
+                    <FeedbackErrorBoundary
                         appSource="admin"
+                        apiUrl={env.VITE_API_URL}
+                        feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
                         deployVersion={env.VITE_APP_VERSION}
-                        userId={session?.user.id}
-                        userEmail={session?.user.email}
-                        userName={session?.user.name}
-                        getSentryEventId={getSentryEventId}
-                        onSentryFeedback={handleSentryFeedback}
-                    />
-                </FeedbackErrorBoundary>
+                    >
+                        <FeedbackFAB
+                            apiUrl={env.VITE_API_URL}
+                            appSource="admin"
+                            deployVersion={env.VITE_APP_VERSION}
+                            userId={session?.user.id}
+                            userEmail={session?.user.email}
+                            userName={session?.user.name}
+                            getSentryEventId={getSentryEventId}
+                            onSentryFeedback={handleSentryFeedback}
+                        />
+                    </FeedbackErrorBoundary>
+                )}
                 {env.NODE_ENV === 'development' && <TanstackDevtools />}
                 <Scripts />
             </body>

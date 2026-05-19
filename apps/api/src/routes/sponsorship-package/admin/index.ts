@@ -5,9 +5,13 @@
 import { createRouter } from '../../../utils/create-app';
 import { createSponsorshipPackageRoute } from './create';
 import { deleteSponsorshipPackageRoute } from './delete';
+import { adminListSponsorshipPackagesRoute } from './list';
 import { updateSponsorshipPackageRoute } from './update';
 
 const router = createRouter();
+
+// GET / - List sponsorship packages (SPEC-117 follow-up #2)
+router.route('/', adminListSponsorshipPackagesRoute);
 
 // POST / - Create sponsorship package
 router.route('/', createSponsorshipPackageRoute);

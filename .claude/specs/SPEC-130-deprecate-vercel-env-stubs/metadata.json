@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-130",
+    "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+    "type": "cleanup",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-05-15T17:50:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["cleanup", "scripts", "env", "vercel", "deprecation", "monorepo"]
+}

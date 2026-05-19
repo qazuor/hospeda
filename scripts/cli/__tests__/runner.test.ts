@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildSpawnArgs, runCommand } from '../runner.js';
 import type { CliCommand } from '../types.js';
@@ -243,8 +245,12 @@ describe('buildSpawnArgs', () => {
             // Act
             const result = buildSpawnArgs({ cmd });
 
-            // Assert - cwd should point to a directory containing the workspace file
-            expect(result.cwd).toMatch(/hospeda$/);
+            // Assert - cwd should point to a directory containing the workspace
+            // file. Checking for the marker file (rather than asserting the dir
+            // name ends in `hospeda`) keeps this test stable in git worktrees
+            // whose paths carry suffixes like `hospeda-spec-XXX-...`.
+            expect(typeof result.cwd).toBe('string');
+            expect(existsSync(join(result.cwd as string, 'pnpm-workspace.yaml'))).toBe(true);
         });
     });
 });

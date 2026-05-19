@@ -44,10 +44,17 @@ export const FeatureBatchRequestSchema = z.object({
  * ];
  * ```
  */
-export const FeatureBatchResponseSchema = z.array(FeatureSchema.nullable());
+/**
+ * Batch item schema for feature operations
+ * All fields are optional except `id` (the handler always emits it).
+ */
+export const FeatureBatchItemSchema = FeatureSchema.partial().required({ id: true });
+
+export const FeatureBatchResponseSchema = z.array(FeatureBatchItemSchema.nullable());
 
 /**
  * Type exports for batch operations
  */
 export type FeatureBatchRequest = z.infer<typeof FeatureBatchRequestSchema>;
+export type FeatureBatchItem = z.infer<typeof FeatureBatchItemSchema>;
 export type FeatureBatchResponse = z.infer<typeof FeatureBatchResponseSchema>;

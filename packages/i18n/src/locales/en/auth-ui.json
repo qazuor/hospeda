@@ -22,7 +22,19 @@
             "accountNotFound": "Account not found",
             "tooManyAttempts": "Too many attempts. Please try again later",
             "networkError": "Connection error. Check your internet",
-            "unknownError": "Unknown error. Please try again"
+            "unknownError": "Unknown error. Please try again",
+            "oauth": {
+                "access_denied": "You cancelled signing in with {{provider}}. Please try again or use another method.",
+                "redirect_uri_mismatch": "There's a configuration issue with {{provider}}. Please contact us.",
+                "invalid_request": "The request to {{provider}} is invalid. Please try again in a few minutes.",
+                "unauthorized_client": "Our application isn't authorized with {{provider}}. Please contact us.",
+                "unsupported_response_type": "There's a technical issue with {{provider}}. Please contact us.",
+                "invalid_scope": "The permissions requested from {{provider}} aren't valid. Please contact us.",
+                "server_error": "{{provider}} is having issues. Please try again in a few minutes.",
+                "temporarily_unavailable": "{{provider}} is currently unavailable. Please try again in a few minutes.",
+                "oauth_state_mismatch": "Your session expired during sign-in. Please try again.",
+                "unknown": "We couldn't complete sign-in with {{provider}}. Please try again later."
+            }
         }
     },
     "signUp": {
@@ -56,6 +68,20 @@
             "resendCode": "Resend code",
             "changeEmail": "Change email"
         },
+        "strength": {
+            "weak": "Weak",
+            "medium": "Medium",
+            "strong": "Strong"
+        },
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "rules": {
+            "length": "At least 8 characters",
+            "upper": "At least one uppercase letter",
+            "lower": "At least one lowercase letter",
+            "digit": "At least one number",
+            "special": "At least one special character"
+        },
         "errors": {
             "emailRequired": "Email address is required",
             "passwordRequired": "Password is required",
@@ -65,7 +91,7 @@
             "passwordTooShort": "Password must be at least 8 characters",
             "passwordsDoNotMatch": "Passwords do not match",
             "emailAlreadyExists": "An account with this email already exists",
-            "weakPassword": "Password is too weak",
+            "weakPassword": "Password does not meet security requirements",
             "networkError": "Connection error. Check your internet",
             "unknownError": "Unknown error. Please try again"
         }
@@ -125,7 +151,18 @@
         },
         "resetPassword": {
             "title": "Reset Password",
-            "description": "Set a new password for your Hospeda account"
+            "description": "Set a new password for your Hospeda account",
+            "tokenError": {
+                "expired": {
+                    "title": "This link has expired",
+                    "description": "Reset links have a short lifespan for your security. Request a new one and try again."
+                },
+                "invalid": {
+                    "title": "This link is no longer valid",
+                    "description": "It may have already been used or modified. Request a new link to continue."
+                },
+                "requestNewLinkCta": "Request a new link"
+            }
         },
         "verifyEmail": {
             "title": "Verify Email",

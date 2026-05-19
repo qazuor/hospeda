@@ -3,8 +3,8 @@
     "id": "001-destination-chajari",
     "slug": "chajari",
     "name": "Chajarí",
-    "summary": "Pintoresca ciudad citrícola con encanto rural y tradiciones gauchas",
-    "description": "Chajarí es una encantadora ciudad ubicada en el nordeste de Entre Ríos, conocida por su producción citrícola y su fuerte tradición rural. Esta pintoresca ciudad combina el encanto del campo entrerriano con la calidez de su gente, ofreciendo una experiencia auténtica de la vida rural argentina. Con sus estancias, festivales folklóricos y paisajes rurales, Chajarí es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones gauchas de Entre Ríos.",
+    "summary": "Ciudad termal y citrícola del nordeste entrerriano, con playas del lago Salto Grande y herencia friulana.",
+    "description": "Chajarí es una ciudad del departamento Federación, en el nordeste de Entre Ríos, fundada en 1872 y reconocida como Capital Provincial de la Citricultura. Su economía y cultura giran en torno a la producción de naranjas y mandarinas, la elaboración artesanal del célebre salame de Chajarí y la herencia de los inmigrantes friulanos que la poblaron. A pocos kilómetros del centro se encuentra el moderno Complejo Termal de Chajarí, con aguas surgentes a 39 °C y piscinas de distintas temperaturas. Sobre el lago Salto Grande despliega playas, camping y una costanera ideales para deportes náuticos y descanso. Cada año celebra la Fiesta Nacional de la Citricultura, que combina música, tradición y producción regional.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,39 +13,205 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3237",
+        "zipCode": "E3228",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "123",
         "city": "Chajarí",
         "coordinates": {
-            "lat": "-30.7500",
-            "long": "-57.9833"
+            "lat": "-30.7545",
+            "long": "-58.0127"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Chajarí",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177859/hospeda/seed/required/destinations/001-destination-chajari/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/001-destination-chajari/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Chajarí"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo y citricultura en Chajarí",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177861/hospeda/seed/required/destinations/001-destination-chajari/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Estancias rurales de Chajarí",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177862/hospeda/seed/required/destinations/001-destination-chajari/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177863/hospeda/seed/required/destinations/001-destination-chajari/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177865/hospeda/seed/required/destinations/001-destination-chajari/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177867/hospeda/seed/required/destinations/001-destination-chajari/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177868/hospeda/seed/required/destinations/001-destination-chajari/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177870/hospeda/seed/required/destinations/001-destination-chajari/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177871/hospeda/seed/required/destinations/001-destination-chajari/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177872/hospeda/seed/required/destinations/001-destination-chajari/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177874/hospeda/seed/required/destinations/001-destination-chajari/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177876/hospeda/seed/required/destinations/001-destination-chajari/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177877/hospeda/seed/required/destinations/001-destination-chajari/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177878/hospeda/seed/required/destinations/001-destination-chajari/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177880/hospeda/seed/required/destinations/001-destination-chajari/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177882/hospeda/seed/required/destinations/001-destination-chajari/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177884/hospeda/seed/required/destinations/001-destination-chajari/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177885/hospeda/seed/required/destinations/001-destination-chajari/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177886/hospeda/seed/required/destinations/001-destination-chajari/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Chajarí - Tradición Rural y Citricultura | Entre Ríos",
-        "description": "Descubre Chajarí, ciudad rural con tradición gaucha y producción citrícola en Entre Ríos.",
-        "keywords": ["Chajarí", "Entre Ríos", "Rural", "Citricultura", "Tradición Gaucha", "Campo"]
+        "title": "Chajarí: termas, citricultura y Salto Grande | Entre Ríos",
+        "description": "Descubrí Chajarí, Entre Ríos: complejo termal, playas del lago Salto Grande, citricultura, salames artesanales y herencia friulana en el nordeste argentino.",
+        "keywords": [
+            "Chajarí",
+            "Entre Ríos",
+            "termas de Chajarí",
+            "lago Salto Grande",
+            "citricultura",
+            "salame de Chajarí",
+            "inmigración friulana",
+            "Litoral argentino"
+        ]
     },
     "tagIds": [
         "009-tag-citricultura",
@@ -56,11 +222,14 @@
         "015-tag-ecoturismo"
     ],
     "attractionIds": [
-        "037-attraction-estancia_turistica",
-        "013-attraction-centro_agropecuario",
-        "043-attraction-granja_educativa",
-        "049-attraction-mercado_agricola",
-        "062-attraction-parque_municipal"
+        "028-attraction-complejo_termal_principal",
+        "066-attraction-piscinas_termales",
+        "068-attraction-plantacion_citricos",
+        "086-attraction-tour_citricola",
+        "019-attraction-centro_interpretacion_citricola",
+        "069-attraction-playa_fluvial",
+        "070-attraction-plaza_festivales",
+        "031-attraction-costanera"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

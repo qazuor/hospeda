@@ -138,8 +138,8 @@ This enables permission checks at the service layer.
 
 - **[📚 Full Documentation](./docs/README.md)** - Complete guides, API reference, and examples
 - **[🚀 Quick Start Tutorial](./docs/quick-start.md)** - Get started in 5 minutes
-- **[📖 API Reference](./docs/api/)** - Detailed API documentation
-- **[📝 Examples](./docs/examples/)** - Real-world usage examples
+- **[📖 API Reference](./docs/api/BaseCrudService.md)** - Detailed API documentation (see also `ServiceOutput.md`, `errors.md` in the same dir)
+- **📝 Code examples** - See `src/examples/` for runnable `.ts` examples (`basic-service.ts`, `complex-logic.ts`, `custom-methods.ts`, `with-hooks.ts`)
 
 ## Documentation Structure
 
@@ -154,9 +154,9 @@ docs/
 
 ## Related Packages
 
-- **[@repo/db](../db)** - Database models and schemas
-- **[@repo/schemas](../schemas)** - Zod validation schemas
-- **[@repo/logger](../logger)** - Logging utilities
+- **[@repo/db](../db/docs/README.md)** - Database models and schemas
+- **[@repo/schemas](../schemas/docs/README.md)** - Zod validation schemas
+- **[@repo/logger](../logger/docs/README.md)** - Logging utilities
 
 ## Development
 
@@ -176,7 +176,7 @@ pnpm build
 
 ## Related Documentation
 
-- [Adding Services Guide](../../docs/guides/adding-services.md)
+- [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern, including the service layer
 - [Architecture Patterns](../../docs/architecture/patterns.md)
 
 ## License

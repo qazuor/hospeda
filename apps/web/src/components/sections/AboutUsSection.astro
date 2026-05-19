@@ -79,6 +79,7 @@ const { t } = createTranslations(locale);
                         loading="lazy"
                         width={231}
                         height={352}
+                        densities={[1, 2]}
                     />
                 </div>
 
@@ -88,7 +89,7 @@ const { t } = createTranslations(locale);
                     with the section background, giving a floating effect.
                 -->
                 <div class="about-us__photo-secondary">
-                    <Image src={choose12} alt="" loading="lazy" aria-hidden="true" width={135} height={195} />
+                    <Image src={choose12} alt="" loading="lazy" aria-hidden="true" width={135} height={195} densities={[1, 2]} />
                 </div>
 
                 <!--
@@ -96,7 +97,7 @@ const { t } = createTranslations(locale);
                     edge of the main photo. Positioned at left:91px top:111px before rotation.
                 -->
                 <span class="about-us__exp-badge" aria-hidden="true">
-                    {t("home.about.experienceBadge", "2 años de experiencia")}
+                    {t("home.about.experienceBadge", "Descubrí el Litoral")}
                 </span>
             </div>
 
@@ -140,8 +141,9 @@ const { t } = createTranslations(locale);
                     alt={t("home.about.travelerPhotoAlt", "Viajeros disfrutando del Litoral entrerriano")}
                     loading="lazy"
                     class="about-us__side-img"
-                    width={347}
-                    height={500}
+                    width={500}
+                    height={488}
+                    densities={[1, 2]}
                 />
             </div>
         </div>
@@ -344,7 +346,17 @@ const { t } = createTranslations(locale);
         color: var(--core-foreground);
         margin: 0;
         text-wrap: balance;
-        max-width: 18ch;
+        max-width: 28ch;
+    }
+
+    /* Desktop only: let the title spill into the transparent area to
+       the top-left of the side traveler PNG so the heading wraps in
+       ~2 lines instead of stacking 4 narrow ones. The negative margin
+       does not affect the flex layout (side image stays put). */
+    @media (min-width: 1025px) {
+        .about-us__title {
+            margin-right: -120px;
+        }
     }
 
     .about-us__body {
@@ -398,26 +410,35 @@ const { t } = createTranslations(locale);
             gap: 2rem;
         }
 
-        /* Reset fixed dimensions — let the collage adapt */
+        /* Reset fixed dimensions — let the collage adapt. The min-height is
+           tuned so the absolutely-positioned photos (main reaches y≈376px,
+           secondary reaches y≈448px including the 12px border) leave only a
+           small visual gap before the tagline. The 32px flex gap on
+           .about-us__layout still applies. */
         .about-us__collage {
             width: 100%;
             max-width: 432px;
             height: auto;
-            min-height: 400px;
+            min-height: 440px;
         }
 
-        /* Center main photo: override absolute left offset so the collage   */
-        /* doesn't waste space on the left side at tablet widths.            */
+        /* Center main photo: override absolute left offset so the collage
+           doesn't waste space on the left side at tablet widths. Pull the
+           photo closer to the section top edge — the desktop value of 63px
+           leaves too much air above the collage when the airplane decoratives
+           and badge are hidden. */
         .about-us__photo-main {
             left: 50%;
+            top: 38px;
             transform: translateX(-50%);
         }
 
-        /* Anchor secondary photo relative to right edge instead of a fixed  */
-        /* pixel offset that may overflow at narrower widths.                */
+        /* Anchor secondary photo relative to right edge instead of a fixed
+           pixel offset that may overflow at narrower widths. */
         .about-us__photo-secondary {
             left: auto;
             right: 5%;
+            top: 266px;
         }
 
         .about-us__content {
@@ -425,16 +446,56 @@ const { t } = createTranslations(locale);
             text-align: center;
         }
 
+        /* Keep the traveler image flush against the section's bottom edge —
+           desktop achieves this via align-self: stretch + justify-content:
+           flex-end on the flex row, so the image already sits at the bottom
+           of the row (which equals the bottom of the section since
+           padding-block is 0). On mobile the layout becomes a column and the
+           original padding-block: 2rem pushed the image up. Drop it.
+           Also break out of the container's horizontal padding via the
+           `calc(50% - 50vw)` full-bleed trick so the image spans edge to
+           edge of the viewport. */
         .about-us__side {
-            width: 100%;
-            max-width: 347px;
-            padding-block: 2rem;
+            width: 100vw;
+            max-width: 100vw;
+            margin-inline: calc(50% - 50vw);
+            padding-block: 0;
         }
 
-        /* Hide decoratives that use pixel-exact positioning */
-        .about-us__exp-badge,
-        .about-us__airplane {
-            display: none;
+        .about-us__side-img {
+            width: 100%;
+            max-width: none;
+        }
+
+        /* Re-anchor the experience badge and the three airplane decoratives
+           to the centered main photo. Desktop uses pixel-exact left offsets
+           that assume the photo sits at `left: 111px` inside a 432px-wide
+           collage; on mobile the photo is centered with translateX(-50%),
+           so we restate every offset as `calc(50% ± Npx)` relative to that
+           centerline. Distances match the desktop relationships: badge sits
+           ~20px left of the photo's left edge with its bottom near y=390
+           (photo bottom). */
+        .about-us__exp-badge {
+            top: 305px;
+            left: calc(50% - 136px);
+        }
+
+        .about-us__airplane--1 {
+            top: 25px;
+            left: calc(50% - 165px);
+            width: 130px;
+        }
+
+        .about-us__airplane--2 {
+            top: 100px;
+            left: calc(50% - 80px);
+            width: 100px;
+        }
+
+        .about-us__airplane--3 {
+            top: 25px;
+            left: calc(50% + 80px);
+            width: 70px;
         }
     }
 </style>

@@ -1,0 +1,95 @@
+---
+/**
+ * @file WhatsAppCTA.astro
+ * @description Optional CTA block that invites the visitor to join the
+ * Hospeda WhatsApp broadcast channel. Renders nothing when the
+ * `PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL` env var is unset — the entire
+ * block disappears from the rendered HTML, no empty wrapper left behind.
+ *
+ * Consumed by:
+ *   - T-101-35 newsletter verification success page (source="verification_success")
+ *   - T-101-34 account preferences page (source="account_preferences")
+ *
+ * Analytics: clicking the CTA fires the `newsletter_wa_channel_clicked`
+ * event on `window.dataLayer`, passing the `source` prop so downstream
+ * GA / GTM can split the funnel by surface.
+ *
+ * Accessibility: the link has an explicit `aria-label`, opens in a new
+ * tab with `rel="noopener noreferrer"`, and never uses colour alone to
+ * convey information (icon + headline + description + button label).
+ */
+import { WhatsappIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import styles from './WhatsAppCTA.module.css';
+
+interface Props {
+    /** Locale to resolve the copy in (es / en / pt). */
+    readonly locale: SupportedLocale;
+    /**
+     * Surface this CTA is being rendered on. Forwarded to the analytics
+     * event so we can split open / click rates by origin.
+     */
+    readonly source: 'verification_success' | 'account_preferences' | 'welcome_email_landing';
+}
+
+const { locale, source } = Astro.props;
+const { t } = createTranslations(locale);
+
+const channelUrl = import.meta.env.PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL;
+
+const title = t('newsletter.whatsapp.title', 'Sumate al canal de WhatsApp de Hospeda');
+const description = t(
+    'newsletter.whatsapp.description',
+    'Recibí ofertas exclusivas y novedades del Litoral en tu WhatsApp.'
+);
+const ctaLabel = t('newsletter.whatsapp.ctaButton', 'Unirse al canal');
+---
+
+{channelUrl && (
+    <aside
+        class={styles.wrapper}
+        aria-label={title}
+        data-newsletter-wa-cta
+        data-source={source}
+    >
+        <div class={styles.iconWrap} aria-hidden="true">
+            <WhatsappIcon size={32} weight="fill" />
+        </div>
+
+        <div class={styles.body}>
+            <h3 class={styles.title}>{title}</h3>
+            <p class={styles.description}>{description}</p>
+        </div>
+
+        <a
+            class={styles.cta}
+            href={channelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={ctaLabel}
+            data-newsletter-wa-cta-link
+        >
+            {ctaLabel}
+        </a>
+    </aside>
+)}
+
+<script>
+    /**
+     * Wire the click-tracking event on every WhatsAppCTA link in the page.
+     * Hoisted by Astro into a single module-bundled script — no duplication
+     * even when the component appears multiple times.
+     */
+    document.querySelectorAll<HTMLAnchorElement>('[data-newsletter-wa-cta-link]').forEach((link) => {
+        link.addEventListener('click', () => {
+            const source = link.closest<HTMLElement>('[data-newsletter-wa-cta]')?.dataset.source;
+            // biome-ignore lint/suspicious/noExplicitAny: window.dataLayer is provided by GTM at runtime
+            const dataLayer = (window as any).dataLayer as Array<Record<string, unknown>> | undefined;
+            dataLayer?.push({
+                event: 'newsletter_wa_channel_clicked',
+                source: source ?? 'unknown'
+            });
+        });
+    });
+</script>

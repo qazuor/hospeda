@@ -1,4 +1,5 @@
 import { EntityFormProvider, EntityFormSection, FormModeEnum } from '@/components/entity-form';
+import { FormSidebarLayout } from '@/components/entity-form/layouts';
 import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
@@ -7,7 +8,7 @@ import { unflattenValues } from '@/components/entity-form/utils/unflatten-values
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { env } from '@/env';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
@@ -266,7 +267,9 @@ export function EntityCreateContent({
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-2xl">{config.title}</CardTitle>
+                            <h1 className="font-semibold text-2xl leading-none tracking-tight">
+                                {config.title}
+                            </h1>
                             <p className="text-muted-foreground">{config.description}</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -314,10 +317,11 @@ export function EntityCreateContent({
                                         />
                                     </div>
 
-                                    {/* Main content with navigation sidebar */}
-                                    <div className="flex gap-6">
-                                        {/* Navigation Sidebar */}
-                                        <div className="w-80 flex-shrink-0">
+                                    {/* Main content with responsive navigation sidebar
+                                        (accordion on mobile, fixed column on desktop) */}
+                                    <FormSidebarLayout
+                                        defaultMobileOpen={Object.keys(errors).length > 0}
+                                        sidebar={
                                             <SmartNavigation
                                                 sections={sectionProgress}
                                                 overallProgress={overallProgress}
@@ -328,65 +332,58 @@ export function EntityCreateContent({
                                                 showProgress
                                                 showDetails
                                             />
-                                        </div>
+                                        }
+                                    >
+                                        {/* Performance metrics (development only - hidden by default) */}
+                                        {import.meta.env.DEV && env.VITE_DEBUG_LAZY_SECTIONS && (
+                                            <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
+                                                Lazy Loading: {getMetrics().loadedCount}/
+                                                {getMetrics().totalSections} sections loaded
+                                            </div>
+                                        )}
 
-                                        {/* Content Area */}
-                                        <div className="min-w-0 flex-1">
-                                            {/* Performance metrics (development only - hidden by default) */}
-                                            {import.meta.env.DEV &&
-                                                env.VITE_DEBUG_LAZY_SECTIONS && (
-                                                    <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
-                                                        Lazy Loading: {getMetrics().loadedCount}/
-                                                        {getMetrics().totalSections} sections loaded
-                                                    </div>
-                                                )}
+                                        <form
+                                            onSubmit={(e) => {
+                                                e.preventDefault();
+                                                handleSave();
+                                            }}
+                                        >
+                                            <div className="space-y-8">{renderSections()}</div>
 
-                                            <form
-                                                onSubmit={(e) => {
-                                                    e.preventDefault();
-                                                    handleSave();
-                                                }}
-                                            >
-                                                <div className="space-y-8">{renderSections()}</div>
-
-                                                <div className="mt-6 flex justify-end gap-3 border-t pt-6">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={handleCancel}
-                                                        disabled={isSaving}
-                                                    >
-                                                        Cancelar
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        disabled={
-                                                            isSaving ||
-                                                            !overallProgress.readyForSubmission
-                                                        }
-                                                        className={
-                                                            overallProgress.readyForSubmission
-                                                                ? ''
-                                                                : 'opacity-50'
-                                                        }
-                                                    >
-                                                        {isSaving
-                                                            ? config.savingLabel
-                                                            : config.submitLabel}
-                                                        {!overallProgress.readyForSubmission && (
-                                                            <span className="ml-2 text-xs">
-                                                                (
-                                                                {
-                                                                    overallProgress.completionPercentage
-                                                                }
-                                                                %)
-                                                            </span>
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
+                                            <div className="mt-6 flex justify-end gap-3 border-t pt-6">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={handleCancel}
+                                                    disabled={isSaving}
+                                                >
+                                                    Cancelar
+                                                </Button>
+                                                <Button
+                                                    type="submit"
+                                                    disabled={
+                                                        isSaving ||
+                                                        !overallProgress.readyForSubmission
+                                                    }
+                                                    className={
+                                                        overallProgress.readyForSubmission
+                                                            ? ''
+                                                            : 'opacity-50'
+                                                    }
+                                                >
+                                                    {isSaving
+                                                        ? config.savingLabel
+                                                        : config.submitLabel}
+                                                    {!overallProgress.readyForSubmission && (
+                                                        <span className="ml-2 text-xs">
+                                                            ({overallProgress.completionPercentage}
+                                                            %)
+                                                        </span>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    </FormSidebarLayout>
                                 </div>
                             </EntityFormProvider>
                         </Suspense>

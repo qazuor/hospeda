@@ -288,6 +288,8 @@
             "statusCancelled": "Cancelled",
             "filterAllStatuses": "All statuses",
             "filterAllTypes": "All types",
+            "filterStatusLabel": "Filter by status",
+            "filterTypeLabel": "Filter by type",
             "viewDetails": "View details",
             "dialog": {
                 "details": "Sponsorship details",
@@ -360,6 +362,66 @@
     },
     "access": {
         "permissions": {
+            "categories": {
+                "ACCOMMODATION": "Accommodation",
+                "ACCOMMODATION_LISTING": "Accommodation Listing",
+                "ACCOMMODATION_LISTING_PLAN": "Accommodation Listing Plan",
+                "ACCOMMODATION_REVIEW": "Accommodation Review",
+                "AD_PRICING_CATALOG": "Ad Pricing Catalog",
+                "ATTRACTION": "Attraction",
+                "CLIENT_ACCESS_RIGHT": "Client Access Right",
+                "CONVERSATION": "Conversation",
+                "CREDIT_NOTE": "Credit Note",
+                "DESTINATION": "Destination",
+                "DESTINATION_REVIEW": "Destination Review",
+                "DISCOUNT_CODE_USAGE": "Discount Code Usage",
+                "EVENT": "Event",
+                "EVENT_LOCATION": "Event Location",
+                "EVENT_ORGANIZER": "Event Organizer",
+                "EXCHANGE_RATE": "Exchange Rate",
+                "INVOICE": "Invoice",
+                "INVOICE_LINE": "Invoice Line",
+                "METRICS": "Metrics",
+                "PAYMENT": "Payment",
+                "PAYMENT_METHOD": "Payment Method",
+                "PERMISSION": "Permission",
+                "POST": "Post",
+                "POST_SPONSOR": "Post Sponsor",
+                "POST_SPONSORSHIP": "Post Sponsorship",
+                "PURCHASE": "Purchase",
+                "REFUND": "Refund",
+                "REVALIDATION": "Revalidation",
+                "USER": "User",
+                "USER_BOOKMARK": "User Bookmark",
+                "USER_BOOKMARK_COLLECTION": "User Bookmark Collection",
+                "CLIENT": "Client",
+                "PRODUCT": "Product",
+                "SUBSCRIPTION": "Subscription",
+                "SUBSCRIPTION_ITEM": "Subscription Item",
+                "PROMOTION": "Promotion",
+                "DISCOUNT_CODE": "Discount Code",
+                "CAMPAIGN": "Campaign",
+                "SERVICE_LISTING": "Service Listing",
+                "BENEFIT_LISTING": "Benefit Listing",
+                "BENEFIT_PARTNER": "Benefit Partner",
+                "BENEFIT_LISTING_PLAN": "Benefit Listing Plan",
+                "TOURIST_SERVICE": "Tourist Service",
+                "SERVICE_LISTING_PLAN": "Service Listing Plan",
+                "NEWSLETTER_CAMPAIGN": "Newsletter Campaign",
+                "NEWSLETTER_SUBSCRIBER": "Newsletter Subscriber",
+                "NOTIFICATION": "Notification",
+                "SERVICE_ORDER": "Service Order",
+                "PROFESSIONAL_SERVICE": "Professional Service",
+                "PROFESSIONAL_SERVICE_ORDER": "Professional Service Order",
+                "BILLING": "Billing",
+                "PUBLIC": "Public",
+                "SPONSORSHIP": "Sponsorship",
+                "OWNER_PROMOTION": "Owner Promotion",
+                "FEATURED_ACCOMMODATION": "Featured Accommodation",
+                "SYSTEM": "System",
+                "ACCESS": "Access",
+                "MEDIA": "Media"
+            },
             "pageDescription": "This page displays all permission categories available in the system. Permissions are organized by domain and control access to specific features and resources. Individual permission details are managed through role assignments.",
             "totalCategories": "Total Categories",
             "permissionCategories": "Permission categories",
@@ -382,7 +444,108 @@
             "keyCapabilities": "Key Capabilities:",
             "accessSuffix": "Access",
             "infoNote": "Note",
-            "infoNoteDesc": "Individual permission details are managed through the Permissions page. Users can be assigned to roles from the User Management section."
+            "infoNoteDesc": "Individual permission details are managed through the Permissions page. Users can be assigned to roles from the User Management section.",
+            "levels": {
+                "critical": "Critical",
+                "high": "High",
+                "medium": "Medium",
+                "low": "Low"
+            },
+            "catalog": {
+                "SUPER_ADMIN": {
+                    "name": "Super Admin",
+                    "description": "Full system access with all permissions including system-level actions",
+                    "capabilities": {
+                        "cap1": "Complete system control",
+                        "cap2": "User and role management",
+                        "cap3": "System configuration",
+                        "cap4": "Audit log access",
+                        "cap5": "All content management"
+                    }
+                },
+                "ADMIN": {
+                    "name": "Admin",
+                    "description": "Manages platform content, users, and most administrative functions",
+                    "capabilities": {
+                        "cap1": "Content moderation",
+                        "cap2": "User management",
+                        "cap3": "Accommodation approval",
+                        "cap4": "Event management",
+                        "cap5": "Analytics access"
+                    }
+                },
+                "CLIENT_MANAGER": {
+                    "name": "Client Manager",
+                    "description": "Manages client accounts, billing, subscriptions, and business analytics",
+                    "capabilities": {
+                        "cap1": "Client account management",
+                        "cap2": "Subscription management",
+                        "cap3": "Billing and invoicing",
+                        "cap4": "Payment processing",
+                        "cap5": "Business analytics"
+                    }
+                },
+                "EDITOR": {
+                    "name": "Editor",
+                    "description": "Creates and edits events, posts, and editorial content",
+                    "capabilities": {
+                        "cap1": "Create events",
+                        "cap2": "Edit posts",
+                        "cap3": "Publish content",
+                        "cap4": "Manage media",
+                        "cap5": "Content scheduling"
+                    }
+                },
+                "HOST": {
+                    "name": "Host",
+                    "description": "Accommodation owner who manages their own listings",
+                    "capabilities": {
+                        "cap1": "Manage own accommodations",
+                        "cap2": "Update availability",
+                        "cap3": "Upload photos",
+                        "cap4": "Respond to reviews",
+                        "cap5": "View booking analytics"
+                    }
+                },
+                "USER": {
+                    "name": "User",
+                    "description": "Registered user of the public portal with basic interaction capabilities",
+                    "capabilities": {
+                        "cap1": "View content",
+                        "cap2": "Create reviews",
+                        "cap3": "Save favorites",
+                        "cap4": "Update profile",
+                        "cap5": "Contact hosts"
+                    }
+                },
+                "SPONSOR": {
+                    "name": "Sponsor",
+                    "description": "External business sponsor with access to sponsorship management and analytics",
+                    "capabilities": {
+                        "cap1": "Manage sponsorships",
+                        "cap2": "View sponsorship analytics",
+                        "cap3": "View invoices"
+                    }
+                },
+                "GUEST": {
+                    "name": "Guest",
+                    "description": "Public visitor without authentication, limited to viewing public content",
+                    "capabilities": {
+                        "cap1": "View public content",
+                        "cap2": "Browse accommodations",
+                        "cap3": "Search destinations",
+                        "cap4": "View events",
+                        "cap5": "Access public information"
+                    }
+                },
+                "SYSTEM": {
+                    "name": "System",
+                    "description": "Reserved non-loginable account used as assignedById for automated tag assignments (seeds, cron jobs, webhooks). Not visible in UI.",
+                    "capabilities": {
+                        "cap1": "Used internally for automated operations only"
+                    }
+                }
+            }
         },
         "users": {
             "loadingData": "Loading user data...",
@@ -590,6 +753,10 @@
                 "perNight": "Per Night",
                 "perGuest": "Per Guest"
             }
+        },
+        "amenities": {
+            "empty": "This accommodation has no amenities assigned.",
+            "editCta": "Add amenity"
         },
         "reviews": {
             "noReviews": "No reviews yet for this accommodation.",

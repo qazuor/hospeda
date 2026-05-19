@@ -13,5 +13,8 @@
     },
     "breadcrumbs": {
         "breadcrumb": "Breadcrumb"
+    },
+    "tabs": {
+        "pageSections": "Page sections"
     }
 }

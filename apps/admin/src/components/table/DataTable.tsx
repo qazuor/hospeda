@@ -353,9 +353,13 @@ export const DataTable = <TData,>({
 
     return (
         <div className="space-y-3">
+            {/* The wrapper provides the horizontal scroll affordance; the
+                table forces its natural max-content width below `lg` so all
+                columns remain visible by scrolling instead of being
+                silently truncated (SPEC-135 F-021). */}
             <div className="overflow-x-auto rounded-md border">
-                <table className="w-full table-auto text-left text-sm">
-                    <thead className="bg-muted text-muted-foreground">
+                <table className="w-full min-w-max table-auto text-left text-sm lg:min-w-0">
+                    <thead className="bg-muted text-foreground">
                         {table.getHeaderGroups().map((hg) => (
                             <tr key={hg.id}>
                                 {hg.headers.map((header) => {

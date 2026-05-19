@@ -3,8 +3,8 @@
     "id": "013-destination-san-salvador",
     "slug": "san-salvador",
     "name": "San Salvador",
-    "summary": "Ciudad agrícola con tradición citrícola y hospitalidad entrerriana",
-    "description": "San Salvador es una ciudad ubicada en el departamento Federación de Entre Ríos, reconocida por su fuerte actividad agrícola y producción citrícola. Con una comunidad activa y tradicional, San Salvador ofrece la experiencia genuina del interior entrerriano. Sus festivales locales, su gastronomía regional y los paisajes rurales que la rodean la convierten en un destino interesante para quienes quieren conocer la cultura y las tradiciones del campo entrerriano.",
+    "summary": "Capital Nacional del Arroz en Entre Ríos, centro de la cuenca arrocera argentina, con la tradicional Fiesta Nacional del Arroz y un paisaje rural marcado por plantaciones, molinos y arroceras.",
+    "description": "San Salvador es la cabecera del Departamento San Salvador, en la provincia de Entre Ríos, y ostenta el título de Capital Nacional del Arroz desde 1953. Desde mediados del siglo XX se consolidó como el principal polo arrocero de Argentina, concentrando una porción mayoritaria de la industria nacional vinculada al cereal, con molinos, secaderos y empresas arroceras distribuidas en su zona urbana y rural. Su identidad gira en torno a la Fiesta Nacional del Arroz, que reúne expo agroindustrial, desfile de maquinaria, elección de la Reina Nacional del Arroz, espectáculos populares y muestras gastronómicas. El entorno ofrece paisajes de campo entrerriano, plantaciones, caminos rurales y una vida urbana tranquila con plazas, parques y propuestas culturales que invitan a conocer el interior productivo de la Mesopotamia argentina.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,7 +13,7 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "3232",
+        "zipCode": "3218",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "200",
@@ -25,33 +25,263 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Paisajes agrícolas de San Salvador",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178170/hospeda/seed/required/destinations/013-destination-san-salvador/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes agrícolas de San Salvador"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Producción citrícola en San Salvador",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178171/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano cerca de San Salvador",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178172/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178173/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178174/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178174/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178175/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178176/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178177/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178178/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178179/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178180/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178181/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178182/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178183/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178184/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178185/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178186/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178188/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178188/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178189/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178190/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178191/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178192/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178193/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178194/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178194/hospeda/seed/required/destinations/013-destination-san-salvador/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/013-destination-san-salvador/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "San Salvador - Tradición y Citricultura | Hospeda",
-        "description": "Descubre San Salvador, ciudad agrícola con tradición citrícola en Entre Ríos.",
+        "title": "San Salvador, Capital Nacional del Arroz | Hospeda",
+        "description": "Descubrí San Salvador, Entre Ríos: Capital Nacional del Arroz, sede de la Fiesta Nacional del Arroz, con plantaciones, molinos y tradición agroindustrial.",
         "keywords": [
             "San Salvador",
             "Entre Ríos",
-            "Citricultura",
-            "Agricultura",
-            "Rural",
-            "Tradición"
+            "Capital Nacional del Arroz",
+            "Fiesta Nacional del Arroz",
+            "Arroceras",
+            "Turismo rural",
+            "Mesopotamia argentina"
         ]
     },
     "tagIds": [
@@ -65,9 +295,10 @@
     "attractionIds": [
         "013-attraction-centro_agropecuario",
         "049-attraction-mercado_agricola",
-        "068-attraction-plantacion_citricos",
-        "072-attraction-plaza_principal",
-        "062-attraction-parque_municipal"
+        "070-attraction-plaza_festivales",
+        "062-attraction-parque_municipal",
+        "056-attraction-museo_regional",
+        "072-attraction-plaza_principal"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

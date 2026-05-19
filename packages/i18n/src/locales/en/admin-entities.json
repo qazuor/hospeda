@@ -116,7 +116,28 @@
         "organizer": "Organizer",
         "startDate": "Start Date",
         "endDate": "End Date",
-        "actions": "Actions"
+        "actions": "Actions",
+        "title": "Title",
+        "displayName": "Display Name",
+        "fullName": "Full Name",
+        "role": "Role",
+        "authProvider": "Auth Provider",
+        "builtIn": "Built-in",
+        "department": "Department",
+        "neighborhood": "Neighborhood",
+        "placeName": "Place Name",
+        "icon": "Icon",
+        "weight": "Weight",
+        "published": "Published",
+        "readingTime": "Reading Time",
+        "sponsor": "Sponsor",
+        "sponsorship": "Sponsorship",
+        "eventsCount": "Events",
+        "destinationsCount": "Destinations",
+        "postsCount": "Posts",
+        "relatedAccommodation": "Rel. Accommodation",
+        "relatedDestination": "Rel. Destination",
+        "relatedEvent": "Rel. Event"
     },
     "actions": {
         "view": "View",
@@ -177,6 +198,7 @@
         "created": "{entity} created successfully",
         "updated": "{entity} updated successfully",
         "deleted": "{entity} deleted successfully",
+        "deletedFeminine": "{entity} deleted successfully",
         "archived": "{entity} archived successfully",
         "restored": "{entity} restored successfully",
         "published": "{entity} published successfully",
@@ -249,16 +271,20 @@
         "lifecycle": {
             "draft": "Draft",
             "active": "Active",
-            "archived": "Archived"
+            "inactive": "Inactive",
+            "archived": "Archived",
+            "deleted": "Deleted"
         },
         "moderation": {
             "pending": "Pending",
             "approved": "Approved",
-            "rejected": "Rejected"
+            "rejected": "Rejected",
+            "underReview": "Under Review"
         },
         "visibility": {
             "public": "Public",
             "private": "Private",
+            "hidden": "Hidden",
             "restricted": "Restricted"
         },
         "publishStatus": {
@@ -281,6 +307,14 @@
             "motel": "Motel",
             "resort": "Resort"
         },
+        "amenity": {
+            "basic": "Basic",
+            "comfort": "Comfort",
+            "luxury": "Luxury",
+            "technology": "Technology",
+            "recreation": "Recreation",
+            "business": "Business"
+        },
         "event": {
             "concert": "Concert",
             "festival": "Festival",
@@ -289,7 +323,52 @@
             "workshop": "Workshop",
             "sports": "Sports",
             "theater": "Theater",
+            "music": "Music",
+            "gastronomy": "Gastronomy",
+            "nature": "Nature",
+            "culture": "Culture",
             "other": "Other"
+        },
+        "postCategory": {
+            "events": "Events",
+            "culture": "Culture",
+            "gastronomy": "Gastronomy",
+            "nature": "Nature",
+            "tourism": "Tourism",
+            "general": "General",
+            "sport": "Sport",
+            "carnival": "Carnival",
+            "nightlife": "Nightlife",
+            "history": "History",
+            "traditions": "Traditions",
+            "wellness": "Wellness",
+            "family": "Family",
+            "tips": "Tips",
+            "art": "Art",
+            "beach": "Beach",
+            "rural": "Rural",
+            "festivals": "Festivals"
+        },
+        "sponsor": {
+            "postSponsor": "Post Sponsor",
+            "advertiser": "Advertiser",
+            "host": "Host"
+        },
+        "userRole": {
+            "superAdmin": "Super Admin",
+            "admin": "Admin",
+            "editor": "Editor",
+            "host": "Host",
+            "user": "User",
+            "guest": "Guest",
+            "system": "System"
+        },
+        "authProvider": {
+            "local": "Local",
+            "google": "Google",
+            "facebook": "Facebook",
+            "github": "GitHub",
+            "betterAuth": "Better Auth"
         }
     },
     "viewFields": {

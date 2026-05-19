@@ -23,8 +23,15 @@
         "twitter": "https://twitter.com/miradornaturalhotel"
     },
     "price": {
-        "price": 20000,
-        "currency": "ARS"
+        "price": 81000,
+        "currency": "ARS",
+        "discounts": {
+            "lastMinute": {
+                "price": 15,
+                "currency": "ARS",
+                "isPercent": true
+            }
+        }
     },
     "location": {
         "coordinates": {
@@ -36,40 +43,40 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-            "caption": "Fachada y entorno del hotel",
-            "description": "Vista exterior del Mirador Natural Hotel con vegetación",
+            "url": "https://images.pexels.com/photos/36354489/pexels-photo-36354489.jpeg",
+            "caption": "Lobby moderno",
+            "description": "Lobby del hotel con diseño moderno, mobiliario sobrio y luz cálida",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
-                "caption": "Exterior",
-                "description": "Vista del hotel",
+                "url": "https://images.pexels.com/photos/6474588/pexels-photo-6474588.jpeg",
+                "caption": "Lobby decorado",
+                "description": "Lobby del hotel con decoración elegante y luces tenues por la noche",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
-                "caption": "Piscina",
-                "description": "Área de piscina y solárium con vista",
+                "url": "https://images.pexels.com/photos/36816426/pexels-photo-36816426.jpeg",
+                "caption": "Habitación matrimonial",
+                "description": "Habitación con cama doble, lámparas suaves y diseño elegante",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
-                "caption": "Habitación con balcón",
-                "description": "Habitación con balcón y vista",
+                "url": "https://images.pexels.com/photos/37252307/pexels-photo-37252307.jpeg",
+                "caption": "Lobby contemporáneo",
+                "description": "Lobby espacioso del hotel con decoración contemporánea y luz cuidada",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
-                "caption": "Vista desde la habitación",
-                "description": "Vista al río desde un balcón",
+                "url": "https://images.pexels.com/photos/14841133/pexels-photo-14841133.jpeg",
+                "caption": "Lobby con araña moderna",
+                "description": "Lobby elegante con araña de diseño moderno y mobiliario contemporáneo",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
-                "caption": "Comedor",
-                "description": "Salón desayunador con vista al jardín",
+                "url": "https://images.pexels.com/photos/31967701/pexels-photo-31967701.jpeg",
+                "caption": "Habitación de noche",
+                "description": "Habitación moderna del hotel con iluminación cálida en horario nocturno",
                 "moderationState": "APPROVED"
             }
         ]

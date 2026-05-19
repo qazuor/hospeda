@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-107",
+    "title": "Beta Tester Docs Screenshots Rollout",
+    "type": "docs",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-13T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["beta-docs", "screenshots", "content", "ux", "non-tech-audience"]
+}

@@ -111,8 +111,14 @@ describe('CategoryTiles.astro', () => {
             expect(src).toContain('data-reveal="up"');
         });
 
-        it('applies staggered transition-delay via inline style', () => {
-            expect(src).toContain('transition-delay:');
+        it('applies staggered reveal via data-stagger attrs (no inline style=, SPEC-046)', () => {
+            // SPEC-046 GAP-046-09a: the stagger delay is now driven by
+            // data-stagger-index + data-stagger-step matched in
+            // css-var-themes.css, replacing the prior inline
+            // `style="transition-delay: Xms"` that triggered style-src-attr.
+            expect(src).toContain('data-stagger-index=');
+            expect(src).toContain('data-stagger-step="80"');
+            expect(src).not.toContain('transition-delay:');
         });
     });
 

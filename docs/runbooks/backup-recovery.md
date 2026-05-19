@@ -1160,8 +1160,8 @@ docker exec -i hospeda_postgres pg_restore -U hospeda_user -d hospeda_dev \
 - [Rollback Procedures](./rollback.md) - Rolling back deployments
 - [Production Bugs](./production-bugs.md) - Investigating production issues
 - [Monitoring](./monitoring.md) - Database monitoring setup
-- [Architecture - Database](../architecture/database.md) - Database architecture
-- [Development - Migrations](../development/migrations.md) - Database migration guide
+- [Architecture - Overview](../architecture/overview.md) - System architecture (includes database layer)
+- [Database Migrations Guide](../../packages/db/docs/guides/migrations.md) - Database migration workflow
 
 ## Backup & Recovery Checklist
 

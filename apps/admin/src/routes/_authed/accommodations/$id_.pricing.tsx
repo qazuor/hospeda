@@ -4,9 +4,9 @@
  * Displays and manages pricing for a specific accommodation.
  */
 
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatCurrency } from '@repo/i18n';
@@ -33,8 +33,8 @@ function AccommodationPricingPage() {
     const additionalFees = price?.additionalFees;
     const discounts = price?.discounts;
 
-    const formatPrice = (amount?: number, curr?: string) => {
-        if (amount === undefined) return 'N/A';
+    const formatPrice = (amount: number | null | undefined, curr?: string) => {
+        if (amount == null) return 'N/A';
         return formatCurrency({
             value: amount,
             locale,
@@ -64,12 +64,10 @@ function AccommodationPricingPage() {
     };
 
     return (
-        <div className="space-y-4">
-            <PageTabs
-                tabs={accommodationTabs}
-                basePath={`/accommodations/${id}`}
-            />
-
+        <AccommodationSubTabLayout
+            accommodationId={id}
+            entityName={accommodation?.name}
+        >
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.pricing')}</h2>
 
@@ -83,7 +81,7 @@ function AccommodationPricingPage() {
                             />
                         ))}
                     </div>
-                ) : !price || basePrice === undefined ? (
+                ) : !price || basePrice == null ? (
                     <p className="text-muted-foreground">
                         {t('admin-pages.accommodations.pricing.noData')}
                     </p>
@@ -263,6 +261,6 @@ function AccommodationPricingPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </AccommodationSubTabLayout>
     );
 }

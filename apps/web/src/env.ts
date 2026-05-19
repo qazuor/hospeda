@@ -16,16 +16,24 @@ import { z } from 'zod';
  * reserved for cross-field validation.
  */
 export const serverEnvBaseSchema = z.object({
-    HOSPEDA_API_URL: z.string().url().optional(),
-    PUBLIC_API_URL: z.string().url().optional(),
-    HOSPEDA_SITE_URL: z.string().url().optional(),
-    PUBLIC_SITE_URL: z.string().url().optional(),
-    HOSPEDA_BETTER_AUTH_URL: z.string().url().optional(),
-    HOSPEDA_ADMIN_URL: z.string().url().optional(),
-    PUBLIC_ADMIN_URL: z.string().url().optional(),
+    HOSPEDA_API_URL: z.url().optional(),
+    PUBLIC_API_URL: z.url().optional(),
+    HOSPEDA_SITE_URL: z.url().optional(),
+    PUBLIC_SITE_URL: z.url().optional(),
+    HOSPEDA_BETTER_AUTH_URL: z.url().optional(),
+    HOSPEDA_ADMIN_URL: z.url().optional(),
+    PUBLIC_ADMIN_URL: z.url().optional(),
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
-    PUBLIC_SENTRY_DSN: z.string().url().optional(),
+    PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
+    /**
+     * Free-text environment tag applied to all Sentry events from the web app
+     * (SSR and browser). Takes precedence over `import.meta.env.MODE` in the
+     * Sentry init. Required to separate staging from production in the Sentry
+     * dashboard — without it, Astro production builds always emit MODE=production
+     * regardless of which deployment they came from.
+     */
+    PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.
@@ -36,6 +44,38 @@ export const serverEnvBaseSchema = z.object({
         .string()
         .optional()
         .transform((v) => v === 'true'),
+    /**
+     * WhatsApp broadcast channel invite URL. Used by the web WhatsAppCTA
+     * island (SPEC-101 T-101-24). When unset the CTA block is hidden.
+     */
+    PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL: z.url().optional(),
+    /**
+     * Comma-separated list of hostnames that must receive a restrictive
+     * `Disallow: /` robots policy and `X-Robots-Tag: noindex, nofollow`
+     * header. Used by middleware.ts and pages/robots.txt.ts to keep
+     * staging hostnames out of search engines. Defaults to
+     * `staging.hospeda.com.ar` via parseNoindexHosts() when unset.
+     */
+    HOSPEDA_NOINDEX_HOSTS: z.string().optional(),
+    /**
+     * Opt-in flag for client-side console logging in non-dev builds.
+     * Read by isLoggingEnabled() in src/lib/env.ts. Dev builds always
+     * log regardless of this flag.
+     */
+    PUBLIC_ENABLE_LOGGING: z.string().optional(),
+    /**
+     * PostHog Cloud project API key for the web app (SPEC-140). Public by
+     * design — ships in the browser bundle. Leave unset to disable PostHog
+     * init (no events sent, no cookies set, no network requests). Per-env
+     * values come from Coolify (one project key per staging/prod).
+     */
+    PUBLIC_POSTHOG_KEY: z.string().optional(),
+    /**
+     * PostHog ingestion endpoint for the web app (SPEC-140). Defaults to
+     * the US Cloud region in posthog-client.ts when unset. Override only
+     * if migrating to EU Cloud or self-hosted PostHog.
+     */
+    PUBLIC_POSTHOG_HOST: z.url().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

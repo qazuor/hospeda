@@ -20,12 +20,16 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
- * Updated 2026-05-12 to 179 after the VPS-migration sprint removed
- * Vercel-coupled env vars (deploy scripts, preview URLs, QStash). When
- * adding or removing variables, bump this constant in the same commit
- * and regenerate the snapshot below (`vitest -u`).
+ * Updated 2026-05-18 to 197: net +2 vs the previous 195 (SPEC-140 PostHog).
+ * Both new vars come from the Sentry staging-vs-prod environment separation:
+ *  - `PUBLIC_SENTRY_ENVIRONMENT` in CLIENT_WEB_ENV_VARS
+ *  - `VITE_SENTRY_ENVIRONMENT` in CLIENT_ADMIN_ENV_VARS
+ * Previous value 195 (2026-05-17) covered SPEC-140 (PostHog Cloud), which also
+ * removed a pre-existing duplicate of PUBLIC_ENABLE_LOGGING. Previous 189
+ * (2026-05-15) covered SPEC-109. When adding or removing variables, bump this
+ * constant in the same commit and regenerate the snapshot below (`vitest -u`).
  */
-const EXPECTED_VAR_COUNT = 179;
+const EXPECTED_VAR_COUNT = 197;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -38,6 +42,7 @@ const EXPECTED_CATEGORIES = [
     'cache',
     'billing',
     'email',
+    'newsletter',
     'cron',
     'integrations',
     'monitoring',
@@ -223,6 +228,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_EMAIL_FROM_NAME',
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
+                'HOSPEDA_SENTRY_ENVIRONMENT',
                 'API_PORT',
                 'API_CORS_ORIGINS',
                 'PUBLIC_API_URL',
@@ -357,12 +363,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 23 VITE_* admin variables', () => {
+        it('should contain all 26 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(23);
+            expect(viteVars.length).toBe(26);
         });
     });
 

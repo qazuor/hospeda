@@ -295,7 +295,7 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Generate columns
         const columns = useMemo<readonly DataTableColumn<Row>[]>(() => {
-            const columnsConfig = config.createColumns();
+            const columnsConfig = config.createColumns(t);
             return columnsConfig.map((columnConfig) => ({
                 ...columnConfig,
                 accessorKey: columnConfig.accessorKey as keyof Row & string,
@@ -310,13 +310,13 @@ export const createEntityListPage = <TData extends { id: string }>(
                       }
                     : undefined
             }));
-        }, [navigate, config.createColumns]);
+        }, [navigate, config.createColumns, t]);
 
         // Column visibility logic
         const getInitialColumnVisibility = useCallback(
             (viewType: 'table' | 'grid') => {
                 const visibility: Record<string, boolean> = {};
-                for (const columnConfig of config.createColumns()) {
+                for (const columnConfig of config.createColumns(t)) {
                     if (viewType === 'table') {
                         visibility[columnConfig.id] = columnConfig.startVisibleOnTable !== false;
                     } else {
@@ -325,7 +325,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 }
                 return visibility;
             },
-            [config.createColumns]
+            [config.createColumns, t]
         );
 
         const initialColumnVisibility = useMemo(() => {

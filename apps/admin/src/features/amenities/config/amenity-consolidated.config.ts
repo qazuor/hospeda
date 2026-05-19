@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import {
     createBasicInfoConsolidatedSection,
     createFlagsConsolidatedSection,
@@ -20,9 +21,13 @@ export interface AmenityConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Amenity entity
+ * Creates the complete consolidated configuration for the Amenity entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createAmenityConsolidatedConfig = (): AmenityConsolidatedConfig => ({
+export const createAmenityConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): AmenityConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createFlagsConsolidatedSection(),
@@ -30,8 +35,8 @@ export const createAmenityConsolidatedConfig = (): AmenityConsolidatedConfig => 
     ],
     metadata: {
         entityType: 'amenity',
-        entityName: 'Amenidad',
-        entityNamePlural: 'Amenidades',
+        entityName: t('admin-entities.entities.amenity.singular'),
+        entityNamePlural: t('admin-entities.entities.amenity.plural'),
         baseRoute: '/content/accommodation-amenities'
     }
 });

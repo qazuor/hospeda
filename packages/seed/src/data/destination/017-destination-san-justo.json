@@ -3,8 +3,8 @@
     "id": "017-destination-san-justo",
     "slug": "san-justo",
     "name": "San Justo",
-    "summary": "Tranquila localidad rural con paisajes naturales y tradición agropecuaria",
-    "description": "San Justo es una localidad ubicada en el centro de la provincia de Entre Ríos, caracterizada por su actividad agropecuaria y sus tranquilos paisajes rurales. Rodeada de campos y arroyos, la localidad ofrece una experiencia auténtica del interior entrerriano. Sus habitantes conservan las tradiciones del campo y la ganadería, y reciben a los visitantes con la hospitalidad característica de los pueblos pequeños de la mesopotamia argentina. La pesca y el contacto con la naturaleza son las principales actividades turísticas.",
+    "summary": "Villa San Justo es una pequeña colonia agrícola del Departamento Uruguay, Entre Ríos, fundada en 1874 por Dolores Costa de Urquiza cerca del Palacio San José.",
+    "description": "Villa San Justo es una tranquila localidad rural ubicada en el Departamento Uruguay, provincia de Entre Ríos, a unos 25 km de Concepción del Uruguay y muy cerca del Palacio San José. Fue fundada en 1874 como colonia agrícola por Doña Dolores Costa de Urquiza, viuda del General Justo José de Urquiza, y poblada por inmigrantes italianos y franceses. Su trazado original de 23 manzanas se extiende a ambos lados del Boulevard o Camino Real. Hoy conserva su perfil agropecuario y forma parte del circuito turístico Caminos del Palacio. Su principal atractivo es la Parroquia Nuestra Señora de los Dolores, mandada a construir en 1887, junto a su plaza central y el entorno rural característico de la microregión del Palacio San José.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,39 +13,232 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2827",
+        "zipCode": "3265",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "100",
         "city": "San Justo",
         "coordinates": {
-            "lat": "-32.3833",
-            "long": "-58.7500"
+            "lat": "-32.4667",
+            "long": "-58.5500"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de San Justo",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178149/hospeda/seed/required/destinations/017-destination-san-justo/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de San Justo"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano en San Justo",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178149/hospeda/seed/required/destinations/017-destination-san-justo/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Naturaleza alrededor de San Justo",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178151/hospeda/seed/required/destinations/017-destination-san-justo/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178152/hospeda/seed/required/destinations/017-destination-san-justo/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178153/hospeda/seed/required/destinations/017-destination-san-justo/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178154/hospeda/seed/required/destinations/017-destination-san-justo/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178156/hospeda/seed/required/destinations/017-destination-san-justo/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178157/hospeda/seed/required/destinations/017-destination-san-justo/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178158/hospeda/seed/required/destinations/017-destination-san-justo/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178159/hospeda/seed/required/destinations/017-destination-san-justo/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178160/hospeda/seed/required/destinations/017-destination-san-justo/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178161/hospeda/seed/required/destinations/017-destination-san-justo/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178162/hospeda/seed/required/destinations/017-destination-san-justo/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178163/hospeda/seed/required/destinations/017-destination-san-justo/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178164/hospeda/seed/required/destinations/017-destination-san-justo/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178165/hospeda/seed/required/destinations/017-destination-san-justo/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178165/hospeda/seed/required/destinations/017-destination-san-justo/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178166/hospeda/seed/required/destinations/017-destination-san-justo/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178167/hospeda/seed/required/destinations/017-destination-san-justo/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178168/hospeda/seed/required/destinations/017-destination-san-justo/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178169/hospeda/seed/required/destinations/017-destination-san-justo/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178169/hospeda/seed/required/destinations/017-destination-san-justo/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "San Justo - Vida Rural y Naturaleza | Entre Ríos",
-        "description": "Descubre San Justo, tranquila localidad rural con naturaleza y tradición agropecuaria en Entre Ríos.",
-        "keywords": ["San Justo", "Entre Ríos", "Rural", "Naturaleza", "Ganadería", "Tranquilidad"]
+        "title": "Villa San Justo, Entre Ríos | Caminos del Palacio",
+        "description": "Descubrí Villa San Justo, pueblo rural del Departamento Uruguay (Entre Ríos) fundado por Dolores Costa de Urquiza, en los Caminos del Palacio San José.",
+        "keywords": [
+            "Villa San Justo",
+            "San Justo Entre Ríos",
+            "Departamento Uruguay",
+            "Caminos del Palacio",
+            "Palacio San José",
+            "turismo rural Entre Ríos",
+            "colonia agrícola",
+            "Dolores Costa de Urquiza"
+        ]
     },
     "tagIds": [
         "027-tag-naturaleza",
@@ -56,11 +249,11 @@
         "007-tag-camping"
     ],
     "attractionIds": [
-        "065-attraction-pesca_deportiva",
-        "062-attraction-parque_municipal",
         "072-attraction-plaza_principal",
-        "081-attraction-sendero_ecologico",
-        "013-attraction-centro_agropecuario"
+        "045-attraction-iglesia_colonial",
+        "013-attraction-centro_agropecuario",
+        "010-attraction-casa_historica",
+        "037-attraction-estancia_turistica"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

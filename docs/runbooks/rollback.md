@@ -1164,7 +1164,7 @@ git push
 - [Production Bug Investigation](./production-bugs.md) - Diagnosing issues before rollback
 - [Backup & Recovery](./backup-recovery.md) - Database backup and recovery
 - [Monitoring](./monitoring.md) - Setting up alerts and monitoring
-- [Deployment Guide](../development/deployment.md) - Normal deployment procedures
+- [Deployment Guide](../deployment/README.md) - Normal deployment procedures
 - [Architecture Overview](../architecture/README.md) - Understanding system components
 
 ## Changelog

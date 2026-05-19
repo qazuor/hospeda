@@ -69,7 +69,25 @@
         "viewLess": "Ver menos",
         "sponsoredContent": "Conteúdo patrocinado",
         "expiresOn": "Esta publicação expira em {{date}}",
-        "expiredOn": "Publicação expirada em {{date}}"
+        "expiredOn": "Publicação expirada em {{date}}",
+        "byline": "Por {{name}}",
+        "updatedOn": "Atualizado em {{date}}",
+        "videosTitle": "Vídeos",
+        "badge": {
+            "news": "Notícia",
+            "featured": "Destaque"
+        },
+        "engagement": {
+            "likes": "{{count}} curtidas",
+            "likes_one": "{{count}} curtida",
+            "likes_zero": "Sem reações ainda",
+            "comments": "{{count}} comentários",
+            "comments_one": "{{count}} comentário",
+            "comments_zero": "Sem comentários",
+            "shares": "{{count}} compartilhamentos",
+            "shares_one": "{{count}} compartilhamento",
+            "shares_zero": "Sem compartilhamentos"
+        }
     },
     "tagPage": {
         "title": "Publicações com a etiqueta \"{tag}\"",

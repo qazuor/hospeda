@@ -24,17 +24,19 @@ function AttractionCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'attraction',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        // 'Atracción' is feminine (SPEC-117 D-POSTS.3 family).
+        title: 'Nueva Atracción',
         description: t('admin-entities.entities.attraction.description'),
         entityName,
         entityNamePlural,
         basePath: '/content/destination-attractions',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1/2 — title ≠ body and feminine gender.
+        successToastTitle: 'Atracción creada',
+        successToastMessage: 'La atracción se creó exitosamente',
+        errorToastTitle: 'Error al crear la atracción',
+        errorMessage: 'No pudimos crear la atracción. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +44,8 @@ function AttractionCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={AttractionCreateInputSchema}
-                createConsolidatedConfig={createAttractionConsolidatedConfig}
+                createConsolidatedConfig={() => createAttractionConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

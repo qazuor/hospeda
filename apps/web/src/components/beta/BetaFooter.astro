@@ -1,0 +1,37 @@
+---
+/**
+ * @file BetaFooter.astro
+ * @description Minimal footer for the beta docs site. Internal-only; never
+ * exposes marketing/legal links from the main site.
+ */
+---
+
+<footer class="beta-footer" role="contentinfo">
+    <div class="beta-footer__inner">
+        <p class="beta-footer__text">
+            Documentación interna del programa beta de Hospeda. No compartir fuera del grupo de testers.
+        </p>
+    </div>
+</footer>
+
+<style>
+    .beta-footer {
+        margin-top: var(--space-section, 4rem);
+        background: var(--surface-warm);
+        border-top: 1px solid var(--border);
+    }
+
+    .beta-footer__inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--space-5, 1.25rem) var(--space-5, 1.25rem);
+    }
+
+    .beta-footer__text {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+        text-align: center;
+    }
+</style>

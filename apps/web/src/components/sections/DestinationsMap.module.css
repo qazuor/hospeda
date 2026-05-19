@@ -40,7 +40,8 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    opacity: 0.75;
+    /* Lowered so route lines do not compete with city labels on top. */
+    opacity: 0.55;
 }
 
 /* --- Pins layer (absolutely positioned over the SVG) --- */
@@ -165,14 +166,21 @@
     line-height: 1.2;
     text-align: center;
     white-space: pre-line;
-    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
-        oklch(from var(--core-card) l c h / 0.9);
+    /* Solid 1px cardinal outline + soft blur halo so labels stay legible
+       when they cross route lines on the map background. */
+    text-shadow:
+        -1px -1px 0 var(--core-card),
+        1px -1px 0 var(--core-card),
+        -1px 1px 0 var(--core-card),
+        1px 1px 0 var(--core-card),
+        0 0 3px oklch(from var(--core-card) l c h / 0.9);
     pointer-events: none;
     transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, font-weight
         var(--duration-fast) ease;
     max-width: 90px;
-    /* Inactive labels fade back hard so the active one dominates. */
-    opacity: 0.4;
+    /* Inactive labels fade back so the active one dominates,
+       but stay readable against the route layer. */
+    opacity: 0.6;
 }
 
 .mainPin:hover .mainLabel {
@@ -185,8 +193,12 @@
     font-size: 17px;
     letter-spacing: 0.01em;
     opacity: 1;
-    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1), 0 0 4px
-        oklch(from var(--core-card) l c h / 1);
+    text-shadow:
+        -1px -1px 0 var(--core-card),
+        1px -1px 0 var(--core-card),
+        -1px 1px 0 var(--core-card),
+        1px 1px 0 var(--core-card),
+        0 0 8px oklch(from var(--core-card) l c h / 1);
 }
 
 /* Label positioned to the left side of the pin */
@@ -296,12 +308,16 @@
 .secondaryLabel {
     font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 400;
+    font-weight: 500;
     color: var(--core-muted-foreground);
     line-height: 1.2;
-    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
-        oklch(from var(--core-card) l c h / 0.9);
-    opacity: 0.35;
+    text-shadow:
+        -1px -1px 0 var(--core-card),
+        1px -1px 0 var(--core-card),
+        -1px 1px 0 var(--core-card),
+        1px 1px 0 var(--core-card),
+        0 0 3px oklch(from var(--core-card) l c h / 0.9);
+    opacity: 0.55;
     max-width: 80px;
     white-space: normal;
     text-align: center;
@@ -315,8 +331,12 @@
     font-weight: 800;
     font-size: 15px;
     letter-spacing: 0.01em;
-    text-shadow: 0 0 8px oklch(from var(--core-card) l c h / 1), 0 0 4px
-        oklch(from var(--core-card) l c h / 1);
+    text-shadow:
+        -1px -1px 0 var(--core-card),
+        1px -1px 0 var(--core-card),
+        -1px 1px 0 var(--core-card),
+        1px 1px 0 var(--core-card),
+        0 0 8px oklch(from var(--core-card) l c h / 1);
 }
 
 .secondaryPin:hover .secondaryLabel {

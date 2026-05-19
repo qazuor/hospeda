@@ -1156,7 +1156,7 @@ for (let i = 0; i < items.length; i += BATCH_SIZE) {
 - [Creating Seeds Guide](../guides/creating-seeds.md) - Complete guide to creating seeders
 - [Dependencies Guide](../guides/dependencies.md) - Managing relationships
 - [Testing Guide](../guides/testing.md) - Testing seed scripts
-- [Examples](../examples/) - Working code examples
+- Working code examples in `packages/seed/src/seeders/`
 
 ---
 

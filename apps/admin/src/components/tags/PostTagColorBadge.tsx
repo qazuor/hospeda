@@ -41,6 +41,10 @@ export function PostTagColorBadge({ color, label, className = '' }: PostTagColor
 
     return (
         <span
+            // role="img" is required so aria-label is permitted on a span (axe
+            // aria-prohibited-attr otherwise flags it). The decorative swatch
+            // below stays aria-hidden so screen readers only announce the label.
+            role="img"
             className={`inline-flex items-center gap-1.5 ${className}`}
             aria-label={label ? `Color: ${label}` : `Color: ${color}`}
         >

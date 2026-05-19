@@ -16,6 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { AnimatedCounter } from '@/components/sections/AnimatedCounter.client';
 import type { StatItemData } from '@/data/types';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations. */
@@ -66,7 +67,7 @@ const t = createT(locale);
         <div
           class="stats-section__card"
           data-reveal="up"
-          style={`transition-delay: ${i * 100}ms`}
+          {...revealStagger({ index: i })}
         >
           <AnimatedCounter
             client:visible
@@ -335,6 +336,37 @@ const t = createT(locale);
   .stats-section__wave {
     width: 100%;
     height: 100%;
+  }
+
+  /* ── Mobile: tighten the section's vertical footprint ──
+     Without the desktop wave, the cards no longer need the extra padding
+     that reserved breathing room around it. The full --space-section
+     padding-block plus the per-card padding-top of 27px and the 2rem
+     row gap made the stats block tower over its actual content height. */
+  @media (max-width: 767px) {
+    .stats-section {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+    }
+
+    .stats-section__container {
+      gap: 1.5rem;
+    }
+
+    .stats-section__card {
+      padding-top: 0;
+    }
+
+    .stats-section__cards {
+      gap: 1.25rem;
+    }
+
+    /* Default `.section-header` margin-bottom is 50px (designed for desktop
+       sections). On mobile that leaves a big gap between the section
+       subtitle and the first stat row. */
+    .stats-section :global(.section-header) {
+      margin-bottom: 1rem;
+    }
   }
 
   /* ── Tablet: 768px+ ───────────────────────────────────────────── */

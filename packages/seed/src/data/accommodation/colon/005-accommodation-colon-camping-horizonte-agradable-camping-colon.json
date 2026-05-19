@@ -20,10 +20,6 @@
     "socialNetworks": {
         "twitter": "https://twitter.com/horizonteagradablecampingar"
     },
-    "price": {
-        "price": 3500,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-32.2134",
@@ -35,33 +31,39 @@
     "media": {
         "featuredImage": {
             "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
-            "caption": "Vista del camping",
-            "description": "Zona de acampe con vista al río",
+            "caption": "Carpa bajo cielo estrellado",
+            "description": "Vista nocturna del área de acampe con tipi iluminado y la Vía Láctea de fondo",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
-                "caption": "Parcelas con sombra",
-                "description": "Espacios para carpas bajo los árboles",
+                "url": "https://images.pexels.com/photos/12623152/pexels-photo-12623152.jpeg",
+                "caption": "Campamento con fogón",
+                "description": "Carpas y fogón en un claro rodeado de bosque verde y frondoso",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-                "caption": "Área de acampe",
-                "description": "Vista general de la zona de carpas",
+                "url": "https://images.pexels.com/photos/8985295/pexels-photo-8985295.jpeg",
+                "caption": "Acampe con vista",
+                "description": "Campamento al pie de un cerro rodeado de vegetación y árboles verdes",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
-                "caption": "Sanitarios",
-                "description": "Instalaciones de baños y duchas",
+                "url": "https://images.pexels.com/photos/14087937/pexels-photo-14087937.jpeg",
+                "caption": "Carpas al amanecer",
+                "description": "Carpas iluminadas por el sol de la mañana en sector despejado del camping",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg",
-                "caption": "Río Uruguay",
-                "description": "Acceso a la playa del río",
+                "url": "https://images.pexels.com/photos/17767045/pexels-photo-17767045.jpeg",
+                "caption": "Carpa bajo los árboles",
+                "description": "Carpa instalada bajo árboles del monte con luz filtrada del sol",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/104664/pexels-photo-104664.jpeg",
+                "caption": "Carpa azul sobre el césped",
+                "description": "Parcela con carpa familiar instalada sobre pasto al borde del monte",
                 "moderationState": "APPROVED"
             }
         ]

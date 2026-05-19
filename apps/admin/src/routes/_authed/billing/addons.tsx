@@ -156,9 +156,9 @@ function BillingAddonsPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.addons.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.addons.description')}
                         </p>
@@ -188,9 +188,9 @@ function BillingAddonsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.addons.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.addons.description')}
                         </p>
@@ -245,7 +245,10 @@ function BillingAddonsPage() {
                                         setPage(1);
                                     }}
                                 >
-                                    <SelectTrigger className="w-[180px]">
+                                    <SelectTrigger
+                                        className="w-[180px]"
+                                        aria-label={t('admin-billing.addons.allStatuses')}
+                                    >
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>

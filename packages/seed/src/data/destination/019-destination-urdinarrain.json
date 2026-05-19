@@ -3,8 +3,8 @@
     "id": "019-destination-urdinarrain",
     "slug": "urdinarrain",
     "name": "Urdinarrain",
-    "summary": "Ciudad rural con tradición agropecuaria y vida comunitaria en el corazón entrerriano",
-    "description": "Urdinarrain es una ciudad ubicada en el departamento Gualeguaychú de Entre Ríos, conocida por su fuerte tradición agropecuaria y su vida comunitaria activa. La ciudad es un ejemplo del espíritu entrerriano, con una comunidad unida que celebra festividades locales y mantiene vivas las tradiciones del campo. Sus calles tranquilas, plazas arboladas y la hospitalidad de su gente hacen de Urdinarrain un destino auténtico para quienes quieren conocer el interior de Entre Ríos. Actividades como la pesca, el turismo rural y las cabalgatas son las favoritas de los visitantes.",
+    "summary": "Pueblo rural del sur de Gualeguaychu, fundado en 1890 junto al ferrocarril, destacado por sus queserias artesanales, tradicion agricola inmigrante y un complejo museologico en la antigua estacion.",
+    "description": "Urdinarrain es una localidad del sur del departamento Gualeguaychu, Entre Rios, fundada en 1890 al amparo del ferrocarril y poblada por inmigrantes europeos que dieron forma a su identidad agropecuaria. Hoy es reconocida por su produccion de quesos artesanales y dulce de leche (premiado a nivel nacional como mejor dulce de leche repostero), por su tradicion en la elaboracion de productos lacteos y por la calidez de su gente. El predio del Museo Regional La Estacion, emplazado en la antigua estacion ferroviaria, reune varios museos que recorren la historia local, las tradiciones rurales y el trabajo del campo, incluyendo el Museo del Caballo y el Museo Agricola al aire libre con maquinaria historica. La Plaza Central concentra la vida comunitaria, mientras que los alrededores ofrecen estancias, turismo rural y paisajes de la pampa entrerriana. Urdinarrain fue postulada por Argentina al programa Best Tourism Villages de ONU Turismo, reconocimiento al modelo de turismo comunitario y conservacion del patrimonio rural.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -12,40 +12,305 @@
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {
-        "state": "Entre Ríos",
+        "state": "Entre Rios",
         "zipCode": "2826",
         "country": "Argentina",
         "street": "Av. San Martín",
         "number": "300",
         "city": "Urdinarrain",
         "coordinates": {
-            "lat": "-32.6833",
-            "long": "-58.8833"
+            "lat": "-32.6889",
+            "long": "-58.8869"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Urdinarrain",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178257/hospeda/seed/required/destinations/019-destination-urdinarrain/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Urdinarrain"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano en Urdinarrain",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178258/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en los alrededores de Urdinarrain",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178260/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178262/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178263/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178265/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178266/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178268/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178269/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178270/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178271/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178272/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178273/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178274/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178275/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178276/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178278/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178278/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178279/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178280/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178281/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178282/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178283/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178284/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178285/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178286/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178287/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178288/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-27.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-27",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178289/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-28.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-28",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178290/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-29.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-29",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Urdinarrain - Tradición Agropecuaria | Hospeda",
-        "description": "Descubre Urdinarrain, ciudad rural con tradición agropecuaria en el corazón de Entre Ríos.",
-        "keywords": ["Urdinarrain", "Entre Ríos", "Rural", "Agropecuario", "Tradición", "Campo"]
+        "title": "Urdinarrain, Entre Rios: Queserias y Turismo Rural | Hospeda",
+        "description": "Descubre Urdinarrain en el sur de Gualeguaychu, pueblo de queserias artesanales, dulce de leche premiado y el complejo museologico La Estacion en Entre Rios.",
+        "keywords": [
+            "Urdinarrain",
+            "Entre Rios",
+            "Gualeguaychu",
+            "queserias artesanales",
+            "dulce de leche",
+            "turismo rural",
+            "Museo La Estacion",
+            "Best Tourism Villages"
+        ]
     },
     "tagIds": [
         "027-tag-naturaleza",
@@ -56,11 +321,12 @@
         "017-tag-familia"
     ],
     "attractionIds": [
-        "037-attraction-estancia_turistica",
-        "013-attraction-centro_agropecuario",
+        "076-attraction-queseria_artesanal",
+        "056-attraction-museo_regional",
         "072-attraction-plaza_principal",
-        "065-attraction-pesca_deportiva",
-        "062-attraction-parque_municipal"
+        "013-attraction-centro_agropecuario",
+        "037-attraction-estancia_turistica",
+        "043-attraction-granja_educativa"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

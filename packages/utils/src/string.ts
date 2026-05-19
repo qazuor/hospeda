@@ -3,7 +3,6 @@
  * @module utils/string
  */
 
-import { getRandomValues } from 'node:crypto';
 import logger from '@repo/logger';
 import slugify from 'slugify';
 
@@ -140,6 +139,6 @@ export function randomString(
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 ): string {
     const array = new Uint32Array(length);
-    getRandomValues(array);
+    crypto.getRandomValues(array);
     return Array.from(array, (v) => chars[v % chars.length]).join('');
 }

@@ -2,7 +2,7 @@
 
 This runbook provides troubleshooting procedures for incidents affecting Hospeda's image management subsystem (Cloudinary). It covers detection, health verification, credential rotation, account/quota issues, soft-delete semantics, GDPR erasure handoff, contacts, and escalation.
 
-> **Background**: Hospeda uses Cloudinary as the canonical image storage and CDN for accommodations, destinations, events, posts, and user-uploaded media. The integration is encapsulated in `packages/media/src/server/cloudinary.provider.ts` and exposed to the API through `apps/api/src/services/media.ts`. See [SPEC-078](../../.claude/specs/SPEC-078-cloudinary-image-management/spec.md) for the full design and the SPEC-078-GAPS remediation series for hardening history (T-007, T-009, T-035, T-051, T-052, T-054).
+> **Background**: Hospeda uses Cloudinary as the canonical image storage and CDN for accommodations, destinations, events, posts, and user-uploaded media. The integration is encapsulated in `packages/media/src/server/cloudinary.provider.ts` and exposed to the API through `apps/api/src/services/media.ts`. The design history lives in the archived SPEC-078 (Cloudinary Image Management) and the SPEC-078-GAPS remediation series (T-007, T-009, T-035, T-051, T-052, T-054).
 
 ## Quick Reference
 

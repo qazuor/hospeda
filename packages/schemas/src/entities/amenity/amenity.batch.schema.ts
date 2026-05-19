@@ -47,10 +47,17 @@ export const AmenityBatchRequestSchema = z.object({
  * ];
  * ```
  */
+/**
+ * Batch item schema for amenity operations
+ * All fields are optional except `id` (the handler always emits it).
+ */
+export const AmenityBatchItemSchema = AmenitySchema.partial().required({ id: true });
+
 export const AmenityBatchResponseSchema = z.array(
-    AmenitySchema.nullable().describe('Amenity data or null if not found/accessible')
+    AmenityBatchItemSchema.nullable().describe('Amenity data or null if not found/accessible')
 );
 
 // Type exports for TypeScript usage
 export type AmenityBatchRequest = z.infer<typeof AmenityBatchRequestSchema>;
+export type AmenityBatchItem = z.infer<typeof AmenityBatchItemSchema>;
 export type AmenityBatchResponse = z.infer<typeof AmenityBatchResponseSchema>;

@@ -510,8 +510,8 @@ function ThemeButton({
             className={`flex items-center gap-2 rounded-lg border p-3 transition-colors ${
                 active
                     ? 'border-primary bg-primary/10 text-foreground'
-                    : 'bg-card text-muted-foreground opacity-60 hover:opacity-100'
-            } disabled:cursor-not-allowed disabled:opacity-40`}
+                    : 'bg-card text-muted-foreground hover:text-foreground'
+            } disabled:cursor-not-allowed disabled:opacity-50`}
         >
             {icon}
             <span className={active ? 'font-medium text-sm' : 'text-sm'}>{label}</span>
@@ -543,8 +543,8 @@ function LanguageButton({
             className={`flex items-center gap-2 rounded-lg border p-3 transition-colors ${
                 active
                     ? 'border-primary bg-primary/10 text-foreground'
-                    : 'bg-card text-muted-foreground opacity-60 hover:opacity-100'
-            } disabled:cursor-not-allowed disabled:opacity-40`}
+                    : 'bg-card text-muted-foreground hover:text-foreground'
+            } disabled:cursor-not-allowed disabled:opacity-50`}
         >
             <GlobeIcon className="h-5 w-5" />
             <span className={active ? 'font-medium text-sm' : 'text-sm'}>{label}</span>
@@ -583,6 +583,7 @@ function NotificationToggle({
                 <p className="text-muted-foreground text-xs">{description}</p>
             </div>
             <Switch
+                aria-label={label}
                 checked={checked}
                 disabled={disabled}
                 onCheckedChange={onChange}

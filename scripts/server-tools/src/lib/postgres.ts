@@ -10,7 +10,7 @@
 
 import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
-import { dockerPrefix } from './docker.ts';
+import { docker, dockerPrefix } from './docker.ts';
 
 /** Result of a pg_dump invocation captured into memory. */
 export interface PgDumpResult {
@@ -76,4 +76,106 @@ export async function pgDumpToBuffer(params: {
             });
         });
     });
+}
+
+/**
+ * Read POSTGRES_PASSWORD from the container's `Config.Env`.
+ *
+ * Postgres images set the password as a container env var at create time
+ * (Coolify provisions it from its own secret store). Inspecting the env
+ * is the lowest-friction way to recover it without storing yet another
+ * secret in `.env.local`. The same trick lets `hops psql` work without
+ * any password configuration — psql goes through `docker exec` and
+ * connects via the Unix socket inside the container, so it never
+ * needs the password; this helper exists for callers that DO need the
+ * password (notably building a `postgresql://` URL for clients running
+ * outside the container, like `pnpm seed` on the VPS host).
+ *
+ * @throws when the container exposes no POSTGRES_PASSWORD env var.
+ */
+export async function getPostgresPassword(container: string): Promise<string> {
+    const result = await docker([
+        'inspect',
+        container,
+        '--format',
+        '{{range .Config.Env}}{{println .}}{{end}}'
+    ]);
+    if (result.exitCode !== 0) {
+        throw new Error(`docker inspect ${container} failed: ${result.stderr.trim()}`);
+    }
+    for (const line of result.stdout.split('\n')) {
+        if (line.startsWith('POSTGRES_PASSWORD=')) {
+            return line.slice('POSTGRES_PASSWORD='.length);
+        }
+    }
+    throw new Error(
+        `Container '${container}' does not expose POSTGRES_PASSWORD in its env. Cannot derive a Postgres URL automatically.`
+    );
+}
+
+/**
+ * Read the host port mapped to the container's `5432/tcp` via the docker
+ * port table (the equivalent of `docker port <name> 5432`).
+ *
+ * Returns the host's listening address as `host:port` so it can be
+ * spliced directly into a `postgresql://` URL. When Coolify exposes the
+ * service publicly Docker prints multiple lines (one for IPv4 + one for
+ * IPv6); we take the first IPv4 line and rewrite `0.0.0.0` to
+ * `127.0.0.1` so the URL works when pasted into a client.
+ *
+ * @returns null when the port is NOT published to the host (callers
+ * decide whether that is an error or a signal to fall back to in-container
+ * execution).
+ */
+export async function getPostgresHostPort(container: string): Promise<string | null> {
+    const result = await docker(['port', container, '5432']);
+    if (result.exitCode !== 0) {
+        // `docker port` exits 0 with empty stdout when the port is not
+        // published — but older docker versions exit 6 with stderr. Treat
+        // both shapes as "not published" rather than crashing.
+        if (result.stdout.trim().length === 0) return null;
+        throw new Error(`docker port ${container} 5432 failed: ${result.stderr.trim()}`);
+    }
+    const firstIpv4 = result.stdout
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .find((line) => !line.includes(':::'));
+    if (!firstIpv4) return null;
+    // Normalise 0.0.0.0 to 127.0.0.1 so clients on the host loopback can
+    // actually connect (some PG clients refuse 0.0.0.0 as a target).
+    return firstIpv4.replace(/^0\.0\.0\.0:/, '127.0.0.1:');
+}
+
+/**
+ * Build a `postgresql://USER:PASS@HOST:PORT/DB` URL for the given
+ * container by inspecting its env (password) and port mapping (host:port).
+ * USER and DB come from the caller — the toolkit derives them from
+ * {@link getDbCredentials} per target.
+ *
+ * Special characters in PASSWORD are URL-encoded so the resulting URL
+ * is safe to splice into a connection string verbatim.
+ *
+ * @throws with an actionable message when the port is not published to
+ * the host — in that case the seed cannot reach Postgres from outside
+ * the docker network and the operator has to expose it via Coolify
+ * (or change the workflow to run inside a container).
+ */
+export async function buildPostgresUrl(params: {
+    readonly container: string;
+    readonly user: string;
+    readonly db: string;
+}): Promise<string> {
+    const [password, hostPort] = await Promise.all([
+        getPostgresPassword(params.container),
+        getPostgresHostPort(params.container)
+    ]);
+    if (!hostPort) {
+        throw new Error(
+            `Postgres container '${params.container}' does not publish port 5432 to the host. The seed runs from the VPS host and needs a reachable address. Publish the port in Coolify (Service → Network → expose 5432) and retry, or run the seed inside a container instead.`
+        );
+    }
+    const encodedPassword = encodeURIComponent(password);
+    const encodedUser = encodeURIComponent(params.user);
+    return `postgresql://${encodedUser}:${encodedPassword}@${hostPort}/${params.db}`;
 }

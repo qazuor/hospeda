@@ -89,7 +89,10 @@ export type FieldTypeConfig =
     | UserSelectFieldConfig
     | AccommodationSelectFieldConfig
     | EventSelectFieldConfig
+    | EventLocationSelectFieldConfig
+    | EventOrganizerSelectFieldConfig
     | PostSelectFieldConfig
+    | PostSponsorshipSelectFieldConfig
     | FeatureSelectFieldConfig
     | AmenitySelectFieldConfig
     | TagSelectFieldConfig;
@@ -297,6 +300,21 @@ export type EventSelectFieldConfig = BaseEntitySelectFieldConfig & {
     statusFilter?: string[]; // Filter by event status
     dateRange?: { from?: Date; to?: Date }; // Filter by date range
 };
+
+/**
+ * Event location select field configuration
+ */
+export type EventLocationSelectFieldConfig = BaseEntitySelectFieldConfig;
+
+/**
+ * Event organizer select field configuration
+ */
+export type EventOrganizerSelectFieldConfig = BaseEntitySelectFieldConfig;
+
+/**
+ * Post sponsorship select field configuration
+ */
+export type PostSponsorshipSelectFieldConfig = BaseEntitySelectFieldConfig;
 
 /**
  * Post select field specific configuration

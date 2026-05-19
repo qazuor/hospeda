@@ -9,12 +9,12 @@
  * @module routes/webhooks/mercadopago/payment-handler
  */
 
+import type { QZPayProviderPayment } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
 import { apiLogger } from '../../../utils/logger';
 import { cleanupRequestProviderEventId } from './event-handler';
 import { processPaymentUpdated } from './payment-logic';
-import { markEventProcessedByProviderId } from './utils';
+import { getWebhookDependencies, markEventProcessedByProviderId } from './utils';
 
 /**
  * Handler for payment.created events.
@@ -44,9 +44,17 @@ export const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
 /**
  * Handler for payment.updated events.
  *
- * Processes payment status changes, including add-on purchases.
- * If the payment is for an add-on, confirms the purchase and applies entitlements.
- * Sends payment success/failure notifications based on payment status.
+ * Processes payment status changes (annual subscription confirmation, plan
+ * upgrade confirmation, add-on purchase confirmation, success/failure
+ * notifications).
+ *
+ * MercadoPago's IPN format only carries `data.id` in the webhook body —
+ * the full payment object (status, amount, currency, metadata, …) must be
+ * fetched from MP via `paymentAdapter.payments.retrieve(id)` before the
+ * downstream dispatchers in `processPaymentUpdated` can do anything useful.
+ * Before SPEC-143 T-143-09 this fetch was missing and every dispatch path
+ * silently no-op'd because `extractPaymentInfo` returned null on the
+ * field-less `{ id }` data.
  *
  * @param c - Hono context
  * @param event - Parsed QZPay webhook event
@@ -62,24 +70,76 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
     );
 
     try {
-        const billing = getQZPayBilling();
+        const dependencies = getWebhookDependencies();
 
-        if (!billing) {
-            apiLogger.warn('Billing not configured, skipping add-on processing');
+        if (!dependencies) {
+            apiLogger.warn(
+                { eventId: event.id, requestId: c.get('requestId') },
+                'Billing not configured, skipping payment.updated processing'
+            );
+            await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+            cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
             return undefined;
         }
 
         const eventData = event.data as unknown;
+        const paymentId =
+            eventData !== null &&
+            typeof eventData === 'object' &&
+            'id' in eventData &&
+            (typeof (eventData as { id: unknown }).id === 'string' ||
+                typeof (eventData as { id: unknown }).id === 'number')
+                ? String((eventData as { id: unknown }).id)
+                : null;
 
-        if (!eventData || typeof eventData !== 'object') {
+        if (!paymentId) {
+            apiLogger.warn(
+                { eventId: event.id, requestId: c.get('requestId') },
+                'payment.updated event missing data.id — skipping'
+            );
+            await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+            cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
             return undefined;
         }
 
-        const data = eventData as Record<string, unknown>;
+        // Fetch the full payment object — IPN carries only data.id.
+        let providerPayment: QZPayProviderPayment;
+        try {
+            providerPayment = await dependencies.paymentAdapter.payments.retrieve(paymentId);
+        } catch (retrieveErr) {
+            apiLogger.error(
+                {
+                    paymentId,
+                    eventId: event.id,
+                    requestId: c.get('requestId'),
+                    error: retrieveErr instanceof Error ? retrieveErr.message : String(retrieveErr)
+                },
+                'Failed to retrieve payment from MercadoPago — event acknowledged but unprocessed'
+            );
+            await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+            cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
+            return undefined;
+        }
+
+        // Map the QZPayProviderPayment shape (qzpay's normalized type) to the
+        // MP-raw-ish shape that the existing extractors (extractPaymentInfo,
+        // extractAnnualSubscriptionMetadata, …) consume. The mapping is
+        // straightforward: amount → transaction_amount and currency →
+        // currency_id; status and metadata pass through unchanged. Fields
+        // that exist only in MP raw (status_detail, payment_method_id) stay
+        // null — those are used only by failure notification copy, not by
+        // any dispatch decision.
+        const data: Record<string, unknown> = {
+            id: providerPayment.id,
+            transaction_amount: providerPayment.amount,
+            currency_id: providerPayment.currency,
+            status: providerPayment.status,
+            metadata: providerPayment.metadata
+        };
 
         await processPaymentUpdated({
             data,
-            billing,
+            billing: dependencies.billing,
             source: 'webhook'
         });
     } catch (error) {
@@ -90,7 +150,7 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
                 eventId: event.id,
                 requestId: c.get('requestId')
             },
-            'Error processing add-on purchase in webhook'
+            'Error processing payment.updated in webhook'
         );
     }
 

@@ -37,13 +37,13 @@ function DefaultFallback({ sectionTitle }: { sectionTitle?: string }) {
                     />
                 </div>
                 <div className="flex-1">
-                    <h4 className="font-semibold text-amber-900">
+                    <h3 className="font-semibold text-amber-900">
                         {sectionTitle
                             ? t('admin-entities.entitlementGate.titleWithSection', {
                                   section: sectionTitle
                               })
                             : t('admin-entities.entitlementGate.titleDefault')}
-                    </h4>
+                    </h3>
                     <p className="mt-1 text-amber-800 text-sm">
                         {t('admin-entities.entitlementGate.description')}
                     </p>

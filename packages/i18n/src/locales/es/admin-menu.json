@@ -10,7 +10,13 @@
         "title": "Alojamientos",
         "add": "Agregar",
         "list": "Lista",
-        "myAccommodations": "Mis Alojamientos"
+        "myAccommodations": "Mis Alojamientos",
+        "edit": "Editar",
+        "amenities": "Comodidades",
+        "features": "Características",
+        "gallery": "Galería",
+        "pricing": "Precios",
+        "reviews": "Reseñas"
     },
     "destinations": {
         "title": "Destinos",
@@ -43,7 +49,30 @@
         "revalidation": "Revalidación ISR"
     },
     "billing": {
-        "title": "Facturación"
+        "title": "Facturación",
+        "plans": "Planes",
+        "subscriptions": "Suscripciones",
+        "addons": "Add-ons",
+        "payments": "Pagos",
+        "invoices": "Facturas",
+        "promoCodes": "Códigos Promocionales",
+        "sponsorships": "Patrocinios",
+        "ownerPromotions": "Promociones de Propietarios",
+        "exchangeRates": "Tasas de Cambio",
+        "metrics": "Métricas",
+        "settings": "Configuración",
+        "cron": "Tareas Programadas",
+        "notificationLogs": "Registros de Notificación",
+        "webhookEvents": "Eventos de Webhook"
+    },
+    "notifications": "Notificaciones",
+    "access": {
+        "title": "Acceso",
+        "users": "Usuarios",
+        "roles": "Roles",
+        "permissions": "Permisos",
+        "activity": "Actividad",
+        "edit": "Editar"
     },
     "sponsors": "Patrocinadores",
     "analytics": {

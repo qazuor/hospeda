@@ -1,0 +1,64 @@
+---
+/**
+ * @file mi-cuenta/newsletter.astro
+ * @description Account preferences page for the newsletter subscription
+ * (SPEC-101 T-101-34).
+ *
+ * SSR (not prerendered) — requires an authenticated user. Guests are
+ * redirected to /auth/signin with a redirect back to this page.
+ *
+ * The page is a thin Astro wrapper around the NewsletterPreferences
+ * React island plus the env-gated WhatsAppCTA block (rendered server-
+ * side, hidden when PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL is unset).
+ */
+
+import { getApiUrl } from '@/lib/env';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import WhatsAppCTA from '@/components/newsletter/WhatsAppCTA.astro';
+import { NewsletterPreferences } from '@/components/newsletter/NewsletterPreferences.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+// App.Locals doesn't yet declare `user` or `locale` in its types. Same
+// narrowed-cast workaround used in MobileMenuIsland.astro and the other
+// SPEC-101 pages — to be removed once the upstream type is patched.
+const locals = Astro.locals as {
+    user?: { id: string; email: string } | null;
+    locale?: SupportedLocale;
+};
+const locale = (locals.locale ?? (Astro.params.lang as SupportedLocale | undefined) ?? 'es') as SupportedLocale;
+const user = locals.user;
+
+if (!user) {
+    return Astro.redirect(
+        `/${locale}/auth/signin?redirect=${encodeURIComponent(`/${locale}/mi-cuenta/newsletter/`)}`
+    );
+}
+
+const { t } = createTranslations(locale);
+const pageTitle = t('account.newsletter.title', 'Newsletter');
+
+const apiUrl = getApiUrl();
+---
+
+<AccountLayout locale={locale} title={pageTitle} activeSection="newsletter">
+    <h2 class="account-section__title">{pageTitle}</h2>
+
+    <NewsletterPreferences
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+    />
+
+    <WhatsAppCTA locale={locale} source="account_preferences" />
+</AccountLayout>
+
+<style>
+    .account-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

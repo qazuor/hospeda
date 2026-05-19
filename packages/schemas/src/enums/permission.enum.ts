@@ -43,6 +43,8 @@ export enum PermissionCategoryEnum {
     BENEFIT_LISTING_PLAN = 'BENEFIT_LISTING_PLAN',
     TOURIST_SERVICE = 'TOURIST_SERVICE',
     SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
+    NEWSLETTER_CAMPAIGN = 'NEWSLETTER_CAMPAIGN',
+    NEWSLETTER_SUBSCRIBER = 'NEWSLETTER_SUBSCRIBER',
     NOTIFICATION = 'NOTIFICATION',
     SERVICE_ORDER = 'SERVICE_ORDER',
     PROFESSIONAL_SERVICE = 'PROFESSIONAL_SERVICE',
@@ -636,6 +638,12 @@ export enum PermissionEnum {
     BENEFIT_LISTING_HARD_DELETE = 'benefitListing.hardDelete', // Allows permanently deleting a benefit listing.
     BENEFIT_LISTING_SOFT_DELETE_VIEW = 'benefitListing.softDelete.view', // Allows viewing soft-deleted benefit listings.
     BENEFIT_LISTING_STATUS_MANAGE = 'benefitListing.status.manage', // Allows managing benefit listing status.
+
+    // NEWSLETTER: Permissions related to newsletter campaign and subscriber management (SPEC-101)
+    NEWSLETTER_CAMPAIGN_VIEW = 'newsletter.campaign.view', // Allows viewing newsletter campaigns and their deliveries.
+    NEWSLETTER_CAMPAIGN_WRITE = 'newsletter.campaign.write', // Allows creating, editing, and deleting draft newsletter campaigns.
+    NEWSLETTER_CAMPAIGN_SEND = 'newsletter.campaign.send', // Allows dispatching a campaign (test send, real send, and cancellation).
+    NEWSLETTER_SUBSCRIBER_VIEW = 'newsletter.subscriber.view', // Allows admin listing of newsletter subscribers.
 
     // NOTIFICATION: Permissions related to notification management
     NOTIFICATION_CREATE = 'notification.create', // Allows creating a new notification.

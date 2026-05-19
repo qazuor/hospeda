@@ -9,6 +9,8 @@
  * Only renders when accommodation.lifecycleState === 'ACTIVE' && !accommodation.deletedAt.
  */
 
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -170,6 +172,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         if (isSubmitDisabled) return;
 
         setSubmitState({ phase: 'submitting' });
+        trackEvent(WebEvents.BookingInitiated, {
+            accommodation_id: accommodation.id,
+            is_authenticated: isAuthenticated,
+            locale
+        });
 
         try {
             if (isAuthenticated) {

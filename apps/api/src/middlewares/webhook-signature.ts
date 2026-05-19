@@ -199,8 +199,10 @@ export interface WebhookSignatureOptions {
  * 6. Calls `next()` on success or throws `HTTPException(401)` on failure.
  *
  * When `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is not configured the middleware
- * logs a warning and passes the request through without verification. This
- * allows the API to start in environments where billing is not yet configured.
+ * fails closed in production (`HTTPException(503)`); in non-production
+ * environments it logs a warning and passes the request through without
+ * verification, so local dev / CI without billing configured can still boot
+ * and exercise the route.
  *
  * @param options - Optional configuration (see {@link WebhookSignatureOptions})
  * @returns Hono middleware handler
@@ -221,9 +223,23 @@ export function createWebhookSignatureMiddleware(
     return async (c: Context, next: Next): Promise<void> => {
         const secret = env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET;
 
-        // When the secret is not configured, skip verification with a warning.
-        // This avoids hard failures in environments where billing is not set up.
+        // When the secret is not configured we fail closed in production
+        // (defense in depth — even though the adapter factory also enforces
+        // this, the webhook endpoint must never accept unverified payloads
+        // in prod). In non-production we keep the legacy warn-and-pass
+        // behaviour so local dev / CI without billing configured can still
+        // boot and exercise the route.
         if (!secret) {
+            if (env.NODE_ENV === 'production') {
+                apiLogger.error(
+                    { path: c.req.path },
+                    'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET is not set in production — rejecting webhook request'
+                );
+                throw new HTTPException(503, {
+                    message: 'Webhook signature verification is not configured'
+                });
+            }
+
             apiLogger.warn(
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET is not set — webhook signature verification skipped'
             );

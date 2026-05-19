@@ -41,12 +41,20 @@ export function getPlanColumns(
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.STRING,
-            cell: ({ row }) => (
-                <div>
-                    <div className="font-medium">{row.name}</div>
-                    <div className="text-muted-foreground text-xs">{row.description}</div>
-                </div>
-            )
+            cell: ({ row }) => {
+                // Description is sourced from packages/billing/src/config/plans.config.ts
+                // in English. Translate via i18n keyed by plan slug, fall back to the
+                // source-defined string when no translation is registered.
+                const i18nKey = `admin-billing.plans.descriptions.${row.slug}`;
+                const translated = t(i18nKey);
+                const description = translated === i18nKey ? row.description : translated;
+                return (
+                    <div>
+                        <div className="font-medium">{row.name}</div>
+                        <div className="text-muted-foreground text-xs">{description}</div>
+                    </div>
+                );
+            }
         },
         {
             id: 'category',

@@ -536,20 +536,20 @@
 /* === Scroll Reveal === */
 [data-reveal] {
     opacity: 0;
-    transition: opacity var(--duration-reveal) var(--ease-bounce), transform var(--duration-reveal)
-        var(--ease-bounce);
+    transition: opacity var(--duration-reveal) var(--ease-reveal), transform var(--duration-reveal)
+        var(--ease-reveal);
 }
 [data-reveal="up"] {
-    transform: translateY(40px);
+    transform: translateY(20px);
 }
 [data-reveal="left"] {
-    transform: translateX(-60px);
+    transform: translateX(-32px);
 }
 [data-reveal="right"] {
-    transform: translateX(60px);
+    transform: translateX(32px);
 }
 [data-reveal="scale"] {
-    transform: scale(0.9);
+    transform: scale(0.96);
 }
 [data-reveal].revealed {
     opacity: 1;
@@ -648,4 +648,91 @@
     mask-position: center center;
     -webkit-mask-size: contain;
     mask-size: contain;
+}
+
+/* ==========================================================================
+   Shared overlay / scrim
+   --------------------------------------------------------------------------
+   One pattern for every dim/blur layer that sits behind a dialog, drawer,
+   sheet, mobile menu, or cookie banner. Compose `.overlay-base` with a
+   variant (`.overlay-strong` or `.overlay-light`). The scrim color and blur
+   come from the `--overlay-*` tokens in global.css — tweak them there to
+   retune every overlay at once.
+
+   Use `.overlay-strong` for full-attention modals (heavier dim + blur) and
+   `.overlay-light` for non-blocking drawers, sheets, menus, banners.
+
+   Components are responsible for setting their own z-index (above page,
+   below their panel) so the same overlay can stack at different layers
+   depending on context.
+   ========================================================================== */
+
+.overlay-base {
+    position: fixed;
+    inset: 0;
+    animation: overlay-fade-in var(--duration-fast, 0.2s) ease forwards;
+}
+
+.overlay-strong {
+    background-color: var(--overlay-bg-strong);
+    backdrop-filter: blur(var(--overlay-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-blur));
+}
+
+.overlay-light {
+    background-color: var(--overlay-bg-light);
+}
+
+@keyframes overlay-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay-base {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   Frosted surfaces
+   --------------------------------------------------------------------------
+   Translucent backgrounds with a backdrop blur for floating UI (toggles,
+   filter FABs, sheet triggers) that sits above page content. Use
+   `.frosted-light` over light-on-dark backdrops (cards, photos) and
+   `.frosted-dark` when the floating control itself reads white-on-dark.
+   Tokens live in global.css → --frost-bg-* / --frost-blur / --frost-border.
+
+   Both variants share a Safari prefix and a no-blur fallback so older
+   browsers still render an acceptable translucent surface.
+   ========================================================================== */
+
+.frosted-light,
+.frosted-dark {
+    backdrop-filter: blur(var(--frost-blur));
+    -webkit-backdrop-filter: blur(var(--frost-blur));
+    border: 1px solid var(--frost-border);
+}
+
+.frosted-light {
+    background-color: var(--frost-bg-light);
+}
+
+.frosted-dark {
+    background-color: var(--frost-bg-dark);
+}
+
+/* If the browser doesn't support backdrop-filter, bump the alpha so the
+ * background stays readable on busy content. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .frosted-light {
+        background-color: oklch(from var(--core-card) l c h / 0.95);
+    }
+    .frosted-dark {
+        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+    }
 }

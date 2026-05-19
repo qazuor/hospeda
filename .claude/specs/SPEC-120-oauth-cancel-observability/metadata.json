@@ -1,0 +1,15 @@
+{
+    "specId": "SPEC-120",
+    "title": "OAuth Cancel/Error Observability — UI Feedback and Sentry Capture",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-05-14T10:00:00Z",
+    "renumberedFrom": "SPEC-117",
+    "renumberedReason": "collision with SPEC-117-admin-pages-stabilization (created in worktree before staging assignment was known)",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["auth", "oauth", "observability", "ux", "sentry", "i18n"],
+    "startedAt": "2026-05-15T00:00:00Z"
+}

@@ -20,10 +20,6 @@
     "socialNetworks": {
         "twitter": "https://twitter.com/senderomaravillosocamping"
     },
-    "price": {
-        "price": 4200,
-        "currency": "ARS"
-    },
     "location": {
         "coordinates": {
             "lat": "-32.4856",
@@ -34,34 +30,58 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-            "caption": "Zona de acampe boscosa",
-            "description": "Parcelas de camping rodeadas de árboles",
+            "url": "https://images.pexels.com/photos/15331106/pexels-photo-15331106.jpeg",
+            "caption": "Carpa en el bosque",
+            "description": "Carpa solitaria en medio del bosque rodeada de pasto y árboles",
             "moderationState": "APPROVED"
         },
         "gallery": [
             {
-                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
-                "caption": "Acampe",
-                "description": "Espacio para carpas con sombra",
+                "url": "https://images.pexels.com/photos/11320367/pexels-photo-11320367.jpeg",
+                "caption": "Dos carpas en pradera",
+                "description": "Par de carpas instaladas sobre pasto verde en sector tranquilo del predio",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
-                "caption": "Parcelas",
-                "description": "Vista de las parcelas",
+                "url": "https://images.pexels.com/photos/34034355/pexels-photo-34034355.jpeg",
+                "caption": "Carpa entre el verde",
+                "description": "Carpa amarilla rodeada de vegetación frondosa típica del Litoral",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
-                "caption": "Baños",
-                "description": "Instalaciones sanitarias",
+                "url": "https://images.pexels.com/photos/17767045/pexels-photo-17767045.jpeg",
+                "caption": "Carpa bajo los árboles",
+                "description": "Carpa instalada bajo árboles del monte con luz filtrada del sol",
                 "moderationState": "APPROVED"
             },
             {
-                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
-                "caption": "Entorno natural",
-                "description": "Bosque y senderos alrededor",
+                "url": "https://images.pexels.com/photos/9375017/pexels-photo-9375017.jpeg",
+                "caption": "Acampe bajo los árboles",
+                "description": "Carpas armadas bajo árboles altos en sector de sombra del predio",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5994751/pexels-photo-5994751.jpeg",
+                "caption": "Carpa iluminada en el bosque",
+                "description": "Atardecer en el camping con carpa marrón iluminada desde adentro",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/20468085/pexels-photo-20468085.jpeg",
+                "caption": "Carpas en valle",
+                "description": "Varias carpas distribuidas en un valle abierto al amanecer",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/20708782/pexels-photo-20708782.jpeg",
+                "caption": "Campamento en el monte",
+                "description": "Sector de acampe enclavado en bosque verde con varias carpas armadas",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5993943/pexels-photo-5993943.jpeg",
+                "caption": "Armando la carpa",
+                "description": "Acampante terminando de montar la carpa amarilla bajo los árboles",
                 "moderationState": "APPROVED"
             }
         ]

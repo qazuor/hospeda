@@ -35,7 +35,7 @@
         "emptyState": "No hay alojamientos disponibles en este momento",
         "emptyAction": "Ver todos los alojamientos",
         "noReviews": "Sin resenas",
-        "seeAllAction": "Ver todos los alojamientos →"
+        "seeAllAction": "Ver todos los alojamientos"
     },
     "accommodations": {
         "badge": {
@@ -44,7 +44,8 @@
         },
         "price": {
             "from": "Desde",
-            "perNight": "/noche"
+            "perNight": "/noche",
+            "consult": "Consultar"
         },
         "amenities": {
             "label": "Amenidades"
@@ -61,7 +62,7 @@
         "title": "Próximos eventos",
         "description": "No te pierdas las fiestas, festivales y competencias que hacen única a nuestra región.",
         "accentSubtitle": "Agenda Litoral",
-        "viewAll": "Ver todos los eventos →",
+        "viewAll": "Ver todos los eventos",
         "emptyState": "No hay eventos próximos en este momento",
         "emptyAction": "Ver todos los eventos"
     },
@@ -71,7 +72,7 @@
         "subtitle": "Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.",
         "description": "Conocé más sobre Entre Ríos y sus alrededores.",
         "accentSubtitle": "Nuestro blog",
-        "viewAll": "Ver todos los artículos →",
+        "viewAll": "Ver todos los artículos",
         "emptyState": "No hay artículos disponibles en este momento",
         "emptyAction": "Ver todos los artículos"
     },
@@ -156,7 +157,7 @@
         "accentSubtitle": "Acerca de nosotros",
         "title": "Los mejores alojamientos e información para tus vacaciones",
         "description": "Desde 2022, conectamos viajeros con los mejores alojamientos de Concepción del Uruguay y el litoral entrerriano. Nuestro equipo trabaja para que descubras los rincones más auténticos de la región, con información actualizada y experiencias verificadas por nuestra comunidad.",
-        "experienceBadge": "2 años de experiencia",
+        "experienceBadge": "Descubrí el Litoral",
         "primaryPhotoAlt": "Alojamientos y paisajes del Litoral argentino",
         "travelerPhotoAlt": "Viajeros disfrutando del Litoral entrerriano",
         "feature1": {

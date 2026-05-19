@@ -1,0 +1,65 @@
+---
+/**
+ * @file [lang]/newsletter/desuscripto.astro
+ * @description Unsubscribe confirmation page (SPEC-101 T-101-36).
+ *
+ * Landing page the API redirects the user to after a successful
+ * `GET /api/v1/public/newsletter/unsubscribe?token=…`.
+ *
+ * Per UX §5.4: NO marketing content on this page. Just the
+ * confirmation message and a small re-subscribe escape hatch in case
+ * the unsubscribe was a mistake.
+ *
+ * Server-rendered, no JavaScript, noindex.
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { MailIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const pageTitle = t('newsletter.unsubscribePage.title', 'Tu suscripción fue cancelada.');
+const pageDescription = t(
+    'newsletter.unsubscribePage.description',
+    'Ya no recibirás emails de Hospeda.'
+);
+const resubscribeLink = t(
+    'newsletter.unsubscribePage.resubscribeLink',
+    'Si fue un error, volver a suscribirme'
+);
+
+// Re-subscribe target: authenticated users go to the account preferences
+// page (resubscribe is one click there); guests go through signin with
+// a redirect so the post-login flow lands them on the same page. The
+// session check happens via Astro.locals.user (populated by middleware
+// — narrowed via an explicit cast because the project's App.Locals type
+// does not yet declare `user`; same pattern as MobileMenuIsland.astro).
+const locals = Astro.locals as { user?: { id: string; email: string } | null };
+const isAuthenticated = Boolean(locals.user);
+const resubscribeHref = isAuthenticated
+    ? `/${lang}/mi-cuenta/newsletter/`
+    : `/${lang}/auth/signin/?redirect=${encodeURIComponent(`/${lang}/mi-cuenta/newsletter/`)}`;
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="info"
+        Icon={MailIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <a slot="footer" href={resubscribeHref}>
+            {resubscribeLink}
+        </a>
+    </StatusPage>
+</DefaultLayout>

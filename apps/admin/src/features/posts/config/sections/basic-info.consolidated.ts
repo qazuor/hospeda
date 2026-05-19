@@ -2,6 +2,28 @@ import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/fo
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { PermissionEnum, PostCategoryEnum } from '@repo/schemas';
 
+// Spanish enum labels (SPEC-117 D-POSTS.4).
+const POST_CATEGORY_LABELS: Record<string, string> = {
+    EVENTS: 'Eventos',
+    CULTURE: 'Cultura',
+    GASTRONOMY: 'Gastronomía',
+    NATURE: 'Naturaleza',
+    TOURISM: 'Turismo',
+    GENERAL: 'General',
+    SPORT: 'Deporte',
+    CARNIVAL: 'Carnaval',
+    NIGHTLIFE: 'Vida Nocturna',
+    HISTORY: 'Historia',
+    TRADITIONS: 'Tradiciones',
+    WELLNESS: 'Bienestar',
+    FAMILY: 'Familia',
+    TIPS: 'Consejos',
+    ART: 'Arte',
+    BEACH: 'Playa',
+    RURAL: 'Rural',
+    FESTIVALS: 'Festivales'
+};
+
 /**
  * Consolidated configuration for the Basic Info section of post
  */
@@ -83,7 +105,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             typeConfig: {
                 options: Object.values(PostCategoryEnum).map((value) => ({
                     value,
-                    label: value.charAt(0) + value.slice(1).toLowerCase()
+                    label: POST_CATEGORY_LABELS[value] ?? value
                 }))
             }
         },

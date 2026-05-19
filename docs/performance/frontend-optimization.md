@@ -1436,4 +1436,4 @@ npx cost-of-modules
 
 - [Caching Strategies](./caching.md) - Multi-layer caching
 - [Performance Monitoring](./monitoring.md) - Metrics and alerts
-- [Database Optimization](./database-optimization.md) - Query optimization
+- [Database Optimization](../../packages/db/docs/guides/optimization.md) - Query optimization

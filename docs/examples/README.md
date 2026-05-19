@@ -4,15 +4,16 @@ For practical examples of Hospeda development patterns, see the [Guides](../guid
 
 ## Key Guides
 
-- **[Adding a New Entity](../guides/adding-new-entity.md)** .. Complete tutorial covering Schema, Model, Service, and Route creation
-- **[Adding API Routes](../guides/adding-api-routes.md)** .. Step-by-step guide for creating new API endpoints
-- **[Adding Admin Pages](../guides/adding-admin-pages.md)** .. Guide for adding pages to the admin dashboard
-- **[Adding Web Pages](../guides/adding-web-pages.md)** .. Guide for adding pages to the public website
+- **[Adding a New Entity](../guides/adding-new-entity.md)** .. Complete tutorial covering Schema, Model, Service, and Route creation (the canonical end-to-end guide; API/admin/web layers are covered as steps in this guide)
+- **[Creating Endpoints (API)](../../apps/api/docs/development/creating-endpoints.md)** .. API-specific guide for new endpoints
+- **[Admin Development](../../apps/admin/docs/development/README.md)** .. Admin-specific patterns (creating pages, forms, tables)
+- **[Web App Guidelines](../../apps/web/CLAUDE.md)** .. Web-specific patterns
 
 ## Inline Example Files
 
-The following directories contain standalone code examples that complement the guides:
+Runnable `.ts` examples live next to the source packages, not under `docs/examples/`:
 
-- **[advanced-service/](./advanced-service/)** .. Complex service patterns with transactions, multi-step operations, and actor-based authorization
-- **[custom-validation/](./custom-validation/)** .. Zod validation patterns including custom validators, schema refinements, and reusable validation logic
-- **[testing-patterns/](./testing-patterns/)** .. Testing strategies including unit tests, integration tests, mocking, and test fixtures
+- **Service-core examples** .. `packages/service-core/src/examples/` (`basic-service.ts`, `custom-methods.ts`, `with-hooks.ts`, `complex-logic.ts`)
+- **DB examples** .. `packages/db/examples/` (`basic-model.ts`, `with-relations.ts`, `complex-queries.ts`, `advanced-patterns.ts`)
+- **Logger examples** .. `packages/logger/docs/examples/` (`basic-logging.ts`, `scoped-logging.ts`, `structured-logging.ts`, `error-logging.ts`)
+- **API endpoint examples** .. `apps/api/src/examples/` (`crud-endpoint.ts`, `list-endpoint.ts`, `custom-endpoint.ts`, `complex-logic.ts`)

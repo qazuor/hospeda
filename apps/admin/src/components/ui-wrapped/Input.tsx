@@ -9,7 +9,7 @@
 
 import { cn } from '@/lib/utils';
 import { LoaderIcon } from '@repo/icons';
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 
 /**
  * Enhanced Input Props with additional functionality
@@ -78,7 +78,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         const hasError = error || !!errorMessage;
         const showHelperText = helperText && !hasError;
 
-        const inputId = `input-${crypto.randomUUID()}`;
+        // SSR/client-stable id (SPEC-117 D-ACCOM.2). Previously used
+        // crypto.randomUUID() which produced different values on each render
+        // and triggered a hydration mismatch in fields under SSR (notably
+        // ImageField file input on /accommodations/new).
+        const inputId = `input-${useId()}`;
 
         return (
             <div className="w-full">

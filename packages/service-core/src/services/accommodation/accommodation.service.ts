@@ -87,7 +87,7 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
-import { generateSlug } from './accommodation.helpers';
+import { flattenAccommodationJoinRelations, generateSlug } from './accommodation.helpers';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -201,11 +201,16 @@ export class AccommodationService extends BaseCrudService<
         // NOTE: `tags` relation omitted — Drizzle can't infer r_entity_tag (polymorphic
         // entityId+entityType, no direct FK). Pending dedicated SPEC for a polymorphic
         // helper; load tags separately when needed.
+        // NOTE: `amenities` and `features` are intentionally NOT loaded here (SPEC-117 A-6).
+        // They go through r_accommodation_{amenity,feature} join tables. Drizzle's `with`
+        // clause cannot resolve the nested entity (`{ with: { amenity: true } }` triggers
+        // a `referencedTable undefined` error in the relational query builder). The detail
+        // page in the admin loads them via dedicated tab endpoints
+        // (`/accommodations/{id}/amenities`, `/accommodations/{id}/features`), so they are
+        // not required in the base detail response.
         return {
             destination: true,
             owner: true,
-            amenities: true,
-            features: true,
             reviews: true,
             faqs: true
         };
@@ -314,7 +319,8 @@ export class AccommodationService extends BaseCrudService<
         actor: Actor,
         _ctx: ServiceContext
     ): Promise<Accommodation | null> {
-        const withCity = projectAccommodationCityDestination(entity);
+        const flattened = flattenAccommodationJoinRelations(entity);
+        const withCity = projectAccommodationCityDestination(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatar(withCity);
         const salt = this.getLocationSalt();
         if (!salt) return withOwnerAvatar;

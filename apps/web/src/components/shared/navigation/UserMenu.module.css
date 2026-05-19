@@ -19,29 +19,21 @@
         var(--duration-normal, 0.4s) ease, border-color var(--duration-normal, 0.4s) ease;
 }
 
-.signInLinkHero {
-    border: 1px solid rgba(255 255 255 / 0.35);
-    color: #fff;
-    background-color: rgba(255 255 255 / 0.12);
-}
-
-.signInLinkHero:hover {
-    background-color: rgba(255 255 255 / 0.18);
-}
-
-/* When the header is in scrolled state (white background), the sign-in CTA
-   needs to stand out against the surface — the previous ghost-button look
-   (border at 20% opacity, transparent fill) was almost invisible in light
-   mode because both border and text use --core-foreground in the same
-   value space as the surface. Switch to a filled primary button so the
-   action reads clearly. Matches the SettingsDropdown sign-in link styling
-   for consistency across the navbar entry points. */
+/* Both variants render the same filled primary CTA. The original "hero"
+   variant assumed the header sat over a dark hero image, but in this
+   design the hero section uses --brand-secondary (a near-white peach
+   tint in light mode) and sits BELOW where the transparent navbar
+   actually paints, so the ghost-button look reduced to white-on-white.
+   Unify both variants to the filled brand-primary button so the CTA
+   stays readable on hero top, hero scrolled, and every non-hero route. */
+.signInLinkHero,
 .signInLinkScrolled {
     border: 1px solid transparent;
     color: var(--primary-foreground, #fff);
     background-color: var(--brand-primary);
 }
 
+.signInLinkHero:hover,
 .signInLinkScrolled:hover {
     background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
 }
@@ -68,21 +60,15 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.triggerHero {
-    color: #fff;
-    background-color: rgba(255 255 255 / 0.12);
-    border-color: rgba(255 255 255 / 0.25);
-}
-
-.triggerHero:hover {
-    background-color: rgba(255 255 255 / 0.18);
-}
-
+/* Both hero and scrolled triggers paint over a light navbar background
+   in this design, so they share the same readable foreground look. */
+.triggerHero,
 .triggerScrolled {
     color: var(--core-foreground);
     border-color: oklch(from var(--core-foreground) l c h / 0.15);
 }
 
+.triggerHero:hover,
 .triggerScrolled:hover {
     background-color: oklch(from var(--core-foreground) l c h / 0.05);
 }

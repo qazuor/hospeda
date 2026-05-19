@@ -130,9 +130,9 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
             {showProgress && (
                 <div className="border-border border-b p-4">
                     <div className="mb-2 flex items-center justify-between">
-                        <h3 className="font-medium text-foreground text-sm">
+                        <h2 className="font-medium text-foreground text-sm">
                             {t('ui.navigation.formProgress')}
-                        </h3>
+                        </h2>
                         <span className="font-medium text-muted-foreground text-sm">
                             {overallProgress.completionPercentage}%
                         </span>
@@ -140,6 +140,7 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
 
                     <Progress
                         value={overallProgress.completionPercentage}
+                        label={t('ui.navigation.formProgress')}
                         className="mb-2"
                     />
 

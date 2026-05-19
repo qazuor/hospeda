@@ -37,17 +37,26 @@ import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { promoCodesRouter } from './promo-codes';
+import { startPaidRouter } from './start-paid';
+import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
 
 /**
  * Authentication middleware for billing routes.
  * Compatible with QZPay's authMiddleware requirement.
+ *
+ * Accepts either `user` (set by better-auth session middleware in production)
+ * or `actor` (set by actorMiddleware, which is the codebase-wide auth abstraction
+ * and is also populated in test mode via HOSPEDA_ALLOW_MOCK_ACTOR). The two are
+ * always set together in production; the dual check exists so test setups that
+ * skip the session layer still pass through.
  */
 const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
     const user = c.get('user');
+    const actor = c.get('actor');
 
-    if (!user?.id) {
+    if (!user?.id && !actor?.id) {
         throw new HTTPException(401, {
             message: 'Authentication required for billing operations'
         });
@@ -185,11 +194,20 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
+    // Mount custom subscription status polling routes (SPEC-126 D2).
+    // Sits on the same `/subscriptions` prefix as plan-change because both
+    // operate on local subscription rows; Hono routes by exact path so there
+    // is no conflict between the two routers.
+    router.route('/subscriptions', subscriptionStatusRouter);
+
+    // Mount custom start-paid subscription route (SPEC-126 D1).
+    router.route('/subscriptions', startPaidRouter);
+
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, and usage routes'
     );
 
     return router;

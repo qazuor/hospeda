@@ -17,6 +17,7 @@ import {
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import { formatDate } from '@repo/i18n';
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
@@ -114,6 +115,17 @@ function BillingSettingsPage() {
         }
     }, [form.state.isDirty, hasChanges]);
 
+    // Report load errors to Sentry once per occurrence.
+    useEffect(() => {
+        if (error) {
+            reportError({
+                error,
+                source: 'BillingSettingsPage',
+                tags: { feature: 'billing', surface: 'settings-load' }
+            });
+        }
+    }, [error]);
+
     if (isLoading) {
         return (
             <SidebarPageLayout>
@@ -125,13 +137,14 @@ function BillingSettingsPage() {
     }
 
     if (error) {
+        const friendlyError = getFriendlyErrorInfo(error);
         return (
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.settings.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.settings.description')}
                         </p>
@@ -143,9 +156,11 @@ function BillingSettingsPage() {
                                 <AlertCircleIcon className="mt-0.5 h-5 w-5 text-destructive" />
                                 <div>
                                     <p className="font-medium text-destructive">
-                                        {t('admin-billing.settings.loadError')}
+                                        {friendlyError.title}
                                     </p>
-                                    <p className="mt-1 text-destructive text-sm">{error.message}</p>
+                                    <p className="mt-1 text-destructive text-sm">
+                                        {friendlyError.description}
+                                    </p>
                                     <p className="mt-2 text-destructive text-sm">
                                         {t('admin-billing.settings.defaultFallback')}
                                     </p>
@@ -172,9 +187,9 @@ function BillingSettingsPage() {
             >
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">
+                        <h1 className="mb-2 font-bold text-2xl">
                             {t('admin-billing.settings.title')}
-                        </h2>
+                        </h1>
                         <p className="text-muted-foreground">
                             {t('admin-billing.settings.description')}
                         </p>

@@ -2,21 +2,32 @@
 /**
  * @file PostDetailHeader.astro
  * @description Header for the post detail page. Renders the title, category badge,
- * publication meta (date + reading time), bookmark count, and the FavoriteButton island.
- * Collapses to a compact single row when the parent WaveHeader enters compact mode on scroll.
+ * news/featured badges, publication meta (author byline + date + updated indicator +
+ * reading time), bookmark count, engagement counters (likes/comments/shares), and
+ * the FavoriteButton island. Collapses to a compact single row when the parent
+ * WaveHeader enters compact mode on scroll.
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { FavoriteIcon } from '@repo/icons';
+import { FavoriteIcon, ChatIcon, ShareIcon, StarIcon, SparkleIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { formatDate } from '@/lib/format-utils';
+import { buildUrl } from '@/lib/urls';
+
+interface AuthorByline {
+	readonly id: string;
+	readonly name: string;
+	readonly slug: string | null;
+}
 
 interface Props {
 	readonly title: string;
+	readonly summary?: string;
 	readonly category: string;
 	readonly categoryColor: { readonly bg: string; readonly text: string };
 	readonly publishedAt: string | Date | null;
+	readonly updatedAt?: string | Date | null;
 	readonly readingTimeMinutes: number;
 	readonly bookmarkCount?: number;
 	readonly postId: string;
@@ -24,13 +35,21 @@ interface Props {
 	readonly isAuthenticated: boolean;
 	readonly initialIsFavorited?: boolean;
 	readonly initialBookmarkId?: string | null;
+	readonly author?: AuthorByline | null;
+	readonly likes?: number;
+	readonly comments?: number;
+	readonly shares?: number;
+	readonly isFeatured?: boolean;
+	readonly isNews?: boolean;
 }
 
 const {
 	title,
+	summary,
 	category,
 	categoryColor,
 	publishedAt,
+	updatedAt,
 	readingTimeMinutes,
 	bookmarkCount,
 	postId,
@@ -38,16 +57,58 @@ const {
 	isAuthenticated,
 	initialIsFavorited,
 	initialBookmarkId = null,
+	author = null,
+	likes = 0,
+	comments = 0,
+	shares = 0,
+	isFeatured = false,
+	isNews = false,
 } = Astro.props;
 
 const { t, tPlural } = createTranslations(locale);
 
 const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), locale }) : null;
+
+// Show "Updated on …" only when the post was modified meaningfully after publication
+// (more than 1 hour to avoid flickering on auto-touches).
+const showUpdated = (() => {
+	if (!updatedAt || !publishedAt) return false;
+	const pub = new Date(String(publishedAt)).getTime();
+	const upd = new Date(String(updatedAt)).getTime();
+	if (Number.isNaN(pub) || Number.isNaN(upd)) return false;
+	return upd - pub > 60 * 60 * 1000;
+})();
+const formattedUpdated = showUpdated ? formatDate({ date: String(updatedAt), locale }) : null;
+
+const authorHref = author?.slug
+	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
+	: null;
+
+const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 ---
 
 <header class="post-header">
 	<div class="post-header__main">
+		{(isNews || isFeatured) && (
+			<div class="post-header__badges" aria-hidden="false">
+				{isNews && (
+					<span class="post-header__flag post-header__flag--news">
+						<SparkleIcon size={12} weight="fill" aria-hidden="true" />
+						{t('blog.detail.badge.news', 'Noticia')}
+					</span>
+				)}
+				{isFeatured && (
+					<span class="post-header__flag post-header__flag--featured">
+						<StarIcon size={12} weight="fill" aria-hidden="true" />
+						{t('blog.detail.badge.featured', 'Destacado')}
+					</span>
+				)}
+			</div>
+		)}
+
 		<h1 class="post-header__title">{title}</h1>
+
+		{summary && <p class="post-header__summary">{summary}</p>}
 
 		<div class="post-header__meta">
 			<span
@@ -57,9 +118,27 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 				{t(`blog.categories.${category.toLowerCase()}`, category)}
 			</span>
 
+			{author && (
+				<span class="post-header__byline">
+					{authorHref ? (
+						<a href={authorHref} class="post-header__byline-link">
+							{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}
+						</a>
+					) : (
+						<span>{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}</span>
+					)}
+				</span>
+			)}
+
 			{formattedDate && (
 				<time class="post-header__date" datetime={String(publishedAt)}>
 					{formattedDate}
+				</time>
+			)}
+
+			{formattedUpdated && (
+				<time class="post-header__updated" datetime={String(updatedAt)}>
+					{t('blog.detail.updatedOn', `Actualizado el ${formattedUpdated}`).replace('{{date}}', formattedUpdated)}
 				</time>
 			)}
 
@@ -79,6 +158,29 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 				</span>
 			)}
 		</div>
+
+		{hasEngagement && (
+			<div class="post-header__engagement" aria-label={t('blog.detail.engagement.likes', 'Interacciones')}>
+				{likes > 0 && (
+					<span class="post-header__engagement-item">
+						<FavoriteIcon size={14} weight="fill" aria-hidden="true" />
+						<span>{tPlural('blog.detail.engagement.likes', likes)}</span>
+					</span>
+				)}
+				{comments > 0 && (
+					<span class="post-header__engagement-item">
+						<ChatIcon size={14} weight="regular" aria-hidden="true" />
+						<span>{tPlural('blog.detail.engagement.comments', comments)}</span>
+					</span>
+				)}
+				{shares > 0 && (
+					<span class="post-header__engagement-item">
+						<ShareIcon size={14} weight="regular" aria-hidden="true" />
+						<span>{tPlural('blog.detail.engagement.shares', shares)}</span>
+					</span>
+				)}
+			</div>
+		)}
 	</div>
 
 	<div class="post-header__favorite">
@@ -117,6 +219,36 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 		margin-left: auto;
 	}
 
+	.post-header__badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-bottom: 0.1rem;
+	}
+
+	.post-header__flag {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+		padding: 0.15rem 0.55rem;
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.post-header__flag--news {
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		color: var(--brand-primary);
+	}
+
+	.post-header__flag--featured {
+		background-color: oklch(from var(--brand-accent) l c h / 0.15);
+		color: var(--brand-accent);
+	}
+
 	.post-header__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
@@ -125,6 +257,15 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 		margin: 0;
 		line-height: 1.15;
 		transition: font-size 0.3s ease;
+	}
+
+	.post-header__summary {
+		font-family: var(--font-sans);
+		font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+		line-height: 1.55;
+		color: var(--core-muted-foreground);
+		margin: 0.15rem 0 0;
+		max-width: 70ch;
 	}
 
 	.post-header__meta {
@@ -149,23 +290,38 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 		white-space: nowrap;
 	}
 
+	.post-header__byline,
 	.post-header__date,
+	.post-header__updated,
 	.post-header__reading-time {
 		font-family: var(--font-sans);
 		font-size: 0.8rem;
 		color: var(--core-muted-foreground);
 	}
 
-	.post-header__date::before {
+	.post-header__byline::before,
+	.post-header__date::before,
+	.post-header__updated::before,
+	.post-header__reading-time::before {
 		content: '·';
 		margin-right: 0.5rem;
 		color: var(--core-muted-foreground);
 	}
 
-	.post-header__reading-time::before {
-		content: '·';
-		margin-right: 0.5rem;
-		color: var(--core-muted-foreground);
+	.post-header__byline-link {
+		color: var(--core-foreground);
+		text-decoration: none;
+		font-weight: 500;
+		transition: color 0.15s ease;
+	}
+
+	.post-header__byline-link:hover {
+		color: var(--brand-accent);
+		text-decoration: underline;
+	}
+
+	.post-header__updated {
+		font-style: italic;
 	}
 
 	.post-header__bookmark-count {
@@ -185,7 +341,37 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 		color: var(--destructive, #e53e3e);
 	}
 
-	/* Compact state — collapses meta to a single row, hides bookmark count */
+	.post-header__engagement {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+		margin-top: 0.3rem;
+		padding-top: 0.4rem;
+		border-top: 1px dashed var(--border);
+		max-height: 5em;
+		opacity: 1;
+		transition:
+			max-height 0.3s ease,
+			opacity 0.2s ease,
+			padding-top 0.3s ease;
+	}
+
+	.post-header__engagement-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--core-muted-foreground);
+	}
+
+	.post-header__engagement-item :global(svg) {
+		color: var(--core-muted-foreground);
+	}
+
+	/* Compact state — collapses meta to a single row, hides bookmark count and engagement */
 	:global(.wave-header--compact) .post-header {
 		align-items: center;
 	}
@@ -201,16 +387,23 @@ const formattedDate = publishedAt ? formatDate({ date: String(publishedAt), loca
 		font-size: clamp(1rem, 2vw, 1.25rem);
 	}
 
-	:global(.wave-header--compact) .post-header__meta {
+	:global(.wave-header--compact) .post-header__summary,
+	:global(.wave-header--compact) .post-header__badges,
+	:global(.wave-header--compact) .post-header__meta,
+	:global(.wave-header--compact) .post-header__engagement {
 		max-height: 0;
 		opacity: 0;
 		pointer-events: none;
+		padding-top: 0;
+		border-top: none;
+		margin-top: 0;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.post-header__main,
 		.post-header__title,
-		.post-header__meta {
+		.post-header__meta,
+		.post-header__engagement {
 			transition: none;
 		}
 	}

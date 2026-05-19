@@ -88,9 +88,12 @@ describe('T-050 — ShareButtons in detail pages', () => {
     describe('publicaciones/[slug].astro — author link (T-044 re-enable)', () => {
         const src = readPage('publicaciones/[slug].astro');
 
-        it('extracts authorSlug from author object', () => {
-            expect(src).toContain('authorSlug');
-            expect(src).toContain('authorObj?.slug');
+        it('extracts the author slug from the API author object and forwards it to UI components', () => {
+            // After the post-details enrichment the slug travels via
+            // `authorForCard.slug` (consumed by PostAuthorCard and PostDetailHeader byline)
+            // instead of a standalone `authorSlug` constant.
+            expect(src).toContain('authorObj.slug');
+            expect(src).toContain('slug: authorObj.slug');
         });
     });
 

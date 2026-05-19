@@ -1,4 +1,5 @@
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
+import type { useTranslations } from '@repo/i18n';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContactMediaConsolidatedSection } from './sections/contact-media.consolidated';
 import { createDatePricingConsolidatedSection } from './sections/date-pricing.consolidated';
@@ -20,9 +21,13 @@ export interface EventConsolidatedConfig {
 }
 
 /**
- * Creates the complete consolidated configuration for the Event entity
+ * Creates the complete consolidated configuration for the Event entity.
+ *
+ * @param t - Translation function from `useTranslations()`
  */
-export const createEventConsolidatedConfig = (): EventConsolidatedConfig => ({
+export const createEventConsolidatedConfig = (
+    t: ReturnType<typeof useTranslations>['t']
+): EventConsolidatedConfig => ({
     sections: [
         createBasicInfoConsolidatedSection(),
         createDatePricingConsolidatedSection(),
@@ -32,8 +37,8 @@ export const createEventConsolidatedConfig = (): EventConsolidatedConfig => ({
     ],
     metadata: {
         entityType: 'event',
-        entityName: 'Evento',
-        entityNamePlural: 'Eventos',
+        entityName: t('admin-entities.entities.event.singular'),
+        entityNamePlural: t('admin-entities.entities.event.plural'),
         baseRoute: '/events'
     }
 });

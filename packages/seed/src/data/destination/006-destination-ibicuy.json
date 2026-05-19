@@ -3,8 +3,8 @@
     "id": "006-destination-ibicuy",
     "slug": "ibicuy",
     "name": "Ibicuy",
-    "summary": "Destino de naturaleza y aventura en el delta entrerriano",
-    "description": "Ibicuy es una localidad ubicada en el extremo sur de Entre Ríos, conocida por su ubicación estratégica en el delta del Paraná. Rodeada de naturaleza exuberante, canales y fauna autóctona, Ibicuy es el destino perfecto para el turismo de aventura y naturaleza. Ofrece actividades como pesca, navegación, avistamiento de aves y ecoturismo en un entorno natural único y preservado.",
+    "summary": "Pueblo del delta entrerriano en el Departamento Islas del Ibicuy, rodeado de humedales, canales y naturaleza preservada.",
+    "description": "Ibicuy es una localidad ubicada en el sureste de Entre Ríos, cabecera del Departamento Islas del Ibicuy, a orillas del brazo Ibicuy del río Paraná. Es un conglomerado de islas, arroyos y ríos donde el gran Paraná comienza a prepararse para su desembocadura en el Delta. Sus humedales y bañados, como los célebres Bañados de Las Lechiguanas, conforman uno de los ecosistemas más ricos en biodiversidad del Litoral argentino. Es un destino ideal para amantes de la naturaleza, el silencio y la aventura tranquila: pesca deportiva de tarariras, patíes, surubíes, sábalos, bogas, bagres y carpas; navegación recreativa por canales; safaris fotográficos; avistaje de aves autóctonas y migratorias; trekking, kayak y paseos en lancha. El acceso fluvial es protagonista, con embarcaderos y muelles que conectan la localidad con las islas circundantes.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -13,46 +13,150 @@
     "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
-        "zipCode": "2840",
+        "zipCode": "2846",
         "country": "Argentina",
         "street": "Av. Delta",
         "number": "987",
         "city": "Ibicuy",
         "coordinates": {
-            "lat": "-33.7500",
-            "long": "-58.8333"
+            "lat": "-33.7333",
+            "long": "-59.1667"
         }
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Ibicuy",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178024/hospeda/seed/required/destinations/006-destination-ibicuy/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Ibicuy"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Ibicuy",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178025/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Ibicuy",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178025/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178026/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178027/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178028/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178029/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178030/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178031/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178032/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178033/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178034/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178035/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
     "seo": {
-        "title": "Ibicuy - Destino de naturaleza y aventura en el delta",
-        "description": "Descubre Ibicuy en Entre Ríos. Destino de naturaleza y aventura en el delta entrerriano",
+        "title": "Ibicuy, Entre Ríos | Delta, humedales y pesca deportiva",
+        "description": "Descubrí Ibicuy, pueblo del delta entrerriano: humedales, navegación por canales, pesca deportiva, avistaje de aves y naturaleza preservada en Islas del Ibicuy.",
         "keywords": [
             "Ibicuy",
             "Entre Ríos",
-            "delta",
-            "naturaleza",
-            "aventura",
-            "pesca",
-            "ecoturismo"
+            "delta del Paraná",
+            "Islas del Ibicuy",
+            "humedales",
+            "pesca deportiva",
+            "avistaje de aves",
+            "Bañados de Las Lechiguanas"
         ]
     },
     "tagIds": [
@@ -70,7 +174,9 @@
         "044-attraction-humedales",
         "058-attraction-observacion_aves",
         "007-attraction-canal_navegable",
-        "065-attraction-pesca_deportiva"
+        "065-attraction-pesca_deportiva",
+        "035-attraction-embarcadero_turistico",
+        "053-attraction-muelle_pesquero"
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

@@ -13,14 +13,13 @@
  * policy regardless of which host is being served.
  */
 
+import { getNoindexHosts } from '@/lib/env';
 import { parseNoindexHosts } from '@/lib/middleware-helpers';
 import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
-const NOINDEX_HOSTS = parseNoindexHosts(
-    import.meta.env.HOSPEDA_NOINDEX_HOSTS as string | undefined
-);
+const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 const PERMISSIVE_BODY = `User-agent: *
 Allow: /

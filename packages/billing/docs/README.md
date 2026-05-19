@@ -61,8 +61,8 @@ The `@repo/billing` package provides Hospeda-specific plan definitions, entitlem
 
 ## Related Documentation
 
-- [Billing API Endpoints](../../apps/api/docs/billing-api-endpoints.md)
-- [Trial System (API)](../../apps/api/docs/trial-system.md)
-- [ADR-005: MercadoPago Payments](../../docs/decisions/ADR-005-mercadopago-payments.md)
-- [ADR-006: Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
-- [ADR-009: Trial Host-Only](../../docs/decisions/ADR-009-trial-host-only.md)
+- [Billing API Endpoints](../../../apps/api/docs/billing-api-endpoints.md)
+- [Trial System (API)](../../../apps/api/docs/trial-system.md)
+- [ADR-005: MercadoPago Payments](../../../docs/decisions/ADR-005-mercadopago-payments.md)
+- [ADR-006: Integer Monetary Values](../../../docs/decisions/ADR-006-integer-monetary-values.md)
+- [ADR-009: Trial Host-Only](../../../docs/decisions/ADR-009-trial-host-only.md)

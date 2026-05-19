@@ -428,6 +428,22 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Tracking ID opcional que Mercado Pago da a partners de integración certificados (developers/agencias que completaron la certificación de MP). Dejalo VACÍO (default) salvo que hayas completado la certificación y te hayan asignado uno.'
     },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR',
+        description: "Statement descriptor shown on the cardholder's bank statement",
+        descriptionEs: 'Descriptor que aparece en el resumen de la tarjeta del cliente',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'HOSPEDA',
+        exampleValue: 'HOSPEDA',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Free-text label, 1-11 ASCII uppercase chars (letters, digits, spaces). MP rejects anything longer or with lowercase / non-ASCII. Defaults to "HOSPEDA"; override only if MP homologation feedback requests it.',
+        howToObtainEs:
+            'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
+    },
 
     // -------------------------------------------------------------------------
     // Email
@@ -498,9 +514,10 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
-        description: 'Comma-separated admin emails for dispute/webhook notifications',
+        description:
+            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks AND newsletter campaigns that close with failed deliveries (SPEC-108).',
         descriptionEs:
-            'Emails de admin separados por comas para notificaciones de disputas/webhooks',
+            'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago Y campañas de newsletter que cierran con entregas fallidas (SPEC-108).',
         type: 'string',
         required: false,
         secret: false,
@@ -508,9 +525,135 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, etc. Example: alice@hospeda.ar,bob@hospeda.ar',
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped (the features that depend on the value gracefully no-op).',
         howToObtainEs:
-            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, etc. Ejemplo: alice@hospeda.ar,bob@hospeda.ar'
+            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten silenciosamente (las features que dependen del valor caen a no-op).'
+    },
+
+    // -------------------------------------------------------------------------
+    // Newsletter (SPEC-101)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_NEWSLETTER_HMAC_SECRET',
+        description:
+            'HMAC-SHA256 secret used to sign newsletter verification and unsubscribe tokens. Must be at least 32 bytes of entropy.',
+        descriptionEs:
+            'Secreto HMAC-SHA256 que firma los tokens de verificación y de baja del newsletter. Mínimo 32 bytes de entropía.',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'change-me-to-a-32-byte-random-secret-xxxxxxxx',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Generate a random 32-byte string: `openssl rand -base64 48`. Treat as a long-lived secret — rotating it invalidates every outstanding verification email and unsubscribe link. Use HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV for graceful rotation.',
+        howToObtainEs:
+            'Generá un string random de 32 bytes: `openssl rand -base64 48`. Tratalo como secreto de larga vida — rotarlo invalida todos los emails de verificación pendientes y links de baja. Usá HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV para una rotación con ventana de gracia.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV',
+        description:
+            'Previous newsletter HMAC secret, accepted during the rotation window. Verification falls back to this when the current secret rejects a token.',
+        descriptionEs:
+            'Secreto HMAC anterior del newsletter, aceptado durante la ventana de rotación. La verificación cae a este si el secreto actual rechaza el token.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'old-32-byte-random-secret-from-previous-rotation',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Set only during a key rotation. Workflow: (1) keep current value, copy it to HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV; (2) generate a new HOSPEDA_NEWSLETTER_HMAC_SECRET; (3) after 72h (verification token TTL), unset HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV. Leave blank in steady state.',
+        howToObtainEs:
+            'Solo se setea durante una rotación de clave. Pasos: (1) guardás el valor actual en HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV; (2) generás un nuevo HOSPEDA_NEWSLETTER_HMAC_SECRET; (3) pasadas 72h (TTL del token de verificación), borrás HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV. En estado normal, dejala vacía.'
+    },
+    {
+        name: 'HOSPEDA_BREVO_WEBHOOK_SECRET',
+        description:
+            'Static secret Brevo sends in the `X-Sib-Webhook-Token` header so the API can verify webhook authenticity. Min 10 bytes.',
+        descriptionEs:
+            'Secreto estático que Brevo envía en el header `X-Sib-Webhook-Token` para que la API valide la autenticidad de los webhooks. Mínimo 10 bytes.',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'replace-with-brevo-webhook-token',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Brevo dashboard → Transactional → Email → Settings → Webhook → create a webhook and set a custom "token". Brevo will then send that exact value in every X-Sib-Webhook-Token header. Compare with timingSafeEqual on the receiving end.',
+        howToObtainEs:
+            'Dashboard de Brevo → Transactional → Email → Settings → Webhook → creá un webhook y poné un "token" custom. Brevo va a enviar ese valor exacto en cada header X-Sib-Webhook-Token. Comparalo con timingSafeEqual del lado del receptor.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_SOFTCAP_DAYS',
+        description:
+            'Rolling window (in days) for the per-subscriber send-frequency soft cap. A subscriber that received a campaign within this many days is excluded from the next dispatch unless the admin opts to bypass.',
+        descriptionEs:
+            'Ventana móvil (en días) para el soft cap de frecuencia por suscriptor. Un suscriptor que recibió una campaña dentro de esa ventana queda fuera del próximo dispatch salvo que el admin lo bypasee.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '7',
+        exampleValue: '7',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Number of days (1-365). Default 7 means "do not email the same subscriber more than once per week". Increase to be more conservative; decrease for higher-cadence campaigns.',
+        howToObtainEs:
+            'Número de días (1-365). Default 7 = "no mandar más de un email por semana al mismo suscriptor". Subilo si querés ser más conservador, bajalo para campañas con cadencia más alta.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_BATCH_SIZE',
+        description:
+            'Number of recipients per Brevo `messageVersions` batch call (1-100). Brevo enforces a hard ceiling of 100 per batch.',
+        descriptionEs:
+            'Cantidad de destinatarios por llamada batch a Brevo (`messageVersions`, 1-100). Brevo impone un tope duro de 100 por batch.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '100',
+        exampleValue: '100',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Integer 1-100. Lower values fan out more BullMQ jobs (better parallelism but more API calls); higher values send more recipients per call (fewer requests but larger blast radius on a single failure). Default 100 = Brevo limit.',
+        howToObtainEs:
+            'Entero 1-100. Valores más bajos abren más jobs en BullMQ (más paralelismo pero más calls a la API); valores más altos mandan más destinatarios por call (menos requests pero más impacto si uno falla). Default 100 = límite de Brevo.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY',
+        description:
+            'BullMQ worker concurrency for the newsletter dispatch queue — number of batch jobs the worker processes in parallel.',
+        descriptionEs:
+            'Concurrencia del worker BullMQ del newsletter — cantidad de jobs batch que el worker procesa en paralelo.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5',
+        exampleValue: '5',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'Integer 1-20. Bound by Brevo throughput limits and DB connection budget. Default 5 is conservative; raise carefully and watch for Brevo 429s.',
+        howToObtainEs:
+            'Entero 1-20. Acotado por los limits de throughput de Brevo y el budget de conexiones a la DB. Default 5 es conservador; subilo con cuidado y monitoreá los 429 de Brevo.'
+    },
+    {
+        name: 'HOSPEDA_NEWSLETTER_WA_CHANNEL_URL',
+        description:
+            'WhatsApp broadcast channel invite URL. When set, the post-verification welcome email shows a CTA to join the channel; otherwise the block is hidden.',
+        descriptionEs:
+            'URL de invitación al canal de difusión de WhatsApp. Si está seteada, el email de bienvenida muestra un CTA para sumarse; si no, se oculta.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://whatsapp.com/channel/0029Va6S3oPxxxxxxxxxxxx',
+        apps: ['api'],
+        category: 'newsletter',
+        howToObtain:
+            'WhatsApp → Channels → your channel → Channel link → copy the public invite URL. Leave unset to hide the CTA entirely. Mirrors the client-side value of PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL (web).',
+        howToObtainEs:
+            'WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA. Mirror del valor cliente PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL (web).'
     },
 
     // -------------------------------------------------------------------------
@@ -940,6 +1083,39 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este-valor>/. Lo usa la herramienta de upload de source maps.'
     },
+    {
+        name: 'HOSPEDA_SENTRY_ENVIRONMENT',
+        description: 'Sentry environment tag (production | staging | development)',
+        descriptionEs:
+            'Tag de entorno en Sentry (production | staging | development) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'staging',
+        apps: ['api'],
+        category: 'monitoring',
+        howToObtain:
+            'Free-text label applied to all Sentry events. Set to `production` on the prod container and `staging` on the staging container. Takes precedence over NODE_ENV in the Sentry init — lets both deployments run with NODE_ENV=production (preserving prod-like trace/profile sampling) while remaining separable in the Sentry dashboard.',
+        howToObtainEs:
+            'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
+    },
+    {
+        name: 'SENTRY_AUTH_TOKEN',
+        description: 'Sentry auth token used at build time to upload source maps (web, admin, api)',
+        descriptionEs:
+            'Token de autenticación de Sentry usado en build-time para subir source maps (web, admin, api)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sntrys_xxxxxxxxxxxxxxxxxxxx',
+        apps: ['web', 'admin', 'api'],
+        category: 'monitoring',
+        helpUrl: 'https://docs.sentry.io/account/auth-tokens/',
+        howToObtain:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Required scopes: `project:releases`, `org:read`, `project:read`. Used by @sentry/astro (web), @sentry/vite-plugin (admin), and @sentry/esbuild-plugin (api) at build time to upload source maps so production stack traces are symbolicated. Build skips upload silently if missing. Org slug `qazuor` and per-app project slugs (`hospeda-web`, `hospeda-admin`, `hospeda-api`) are hardcoded in each app build config — the same org-scoped token works for all three.',
+        howToObtainEs:
+            'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
+    },
 
     // -------------------------------------------------------------------------
     // Testing
@@ -1087,5 +1263,23 @@ export const HOSPEDA_ENV_VARS = [
             'Locale used when no preference is set (e.g. "es" for Argentina). Must be one of HOSPEDA_SUPPORTED_LOCALES.',
         howToObtainEs:
             'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
+    },
+    {
+        name: 'HOSPEDA_NOINDEX_HOSTS',
+        description:
+            'Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.',
+        descriptionEs:
+            'Lista de hostnames separados por coma que deben recibir una policy restrictiva de robots (Disallow: /) y el header X-Robots-Tag: noindex, nofollow. Sirve para mantener los hostnames de staging fuera de los buscadores.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'staging.hospeda.com.ar',
+        exampleValue: 'staging.hospeda.com.ar,beta.hospeda.com.ar',
+        apps: ['web'],
+        category: 'features',
+        howToObtain:
+            'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
+        howToObtainEs:
+            'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
     }
 ] as const satisfies readonly EnvVarDefinition[];

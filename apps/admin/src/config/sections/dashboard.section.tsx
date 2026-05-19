@@ -24,6 +24,9 @@ export const dashboardSection = createSection({
     sidebar: {
         title: 'Dashboard',
         titleKey: 'admin-menu.dashboard',
+        // Flat link list (no separator) so the sidebar doesn't show an
+        // accidental-looking gap between top-level items. Order preserves the
+        // previous "activity then account" affinity.
         items: [
             sidebar.link(
                 'overview',
@@ -37,7 +40,6 @@ export const dashboardSection = createSection({
                 '/me/accommodations',
                 <AccommodationIcon className="h-4 w-4" />
             ),
-            sidebar.separator(),
             sidebar.link(
                 'notifications',
                 'Notificaciones',

@@ -6,10 +6,16 @@ import { BillingIntervalEnum } from '../../enums/billing-interval.enum.js';
  * Defines the result status of a plan change operation
  */
 export enum PlanChangeStatusEnum {
-    /** Plan change applied immediately (upgrade) */
+    /** Plan change applied immediately (upgrade — pre-SPEC-141 D7) or scheduled (downgrade) — applies to the legacy synchronous flow. */
     ACTIVE = 'active',
     /** Plan change scheduled for end of billing period (downgrade) */
-    SCHEDULED = 'scheduled'
+    SCHEDULED = 'scheduled',
+    /**
+     * Plan change requires upfront payment of the prorated delta before
+     * taking effect (SPEC-141 D7 upgrade). The client must redirect the
+     * user to `checkoutUrl` and resume the polling UX on return.
+     */
+    PENDING_PAYMENT = 'pending_payment'
 }
 
 /**
@@ -41,10 +47,16 @@ export const PlanChangeRequestSchema = z.object({
 export type PlanChangeRequest = z.infer<typeof PlanChangeRequestSchema>;
 
 /**
- * Schema for plan change response body
- * Represents the result of a plan change operation
+ * Variant of the plan-change response that fires when the change was
+ * applied immediately (legacy synchronous flow — covers downgrades and
+ * pre-SPEC-141 upgrades) OR scheduled for period end (downgrade).
+ *
+ * `status` is `'active'` for immediate-apply and `'scheduled'` for
+ * deferred-apply; both share the same payload shape.
  */
-export const PlanChangeResponseSchema = z.object({
+export const PlanChangeAppliedResponseSchema = z.object({
+    /** The result status of the plan change. */
+    status: z.union([z.literal('active'), z.literal('scheduled')]),
     /** The subscription ID that was modified */
     subscriptionId: z
         .string({
@@ -75,10 +87,47 @@ export const PlanChangeResponseSchema = z.object({
             message: 'zodError.billing.planChange.proratedAmount.invalidType'
         })
         .min(0, { message: 'zodError.billing.planChange.proratedAmount.min' })
-        .optional(),
-    /** The result status of the plan change */
-    status: PlanChangeStatusEnumSchema
+        .optional()
 });
+
+/**
+ * Variant of the plan-change response returned by the SPEC-141 D7
+ * upgrade flow when the user must pay a prorated delta BEFORE the
+ * change applies. The client redirects to `checkoutUrl` and polls
+ * `subscriptions/<localSubscriptionId>/status` on return (same UX as
+ * SPEC-126 D2/D5 + SPEC-141 D1).
+ */
+export const PlanChangePendingPaymentResponseSchema = z.object({
+    /** Discriminator literal for this variant. */
+    status: z.literal('pending_payment'),
+    /** Provider-hosted MP checkout URL the front-end must redirect to. */
+    checkoutUrl: z.string().url({ message: 'zodError.billing.planChange.checkoutUrl.invalid' }),
+    /** Local subscription id (the sub being upgraded). */
+    localSubscriptionId: z.string().min(1),
+    /** ISO 8601 timestamp after which the pending checkout can be considered abandoned. */
+    expiresAt: z.string().datetime(),
+    /** Target plan id the upgrade will move to upon successful payment. */
+    newPlanId: z.string().min(1),
+    /** Delta amount the user will be charged, in ARS centavos (always > 0 for true upgrades). */
+    deltaCentavos: z.number().int().min(1)
+});
+
+/**
+ * Discriminated-union schema for the plan-change response.
+ *
+ * - `status === 'active' | 'scheduled'` → legacy applied-or-scheduled
+ *   payload (downgrades + pre-SPEC-141 path).
+ * - `status === 'pending_payment'` → SPEC-141 D7 upgrade requires
+ *   user payment of the prorated delta before the change applies.
+ */
+export const PlanChangeResponseSchema = z.discriminatedUnion('status', [
+    PlanChangeAppliedResponseSchema,
+    PlanChangePendingPaymentResponseSchema
+]);
 
 /** TypeScript type inferred from PlanChangeResponseSchema */
 export type PlanChangeResponse = z.infer<typeof PlanChangeResponseSchema>;
+export type PlanChangeAppliedResponse = z.infer<typeof PlanChangeAppliedResponseSchema>;
+export type PlanChangePendingPaymentResponse = z.infer<
+    typeof PlanChangePendingPaymentResponseSchema
+>;

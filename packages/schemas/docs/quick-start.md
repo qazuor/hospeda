@@ -948,7 +948,7 @@ Now that you understand the basics:
 1. **Explore more entities**: Check out [Schema Reference](./api/schema-reference.md) for all available schemas
 2. **Advanced types**: Read [Type Inference Guide](./api/type-inference.md) for complex type patterns
 3. **Custom validation**: Learn about [Custom Validators](./api/validators.md) and refinements
-4. **Testing**: Write tests for your schemas following [Testing Standards](../../CLAUDE.md#testing-standards)
+4. **Testing**: Write tests for your schemas following the [Testing Standards](../../../.claude/docs/testing-standards.md)
 
 ## Common Patterns Summary
 

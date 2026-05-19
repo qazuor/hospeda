@@ -7,11 +7,23 @@
  * Used by: mi-cuenta dashboard, edit profile, favorites, reviews, subscription, preferences.
  */
 
+import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import {
+	UserIcon,
+	HomeIcon,
+	FavoriteIcon,
+	StarIcon,
+	ChatIcon,
+	CreditCardIcon,
+	SettingsIcon,
+	NewsletterIcon,
+} from '@repo/icons';
+import type { ComponentType } from 'react';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -28,21 +40,58 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
-const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
 
 const resolvedTitle = title ?? t('account.title', 'Mi cuenta');
 const resolvedDescription = description ?? t('account.description', 'Gestioná tu cuenta en Hospeda');
 
-const navLinks = [
-	{ section: 'mi-cuenta', label: t('account.nav.dashboard', 'Mi cuenta'), path: 'mi-cuenta' },
-	{ section: 'editar', label: t('account.nav.editProfile', 'Editar perfil'), path: 'mi-cuenta/editar' },
-	{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos' },
-	{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas' },
-	{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/messages' },
-	{ section: 'suscripcion', label: t('account.nav.subscription', 'Suscripción'), path: 'mi-cuenta/suscripcion' },
-	{ section: 'preferencias', label: t('account.nav.preferences', 'Preferencias'), path: 'mi-cuenta/preferencias' },
-] as const;
+interface NavLink {
+	readonly section: string;
+	readonly label: string;
+	readonly path: string;
+	readonly Icon: ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>;
+}
+
+interface NavGroup {
+	readonly id: string;
+	readonly label: string;
+	readonly items: ReadonlyArray<NavLink>;
+}
+
+/**
+ * Sidebar nav is grouped so users can scan it as two short lists instead
+ * of one long one. The grouping is visual only — selection logic still
+ * matches by `section` against the `activeSection` prop.
+ */
+const navGroups: ReadonlyArray<NavGroup> = [
+	{
+		id: 'profile',
+		label: t('account.nav.groupProfile', 'Mi perfil'),
+		items: [
+			{ section: 'mi-cuenta', label: t('account.nav.dashboard', 'Mi cuenta'), path: 'mi-cuenta', Icon: HomeIcon },
+			{ section: 'editar', label: t('account.nav.editProfile', 'Editar perfil'), path: 'mi-cuenta/editar', Icon: UserIcon },
+		],
+	},
+	{
+		id: 'activity',
+		label: t('account.nav.groupActivity', 'Actividad'),
+		items: [
+			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
+			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
+			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/messages', Icon: ChatIcon },
+		],
+	},
+	{
+		id: 'config',
+		label: t('account.nav.groupConfig', 'Configuración'),
+		items: [
+			{ section: 'suscripcion', label: t('account.nav.subscription', 'Suscripción'), path: 'mi-cuenta/suscripcion', Icon: CreditCardIcon },
+			{ section: 'preferencias', label: t('account.nav.preferences', 'Preferencias'), path: 'mi-cuenta/preferencias', Icon: SettingsIcon },
+			{ section: 'newsletter', label: t('account.nav.newsletter', 'Newsletter'), path: 'mi-cuenta/newsletter', Icon: NewsletterIcon },
+		],
+	},
+];
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -69,24 +118,34 @@ const navLinks = [
 			</button>
 
 			<!-- Sidebar navigation -->
-			<nav id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
-				<ul class="account-nav__list">
-					{navLinks.map((link) => (
-						<li class="account-nav__item">
-							<a
-								href={buildUrl({ locale, path: link.path })}
-								class:list={[
-									'account-nav__link',
-									{ 'account-nav__link--active': link.section === activeSection },
-								]}
-								aria-current={link.section === activeSection ? 'page' : undefined}
-							>
-								{link.label}
-							</a>
-						</li>
+			<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<nav class="account-nav">
+					{navGroups.map((group) => (
+						<div class="account-nav__group">
+							<p class="account-nav__group-label">{group.label}</p>
+							<ul class="account-nav__list">
+								{group.items.map(({ section, label, path, Icon }) => (
+									<li class="account-nav__item">
+										<a
+											href={buildUrl({ locale, path })}
+											class:list={[
+												'account-nav__link',
+												{ 'account-nav__link--active': section === activeSection },
+											]}
+											aria-current={section === activeSection ? 'page' : undefined}
+										>
+											<span class="account-nav__icon" aria-hidden="true">
+												<Icon size={18} weight="regular" aria-hidden="true" />
+											</span>
+											<span class="account-nav__label">{label}</span>
+										</a>
+									</li>
+								))}
+							</ul>
+						</div>
 					))}
-				</ul>
-			</nav>
+				</nav>
+			</aside>
 
 			<!-- Content area -->
 			<div class="account-page__content">
@@ -115,6 +174,7 @@ const navLinks = [
 <style>
 	.account-page {
 		padding: var(--space-section-sm) 0;
+		background-color: var(--core-background);
 	}
 
 	.account-page__container {
@@ -122,8 +182,8 @@ const navLinks = [
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
 		display: grid;
-		grid-template-columns: 250px 1fr;
-		gap: var(--space-card-gap);
+		grid-template-columns: 260px 1fr;
+		gap: var(--space-8);
 		align-items: start;
 	}
 
@@ -152,10 +212,43 @@ const navLinks = [
 		transform: rotate(180deg);
 	}
 
-	/* Sidebar */
+	/* Sidebar shell — card-like wrapper around the grouped nav */
 	.account-page__sidebar {
 		position: sticky;
-		top: 130px;
+		top: 110px;
+		background-color: var(--core-card);
+		border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+		border-radius: var(--radius-card);
+		padding: var(--space-3);
+		box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+	}
+
+	.account-nav {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.account-nav__group {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.account-nav__group:not(:first-child) {
+		margin-top: var(--space-3);
+		padding-top: var(--space-3);
+		border-top: 1px solid oklch(from var(--core-foreground) l c h / 0.06);
+	}
+
+	.account-nav__group-label {
+		margin: 0 0 var(--space-1);
+		padding: 0 var(--space-3);
+		font-family: var(--font-sans);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--core-muted-foreground);
 	}
 
 	.account-nav__list {
@@ -164,33 +257,76 @@ const navLinks = [
 		margin: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: 2px;
 	}
 
 	.account-nav__link {
-		display: block;
-		padding: var(--space-3) var(--space-4);
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: 0.5rem var(--space-3);
 		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-muted-foreground);
+		font-size: 0.9375rem;
+		color: var(--core-foreground);
 		text-decoration: none;
 		border-radius: var(--radius-button);
-		border-left: 3px solid transparent;
 		transition: background-color var(--duration-fast) ease,
-					color var(--duration-fast) ease,
-					border-color var(--duration-fast) ease;
+					color var(--duration-fast) ease;
+	}
+
+	.account-nav__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		color: var(--core-muted-foreground);
+		transition: color var(--duration-fast) ease;
+		flex-shrink: 0;
+	}
+
+	.account-nav__label {
+		flex: 1;
+		font-weight: 500;
 	}
 
 	.account-nav__link:hover {
-		background-color: var(--muted);
-		color: var(--core-foreground);
+		background-color: oklch(from var(--brand-primary) l c h / 0.06);
+	}
+
+	.account-nav__link:hover .account-nav__icon {
+		color: var(--brand-primary);
+	}
+
+	.account-nav__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
 	}
 
 	.account-nav__link--active {
-		background-color: oklch(from var(--brand-accent) l c h / 0.1);
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
 		color: var(--brand-accent);
-		border-left-color: var(--brand-accent);
-		font-weight: 500;
+	}
+
+	.account-nav__link--active .account-nav__icon {
+		color: var(--brand-accent);
+	}
+
+	.account-nav__link--active .account-nav__label {
+		font-weight: 600;
+	}
+
+	.account-nav__link--active::before {
+		content: '';
+		position: absolute;
+		left: -3px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 3px;
+		height: 60%;
+		background-color: var(--brand-accent);
+		border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
 	}
 
 	/* Content */
@@ -202,6 +338,7 @@ const navLinks = [
 	@media (max-width: 768px) {
 		.account-page__container {
 			grid-template-columns: 1fr;
+			gap: var(--space-4);
 		}
 
 		.account-page__toggle {

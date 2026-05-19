@@ -632,8 +632,8 @@ Now that setup is complete:
 
 1. **Explore the Dashboard** - Navigate through different sections
 2. **Read [Architecture Guide](./architecture.md)** - Understand TanStack Start
-3. **Check [Usage Guides](./usage/)** - Learn admin features
-4. **Review [Development Guides](./development/)** - Start building
+3. **Check [Usage Guides](./usage/README.md)** - Learn admin features
+4. **Review [Development Guides](./development/README.md)** - Start building
 
 ---
 
@@ -641,10 +641,9 @@ Now that setup is complete:
 
 If you're stuck:
 
-1. **Check [Troubleshooting Guide](./development/troubleshooting.md)**
-2. **Search [GitHub Issues](https://github.com/hospeda/issues)**
-3. **Ask in team Slack** #dev-admin channel
-4. **Create GitHub issue** with:
+1. **Search [GitHub Issues](https://github.com/hospeda/issues)**
+2. **Ask in team Slack** #dev-admin channel
+3. **Create GitHub issue** with:
    - Clear description
    - Steps to reproduce
    - Error messages

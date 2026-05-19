@@ -17,6 +17,10 @@ export type { TabConfig, TabsLayoutProps } from './TabsLayout';
 export { AccordionLayout } from './AccordionLayout';
 export type { AccordionLayoutProps, AccordionSectionConfig } from './AccordionLayout';
 
+// Form Sidebar Layout (responsive sidebar/content shell)
+export { FormSidebarLayout } from './FormSidebarLayout';
+export type { FormSidebarLayoutProps } from './FormSidebarLayout';
+
 // TODO: Implement additional layout types
 // export { SplitLayout } from './SplitLayout';
 // export type { SplitLayoutProps } from './SplitLayout';

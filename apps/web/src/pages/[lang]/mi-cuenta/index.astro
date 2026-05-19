@@ -22,10 +22,9 @@ import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
 import {
     UserIcon,
-    FavoriteIcon,
-    StarIcon,
-    CreditCardIcon,
-    SettingsIcon
+    SettingsIcon,
+    ChatIcon,
+    NewsletterIcon
 } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -46,8 +45,6 @@ const description = t(
 );
 const greeting = t('account.pages.dashboard.greeting', 'Hola');
 const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de control');
-const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
-const sectionsLabel = t('account.pages.dashboard.sectionsLabel', 'Secciones');
 
 // Generate user initials (up to 2 characters) for the avatar placeholder.
 const initials = user.name
@@ -57,7 +54,11 @@ const initials = user.name
     .join('')
     .toUpperCase();
 
-// Navigation cards (sidebar + main grid).
+// Sections grid. We intentionally exclude Favoritos, Reseñas and
+// Suscripción from this list — they already have dedicated stat
+// cards directly above with the same link. Listing them in both
+// places duplicated the navigation entry and made the dashboard feel
+// cluttered. Keep this grid for items the stats row does NOT cover.
 const navItems = [
     {
         label: t('account.pages.dashboard.nav.editProfile', 'Editar perfil'),
@@ -69,31 +70,13 @@ const navItems = [
         Icon: UserIcon
     },
     {
-        label: t('account.pages.dashboard.nav.myFavorites', 'Mis favoritos'),
-        href: buildUrl({ locale, path: 'mi-cuenta/favoritos' }),
+        label: t('account.pages.dashboard.nav.myMessages', 'Mis consultas'),
+        href: buildUrl({ locale, path: 'mi-cuenta/messages' }),
         description: t(
-            'account.pages.dashboard.nav.myFavoritesDesc',
-            'Alojamientos que guardaste para consultar más tarde'
+            'account.pages.dashboard.nav.myMessagesDesc',
+            'Conversaciones con anfitriones'
         ),
-        Icon: FavoriteIcon
-    },
-    {
-        label: t('account.pages.dashboard.nav.myReviews', 'Mis resenas'),
-        href: buildUrl({ locale, path: 'mi-cuenta/resenas' }),
-        description: t(
-            'account.pages.dashboard.nav.myReviewsDesc',
-            'Resenas que escribiste sobre alojamientos visitados'
-        ),
-        Icon: StarIcon
-    },
-    {
-        label: t('account.pages.dashboard.nav.mySubscription', 'Mi suscripcion'),
-        href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
-        description: t(
-            'account.pages.dashboard.nav.mySubscriptionDesc',
-            'Administrá tu plan y método de pago'
-        ),
-        Icon: CreditCardIcon
+        Icon: ChatIcon
     },
     {
         label: t('account.pages.dashboard.nav.preferences', 'Preferencias'),
@@ -103,6 +86,15 @@ const navItems = [
             'Configurá notificaciones, idioma y privacidad'
         ),
         Icon: SettingsIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.newsletter', 'Newsletter'),
+        href: buildUrl({ locale, path: 'mi-cuenta/newsletter' }),
+        description: t(
+            'account.pages.dashboard.nav.newsletterDesc',
+            'Gestioná tu suscripción al boletín'
+        ),
+        Icon: NewsletterIcon
     }
 ] as const;
 
@@ -112,16 +104,33 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 <AccountLayout locale={locale} title={title} description={description} activeSection="mi-cuenta">
     <!-- ── User header card ── -->
     <article id="user-header" class="account__header-card">
+        <!-- Decorative warm gradient frame on the right edge -->
+        <span class="account__header-glow" aria-hidden="true" />
+        <span class="account__header-pattern" aria-hidden="true" />
+
         <div class="account__header-inner">
             <!-- Avatar with initials fallback -->
             <div class="account__avatar" aria-hidden="true">
-                {initials}
+                <span class="account__avatar-ring" aria-hidden="true" />
+                <span class="account__avatar-initials">{initials}</span>
             </div>
 
-            <!-- Name + email -->
+            <!-- Name + email + small detail row -->
             <div class="account__user-info">
-                <h1 class="account__user-name">{greeting}, {user.name}</h1>
+                <p class="account__user-eyebrow">{greeting}</p>
+                <h1 class="account__user-name">{user.name}</h1>
                 <p class="account__user-email">{user.email}</p>
+            </div>
+
+            <!-- CTA: edit profile -->
+            <div class="account__header-actions">
+                <a
+                    href={buildUrl({ locale, path: 'mi-cuenta/editar' })}
+                    class="account__header-cta"
+                >
+                    <UserIcon size={18} weight="regular" aria-hidden="true" />
+                    {t('account.pages.dashboard.nav.editProfile', 'Editar perfil')}
+                </a>
             </div>
         </div>
     </article>
@@ -148,66 +157,177 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
     /* ── User header card ── */
     .account__header-card {
+        position: relative;
         margin-bottom: var(--space-8, 2rem);
         border-radius: var(--radius-card);
-        border: 1px solid var(--border);
+        border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
         background-color: var(--core-card);
+        background-image: linear-gradient(
+            135deg,
+            oklch(from var(--brand-primary) l c h / 0.06) 0%,
+            oklch(from var(--brand-accent) l c h / 0.04) 100%
+        );
         box-shadow: var(--shadow-card);
         overflow: hidden;
+        isolation: isolate;
+    }
+
+    /* Soft brand glow on the right shoulder. */
+    .account__header-glow {
+        position: absolute;
+        top: -40%;
+        right: -10%;
+        width: 22rem;
+        height: 22rem;
+        border-radius: var(--radius-pill);
+        background: radial-gradient(
+            closest-side,
+            oklch(from var(--brand-primary) l c h / 0.18),
+            transparent 70%
+        );
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Faint dotted pattern at the bottom-left of the card. */
+    .account__header-pattern {
+        position: absolute;
+        bottom: -1rem;
+        left: -1rem;
+        width: 10rem;
+        height: 10rem;
+        background-image: radial-gradient(
+            circle,
+            oklch(from var(--brand-accent) l c h / 0.18) 1px,
+            transparent 1.5px
+        );
+        background-size: 12px 12px;
+        opacity: 0.55;
+        pointer-events: none;
+        z-index: -1;
     }
 
     .account__header-inner {
+        position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: var(--space-6, 1.5rem);
         padding: var(--space-8, 2rem);
+        text-align: center;
     }
 
     @media (min-width: 640px) {
         .account__header-inner {
             flex-direction: row;
+            text-align: left;
+            align-items: center;
         }
     }
 
     .account__avatar {
+        position: relative;
         flex-shrink: 0;
         display: flex;
-        width: 6rem;
-        height: 6rem;
+        width: 6.5rem;
+        height: 6.5rem;
         align-items: center;
         justify-content: center;
         border-radius: var(--radius-pill);
-        background-color: var(--brand-primary);
+        background: linear-gradient(
+            135deg,
+            var(--brand-primary),
+            oklch(from var(--brand-primary) calc(l - 0.12) c h)
+        );
         color: var(--core-card);
-        font-size: 1.875rem;
+        font-size: 2rem;
         font-weight: 700;
         font-family: var(--font-heading);
+        box-shadow: 0 12px 24px oklch(from var(--brand-primary) l c h / 0.25);
+    }
+
+    /* Outer ring around the avatar to lift it visually off the surface. */
+    .account__avatar-ring {
+        position: absolute;
+        inset: -6px;
+        border-radius: var(--radius-pill);
+        border: 2px solid oklch(from var(--brand-primary) l c h / 0.2);
+        pointer-events: none;
+    }
+
+    .account__avatar-initials {
+        position: relative;
+        z-index: 1;
     }
 
     .account__user-info {
         flex: 1;
-        text-align: center;
+        min-width: 0;
     }
 
-    @media (min-width: 640px) {
-        .account__user-info {
-            text-align: left;
-        }
+    .account__user-eyebrow {
+        margin: 0 0 var(--space-1);
+        font-family: var(--font-sans);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--brand-primary);
     }
 
     .account__user-name {
-        margin: 0 0 0.25rem;
-        font-size: var(--text-h2, 1.875rem);
+        margin: 0 0 var(--space-2);
+        font-size: clamp(1.5rem, 3vw, 2rem);
         font-family: var(--font-heading);
         font-weight: 700;
         color: var(--core-foreground);
+        line-height: 1.15;
+        word-break: break-word;
     }
 
     .account__user-email {
         margin: 0;
-        font-size: var(--text-body, 1.125rem);
+        font-size: var(--text-body-sm);
         color: var(--core-muted-foreground);
+        word-break: break-all;
+    }
+
+    .account__header-actions {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .account__header-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-5);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--brand-primary);
+        background-color: var(--core-card);
+        border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
+        border-radius: var(--radius-button);
+        text-decoration: none;
+        transition:
+            background-color var(--duration-fast) ease,
+            color var(--duration-fast) ease,
+            transform var(--duration-fast) ease,
+            box-shadow var(--duration-fast) ease;
+    }
+
+    .account__header-cta:hover {
+        background-color: var(--brand-primary);
+        color: var(--core-card);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px oklch(from var(--brand-primary) l c h / 0.25);
+    }
+
+    .account__header-cta:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
     }
 
     /* ── Two-column layout ── */

@@ -28,7 +28,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
         'Límite reducido en tu plan {planName} - Revisá tu contenido',
     [NotificationType.PAYMENT_RETRY_WARNING]:
         'Problema con tu pago - Intento {failureCount} de {maxRetries}',
-    [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado'
+    [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado',
+
+    // Newsletter (SPEC-101)
+    [NotificationType.NEWSLETTER_VERIFICATION]: 'Confirmá tu suscripción al newsletter de Hospeda',
+    [NotificationType.NEWSLETTER_WELCOME]: 'Bienvenido al newsletter de Hospeda',
+    [NotificationType.NEWSLETTER_CAMPAIGN]: '{subject}'
 };
 
 /**

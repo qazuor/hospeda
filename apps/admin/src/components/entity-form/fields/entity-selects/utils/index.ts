@@ -5,5 +5,10 @@
  * These utilities are used both by specific entity select components and by EntityViewSection.
  */
 
+export * from './accommodation-api.utils';
 export * from './destination-api.utils';
+export * from './event-api.utils';
+export * from './event-location-api.utils';
+export * from './event-organizer-api.utils';
+export * from './post-sponsorship-api.utils';
 export * from './user-api.utils';

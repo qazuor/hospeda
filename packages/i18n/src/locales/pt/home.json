@@ -35,7 +35,7 @@
         "emptyState": "Nenhuma hospedagem disponivel no momento",
         "emptyAction": "Ver todas as acomodações",
         "noReviews": "Sem avaliacoes",
-        "seeAllAction": "Ver todas as hospedagens →"
+        "seeAllAction": "Ver todas as hospedagens"
     },
     "accommodations": {
         "badge": {
@@ -44,7 +44,8 @@
         },
         "price": {
             "from": "A partir de",
-            "perNight": "/noite"
+            "perNight": "/noite",
+            "consult": "Consultar"
         },
         "amenities": {
             "label": "Comodidades"
@@ -63,7 +64,7 @@
         "accentSubtitle": "Nao perca",
         "emptyState": "Nenhum evento proximo no momento",
         "emptyAction": "Ver todos os eventos",
-        "viewAll": "Ver todos os eventos →"
+        "viewAll": "Ver todos os eventos"
     },
     "latestPosts": {
         "title": "Ultimos artigos",
@@ -73,7 +74,7 @@
         "emptyAction": "Ver todos os artigos",
         "tagline": "Informe-se, inspire-se, descubra",
         "subtitle": "Histórias, guias e segredos do Litoral para inspirar a sua próxima aventura.",
-        "viewAll": "Ver todos os artigos →"
+        "viewAll": "Ver todos os artigos"
     },
     "testimonials": {
         "title": "O que dizem nossos usuarios",
@@ -164,7 +165,7 @@
         "accentSubtitle": "Sobre nós",
         "title": "As melhores acomodações e informações para as suas férias",
         "description": "Desde 2022, conectamos viajantes com as melhores acomodações de Concepción del Uruguay e da costa de Entre Ríos. Nossa equipe trabalha para que você descubra os recantos mais autênticos da região, com informações atualizadas e experiências verificadas pela nossa comunidade.",
-        "experienceBadge": "2 anos de experiência",
+        "experienceBadge": "Descubra o Litoral",
         "primaryPhotoAlt": "Acomodações e paisagens do Litoral argentino",
         "travelerPhotoAlt": "Viajantes aproveitando a costa de Entre Ríos"
     },

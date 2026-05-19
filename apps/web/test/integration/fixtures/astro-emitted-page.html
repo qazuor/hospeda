@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Hospeda — Test Fixture</title>
+    <!-- Astro-emitted inline style (scoped CSS extracted from .astro components) -->
+    <style>:where(html){font-family:var(--font-sans)}</style>
+    <!-- Vite dev-id style block (dev mode flavor) -->
+    <style data-vite-dev-id="/src/components/Header.astro?astro&type=style&index=0&lang.css">.header{display:flex}</style>
+    <!-- Pre-stamped style (e.g. someone manually added a nonce) — must survive -->
+    <style nonce="pre-existing-nonce">body{margin:0}</style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica">
+</head>
+<body>
+    <h1>Hospeda</h1>
+    <p>Some content with a "<style>foo</style>" literal in a sentence (HTML-escaped at runtime).</p>
+
+    <!-- Inline script for FOUC prevention -->
+    <script>
+        const theme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+    </script>
+
+    <!-- External script (Astro bundles) -->
+    <script src="/_astro/client.hash.js" type="module"></script>
+
+    <!-- Astro ClientRouter view-transitions script -->
+    <script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.hash.js"></script>
+
+    <!-- Pre-stamped script (e.g. legacy injection) — must survive -->
+    <script nonce="pre-existing-nonce">console.log('keep my nonce')</script>
+
+    <!-- Script with a body that CONTAINS a literal <style>...</style> string —
+         parse5 must not be tricked into stamping the inner literal -->
+    <script>
+        const banner = "<style>this is text inside a script body</style>";
+    </script>
+
+    <!-- noscript: nothing inside here may receive a nonce -->
+    <noscript>
+        <style>.no-js .hide{display:none}</style>
+        <script>this content runs only when JS is disabled — should NOT be stamped</script>
+    </noscript>
+
+    <!-- Another plain script at the bottom -->
+    <script>document.body.classList.add('ready')</script>
+</body>
+</html>

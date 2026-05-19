@@ -53,7 +53,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
         setError(null);
 
         if (!email.trim()) {
-            setError(t('auth.forgotPassword.emailRequired', 'Ingresa tu correo electrónico'));
+            setError(t('auth.forgotPassword.emailRequired', 'Ingresá tu correo electrónico'));
             return;
         }
 
@@ -90,12 +90,12 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                     <MailIcon />
                 </div>
                 <h2 className={styles.successTitle}>
-                    {t('auth.forgotPassword.sentTitle', 'Revisa tu email')}
+                    {t('auth.forgotPassword.sentTitle', 'Revisá tu email')}
                 </h2>
                 <p className={styles.successMessage}>
                     {t(
                         'auth.forgotPassword.sentMessage',
-                        'Te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada.'
+                        'Te enviamos un enlace para restablecer tu contraseña. Revisá tu bandeja de entrada.'
                     )}
                 </p>
                 <a
@@ -122,7 +122,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 <p className={styles.description}>
                     {t(
                         'auth.forgotPassword.description',
-                        'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.'
+                        'Ingresá tu correo y te enviamos un enlace para restablecer tu contraseña.'
                     )}
                 </p>
             </div>

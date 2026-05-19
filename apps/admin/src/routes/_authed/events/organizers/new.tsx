@@ -24,17 +24,18 @@ function EventOrganizerCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'event-organizer',
-        title: `${t('admin-entities.list.new')} ${entityName}`,
+        title: t('admin-entities.list.new').replace('{entity}', entityName),
         description: t('admin-entities.entities.eventOrganizer.description'),
         entityName,
         entityNamePlural,
         basePath: '/events/organizers',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
-        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
-        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
-        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+        // SPEC-117 D-TOAST.1 — title ≠ body.
+        successToastTitle: 'Organizador creado',
+        successToastMessage: 'El organizador se creó exitosamente',
+        errorToastTitle: 'Error al crear el organizador',
+        errorMessage: 'No pudimos crear el organizador. Probá de nuevo.'
     };
 
     return (
@@ -42,7 +43,8 @@ function EventOrganizerCreatePage() {
             <EntityCreateContent
                 config={createConfig}
                 zodSchema={EventOrganizerCreateInputSchema}
-                createConsolidatedConfig={createEventOrganizerConsolidatedConfig}
+                createConsolidatedConfig={() => createEventOrganizerConsolidatedConfig(t)}
+                configDeps={[t]}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
             />

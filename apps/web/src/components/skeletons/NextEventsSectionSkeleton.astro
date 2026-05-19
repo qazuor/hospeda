@@ -1,0 +1,89 @@
+---
+/**
+ * @file NextEventsSectionSkeleton.astro
+ * @description Loading placeholder for NextEventsSection used as the
+ * `slot="fallback"` while the section's `server:defer` render completes.
+ *
+ * Mirrors the section's outer structure (section + container + header)
+ * but replaces the bento grid with a simpler 2-column grid of
+ * EventCardHorizontalSkeleton placeholders so users see consistent
+ * loading state without layout shift on swap-in.
+ */
+
+import EventCardHorizontalSkeleton from './EventCardHorizontalSkeleton.astro';
+---
+
+<section class="section" aria-busy="true" aria-label="Cargando próximos eventos">
+    <div class="section__container">
+        <!-- Section header placeholder -->
+        <div class="ne-skel__header">
+            <div class="ne-skel__tagline skeleton-pulse"></div>
+            <div class="ne-skel__title skeleton-pulse"></div>
+            <div class="ne-skel__subtitle skeleton-pulse"></div>
+        </div>
+
+        <!-- Cards grid: matches the listing pages layout for visual continuity -->
+        <div class="ne-skel__grid">
+            {Array.from({ length: 6 }).map(() => (
+                <EventCardHorizontalSkeleton />
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+    @keyframes skeleton-pulse {
+        0%, 100% { opacity: 0.4; }
+        50%      { opacity: 1; }
+    }
+
+    .skeleton-pulse {
+        animation: skeleton-pulse 1.8s ease-in-out infinite;
+        background-color: oklch(from var(--core-foreground) l c h / 0.08);
+        border-radius: var(--radius-md);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .skeleton-pulse {
+            animation: none;
+            opacity: 0.6;
+        }
+    }
+
+    .ne-skel__header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 2.5rem;
+        max-width: 720px;
+    }
+
+    .ne-skel__tagline {
+        height: 1rem;
+        width: 140px;
+        border-radius: var(--radius-pill);
+    }
+
+    .ne-skel__title {
+        height: 2.5rem;
+        width: 60%;
+        min-width: 240px;
+    }
+
+    .ne-skel__subtitle {
+        height: 1.25rem;
+        width: 80%;
+    }
+
+    .ne-skel__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap);
+    }
+
+    @media (min-width: 1024px) {
+        .ne-skel__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>

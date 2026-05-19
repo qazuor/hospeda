@@ -7,18 +7,25 @@ import { validateBillingConfigOrThrow } from '@repo/billing';
 import { getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
 import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
+import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
+import {
+    closeNewsletterDispatchResources,
+    getBullMQConnection,
+    getNewsletterDeliveryService
+} from './services/newsletter/delivery-factory';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
 import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
+import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
 validateApiEnv();
@@ -86,6 +93,10 @@ const startServer = async (): Promise<void> => {
 
         const app = initApp();
 
+        // Newsletter dispatch worker handle — populated below after serve() resolves.
+        // Hoisted here so gracefulShutdown can await its drain.
+        let newsletterWorker: Worker | undefined;
+
         // Start the server
         const server = serve(
             {
@@ -108,6 +119,66 @@ const startServer = async (): Promise<void> => {
                             error instanceof Error ? error.message : String(error)
                         );
                     });
+
+                    // Start the embedded BullMQ newsletter dispatch worker.
+                    // Requires Redis + HOSPEDA_EMAIL_API_KEY; logs a warning and
+                    // skips startup otherwise so dev environments without Docker
+                    // continue to boot the API normally.
+                    void (async () => {
+                        // In production a missing prerequisite is a hard
+                        // configuration error (admin "Send campaign" will
+                        // surface SERVICE_UNAVAILABLE without anyone watching
+                        // the logs). Escalate to error so monitoring picks it
+                        // up; demote to warn in dev/test where it's expected
+                        // to boot without Redis or Brevo.
+                        const skipLog =
+                            env.NODE_ENV === 'production'
+                                ? apiLogger.error.bind(apiLogger)
+                                : apiLogger.warn.bind(apiLogger);
+                        try {
+                            if (!env.HOSPEDA_REDIS_URL) {
+                                skipLog(
+                                    'Newsletter dispatch worker not started — HOSPEDA_REDIS_URL is unset. Admin send campaign WILL fail with SERVICE_UNAVAILABLE.'
+                                );
+                                return;
+                            }
+                            if (!env.HOSPEDA_EMAIL_API_KEY) {
+                                skipLog(
+                                    'Newsletter dispatch worker not started — HOSPEDA_EMAIL_API_KEY is unset. Admin send campaign WILL fail with SERVICE_UNAVAILABLE.'
+                                );
+                                return;
+                            }
+                            // The factory manages a dedicated BullMQ Redis
+                            // connection (separate from the shared client)
+                            // so its `maxRetriesPerRequest: null` requirement
+                            // does not bleed into auth-lockout / retry-service.
+                            const deliveryService = getNewsletterDeliveryService();
+                            const bullmqConnection = getBullMQConnection();
+                            if (!deliveryService || !bullmqConnection) {
+                                skipLog(
+                                    'Newsletter dispatch worker not started — factory returned null (delivery service or connection unavailable).'
+                                );
+                                return;
+                            }
+                            // TYPE-WORKAROUND: pnpm resolves ioredis at two patch versions (apps/api uses 5.10.0; bullmq pulls 5.10.1). The runtime instance from getBullMQConnection is structurally compatible with BullMQ's Worker connection option; the cast walks past the duplicated-type-identity friction.
+                            newsletterWorker = startNewsletterWorker({
+                                redis: bullmqConnection as unknown as Parameters<
+                                    typeof startNewsletterWorker
+                                >[0]['redis'],
+                                deliveryService,
+                                logger: apiLogger,
+                                concurrency: env.HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY
+                            });
+                            apiLogger.info(
+                                `Newsletter dispatch worker started (concurrency=${env.HOSPEDA_NEWSLETTER_WORKER_CONCURRENCY}).`
+                            );
+                        } catch (error) {
+                            apiLogger.error(
+                                'Failed to start newsletter dispatch worker:',
+                                error instanceof Error ? error.message : String(error)
+                            );
+                        }
+                    })();
                 }
             }
         );
@@ -117,6 +188,34 @@ const startServer = async (): Promise<void> => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
 
             try {
+                // Drain in-flight BullMQ jobs first — must complete BEFORE Redis
+                // disconnects or the worker will throw on its outstanding ops.
+                if (newsletterWorker) {
+                    try {
+                        apiLogger.info('Closing newsletter dispatch worker...');
+                        await newsletterWorker.close();
+                        apiLogger.info('Newsletter dispatch worker closed.');
+                    } catch (error) {
+                        apiLogger.error(
+                            'Error closing newsletter dispatch worker:',
+                            error instanceof Error ? error.message : String(error)
+                        );
+                    }
+                }
+
+                // Close the BullMQ Queue (and drop cached delivery-service
+                // singleton). The Queue holds its own Redis connection
+                // separate from the Worker's; closing it explicitly avoids
+                // an abrupt connection reset when disconnectRedis() runs.
+                try {
+                    await closeNewsletterDispatchResources();
+                } catch (error) {
+                    apiLogger.error(
+                        'Error closing newsletter dispatch queue:',
+                        error instanceof Error ? error.message : String(error)
+                    );
+                }
+
                 // Flush Sentry events
                 await closeSentry(2000);
 
@@ -142,11 +241,13 @@ const startServer = async (): Promise<void> => {
                 process.exit(1);
             }
 
-            // Force close after 10 seconds
+            // Force close after 60 seconds. BullMQ worker.close() drains
+            // in-flight jobs for up to ~30s; we add a 30s buffer so the
+            // force-exit cannot race the drain and kill the process mid-batch.
             setTimeout(() => {
                 apiLogger.error('Force closing server after timeout');
                 process.exit(1);
-            }, 10000);
+            }, 60_000);
         };
 
         // Handle shutdown signals

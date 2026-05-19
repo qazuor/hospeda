@@ -22,7 +22,9 @@ import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadg
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { webLogger } from '@/lib/logger';
+import { revealStagger } from '@/lib/reveal-stagger';
 
 interface Props {
   /** Active locale used to resolve translations and build internal URLs. */
@@ -49,7 +51,7 @@ try {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
 }
 
-const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos →');
+const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos');
 const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 
 ---
@@ -57,14 +59,12 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 <section class="section accommodations">
   <div class="section__container">
 
-    <!-- Section header: left-aligned with "Ver todos" pill action -->
+    <!-- Section header: action moved below the grid (see __see-all-mobile). -->
     <SectionHeader
       tagline={t('home.featuredAccommodations.accentSubtitle')}
       title={t('home.featuredAccommodations.title')}
       subtitle={t('home.featuredAccommodations.description')}
       alignment="left"
-      actionLabel={seeAllLabel}
-      actionHref={seeAllHref}
     />
 
     <!-- Accommodation type filter badges: per-type colour identity,
@@ -96,13 +96,28 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
         <AccommodationIcon size={48} weight="duotone" />
       </EmptyState>
     ) : (
-      <div class="grid-cards accommodations__grid">
-        {items.map((accommodation, i) => (
-          <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 7) * 100}ms`}>
-            <AccommodationCard data={accommodation} locale={locale} />
-          </div>
-        ))}
-      </div>
+      <>
+        <div class="grid-cards accommodations__grid">
+          {items.map((accommodation, i) => (
+            <div data-reveal="up" class="accommodations__card-wrapper" {...revealStagger({ index: i })}>
+              <AccommodationCard data={accommodation} locale={locale} />
+            </div>
+          ))}
+        </div>
+
+        <!-- "See all" CTA below the grid. The SectionHeader no longer
+             carries an action button (every viewport scrolls past the
+             grid and lands on this CTA instead). -->
+        <div class="accommodations__see-all">
+          <GradientButton
+            href={seeAllHref}
+            label={seeAllLabel}
+            variant="outline-primary"
+            size="sm"
+            icon="true"
+          />
+        </div>
+      </>
     )}
 
   </div>
@@ -115,11 +130,48 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
   .accommodations__card-wrapper {
     height: 100%;
   }
+  /* The default --space-section-header-mb (50px) is sized for sections
+   * where the header is followed directly by the grid. Here the chip row
+   * sits between, so the 50px gap leaves a visible empty band between
+   * the subtitle and the chips. Compact it so the chips read as a
+   * continuation of the header block. */
+  .accommodations :global(.section-header) {
+    margin-bottom: 1.1rem;
+  }
   /* Type pills row spacing only — overflow + fade + arrows come from
-   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro). */
-  .accommodations__types {
+   * ScrollableNav (see apps/web/src/components/shared/ui/ScrollableNav.astro).
+   *
+   * `:global()` is required because the <nav> that carries this class is
+   * rendered by ScrollableNav.astro, which has its own scoped style block.
+   * A locally-scoped `.accommodations__types` selector would compile to
+   * `.accommodations__types[data-astro-cid-XXX]` and never match the child
+   * component's element. */
+  :global(.accommodations__types) {
     justify-content: center;
     gap: 0.5rem;
-    margin-bottom: 2rem;
+    /* Match the gap between the SectionHeader's action and the chip row
+     * above so the rhythm header → chips → grid feels even. (Previously
+     * the gap below the chips was much larger via clamp(2.5rem, 5vw,
+     * 3.5rem) — a workaround for cards' `data-reveal="up"` overshoot,
+     * which we accept now in exchange for a tighter visual flow.) */
+    margin-bottom: 1.1rem;
+  }
+
+  /* Mobile: the chip row uses overflow-x: auto (set by ScrollableNav) to
+   * scroll horizontally, but with `justify-content: center` flex centers
+   * its content when it doesn't fit — pushing the first chips off-screen
+   * to the LEFT, where scrollLeft can't reach them (its minimum is 0).
+   * Force flex-start on mobile so the first chip lands at the left edge
+   * and the user can swipe through every type from the beginning. */
+  @media (max-width: 767px) {
+    :global(.accommodations__types) {
+      justify-content: flex-start;
+    }
+  }
+
+  .accommodations__see-all {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-card-gap, 2rem);
   }
 </style>

@@ -16,6 +16,7 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import { renderContent } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
@@ -26,10 +27,11 @@ import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
-import EventCard from '@/components/shared/cards/EventCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import { accommodationsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
@@ -287,6 +289,17 @@ const galleryImages = (() => {
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
 const seoDescription = accommodation.seo?.description ?? accommodation.summary;
 
+// --- Description rendering ---
+// `accommodation.description` may arrive as markdown (current authoring format),
+// HTML (future TipTap admin output), or plain text. `renderContent` normalizes
+// all three into safe HTML for `set:html`. (Previously this field was piped
+// straight into `set:html` without sanitization — pre-existing XSS hole, fixed
+// here alongside the markdown rendering work.)
+const safeDescriptionHtml = renderContent({
+    raw: accommodation.description ?? '',
+    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+});
+
 // --- JSON-LD (LodgingBusiness) ---
 const TYPE_MAP: Readonly<Record<string, string>> = {
     HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
@@ -378,7 +391,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             client:visible
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
-        <Description summary={accommodation.summary} description={accommodation.description} />
+        <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
@@ -433,9 +446,17 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     {eventItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCard data={toEventCardProps({ item })} locale={locale} />)}
+            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} />)}
         </RelatedCarousel>
     )}
+
+    <!-- Analytics tracker (headless, SPEC-140) -->
+    <AccommodationViewTracker
+        client:idle
+        slug={slug}
+        accommodationId={accommodation.id}
+        locale={locale}
+    />
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">

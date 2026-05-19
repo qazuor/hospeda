@@ -87,6 +87,7 @@
 .tagline {
     font-family: var(--font-decorative);
     font-size: var(--text-tagline);
+    font-weight: 700;
     color: var(--brand-primary);
     line-height: 1.2;
 }

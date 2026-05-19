@@ -22,7 +22,13 @@ export enum NotificationType {
     SUBSCRIPTION_REACTIVATED = 'subscription_reactivated',
     PLAN_DOWNGRADE_LIMIT_WARNING = 'plan_downgrade_limit_warning',
     PAYMENT_RETRY_WARNING = 'payment_retry_warning',
-    ADDON_CANCELLATION = 'addon_cancellation'
+    ADDON_CANCELLATION = 'addon_cancellation',
+    /** SPEC-101 — confirmation email sent after a user clicks Subscribe (double opt-in step 1). */
+    NEWSLETTER_VERIFICATION = 'newsletter_verification',
+    /** SPEC-101 — welcome email sent after the user clicks the verification link. */
+    NEWSLETTER_WELCOME = 'newsletter_welcome',
+    /** SPEC-101 — campaign delivery payload routed through the dispatch worker. */
+    NEWSLETTER_CAMPAIGN = 'newsletter_campaign'
 }
 
 /**
@@ -34,7 +40,13 @@ export enum NotificationCategory {
     /** Can be opted out by user */
     REMINDER = 'reminder',
     /** Sent to admin email list only */
-    ADMIN = 'admin'
+    ADMIN = 'admin',
+    /**
+     * Marketing newsletter category (SPEC-101). Tied to opt-in / double opt-in
+     * verification + the dedicated `newsletter_subscribers` table. Unsubscribe
+     * is honoured outside of {@link UserSettings.notifications.allowEmails}.
+     */
+    NEWSLETTER = 'newsletter'
 }
 
 /** Base payload all notifications carry */

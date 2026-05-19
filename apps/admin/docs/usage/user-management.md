@@ -853,7 +853,7 @@ inactive:30d role:editor           - Editors inactive 30+ days
 
 **For developers:**
 
-- **[Authentication](../development/authentication.md)** - Auth integration
+- **[Authentication](../AUTH_SYSTEM.md)** - Auth integration
 - **[Architecture](../architecture.md)** - System design
 
 ---
