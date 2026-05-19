@@ -308,4 +308,174 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
         expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
         expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
     });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    //
+    // Each test pins one branch of the cron's "not due yet / nothing to do"
+    // surface. The granular failure paths (changePlan throws → retry,
+    // retry budget exhausted → failed) are already pinned by the unit
+    // suite in `apps/api/test/cron/apply-scheduled-plan-changes.test.ts`
+    // and replicating them here would require mocking billing.subscriptions.
+    // changePlan, which defeats the purpose of an e2e test (we want the
+    // real qzpay-core path exercised). The e2e value here is the
+    // observable-from-the-DB behavior when the cron correctly NO-OPs.
+    // -----------------------------------------------------------------------
+
+    it('skips a scheduled downgrade whose applyAt is still in the future', async () => {
+        // ARRANGE — push currentPeriodEnd into the future so the POST below
+        // writes a schedule with applyAt in the future (the handler copies
+        // currentPeriodEnd into scheduledPlanChange.applyAt). The cron's
+        // SQL filter `(scheduled_plan_change->>'applyAt')::timestamptz <= now()`
+        // then rejects the row.
+        const futurePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({ currentPeriodEnd: futurePeriodEnd })
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+
+        const scheduleRes = await client.post(
+            '/api/v1/protected/billing/subscriptions/change-plan',
+            {
+                newPlanId: seed.cheap.planId,
+                billingInterval: 'monthly'
+            }
+        );
+        expect(scheduleRes.status).toBe(200);
+
+        // Sanity: the schedule landed with a future applyAt.
+        const preRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        const preSchedule = preRows[0]?.scheduledPlanChange as Record<string, unknown> | null;
+        expect(preSchedule?.status).toBe('pending');
+        expect(new Date(preSchedule?.applyAt as string).getTime()).toBeGreaterThan(Date.now());
+
+        // ACT — invoke the cron. The row is pending but not due.
+        const { ctx } = makeCronCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // ASSERT — counters reflect a clean no-op: no rows due, no rows
+        // processed, no errors. The handler still returns success=true:
+        // a tick with nothing to do is a normal tick, not a failure.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+        expect(result.details).toMatchObject({ applied: 0, retried: 0, failed: 0, due: 0 });
+
+        // ASSERT — DB unchanged. plan_id still expensive, schedule still
+        // pending (will be picked up by a future tick once applyAt elapses).
+        const postRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(postRows[0]?.planId).toBe(seed.expensive.planId);
+        const postSchedule = postRows[0]?.scheduledPlanChange as Record<string, unknown> | null;
+        expect(postSchedule?.status).toBe('pending');
+        expect(postSchedule?.attemptCount).toBe(0);
+        expect(postSchedule?.resolvedAt).toBeUndefined();
+    });
+
+    it('reports a clean no-op when no subscription has a pending scheduled change', async () => {
+        // ARRANGE — the beforeEach creates a sub but never POSTs the
+        // downgrade, so `scheduled_plan_change` is NULL for every row.
+        // The cron's filter `scheduled_plan_change IS NOT NULL AND
+        // (scheduled_plan_change->>'status') = 'pending'` excludes the row.
+
+        // Sanity: no sub has a pending schedule.
+        const rowsWithSchedule = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(rowsWithSchedule[0]?.scheduledPlanChange).toBeNull();
+
+        // ACT
+        const { ctx } = makeCronCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // ASSERT — clean no-op. processed=0 with success=true mirrors the
+        // production "every 15 min nothing scheduled" tick — common in
+        // practice and must never be a noisy alert.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+        expect(result.details).toMatchObject({ applied: 0, retried: 0, failed: 0, due: 0 });
+        expect(result.message).toContain('Applied 0');
+
+        // ASSERT — DB unchanged. plan_id still expensive, no schedule
+        // written by the cron itself.
+        const postRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        expect(postRows[0]?.planId).toBe(seed.expensive.planId);
+        expect(postRows[0]?.scheduledPlanChange).toBeNull();
+    });
+
+    it('does not reprocess a schedule already marked applied on a previous tick', async () => {
+        // ARRANGE — drive the schedule to status='applied' by running one
+        // full cron tick on a due row. This mirrors the production timeline:
+        // the cron applies the change at tick N, then runs again at tick N+1
+        // and must not re-touch the same sub.
+        const scheduleRes = await client.post(
+            '/api/v1/protected/billing/subscriptions/change-plan',
+            {
+                newPlanId: seed.cheap.planId,
+                billingInterval: 'monthly'
+            }
+        );
+        expect(scheduleRes.status).toBe(200);
+
+        const { ctx: firstCtx } = makeCronCtx();
+        const firstResult = await applyScheduledPlanChangesJob.handler(firstCtx);
+        expect(firstResult.details).toMatchObject({ applied: 1, due: 1 });
+
+        // Snapshot state after the first tick: plan flipped, schedule
+        // applied with attemptCount=1 and a resolvedAt timestamp.
+        const afterFirstRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        const afterFirst = afterFirstRows[0];
+        expect(afterFirst?.planId).toBe(seed.cheap.planId);
+        const afterFirstSchedule = afterFirst?.scheduledPlanChange as Record<string, unknown>;
+        expect(afterFirstSchedule.status).toBe('applied');
+        expect(afterFirstSchedule.attemptCount).toBe(1);
+        const resolvedAtAfterFirst = afterFirstSchedule.resolvedAt as string;
+        expect(resolvedAtAfterFirst).toBeDefined();
+
+        // ACT — invoke the cron a second time. The SQL filter only matches
+        // status='pending'; status='applied' rows are out of scope.
+        const { ctx: secondCtx } = makeCronCtx();
+        const secondResult = await applyScheduledPlanChangesJob.handler(secondCtx);
+
+        // ASSERT — second tick is a clean no-op (no due rows). Crucially,
+        // attemptCount and resolvedAt MUST NOT change, otherwise a buggy
+        // refactor that drops the status filter would silently re-run
+        // changePlan against an already-cheap sub.
+        expect(secondResult.success).toBe(true);
+        expect(secondResult.processed).toBe(0);
+        expect(secondResult.details).toMatchObject({ applied: 0, retried: 0, failed: 0, due: 0 });
+
+        const afterSecondRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, expensiveSubscriptionId));
+        const afterSecondSchedule = afterSecondRows[0]?.scheduledPlanChange as Record<
+            string,
+            unknown
+        >;
+        expect(afterSecondSchedule.status).toBe('applied');
+        expect(afterSecondSchedule.attemptCount).toBe(1);
+        expect(afterSecondSchedule.resolvedAt).toBe(resolvedAtAfterFirst);
+        expect(afterSecondRows[0]?.planId).toBe(seed.cheap.planId);
+    });
 });
