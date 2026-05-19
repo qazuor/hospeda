@@ -23,7 +23,7 @@ import { toEventDetailProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { Image } from 'astro:assets';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderContent } from '@/lib/render-content';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -98,9 +98,9 @@ if (eventId) {
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const canonical = `${siteOrigin}${Astro.url.pathname}`;
 
-// --- Rich description HTML ---
-const safeDescriptionHtml = sanitizeHtml({
-	html: contentHtml || description || summary,
+// --- Description rendering (markdown / HTML / plain text → sanitized HTML) ---
+const safeDescriptionHtml = renderContent({
+	raw: contentHtml || description || summary,
 	siteOrigin,
 });
 

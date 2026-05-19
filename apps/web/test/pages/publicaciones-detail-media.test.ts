@@ -91,6 +91,32 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
         });
     });
 
+    describe('content rendering: delegates to renderContent helper', () => {
+        it('imports renderContent from the shared lib', () => {
+            expect(pageSrc).toMatch(
+                /import\s*\{\s*renderContent\s*\}\s*from\s*['"]@\/lib\/render-content['"]/
+            );
+        });
+
+        it('calls renderContent with the API body field and the siteOrigin', () => {
+            expect(pageSrc).toMatch(
+                /safeContentHtml\s*=\s*renderContent\(\s*\{\s*[\s\S]*?raw:\s*String\(post\.contentHtml/
+            );
+            expect(pageSrc).toMatch(/renderContent\(\s*\{[\s\S]*?siteOrigin/);
+        });
+
+        it('no longer imports marked or sanitizeHtml directly (single source of pipeline)', () => {
+            expect(pageSrc).not.toMatch(/import\s*\{\s*marked\s*\}/);
+            expect(pageSrc).not.toMatch(
+                /import\s*\{\s*sanitizeHtml\s*\}\s*from\s*['"]@\/lib\/sanitize-html['"]/
+            );
+        });
+
+        it('feeds the result to PostContent', () => {
+            expect(pageSrc).toContain('safeContentHtml={safeContentHtml}');
+        });
+    });
+
     describe('PostDetailHeader renders the new content blocks', () => {
         it('renders a subtitle paragraph when a summary is provided', () => {
             expect(headerSrc).toContain('post-header__summary');

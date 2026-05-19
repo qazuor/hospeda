@@ -29,7 +29,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getPostCategoryColor } from '@/lib/colors';
 import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -169,10 +169,12 @@ const expiryDateLabel = postExpiresAt
     ? new Date(postExpiresAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 
-// --- Sanitize content ---
+// --- Render content (markdown → HTML, then sanitize) ---
+// Body fields may arrive as markdown (seed format), HTML (TipTap admin output),
+// or plain text. `renderContent` handles all three through a single pipeline.
 const siteOrigin = Astro.site?.href ?? Astro.url.origin;
-const safeContentHtml = sanitizeHtml({
-	html: String(post.contentHtml || post.content || summary),
+const safeContentHtml = renderContent({
+	raw: String(post.contentHtml || post.content || summary),
 	siteOrigin,
 });
 

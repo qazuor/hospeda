@@ -16,6 +16,7 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import { renderContent } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
@@ -288,6 +289,17 @@ const galleryImages = (() => {
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
 const seoDescription = accommodation.seo?.description ?? accommodation.summary;
 
+// --- Description rendering ---
+// `accommodation.description` may arrive as markdown (current authoring format),
+// HTML (future TipTap admin output), or plain text. `renderContent` normalizes
+// all three into safe HTML for `set:html`. (Previously this field was piped
+// straight into `set:html` without sanitization — pre-existing XSS hole, fixed
+// here alongside the markdown rendering work.)
+const safeDescriptionHtml = renderContent({
+    raw: accommodation.description ?? '',
+    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+});
+
 // --- JSON-LD (LodgingBusiness) ---
 const TYPE_MAP: Readonly<Record<string, string>> = {
     HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
@@ -379,7 +391,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             client:visible
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
-        <Description summary={accommodation.summary} description={accommodation.description} />
+        <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
