@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/astro';
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
+import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     BETA_PREFIX,
@@ -442,6 +443,15 @@ export function buildCspHeader({
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
+    // Remote image hosts mirror `ALLOWED_REMOTE_HOSTS` (single source of truth
+    // shared with `astro.config.mjs` `image.remotePatterns` and the SSRF guard
+    // `isAllowedRemoteHost()`). Adding a new host there auto-flows into CSP.
+    // `localhost` is dropped since CSP host-source matching does not apply to
+    // it; non-HTTPS hosts only matter in dev where img-src isn't enforced.
+    const remoteImgHosts = ALLOWED_REMOTE_HOSTS.filter((h) => h !== 'localhost')
+        .map((h) => `https://${h}`)
+        .join(' ');
+
     // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
     // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
     // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
@@ -453,7 +463,7 @@ export function buildCspHeader({
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: ${remoteImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
         "worker-src 'self' blob:",
         'child-src blob:',

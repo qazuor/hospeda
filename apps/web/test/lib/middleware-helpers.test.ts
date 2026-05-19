@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
     buildCspHeader,
     buildLocaleRedirect,
@@ -220,6 +221,19 @@ describe('buildCspHeader', () => {
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src'));
         expect(imgSrc).toBeDefined();
         expect(imgSrc).toContain('https://res.cloudinary.com');
+    });
+
+    it('should allowlist every entry of ALLOWED_REMOTE_HOSTS in img-src', () => {
+        // Prevents drift: ALLOWED_REMOTE_HOSTS is the single source of truth
+        // shared with astro.config.mjs image.remotePatterns and the SSRF guard.
+        // Any host added there must also be reachable from CSP img-src,
+        // otherwise the browser blocks the image and Sentry receives a report.
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        for (const host of ALLOWED_REMOTE_HOSTS) {
+            if (host === 'localhost') continue;
+            expect(imgSrc).toContain(`https://${host}`);
+        }
     });
 
     it('should use exact cloudinary hostname, not a wildcard', () => {
