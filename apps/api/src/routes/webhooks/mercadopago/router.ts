@@ -102,13 +102,14 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
                 // so both .created and .updated point at the same handler.
                 'subscription_preapproval.created': handleSubscriptionPreapprovalEvent,
                 'subscription_preapproval.updated': handleSubscriptionPreapprovalEvent,
-                // SPEC-126 D4: subscription_authorized_payment events fire
-                // when MP schedules / executes a recurring charge against a
-                // preapproval. The current handler is acknowledge-only (logs
-                // + dedup), with full payment recording deferred to a
-                // follow-up because the IPN payload does not carry the
-                // preapproval link and qzpay-core lacks a public helper to
-                // fetch the authorized-payment object.
+                // SPEC-126 D4 / SPEC-141 D4: subscription_authorized_payment events
+                // fire when MP schedules / executes a recurring charge against a
+                // preapproval. The handler fetches the authorized-payment object
+                // via `fetchAuthorizedPaymentDetails` (REST), resolves the local
+                // subscription via `mp_subscription_id`, and inserts a
+                // `billing_payments` row. Always acks 200 even on upstream
+                // failures so MP stops retrying. See
+                // `subscription-payment-handler.ts` for the full flow.
                 'subscription_authorized_payment.created': handleSubscriptionAuthorizedPayment,
                 'subscription_authorized_payment.updated': handleSubscriptionAuthorizedPayment,
                 chargebacks: handleDisputeOpened,
