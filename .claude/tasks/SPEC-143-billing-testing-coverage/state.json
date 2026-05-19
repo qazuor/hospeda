@@ -463,11 +463,13 @@
             "title": "E2E: customer override apply / expire",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "obsolete",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "customer-override.test.ts. Exhaustive cases: admin sets override → applies on read, override expiry boundary → reverts to plan default, override stacks with sponsorship (precedence rules), override vs base plan conflict resolution, override removed mid-cycle, override on user without active subscription."
+            "notes": "OBSOLETE — task notes describe a customer-override system (admin sets override → applies on read, override expiry boundary → reverts to plan default, override stacks with sponsorship with precedence rules, override removed mid-cycle) that does NOT exist in the codebase. Verified zero references to customerOverride / customer_override / entitlementOverride / limitOverride in packages/billing, packages/db/src/billing, packages/schemas/src/api/billing, apps/api/src/middlewares/billing.ts, and across qzpay upstream (packages/core/src, packages/drizzle/src, packages/hono/src, drizzle/migrations/*.sql). Only matches are unrelated comments about env-var override and pagination MAX_LIMIT/MAX_OFFSET defaults, plus test-fixture partial overrides. The feature was scoped in spec (Goal + Phase 3 file listing) but never built. Closed without tests; gap documented in engram `bug/customer-override-task-misalignment`. Same precedent as T-143-39 (gift-subscription not implemented).",
+            "obsoletedAt": "2026-05-19",
+            "obsoletedReason": "Task notes describe a feature that does not exist in the codebase or upstream qzpay; no override entity/service/route/table to test against."
         },
         {
             "id": "T-143-41",
