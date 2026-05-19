@@ -2,15 +2,20 @@
 /**
  * @file Description.astro
  * @description Accommodation summary + full description section.
- * Summary is highlighted with warm background. Description rendered as HTML.
+ * Summary is highlighted with a warm background.
+ *
+ * SECURITY: `descriptionHtml` MUST be sanitized HTML produced by
+ * `renderContent` (see `apps/web/src/lib/render-content.ts`). Never pass raw
+ * API content here — the parent page is responsible for the conversion.
  */
 
 interface Props {
-  readonly summary: string;
-  readonly description: string;
+    readonly summary: string;
+    /** Sanitized HTML produced by `renderContent({ raw: accommodation.description, siteOrigin })`. */
+    readonly descriptionHtml: string;
 }
 
-const { summary, description } = Astro.props;
+const { summary, descriptionHtml } = Astro.props;
 ---
 
 {summary && (
@@ -19,8 +24,8 @@ const { summary, description } = Astro.props;
   </div>
 )}
 
-{description && (
-  <div class="description__body" set:html={description} />
+{descriptionHtml && (
+  <div class="description__body" set:html={descriptionHtml} />
 )}
 
 <style>
@@ -57,4 +62,6 @@ const { summary, description } = Astro.props;
     padding-left: var(--space-5, 20px);
     margin-bottom: var(--space-3, 12px);
   }
+  .description__body :global(strong) { font-weight: 700; }
+  .description__body :global(em) { font-style: italic; }
 </style>

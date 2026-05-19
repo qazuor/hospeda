@@ -29,9 +29,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getPostCategoryColor } from '@/lib/colors';
 import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
-import { marked } from 'marked';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -171,20 +170,11 @@ const expiryDateLabel = postExpiresAt
     : '';
 
 // --- Render content (markdown → HTML, then sanitize) ---
-// Post bodies are authored in markdown today (seed data, e.g. **bold**, ##
-// headings, lists) but the admin TipTap editor (rolling out) emits HTML.
-// `marked` converts markdown and passes raw HTML blocks through untouched, so
-// the same pipeline handles both formats. We still sanitize afterwards as
-// defense in depth.
+// Body fields may arrive as markdown (seed format), HTML (TipTap admin output),
+// or plain text. `renderContent` handles all three through a single pipeline.
 const siteOrigin = Astro.site?.href ?? Astro.url.origin;
-const rawContent = String(post.contentHtml || post.content || summary);
-const renderedHtml = marked.parse(rawContent, {
-	async: false,
-	gfm: true,
-	breaks: false,
-}) as string;
-const safeContentHtml = sanitizeHtml({
-	html: renderedHtml,
+const safeContentHtml = renderContent({
+	raw: String(post.contentHtml || post.content || summary),
 	siteOrigin,
 });
 

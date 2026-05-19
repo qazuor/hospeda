@@ -91,27 +91,28 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
         });
     });
 
-    describe('content rendering: markdown → HTML → sanitize', () => {
-        it('imports marked', () => {
-            expect(pageSrc).toMatch(/import\s*\{\s*marked\s*\}\s*from\s*'marked'/);
+    describe('content rendering: delegates to renderContent helper', () => {
+        it('imports renderContent from the shared lib', () => {
+            expect(pageSrc).toMatch(
+                /import\s*\{\s*renderContent\s*\}\s*from\s*['"]@\/lib\/render-content['"]/
+            );
         });
 
-        it('runs marked.parse() before sanitizeHtml so markdown becomes HTML', () => {
-            // The order must be markdown→HTML→sanitize. Sanitizing markdown
-            // text directly leaves `**bold**` and `## H2` visible as plain text.
-            const renderIdx = pageSrc.indexOf('marked.parse(');
-            const sanitizeIdx = pageSrc.indexOf('sanitizeHtml({');
-            expect(renderIdx).toBeGreaterThan(-1);
-            expect(sanitizeIdx).toBeGreaterThan(-1);
-            expect(renderIdx).toBeLessThan(sanitizeIdx);
+        it('calls renderContent with the API body field and the siteOrigin', () => {
+            expect(pageSrc).toMatch(
+                /safeContentHtml\s*=\s*renderContent\(\s*\{\s*[\s\S]*?raw:\s*String\(post\.contentHtml/
+            );
+            expect(pageSrc).toMatch(/renderContent\(\s*\{[\s\S]*?siteOrigin/);
         });
 
-        it('parses synchronously (Astro SSR is sync, cannot await in the frontmatter expression chain)', () => {
-            expect(pageSrc).toMatch(/marked\.parse\([\s\S]*?async:\s*false/);
+        it('no longer imports marked or sanitizeHtml directly (single source of pipeline)', () => {
+            expect(pageSrc).not.toMatch(/import\s*\{\s*marked\s*\}/);
+            expect(pageSrc).not.toMatch(
+                /import\s*\{\s*sanitizeHtml\s*\}\s*from\s*['"]@\/lib\/sanitize-html['"]/
+            );
         });
 
-        it('feeds the sanitized HTML (not the raw content) to PostContent', () => {
-            expect(pageSrc).toContain('safeContentHtml = sanitizeHtml');
+        it('feeds the result to PostContent', () => {
             expect(pageSrc).toContain('safeContentHtml={safeContentHtml}');
         });
     });
