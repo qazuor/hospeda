@@ -49,18 +49,24 @@ const SubscriptionCancelBodySchema = z.object({
     reason: z.string().max(500).optional()
 });
 
-/** Successful cancellation response schema */
+/**
+ * Successful cancellation response schema (INNER data shape).
+ *
+ * `createResponse` (apps/api/src/utils/response-helpers.ts:165-182)
+ * calls `stripWithSchema` against the handler's raw return value BEFORE
+ * wrapping it with the `{ success: true, data, metadata }` envelope.
+ * The schema therefore describes the INNER data only — declaring
+ * `success` / `data` keys here makes every response fail schema
+ * validation and return 500. Discovered by SPEC-143 T-143-27.
+ */
 const SubscriptionCancelSuccessResponseSchema = z.object({
-    success: z.literal(true),
-    data: z.object({
-        subscriptionId: z.string(),
-        canceledAddons: z.array(
-            z.object({
-                purchaseId: z.string(),
-                addonSlug: z.string()
-            })
-        )
-    })
+    subscriptionId: z.string(),
+    canceledAddons: z.array(
+        z.object({
+            purchaseId: z.string(),
+            addonSlug: z.string()
+        })
+    )
 });
 
 // ---------------------------------------------------------------------------
