@@ -29,6 +29,9 @@ export const EventSearchHttpSchema = BaseHttpSearchSchema.extend({
     price: z.coerce.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
     isFree: createBooleanQueryParam('Filter free events'),
+    includeUnpriced: createBooleanQueryParam(
+        'When a price filter is active, also include events whose pricing JSONB column is NULL (events without an established price)'
+    ),
 
     // Date filters with HTTP coercion
     startDateAfter: z.coerce.date().optional(),
@@ -220,6 +223,7 @@ export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearc
     price: httpParams.price,
     currency: httpParams.currency,
     isFree: httpParams.isFree,
+    includeUnpriced: httpParams.includeUnpriced,
     startDateAfter: httpParams.startDateAfter,
     startDateBefore: httpParams.startDateBefore,
     endDateAfter: httpParams.endDateAfter,

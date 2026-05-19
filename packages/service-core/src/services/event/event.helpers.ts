@@ -7,7 +7,7 @@
 import { EventModel, events as eventTable } from '@repo/db';
 import { createUniqueSlug } from '@repo/utils';
 import type { SQL } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { and, isNull, or, sql } from 'drizzle-orm';
 
 /**
  * Builds raw SQL conditions for the JSONB `date` column of the events table
@@ -42,6 +42,76 @@ export function buildEventDateConditions(input: {
     }
     if (endDateBefore) {
         conditions.push(sql`(${eventTable.date}->>'end')::timestamptz <= ${endDateBefore}`);
+    }
+
+    return conditions;
+}
+
+/**
+ * Builds raw SQL conditions for the JSONB `pricing` column of the events table
+ * from `isFree`, `minPrice`, `maxPrice`, `price`, and `currency` filters. The
+ * `pricing` column stores `{ isFree, price?, currency?, ... }` per
+ * EventPriceSchema, so these queries must extract nested keys with `->>`.
+ *
+ * - `isFree`: matches events whose `pricing.isFree` equals the requested value.
+ *   Rows with NULL `pricing` are excluded (strict semantics).
+ * - `minPrice`/`maxPrice`/`price`: compare against `pricing.price` as numeric.
+ *   Rows with NULL `pricing` are excluded; rows with `isFree=true` (no `price`
+ *   key) are treated as price = 0 via COALESCE so the range still includes
+ *   them when 0 falls inside the bounds.
+ * - `currency`: matches `pricing.currency` exactly.
+ * - `includeUnpriced`: when true AND at least one price filter is active, the
+ *   final clause is wrapped so rows with `pricing IS NULL` are also returned
+ *   alongside the matching rows. No-op when no price filter is active.
+ *
+ * Returns an empty array when no price filters are present, so callers can
+ * safely spread/concat the result.
+ *
+ * @param input - Optional price filters from the search schema
+ * @returns Array of Drizzle `SQL` conditions ready to add to a `WHERE` clause
+ */
+export function buildEventPriceConditions(input: {
+    readonly isFree?: boolean;
+    readonly minPrice?: number;
+    readonly maxPrice?: number;
+    readonly price?: number;
+    readonly currency?: string;
+    readonly includeUnpriced?: boolean;
+}): SQL[] {
+    const conditions: SQL[] = [];
+    const { isFree, minPrice, maxPrice, price, currency, includeUnpriced } = input;
+
+    if (isFree !== undefined) {
+        conditions.push(
+            sql`${eventTable.pricing} IS NOT NULL AND (${eventTable.pricing}->>'isFree')::boolean = ${isFree}`
+        );
+    }
+    if (minPrice !== undefined) {
+        conditions.push(
+            sql`${eventTable.pricing} IS NOT NULL AND COALESCE((${eventTable.pricing}->>'price')::numeric, 0) >= ${minPrice}`
+        );
+    }
+    if (maxPrice !== undefined) {
+        conditions.push(
+            sql`${eventTable.pricing} IS NOT NULL AND COALESCE((${eventTable.pricing}->>'price')::numeric, 0) <= ${maxPrice}`
+        );
+    }
+    if (price !== undefined) {
+        conditions.push(
+            sql`${eventTable.pricing} IS NOT NULL AND (${eventTable.pricing}->>'price')::numeric = ${price}`
+        );
+    }
+    if (currency !== undefined) {
+        conditions.push(
+            sql`${eventTable.pricing} IS NOT NULL AND ${eventTable.pricing}->>'currency' = ${currency}`
+        );
+    }
+
+    if (includeUnpriced === true && conditions.length > 0) {
+        const combined = and(...conditions);
+        if (combined) {
+            return [or(combined, isNull(eventTable.pricing)) as SQL];
+        }
     }
 
     return conditions;

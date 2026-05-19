@@ -565,11 +565,12 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         }
 
         /* In vertical mode the date-block sits at top-left of the photo.
-           Push the featured badge down so the two do not stack on top of
-           each other. */
+           Stack the featured badge just below it (still inside the photo
+           area). Using `bottom` here would anchor to the card, not the
+           photo, and collide with the location pill in the content area. */
         .event-card-h__featured {
-            top: auto;
-            bottom: 0.625rem;
+            top: 3rem;
+            bottom: auto;
             left: 0.625rem;
         }
 

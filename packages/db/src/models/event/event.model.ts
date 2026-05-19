@@ -24,6 +24,23 @@ import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 const MOST_SAVED_SORT_FIELD = 'mostSaved';
 
 /**
+ * Synthetic sort field that orders events by the `date->>'start'` value
+ * inside the JSONB `date` column. Required because that field is not a
+ * top-level column and `buildOrderByClause` cannot reach it.
+ */
+const START_DATE_SORT_FIELD = 'startDate';
+
+/**
+ * Build the SQL expression used as the ORDER BY for the `startDate` synthetic
+ * sort. NULL dates are pushed to the end of the result set so missing data
+ * never floats above real upcoming events.
+ */
+function buildStartDateOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(${events.date}->>'start')::timestamptz ${direction} NULLS LAST`;
+}
+
+/**
  * Build the correlated subquery used as the ORDER BY expression for the
  * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are
  * folded to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
@@ -97,18 +114,22 @@ export class EventModel extends BaseModelImpl<Event> {
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Event[]; total: number }> {
-        if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
+        const sortBy = options?.sortBy;
+        const isSyntheticSort =
+            sortBy === MOST_SAVED_SORT_FIELD || sortBy === START_DATE_SORT_FIELD;
+        if (!isSyntheticSort) {
             return super.findAll(where, options, additionalConditions, tx);
         }
 
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
-        const page = options.page ?? 1;
-        const pageSize = options.pageSize ?? 10;
-        const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'desc';
+        const page = options?.page ?? 1;
+        const pageSize = options?.pageSize ?? 10;
+        const sortOrder: 'asc' | 'desc' =
+            options?.sortOrder ?? (sortBy === MOST_SAVED_SORT_FIELD ? 'desc' : 'asc');
         const offset = (page - 1) * pageSize;
 
-        const logContext = { where: safeWhere, page, pageSize, sortBy: MOST_SAVED_SORT_FIELD };
+        const logContext = { where: safeWhere, page, pageSize, sortBy };
 
         try {
             const baseWhereClause = buildWhereClause(safeWhere, this.table);
@@ -126,7 +147,10 @@ export class EventModel extends BaseModelImpl<Event> {
                       ? allConditions[0]
                       : and(...allConditions);
 
-            const orderExpr = buildMostSavedOrderExpr(sortOrder);
+            const orderExpr =
+                sortBy === START_DATE_SORT_FIELD
+                    ? buildStartDateOrderExpr(sortOrder)
+                    : buildMostSavedOrderExpr(sortOrder);
             const tieBreaker = desc(events.id);
 
             const itemsQuery = db
@@ -157,6 +181,96 @@ export class EventModel extends BaseModelImpl<Event> {
                 logError(this.entityName, 'findAll', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findAll', logContext, err.message);
+        }
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAllWithRelations} so the synthetic
+     * sort field `startDate` — which orders by `date->>'start'` extracted from
+     * the JSONB `date` column — also works when loading rows with relations
+     * (the path used by `EventService._executeSearch`).
+     *
+     * The other synthetic sort field, `mostSaved`, is intentionally NOT
+     * handled here. Its correlated subquery does not compose with Drizzle's
+     * relational query API and currently falls back to default ordering when
+     * used via the public list endpoint — see SPEC-098 T-052a notes.
+     */
+    override async findAllWithRelations(
+        relations: Record<string, boolean | Record<string, unknown>>,
+        where: Record<string, unknown> = {},
+        options: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        } = {},
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Event[]; total: number }> {
+        const sortBy = options.sortBy;
+        if (sortBy !== START_DATE_SORT_FIELD) {
+            return super.findAllWithRelations(relations, where, options, additionalConditions, tx);
+        }
+
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
+
+        const db = this.getClient(tx);
+        const safeWhere = where ?? {};
+        const page = options.page ?? 1;
+        const pageSize = options.pageSize ?? 10;
+        const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'asc';
+        const offset = (page - 1) * pageSize;
+
+        const logContext = { where: safeWhere, page, pageSize, sortBy };
+
+        try {
+            const baseWhereClause = buildWhereClause(safeWhere, this.table);
+
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions && additionalConditions.length > 0) {
+                allConditions.push(...additionalConditions);
+            }
+
+            const finalWhereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
+
+            const orderExpr = buildStartDateOrderExpr(sortOrder);
+
+            // Translate the relations record into the shape Drizzle's
+            // relational query API expects (boolean flags per relation key).
+            const withObj: Record<string, boolean> = {};
+            for (const key of this.validRelationKeys) {
+                if (relations[key as string]) withObj[key as string] = true;
+            }
+
+            const [items, total] = await Promise.all([
+                db.query.events.findMany({
+                    where: finalWhereClause,
+                    with: withObj,
+                    orderBy: [orderExpr, desc(events.id)],
+                    limit: pageSize,
+                    offset
+                }),
+                this.count(safeWhere, { additionalConditions, tx })
+            ]);
+
+            // DRIZZLE-LIMITATION: relational query widens nullable JSONB columns vs the Event entity type; the projection returns the same row shape used elsewhere.
+            const result = { items: items as unknown as Event[], total };
+            try {
+                logQuery(this.entityName, 'findAllWithRelations', logContext, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAllWithRelations', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAllWithRelations', logContext, err.message);
         }
     }
 

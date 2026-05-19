@@ -21,6 +21,7 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
 if (!slug) return new Response(null, { status: 404 });
 
 // Resolve location slug to ID
@@ -46,7 +47,7 @@ const baseUrl = buildUrl({ locale, path: `eventos/en/${slug}` });
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
 	{!hasError && cards.length > 0 && (
-		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><EventCardHorizontal data={card} locale={locale} /></div>))}</div>
+		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}</div>
 	)}
 	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
 </ListingLayout>

@@ -561,6 +561,11 @@ export const eventsApi = {
         maxPrice?: number;
         /** When true, only return free events (price === 0 or isFree flag). */
         isFree?: boolean;
+        /**
+         * When true and any price filter is active, also include events whose
+         * `pricing` is NULL (events without an established price).
+         */
+        includeUnpriced?: boolean;
     }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
         return apiClient.getList({ path: `${BASE}/events`, params });
     },
