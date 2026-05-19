@@ -46,21 +46,30 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
 COPY --from=deps /repo /repo
 RUN pnpm turbo run build --filter=hospeda-web
 
+# ----- prune stage -----------------------------------------------------------
+# `pnpm deploy` resolves workspace deps as real packages and ships only prod
+# deps into a self-contained directory at /prod/web. Unlike the API (which
+# bundles everything into dist/index.cjs via tsup), Astro Node standalone
+# keeps most deps external and resolves them from node_modules at runtime, so
+# this stage is what determines the runner image size for the web app.
+#
+# See apps/api/Dockerfile for the broader rationale (and the staging incident
+# on 2026-05-19 that motivated the switch).
+FROM base AS pruned
+COPY --from=build /repo /repo
+RUN pnpm deploy --filter=hospeda-web --prod /prod/web
+
 # ----- runner stage ----------------------------------------------------------
-# Preserve the monorepo directory layout (/repo/...) so pnpm's relative
-# symlinks resolve at runtime. See apps/api/Dockerfile runner stage for full
-# rationale. Astro Node standalone still expects workspace deps to be
-# resolvable from apps/web/node_modules, hence the full layout copy.
+# Self-contained app at /app. Astro Node standalone reads dist/client/ for
+# static assets and dist/server/entry.mjs is the SSR entry — both shipped by
+# pnpm deploy as part of the app's files.
 FROM node:22-alpine AS runner
-WORKDIR /repo
+WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=4321
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=build /repo/node_modules ./node_modules
-COPY --from=build /repo/packages ./packages
-COPY --from=build /repo/apps/web ./apps/web
-WORKDIR /repo/apps/web
+COPY --from=pruned /prod/web ./
 EXPOSE 4321
 CMD ["node", "dist/server/entry.mjs"]
