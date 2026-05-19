@@ -12,6 +12,8 @@
 import {
     LocationIcon,
     ArrowRightIcon,
+    StarIcon,
+    BuildingIcon,
     BallroomIcon,
     SportsCenterIcon,
     CulturalCenterIcon,
@@ -98,6 +100,14 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
 ---
 
 <article class="event-card-h">
+    <!-- Featured badge: top-left overlay, only when isFeatured=true.
+         Sits outside the <a> link for consistent z-index handling. -->
+    {data.isFeatured && (
+        <span class="event-card-h__featured" aria-label="Evento destacado">
+            <StarIcon size={12} weight="fill" aria-hidden="true" />
+            <span class="event-card-h__featured-label">Destacado</span>
+        </span>
+    )}
     <!-- FavoriteButton island: top-right over photo area, OUTSIDE the <a> link (HTML semantics) -->
     <div class="event-card-h__fav-wrapper">
         <FavoriteButton
@@ -184,14 +194,23 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             <h3 class="event-card-h__title">{data.name}</h3>
             <p class="event-card-h__summary">{data.summary}</p>
 
-            {
-                locationLabel && (
-                    <span class="event-card-h__location">
-                        <LocationIcon size={13} weight="fill" aria-hidden="true" />
-                        {locationLabel}
-                    </span>
-                )
-            }
+            <!-- Meta row: location + organizer (both optional) -->
+            {(locationLabel || data.organizer?.name) && (
+                <div class="event-card-h__meta">
+                    {locationLabel && (
+                        <span class="event-card-h__location">
+                            <LocationIcon size={13} weight="fill" aria-hidden="true" />
+                            {locationLabel}
+                        </span>
+                    )}
+                    {data.organizer?.name && (
+                        <span class="event-card-h__organizer">
+                            <BuildingIcon size={13} weight="regular" aria-hidden="true" />
+                            <span>{data.organizer.name}</span>
+                        </span>
+                    )}
+                </div>
+            )}
         </div>
 
         <!-- Right: circular arrow CTA -->
@@ -227,6 +246,34 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         top: 8px;
         right: 8px;
         z-index: 2;
+    }
+
+    /* Featured badge: top-left overlay, only rendered when isFeatured=true.
+       Sits above the photo + date-block. In vertical mode (container query)
+       the date-block becomes a pill at top-left of the photo — see the
+       container query rule below for the conflict-avoidance offset. */
+    .event-card-h__featured {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-pill);
+        background-color: oklch(0.78 0.16 85);
+        color: oklch(0.2 0.05 85);
+        font-family: var(--font-sans);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
+        z-index: 3;
+    }
+
+    .event-card-h__featured-label {
+        line-height: 1;
     }
 
     .event-card-h:hover {
@@ -390,6 +437,15 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         overflow: hidden;
     }
 
+    /* Meta row: wraps location + organizer pills, allows them to wrap
+       to the next line on narrow widths instead of overflowing. */
+    .event-card-h__meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
     .event-card-h__location {
         display: inline-flex;
         align-items: center;
@@ -402,6 +458,30 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         padding: 0.2rem 0.6rem;
         width: fit-content;
         font-weight: 500;
+    }
+
+    /* Organizer pill: same shape as location but neutral colors so the
+       two pills read as parallel meta information. */
+    .event-card-h__organizer {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--core-muted-foreground);
+        background-color: oklch(from var(--core-foreground) l c h / 0.06);
+        border-radius: var(--radius-pill);
+        padding: 0.2rem 0.6rem;
+        width: fit-content;
+        font-weight: 500;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .event-card-h__organizer > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* Circular arrow CTA — absolute bottom-right, aligned with FavoriteButton
@@ -482,6 +562,15 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             z-index: 2;
+        }
+
+        /* In vertical mode the date-block sits at top-left of the photo.
+           Push the featured badge down so the two do not stack on top of
+           each other. */
+        .event-card-h__featured {
+            top: auto;
+            bottom: 0.625rem;
+            left: 0.625rem;
         }
 
         .event-card-h__month-rotated {

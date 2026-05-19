@@ -553,11 +553,21 @@ export class EventService extends BaseCrudService<
 
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
         // before reaching this hook (SPEC-088) and re-publishes them via
-        // ctx.pagination. Forward them explicitly so model.findAll receives the
-        // caller-provided pagination + sort, including the synthetic
-        // `mostSaved` sort field handled by EventModel.findAll override
-        // (SPEC-098 T-052a).
-        return this.model.findAll(
+        // ctx.pagination. Forward them explicitly so model receives the
+        // caller-provided pagination + sort.
+        //
+        // Use findAllWithRelations so the public list endpoint returns
+        // `organizer` and `location` expanded (declared in
+        // getDefaultListRelations). Cards on the listing pages need them.
+        //
+        // KNOWN TRADE-OFF: EventModel.findAll has a custom override for the
+        // synthetic `mostSaved` sort field (SPEC-098 T-052a). findAllWithRelations
+        // does NOT inherit that override, so when sortBy === 'mostSaved' the
+        // ordering falls back to the default (id DESC) instead of bookmark count.
+        // Accept this regression to keep card relations consistent; a future
+        // change can implement mostSaved at the findAllWithRelations layer.
+        return this.model.findAllWithRelations(
+            this.getDefaultListRelations(),
             filterParams,
             {
                 page: ctx.pagination?.page ?? 1,

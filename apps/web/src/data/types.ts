@@ -386,6 +386,12 @@ export interface EventCardData {
     /** Optional venue location. Absent for online/virtual events. */
     readonly location?: EventLocation;
     /**
+     * Optional event organizer. Absent when the API list endpoint does not
+     * expand the organizer relation. Cards may surface `organizer.name`
+     * as secondary meta.
+     */
+    readonly organizer?: { readonly name: string; readonly slug?: string };
+    /**
      * SPEC-095: City name derived from `eventLocation.cityDestination.name`.
      * Empty string when the API response did not carry a `cityDestination`
      * projection or when the event has no eventLocation.
