@@ -498,11 +498,12 @@
             "title": "E2E: exchange rate cron",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "exchange-rate-cron.test.ts. Cron fetches latest ARS/USD/BRL → updates billing_exchange_rates row → next checkout uses fresh rate."
+            "notes": "apps/api/test/e2e/flows/billing/exchange-rate-cron.test.ts (3 tests). Stubs DolarAPI + ExchangeRate-API HTTP clients at the @repo/service-core boundary (importOriginal preserves the real ExchangeRateFetcher), leaves ExchangeRateModel + DB real. Tests cover: (1) happy path — fetcher persists USD/ARS and BRL/ARS rates to exchange_rates table, follow-up SELECT returns the fresh rows (the 'next checkout uses fresh rate' contract is exercised as a direct DB read since hospeda has no e2e-reachable checkout → live rate lookup path), (2) HTTP failure — both APIs fail, fetcher reports errors, no DB writes, (3) dry-run — handler runs in dryRun mode, reports planned counts, no DB writes. Naming alignment: task notes say billing_exchange_rates (does not exist); actual table is exchange_rates. Complements unit suite at apps/api/test/cron/exchange-rate-fetch.test.ts which mocks @repo/service-core fully.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-44",
