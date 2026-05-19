@@ -25,20 +25,204 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de San Justo",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178149/hospeda/seed/required/destinations/017-destination-san-justo/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de San Justo"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano en San Justo",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178149/hospeda/seed/required/destinations/017-destination-san-justo/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Naturaleza alrededor de San Justo",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178151/hospeda/seed/required/destinations/017-destination-san-justo/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178152/hospeda/seed/required/destinations/017-destination-san-justo/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178153/hospeda/seed/required/destinations/017-destination-san-justo/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178154/hospeda/seed/required/destinations/017-destination-san-justo/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178156/hospeda/seed/required/destinations/017-destination-san-justo/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178157/hospeda/seed/required/destinations/017-destination-san-justo/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178158/hospeda/seed/required/destinations/017-destination-san-justo/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178159/hospeda/seed/required/destinations/017-destination-san-justo/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178160/hospeda/seed/required/destinations/017-destination-san-justo/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178161/hospeda/seed/required/destinations/017-destination-san-justo/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178162/hospeda/seed/required/destinations/017-destination-san-justo/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178163/hospeda/seed/required/destinations/017-destination-san-justo/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178164/hospeda/seed/required/destinations/017-destination-san-justo/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178165/hospeda/seed/required/destinations/017-destination-san-justo/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178165/hospeda/seed/required/destinations/017-destination-san-justo/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178166/hospeda/seed/required/destinations/017-destination-san-justo/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178167/hospeda/seed/required/destinations/017-destination-san-justo/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178168/hospeda/seed/required/destinations/017-destination-san-justo/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178169/hospeda/seed/required/destinations/017-destination-san-justo/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178169/hospeda/seed/required/destinations/017-destination-san-justo/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/017-destination-san-justo/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

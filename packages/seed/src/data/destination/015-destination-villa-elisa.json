@@ -25,20 +25,294 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-            "caption": "Termas de Villa Elisa",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178290/hospeda/seed/required/destinations/015-destination-villa-elisa/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Termas de Villa Elisa"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Complejo termal de Villa Elisa",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178292/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Villa Elisa",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178292/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178293/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178294/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178295/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178296/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178297/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178298/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178300/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178301/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178301/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178302/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178303/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178304/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178305/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178306/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178307/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178308/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178309/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178310/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178310/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178311/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178313/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178313/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178314/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178315/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178316/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-27.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-27",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178317/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-28.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-28",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178318/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-29.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-29",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178319/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-30.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-30",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178320/hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-31.webp",
+                "publicId": "hospeda/seed/required/destinations/015-destination-villa-elisa/gallery-31",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

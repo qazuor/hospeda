@@ -25,20 +25,276 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Urdinarrain",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178257/hospeda/seed/required/destinations/019-destination-urdinarrain/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Urdinarrain"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano en Urdinarrain",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178258/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en los alrededores de Urdinarrain",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178260/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178262/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178263/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178265/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178266/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178268/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178269/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178270/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178271/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178272/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178273/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178274/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178275/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178276/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178278/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178278/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178279/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178280/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178281/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178282/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178283/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178284/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178285/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178286/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178287/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178288/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-27.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-27",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178289/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-28.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-28",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178290/hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-29.webp",
+                "publicId": "hospeda/seed/required/destinations/019-destination-urdinarrain/gallery-29",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

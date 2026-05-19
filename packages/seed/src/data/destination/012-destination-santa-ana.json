@@ -25,20 +25,285 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Santa Ana",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178195/hospeda/seed/required/destinations/012-destination-santa-ana/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Santa Ana"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo entrerriano en Santa Ana",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178196/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Costa fluvial de Santa Ana",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178197/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178198/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178199/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178200/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178201/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178202/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178203/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178204/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178205/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178206/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178207/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178208/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178209/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178210/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178211/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178212/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178213/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178215/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178216/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-20.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-20",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178218/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-21.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-21",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178219/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-22.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-22",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178220/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-23.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-23",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178222/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-24.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-24",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178222/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-25.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-25",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178224/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-26.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-26",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178225/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-27.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-27",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178226/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-28.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-28",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178229/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-29.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-29",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178230/hospeda/seed/required/destinations/012-destination-santa-ana/gallery-30.webp",
+                "publicId": "hospeda/seed/required/destinations/012-destination-santa-ana/gallery-30",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

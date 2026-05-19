@@ -25,20 +25,159 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Rosario del Tala",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178111/hospeda/seed/required/destinations/016-destination-rosario-del-tala/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Rosario del Tala"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo gaucho en Rosario del Tala",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178112/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Estancias cerca de Rosario del Tala",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178113/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178114/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178116/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178117/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178118/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178119/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178121/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178122/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178123/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178124/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178125/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178126/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178127/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178128/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178129/hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/016-destination-rosario-del-tala/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
