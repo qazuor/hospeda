@@ -1395,6 +1395,26 @@
             "discoveredDuring": "2026-05-18 staging Sentry health check after SPEC-140 PR #1146 verification",
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["sentry", "monitoring", "observability", "web", "admin"]
+        },
+        {
+            "specId": "SPEC-147",
+            "title": "User self-service subscription cancellation",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-147-user-self-service-subscription-cancellation",
+            "created": "2026-05-19T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-27 — user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses soft-cancel branch of qzpay-core",
+            "dependsOn": ["SPEC-143", "SPEC-109"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "subscription",
+                "user-facing",
+                "lifecycle",
+                "mp-preapproval",
+                "cron"
+            ]
         }
     ]
 }
