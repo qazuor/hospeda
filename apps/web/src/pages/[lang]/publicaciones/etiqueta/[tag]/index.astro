@@ -32,6 +32,7 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { tag: tagSlug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
 
 if (!tagSlug) return new Response(null, { status: 404 });
 
@@ -101,7 +102,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
         <div class="grid">
             {cards.map((card, i) => (
                 <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-                    <ArticleCard data={card} locale={locale} />
+                    <ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
                 </div>
             ))}
         </div>

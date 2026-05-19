@@ -30,6 +30,10 @@ interface Props {
 const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
+// Forwarded to ArticleCard / FeaturedArticleCard so the FavoriteButton picks the
+// toggle-favorite flow instead of the guest auth-required popover when logged in.
+const isAuthenticated = Boolean(Astro.locals.user);
+
 // Fetch 4 posts: 1 featured + 3 secondary
 let posts: ArticleCardData[] = [];
 try {
@@ -108,7 +112,7 @@ const isSparse = posts.length < 2;
                                     data-reveal="up"
                                     {...revealStagger({ index: i + 1 })}
                                 >
-                                    <ArticleCard data={post} locale={locale} />
+                                    <ArticleCard data={post} locale={locale} isAuthenticated={isAuthenticated} />
                                 </div>
                             ))}
                         </div>

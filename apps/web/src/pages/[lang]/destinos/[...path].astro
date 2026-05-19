@@ -480,7 +480,7 @@ const safeDescriptionHtml = renderContent({
 				<div class="dest-detail__preview-grid">
 					{eventCards.map((card, i) => (
 						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<EventCardHorizontal data={card} locale={locale} />
+							<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
 						</div>
 					))}
 				</div>

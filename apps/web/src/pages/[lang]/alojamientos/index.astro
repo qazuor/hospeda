@@ -86,8 +86,9 @@ if (adults !== undefined && !Number.isNaN(adults)) contextQueryParams.set('adult
 if (childrenCount !== undefined && !Number.isNaN(childrenCount)) contextQueryParams.set('children', String(childrenCount));
 const contextQuery = contextQueryParams.toString() || undefined;
 
-// Fetch destinations for filter dropdown
-const destinationsResult = await destinationsApi.list({ pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+// Fetch destinations for filter dropdown (CITY only — accommodations are
+// browsed by city, not by parent administrative regions).
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
