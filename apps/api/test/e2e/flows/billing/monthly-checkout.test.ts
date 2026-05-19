@@ -53,6 +53,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
+import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -60,7 +61,11 @@ import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import { createTestBillingCustomer } from '../../helpers/billing-factories.js';
-import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
+import {
+    invalidSignatureHeaders,
+    providerResponseFixtures,
+    signWebhookPayload
+} from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     createTestPlan,
@@ -178,6 +183,13 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         const row = rows[0];
         expect(row).toBeDefined();
         expect(row?.mpSubscriptionId).toBe('sub_monthly_xyz');
+        // qzpay-core 1.6.4 / qzpay-drizzle 1.7.4 ship `mode: 'paid'` subs in
+        // `'incomplete'` until the `subscription_preapproval.updated` webhook
+        // flips the row to `'active'`. Prior versions wrote `'active'` at
+        // create time, which leaked entitlements before any provider
+        // authorization landed — pin the invariant explicitly so a downstream
+        // bump that regresses the behavior fails this test.
+        expect(row?.status).toBe('incomplete');
         const subscriptionMetadata = row?.metadata as Record<string, unknown> | null;
         expect(subscriptionMetadata?.source).toBe('start-paid-monthly');
 
@@ -353,5 +365,261 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
 
         // Adapter was never called.
         expect(mpStub.config.getCalls('subscriptions.create')).toHaveLength(0);
+    });
+
+    // -----------------------------------------------------------------------
+    // Webhook activation — sub-commit 3
+    //
+    // MercadoPago delivers `{ id, type: 'subscription_preapproval.updated',
+    // data: { id } }` when the user authorizes the recurring charge in MP.
+    // The hospeda webhook handler (apps/api/src/routes/webhooks/mercadopago/
+    // subscription-logic.ts:218 `processSubscriptionUpdated`) fetches the
+    // full preapproval via paymentAdapter.subscriptions.retrieve, maps the
+    // MP-side status to the internal SubscriptionStatusEnum via
+    // QZPAY_TO_HOSPEDA_STATUS (subscription-logic.ts:77), updates the local
+    // row matched by `mp_subscription_id`, and invokes
+    // `clearEntitlementCache(customerId)` so the next entitlement lookup
+    // sees the post-activation plan immediately (no 5-minute TTL wait).
+    //
+    // The MP adapter maps MP `'authorized'` to qzpay `'active'`
+    // (mercadopago/types.ts:117 MERCADOPAGO_SUBSCRIPTION_STATUS), and
+    // QZPAY_TO_HOSPEDA_STATUS maps qzpay `'active'` to
+    // SubscriptionStatusEnum.ACTIVE. So stubbing
+    // `subscriptions.retrieve` with `status: 'active'` (the post-MP-mapping
+    // value) flips the local row to `active` exactly once.
+    //
+    // The three tests below mirror the annual sub-commit 3 webhook block:
+    // happy path (matching mpSubscriptionId), mismatched id (no DB change),
+    // invalid signature (401, no DB change).
+    // -----------------------------------------------------------------------
+
+    /**
+     * Helper: create a pending monthly subscription via the happy path so
+     * the webhook tests have something to activate. Resets the stub config
+     * before returning so each test's assertions about webhook stub calls
+     * are independent of the create-time call.
+     */
+    async function createPendingMonthlySubscription(): Promise<{
+        readonly localSubscriptionId: string;
+        readonly mpSubscriptionId: string;
+    }> {
+        const mpSubscriptionId = `sub_for_activation_${randomUUID().slice(0, 8)}`;
+        mpStub.config.setSuccess(
+            'subscriptions.create',
+            providerResponseFixtures.subscription({
+                id: mpSubscriptionId,
+                status: 'pending',
+                initPoint: `https://stub.example/preapproval/${mpSubscriptionId}`
+            })
+        );
+        const response = await client.post('/api/v1/protected/billing/subscriptions/start-paid', {
+            planSlug: cheapPlanName,
+            billingInterval: 'monthly'
+        });
+        expect(response.status).toBe(201);
+        const body = (await response.json()) as {
+            readonly data: { readonly localSubscriptionId: string };
+        };
+        mpStub.config.reset();
+        return {
+            localSubscriptionId: body.data.localSubscriptionId,
+            mpSubscriptionId
+        };
+    }
+
+    /**
+     * Helper: build + sign an MP IPN subscription_preapproval.updated payload.
+     */
+    function buildSignedWebhookRequest(opts: {
+        readonly mpSubscriptionId: string;
+    }): {
+        readonly body: string;
+        readonly headers: Record<string, string>;
+    } {
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'subscription_preapproval',
+            action: 'subscription_preapproval.updated',
+            data: { id: opts.mpSubscriptionId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const headers = signWebhookPayload({ body });
+        return { body, headers };
+    }
+
+    it('webhook subscription_preapproval.updated with matching mpSubscriptionId flips the subscription to active', async () => {
+        // ARRANGE: pending monthly sub created via happy path
+        const { localSubscriptionId, mpSubscriptionId } = await createPendingMonthlySubscription();
+
+        // ARRANGE: stub the three adapter calls qzpay-hono + the handler make.
+        // subscriptions.retrieve returns `status: 'active'` — the
+        // POST-mapping value (the MP adapter would map MP `'authorized'` to
+        // `'active'` via MERCADOPAGO_SUBSCRIPTION_STATUS before returning).
+        // The hospeda handler then maps qzpay `'active'` to
+        // SubscriptionStatusEnum.ACTIVE and updates the local row.
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_monthly_activation',
+                type: 'subscription_preapproval.updated',
+                data: { id: mpSubscriptionId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'subscriptions.retrieve',
+            providerResponseFixtures.subscription({
+                id: mpSubscriptionId,
+                status: 'active'
+            })
+        );
+
+        // ACT: POST the signed webhook
+        const { body, headers } = buildSignedWebhookRequest({ mpSubscriptionId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: webhook acknowledged
+        expect(response.status).toBe(200);
+
+        // ASSERT: subscription flipped to active
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('active');
+
+        // ASSERT: each stub leg fired exactly once
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(1);
+        expect(mpStub.config.getCalls('subscriptions.retrieve')).toHaveLength(1);
+    });
+
+    it('webhook with mismatched mpSubscriptionId leaves the existing subscription untouched', async () => {
+        // ARRANGE: pending monthly sub
+        const { localSubscriptionId, mpSubscriptionId } = await createPendingMonthlySubscription();
+
+        // ARRANGE: webhook carries a *different* mpSubscriptionId — one that
+        // does not match any subscription row. The handler should log the
+        // miss + acknowledge the event without mutating the existing sub.
+        const mismatchedMpId = `sub_mismatch_${randomUUID().slice(0, 8)}`;
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_monthly_mismatch',
+                type: 'subscription_preapproval.updated',
+                data: { id: mismatchedMpId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'subscriptions.retrieve',
+            providerResponseFixtures.subscription({
+                id: mismatchedMpId,
+                status: 'active'
+            })
+        );
+
+        // ACT
+        const { body, headers } = buildSignedWebhookRequest({
+            mpSubscriptionId: mismatchedMpId
+        });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT: 200 (event acknowledged) and the original sub is unchanged.
+        expect(response.status).toBe(200);
+
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        // The original sub did NOT flip to active. qzpay-drizzle 1.7.4+
+        // leaves it in `'incomplete'` until the matching preapproval webhook
+        // arrives, so pin the exact status (no laxer `.not.toBe('active')`)
+        // to catch regressions in either the storage adapter (the initial
+        // status) or the webhook handler (which must NOT update on a miss).
+        expect(subs[0]?.status).toBe('incomplete');
+
+        // ASSERT: no NEW subscription was created for the unknown preapproval id.
+        const subsForMismatched = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.mpSubscriptionId, mismatchedMpId));
+        expect(subsForMismatched).toHaveLength(0);
+
+        // The expected sub still exists with its original mp_subscription_id.
+        const subsForOriginal = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.mpSubscriptionId, mpSubscriptionId));
+        expect(subsForOriginal).toHaveLength(1);
+    });
+
+    it('webhook with invalid signature is rejected with 401 and produces no DB change', async () => {
+        // ARRANGE: pending monthly sub
+        const { localSubscriptionId, mpSubscriptionId } = await createPendingMonthlySubscription();
+
+        // ACT: build a body but use wrong-hmac headers — Hospeda's
+        // webhookSignatureMiddleware (HMAC over the body with the test
+        // secret) rejects BEFORE qzpay-hono and the handler run.
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'subscription_preapproval',
+            action: 'subscription_preapproval.updated',
+            data: { id: mpSubscriptionId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
+
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...badHeaders
+            },
+            body
+        });
+
+        expect(response.status).toBe(401);
+
+        // ASSERT: subscription untouched. Same `'incomplete'` invariant as
+        // the mismatched-id test above — the signature middleware rejects
+        // BEFORE the handler runs, so the row never sees the update path.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        expect(subs).toHaveLength(1);
+        expect(subs[0]?.status).toBe('incomplete');
+
+        // ASSERT: stub never reached (hospeda's middleware short-circuited).
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
+        expect(mpStub.config.getCalls('subscriptions.retrieve')).toHaveLength(0);
     });
 });
