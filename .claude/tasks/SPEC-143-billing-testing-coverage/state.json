@@ -509,11 +509,12 @@
             "title": "E2E: secondary auth/redirect/cancel flows (D1..D8)",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "auth-redirect-cancel-flows.test.ts. Eight smaller flows: D1 success-redirect, D2 failure-redirect, D3 pending-redirect, D4 cancel-from-MP, D5 browser-back-during-checkout, D6 double-submit, D7 session-expired-during-checkout, D8 anonymous-checkout-attempt (must redirect to login preserving intent)."
+            "notes": "Split across two files because the eight sub-flows mix API and frontend surfaces. apps/api/test/e2e/flows/billing/auth-redirect-cancel-flows.test.ts (4 tests) covers D4 cancel-from-MP webhook, D6 double-submit start-paid (PIN, no idempotency), D7 session-expired during checkout, D8 anonymous checkout attempt. apps/web/test/pages/checkout-pages.test.ts (26 tests, source-reading per apps/web/CLAUDE.md sealed pattern) covers D1 success.astro, D2 failure.astro, D3 pending.astro, index.astro redirect, plus a pin that /billing/return.astro (the orphan back_url) does not exist. D5 browser-back is out-of-scope vitest e2e — Workstream B manual staging smoke (docs/staging-smoke-checklist.md). Discovered bug pinned in engram bug/back-url-orphan-billing-return: MP back_url points at /billing/return which is 404 in apps/web; back_urls.pending=success in qzpay MP adapter; back_url lacks locale prefix. Commits 0b98b006a + b3e68bff4.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-45",
