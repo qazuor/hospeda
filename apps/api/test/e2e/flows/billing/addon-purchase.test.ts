@@ -52,6 +52,15 @@ const stubRef = vi.hoisted(() => ({
     current: null as unknown
 }));
 const preferenceCreateMock = vi.hoisted(() => vi.fn());
+// Per-test override for getAddonBySlug. When unset (default), the wrapper
+// below falls through to the real catalog lookup so the happy path behaves
+// normally. When set (in an error-path test), the wrapper returns the
+// override value instead — enabling tests like ADDON_INACTIVE that need an
+// addon whose `isActive` is false (no such row exists in the production
+// catalog, so it has to be synthesized at test time).
+const addonOverrideRef = vi.hoisted(() => ({
+    bySlug: null as ((slug: string) => unknown) | null
+}));
 
 vi.mock('@repo/billing', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/billing')>();
@@ -64,6 +73,13 @@ vi.mock('@repo/billing', async (importOriginal) => {
                 );
             }
             return stubRef.current;
+        },
+        getAddonBySlug: (slug: string) => {
+            if (addonOverrideRef.bySlug !== null) {
+                const result = addonOverrideRef.bySlug(slug);
+                if (result !== undefined) return result;
+            }
+            return actual.getAddonBySlug(slug);
         }
     };
 });
@@ -85,7 +101,7 @@ vi.mock('mercadopago', () => {
     };
 });
 
-import { billingAddonPurchases, billingCheckouts } from '@repo/db';
+import { billingAddonPurchases, billingCheckouts, billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
@@ -137,6 +153,7 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
     beforeEach(async () => {
         mpStub.config.reset();
         preferenceCreateMock.mockReset();
+        addonOverrideRef.bySlug = null;
 
         // Each test starts clean: seed plans, create a user + billing
         // customer, build an authenticated client, and seed an ACTIVE monthly
@@ -311,5 +328,94 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
             [])[1];
         expect(orderUuid).toBeDefined();
         expect(callArg?.requestOptions?.idempotencyKey).toBe(orderUuid);
+    });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    //
+    // The addon purchase flow surfaces four guards reachable through the
+    // user-facing endpoint. Each test pins one branch and asserts no
+    // MP Preference is created when the guard fires (the Preference call
+    // is the side effect we most want to prevent — billing the user for
+    // a state the system already knows is invalid).
+    //
+    // Note: ADDON_ALREADY_ACTIVE is intentionally NOT pinned here. That
+    // guard lives on the WEBHOOK side (confirmAddonPurchase, SELECT FOR
+    // UPDATE) and is covered by sub-commit 3.
+    // -----------------------------------------------------------------------
+
+    it('returns 404 when the addon slug does not match any catalog entry', async () => {
+        const response = await client.post(
+            '/api/v1/protected/billing/addons/no-such-addon/purchase',
+            { addonId: 'no-such-addon' }
+        );
+
+        expect(response.status).toBe(404);
+
+        // No Preference call: the catalog lookup failed before the SDK
+        // path. This pins that the addon catalog gate is upstream of any
+        // network side effect.
+        expect(preferenceCreateMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 422 when the addon exists but is marked inactive in the catalog', async () => {
+        // ARRANGE — synthesize an inactive variant of the canonical addon.
+        // No row in ALL_ADDONS has isActive=false, so we override the
+        // catalog lookup for this test only. The override falls back to
+        // the real lookup for any slug other than the one we configure.
+        const { getAddonBySlug: realGetAddonBySlug } = await import('@repo/billing');
+        const real = realGetAddonBySlug(ADDON_SLUG);
+        if (!real) throw new Error('precondition: canonical addon must exist in catalog');
+        addonOverrideRef.bySlug = (slug) =>
+            slug === ADDON_SLUG ? { ...real, isActive: false } : undefined;
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(422);
+        expect(preferenceCreateMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 422 when the customer has no subscriptions at all', async () => {
+        // ARRANGE — delete the active sub seeded by beforeEach. The
+        // service's `subscriptions.length === 0` branch (line 207 in
+        // addon.checkout.ts) requires literally zero rows, not just zero
+        // active rows.
+        await testDb
+            .getDb()
+            .delete(billingSubscriptions)
+            .where(eq(billingSubscriptions.customerId, customerId));
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(422);
+        expect(preferenceCreateMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 422 when the customer has subscriptions but none active or trialing', async () => {
+        // ARRANGE — flip the seeded sub to 'cancelled' so the
+        // `.find(sub => active || trialing)` returns undefined. The
+        // service hits its NO_ACTIVE_SUBSCRIPTION branch (line 221) rather
+        // than NO_SUBSCRIPTION; the two branches return the same 422
+        // status but different error codes — pin both so a refactor that
+        // collapses them surfaces here.
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({ status: 'cancelled' })
+            .where(eq(billingSubscriptions.customerId, customerId));
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(422);
+        expect(preferenceCreateMock).not.toHaveBeenCalled();
     });
 });
