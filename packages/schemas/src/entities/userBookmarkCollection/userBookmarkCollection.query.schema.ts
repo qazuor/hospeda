@@ -167,7 +167,15 @@ export const UserBookmarkCollectionDetailResponseSchema = UserBookmarkCollection
             entityId: true,
             entityType: true,
             name: true,
+            description: true,
             createdAt: true
+        }).extend({
+            // Server-enriched display fields resolved from the referenced entity.
+            // Nullable because the entity may have been soft-deleted or be of a
+            // non-enrichable type (e.g. USER, ATTRACTION).
+            entityName: z.string().nullable().optional(),
+            entitySlug: z.string().nullable().optional(),
+            entityImage: z.string().nullable().optional()
         })
     ).optional(),
 

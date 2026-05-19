@@ -82,11 +82,11 @@ describe('UserBookmark CRUD Schemas', () => {
             });
             expect(() => UserBookmarkCreateInputSchema.parse(maxInput)).not.toThrow();
 
-            // Invalid - too short
+            // Short names are accepted (no min length — see UserBookmarkSchema)
             const tooShortInput = createUserBookmarkInputFixture({
                 name: edgeCases.invalidValues.nameTooShort
             });
-            expect(() => UserBookmarkCreateInputSchema.parse(tooShortInput)).toThrow();
+            expect(() => UserBookmarkCreateInputSchema.parse(tooShortInput)).not.toThrow();
 
             // Invalid - too long
             const tooLongInput = createUserBookmarkInputFixture({
@@ -110,11 +110,11 @@ describe('UserBookmark CRUD Schemas', () => {
             });
             expect(() => UserBookmarkCreateInputSchema.parse(maxInput)).not.toThrow();
 
-            // Invalid - too short
+            // Short descriptions are accepted (no min length — see UserBookmarkSchema)
             const tooShortInput = createUserBookmarkInputFixture({
                 description: edgeCases.invalidValues.descriptionTooShort
             });
-            expect(() => UserBookmarkCreateInputSchema.parse(tooShortInput)).toThrow();
+            expect(() => UserBookmarkCreateInputSchema.parse(tooShortInput)).not.toThrow();
 
             // Invalid - too long
             const tooLongInput = createUserBookmarkInputFixture({

@@ -28,8 +28,18 @@ export const listUserBookmarksRoute = createProtectedRoute({
         page: z.coerce.number().int().min(1).default(1),
         pageSize: z.coerce.number().int().min(1).max(100).default(10)
     },
+    // Bookmarks are enriched server-side with display fields from the referenced
+    // entity (accommodation/destination/event/post). The three extra fields
+    // (`entityName`, `entitySlug`, `entityImage`) are nullable because the entity
+    // may be soft-deleted or of a non-enrichable type (e.g. USER, ATTRACTION).
     responseSchema: z.object({
-        bookmarks: z.array(UserBookmarkSchema),
+        bookmarks: z.array(
+            UserBookmarkSchema.extend({
+                entityName: z.string().nullable().optional(),
+                entitySlug: z.string().nullable().optional(),
+                entityImage: z.string().nullable().optional()
+            })
+        ),
         total: z.number()
     }),
     handler: async (
