@@ -236,6 +236,17 @@ describe('buildCspHeader', () => {
         }
     });
 
+    it('should allowlist Google and Facebook OAuth avatar hosts in img-src', () => {
+        // Better Auth stores the OAuth-returned picture URL on user.image and
+        // @repo/auth-ui renders it via plain <img>. Without these hosts the
+        // navbar avatar gets blocked for signed-in users (or generates CSP
+        // reports while the policy is Report-Only).
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        expect(imgSrc).toContain('https://lh3.googleusercontent.com');
+        expect(imgSrc).toContain('https://platform-lookaside.fbsbx.com');
+    });
+
     it('should use exact cloudinary hostname, not a wildcard', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('https://*.cloudinary.com');
