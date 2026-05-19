@@ -76,6 +76,14 @@ const PROJECT_TAGS = {
  * Check if Sentry should be initialized
  */
 function shouldInitializeSentry(): boolean {
+    // @sentry/react targets the browser. Its integrations (browserTracing,
+    // replay) reach for `window`/DOM APIs and the SDK is not safe to init in
+    // Nitro's node-server SSR bundle. Server-side error tracking should go
+    // through the API's own Sentry middleware, not the React SDK.
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
     const config = getSentryConfig();
 
     // Only initialize in production with valid DSN

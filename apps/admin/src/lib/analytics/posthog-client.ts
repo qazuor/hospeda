@@ -55,6 +55,12 @@ let isInitialized = false;
  * gate is closed.
  */
 function shouldInitialize(): boolean {
+    // posthog-js is browser-only — calling posthog.init() during Nitro SSR
+    // crashes the node-server bundle with `init is not a function` because
+    // the package's default export is a no-op stub on the server side.
+    if (typeof window === 'undefined') {
+        return false;
+    }
     if (import.meta.env.DEV) {
         adminLogger.debug('[PostHog] Skipping initialization in development');
         return false;
