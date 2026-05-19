@@ -91,6 +91,31 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
         });
     });
 
+    describe('content rendering: markdown → HTML → sanitize', () => {
+        it('imports marked', () => {
+            expect(pageSrc).toMatch(/import\s*\{\s*marked\s*\}\s*from\s*'marked'/);
+        });
+
+        it('runs marked.parse() before sanitizeHtml so markdown becomes HTML', () => {
+            // The order must be markdown→HTML→sanitize. Sanitizing markdown
+            // text directly leaves `**bold**` and `## H2` visible as plain text.
+            const renderIdx = pageSrc.indexOf('marked.parse(');
+            const sanitizeIdx = pageSrc.indexOf('sanitizeHtml({');
+            expect(renderIdx).toBeGreaterThan(-1);
+            expect(sanitizeIdx).toBeGreaterThan(-1);
+            expect(renderIdx).toBeLessThan(sanitizeIdx);
+        });
+
+        it('parses synchronously (Astro SSR is sync, cannot await in the frontmatter expression chain)', () => {
+            expect(pageSrc).toMatch(/marked\.parse\([\s\S]*?async:\s*false/);
+        });
+
+        it('feeds the sanitized HTML (not the raw content) to PostContent', () => {
+            expect(pageSrc).toContain('safeContentHtml = sanitizeHtml');
+            expect(pageSrc).toContain('safeContentHtml={safeContentHtml}');
+        });
+    });
+
     describe('PostDetailHeader renders the new content blocks', () => {
         it('renders a subtitle paragraph when a summary is provided', () => {
             expect(headerSrc).toContain('post-header__summary');

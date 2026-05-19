@@ -30,9 +30,16 @@ describe('detail pages — HTML sanitization (XSS regression)', () => {
             );
         });
 
-        it('builds a sanitized content variable from post.contentHtml', () => {
+        it('sources content from post.contentHtml (with fallback to post.content / summary) and sanitizes the result', () => {
+            // The pipeline is now: rawContent = post.contentHtml ?? post.content ?? summary
+            // → marked.parse(rawContent) → sanitizeHtml(rendered).
+            // What matters for the XSS regression is that *every* path of the content
+            // ends inside `sanitizeHtml(...)` before it is handed to `set:html`.
             expect(src).toContain('sanitizeHtml(');
-            expect(src).toMatch(/sanitizeHtml\s*\(\s*\{\s*[\s\S]*post\.contentHtml/);
+            expect(src).toMatch(/post\.contentHtml\s*\|\|\s*post\.content/);
+            // The rendered HTML (output of marked) must be the input to sanitizeHtml,
+            // not the raw user-supplied content.
+            expect(src).toMatch(/sanitizeHtml\s*\(\s*\{\s*[\s\S]*?html:\s*renderedHtml/);
         });
 
         it('passes the sanitized variable to PostContent component (not raw set:html)', () => {
