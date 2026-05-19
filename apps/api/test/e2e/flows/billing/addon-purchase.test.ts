@@ -111,6 +111,7 @@ import {
     createTestBillingCustomer,
     createTestSubscription
 } from '../../helpers/billing-factories.js';
+import { providerResponseFixtures, signWebhookPayload } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     type TestBillingPlansSeed,
@@ -397,6 +398,30 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
         expect(preferenceCreateMock).not.toHaveBeenCalled();
     });
 
+    /**
+     * Helper: build a signed MP IPN payment.updated webhook payload. Mirrors
+     * `buildSignedWebhookRequest` in annual-checkout.test.ts. Each invocation
+     * uses a fresh random outer `id` so qzpay-hono's idempotency tracker does
+     * not collapse two sequential calls; the inner `data.id` (the MP
+     * paymentId) is caller-supplied so two events can target the same
+     * payment when an idempotency test needs that.
+     */
+    function buildSignedWebhookRequest(opts: { readonly providerPaymentId: string }): {
+        readonly body: string;
+        readonly headers: Record<string, string>;
+    } {
+        const body = JSON.stringify({
+            id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
+            type: 'payment',
+            action: 'payment.updated',
+            data: { id: opts.providerPaymentId },
+            date_created: new Date().toISOString(),
+            live_mode: false
+        });
+        const headers = signWebhookPayload({ body });
+        return { body, headers };
+    }
+
     it('returns 422 when the customer has subscriptions but none active or trialing', async () => {
         // ARRANGE — flip the seeded sub to 'cancelled' so the
         // `.find(sub => active || trialing)` returns undefined. The
@@ -417,5 +442,202 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
 
         expect(response.status).toBe(422);
         expect(preferenceCreateMock).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
+    // Webhook activation + JSONB CHECK validation — sub-commit 3
+    //
+    // The second leg of the addon flow runs on the WEBHOOK side. MP fires
+    // payment.updated once the user completes the Checkout Pro flow; the
+    // hospeda handler retrieves the payment, dispatches to
+    // confirmAddonPurchase, and INSERTs a `billing_addon_purchases` row
+    // with status='active'. The row's `limit_adjustments` and
+    // `entitlement_adjustments` JSONB columns are guarded by the
+    // `chk_limit_adjustments_type` / `chk_entitlement_adjustments_type`
+    // CHECK constraints (must be JSON arrays). This sub-commit pins the
+    // array shape contract end-to-end.
+    //
+    // Note: the helper subscription seeded in beforeEach is what
+    // confirmAddonPurchase looks up as the customer's active sub. Its id
+    // ends up in the inserted row's `subscription_id` column.
+    // -----------------------------------------------------------------------
+
+    it('webhook payment.updated inserts an active billing_addon_purchases row with JSONB-array adjustments', async () => {
+        // ARRANGE — pick a random MP payment id. confirmAddonPurchase will
+        // store this as `payment_id` on the inserted row (defensive
+        // idempotency uses this column on subsequent ticks).
+        const providerPaymentId = `pay_test_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+        // ARRANGE — stub the three adapter calls qzpay-hono + the handler
+        // make: webhooks.verifySignature, webhooks.constructEvent, and
+        // payments.retrieve. The retrieved payment carries the metadata
+        // shape that extractAddonMetadata reads (camelCase addonSlug +
+        // customerId).
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_addon_activate',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: ADDON_PRICE_ARS_CENTAVOS,
+                currency: 'ARS',
+                metadata: {
+                    addonSlug: ADDON_SLUG,
+                    customerId,
+                    userId,
+                    type: 'addon_purchase'
+                }
+            })
+        );
+
+        // Sanity — no row exists before the webhook lands.
+        const before = await testDb.getDb().select().from(billingAddonPurchases);
+        expect(before).toHaveLength(0);
+
+        // ACT — POST the signed webhook
+        const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
+        const response = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...headers
+            },
+            body
+        });
+
+        // ASSERT — webhook acknowledged. MP retries on non-2xx, so the
+        // handler always returns 200 once signature + dispatch finish,
+        // even when downstream processing has nothing to do.
+        expect(response.status).toBe(200);
+
+        // ASSERT — exactly one billing_addon_purchases row was inserted
+        // with the expected status + correlation fields.
+        const purchases = await testDb.getDb().select().from(billingAddonPurchases);
+        expect(purchases).toHaveLength(1);
+        const purchase = purchases[0];
+        expect(purchase).toBeDefined();
+        expect(purchase?.customerId).toBe(customerId);
+        expect(purchase?.addonSlug).toBe(ADDON_SLUG);
+        expect(purchase?.status).toBe('active');
+        // expires_at: one-time addon with durationDays=7 → ~7 days in the
+        // future from the row's purchasedAt. Allow 1h slack to absorb the
+        // gap between the test's clock and the DB clock.
+        expect(purchase?.expiresAt).toBeDefined();
+        const expiresAtMs = (purchase?.expiresAt as Date).getTime();
+        const sevenDaysFromNow = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        expect(Math.abs(expiresAtMs - sevenDaysFromNow)).toBeLessThan(60 * 60 * 1000);
+        // The active subscription seeded in beforeEach is what
+        // confirmAddonPurchase links via subscription_id.
+        expect(purchase?.subscriptionId).toBeDefined();
+
+        // ASSERT — JSONB CHECK constraint contract. Both columns MUST be
+        // JSON arrays (chk_limit_adjustments_type / chk_entitlement_adjustments_type
+        // enforce this at the DB level). A non-array shape would not even
+        // commit; this assertion documents the contract.
+        expect(Array.isArray(purchase?.limitAdjustments)).toBe(true);
+        expect(Array.isArray(purchase?.entitlementAdjustments)).toBe(true);
+
+        // visibility-boost-7d's catalog row has affectsLimitKey=null and
+        // grantsEntitlement=FEATURED_LISTING, so the computed adjustment
+        // arrays are: limits = [] (no limit affected), entitlements =
+        // [{ entitlementKey: 'featured_listing', granted: true }]. Pin
+        // both — a refactor that changes the shape (object instead of
+        // array, missing keys, etc.) would surface here AND would also
+        // trip the DB CHECK on insert.
+        expect(purchase?.limitAdjustments).toEqual([]);
+        const entitlementAdj = purchase?.entitlementAdjustments as Array<Record<string, unknown>>;
+        expect(entitlementAdj).toHaveLength(1);
+        expect(entitlementAdj[0]).toEqual({
+            entitlementKey: 'featured_listing',
+            granted: true
+        });
+
+        // ASSERT — each stub leg fired exactly once. The annual-checkout
+        // suite pins this same triplet; replicating it here documents that
+        // the addon webhook path uses the same dispatch pipeline.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
+        expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(1);
+        expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(1);
+    });
+
+    it('webhook payment.updated is idempotent: a duplicate event does not insert a second row', async () => {
+        // ARRANGE — same setup as the happy path. Two webhook events with
+        // the SAME providerPaymentId hit the endpoint sequentially; the
+        // idempotency guard at payment-logic.ts:583 (SELECT by paymentId)
+        // short-circuits the second one.
+        const providerPaymentId = `pay_test_idem_${Date.now()}`;
+        mpStub.config.setSuccess('webhooks.verifySignature', true);
+        mpStub.config.setSuccess(
+            'webhooks.constructEvent',
+            providerResponseFixtures.webhookEvent({
+                id: 'evt_test_addon_idem',
+                type: 'payment.updated',
+                data: { id: providerPaymentId }
+            })
+        );
+        mpStub.config.setSuccess(
+            'payments.retrieve',
+            providerResponseFixtures.payment({
+                id: providerPaymentId,
+                status: 'approved',
+                amount: ADDON_PRICE_ARS_CENTAVOS,
+                currency: 'ARS',
+                metadata: {
+                    addonSlug: ADDON_SLUG,
+                    customerId,
+                    userId,
+                    type: 'addon_purchase'
+                }
+            })
+        );
+
+        // ACT 1 — first event lands and creates the row.
+        const first = buildSignedWebhookRequest({ providerPaymentId });
+        const firstResponse = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...first.headers
+            },
+            body: first.body
+        });
+        expect(firstResponse.status).toBe(200);
+
+        const afterFirst = await testDb.getDb().select().from(billingAddonPurchases);
+        expect(afterFirst).toHaveLength(1);
+        const insertedId = afterFirst[0]?.id;
+
+        // ACT 2 — second event with the SAME providerPaymentId. The outer
+        // event id differs (buildSignedWebhookRequest randomises it), so
+        // qzpay-hono's idempotency tracker does NOT collapse the two.
+        // Hospeda's payment-logic.ts idempotency guard (SELECT by
+        // paymentId) is what we want to validate here.
+        const second = buildSignedWebhookRequest({ providerPaymentId });
+        const secondResponse = await app.request('/api/v1/webhooks/mercadopago', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'mp-webhook-test',
+                ...second.headers
+            },
+            body: second.body
+        });
+        expect(secondResponse.status).toBe(200);
+
+        // ASSERT — still exactly one row, same id. The idempotency guard
+        // skipped the second confirmAddonPurchase call cleanly.
+        const afterSecond = await testDb.getDb().select().from(billingAddonPurchases);
+        expect(afterSecond).toHaveLength(1);
+        expect(afterSecond[0]?.id).toBe(insertedId);
     });
 });
