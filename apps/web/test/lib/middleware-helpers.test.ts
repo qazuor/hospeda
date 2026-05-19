@@ -248,9 +248,24 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('blob:');
     });
 
-    it('should not include unsafe-inline', () => {
+    it('should allow inline style attributes via style-src-attr', () => {
+        // Inline style="..." attributes (used for tokenized colors on cards
+        // and per-card transition-delay in the stagger pattern) cannot use a
+        // nonce by CSP spec. We override only -attr with 'unsafe-inline' so
+        // <style> blocks remain nonce-gated.
         const header = buildCspHeader({ nonce: 'x' });
-        expect(header).not.toContain('unsafe-inline');
+        const attrDirective = header.split('; ').find((d) => d.startsWith('style-src-attr ')) ?? '';
+        expect(attrDirective).toContain("'unsafe-inline'");
+    });
+
+    it('should not leak unsafe-inline into directives other than style-src-attr', () => {
+        // The lax override on -attr must NOT bleed into script-src, the main
+        // style-src (which gates <style> blocks), or any other directive.
+        const header = buildCspHeader({ nonce: 'x' });
+        const directives = header.split('; ').filter((d) => !d.startsWith('style-src-attr '));
+        for (const d of directives) {
+            expect(d).not.toContain("'unsafe-inline'");
+        }
     });
 
     // SPEC-047 (rewritten in SPEC-140): lock the script-src security

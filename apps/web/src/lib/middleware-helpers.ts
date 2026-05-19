@@ -462,6 +462,17 @@ export function buildCspHeader({
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
         `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
+        // `style-src` (above) defaults to gating BOTH `<style>` elements and
+        // inline `style="..."` attributes. Nonces cannot be applied to style
+        // attributes by spec, so a strict nonce-based `style-src` blocks every
+        // inline color/transition style we set on cards, badges, and the
+        // `data-reveal` stagger pattern (see apps/web/src/lib/colors.ts and
+        // STYLE_GUIDE.md). Override only the `-attr` variant with
+        // `'unsafe-inline'` so:
+        //   - `<style>` blocks still require the nonce (the high-XSS-impact path)
+        //   - `style="..."` attributes are allowed (low-XSS-impact patterns
+        //     used for tokenized inline colors and per-card transition delays)
+        "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
         `img-src 'self' data: blob: ${remoteImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
