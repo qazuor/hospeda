@@ -59,6 +59,9 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 </ListingLayout>
 
 <style>
-	.events-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-card-gap); }
-	@media (min-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+	.events-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+		gap: var(--space-card-gap);
+	}
 </style>
