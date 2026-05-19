@@ -31,9 +31,14 @@ ARG HOSPEDA_ADMIN_URL=https://admin.placeholder.local
 ARG PUBLIC_API_URL=https://api.placeholder.local
 ARG PUBLIC_SITE_URL=https://placeholder.local
 ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
-ARG PUBLIC_SENTRY_RELEASE
-ARG PUBLIC_SENTRY_ENVIRONMENT
+# HOSPEDA_GIT_SHA must precede PUBLIC_SENTRY_RELEASE so the ARG default
+# expression below can reference it. Coolify should pass this as a Build
+# Variable mapped to $COOLIFY_COMMIT_SHA so each deploy gets a unique
+# release identifier in Sentry. Falling back to an unset SHA leaves the
+# downstream `|| 'development'` chain to absorb the empty value.
 ARG HOSPEDA_GIT_SHA
+ARG PUBLIC_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
+ARG PUBLIC_SENTRY_ENVIRONMENT
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
     HOSPEDA_ADMIN_URL=$HOSPEDA_ADMIN_URL \
