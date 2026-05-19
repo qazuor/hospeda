@@ -3,8 +3,7 @@
  *
  * Pins the qzpay-core pause and resume contracts end-to-end against a
  * real Postgres and the real qzpay-billing instance. T-143-28 covers
- * the pause case; T-143-29 (appended in a follow-up commit) covers the
- * resume case.
+ * the pause case; T-143-29 covers the resume case.
  *
  * Discovery context. The spec note for T-143-28 described:
  *
@@ -154,6 +153,21 @@ describe('SPEC-143 trial pause/resume e2e', () => {
         return probeApp;
     }
 
+    /**
+     * Seed a paused subscription by creating an active one and then
+     * invoking the real qzpay-core pause path. Returns the
+     * subscription id. Used by the T-143-29 resume tests below; the
+     * pause tests above exercise the pause leg directly.
+     */
+    async function seedPausedSubscription(): Promise<string> {
+        const billing = getQZPayBilling();
+        if (!billing) {
+            throw new Error('Billing instance not initialized — check the @repo/billing mock');
+        }
+        await billing.subscriptions.pause(subscriptionId);
+        return subscriptionId;
+    }
+
     describe('SPEC-143 T-143-28 — subscription pause', () => {
         it('flips status from active to paused and returns the helper-wrapped subscription', async () => {
             // Pre-cancel sanity: the sub is active and the entitlement
@@ -236,6 +250,96 @@ describe('SPEC-143 trial pause/resume e2e', () => {
             };
             expect(postBody.entitlements).toEqual([]);
             expect(postBody.limits).toEqual({});
+            expect(postBody.billingLoadFailed).toBe(false);
+        });
+    });
+
+    describe('SPEC-143 T-143-29 — subscription resume', () => {
+        it('flips status from paused to active and returns the helper-wrapped subscription', async () => {
+            const pausedId = await seedPausedSubscription();
+            const billing = getQZPayBilling();
+            if (!billing) {
+                throw new Error('Billing instance not initialized — check the @repo/billing mock');
+            }
+
+            // Sanity pre-resume: DB shows status='paused' from the
+            // seeded pause leg.
+            const preRow = (
+                await testDb
+                    .getDb()
+                    .select({ status: billingSubscriptions.status })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, pausedId))
+            )[0];
+            expect(preRow?.status).toBe('paused');
+
+            // ACT
+            const result = await billing.subscriptions.resume(pausedId);
+
+            // ASSERT: qzpay-core returns the helper-wrapped subscription
+            // with status='active' (qzpay-core/billing.ts:1395 sets
+            // status to 'active' via storage.subscriptions.update). No
+            // payment adapter call, no schedule reset — see the
+            // module-level scope note for the gaps.
+            expect(result.id).toBe(pausedId);
+            expect(result.status).toBe('active');
+
+            // ASSERT: DB row mirrors the helper view. qzpay-core's
+            // resume does NOT clear the `canceledAt` column if it was
+            // previously stamped by a soft cancel — pause-then-resume
+            // is a distinct flow from cancel-then-uncancel. (No test
+            // for that interaction here; cancel-then-resume is out of
+            // scope and would need a SPEC-147 design call.)
+            const postRow = (
+                await testDb
+                    .getDb()
+                    .select()
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, pausedId))
+            )[0];
+            expect(postRow?.status).toBe('active');
+        });
+
+        it('resumed subscription is loaded by the entitlement middleware on the next request', async () => {
+            const pausedId = await seedPausedSubscription();
+            const billing = getQZPayBilling();
+            if (!billing) {
+                throw new Error('Billing instance not initialized — check the @repo/billing mock');
+            }
+
+            // Sanity pre-resume: paused sub yields empty entitlements
+            // (the no-active-sub branch of the loader). Without this
+            // anchor, the post-resume assertion is ambiguous — the
+            // entitlements could have been there all along.
+            clearEntitlementCache(customerId);
+            const preBody = (await (await buildProbeApp().request('/probe')).json()) as {
+                readonly entitlements: readonly string[];
+            };
+            expect(preBody.entitlements).toEqual([]);
+
+            // ACT
+            await billing.subscriptions.resume(pausedId);
+
+            // qzpay-core's resume does NOT clear the entitlement
+            // cache (same gap as pause). Evict manually so the next
+            // probe re-loads from storage and observes the now-active
+            // sub. SPEC-147 should wire a cache clear into the
+            // user-facing resume route alongside the MP preapproval
+            // reactivation.
+            clearEntitlementCache(customerId);
+
+            // ASSERT: probe surfaces the plan's entitlements + limits.
+            // The middleware's active-sub filter
+            // (entitlement.ts:167-169) now matches status='active',
+            // so the loader takes the happy path and returns the
+            // cheap plan's declared entitlements.
+            const postBody = (await (await buildProbeApp().request('/probe')).json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Readonly<Record<string, number>>;
+                readonly billingLoadFailed: boolean;
+            };
+            expect(postBody.entitlements).toContain('public:read');
+            expect(postBody.limits.ads_per_month).toBe(5);
             expect(postBody.billingLoadFailed).toBe(false);
         });
     });
