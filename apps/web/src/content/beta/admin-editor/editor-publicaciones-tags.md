@@ -4,6 +4,7 @@ description: Gestión completa de posts del blog y etiquetas — rol Editor.
 order: 2
 role: admin-editor
 section: Solo editor
+audience: ['admin', 'editor']
 ---
 
 # Editor — publicaciones, etiquetas y eventos
@@ -70,3 +71,7 @@ Para las etiquetas de blog:
 - **"Mi perfil"** o avatar arriba a la derecha.
 - Cambiá foto, nombre, idioma del panel, contraseña.
 - Probá cerrar sesión y volver a entrar.
+
+## Próximo paso
+
+Si tu rol es **admin**, seguí con **[Admin — alojamientos, destinos y eventos](/beta/admin-editor/admin-alojamientos/)**. Si sos solo editor, ya está — pasá a **[Cómo reportar errores](/beta/reportar-bugs/como-reportar/)**.

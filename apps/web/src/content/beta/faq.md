@@ -110,15 +110,15 @@ Sí. Para probar como turista y como propietario podés crear 2 cuentas con emai
 
 **NO.** Tarjetas de prueba en modo de prueba (sandbox).
 
-> Excepción: los 2 testers de [pago real](/beta/pago-real/introduccion/).
+> Excepción: los 2 testers de [pago real](/beta/pagos/pago-real/introduccion/).
 
 ### ¿Dónde están las tarjetas de prueba?
 
-**[Suscripción y pagos](/beta/host/suscripcion-y-pagos/)**.
+**[Pagos de prueba](/beta/pagos/pagos-de-prueba/)**.
 
 ### Usé la tarjeta y dice "rechazada"
 
-El **nombre del titular** controla el resultado: `APRO` aprueba, `OTHE` rechaza, `CONT` deja pendiente. Tabla completa en [Suscripción y pagos](/beta/host/suscripcion-y-pagos/).
+El **nombre del titular** controla el resultado: `APRO` aprueba, `OTHE` rechaza, `CONT` deja pendiente. Tabla completa en [Pagos de prueba](/beta/pagos/pagos-de-prueba/).
 
 ### Pagué pero no me activaron
 
@@ -210,7 +210,7 @@ Quedan asociados a tu cuenta logueada. **No reportes información personal sensi
 
 ### ¿Pueden ver lo que escribo en formularios?
 
-Sí. **No pongas datos reales sensibles tuyos** (DNI real, datos bancarios) salvo que un doc te lo pida (ej. [pago real](/beta/pago-real/introduccion/)).
+Sí. **No pongas datos reales sensibles tuyos** (DNI real, datos bancarios) salvo que un doc te lo pida (ej. [pago real](/beta/pagos/pago-real/introduccion/)).
 
 ---
 
@@ -324,7 +324,7 @@ Para ver todo desde cero:
 2. Andá a `staging.hospeda.com.ar`.
 3. Sin sesión, sin caché. Como un visitante nuevo.
 
-Especialmente útil para bienvenida inicial (onboarding) (turista, propietario) y cosas que solo aparecen "la primera vez".
+Especialmente útil para probar la bienvenida inicial (turista, propietario) y cosas que solo aparecen "la primera vez".
 
 ---
 

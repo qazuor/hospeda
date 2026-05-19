@@ -165,7 +165,7 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
             <p className={styles.hint}>
                 {t(
                     'auth.verifyEmail.hint',
-                    'El enlace puede haber expirado. Solicita uno nuevo desde la página de inicio de sesión.'
+                    'El enlace puede haber expirado. Solicitá uno nuevo desde la página de inicio de sesión.'
                 )}
             </p>
             <div className={styles.recoveryActions}>

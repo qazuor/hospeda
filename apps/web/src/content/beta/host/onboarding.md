@@ -3,7 +3,7 @@ title: Bienvenida como propietario/anfitrión
 description: Cómo llegar al panel de control del propietario y dar el primer paso para publicar.
 order: 1
 role: host
-section: Empezar como host
+section: Empezar como propietario
 ---
 
 # Bienvenida como propietario/anfitrión

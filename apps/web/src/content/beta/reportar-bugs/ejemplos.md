@@ -65,7 +65,7 @@ Descripción:
 - "Está feo" → ¿qué? ¿en qué dispositivo? ¿captura?
 - "El sitio es lento" → ¿qué página? ¿cuánto tarda? ¿desde dónde te conectás?
 
-No te vamos a putear si reportás así. Pero si podés mejorarlo, mejor.
+Igual nos sirve si reportás así. Pero si podés mejorarlo, mejor.
 
 ## Si te confunde algo, igual reportalo
 
@@ -79,3 +79,7 @@ No te vamos a putear si reportás así. Pero si podés mejorarlo, mejor.
 4. Sumá info de tu dispositivo si no fue capturada automáticamente.
 5. Adjuntá captura siempre que puedas.
 6. **Enviar**. Listo.
+
+## Próximo paso
+
+Antes de reportar a lo loco, mirá **[cosas que parecen error pero no lo son](/beta/reportar-bugs/que-no-es-bug/)** para no perder tiempo en reportes que ya conocemos.

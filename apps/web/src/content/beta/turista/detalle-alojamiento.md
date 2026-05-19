@@ -8,7 +8,7 @@ section: Explorar el sitio
 
 # Ver el detalle de un alojamiento
 
-Click en cualquier alojamiento del catálogo. **Explorá libremente.**
+Apretá cualquier alojamiento del catálogo. **Explorá libremente.**
 
 ## Qué hay que mirar
 

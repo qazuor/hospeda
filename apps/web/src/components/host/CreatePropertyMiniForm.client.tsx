@@ -4,14 +4,23 @@
  *
  * Asks only for name, summary, type and a CITY destination, POSTs the result
  * to `/api/v1/protected/host-onboarding/start`, and redirects the host to the
- * admin panel edit page so they can complete the rest of the listing
- * (price, photos, amenities, contact, etc.).
+ * next step depending on whether they can reach the admin panel.
+ *
+ * Post-submit redirect rules:
+ *  - HOST users WITHOUT `access.panelAdmin` (the default for the public
+ *    onboarding flow) are sent to `accountPropertiesUrl` — the web's own
+ *    listing page under `/mi-cuenta/propiedades/`. Sending them to the admin
+ *    panel would land them on `/auth/forbidden`.
+ *  - Users WITH `access.panelAdmin` (ADMIN / SUPER_ADMIN) are sent to the
+ *    admin panel so they can complete the rest of the listing (price,
+ *    photos, amenities, contact, etc.).
  *
  * The endpoint can answer with three terminal states:
- *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page.
- *  - `resumed`     -> the user already had an active DRAFT, redirect to it.
+ *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page
+ *                     (admin) or to the web property list.
+ *  - `resumed`     -> the user already had an active DRAFT, same redirect.
  *  - `already_host` -> the user is already HOST/ADMIN, redirect to the admin
- *                      panel home (they can create listings normally there).
+ *                      home (if allowed) or to the web property list.
  *
  * On 503 (billing layer unavailable), the form surfaces a retry-friendly
  * message instead of a generic error.
@@ -35,8 +44,20 @@ export type CreatePropertyMiniFormProps = {
     readonly locale: SupportedLocale;
     /** API base URL for the draft create endpoint. */
     readonly apiUrl: string;
-    /** Admin panel base URL — host is redirected here on success. */
+    /** Admin panel base URL — used only when {@link canAccessAdminPanel} is true. */
     readonly adminUrl: string;
+    /**
+     * Absolute path on the web app to the host's property list
+     * (e.g. `/es/mi-cuenta/propiedades/`). Used as the post-create
+     * fallback for users without admin panel access.
+     */
+    readonly accountPropertiesUrl: string;
+    /**
+     * Whether the current user has `access.panelAdmin`. Plain HOST users
+     * do NOT have this permission, so they are bounced from `/admin/*`
+     * to `/auth/forbidden`. When false we keep the redirect on the web.
+     */
+    readonly canAccessAdminPanel: boolean;
 };
 
 type FieldErrors = Readonly<{
@@ -71,7 +92,13 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
  * redirects to the admin edit page on success. Shows inline field errors and
  * a top-level submit error when the API fails.
  */
-export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePropertyMiniFormProps) {
+export function CreatePropertyMiniForm({
+    locale,
+    apiUrl,
+    adminUrl,
+    accountPropertiesUrl,
+    canAccessAdminPanel
+}: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
 
     const nameId = useId();
@@ -174,6 +201,14 @@ export function CreatePropertyMiniForm({ locale, apiUrl, adminUrl }: CreatePrope
                         'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
                     )
                 );
+                return;
+            }
+
+            // Users without admin panel access (plain HOST role) cannot
+            // open /admin/* — they would land on /auth/forbidden. Send
+            // them to the web property list instead.
+            if (!canAccessAdminPanel) {
+                window.location.href = accountPropertiesUrl;
                 return;
             }
 

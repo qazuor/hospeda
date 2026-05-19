@@ -15,7 +15,7 @@ Si una palabra te suena rara, mirá acá. Está dividido por temas.
 | Palabra | Qué significa |
 | --- | --- |
 | **Dirección web (URL)** | La dirección del sitio, tipo `https://hospeda.com.ar`. También: link, enlace. |
-| **Enlace (link)** | Algo donde clickeás y te lleva a otro lado. |
+| **Enlace (link)** | Algo donde hacés clic y te lleva a otro lado. |
 | **Navegador** | El programa con el que abrís internet (Chrome, Firefox, Safari, Edge). |
 | **Pestaña (tab)** | Cada "página" abierta dentro del navegador. |
 | **Recargar** / "refrescar" | Volver a cargar la página. En compu: `F5` o `Ctrl + R` (`Cmd + R` en Mac). En celular: deslizar para abajo. |
@@ -35,7 +35,7 @@ Si una palabra te suena rara, mirá acá. Está dividido por temas.
 | **Barra de navegación (navbar)** | El menú con los enlaces principales (suele estar en la cabecera). |
 | **Barra lateral (sidebar)** | Menú vertical al costado. Acá lo tenés a la izquierda. |
 | **Ruta de navegación (breadcrumb)** | El rastro tipo "Inicio → Alojamientos → Casa de campo". Te muestra dónde estás. |
-| **Botón** | Algo donde clickeás para hacer una acción (texto, ícono, o ambos). |
+| **Botón** | Algo donde hacés clic para hacer una acción (texto, ícono, o ambos). |
 | **CTA** | "Call to action" — el botón principal de una pantalla ("Suscribirme", "Reservar"). |
 | **Enlace de texto (link)** | Palabra subrayada o de otro color dentro de un párrafo que actúa como enlace. |
 | **Ícono** | El dibujito chiquito (corazón, lupa, engranaje). |
@@ -89,9 +89,9 @@ Si una palabra te suena rara, mirá acá. Está dividido por temas.
 | **Sponsor** | Auspiciante. Aparece destacado a cambio de pago. |
 | **Plan de suscripción** | Membresía que paga el propietario para publicar (Free, Pro, Premium). |
 | **Add-on** | Funcionalidad extra que se compra suelta encima de un plan. |
-| **Código promo** | Cupón de descuento aplicable al checkout. |
+| **Código promo** | Cupón de descuento aplicable a la pantalla de pago. |
 | **Modo de prueba (sandbox)** | Modo de prueba del sistema de pagos. **No usa plata real.** |
-| **Checkout** | La pantalla donde completás los datos para pagar. |
+| **Pantalla de pago (checkout)** | La pantalla donde completás los datos para pagar. Cuando pagás un plan, corre en MercadoPago, no en Hospeda. |
 | **MercadoPago** | El procesador de pagos que usamos. |
 | **Tarjeta de prueba** | Tarjeta ficticia que solo funciona en modo de prueba. |
 | **Panel de control (dashboard)** | Panel principal una vez logueado. Cambia según seas turista, propietario o admin. |

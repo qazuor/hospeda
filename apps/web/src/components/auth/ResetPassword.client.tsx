@@ -110,7 +110,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                 <p className={styles.successMessage}>
                     {t(
                         'auth.resetPassword.successMessage',
-                        'Tu contrasena fue actualizada exitosamente. Ya podes iniciar sesion.'
+                        'Tu contraseña fue actualizada exitosamente. Ya podés iniciar sesión.'
                     )}
                 </p>
                 <a
@@ -132,10 +132,10 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
-                    {t('auth.resetPassword.title', 'Nueva contrasena')}
+                    {t('auth.resetPassword.title', 'Nueva contraseña')}
                 </h2>
                 <p className={styles.description}>
-                    {t('auth.resetPassword.description', 'Ingresa y confirma tu nueva contrasena.')}
+                    {t('auth.resetPassword.description', 'Ingresá y confirmá tu nueva contraseña.')}
                 </p>
             </div>
 
@@ -185,7 +185,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder={t(
                         'auth.resetPassword.confirmPasswordPlaceholder',
-                        'Repite tu contraseña'
+                        'Repetí tu contraseña'
                     )}
                     required
                     minLength={8}

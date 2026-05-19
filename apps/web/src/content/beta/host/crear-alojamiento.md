@@ -3,7 +3,7 @@ title: Crear tu primer alojamiento
 description: Miniformulario rápido en el sitio + asistente guiado completo en el panel admin.
 order: 2
 role: host
-section: Empezar como host
+section: Empezar como propietario
 ---
 
 # Crear tu primer alojamiento
@@ -61,7 +61,7 @@ Probá marcar/desmarcar varias. Si hay buscador en la lista, usalo.
 ### 5. Fotos
 
 - Hasta **20 fotos**.
-- Interfaz: "Arrastrá fotos acá o hacé click para seleccionar", botón "Seleccionar archivos".
+- Interfaz: "Arrastrá fotos acá o hacé clic para seleccionar", botón "Seleccionar archivos".
 - Mientras suben aparece **"Subiendo..."**. Cada foto tiene botón **"Quitar foto"**.
 - En el límite ves **"Llegaste al máximo de 20 fotos"**.
 
@@ -73,7 +73,7 @@ Probá: subir 3, después 10, intentar la #21 (debe bloquear). Quitar una y veri
 
 Precio por noche y Moneda.
 
-> No hay (todavía) precios por temporada, descuentos por estadía larga ni reservas con checkout dinámico. No los reportes — están planeados.
+> No hay (todavía) precios por temporada, descuentos por estadía larga ni reservas con pago dinámico. No los reportes — están planeados.
 
 ### 7. Contacto
 

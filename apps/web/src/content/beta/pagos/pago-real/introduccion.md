@@ -1,14 +1,14 @@
 ---
 title: Pago real — introducción y garantía de reembolso
 description: Por qué te elegimos, cuánto pagás y cómo te devolvemos.
-order: 1
-role: pago-real
+order: 3
+role: pagos
 section: Pago real
 ---
 
 # Pago real — introducción
 
-> Documento **solo para los 2 testers** avisados por privado que prueban pago **con dinero real**. Si no te avisamos personalmente, NO es para vos — usá [tarjetas de prueba](/beta/host/suscripcion-y-pagos/).
+> Documento **solo para los 2 testers** avisados por privado que prueban pago **con dinero real**. Si no te avisamos personalmente, NO es para vos — usá [tarjetas de prueba](/beta/pagos/pagos-de-prueba/).
 
 ## ¿Por qué te elegimos?
 
@@ -33,9 +33,9 @@ Lo procesamos **dentro de los 7 días** desde que terminás.
 
 ## Cuánto vas a pagar
 
-Te asignamos uno de los 3 planes (Basic / Pro / Premium). **Te avisamos por privado cuál te toca y cuánto aproximado** antes del checkout.
+Te asignamos uno de los 3 planes (Basic / Pro / Premium). **Te avisamos por privado cuál te toca y cuánto aproximado** antes de llegar a la pantalla de pago.
 
-El monto exacto está en el **checkout** antes de meter la tarjeta. **Verificalo y sacale captura antes de "Pagar"**:
+El monto exacto está en la **pantalla de pago** antes de meter la tarjeta. **Verificalo y sacale captura antes de "Pagar"**:
 
 - Similar a lo dicho: dale.
 - **Muy distinto**: parate, no pagues, avisanos por WhatsApp.
@@ -51,4 +51,4 @@ El monto exacto está en el **checkout** antes de meter la tarjeta. **Verificalo
 
 ## Próximo paso
 
-Cuando estés listo, **[Pasos del pago real](/beta/pago-real/pasos/)**.
+Cuando estés listo, **[Pasos del pago real](/beta/pagos/pago-real/pasos/)**.
