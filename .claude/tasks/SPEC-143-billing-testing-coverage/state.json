@@ -262,11 +262,12 @@
             "title": "Author docs/prod-smoke-checklist.md + rollback procedure",
             "phase": "phase-1-C",
             "workstream": "C",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-20"],
-            "notes": "Abbreviated checklist for 3 prod flows (annual + monthly + addon). Rollback procedure documented for each: how to refund/cancel/revert if smoke fails."
+            "notes": ".claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md created (401L) per spec.md deliverables-structure path. When-to-run matrix (routine/billing-PR/quarterly/major-release/go-live/incident) + prerequisites (rollback authority, MP prod creds with APP_USR-prefix-but-from-prod-section gotcha, small charge budget, real test-user identity, comms channel, Sentry+Coolify open) + GO/no-go gating criteria (staging green, CI green, no high-sev Sentry, rollback authority). Three flow sections (annual / monthly / addon), each with steps + expected outcome + per-flow rollback procedure + run-log grid. Rollback procedures explicitly reference and route around the open production bugs: bug/refund-flow-gaps (manual MP-dashboard refund required because hospeda's refund handler does not call the MP API), bug/admin-billing-endpoints-broken (admin endpoints with crashes — restart fallback documented), bug/addon-limit-recalc-removebysource-global (cross-customer scope warning on addon cancel), bug/back-url-orphan-billing-return (return-page 404 still expected until fix), cancel-spelling-drift (audit row UK vs live column US). General rollback toolkit section: force-clear stuck sub via SQL, force-clear entitlement cache (admin endpoint + restart fallback), refund via MP dashboard directly, disable broken cron mid-run, page on-call escalation. Sign-off block requires total-refunds=total-charges before a session is marked COMPLETE. Cross-refs to spec, state.json, staging smoke, mp-test-cards-reference (T-143-54 Phase 4 pending), billing-runbooks (T-143-49 Phase 4 pending), and 5 bug engram entries.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-23",
