@@ -102,10 +102,20 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
 
             return undefined; // Continue to processing
         } catch (insertError) {
-            const errorMessage =
-                insertError instanceof Error ? insertError.message : String(insertError);
-            const isDuplicateError =
-                errorMessage.includes('unique') || errorMessage.includes('duplicate');
+            // Drizzle wraps DB errors so `error.message` only carries the
+            // generic "Failed query: insert into ..." string, not the
+            // underlying pg message. The original pg error is preserved
+            // on `error.cause` (or directly on the error in older drizzle
+            // builds), and the structured `code` field is the only
+            // language-agnostic way to detect a unique-violation:
+            //   - 23505 = unique_violation (Postgres SQLSTATE)
+            // String-matching on the message would falsely miss
+            // duplicates whenever the wrapper drops the inner text or the
+            // server's lc_messages is non-English.
+            const pgCode =
+                (insertError as { cause?: { code?: string }; code?: string }).cause?.code ??
+                (insertError as { code?: string }).code;
+            const isDuplicateError = pgCode === '23505';
 
             if (!isDuplicateError) {
                 throw insertError;

@@ -411,8 +411,8 @@ importers:
         specifier: ^1.6.4
         version: 1.6.4
       '@qazuor/qzpay-hono':
-        specifier: ^1.1.8
-        version: 1.1.10(hono@4.12.16)(zod@4.3.6)
+        specifier: ^1.2.0
+        version: 1.2.0(hono@4.12.16)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
         specifier: ^1.4.3
         version: 1.4.5(mercadopago@2.12.0)
@@ -911,8 +911,8 @@ importers:
         specifier: ^1.6.4
         version: 1.6.4
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.7.4
-        version: 1.7.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
+        specifier: ^1.7.5
+        version: 1.7.5(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -3477,16 +3477,16 @@ packages:
     resolution: {integrity: sha512-wnvhCpYH0AVNMrA//K0afeP/A8/PlzCkO3SFTsZO0OD717LILtF4CysXeAZ1oU0irA5KVjrMvdRNrwapWSfecg==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-drizzle@1.7.4':
-    resolution: {integrity: sha512-/gzjoHsHm7iFEQi4cN3oiBWuEWFHsh1KolRaIqZLz+Hq/riSVzTblpQQPr4kKyOJwWAwAj7irCF5ikWJQhHoqA==}
+  '@qazuor/qzpay-drizzle@1.7.5':
+    resolution: {integrity: sha512-Lyt0/79DGFnTD1srI3IUaUBTaCTeL93E7rUDLOdouamIlwo7u8PPIEG7u8ZTngiDfVMQug9dCk9NfrxCShiGMQ==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-hono@1.1.10':
-    resolution: {integrity: sha512-fws6A+6Ty1PjAOYA6Ts0BhEpNUjMD9CGsUZLjm9QG4tLppBMtzBP1LNiINPWWbgExVmJmdd1uKp1JBF5JVbeAg==}
+  '@qazuor/qzpay-hono@1.2.0':
+    resolution: {integrity: sha512-bJo6pYdtlitywkAfVjEEv7f1onzRntIdXhdLDpJgvgMHgLdVQii58M8YLat4m2lDOM/iFEGok8b/XrEea+Z4qw==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
@@ -12607,7 +12607,7 @@ snapshots:
 
   '@qazuor/qzpay-core@1.6.4': {}
 
-  '@qazuor/qzpay-drizzle@1.7.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
+  '@qazuor/qzpay-drizzle@1.7.5(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
     dependencies:
       '@qazuor/qzpay-core': 1.6.4
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)
@@ -12615,7 +12615,7 @@ snapshots:
       postgres: 3.4.8
       zod: 4.4.3
 
-  '@qazuor/qzpay-hono@1.1.10(hono@4.12.16)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.2.0(hono@4.12.16)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
       '@qazuor/qzpay-core': 1.6.4
