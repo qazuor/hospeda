@@ -590,4 +590,238 @@ describe('SPEC-143 trial lifecycle e2e', () => {
             expect(payload.upgradeUrl).toMatch(/\/mi-cuenta\/suscripcion$/);
         });
     });
+
+    describe('SPEC-143 T-143-26 — trial to paid conversion mid-trial', () => {
+        // The trial plan is created in beforeEach. Conversion targets a
+        // separate paid plan (richer entitlements + limits) so the
+        // entitlement-reload assertion below has a distinctive delta to
+        // observe.
+        const PAID_PLAN_NAME = 'owner-pro';
+        let trialPlanId: string;
+        let paidPlanId: string;
+        let client: E2EApiClient;
+        let customerId: string;
+
+        beforeEach(async () => {
+            mpStub.config.reset();
+
+            const trialPlan = await createTestPlan({
+                name: TRIAL_PLAN_NAME,
+                description: 'Owner trial plan (seed for T-143-26)',
+                entitlements: ['accommodation:publish', 'accommodation:edit'],
+                limits: { max_accommodations: 1, max_photos_per_accommodation: 5 },
+                metadata: {
+                    slug: TRIAL_PLAN_NAME,
+                    category: 'test-trial',
+                    isDefault: false,
+                    sortOrder: 1,
+                    trialDays: TRIAL_DAYS,
+                    hasTrial: true
+                }
+            });
+            trialPlanId = trialPlan.planId;
+
+            const paidPlan = await createTestPlan({
+                name: PAID_PLAN_NAME,
+                description: 'Owner pro paid plan (seed for T-143-26 conversion target)',
+                entitlements: [
+                    'accommodation:publish',
+                    'accommodation:edit',
+                    'accommodation:feature'
+                ],
+                limits: { max_accommodations: 10, max_photos_per_accommodation: 50 },
+                metadata: {
+                    slug: PAID_PLAN_NAME,
+                    category: 'test-paid',
+                    isDefault: false,
+                    sortOrder: 2,
+                    trialDays: 0,
+                    hasTrial: false
+                }
+            });
+            paidPlanId = paidPlan.planId;
+
+            const user = await createTestUser({
+                email: `trial-convert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
+            });
+            const customer = await createTestBillingCustomer({
+                externalId: user.id,
+                email: user.email
+            });
+            customerId = customer.customerId;
+
+            const actor = createMockUserActor({ id: user.id });
+            client = new E2EApiClient(app, actor);
+        });
+
+        afterEach(async () => {
+            clearEntitlementCache(customerId);
+            await testDb.clean();
+        });
+
+        /**
+         * Start the user's trial via the production POST /trial/start
+         * route and return the trial subscription id. Mirrors the T-143-24
+         * happy-path setup; reused inline here so the conversion tests
+         * exercise the full mid-trial lifecycle (start → reactivate).
+         */
+        async function startTrialAndGetSubscriptionId(): Promise<string> {
+            const trialRes = await client.post('/api/v1/protected/billing/trial/start', {});
+            expect(trialRes.status).toBe(200);
+            const trialBody = (await trialRes.json()) as {
+                readonly data: { readonly subscriptionId: string };
+            };
+            return trialBody.data.subscriptionId;
+        }
+
+        it('returns 200 with a new paid subscription id on POST /reactivate', async () => {
+            await startTrialAndGetSubscriptionId();
+
+            // ACT: convert mid-trial.
+            const response = await client.post('/api/v1/protected/billing/trial/reactivate', {
+                planId: paidPlanId
+            });
+
+            // ASSERT: response shape per reactivateTrialResponseSchema
+            // wrapped under ResponseFactory's `data`.
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as {
+                readonly success: boolean;
+                readonly data: {
+                    readonly success: boolean;
+                    readonly subscriptionId: string | null;
+                    readonly message: string;
+                };
+            };
+            expect(body.success).toBe(true);
+            expect(body.data.success).toBe(true);
+            expect(body.data.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+        });
+
+        it('cancels the trial sub, lands a new paid sub, and records a trial-reactivation audit event', async () => {
+            const originalTrialSubId = await startTrialAndGetSubscriptionId();
+
+            // ACT
+            const response = await client.post('/api/v1/protected/billing/trial/reactivate', {
+                planId: paidPlanId
+            });
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as {
+                readonly data: { readonly subscriptionId: string };
+            };
+            const newSubId = body.data.subscriptionId;
+            expect(newSubId).not.toBe(originalTrialSubId);
+
+            // ASSERT: DB shows two subscription rows for this customer.
+            // The original trial flipped to 'canceled' (qzpay-core US
+            // spelling — billing.ts:1380 via the cancel path used by
+            // trial.service.ts:698). The new paid subscription points at
+            // the paid plan id.
+            const subs = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.customerId, customerId));
+            expect(subs).toHaveLength(2);
+
+            const originalSub = subs.find((s) => s.id === originalTrialSubId);
+            const newSub = subs.find((s) => s.id === newSubId);
+            expect(originalSub?.status).toBe('canceled');
+            expect(originalSub?.planId).toBe(trialPlanId);
+            expect(newSub).toBeDefined();
+            expect(newSub?.planId).toBe(paidPlanId);
+            // The new subscription's metadata carries the conversion
+            // marker set by trial.service.ts:638-641. This is the only
+            // permanent breadcrumb that ties a paid sub back to its
+            // trial origin.
+            const newMetadata = newSub?.metadata as Record<string, unknown> | null;
+            expect(newMetadata?.convertedFromTrial).toBe('true');
+            expect(typeof newMetadata?.convertedAt).toBe('string');
+
+            // ASSERT: an audit event row was written for the new sub.
+            // trial.service.ts:646-657 writes the row with
+            // previousStatus=TRIALING + newStatus=ACTIVE +
+            // triggerSource='trial-reactivation'.
+            const events = await testDb
+                .getDb()
+                .select()
+                .from(billingSubscriptionEvents)
+                .where(eq(billingSubscriptionEvents.subscriptionId, newSubId));
+            expect(events).toHaveLength(1);
+            expect(events[0]?.triggerSource).toBe('trial-reactivation');
+            expect(events[0]?.previousStatus).toBe('trialing');
+            expect(events[0]?.newStatus).toBe('active');
+            const eventMetadata = events[0]?.metadata as Record<string, unknown> | null;
+            expect(eventMetadata?.convertedFromTrial).toBe(true);
+            expect(eventMetadata?.planId).toBe(paidPlanId);
+        });
+
+        it('clears the entitlement cache so the next request sees the paid plan entitlements', async () => {
+            await startTrialAndGetSubscriptionId();
+
+            // Build the entitlement probe — same pattern as
+            // T-143-19 / T-143-24 sub-3 / T-143-25 sub-1.
+            const probeApp = new Hono();
+            probeApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', customerId);
+                return next();
+            });
+            probeApp.use(entitlementMiddleware());
+            probeApp.get('/probe', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements') ?? []),
+                    limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                    billingLoadFailed: c.get('billingLoadFailed') ?? false
+                })
+            );
+
+            // Prime the cache so we have something to evict. The trial
+            // is still active, so the probe surfaces the trial plan's
+            // declared entitlements (max_accommodations=1).
+            clearEntitlementCache(customerId);
+            const preRes = await probeApp.request('/probe');
+            const preBody = (await preRes.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Readonly<Record<string, number>>;
+            };
+            expect(preBody.entitlements).toContain('accommodation:publish');
+            expect(preBody.entitlements).not.toContain('accommodation:feature');
+            expect(preBody.limits.max_accommodations).toBe(1);
+            const cacheSizeBefore = getEntitlementCacheStats().size;
+            expect(cacheSizeBefore).toBeGreaterThanOrEqual(1);
+
+            // ACT: convert. The route calls trial.service.ts:745
+            // clearEntitlementCache after the new paid sub is created.
+            const response = await client.post('/api/v1/protected/billing/trial/reactivate', {
+                planId: paidPlanId
+            });
+            expect(response.status).toBe(200);
+
+            // ASSERT: this customer's cache entry was evicted (delta -1).
+            // The singleton may still hold entries for other customers
+            // from earlier tests; asserting an absolute size would be
+            // brittle.
+            const cacheSizeAfter = getEntitlementCacheStats().size;
+            expect(cacheSizeAfter).toBe(cacheSizeBefore - 1);
+
+            // ASSERT: the next probe reloads from storage and surfaces
+            // the paid plan's richer entitlements + limits. If
+            // clearEntitlementCache were removed from the reactivation
+            // path, this would still return the cached trial values
+            // until the 5-minute TTL elapsed.
+            const postRes = await probeApp.request('/probe');
+            const postBody = (await postRes.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Readonly<Record<string, number>>;
+                readonly billingLoadFailed: boolean;
+            };
+            expect(new Set(postBody.entitlements)).toEqual(
+                new Set(['accommodation:publish', 'accommodation:edit', 'accommodation:feature'])
+            );
+            expect(postBody.limits.max_accommodations).toBe(10);
+            expect(postBody.limits.max_photos_per_accommodation).toBe(50);
+            expect(postBody.billingLoadFailed).toBe(false);
+        });
+    });
 }); // close parent describe('SPEC-143 trial lifecycle e2e')
