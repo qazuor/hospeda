@@ -5,7 +5,7 @@
     "name": "Concordia",
     "summary": "Capital nacional de la citricultura, con termas, el Lago Salto Grande, el Castillo San Carlos y una activa vida cultural sobre el río Uruguay.",
     "description": "Concordia es la segunda ciudad de Entre Ríos y un destino turístico clave del Litoral argentino, ubicada a orillas del río Uruguay frente a la ciudad uruguaya de Salto. Reconocida como capital nacional de la citricultura, combina paisajes naturales únicos como el Lago Salto Grande, el lago artificial más grande del país, con un patrimonio histórico singular representado por las ruinas del Castillo San Carlos en el Parque San Carlos. Tres complejos termales (Vertientes de la Concordia, Termas del Ayuí y Punta Viracho) ofrecen aguas mineralizadas entre 36 y 45 grados para el bienestar y la relajación. La ciudad cuenta además con una extensa costanera, la Catedral San Antonio de Padua, museos, un activo carnaval y una rica oferta gastronómica regional.",
-    "isFeatured": true,
+    "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",

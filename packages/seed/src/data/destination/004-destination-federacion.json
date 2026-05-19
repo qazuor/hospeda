@@ -5,7 +5,7 @@
     "name": "Federación",
     "summary": "Ciudad termal a orillas del lago Salto Grande, reconstruida tras la inundación de 1979 y reconocida como capital del termalismo argentino.",
     "description": "Federación es una ciudad del norte de Entre Ríos ubicada a orillas del embalse de Salto Grande, sobre el río Uruguay. Su historia es única en el país: en 1979, con el llenado del embalse de la represa binacional Salto Grande, la vieja Federación quedó sumergida y el 82% de su población fue reubicada algunos kilómetros al noroeste, donde se inauguró la actual Nueva Federación el 25 de marzo de ese año. Desde 1997 funciona su Parque Termal, pionero en aprovechar las aguas del Acuífero Guaraní, que la convirtió en uno de los destinos termales más visitados de Argentina. La ciudad combina relax y bienestar con playas sobre el lago, una extensa avenida costanera de unos 8 km, paseos náuticos, museos dedicados a la memoria de la antigua ciudad y un entorno natural ideal para el turismo familiar.",
-    "isFeatured": true,
+    "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",

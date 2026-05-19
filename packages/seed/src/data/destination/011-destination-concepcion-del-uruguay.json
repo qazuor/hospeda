@@ -5,7 +5,7 @@
     "name": "Concepción del Uruguay",
     "summary": "Primera capital histórica de Entre Ríos, ciudad universitaria a orillas del río Uruguay con patrimonio jesuítico, playas en Banco Pelay e Isla del Puerto y cercanía al Palacio San José.",
     "description": "Concepción del Uruguay, cabecera del Departamento Uruguay, es una de las ciudades más emblemáticas de Entre Ríos: fue la primera capital histórica de la provincia y cuna del Colegio del Uruguay 'Justo José de Urquiza', fundado en 1849 como el primer colegio laico y gratuito del país. Su casco histórico se organiza en torno a la Plaza Ramírez y a la imponente Basílica de la Inmaculada Concepción, donde descansan los restos del general Urquiza. A pocos kilómetros, el Palacio San José conserva la residencia del primer presidente constitucional argentino, hoy Monumento Histórico Nacional. La ciudad combina cultura y río: la zona portuaria, la costanera y la Isla del Puerto ofrecen paseos, gastronomía y playas de arena blanca como Banco Pelay, Itapé y Paso Vera. Completan la oferta el complejo Termas de la Esmeralda, museos, festivales y un movido carnaval, en un entorno ideal para combinar historia, naturaleza fluvial y descanso.",
-    "isFeatured": false,
+    "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
     "parentDestinationId": "103-destination-departamento-uruguay",
