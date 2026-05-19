@@ -79,10 +79,16 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
+import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { applyScheduledPlanChangesJob } from '../../../../src/cron/jobs/apply-scheduled-plan-changes.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
+import {
+    clearEntitlementCache,
+    entitlementMiddleware,
+    getEntitlementCacheStats
+} from '../../../../src/middlewares/entitlement.js';
 import { createMockUserActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import {
@@ -477,5 +483,125 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
         expect(afterSecondSchedule.attemptCount).toBe(1);
         expect(afterSecondSchedule.resolvedAt).toBe(resolvedAtAfterFirst);
         expect(afterSecondRows[0]?.planId).toBe(seed.cheap.planId);
+    });
+
+    // -----------------------------------------------------------------------
+    // Entitlement reload post-cron — sub-commit 3
+    //
+    // Pin the contract that applying a scheduled downgrade INVALIDATES the
+    // entitlement cache for the affected customer. This is the symmetric
+    // inverse of T-143-12 sub-commit 3 (scheduling does NOT invalidate
+    // because plan_id has not flipped yet) and mirrors the upgrade flow's
+    // sub-commit 4 (`plan-upgrade.test.ts`) cache delta = -1 invariant.
+    //
+    // Why this matters: clearEntitlementCache is one of four sites where the
+    // production code must invalidate after a plan transition (annual
+    // activation, monthly activation, upgrade confirmation, and this cron
+    // path). A regression that drops STEP 4 from `applyOne` would leave
+    // the user with stale entitlements until process restart — invisible
+    // bug, no error logs, the user just keeps the expensive plan's
+    // features until something else evicts the cache entry.
+    //
+    // The probe pattern is the mini-app Hono router with the REAL
+    // entitlementMiddleware. We do NOT use `client` here because the
+    // production routes that mount entitlementMiddleware also run other
+    // middleware (auth, validation, …) that would add cache traffic
+    // unrelated to what we want to measure.
+    //
+    // SCOPE NOTE: validates the LOAD pipeline + cache invalidation only.
+    // ENFORCEMENT (gateXxx / requireEntitlement wiring) is gap work
+    // tracked under SPEC-145.
+    // -----------------------------------------------------------------------
+
+    it('invalidates the entitlement cache and surfaces the new plan after the cron applies the downgrade', async () => {
+        // ARRANGE — mini-app probe with the real entitlementMiddleware. The
+        // synthetic prelude sets billingEnabled + billingCustomerId so
+        // loadEntitlements actually runs against the real DB.
+        const probeApp = new Hono();
+        probeApp.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', expensiveCustomerId);
+            return next();
+        });
+        probeApp.use(entitlementMiddleware());
+        probeApp.get('/probe', (c) => {
+            return c.json({
+                entitlements: Array.from(c.get('userEntitlements') ?? []),
+                limits: Object.fromEntries(c.get('userLimits') ?? new Map()),
+                billingLoadFailed: c.get('billingLoadFailed') ?? false
+            });
+        });
+
+        // ARRANGE — schedule the downgrade. The scheduling leg's own
+        // entitlement-cache behavior is pinned by T-143-12 sub-commit 3;
+        // here we just need the schedule in place so the cron has work
+        // to do.
+        const scheduleRes = await client.post(
+            '/api/v1/protected/billing/subscriptions/change-plan',
+            {
+                newPlanId: seed.cheap.planId,
+                billingInterval: 'monthly'
+            }
+        );
+        expect(scheduleRes.status).toBe(200);
+
+        // ARRANGE — clean slate for the cache singleton (the POST above
+        // touches the cache via the API's own entitlementMiddleware on the
+        // route). After this clear, the next probe will repopulate from
+        // scratch and we have a deterministic snapshot to compare against.
+        clearEntitlementCache(expensiveCustomerId);
+
+        // ACT 1 — probe BEFORE the cron tick. The sub is still on the
+        // expensive plan, so the middleware returns expensive entitlements
+        // ('public:read' + 'expensive:feature') and limits (ads_per_month=100).
+        // The set lands in the cache.
+        const preRes = await probeApp.request('/probe');
+        expect(preRes.status).toBe(200);
+        const preBody = (await preRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(preBody.entitlements).toContain('public:read');
+        expect(preBody.entitlements).toContain('expensive:feature');
+        expect(preBody.limits.ads_per_month).toBe(100);
+        expect(preBody.billingLoadFailed).toBe(false);
+
+        // Snapshot cache size. The cron's STEP 4 MUST invalidate the entry
+        // for this customer, so the delta after the tick must be -1. A
+        // delta of 0 would mean the cron failed to invalidate — stale
+        // entitlements bug.
+        const cacheSizeBeforeCron = getEntitlementCacheStats().size;
+        expect(cacheSizeBeforeCron).toBeGreaterThanOrEqual(1);
+
+        // ACT 2 — invoke the cron. The handler runs the full apply
+        // sequence end-to-end including STEP 4 clearEntitlementCache.
+        const { ctx } = makeCronCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+        expect(result.details).toMatchObject({ applied: 1, due: 1 });
+
+        // ASSERT — cache delta = -1. This is the regression guard: any
+        // future refactor that drops the clearEntitlementCache call from
+        // `applyOne` will leave the customer's cache entry intact and
+        // flip this assertion to delta = 0.
+        const cacheSizeAfterCron = getEntitlementCacheStats().size;
+        expect(cacheSizeAfterCron).toBe(cacheSizeBeforeCron - 1);
+
+        // ACT 3 — probe AFTER the cron tick. With the cache invalidated,
+        // the middleware reloads from the DB and now sees the FLIPPED sub
+        // (plan_id = cheap). The response should carry the cheap plan's
+        // entitlements and limits exclusively — `expensive:feature` MUST
+        // be gone and ads_per_month MUST drop from 100 → 5.
+        const postRes = await probeApp.request('/probe');
+        expect(postRes.status).toBe(200);
+        const postBody = (await postRes.json()) as {
+            readonly entitlements: readonly string[];
+            readonly limits: Readonly<Record<string, number>>;
+            readonly billingLoadFailed: boolean;
+        };
+        expect(postBody.entitlements).toContain('public:read');
+        expect(postBody.entitlements).not.toContain('expensive:feature');
+        expect(postBody.limits.ads_per_month).toBe(5);
+        expect(postBody.billingLoadFailed).toBe(false);
     });
 });
