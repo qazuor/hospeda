@@ -238,11 +238,12 @@
             "title": "Author docs/staging-smoke-checklist.md — Phase 1 sections + MP test users",
             "phase": "phase-1-B",
             "workstream": "B",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": [],
-            "notes": "Steps for each Phase 1 flow against MP sandbox, with per-user assignment (clean-state vs persisted). Includes pass/fail recording grid."
+            "notes": ".claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md created (per spec.md deliverables-structure path, not the task notes' generic docs/ prefix). Header + how-to-use + prerequisites + test-user assignment buckets (clean-state vs persisted) + reset recipe via hops psql + 14 Phase 1 sections (annual/monthly/free-plan/upgrade/downgrade/cron/addon/webhook idempotency-signature-failed-payment-concurrency/api-idempotency/sub-activation/entitlement-load) with run-log grid template per section. Sign-off block + cross-refs to spec, state.json, workstream A files, prod smoke (T-143-22), MP cards ref (T-143-54), runbooks (T-143-49). Bundled with T-143-36 in the same commit.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-21",
@@ -416,11 +417,12 @@
             "title": "Append Phase 2 sections to docs/staging-smoke-checklist.md",
             "phase": "phase-2-B",
             "workstream": "B",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-20"],
-            "notes": "Trial lifecycle, cancel/pause/resume, dunning, addon expiry/cancel, authorized payment, refund, dispute sections."
+            "notes": "Phase 2 sections appended to .claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md in the same commit that landed T-143-20. 10 sub-sections covering trial-lifecycle (start, expiry, conversion), subscription-cancel (admin-only path per SPEC-147 note), pause/resume, dunning-cron retries with [1,3,5,7] schedule, addon expiry/cancel (admin), authorized-payment webhook, refund flow with explicit gap-pin notes referencing bug/refund-flow-gaps, dispute/chargeback per ADR-008 manual-in-v1, MP error handling with rejection patterns, grace-and-plan-lifecycle. Each sub-section has steps, expected outcome, and a run-log grid template. Cross-refs to bug engram entries (cancel-spelling-drift, providerPaymentIds, refund-gaps) so smoke executors know which oddities are documented vs blocking. Phase 3 placeholder included for T-143-45.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-37",
