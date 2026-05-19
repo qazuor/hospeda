@@ -152,6 +152,7 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
 | `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
 | `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
+| `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). |
 | `cron-list`        | shipped  | Numbered list of node-cron jobs registered in the running API process.   |
 | `cron-trigger`     | shipped  | Trigger a cron by index, name, or interactive picker (`--dry-run`, `--yes`). |
 

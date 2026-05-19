@@ -1,0 +1,266 @@
+/**
+ * `hops db-seed` — run `pnpm --filter @repo/seed seed ...` against the
+ * target environment's Postgres database, optionally pulling the latest
+ * seed data from git first.
+ *
+ * Equivalent to typing by hand on the VPS:
+ *   cd ~/hospeda && git pull
+ *   pnpm --filter @repo/seed seed --reset --required --example
+ *
+ * Architecture notes (V1):
+ *   - hops runs ON the VPS, so the "pull" step is a LOCAL git pull in
+ *     the repo at `$HOPS_REPO_ROOT` (default `~/hospeda`). No SSH.
+ *   - The seed runs from the VPS host, NOT inside a container. This
+ *     keeps the data path simple: `git pull` updates JSON fixtures
+ *     under `packages/seed/src/data/` and the next `pnpm seed`
+ *     invocation reads them directly. Running inside the API container
+ *     would require either a bind mount of the repo or a redeploy on
+ *     every seed-data change — neither is set up in the current Coolify
+ *     deploy.
+ *   - The seed connects to Postgres via the `HOSPEDA_DATABASE_URL` env
+ *     var, sourced from `HOPS_<TARGET>_DATABASE_URL` in `.env.local` so
+ *     prod and staging are isolated.
+ *
+ * Safety:
+ *   - `--target=prod` (the default) prompts with a destructive
+ *     confirmation before running. `--yes` skips it. The combination
+ *     `--reset --example` wipes the database and loads Faker-generated
+ *     demo content including the well-known `admin@hospeda.com`
+ *     credentials — never silently. See `packages/seed/CLAUDE.md`.
+ *   - `--target=staging` does not require an extra confirmation (it is
+ *     designed to be reseeded freely). The `--pull` prompt still runs
+ *     unless `--pull` / `--no-pull` is passed.
+ */
+
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { getActiveTarget } from '../lib/container-lookup.ts';
+import { get } from '../lib/env.ts';
+import { die, log } from '../lib/log.ts';
+import { confirm } from '../lib/prompt.ts';
+import { runner } from '../lib/runner.ts';
+import type { Target } from '../lib/target.ts';
+
+const HELP = `
+hops db-seed [--target=prod|staging]
+             [--pull | --no-pull]
+             [--no-reset] [--no-required] [--no-example]
+             [--yes]
+
+Run \`pnpm --filter @repo/seed seed\` against the target environment.
+
+Default behaviour:
+  --reset, --required, --example are ON. The default invocation is the
+  equivalent of:
+    pnpm --filter @repo/seed seed --reset --required --example
+
+Flags:
+  --no-reset       Skip the database reset step (population only).
+                   May fail on UNIQUE violations if rows already exist.
+  --no-required    Skip the --required step (rare; tests / partial seeds).
+  --no-example     Skip the --example step (required-only seed).
+  --pull           Always git pull \$HOPS_REPO_ROOT before seeding.
+                   Mutually exclusive with --no-pull.
+  --no-pull        Never git pull. Mutually exclusive with --pull.
+  --yes            Skip the destructive-action confirm. Does NOT skip
+                   the pull prompt — combine with --pull / --no-pull
+                   for full unattended operation.
+  --help, -h       Show this help.
+
+Without --pull / --no-pull the command asks interactively:
+  "Pull latest seed data from git first? (Y/n)"
+
+Unattended examples:
+  hops db-seed --target=staging --no-pull --yes
+  hops db-seed --target=prod --pull --yes
+  hops db-seed --target=staging --no-pull --yes --no-example   # required only
+
+Required environment variables (in scripts/server-tools/.env.local):
+  HOPS_PROD_DATABASE_URL       Postgres URL for prod  (only if --target=prod).
+  HOPS_STAGING_DATABASE_URL    Postgres URL for staging (only if --target=staging).
+  HOPS_REPO_ROOT (optional)    Path to the hospeda checkout. Default ~/hospeda.
+
+Notes:
+  This command WIPES the target database by default (--reset is on).
+  It is the same workflow as the dev-only \`pnpm db:seed\` script — the
+  --example pass loads Faker-generated content with the well-known
+  admin@hospeda.com credentials. Read packages/seed/CLAUDE.md before
+  using against any environment that holds real data.
+`.trim();
+
+export interface ParsedArgs {
+    readonly reset: boolean;
+    readonly required: boolean;
+    readonly example: boolean;
+    readonly pull: 'on' | 'off' | 'ask';
+    readonly skipConfirm: boolean;
+}
+
+export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
+    const args = [...argv];
+
+    const wantsPull = args.includes('--pull');
+    const skipsPull = args.includes('--no-pull');
+    if (wantsPull && skipsPull) {
+        die('--pull and --no-pull are mutually exclusive.');
+    }
+
+    return {
+        reset: !args.includes('--no-reset'),
+        required: !args.includes('--no-required'),
+        example: !args.includes('--no-example'),
+        pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
+        skipConfirm: args.includes('--yes')
+    };
+}
+
+export function resolveRepoRoot(): string {
+    const explicit = get('HOPS_REPO_ROOT');
+    if (explicit) return explicit;
+    return join(homedir(), 'hospeda');
+}
+
+function resolveDatabaseUrl(target: Target): string {
+    const key = `HOPS_${target.toUpperCase()}_DATABASE_URL`;
+    const value = get(key);
+    if (!value) {
+        die(
+            `${key} is not set in scripts/server-tools/.env.local. Add the Postgres connection URL for '${target}' before running db-seed.`
+        );
+    }
+    return value;
+}
+
+export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
+    const flags: string[] = [];
+    if (parsed.reset) flags.push('--reset');
+    if (parsed.required) flags.push('--required');
+    if (parsed.example) flags.push('--example');
+    return ['--filter', '@repo/seed', 'seed', ...flags];
+}
+
+export function formatFlagSummary(parsed: ParsedArgs): string {
+    const on: string[] = [];
+    const off: string[] = [];
+    (parsed.reset ? on : off).push('reset');
+    (parsed.required ? on : off).push('required');
+    (parsed.example ? on : off).push('example');
+    const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
+    const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
+    return [onPart, offPart].filter((s) => s.length > 0).join(' ');
+}
+
+async function gitPullRepo(repoRoot: string): Promise<void> {
+    log.info(`git pull in ${repoRoot}`);
+    const result = await runner.run(['git', '-C', repoRoot, 'pull'], { inherit: true });
+    if (result.exitCode !== 0) {
+        die(`git pull failed (exit ${result.exitCode}). Resolve manually before retrying.`);
+    }
+    log.ok('Repo updated.');
+}
+
+async function runSeed(params: {
+    readonly repoRoot: string;
+    readonly databaseUrl: string;
+    readonly seedArgs: ReadonlyArray<string>;
+}): Promise<void> {
+    log.info(`Running: pnpm ${params.seedArgs.join(' ')}`);
+    log.hint(`cwd: ${params.repoRoot}`);
+    const result = await runner.run(['pnpm', ...params.seedArgs], {
+        cwd: params.repoRoot,
+        inherit: true,
+        env: {
+            HOSPEDA_DATABASE_URL: params.databaseUrl
+        }
+    });
+    if (result.exitCode !== 0) {
+        die(`Seed failed (exit ${result.exitCode}). Inspect the output above.`);
+    }
+}
+
+export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
+    if (argv.includes('--help') || argv.includes('-h')) {
+        process.stdout.write(`${HELP}\n`);
+        return;
+    }
+
+    const parsed = parseArgs(argv);
+    const target = getActiveTarget();
+
+    if (!parsed.reset && !parsed.required && !parsed.example) {
+        die('Nothing to do: --no-reset --no-required --no-example were all passed.');
+    }
+
+    const repoRoot = resolveRepoRoot();
+    if (!existsSync(repoRoot)) {
+        die(
+            `Repo root '${repoRoot}' not found. Set HOPS_REPO_ROOT in .env.local or clone the repo at ~/hospeda.`
+        );
+    }
+    if (!existsSync(join(repoRoot, '.git'))) {
+        die(`'${repoRoot}' is not a git repository.`);
+    }
+
+    const databaseUrl = resolveDatabaseUrl(target);
+    const seedArgs = buildSeedArgs(parsed);
+
+    log.info(`Target  : ${target}`);
+    log.info(`Repo    : ${repoRoot}`);
+    log.info(`Flags   : ${formatFlagSummary(parsed)}`);
+
+    // ── Pull step ────────────────────────────────────────────────────
+    // Resolution: explicit --pull / --no-pull wins; otherwise ask.
+    let shouldPull: boolean;
+    if (parsed.pull === 'on') {
+        shouldPull = true;
+    } else if (parsed.pull === 'off') {
+        shouldPull = false;
+    } else {
+        shouldPull = await confirm('Pull latest seed data from git first?', {
+            defaultValue: true
+        });
+    }
+
+    if (shouldPull) {
+        await gitPullRepo(repoRoot);
+    } else {
+        log.hint('Skipping git pull.');
+    }
+
+    // ── Destructive confirmation (prod only by default) ──────────────
+    // --reset is the destructive flag — drops every row before the run.
+    // Confirm in prod unless --yes was passed. Staging is designed to be
+    // reseeded freely, so no extra prompt there.
+    if (target === 'prod' && parsed.reset && !parsed.skipConfirm) {
+        log.warn('THIS WILL WIPE THE PRODUCTION DATABASE.');
+        log.warn('--reset drops every row before reseeding.');
+        if (parsed.example) {
+            log.warn(
+                '--example loads Faker-generated demo data including the well-known admin@hospeda.com credentials.'
+            );
+        }
+        const ok = await confirm(`Type yes to PROCEED with db-seed against PRODUCTION`, {
+            defaultValue: false
+        });
+        if (!ok) {
+            log.warn('Aborted.');
+            return;
+        }
+    } else if (target === 'prod' && !parsed.reset && !parsed.skipConfirm) {
+        // Non-reset prod run is non-destructive but still worth a heads-up.
+        const ok = await confirm(`Run db-seed (no --reset) against PRODUCTION?`, {
+            defaultValue: false
+        });
+        if (!ok) {
+            log.warn('Aborted.');
+            return;
+        }
+    }
+
+    // ── Seed ─────────────────────────────────────────────────────────
+    await runSeed({ repoRoot, databaseUrl, seedArgs });
+
+    log.ok(`db-seed completed against ${target}.`);
+    log.hint('Verify with `hops db-counts`.');
+}
