@@ -524,11 +524,12 @@
             "title": "Append Phase 3 sections to docs/staging-smoke-checklist.md",
             "phase": "phase-3-BD",
             "workstream": "B",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-36"],
-            "notes": "Promo codes, sponsorship, overrides, cache, admin ops, exchange rate, D1..D8 sections."
+            "notes": "Phase 3 sections appended to .claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md (replaces the T-143-36 placeholder block). Nine sub-sections: 3.1 promo code (validate/apply/expire with route-shadow gap pin), 3.2 sponsorship OBSOLETE block linking T-143-39 + engram bug/sponsorship-task-notes-misalignment, 3.3 customer override OBSOLETE block linking T-143-40 + engram bug/customer-override-task-misalignment, 3.4 entitlement cache (miss→hit, TTL, invalidation, stampede + Redis gaps), 3.5 admin billing ops with the three known endpoint bugs explicitly listed (engram bug/admin-billing-endpoints-broken), 3.6 exchange rate cron with manual-override priority sub-test and a hops psql snippet for direct DB inspection, 3.7 plan migration matrix, 3.8 multi-currency, 3.9 D1..D8 secondary flows with full sub-section detail for D5 browser-back (D5 has NO CI coverage — this section is its only regression check). File now 850L total (Phase 1: 14 sections, Phase 2: 10 sub-sections, Phase 3: 9 sub-sections, sign-off block + cross-refs).",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-46",

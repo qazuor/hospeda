@@ -507,27 +507,316 @@ Workstream A reference: `grace-and-plan-lifecycle.test.ts`
 
 ## Phase 3 sections
 
-Authored separately in **T-143-45**. The flows to cover:
+### 3.1 — Promo code apply / validate / expire
 
-- Promo code apply / validate / expire (Workstream A: `promo-code.test.ts`)
-- Sponsorship grant / revoke (Workstream A: previously scoped, NOW
-  obsolete — see engram `bug/sponsorship-task-notes-misalignment` and
-  T-143-39 status)
-- Customer override apply / expire (Workstream A: previously scoped,
-  NOW obsolete — engram `bug/customer-override-task-misalignment` and
-  T-143-40 status)
-- Entitlement cache hit / miss / invalidation / TTL
-  (`entitlement-cache.test.ts`)
-- Admin billing ops list / customer detail / sub manual ops /
-  addon manual ops (`admin-billing-ops.test.ts`)
-- Exchange rate cron (`exchange-rate-cron.test.ts`)
-- Plan migration matrix (`plan-migration-matrix.test.ts`)
-- Multi-currency (`multi-currency.test.ts`)
-- D1..D8 secondary flows: D1/D2/D3 page redirects (web), D4
-  cancel-from-MP webhook, D5 browser-back (this section's most
-  unique value — D5 cannot be covered in CI vitest, this checklist
-  is its ONLY automated coverage), D6 double-submit, D7
-  session-expired during checkout, D8 anonymous checkout attempt.
+Workstream A reference: `promo-code.test.ts`
+
+**Pre-conditions**: a promo code seeded in qzpay's catalog (the
+`/promo-codes` namespace is owned by qzpay-hono, not hospeda — engram
+`bug/promo-validate-route-shadow` documents the route shadowing).
+
+#### 3.1.a Validate (read-only)
+
+1. As an authenticated user, POST to
+   `/api/v1/protected/billing/promo-codes/validate`
+   with a known-good code. Confirm 200 with the discount/extension shape.
+2. Repeat with a bogus code. Confirm 404 / `INVALID_PROMO_CODE`.
+3. Repeat with an inactive code. Confirm 422.
+
+#### 3.1.b Apply
+
+1. From the checkout flow, enter the promo code at the appropriate UI
+   point and submit checkout.
+2. Confirm the promo is recorded on the resulting sub
+   (`promoCodeId` populated on `billing_subscriptions`).
+3. Confirm the discount or free-trial extension is reflected on the
+   provider side (MP charges less, or trial period extends).
+4. **KNOWN GAPS** (engram `bug/promo-validate-route-shadow`): apply
+   skips plan-restriction validation and consumes `usedCount`
+   immediately (no two-phase). Smoke records the gap as documented,
+   not blocking.
+
+#### 3.1.c Expire (cron-driven)
+
+1. Set `expiresAt` to the past via `hops psql staging`.
+2. Trigger the promo-code expiry cron (if separate; otherwise rely on
+   the validation path returning 422 for the now-expired code).
+3. Confirm subsequent validate returns 422 / expired.
+
+**Run log**: (template)
+
+### 3.2 — Sponsorship grant / revoke
+
+**OBSOLETE** — T-143-39 closed without tests because the gift-subscription
+flow described in the task notes does not exist in the codebase. The
+`sponsorships` table is CRUD for sponsored ads/posts, not entitlement
+grants. CRUD coverage lives in unit tests
+(`packages/db/test/models/sponsorship.model.test.ts` +
+`packages/service-core/test/factories/sponsorshipFactory.ts`). No staging
+smoke section to run.
+
+If a real grant/revoke flow ever lands, write it under a fresh
+sub-section here and link the engram entry that documented the
+original misalignment: `bug/sponsorship-task-notes-misalignment`.
+
+### 3.3 — Customer override apply / expire
+
+**OBSOLETE** — T-143-40 closed without tests because the
+customer-override system described in the task notes does not exist in
+hospeda OR qzpay upstream. The feature was scoped in spec.md (Goal +
+Phase 3 file listing) but never built. Zero references to
+`customerOverride` / `entitlementOverride` / `limitOverride` across the
+billing surface and qzpay packages. No staging smoke section to run.
+
+If/when customer override becomes a real feature, derive the smoke
+section from the actual implementation under a fresh spec, not from
+the stale task notes. Engram: `bug/customer-override-task-misalignment`.
+
+### 3.4 — Entitlement cache hit / miss / invalidation / TTL
+
+Workstream A reference: `entitlement-cache.test.ts`
+
+**Pre-conditions**: persisted test user with active sub.
+
+#### 3.4.a Miss → hit
+
+1. Clear the entitlement cache for the user via
+   `POST /api/v1/admin/billing/cache/clear` (admin).
+2. Trigger an entitlement load (reload `/mi-cuenta/`). Confirm in API
+   logs: `cache: miss, source: db`.
+3. Reload again immediately. Confirm logs: `cache: hit`.
+
+#### 3.4.b TTL expiry
+
+1. After a hit, wait the configured TTL window (default per
+   `HOSPEDA_ENTITLEMENT_CACHE_TTL_MS`).
+2. Reload. Confirm `cache: miss` again — TTL expired and the cache
+   re-primed from DB.
+
+#### 3.4.c Invalidation on sub change
+
+1. Admin cancels the sub (see 2.2). Confirm the cache entry is
+   invalidated immediately.
+2. Next reload returns the free-plan defaults from a fresh DB read.
+
+#### 3.4.d Known gaps
+
+- **No single-flight protection** on cache stampede: concurrent
+  miss-readers all hit DB. Engram pin from T-143-41.
+- **In-memory only**: no Redis backend wired today. Cache state is
+  per-process; a multi-instance deployment will see drift until the
+  Redis adapter lands.
+
+**Run log**: (template)
+
+### 3.5 — Admin billing ops
+
+Workstream A reference: `admin-billing-ops.test.ts`
+
+#### 3.5.a List endpoints
+
+1. Admin opens `/admin/billing/customers`. Confirm 200 with pagination.
+2. Admin opens `/admin/billing/subscriptions`. Confirm 200.
+3. Admin opens `/admin/billing/addons`. Confirm 200 with canonical
+   catalog (NOT DB rows — engram pin from T-143-42).
+
+#### 3.5.b Customer detail
+
+1. Click any customer row. Confirm detail view loads with sub history,
+   addon list, recent events.
+
+#### 3.5.c Sub manual ops
+
+1. From a customer detail, click "Pause" → confirm sub paused.
+2. Click "Resume" → confirm sub active.
+3. Click "Cancel" → confirm sub canceled.
+
+#### 3.5.d Addon manual ops
+
+1. From a customer detail, click "Add addon" → select addon → confirm
+   added.
+2. Click "Expire addon" or "Activate addon".
+3. **KNOWN GAPS** (engram `bug/admin-billing-endpoints-broken`):
+   - customer-addons expire/activate response schema mismatch → 500
+     (DB flippea but envelope wrong).
+   - settings PATCH empty=400 / non-empty=500 (audit log insert crash).
+   - sub-events handler omite eventType.
+   Document the actual behavior observed in the run log.
+
+#### 3.5.e Permission gating
+
+1. As a non-admin user, attempt to call any `/api/v1/admin/billing/*`
+   endpoint. Confirm 403.
+
+**Run log**: (template)
+
+### 3.6 — Exchange rate cron
+
+Workstream A reference: `exchange-rate-cron.test.ts` (T-143-43)
+
+**Pre-conditions**: `HOSPEDA_EXCHANGE_RATE_API_KEY` configured on
+`hospeda-api-staging` (set via `hops env-set staging` if missing).
+
+**Steps**:
+
+1. Trigger the `exchange-rate-fetch` cron from `/admin/cron`.
+2. Confirm cron output: `success: true`, `processed >= 2`,
+   `fromDolarApi > 0` or `fromExchangeRateApi > 0` (depending on what
+   each external API returns at smoke time).
+3. Verify rows landed in `exchange_rates` via
+   `hops psql staging`:
+
+   ```sql
+   SELECT from_currency, to_currency, rate, source, fetched_at
+   FROM exchange_rates
+   ORDER BY fetched_at DESC
+   LIMIT 10;
+   ```
+
+4. Re-trigger the cron. Confirm new rows appended (NOT updates — each
+   run inserts a new fetched_at slice).
+
+#### 3.6.a Manual override priority
+
+1. Insert a manual override row directly:
+
+   ```sql
+   INSERT INTO exchange_rates (
+       from_currency, to_currency, rate, inverse_rate,
+       rate_type, source, is_manual_override, fetched_at
+   ) VALUES (
+       'USD', 'ARS', 1234.5, 1/1234.5,
+       'official', 'manual', true, now()
+   );
+   ```
+
+2. Trigger cron. Confirm the fetcher logs
+   `fromManualOverride: 1` and does NOT overwrite the manual row.
+
+**Run log**: (template)
+
+### 3.7 — Plan migration matrix
+
+Workstream A reference: `plan-migration-matrix.test.ts` (Phase 3 task,
+status: see state.json)
+
+**Pre-conditions**: persisted test user on each starting plan, walk
+all migration paths defined in the matrix.
+
+**Steps**:
+
+1. For each `(from_plan, to_plan)` pair in the migration matrix, attempt
+   a change-plan call.
+2. Confirm the matrix outcome (allowed / blocked / requires-confirmation)
+   matches the spec.
+3. For allowed migrations, confirm entitlements adjust correctly
+   (subset/superset rules per plan).
+
+**Run log**: (template — one row per (from, to) pair tested)
+
+### 3.8 — Multi-currency
+
+Workstream A reference: `multi-currency.test.ts` (Phase 3 task)
+
+**Pre-conditions**: exchange rate cron has run (3.6) so fresh rates
+exist; at least one plan with a USD or BRL price.
+
+**Steps**:
+
+1. As a user, select a plan priced in USD. Confirm checkout calculates
+   the ARS-equivalent using the latest `exchange_rates` row.
+2. Confirm MP receives the ARS amount (or the multi-currency settlement,
+   depending on the plan config).
+3. Confirm `billing_subscriptions.currency` and `unit_amount` reflect
+   the chosen currency.
+
+**Run log**: (template)
+
+### 3.9 — Secondary auth / redirect / cancel flows (D1..D8)
+
+Workstream A references (T-143-44):
+
+- `apps/api/test/e2e/flows/billing/auth-redirect-cancel-flows.test.ts` (D4/D6/D7/D8)
+- `apps/web/test/pages/checkout-pages.test.ts` (D1/D2/D3, source-reading)
+
+D5 (browser-back) **has no CI coverage** and exists primarily for
+this manual smoke section.
+
+#### 3.9.a D1 — success-redirect
+
+1. Complete annual checkout (see 1.1). At the MP return moment, observe
+   the URL the browser lands on.
+2. Confirm the page renders correctly with the approved-payment variant.
+3. **PIN** — the back_url emitted by the API is `/billing/return`, which
+   does NOT exist (engram `bug/back-url-orphan-billing-return`). The
+   actual pages live at `/{lang}/suscriptores/checkout/{success,failure,pending}`.
+   Document which URL the browser actually receives; this is the most
+   direct way to verify whether the back_url bug is fixed.
+
+#### 3.9.b D2 — failure-redirect
+
+1. Use the OTHE / FUND rejection card. Complete a rejected payment.
+2. Confirm landing on the failure page with the friendly error message.
+3. Verify no sensitive identifier (payment_id, preference_id) is
+   rendered in HTML.
+
+#### 3.9.c D3 — pending-redirect
+
+1. Use the CONT card to produce a pending payment.
+2. Confirm landing on the pending page with the 24h confirmation
+   message and "Verificar estado" CTA.
+3. **PIN** — qzpay-mercadopago checkout adapter sets
+   `back_urls.pending = back_urls.success` (engram
+   `bug/back-url-orphan-billing-return`). Document whether the
+   browser actually lands on success or pending.
+
+#### 3.9.d D4 — cancel-from-MP
+
+1. After authorizing a monthly preapproval, cancel it from the MP
+   sandbox dashboard.
+2. Wait for the webhook (~5-30s). Confirm local sub flipped to
+   `cancelled` (UK 2L on the audit row, `canceled` US 1L on the qzpay
+   live status — engram `cancel-spelling-drift`).
+
+#### 3.9.e D5 — browser-back during checkout
+
+**THIS SUB-FLOW HAS NO CI COVERAGE.** This manual smoke is its ONLY
+automated regression check. Run it on every PR that touches checkout
+flow or MP redirect handling.
+
+1. Start a fresh annual checkout. Reach the MP-hosted page.
+2. Click the browser BACK button (do NOT close the tab).
+3. From the now-visible plan/checkout page, click "Suscribirme" again.
+4. Confirm either: (a) the same checkout URL is reused without creating
+   a duplicate sub, OR (b) a fresh checkout url is issued and the
+   abandoned-pending-subs cron will reap the orphan later.
+5. Document the actual behavior. If duplicate pending subs accumulate,
+   add a follow-up pin in engram.
+
+#### 3.9.f D6 — double-submit
+
+1. From the plan page, click "Suscribirme" TWICE in rapid succession.
+2. Confirm whether the API creates one sub or two (T-143-44 test
+   pinned the gap: today it creates two pending subs).
+3. Document the count observed.
+
+#### 3.9.g D7 — session-expired during checkout
+
+1. Start checkout. Before completing payment, force-expire the session
+   (clear cookies in dev tools, or wait out the BetterAuth TTL).
+2. Try to return to the checkout flow. Confirm the protected endpoint
+   returns 401 (or the web redirects to login).
+
+#### 3.9.h D8 — anonymous checkout attempt
+
+1. Log out completely.
+2. Navigate to `/suscriptores/planes/` and click "Suscribirme".
+3. Confirm the web router redirects to login, preserving the intent
+   (the plan slug + billing interval should survive the round trip
+   so the user resumes the same flow after auth).
+
+**Run log**: (template per sub-flow — D5 especially should land here
+because it has no other regression check)
 
 ---
 
