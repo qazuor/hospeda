@@ -65,13 +65,20 @@ async function request<T>({
     path,
     params,
     body,
-    withCredentials
+    withCredentials,
+    cookieHeader
 }: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     params?: Record<string, unknown>;
     body?: unknown;
     withCredentials?: boolean;
+    /**
+     * Raw `Cookie` header to forward on the outgoing request. Required for SSR
+     * callers because `credentials: 'include'` only forwards cookies in browser
+     * context — server-to-server fetch has no cookie jar to draw from.
+     */
+    cookieHeader?: string;
 }): Promise<ApiResult<T>> {
     const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
     const controller = new AbortController();
@@ -83,6 +90,9 @@ async function request<T>({
         };
         if (body) {
             headers['Content-Type'] = 'application/json';
+        }
+        if (cookieHeader) {
+            headers.cookie = cookieHeader;
         }
 
         const response = await fetch(url, {
@@ -167,17 +177,42 @@ export const apiClient = {
         return request<T>({ method: 'DELETE', path, withCredentials: true });
     },
 
-    /** GET request with authentication credentials */
+    /**
+     * GET request with authentication credentials.
+     * Pass `cookieHeader` from SSR callers (e.g. Astro pages) — browser callers
+     * can rely on `credentials: 'include'` and should omit it.
+     */
     getProtected<T>({
         path,
-        params
-    }: { path: string; params?: Record<string, unknown> }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'GET', path, params, withCredentials: true });
+        params,
+        cookieHeader
+    }: {
+        path: string;
+        params?: Record<string, unknown>;
+        cookieHeader?: string;
+    }): Promise<ApiResult<T>> {
+        return request<T>({
+            method: 'GET',
+            path,
+            params,
+            withCredentials: true,
+            cookieHeader
+        });
     },
 
     /** POST request with authentication credentials */
-    postProtected<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'POST', path, body, withCredentials: true });
+    postProtected<T>({
+        path,
+        body,
+        cookieHeader
+    }: { path: string; body?: unknown; cookieHeader?: string }): Promise<ApiResult<T>> {
+        return request<T>({
+            method: 'POST',
+            path,
+            body,
+            withCredentials: true,
+            cookieHeader
+        });
     }
 };
 

@@ -69,8 +69,9 @@ const BOOKMARK_1 = {
     entityId: 'acc-1',
     entityType: 'ACCOMMODATION',
     name: 'Casa del Litoral',
-    imageUrl: null,
-    entityUrl: '/alojamientos/casa-del-litoral/'
+    entitySlug: 'casa-del-litoral',
+    entityImage: null,
+    entityName: 'Casa del Litoral'
 };
 
 const BOOKMARK_2 = {
@@ -78,8 +79,9 @@ const BOOKMARK_2 = {
     entityId: 'acc-2',
     entityType: 'ACCOMMODATION',
     name: 'Hotel Paraná',
-    imageUrl: 'https://cdn.example.com/hotel.jpg',
-    entityUrl: null
+    entitySlug: null,
+    entityImage: 'https://cdn.example.com/hotel.jpg',
+    entityName: 'Hotel Paraná'
 };
 
 const DESTINATION_BOOKMARK = {
@@ -87,9 +89,9 @@ const DESTINATION_BOOKMARK = {
     entityId: 'dest-1',
     entityType: 'DESTINATION',
     name: 'Concepción del Uruguay',
-    imageUrl: null,
-    entityUrl: null,
-    slug: 'concepcion-del-uruguay'
+    entitySlug: 'concepcion-del-uruguay',
+    entityImage: null,
+    entityName: 'Concepción del Uruguay'
 };
 
 /** Bookmark already assigned to a collection */
@@ -98,8 +100,9 @@ const COLLECTED_BOOKMARK = {
     entityId: 'acc-col-1',
     entityType: 'ACCOMMODATION',
     name: 'Cabaña en la sierra',
-    imageUrl: null,
-    entityUrl: null,
+    entitySlug: null,
+    entityImage: null,
+    entityName: 'Cabaña en la sierra',
     collectionId: 'col-uuid-1'
 };
 
@@ -264,25 +267,25 @@ describe('UserFavoritesList', () => {
         });
     });
 
-    it('renders bookmark cards with links using entityUrl when present', async () => {
+    it('renders bookmark cards with links built from the server-resolved entitySlug', async () => {
         globalThis.fetch = vi
             .fn()
             .mockImplementation(() => Promise.resolve(makeListResponse([BOOKMARK_1], 1)));
         renderList();
         await waitFor(() => {
             const link = screen.getByRole('link', { name: 'Casa del Litoral' });
-            expect(link).toHaveAttribute('href', '/alojamientos/casa-del-litoral/');
+            expect(link).toHaveAttribute('href', '/es/alojamientos/casa-del-litoral/');
         });
     });
 
-    it('falls back to constructed URL when entityUrl is absent', async () => {
+    it('falls back to entityId in the URL when entitySlug is absent', async () => {
         globalThis.fetch = vi
             .fn()
             .mockImplementation(() => Promise.resolve(makeListResponse([BOOKMARK_2], 1)));
         renderList();
         await waitFor(() => {
             const link = screen.getByRole('link', { name: 'Hotel Paraná' });
-            // entityUrl is null; entityId is 'acc-2', no slug
+            // entitySlug is null; entityId is 'acc-2'
             expect(link.getAttribute('href')).toContain('alojamientos');
             expect(link.getAttribute('href')).toContain('acc-2');
         });
@@ -392,16 +395,16 @@ describe('UserFavoritesList', () => {
 
     // ── T-049a: Tab navigation ─────────────────────────────────────────────────
 
-    it('renders a tablist with 4 tab buttons', async () => {
+    it('renders a tablist with 5 tab buttons (ALL + 4 entity types)', async () => {
         globalThis.fetch = vi.fn().mockImplementation(() => Promise.resolve(makeEmptyResponse()));
         renderList();
 
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
-        expect(tabs).toHaveLength(4);
+        expect(tabs).toHaveLength(5);
     });
 
-    it('sets ACCOMMODATION tab as selected by default', async () => {
+    it('sets ALL tab as selected by default', async () => {
         globalThis.fetch = vi.fn().mockImplementation(() => Promise.resolve(makeEmptyResponse()));
         renderList();
 
@@ -422,6 +425,7 @@ describe('UserFavoritesList', () => {
         const tabs = within(tablist).getAllByRole('tab');
 
         const expectedControls = [
+            'tab-panel-all',
             'tab-panel-accommodation',
             'tab-panel-destination',
             'tab-panel-event',
@@ -440,11 +444,11 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        // Click Eventos tab (index 2)
-        fireEvent.click(tabs[2] as HTMLElement);
+        // Click Eventos tab (index 3 now that ALL is first)
+        fireEvent.click(tabs[3] as HTMLElement);
 
         await waitFor(() => {
-            expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
+            expect(tabs[3]).toHaveAttribute('aria-selected', 'true');
             expect(tabs[0]).toHaveAttribute('aria-selected', 'false');
         });
     });
@@ -456,8 +460,8 @@ describe('UserFavoritesList', () => {
         await screen.findByRole('tablist');
 
         const panel = screen.getByRole('tabpanel');
-        expect(panel).toHaveAttribute('id', 'tab-panel-accommodation');
-        expect(panel).toHaveAttribute('aria-labelledby', 'tab-accommodation');
+        expect(panel).toHaveAttribute('id', 'tab-panel-all');
+        expect(panel).toHaveAttribute('aria-labelledby', 'tab-all');
     });
 
     // ── T-049b: Real data for all tabs ─────────────────────────────────────────
@@ -475,8 +479,8 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        // Click Destinos tab (index 1)
-        fireEvent.click(tabs[1] as HTMLElement);
+        // Click Destinos tab (index 2 — ALL=0, ACCOMMODATION=1, DESTINATION=2)
+        fireEvent.click(tabs[2] as HTMLElement);
 
         await waitFor(() => {
             expect(screen.getByText('Concepción del Uruguay')).toBeInTheDocument();
@@ -496,7 +500,7 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        fireEvent.click(tabs[1] as HTMLElement);
+        fireEvent.click(tabs[2] as HTMLElement);
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: 'Concepción del Uruguay' });
@@ -512,8 +516,8 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        // Click Destinos tab (index 1)
-        fireEvent.click(tabs[1] as HTMLElement);
+        // Click Destinos tab (index 2)
+        fireEvent.click(tabs[2] as HTMLElement);
 
         await waitFor(() => {
             expect(screen.queryByText('Próximamente')).not.toBeInTheDocument();
@@ -533,8 +537,8 @@ describe('UserFavoritesList', () => {
 
         const callsBefore = fetchMock.mock.calls.length;
 
-        // Click Eventos tab (index 2)
-        fireEvent.click(tabs[2] as HTMLElement);
+        // Click Eventos tab (index 3)
+        fireEvent.click(tabs[3] as HTMLElement);
 
         await waitFor(() => {
             // Additional calls should have been made for the EVENT tab
@@ -575,8 +579,8 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        // Switch to Blog tab (index 3)
-        fireEvent.click(tabs[3] as HTMLElement);
+        // Switch to Blog tab (index 4 — last)
+        fireEvent.click(tabs[4] as HTMLElement);
 
         await waitFor(() => {
             expect(screen.getByText(/No tenés favoritos en esta categoría/i)).toBeInTheDocument();
@@ -596,8 +600,8 @@ describe('UserFavoritesList', () => {
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
 
-        // Click Eventos tab (index 2)
-        fireEvent.click(tabs[2] as HTMLElement);
+        // Click Eventos tab (index 3)
+        fireEvent.click(tabs[3] as HTMLElement);
 
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -632,10 +636,10 @@ describe('UserFavoritesList', () => {
         fireEvent.click(nextBtn);
         await waitFor(() => expect(screen.getByText('2 / 3')).toBeInTheDocument());
 
-        // Switch to Destinos tab
+        // Switch to Destinos tab (index 2 — ALL=0, ACCOMMODATION=1, DESTINATION=2)
         const tablist = screen.getByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
-        fireEvent.click(tabs[1] as HTMLElement);
+        fireEvent.click(tabs[2] as HTMLElement);
 
         await waitFor(() => {
             expect(isDestinationFetch).toBe(true);

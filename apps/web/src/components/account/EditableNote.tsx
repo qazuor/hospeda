@@ -36,8 +36,12 @@ export interface EditableNoteProps {
     /**
      * Called after a successful save with the new description string.
      * The parent should update its local copy of the bookmark.
+     * Optional: when omitted, the component still updates its own read view
+     * via the local `persistedValue` mirror. SSR hosts (e.g. the collection
+     * detail Astro page) cannot pass functions across the island boundary,
+     * so they omit it and rely on the local mirror instead.
      */
-    readonly onSaved: (newValue: string) => void;
+    readonly onSaved?: (newValue: string) => void;
     /** Full base API URL (e.g. `http://localhost:3001`) without trailing slash. */
     readonly apiBase: string;
     /** Placeholder shown when the note is empty and not editing. */
@@ -78,14 +82,19 @@ export function EditableNote({
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(initialValue ?? '');
     const [isSaving, setIsSaving] = useState(false);
+    // Tracks the last persisted value. Lets the read view stay up-to-date even
+    // when the host page is SSR-rendered and never re-passes a new initialValue
+    // (collection detail page is the main consumer of this fallback).
+    const [persistedValue, setPersistedValue] = useState(initialValue ?? '');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Reset draft whenever the persisted value changes (e.g. after a successful
-    // save the parent passes the new value back in).
+    // Reset draft + mirror whenever the persisted value changes (e.g. after a
+    // successful save the parent passes the new value back in).
     useEffect(() => {
         if (!isEditing) {
             setDraft(initialValue ?? '');
+            setPersistedValue(initialValue ?? '');
         }
     }, [initialValue, isEditing]);
 
@@ -145,7 +154,8 @@ export function EditableNote({
                 throw new Error(msg);
             }
 
-            onSaved(draft);
+            setPersistedValue(draft);
+            onSaved?.(draft);
             setIsEditing(false);
         } catch (err) {
             const msg = err instanceof Error ? err.message : saveErrorMessage;
@@ -158,7 +168,9 @@ export function EditableNote({
 
     const currentLength = draft.length;
     const isOverLimit = currentLength > NOTE_MAX_LENGTH;
-    const displayValue = initialValue?.trim() ?? '';
+    // Use the locally-tracked persisted value so the read view reflects the
+    // last save even when the host page never re-renders (SSR collection page).
+    const displayValue = persistedValue.trim();
     const hasNote = displayValue.length > 0;
 
     // ── Editing view ──────────────────────────────────────────────────────────

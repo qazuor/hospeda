@@ -24,6 +24,10 @@ import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { withServiceTransaction } from '../../utils/transaction';
+import {
+    type UserBookmarkWithEntityInfo,
+    enrichBookmarksWithEntityInfo
+} from '../userBookmark/userBookmark.enrichment';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmarkCollection.normalizers';
 import {
     canAccessCollection,
@@ -376,7 +380,13 @@ export class UserBookmarkCollectionService extends BaseCrudService<
         collectionId: z.string().uuid(),
         includeBookmarks: z.boolean().optional().default(false),
         bookmarksPage: z.number().int().min(1).default(1),
-        bookmarksPageSize: z.number().int().min(1).max(200).default(20)
+        bookmarksPageSize: z.number().int().min(1).max(200).default(20),
+        // Optional polymorphic filter — when set, only bookmarks of this entity
+        // type are returned (and counted). Used by the collection detail page
+        // to power the entity type tabs.
+        entityType: z
+            .enum(['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'])
+            .optional()
     });
 
     /** Schema for updateCollection input validation */
@@ -642,12 +652,18 @@ export class UserBookmarkCollectionService extends BaseCrudService<
             readonly includeBookmarks?: boolean;
             readonly bookmarksPage?: number;
             readonly bookmarksPageSize?: number;
+            readonly entityType?: 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
         },
         ctx?: ServiceContext
     ): Promise<
         ServiceOutput<{
             collection: UserBookmarkCollection;
-            bookmarks?: { rows: UserBookmark[]; total: number; page: number; pageSize: number };
+            bookmarks?: {
+                rows: UserBookmarkWithEntityInfo[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
         }>
     > {
         return this.runWithLoggingAndValidation({
@@ -679,10 +695,19 @@ export class UserBookmarkCollectionService extends BaseCrudService<
                 const pageSize = validated.bookmarksPageSize;
                 const offset = (page - 1) * pageSize;
 
-                const activeBookmarksWhere = and(
-                    eq(userBookmarks.collectionId, validated.collectionId),
-                    isNull(userBookmarks.deletedAt)
-                );
+                // Compose the WHERE clause: always scoped to the collection and
+                // non-deleted; optionally narrowed to a single entity type when
+                // the caller is filtering tabs in the collection detail UI.
+                const activeBookmarksWhere = validated.entityType
+                    ? and(
+                          eq(userBookmarks.collectionId, validated.collectionId),
+                          eq(userBookmarks.entityType, validated.entityType),
+                          isNull(userBookmarks.deletedAt)
+                      )
+                    : and(
+                          eq(userBookmarks.collectionId, validated.collectionId),
+                          isNull(userBookmarks.deletedAt)
+                      );
 
                 const [rows, countRows] = await Promise.all([
                     db
@@ -694,10 +719,15 @@ export class UserBookmarkCollectionService extends BaseCrudService<
                     db.select({ value: count() }).from(userBookmarks).where(activeBookmarksWhere)
                 ]);
 
+                const enrichedRows = await enrichBookmarksWithEntityInfo(
+                    rows as UserBookmark[],
+                    execCtx?.tx
+                );
+
                 return {
                     collection,
                     bookmarks: {
-                        rows: rows as UserBookmark[],
+                        rows: enrichedRows,
                         total: Number(countRows[0]?.value ?? 0),
                         page,
                         pageSize

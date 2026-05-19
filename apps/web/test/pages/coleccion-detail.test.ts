@@ -122,7 +122,8 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
     describe('bookmark grid', () => {
         it('renders a grid list when bookmarks exist', () => {
             expect(pageSrc).toContain('coleccion-grid');
-            expect(pageSrc).toContain('bookmarksData.rows.length > 0');
+            // The endpoint returns `{ data, pagination }` per PaginationResultSchema.
+            expect(pageSrc).toContain('bookmarksData.data.length > 0');
         });
 
         it('renders card elements for each bookmark', () => {
@@ -152,7 +153,7 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
 
     describe('empty state', () => {
         it('shows empty state when rows is empty', () => {
-            expect(pageSrc).toContain('bookmarksData.rows.length === 0');
+            expect(pageSrc).toContain('bookmarksData.data.length === 0');
             expect(pageSrc).toContain('coleccion-empty');
         });
 

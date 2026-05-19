@@ -23,6 +23,10 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import {
+    type UserBookmarkWithEntityInfo,
+    enrichBookmarksWithEntityInfo
+} from './userBookmark.enrichment';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import {
     canAccessBookmark,
@@ -269,7 +273,7 @@ export class UserBookmarkService extends BaseCrudService<
         actor: Actor,
         params: UserBookmarkSearchInput,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ bookmarks: UserBookmark[]; total: number }>> {
+    ): Promise<ServiceOutput<{ bookmarks: UserBookmarkWithEntityInfo[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByUser',
             input: { ...params, actor },
@@ -283,11 +287,16 @@ export class UserBookmarkService extends BaseCrudService<
                     );
                 }
                 const { page, pageSize } = validated;
-                const { items, total } = await this.model.findAll(
-                    { userId: validated.userId, deletedAt: null },
-                    { page, pageSize }
-                );
-                return { bookmarks: items, total };
+                const filter: Record<string, unknown> = {
+                    userId: validated.userId,
+                    deletedAt: null
+                };
+                if (validated.entityType) {
+                    filter.entityType = validated.entityType;
+                }
+                const { items, total } = await this.model.findAll(filter, { page, pageSize });
+                const enriched = await enrichBookmarksWithEntityInfo(items, ctx?.tx);
+                return { bookmarks: enriched, total };
             }
         });
     }

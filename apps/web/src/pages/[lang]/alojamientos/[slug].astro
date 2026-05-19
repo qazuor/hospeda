@@ -446,7 +446,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     {eventItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} />)}
+            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} isAuthenticated={isAuthenticated} />)}
         </RelatedCarousel>
     )}
 

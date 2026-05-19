@@ -35,6 +35,10 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
+// Auth flag forwarded to ArticleCard so the FavoriteButton picks the
+// toggle-favorite flow instead of the guest auth-required popover.
+const isAuthenticated = Boolean(Astro.locals.user);
+
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
@@ -188,7 +192,7 @@ const postCategoryChips = [
 		<div class="posts-grid">
 			{cards.map((card, i) => (
 				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-					<ArticleCard data={card} locale={locale} />
+					<ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
 				</div>
 			))}
 		</div>

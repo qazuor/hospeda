@@ -18,19 +18,10 @@ export interface BookmarkItem {
     readonly id: string;
     readonly entityId: string;
     readonly entityType: string;
-    /** Display name stored at bookmark-creation time */
+    /** User-editable label (defaults to null when the bookmark is just a heart click). */
     readonly name?: string | null;
     /** User's personal note for this bookmark (stored as `description` on the server) */
     readonly description?: string | null;
-    /** Thumbnail image URL (may be absent) */
-    readonly imageUrl?: string | null;
-    /**
-     * Entity URL provided directly by the API.
-     * When absent, the URL is constructed from locale + pathSegment + slug/entityId.
-     */
-    readonly entityUrl?: string | null;
-    /** Slug for URL construction (may be absent; entityId is used as fallback) */
-    readonly slug?: string | null;
     /**
      * ID of the collection this bookmark belongs to.
      * `null` or `undefined` means the bookmark is uncollected.
@@ -38,6 +29,12 @@ export interface BookmarkItem {
      * MoveToCollectionModal.
      */
     readonly collectionId?: string | null;
+    /** Display name resolved from the referenced entity (server-enriched). */
+    readonly entityName?: string | null;
+    /** Slug resolved from the referenced entity (server-enriched). */
+    readonly entitySlug?: string | null;
+    /** Featured image URL resolved from the referenced entity (server-enriched). */
+    readonly entityImage?: string | null;
 }
 
 /** API response shape for the bookmarks list */
@@ -59,21 +56,22 @@ export interface DeleteApiResponse {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Derive the canonical URL for a bookmarked entity.
+ * Derive the canonical URL for a bookmarked entity. Prefers the server-resolved
+ * slug; falls back to the raw entityId when the entity was not enriched.
  *
- * @param bookmark - Bookmark item with optional entityUrl/slug/entityId
- * @param locale - Active locale string for URL prefix
- * @param pathSegment - Entity type path segment (e.g. 'alojamientos')
- * @returns Resolved URL string
+ * `pathSegment` may be a literal string (e.g. when the caller knows the active
+ * tab's entity type) or a resolver function (used by the "Todos" tab where each
+ * bookmark may belong to a different entity type).
  */
 export function resolveEntityUrl(
     bookmark: BookmarkItem,
     locale: string,
-    pathSegment: string
+    pathSegment: string | ((entityType: string) => string)
 ): string {
-    if (bookmark.entityUrl) return bookmark.entityUrl;
-    const identifier = bookmark.slug ?? bookmark.entityId;
-    return `/${locale}/${pathSegment}/${identifier}/`;
+    const identifier = bookmark.entitySlug ?? bookmark.entityId;
+    const segment =
+        typeof pathSegment === 'function' ? pathSegment(bookmark.entityType) : pathSegment;
+    return `/${locale}/${segment}/${identifier}/`;
 }
 
 // ─── EmptyFavorites ───────────────────────────────────────────────────────────
@@ -110,8 +108,17 @@ export interface BookmarkGridProps {
     readonly totalPages: number;
     readonly removingIds: ReadonlySet<string>;
     readonly locale: string;
-    readonly pathSegment: string;
-    readonly cardTypeLabel: string;
+    /**
+     * Path segment for the bookmark's detail URL. Can be a literal (single
+     * entity type tab) or a function that resolves per-bookmark (the "Todos"
+     * tab where each card may be of a different type).
+     */
+    readonly pathSegment: string | ((entityType: string) => string);
+    /**
+     * Card meta label shown under the title. Same string/function pattern as
+     * `pathSegment` for cross-entity rendering.
+     */
+    readonly cardTypeLabel: string | ((entityType: string) => string);
     readonly removeLabel: string;
     readonly removingLabel: string;
     readonly removeBtnLabel: string;
@@ -204,6 +211,13 @@ export function BookmarkGrid({
             >
                 {bookmarks.map((bookmark) => {
                     const href = resolveEntityUrl(bookmark, locale, pathSegment);
+                    // Prefer the user's custom label; fall back to the
+                    // server-resolved entity name; last resort is the i18n placeholder.
+                    const displayTitle = bookmark.name ?? bookmark.entityName ?? untitledLabel;
+                    const resolvedTypeLabel =
+                        typeof cardTypeLabel === 'function'
+                            ? cardTypeLabel(bookmark.entityType)
+                            : cardTypeLabel;
                     return (
                         <li
                             key={bookmark.id}
@@ -211,10 +225,10 @@ export function BookmarkGrid({
                         >
                             {/* Image */}
                             <div className={styles.cardImage}>
-                                {bookmark.imageUrl ? (
+                                {bookmark.entityImage ? (
                                     <img
-                                        src={bookmark.imageUrl}
-                                        alt={bookmark.name ?? ''}
+                                        src={bookmark.entityImage}
+                                        alt={displayTitle}
                                         className={styles.cardImg}
                                         loading="lazy"
                                     />
@@ -235,10 +249,10 @@ export function BookmarkGrid({
                                         href={href}
                                         className={styles.cardTitleLink}
                                     >
-                                        {bookmark.name ?? untitledLabel}
+                                        {displayTitle}
                                     </a>
                                 </h3>
-                                <p className={styles.cardMeta}>{cardTypeLabel}</p>
+                                <p className={styles.cardMeta}>{resolvedTypeLabel}</p>
 
                                 {/* Inline note editor */}
                                 <EditableNote
@@ -265,10 +279,7 @@ export function BookmarkGrid({
                                     data-testid={`move-bookmark-button-${bookmark.id}`}
                                     disabled={removingIds.has(bookmark.id)}
                                     onClick={() => onMove(bookmark)}
-                                    aria-label={moveBtnAriaLabel.replace(
-                                        '{{name}}',
-                                        bookmark.name ?? ''
-                                    )}
+                                    aria-label={moveBtnAriaLabel.replace('{{name}}', displayTitle)}
                                 >
                                     {moveBtnLabel}
                                 </button>
@@ -277,7 +288,7 @@ export function BookmarkGrid({
                                     className={styles.removeBtn}
                                     disabled={removingIds.has(bookmark.id)}
                                     onClick={() => onRemove(bookmark)}
-                                    aria-label={`${removeLabel}: ${bookmark.name ?? ''}`}
+                                    aria-label={`${removeLabel}: ${displayTitle}`}
                                 >
                                     {removingIds.has(bookmark.id) ? removingLabel : removeBtnLabel}
                                 </button>

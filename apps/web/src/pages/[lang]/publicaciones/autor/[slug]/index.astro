@@ -23,6 +23,7 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
 
 if (!slug) return new Response(null, { status: 404 });
 
@@ -110,7 +111,7 @@ const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 			<div class="author-page__grid">
 				{articleCards.map((card, i) => (
 					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
-						<ArticleCard data={card} locale={locale} />
+						<ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
 					</div>
 				))}
 			</div>

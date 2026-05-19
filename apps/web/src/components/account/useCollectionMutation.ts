@@ -98,7 +98,7 @@ export function useCollectionMutation({
                         : await userBookmarkCollectionsApi.create(trimmedInput);
 
                 if (result.ok) {
-                    const saved: BookmarkCollectionItem = result.data.data;
+                    const saved: BookmarkCollectionItem = result.data;
                     onSaved?.({ id: saved.id, name: saved.name });
                     onClose();
                     return true;

@@ -13,6 +13,7 @@
 
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import styles from './UserFavoritesList.module.css';
+import { ICON_OPTIONS } from './collection-picker-config';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -62,21 +63,36 @@ export function CollectionCard({
                     }}
                     aria-hidden="true"
                 >
-                    {collection.icon ? (
-                        <span
-                            className={styles.collectionCardIcon}
-                            style={{ color }}
-                        >
-                            {collection.icon}
-                        </span>
-                    ) : (
-                        /* Default neutral star icon via CSS pseudo-element */
-                        <span
-                            className={styles.collectionCardIconDefault}
-                            style={{ color }}
-                            aria-hidden="true"
-                        />
-                    )}
+                    {(() => {
+                        // The `icon` field stores a key from the curated icon
+                        // set (e.g. "star", "favorite"). Resolve it back to a
+                        // Phosphor component so we render an SVG, not the key.
+                        const entry = collection.icon
+                            ? ICON_OPTIONS.find((opt) => opt.key === collection.icon)
+                            : undefined;
+                        if (entry) {
+                            const Icon = entry.Component;
+                            return (
+                                <span
+                                    className={styles.collectionCardIcon}
+                                    style={{ color }}
+                                >
+                                    <Icon
+                                        size={28}
+                                        weight="duotone"
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                            );
+                        }
+                        return (
+                            <span
+                                className={styles.collectionCardIconDefault}
+                                style={{ color }}
+                                aria-hidden="true"
+                            />
+                        );
+                    })()}
                 </div>
 
                 {/* Card body */}
