@@ -25,20 +25,186 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Liebig",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178058/hospeda/seed/required/destinations/007-destination-liebig/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/007-destination-liebig/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Liebig"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Liebig",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178059/hospeda/seed/required/destinations/007-destination-liebig/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Liebig",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178060/hospeda/seed/required/destinations/007-destination-liebig/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178063/hospeda/seed/required/destinations/007-destination-liebig/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178065/hospeda/seed/required/destinations/007-destination-liebig/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178069/hospeda/seed/required/destinations/007-destination-liebig/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178073/hospeda/seed/required/destinations/007-destination-liebig/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178075/hospeda/seed/required/destinations/007-destination-liebig/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178077/hospeda/seed/required/destinations/007-destination-liebig/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178078/hospeda/seed/required/destinations/007-destination-liebig/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178078/hospeda/seed/required/destinations/007-destination-liebig/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178079/hospeda/seed/required/destinations/007-destination-liebig/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178080/hospeda/seed/required/destinations/007-destination-liebig/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178081/hospeda/seed/required/destinations/007-destination-liebig/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178082/hospeda/seed/required/destinations/007-destination-liebig/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178083/hospeda/seed/required/destinations/007-destination-liebig/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178084/hospeda/seed/required/destinations/007-destination-liebig/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178085/hospeda/seed/required/destinations/007-destination-liebig/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178086/hospeda/seed/required/destinations/007-destination-liebig/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178087/hospeda/seed/required/destinations/007-destination-liebig/gallery-19.webp",
+                "publicId": "hospeda/seed/required/destinations/007-destination-liebig/gallery-19",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

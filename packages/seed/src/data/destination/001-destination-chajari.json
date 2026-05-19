@@ -25,20 +25,177 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Chajarí",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177859/hospeda/seed/required/destinations/001-destination-chajari/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/001-destination-chajari/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Paisajes rurales de Chajarí"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Campo y citricultura en Chajarí",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177861/hospeda/seed/required/destinations/001-destination-chajari/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Estancias rurales de Chajarí",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177862/hospeda/seed/required/destinations/001-destination-chajari/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177863/hospeda/seed/required/destinations/001-destination-chajari/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177865/hospeda/seed/required/destinations/001-destination-chajari/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177867/hospeda/seed/required/destinations/001-destination-chajari/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177868/hospeda/seed/required/destinations/001-destination-chajari/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177870/hospeda/seed/required/destinations/001-destination-chajari/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177871/hospeda/seed/required/destinations/001-destination-chajari/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177872/hospeda/seed/required/destinations/001-destination-chajari/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177874/hospeda/seed/required/destinations/001-destination-chajari/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177876/hospeda/seed/required/destinations/001-destination-chajari/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177877/hospeda/seed/required/destinations/001-destination-chajari/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177878/hospeda/seed/required/destinations/001-destination-chajari/gallery-13.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-13",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177880/hospeda/seed/required/destinations/001-destination-chajari/gallery-14.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-14",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177882/hospeda/seed/required/destinations/001-destination-chajari/gallery-15.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-15",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177884/hospeda/seed/required/destinations/001-destination-chajari/gallery-16.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-16",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177885/hospeda/seed/required/destinations/001-destination-chajari/gallery-17.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-17",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779177886/hospeda/seed/required/destinations/001-destination-chajari/gallery-18.webp",
+                "publicId": "hospeda/seed/required/destinations/001-destination-chajari/gallery-18",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },

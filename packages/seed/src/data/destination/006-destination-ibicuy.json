@@ -25,20 +25,123 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Ibicuy",
-            "moderationState": "APPROVED"
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178024/hospeda/seed/required/destinations/006-destination-ibicuy/featured.webp",
+            "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/featured",
+            "moderationState": "APPROVED",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
+            "caption": "Vista panorámica de Ibicuy"
         },
         "gallery": [
             {
-                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Ibicuy",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178025/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-01.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-01",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             },
             {
-                "url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Ibicuy",
-                "moderationState": "APPROVED"
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178025/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-02.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-02",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178026/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-03.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-03",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178027/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-04.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-04",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178028/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-05.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-05",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178029/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-06.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-06",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178030/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-07.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-07",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178031/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-08.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-08",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178032/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-09.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-09",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178033/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-10.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-10",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178034/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-11.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-11",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
+            },
+            {
+                "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178035/hospeda/seed/required/destinations/006-destination-ibicuy/gallery-12.webp",
+                "publicId": "hospeda/seed/required/destinations/006-destination-ibicuy/gallery-12",
+                "moderationState": "APPROVED",
+                "attribution": {
+                    "photographer": "qazuor",
+                    "license": "Owned"
+                }
             }
         ]
     },
