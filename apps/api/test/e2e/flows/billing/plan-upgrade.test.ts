@@ -56,6 +56,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
+import { randomUUID } from 'node:crypto';
 import { billingCheckouts, billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -70,6 +71,8 @@ import { providerResponseFixtures } from '../../helpers/billing-fixtures.js';
 import { createMpStubAdapter } from '../../helpers/mp-stub.js';
 import {
     type TestBillingPlansSeed,
+    createTestPlan,
+    createTestPrice,
     createTestUser,
     seedBillingTestPlans
 } from '../../setup/seed-helpers.js';
@@ -235,5 +238,198 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
         const calls = mpStub.config.getCalls('checkout.create');
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('success');
+    });
+
+    // -----------------------------------------------------------------------
+    // Error paths — sub-commit 2
+    //
+    // The plan-change handler + initiatePaidPlanUpgrade service surface
+    // five distinct error branches reachable through the upgrade flow.
+    // Each test pins one branch end-to-end and asserts no checkout row
+    // and no adapter call when the failure happens BEFORE the qzpay
+    // checkout.create call.
+    //
+    // Reminder: the active cheap-plan subscription is seeded by the file-
+    // level beforeEach (cheapSubscriptionId in scope), so each test below
+    // starts from a clean state and only mutates what it needs.
+    // -----------------------------------------------------------------------
+
+    it('returns 400 when the user requests to change to the same plan', async () => {
+        // ACT: pass the SAME planId the user is already on. The handler
+        // short-circuits at line 213-217 (plan-change.ts) BEFORE the
+        // service is invoked, so this is a handler-level 400, not the
+        // service's 422 SAME_PLAN (which would only fire if the handler
+        // had let the request through).
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: seed.cheap.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(400);
+
+        // ASSERT — no side effects.
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+
+        // ASSERT — sub unchanged (still on cheap plan).
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.cheap.planId);
+    });
+
+    it('returns 404 when the target plan does not exist', async () => {
+        // ACT: pass a well-formed UUID that does not match any plan in
+        // billing_plans. billing.plans.get() returns null and the handler
+        // throws 404 at line 197-202.
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: randomUUID(),
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(404);
+
+        // ASSERT — no side effects.
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('returns 400 when the target plan has no price for the requested interval', async () => {
+        // ARRANGE: ad-hoc plan with ONLY a monthly price. Request an
+        // annual upgrade against it — the handler at line 233-242 filters
+        // targetPlan.prices by interval and surfaces 400 when nothing
+        // matches.
+        //
+        // NOTE: this 400 is handler-level. The service has its own
+        // NO_MATCHING_PRICE branch (would map to 404 via
+        // mapUpgradeErrorToHttp) but the handler's price filter is
+        // upstream of the service, so requests fail with 400 before the
+        // service ever runs. Reaching the service's 404 path would
+        // require a price row that is `active: false` — leaving that
+        // case to a follow-up test if the matching contract changes.
+        const monthlyOnlyPlan = await createTestPlan({
+            name: 'Plan Without Annual Price',
+            metadata: { slug: 'monthly-only-upgrade', category: 'test-error-path' }
+        });
+        await createTestPrice({
+            planId: monthlyOnlyPlan.planId,
+            unitAmount: 800_000,
+            billingInterval: 'month'
+        });
+        // Deliberately NO annual price on monthlyOnlyPlan.
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: monthlyOnlyPlan.planId,
+            billingInterval: 'annual'
+        });
+
+        expect(response.status).toBe(400);
+
+        // ASSERT — no side effects.
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('returns 422 when the delta is non-positive (NOT_AN_UPGRADE: cycle already ended, no time remaining)', async () => {
+        // ARRANGE: the handler decides upgrade vs downgrade by comparing
+        // NORMALIZED prices (unitAmount / intervalCount). target=expensive
+        // (500_000) > current=cheap (100_000), so the handler enters the
+        // UPGRADE branch and dispatches to initiatePaidPlanUpgrade. The
+        // service then calls computePlanChangeDelta, which returns 0 when
+        // `now >= currentPeriodEnd` (no time remaining in the billing
+        // cycle to prorate against — see subscription-checkout.service.ts:159).
+        // A zero or negative delta triggers SubscriptionCheckoutError
+        // 'NOT_AN_UPGRADE', mapped to HTTP 422 by mapUpgradeErrorToHttp.
+        //
+        // Force the condition by writing a past `currentPeriodEnd` onto
+        // the cheap sub seeded by beforeEach. The sub stays `active` —
+        // this represents the edge case where a renewal cron hasn't yet
+        // run but the user issues an upgrade in the gap.
+        const now = Date.now();
+        const sixtyDaysAgo = new Date(now - 60 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({
+                currentPeriodStart: sixtyDaysAgo,
+                currentPeriodEnd: thirtyDaysAgo
+            })
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: seed.expensive.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(422);
+
+        // ASSERT — no checkout was created (service threw before reaching
+        // billing.checkout.create) and the adapter was never invoked.
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(0);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+
+        // ASSERT — sub plan_id unchanged (still on cheap; the failure
+        // happens before any DB mutation).
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.cheap.planId);
+    });
+
+    it('returns 500 when the adapter response carries no checkout URL (MISSING_INIT_POINT)', async () => {
+        // ARRANGE: stub the adapter to return a successful checkout but
+        // with empty initPoint AND no sandboxInitPoint. qzpay-core only
+        // sets `providerInitPoint` / `providerSandboxInitPoint` when the
+        // adapter result has a truthy value. With both empty, the
+        // service's MISSING_INIT_POINT branch (line 682) fires and
+        // mapUpgradeErrorToHttp maps it to 500.
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_no_url_upgrade',
+                url: ''
+            })
+        );
+
+        const response = await client.post('/api/v1/protected/billing/subscriptions/change-plan', {
+            newPlanId: seed.expensive.planId,
+            billingInterval: 'monthly'
+        });
+
+        expect(response.status).toBe(500);
+
+        // ASSERT — qzpay-core invoked the adapter once, then surfaced
+        // MISSING_INIT_POINT. A billing_checkouts row is still created
+        // because qzpay-core writes the local checkout BEFORE the
+        // adapter result is inspected for an init point — same
+        // no-orphans contract used by the annual flow's identical
+        // branch. Pin the count so a refactor that rolls back the
+        // checkout on missing init point would surface as a test diff
+        // (likely an intentional decision to keep the row + reap via
+        // abandoned-checkouts cron — see SPEC-143 T-143-XX for similar
+        // discussion).
+        const calls = mpStub.config.getCalls('checkout.create');
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.outcome).toBe('success');
+
+        const checkouts = await testDb.getDb().select().from(billingCheckouts);
+        expect(checkouts).toHaveLength(1);
+
+        // ASSERT — sub is unchanged (the upgrade never committed).
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, cheapSubscriptionId));
+        expect(subs[0]?.planId).toBe(seed.cheap.planId);
     });
 });
