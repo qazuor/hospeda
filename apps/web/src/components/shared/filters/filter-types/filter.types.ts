@@ -65,6 +65,36 @@ interface RangeFilterGroup {
     readonly step?: number;
 }
 
+/**
+ * Composite price filter that bundles three sub-controls inside one group:
+ * - `includeUnpriced` toggle (default ON): include events with no pricing data
+ * - `isFree` toggle: only events marked as free
+ * - dual-range `minPrice` / `maxPrice`: shown only when `isFree` is OFF
+ *
+ * Emits the URL params `isFree`, `includeUnpriced`, `minPrice`, `maxPrice`.
+ * `includeUnpriced` only emits to the URL when the user EXPLICITLY turns it
+ * OFF (server treats absent as `true`, the default).
+ */
+export interface PriceCompositeFilterConfig {
+    readonly id: string;
+    readonly label: string;
+    readonly type: 'price-composite';
+    /** Min boundary for the dual-range control (e.g. 0). */
+    readonly min: number;
+    /** Max boundary for the dual-range control (e.g. 10000). */
+    readonly max: number;
+    /** Step size for the dual-range control. */
+    readonly step?: number;
+    /** Display format for the range values. */
+    readonly format?: 'currency' | 'number';
+    /** Label for the include-unpriced toggle. */
+    readonly includeUnpricedLabel: string;
+    /** Label for the only-free toggle. */
+    readonly isFreeLabel: string;
+    /** Label for the dual-range sub-section (shown when isFree is OFF). */
+    readonly rangeLabel: string;
+}
+
 /** Union of all supported filter group configurations. */
 export type FilterGroup =
     | SearchFilterGroup
@@ -77,7 +107,8 @@ export type FilterGroup =
     | DualRangeFilterConfig
     | SelectSearchFilterConfig
     | IconChipsFilterConfig
-    | DateRangeFilterConfig;
+    | DateRangeFilterConfig
+    | PriceCompositeFilterConfig;
 
 /** Shared reducer state shape. */
 export interface FilterState {

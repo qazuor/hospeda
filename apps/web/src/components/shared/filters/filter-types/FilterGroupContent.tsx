@@ -11,6 +11,8 @@ import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
 import { IconChipsFilter } from './IconChipsFilter';
+import { PriceCompositeFilter } from './PriceCompositeFilter';
+import { SearchFilter } from './SearchFilter';
 import { SelectSearchFilter } from './SelectSearchFilter';
 import { StarsFilter } from './StarsFilter';
 import { StepperFilter } from './StepperFilter';
@@ -19,7 +21,8 @@ import type {
     FilterDispatch,
     FilterGroup,
     FilterState,
-    IconChipsFilterConfig
+    IconChipsFilterConfig,
+    PriceCompositeFilterConfig
 } from './filter.types';
 import type {
     DateRangeFilterConfig,
@@ -54,21 +57,20 @@ export function FilterGroupContent({
     const { t } = createTranslations(locale);
 
     if (group.type === 'search') {
-        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const commit = (next: string) => {
             if (onSearchChange) {
-                onSearchChange(e.target.value);
+                onSearchChange(next);
             } else {
-                dispatch({ type: 'SET_SEARCH', value: e.target.value });
+                dispatch({ type: 'SET_SEARCH', value: next });
             }
         };
         return (
-            <input
-                type="text"
-                className={styles.searchInput}
-                placeholder={group.placeholder ?? t('ui.filter.searchPlaceholder', 'Buscar...')}
+            <SearchFilter
                 value={state.search}
-                onChange={handleChange}
-                aria-label={group.label}
+                onCommit={commit}
+                placeholder={group.placeholder}
+                ariaLabel={group.label}
+                locale={locale}
             />
         );
     }
@@ -250,6 +252,51 @@ export function FilterGroupContent({
                         dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
                     }
                 }}
+                locale={locale}
+            />
+        );
+    }
+
+    if (group.type === 'price-composite') {
+        const priceConfig = group as PriceCompositeFilterConfig;
+        const isFree = !!state.toggles[`${priceConfig.id}_isFree`];
+        const includeUnpriced = state.toggles[`${priceConfig.id}_includeUnpriced`] ?? true;
+        return (
+            <PriceCompositeFilter
+                config={priceConfig}
+                isFree={isFree}
+                includeUnpriced={includeUnpriced}
+                range={state.ranges[priceConfig.id] ?? { min: '', max: '' }}
+                onIsFreeChange={(v) =>
+                    dispatch({
+                        type: 'SET_TOGGLE',
+                        groupId: `${priceConfig.id}_isFree`,
+                        value: v
+                    })
+                }
+                onIncludeUnpricedChange={(v) =>
+                    dispatch({
+                        type: 'SET_TOGGLE',
+                        groupId: `${priceConfig.id}_includeUnpriced`,
+                        value: v
+                    })
+                }
+                onMinChange={(v) =>
+                    dispatch({
+                        type: 'SET_RANGE',
+                        groupId: priceConfig.id,
+                        field: 'min',
+                        value: v
+                    })
+                }
+                onMaxChange={(v) =>
+                    dispatch({
+                        type: 'SET_RANGE',
+                        groupId: priceConfig.id,
+                        field: 'max',
+                        value: v
+                    })
+                }
                 locale={locale}
             />
         );

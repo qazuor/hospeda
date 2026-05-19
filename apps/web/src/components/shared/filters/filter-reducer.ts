@@ -73,7 +73,12 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                 toggles: {
                     ...state.toggles,
                     [action.groupId]: false,
-                    [`${action.groupId}_includeNull`]: false
+                    [`${action.groupId}_includeNull`]: false,
+                    // Price-composite sub-toggles. Harmless when the group is
+                    // not a price-composite. `includeUnpriced` resets to its
+                    // default of TRUE so the URL drops the param.
+                    [`${action.groupId}_isFree`]: false,
+                    [`${action.groupId}_includeUnpriced`]: true
                 },
                 ranges: restRanges,
                 dates: restDates
@@ -128,6 +133,20 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
         return hasIncludeNull || (state.steppers[group.id] ?? 0) > 0;
     }
     if (group.type === 'toggle') return !!state.toggles[group.id];
+    if (group.type === 'price-composite') {
+        // Active if isFree is set, OR includeUnpriced is explicitly OFF
+        // (server default is ON), OR the dual-range has non-default values.
+        const isFree = !!state.toggles[`${group.id}_isFree`];
+        const includeUnpricedDefault = true;
+        const includeUnpriced =
+            state.toggles[`${group.id}_includeUnpriced`] ?? includeUnpricedDefault;
+        const range = state.ranges[group.id];
+        const rangeActive = !!(
+            (range?.min && range.min !== String(group.min)) ||
+            (range?.max && range.max !== String(group.max))
+        );
+        return isFree || includeUnpriced !== includeUnpricedDefault || rangeActive;
+    }
     if (group.type === 'dual-range') {
         const range = state.ranges[group.id];
         const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
@@ -225,9 +244,23 @@ export function initStateFromParams({
             if (params[group.id] === 'true') toggles[group.id] = true;
         }
         if (group.type === 'date-range') {
-            const from = params.checkIn ?? '';
-            const to = params.checkOut ?? '';
+            const fromParam = group.fromParam ?? 'checkIn';
+            const toParam = group.toParam ?? 'checkOut';
+            const from = params[fromParam] ?? '';
+            const to = params[toParam] ?? '';
             if (from || to) dates[group.id] = { from, to };
+        }
+        if (group.type === 'price-composite') {
+            if (params.isFree === 'true') toggles[`${group.id}_isFree`] = true;
+            if (params.includeUnpriced === 'false') {
+                toggles[`${group.id}_includeUnpriced`] = false;
+            } else {
+                // Default: include unpriced events. Server treats absent as TRUE.
+                toggles[`${group.id}_includeUnpriced`] = true;
+            }
+            const min = params.minPrice ?? '';
+            const max = params.maxPrice ?? '';
+            if (min || max) ranges[group.id] = { min, max };
         }
     }
 
@@ -280,8 +313,27 @@ export function buildParamsFromState({
         }
         if (group.type === 'date-range') {
             const v = state.dates[group.id];
-            if (v?.from) params.set('checkIn', v.from);
-            if (v?.to) params.set('checkOut', v.to);
+            const fromParam = group.fromParam ?? 'checkIn';
+            const toParam = group.toParam ?? 'checkOut';
+            if (v?.from) params.set(fromParam, v.from);
+            if (v?.to) params.set(toParam, v.to);
+        }
+        if (group.type === 'price-composite') {
+            const isFree = !!state.toggles[`${group.id}_isFree`];
+            if (isFree) params.set('isFree', 'true');
+            // Only emit includeUnpriced when explicitly OFF — server default is TRUE,
+            // so an absent param means "include unpriced".
+            const includeUnpricedRaw = state.toggles[`${group.id}_includeUnpriced`];
+            const includeUnpriced = includeUnpricedRaw ?? true;
+            if (!includeUnpriced) params.set('includeUnpriced', 'false');
+            // Price range is only meaningful when not filtering free-only.
+            if (!isFree) {
+                const range = state.ranges[group.id];
+                if (range?.min && range.min !== String(group.min))
+                    params.set('minPrice', range.min);
+                if (range?.max && range.max !== String(group.max))
+                    params.set('maxPrice', range.max);
+            }
         }
     }
     return params;
