@@ -11,7 +11,7 @@
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
-import { and, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
+import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
@@ -125,9 +125,9 @@ async function confirmAnnualSubscription(input: {
     // already exists, skip the record() to avoid double-inserts when MP
     // resends `payment.updated` for the same charge.
     const existingPayment = await db
-        .select({ id: billingSubscriptions.id })
-        .from(sql`billing_payments`)
-        .where(sql`provider_payment_ids->>'mercadopago' = ${providerPaymentId}`)
+        .select({ id: billingPayments.id })
+        .from(billingPayments)
+        .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${providerPaymentId}`)
         .limit(1);
 
     if (existingPayment.length === 0) {
@@ -273,6 +273,15 @@ async function confirmPlanUpgrade(input: {
         applyAt: 'immediately'
     });
 
+    // Invalidate the entitlement middleware cache for this customer.
+    // Without this, the entitlement middleware would keep serving the
+    // pre-upgrade (cheaper-plan) entitlement set for up to 5 minutes —
+    // the user pays the prorated delta and sees the expensive-plan
+    // features blocked until the TTL expires. Synchronous, in-process,
+    // no I/O — safe to call unconditionally. Mirrors the same call in
+    // confirmAnnualSubscription and processSubscriptionUpdated.
+    clearEntitlementCache(changeResult.subscription.customerId);
+
     // Step 2: propagate to MP preapproval — best-effort.
     const mpSubscriptionId = sub.providerSubscriptionIds?.mercadopago;
     if (mpSubscriptionId) {
@@ -323,9 +332,9 @@ async function confirmPlanUpgrade(input: {
 
     // Step 4: record the delta payment in billing_payments.
     const existingPayment = await db
-        .select({ id: billingSubscriptions.id })
-        .from(sql`billing_payments`)
-        .where(sql`provider_payment_ids->>'mercadopago' = ${providerPaymentId}`)
+        .select({ id: billingPayments.id })
+        .from(billingPayments)
+        .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${providerPaymentId}`)
         .limit(1);
 
     if (existingPayment.length === 0) {

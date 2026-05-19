@@ -1320,6 +1320,31 @@
             "tags": ["security", "csp", "web", "billing", "phase-2", "auth-flows", "mercadopago"]
         },
         {
+            "specId": "SPEC-143",
+            "title": "Billing Testing Coverage (e2e + manual smoke)",
+            "type": "testing",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-143-billing-testing-coverage",
+            "created": "2026-05-17T23:55:00Z",
+            "extractedFrom": "SPEC-141 post-launch follow-ups gap analysis (engram #532)",
+            "blocks": ["real-money-go-live"],
+            "firstAllocatedViaEngramProtocol": true,
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+            "branch": "spec/SPEC-143-billing-testing-coverage",
+            "base": "staging",
+            "tags": [
+                "billing",
+                "testing",
+                "e2e",
+                "mercadopago",
+                "smoke",
+                "observability",
+                "runbooks",
+                "go-live-gate"
+            ]
+        },
+        {
             "specId": "SPEC-144",
             "title": "Admin design-token contrast remediation",
             "type": "feature",
@@ -1333,6 +1358,31 @@
             "extractedFrom": "SPEC-136 post-fix axe verification",
             "parent": "SPEC-134",
             "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
+        },
+        {
+            "specId": "SPEC-145",
+            "title": "Billing Entitlements and Limits Enforcement",
+            "type": "feature",
+            "complexity": "high",
+            "status": "reserved",
+            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+            "created": "2026-05-18T22:00:00Z",
+            "extractedFrom": "SPEC-143 T-143-09 sub-commit 4 audit (engram spec/spec-145/reserved)",
+            "dependsOn": ["SPEC-143"],
+            "blocks": ["real-money-go-live"],
+            "firstAllocatedViaEngramProtocol": true,
+            "worktree": null,
+            "branch": null,
+            "base": "staging",
+            "tags": [
+                "billing",
+                "entitlements",
+                "limits",
+                "enforcement",
+                "e2e",
+                "feature-gates",
+                "go-live-gate"
+            ]
         },
         {
             "specId": "SPEC-146",

@@ -72,6 +72,7 @@ export default defineConfig({
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
             '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
+            '@repo/email': resolve(__dirname, '../../packages/email/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
             // Workaround for pnpm hoisting issue: the better-auth instance installed in
             // apps/api/node_modules does not carry @better-auth/core as a local sub-dependency.

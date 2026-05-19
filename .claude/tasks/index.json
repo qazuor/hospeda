@@ -426,6 +426,29 @@
             "completionRef": "PR #1139 (merge commit 7c27b995a)",
             "archived": true,
             "archiveNote": "Backfilled 2026-05-17T23:50Z after merge. Collision with prior SPEC-141-admin-design-token-contrast resolved by renumbering that draft to SPEC-144."
+        },
+        {
+            "specId": "SPEC-143",
+            "title": "Billing Testing Coverage (e2e + manual smoke)",
+            "status": "in_progress",
+            "progress": "13/65",
+            "path": "SPEC-143-billing-testing-coverage",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+            "branch": "spec/SPEC-143-billing-testing-coverage",
+            "startedAt": "2026-05-17T23:55:00Z",
+            "followUpSpec": "SPEC-145"
+        },
+        {
+            "specId": "SPEC-145",
+            "title": "Billing Entitlements and Limits Enforcement",
+            "status": "reserved",
+            "progress": "0/0",
+            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+            "worktree": null,
+            "branch": null,
+            "dependsOn": ["SPEC-143"],
+            "reservedAt": "2026-05-18T22:00:00Z",
+            "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         }
     ],
     "standalone": {
