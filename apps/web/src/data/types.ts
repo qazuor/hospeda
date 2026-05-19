@@ -334,11 +334,13 @@ export interface EventLocation {
 }
 
 /**
- * Props for the EventCard component.
+ * Props for the event card components.
  *
  * Produced by `toEventCardProps()` in `transforms.ts` and consumed
- * by `EventCard.astro`. Used in the homepage events section and
- * the full events listing page.
+ * by `EventCardHorizontal.astro` and `EventCardFeatured.astro`.
+ * Used in the homepage events section, the full events listing
+ * page, and related-events sections on destination/accommodation
+ * detail pages.
  *
  * @example
  * ```ts
@@ -383,6 +385,12 @@ export interface EventCardData {
     readonly isFeatured: boolean;
     /** Optional venue location. Absent for online/virtual events. */
     readonly location?: EventLocation;
+    /**
+     * Optional event organizer. Absent when the API list endpoint does not
+     * expand the organizer relation. Cards may surface `organizer.name`
+     * as secondary meta.
+     */
+    readonly organizer?: { readonly name: string; readonly slug?: string };
     /**
      * SPEC-095: City name derived from `eventLocation.cityDestination.name`.
      * Empty string when the API response did not carry a `cityDestination`

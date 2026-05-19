@@ -21,7 +21,7 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 
 ### Si sos turista (entrás a buscar dónde alojarte)
 
-**Cuenta**
+#### Cuenta
 
 - Te podés **registrar** con email + contraseña, con Google o con Facebook.
 - Te llega un **email de verificación** y al apretar el enlace tu cuenta queda activa.
@@ -33,7 +33,7 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 - Cambiás **tema** (claro / oscuro / sistema) y se acuerda.
 - En **preferencias** podés configurar notificaciones, privacidad, cookies.
 
-**Buscar y explorar**
+#### Buscar y explorar
 
 - **Buscador general** arriba: encuentra alojamientos, destinos, eventos y publicaciones de blog mientras escribís.
 - **Catálogo de alojamientos** con filtros (precio, capacidad, comodidades, fecha) y paginación.
@@ -42,7 +42,7 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 - **Catálogos de destinos, eventos y blog**, cada uno con sus filtros (por categoría, autor, etiqueta según el caso).
 - **Paginación** funciona en todos los listados.
 
-**Detalle de un alojamiento**
+#### Detalle de un alojamiento
 
 - **Galería** de fotos con vista ampliada (lightbox).
 - **Descripción, comodidades, características** del lugar.
@@ -53,7 +53,7 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 - **Carrusel** de alojamientos parecidos al final.
 - **Botón de favorito** funciona logueado y pide login si no lo estás.
 
-**Favoritos y colecciones**
+#### Favoritos y colecciones
 
 - Marcás como favorito alojamientos, destinos, eventos y publicaciones.
 - Creás hasta 10 **colecciones** con nombre, color e ícono.
@@ -61,27 +61,27 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 - **Editás** y **borrás** colecciones (los favoritos no se pierden).
 - Le ponés **notas** a un favorito.
 
-**Mensajería con propietarios**
+#### Mensajería con propietarios
 
 - Desde el detalle de un alojamiento mandás un mensaje al propietario.
 - Si no tenés cuenta, te mandamos un email con un enlace para abrir la conversación.
 - Si tenés cuenta, la conversación queda en tu **bandeja de mensajes** (`/mi-cuenta/messages/`).
 - Ves el **historial completo** y respondés.
 
-**Reseñas**
+#### Reseñas
 
 - Leés reseñas de alojamientos con puntaje y comentarios.
 - Si fuiste a un alojamiento, **dejás tu reseña** (estrellas + texto).
 - Ves **tus reseñas** desde tu cuenta.
 
-**Suscripciones de turista (Plus, VIP)**
+#### Suscripciones de turista (Plus, VIP)
 
 - Ves los planes disponibles en `/suscriptores/precios/`.
 - Te suscribís y te redirige a Mercado Pago.
 - Después de pagar, ves tu plan activo en `Mi cuenta → Suscripción`.
 - Ves el **historial de pagos**.
 
-**Otras cosas**
+#### Otras cosas
 
 - **Newsletter**: te suscribís desde el pie de página con tu email.
 - **Páginas estáticas** funcionan y se entienden: nosotros, FAQ, beneficios, contacto, términos, privacidad, cookies.
@@ -95,13 +95,13 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 
 Además de todo lo de turista:
 
-**Empezar como propietario**
+#### Empezar como propietario
 
 - Te registrás como propietario sin trabarte en la bienvenida inicial.
 - Apretás **"Publicar"** o **"Publicá tu alojamiento"** y te lleva al miniformulario.
 - El **miniformulario** (Nombre, Tipo, Ciudad, Resumen) crea el alojamiento como borrador y te redirige al panel admin.
 
-**Gestionar tus alojamientos**
+#### Gestionar tus alojamientos
 
 - Ves **"Mis propiedades"** desde el menú de usuario, con cada alojamiento como tarjeta (foto, nombre, precio, estado, botones).
 - Apretás **"Editar"** y te lleva al asistente del panel admin con 8 secciones (datos básicos, ubicación, capacidad, comodidades, fotos, precio, contacto, publicar).
@@ -110,14 +110,14 @@ Además de todo lo de turista:
 - **Publicás / despublicás** un alojamiento y se refleja en la búsqueda pública.
 - Apretás **"Ver en el sitio"** y se abre el detalle público.
 
-**Mensajes recibidos**
+#### Mensajes recibidos
 
 - Cuando un turista te escribe, te llega a tu **bandeja** (`/mi-cuenta/messages/`).
 - Ves la conversación, el huésped, el alojamiento, el estado.
 - **Respondés** y la conversación queda en historial.
 - Tenés acciones disponibles: archivar, bloquear, cerrar, reabrir, eliminar conversación.
 
-**Suscripción y pagos**
+#### Suscripción y pagos
 
 - Ves los planes para propietarios (Owner Basic, Pro, Premium o Complex).
 - Te suscribís y te redirige a Mercado Pago.
@@ -130,11 +130,11 @@ Además de todo lo de turista:
 
 Además de todo lo anterior:
 
-**Tablero principal del panel**
+#### Tablero principal del panel
 
 - Entrás al panel admin con tus credenciales y ves el **dashboard**: métricas generales, gráfico de tráfico, actividad reciente.
 
-**Contenido**
+#### Contenido
 
 - Crear / editar / eliminar / listar:
   - **Alojamientos** (todos los del sitio, no solo los tuyos)
@@ -144,37 +144,37 @@ Además de todo lo anterior:
   - **Comodidades** y **características**
 - **Buscar y filtrar** en cada listado por sus campos típicos.
 
-**Acceso, usuarios, permisos**
+#### Acceso, usuarios, permisos
 
 - Listar usuarios, editar, cambiar estado, ver actividad de cada uno.
 - Asignar / sacar permisos y roles.
 - Ver listados maestros de **roles** y **permisos** (no los toques sin coordinar).
 
-**Etiquetas (tags)**
+#### Etiquetas (tags)
 
 - **Post tags** (etiquetas del blog): crear, editar, listar.
 - **Etiquetas del sistema**: listas internas (admin-only).
 - **Etiquetas internas**: idem.
 - **Moderación de etiquetas creadas por usuarios**.
 
-**Mensajería (vista admin)**
+#### Mensajería (vista admin)
 
 - Ves **todas** las conversaciones del sistema con filtros (estado, participantes, fecha).
 - Podés abrir cualquier conversación y moderarla.
 
-**Patrocinadores y patrocinios**
+#### Patrocinadores y patrocinios
 
 - CRUD de patrocinadores (marcas).
 - Crear patrocinios asociando una marca a una publicación, con duración y monto.
 - ⏳ **Próximamente**: pantalla de analítica de patrocinador (la página existe pero el contenido todavía no está completo).
 
-**Newsletter**
+#### Newsletter
 
 - Crear y enviar **campañas** (con preview y confirmación antes de mandar).
 - Métricas por campaña: aperturas, clics, entregas fallidas.
 - Listar y filtrar **suscriptores** del newsletter.
 
-**Facturación (billing)**
+#### Facturación (billing)
 
 - **Planes** (gestionados desde código, los ves pero no se editan desde el panel).
 - **Suscripciones**: listar, filtrar por estado, abrir detalle.
@@ -187,12 +187,12 @@ Además de todo lo anterior:
 - **Métricas de billing**: MRR, ARR, ARPU, churn.
 - **Tareas programadas** (cron jobs): ver y disparar manualmente.
 
-**SEO y revalidación**
+#### SEO y revalidación
 
 - Configurar metadatos, robots.txt, datos estructurados.
 - **Revalidación ISR** (refrescar caché de páginas estáticas): config por tipo de entidad, ver logs, disparador manual.
 
-**Configuración crítica**
+#### Configuración crítica
 
 - Acceso a settings sensibles del sistema (no la toques sin avisar).
 
@@ -319,7 +319,7 @@ Las pantallas se acomodan según el tamaño del dispositivo. Estas son las cosas
 
 ¿Se entiende qué hacer en cada pantalla? ¿Los nombres tienen sentido? ¿Hay pasos confusos? Acá nos importa todo lo que te haga **dudar, frenarte o sentir que algo no se entiende**, incluso si "técnicamente funciona".
 
-**En el sitio público (web)**
+#### En el sitio público (web)
 
 - Botones o enlaces cuyo nombre no dice qué pasa al apretarlos.
 - Pantallas sin título, o con un título ambiguo (ej. "Configuración" cuando es "Editar mi perfil").
@@ -332,7 +332,7 @@ Las pantallas se acomodan según el tamaño del dispositivo. Estas son las cosas
 - Te perdés volviendo a la home o a "Mi cuenta" desde donde estás (te falta el camino de regreso).
 - Onboarding o primera carga que te tira a una pantalla sin saber **qué hacer primero**.
 
-**En el panel admin**
+#### En el panel admin
 
 - Menú lateral con etiquetas **técnicas** que no se entienden ("ISR Revalidation", "Webhook Events").
 - **Tablas** sin cabecera clara o con columnas con siglas sin tooltip.
