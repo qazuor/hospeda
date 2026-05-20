@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 51,
+        "completed": 52,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -723,11 +723,12 @@
             "title": "E2E: MercadoPago API error handling (regression-guard of current uniform 500 mapping)",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "[reframed 2026-05-20] Original scope assumed (a) error mode differentiation (4xx vs 5xx vs timeout), (b) Sentry capture per mode, (c) retry policy. All three blocked by qzpay-core providerSyncErrorStrategy=log default which swallows MP API errors before they reach the route layer (see [[bug/qzpay-provider-sync-error-log-strategy]]). Implementing those concerns requires architectural refactor deferred to SPEC-149 (Billing provider error propagation + Sentry context + retry policy). This task now covers a regression-guard test: mp-error-handling.test.ts pins the current behavior so SPEC-149 explicitly knows what changes when it lands. Scope: 11 error modes via mp-stub (400, 401, 403, 404, 422, 429, 500, 502, 503, 504, timeout, malformed) on start-paid endpoint. Per mode assert: response status (currently uniform 500), no partial DB beyond the qzpay log-strategy-persisted sub row, adapter call recorded as error outcome. 3 adjacent bugs pinned in engram: bug/qzpay-provider-sync-error-log-strategy, bug/no-sentry-on-start-paid-mp-errors, bug/no-retry-policy-on-mp-errors. See [[spec/spec-149/scope-deferred-from-spec-143]]."
+            "notes": "[reframed 2026-05-20] Original scope assumed (a) error mode differentiation (4xx vs 5xx vs timeout), (b) Sentry capture per mode, (c) retry policy. All three blocked by qzpay-core providerSyncErrorStrategy=log default which swallows MP API errors before they reach the route layer (see [[bug/qzpay-provider-sync-error-log-strategy]]). Implementing those concerns requires architectural refactor deferred to SPEC-149 (Billing provider error propagation + Sentry context + retry policy). This task now covers a regression-guard test: mp-error-handling.test.ts pins the current behavior so SPEC-149 explicitly knows what changes when it lands. Scope: 11 error modes via mp-stub (400, 401, 403, 404, 422, 429, 500, 502, 503, 504, timeout, malformed) on start-paid endpoint. Per mode assert: response status (currently uniform 500), no partial DB beyond the qzpay log-strategy-persisted sub row, adapter call recorded as error outcome. 3 adjacent bugs pinned in engram: bug/qzpay-provider-sync-error-log-strategy, bug/no-sentry-on-start-paid-mp-errors, bug/no-retry-policy-on-mp-errors. See [[spec/spec-149/scope-deferred-from-spec-143]].",
+            "completedAt": "2026-05-20T05:20:00Z"
         },
         {
             "id": "T-143-60",
