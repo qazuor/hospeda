@@ -268,6 +268,7 @@ export function BookmarkGrid({
                                     textareaLabel={noteTextareaLabel}
                                     editButtonLabel={noteEditButtonLabel}
                                     saveErrorMessage={noteSaveErrorMessage}
+                                    locale={locale}
                                 />
                             </div>
 

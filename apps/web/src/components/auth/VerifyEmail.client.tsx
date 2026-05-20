@@ -7,6 +7,7 @@
  * Redirects automatically after success (with configurable delay).
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { verifyEmail } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -70,11 +71,14 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
 
                 if (result.error) {
                     setErrorMessage(
-                        result.error.message ??
-                            t(
+                        translateApiError({
+                            error: result.error,
+                            t,
+                            fallback: t(
                                 'auth.verifyEmail.error',
                                 'La verificación falló. El enlace puede haber expirado.'
                             )
+                        })
                     );
                     setStatus('error');
                 } else {

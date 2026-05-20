@@ -21,6 +21,7 @@
  * its CSS dynamically and the swap drops dynamically-injected `<style>` tags.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -220,12 +221,14 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
                 if (!result.ok) {
                     addToast({
                         type: 'error',
-                        message:
-                            result.error.message ??
-                            t(
+                        message: translateApiError({
+                            error: result.error,
+                            t,
+                            fallback: t(
                                 'account.favorites.collections.assignFailed',
                                 'No se pudo asignar a la colección'
                             )
+                        })
                     });
                     return;
                 }

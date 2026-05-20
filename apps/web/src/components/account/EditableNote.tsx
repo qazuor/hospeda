@@ -16,6 +16,8 @@
  * - On save error an `addToast` is called and the previous value is kept.
  */
 
+import { translateApiError } from '@/lib/api-errors';
+import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './EditableNote.module.css';
@@ -56,6 +58,12 @@ export interface EditableNoteProps {
     readonly editButtonLabel: string;
     /** i18n fallback message for save errors. */
     readonly saveErrorMessage: string;
+    /**
+     * Current locale, used to translate API error responses by `code`.
+     * Optional for backwards-compat; without it the component falls back to
+     * the API's English `message` (the current behavior pre-fix).
+     */
+    readonly locale?: SupportedLocale;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -77,7 +85,8 @@ export function EditableNote({
     cancelLabel,
     textareaLabel,
     editButtonLabel,
-    saveErrorMessage
+    saveErrorMessage,
+    locale
 }: EditableNoteProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(initialValue ?? '');
@@ -144,14 +153,18 @@ export function EditableNote({
             });
 
             if (!res.ok) {
-                let msg = saveErrorMessage;
+                let apiError: { code?: string; message?: string } | undefined;
                 try {
-                    const body = (await res.json()) as { error?: { message?: string } };
-                    if (body.error?.message) msg = body.error.message;
+                    const body = (await res.json()) as {
+                        error?: { code?: string; message?: string };
+                    };
+                    if (body.error) apiError = body.error;
                 } catch {
                     // ignore JSON parse errors
                 }
-                throw new Error(msg);
+                throw new Error(
+                    translateApiError({ error: apiError, locale, fallback: saveErrorMessage })
+                );
             }
 
             setPersistedValue(draft);
@@ -164,7 +177,7 @@ export function EditableNote({
         } finally {
             setIsSaving(false);
         }
-    }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage]);
+    }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage, locale]);
 
     const currentLength = draft.length;
     const isOverLimit = currentLength > NOTE_MAX_LENGTH;

@@ -8,6 +8,7 @@
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -142,7 +143,13 @@ export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError
             const result = await signIn.email({ email, password });
 
             if (result.error) {
-                setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesión'));
+                setError(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t('auth.signIn.error', 'Error al iniciar sesión')
+                    })
+                );
             } else {
                 // Mirror the OAuth host-strip+re-attach below. The
                 // server-built `redirectTo` can carry `https://localhost`

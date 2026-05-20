@@ -7,6 +7,7 @@
  * HOST/ADMIN/SUPERADMIN roles see an additional admin escalation button.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
 import { getAdminUrl } from '@/lib/env';
@@ -301,6 +302,7 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
 
     // ── Fetch ──────────────────────────────────────────────────────────────
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: stable identity by design — `t` and `userApi` are captured at first mount and never change between renders for a given locale.
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setFetchError(null);
@@ -310,7 +312,11 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
 
             if (!subResult.ok) {
                 setFetchError(
-                    subResult.error.message || 'No se pudo cargar la información de suscripción.'
+                    translateApiError({
+                        error: subResult.error,
+                        t,
+                        fallback: 'No se pudo cargar la información de suscripción.'
+                    })
                 );
                 return;
             }
@@ -319,8 +325,7 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
         } finally {
             setIsLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // intentionally empty — fetchData never changes identity
+    }, []);
 
     useEffect(() => {
         void fetchData();
@@ -341,12 +346,14 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
             if (!result.ok) {
                 addToast({
                     type: 'error',
-                    message:
-                        result.error.message ||
-                        t(
+                    message: translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'account.pages.subscription.cancelError',
                             'No se pudo cancelar la suscripción. Intentá de nuevo.'
                         )
+                    })
                 });
                 return;
             }

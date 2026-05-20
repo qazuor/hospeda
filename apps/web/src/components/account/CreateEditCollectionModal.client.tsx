@@ -132,7 +132,8 @@ export function CreateEditCollectionModal({
 
     const { isSubmitting, submit } = useCollectionMutation({
         collectionId: collection?.id,
-        callbacks: mutationCallbacks
+        callbacks: mutationCallbacks,
+        locale
     });
 
     // ── Sync with collection prop in EDIT mode ────────────────────────────

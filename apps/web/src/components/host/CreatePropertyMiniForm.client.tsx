@@ -28,6 +28,7 @@
 
 import { CityDestinationPicker } from '@/components/form/CityDestinationPicker.client';
 import type { CityDestinationValue } from '@/components/form/CityDestinationPicker.client';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AccommodationTypeEnum } from '@repo/schemas';
@@ -178,17 +179,20 @@ export function CreatePropertyMiniForm({
             }
 
             if (!response.ok) {
-                let message = t(
+                const localizedFallback = t(
                     'host.miniForm.errors.submit',
                     'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
                 );
+                let apiError: { code?: string; message?: string } | undefined;
                 try {
                     const body = (await response.json()) as OnboardingStartResponse;
-                    if (body.error?.message) message = body.error.message;
+                    if (body.error) apiError = body.error;
                 } catch {
                     // Body wasn't JSON; keep the localized fallback message.
                 }
-                setSubmitError(message);
+                setSubmitError(
+                    translateApiError({ error: apiError, t, fallback: localizedFallback })
+                );
                 return;
             }
 

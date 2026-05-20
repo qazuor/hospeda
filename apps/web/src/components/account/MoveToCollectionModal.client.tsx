@@ -21,6 +21,7 @@ import {
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
+import { translateApiError } from '@/lib/api-errors';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
@@ -161,7 +162,10 @@ export function MoveToCollectionModal({
                     bookmarkId
                 });
                 if (!result.ok) {
-                    addToast({ type: 'error', message: result.error.message });
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: result.error, t })
+                    });
                     return false;
                 }
                 return true;
@@ -173,7 +177,10 @@ export function MoveToCollectionModal({
                     bookmarkId
                 });
                 if (!result.ok) {
-                    addToast({ type: 'error', message: result.error.message });
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: result.error, t })
+                    });
                     return false;
                 }
                 return true;
@@ -186,7 +193,10 @@ export function MoveToCollectionModal({
                     bookmarkId
                 });
                 if (!removeResult.ok) {
-                    addToast({ type: 'error', message: removeResult.error.message });
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: removeResult.error, t })
+                    });
                     return false;
                 }
                 const addResult = await userBookmarkCollectionsApi.addBookmark({
@@ -194,7 +204,10 @@ export function MoveToCollectionModal({
                     bookmarkId
                 });
                 if (!addResult.ok) {
-                    addToast({ type: 'error', message: addResult.error.message });
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: addResult.error, t })
+                    });
                     return false;
                 }
                 return true;
@@ -202,7 +215,7 @@ export function MoveToCollectionModal({
 
             return true;
         },
-        [currentCollectionId, bookmarkId]
+        [currentCollectionId, bookmarkId, t]
     );
 
     const handleSave = useCallback(async (): Promise<void> => {

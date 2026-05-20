@@ -30,6 +30,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -388,17 +389,20 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 credentials: 'include'
             });
             if (!res.ok) {
-                let msg = t(
+                const localizedFallback = t(
                     'account.favorites.errors.removeFailed',
                     'No se pudo eliminar el favorito'
                 );
+                let apiError: { code?: string; message?: string } | undefined;
                 try {
                     const body = (await res.json()) as DeleteApiResponse;
-                    if (body.error?.message) msg = body.error.message;
+                    if (body.error) apiError = body.error;
                 } catch {
-                    // ignore
+                    // ignore — keep apiError undefined; helper will use fallback
                 }
-                throw new Error(msg);
+                throw new Error(
+                    translateApiError({ error: apiError, t, fallback: localizedFallback })
+                );
             }
         } catch (err) {
             setBookmarks(snapshot);
