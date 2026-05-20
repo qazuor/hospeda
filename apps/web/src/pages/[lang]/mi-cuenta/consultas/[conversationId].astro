@@ -1,8 +1,8 @@
 ---
 /**
- * @file mi-cuenta/messages/[conversationId].astro
+ * @file mi-cuenta/consultas/[conversationId].astro
  * @description Authenticated guest conversation thread page.
- * @route /{lang}/mi-cuenta/messages/{conversationId}/
+ * @route /{lang}/mi-cuenta/consultas/{conversationId}/
  * @rendering SSR (on-demand, auth-protected)
  */
 
@@ -80,7 +80,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
 >
     <div class="conv-thread">
         <div class="conv-thread__header">
-            <a href={buildUrl({ locale, path: 'mi-cuenta/messages' })} class="conv-thread__back">
+            <a href={buildUrl({ locale, path: 'mi-cuenta/consultas' })} class="conv-thread__back">
                 &larr;
             </a>
             <h1 class="conv-thread__title">{pageTitle}</h1>
@@ -90,7 +90,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
         {olderCursor && (
             <div class="conv-thread__load-older">
                 <a
-                    href={buildUrl({ locale, path: `mi-cuenta/messages/${conversationId}` }) +
+                    href={buildUrl({ locale, path: `mi-cuenta/consultas/${conversationId}` }) +
                         `?cursor=${encodeURIComponent(olderCursor)}`}
                     class="conv-thread__older-link"
                 >

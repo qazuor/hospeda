@@ -12,7 +12,7 @@ Cuando un turista (o vos desde otra cuenta) usa el [formulario de contacto](/bet
 
 ## Pasos
 
-1. Menú de usuario → **"Mis mensajes"** (`/mi-cuenta/messages/`).
+1. Menú de usuario → **"Mis mensajes"** (`/mi-cuenta/consultas/`).
 2. Cada conversación muestra: **Alojamiento**, **Huésped** (nombre/email), **Última actividad**, **Estado** (Abierta / Cerrada / Bloqueada / Pendiente de verificación / Esperando respuesta del huésped / del anfitrión).
 3. Apretá una conversación para abrirla.
 4. Responder: campo **"Escribí tu respuesta..."** + **"Enviar"**.

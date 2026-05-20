@@ -85,7 +85,7 @@ export function ContactHost({
     if (currentUser && existingConversationId) {
         const threadUrl = buildUrl({
             locale,
-            path: `mi-cuenta/messages/${existingConversationId}`
+            path: `mi-cuenta/consultas/${existingConversationId}`
         });
         return (
             <div className={styles.root}>
@@ -214,7 +214,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 if (conversationId) {
                     window.location.href = buildUrl({
                         locale,
-                        path: `mi-cuenta/messages/${conversationId}`
+                        path: `mi-cuenta/consultas/${conversationId}`
                     });
                 }
             } else {

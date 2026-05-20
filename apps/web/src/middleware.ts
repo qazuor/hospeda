@@ -83,6 +83,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.redirect(`${path}/${search}`, 301);
     }
 
+    // Step 3.1: Legacy URL alias — the inbox page was originally hosted at
+    // `/{locale}/mi-cuenta/messages/...` (English slug). It was renamed to
+    // `/consultas/` for parity with the rest of the account section, which is
+    // all-Spanish. Any old link (bookmark, email, beta doc cached by Cloudflare)
+    // gets a permanent 308 redirect so deep links to specific conversations
+    // (`/messages/{conversationId}`) continue to work.
+    const legacyMessagesMatch = path.match(/^\/(es|en|pt)\/mi-cuenta\/messages(\/.*)?$/);
+    if (legacyMessagesMatch) {
+        const localeSegment = legacyMessagesMatch[1];
+        const tail = legacyMessagesMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/mi-cuenta/consultas${tail}${search}`, 308);
+    }
+
     // Step 3.5: Beta tester docs live under `/beta` outside the `/{lang}/` namespace.
     // Skip locale enforcement, session parsing, and auth checks. Still attach the
     // CSP header below (security) and stamp `X-Robots-Tag: noindex, nofollow` so
