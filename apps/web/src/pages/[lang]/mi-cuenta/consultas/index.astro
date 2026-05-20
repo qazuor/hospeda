@@ -28,7 +28,11 @@ const pageParam = Astro.url.searchParams.get('page');
 const page = Math.max(1, parseInt(pageParam ?? '1', 10));
 const pageSize = 20;
 
-const result = await protectedConversationsApi.list({ page, pageSize });
+// Forward the session cookie so the protected endpoint can resolve the
+// authenticated actor; without this the SSR fetch arrives anonymous and the
+// page silently renders the empty inbox.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await protectedConversationsApi.list({ page, pageSize, cookieHeader });
 
 const conversations = result.ok ? result.data.items : [];
 const pagination = result.ok ? result.data.pagination : null;

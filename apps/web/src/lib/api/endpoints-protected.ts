@@ -840,12 +840,17 @@ export const protectedConversationsApi = {
     /**
      * List all conversations in the authenticated user's inbox.
      *
-     * @param params - Optional pagination and archive filter
+     * @param params - Optional pagination, archive filter, and SSR cookie header
      */
     list(params?: {
         readonly page?: number;
         readonly pageSize?: number;
         readonly archivedByGuest?: boolean;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
             readonly items: readonly ConversationInboxItem[];
@@ -857,23 +862,34 @@ export const protectedConversationsApi = {
             };
         }>
     > {
-        return apiClient.getProtected({ path: `${PROTECTED}/conversations`, params });
+        const { cookieHeader, ...rest } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
     },
 
     /**
      * Get a conversation thread by ID.
      *
-     * @param params - Conversation ID and optional cursor/limit
+     * @param params - Conversation ID, optional cursor/limit, and SSR cookie header
      */
     getThread(params: {
         readonly id: string;
         readonly cursor?: string;
         readonly limit?: number;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<ConversationThreadResponse>> {
-        const { id, ...rest } = params;
+        const { id, cookieHeader, ...rest } = params;
         return apiClient.getProtected({
             path: `${PROTECTED}/conversations/${id}`,
-            params: rest as Record<string, unknown>
+            params: rest as Record<string, unknown>,
+            cookieHeader
         });
     },
 
