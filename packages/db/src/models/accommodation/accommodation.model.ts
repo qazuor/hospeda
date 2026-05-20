@@ -355,6 +355,27 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.minRating !== undefined) {
             whereClauses.push(gte(accommodations.averageRating, params.minRating));
         }
+        if (params.amenities && params.amenities.length > 0) {
+            // Intersection semantics: accommodation must have ALL provided amenity IDs.
+            whereClauses.push(buildAmenityIntersectionClause(params.amenities));
+        }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
+        }
+        if (params.features && params.features.length > 0) {
+            // Intersection semantics: accommodation must have ALL provided feature IDs.
+            whereClauses.push(buildFeatureIntersectionClause(params.features));
+        }
         if (params.q) {
             whereClauses.push(
                 or(

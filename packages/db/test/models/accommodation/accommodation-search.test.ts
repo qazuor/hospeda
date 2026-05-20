@@ -66,6 +66,22 @@ function makeSearchMock(opts: {
 }
 
 /**
+ * Creates a chainable mock for db.select().from().where() used by countByFilters,
+ * resolving the count query to [{ count: total }] and optionally capturing the
+ * composed WHERE clause for structural assertions.
+ */
+function makeCountMock(opts: { total?: number; captureWhere?: (clause: unknown) => void }) {
+    const { total = 0, captureWhere } = opts;
+    const whereFn = vi.fn((clause: unknown) => {
+        if (captureWhere) captureWhere(clause);
+        return Promise.resolve([{ count: total }]);
+    });
+    const fromFn = vi.fn().mockReturnValue({ where: whereFn });
+    const selectFn = vi.fn().mockReturnValue({ from: fromFn });
+    return { db: { select: selectFn }, mocks: { selectFn, fromFn, whereFn } };
+}
+
+/**
  * Creates a mock for db.query.accommodations.findMany() + db.select().from().where()
  * (used by searchWithRelations).
  */
@@ -446,6 +462,145 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
             // Assert — offset = (3-1) * 2 = 4
             expect((capturedArgs as { limit?: number })?.limit).toBe(2);
             expect((capturedArgs as { offset?: number })?.offset).toBe(4);
+        });
+    });
+
+    // =========================================================================
+    // countByFilters() — amenity/feature/anyAmenityGroups filter
+    //
+    // Regression coverage: prior to this fix, countByFilters silently ignored
+    // amenities, features, and anyAmenityGroups, so the total returned to the
+    // public list endpoint diverged from the actual number of matching items.
+    // The model now mirrors search()/searchWithRelations() — every WHERE
+    // applied to items must also apply to the count.
+    // =========================================================================
+
+    describe('countByFilters() — amenity/feature/anyAmenityGroups filter', () => {
+        it('returns count from db and applies a WHERE clause for amenities', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 7,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({ amenities: ['amenity-1'] });
+
+            expect(result).toEqual({ count: 7 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('returns count from db and applies a WHERE clause for features', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 3,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({ features: ['feature-1', 'feature-2'] });
+
+            expect(result).toEqual({ count: 3 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('returns count from db and applies a WHERE clause for anyAmenityGroups', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 5,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({
+                anyAmenityGroups: [['am-wifi-1', 'am-wifi-2']]
+            });
+
+            expect(result).toEqual({ count: 5 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('matches search() WHERE structure when the same filters are applied (count/items parity)', async () => {
+            // Arrange — capture WHERE from both calls using the same filters.
+            // The model must build identical WHERE clauses for items and count
+            // queries; otherwise the public list endpoint returns a misleading
+            // total. Drizzle's SQL object exposes `queryChunks`, an array of
+            // SQL fragments that grow with each conditional clause pushed.
+            const sharedParams = {
+                amenities: ['am-1', 'am-2'],
+                features: ['feat-1'],
+                anyAmenityGroups: [['am-wifi-1']]
+            };
+
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(sharedParams);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(sharedParams);
+
+            // Both clauses must exist.
+            expect(searchWhere).toBeDefined();
+            expect(countWhere).toBeDefined();
+
+            // Structural parity: the number of inner SQL chunks must match,
+            // proving countByFilters applied the same set of conditions as
+            // search(). If the model regressed and dropped any of the three
+            // filters, the count clause would have fewer chunks than search.
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(searchChunks)).toBe(true);
+            expect(Array.isArray(countChunks)).toBe(true);
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('treats empty amenities/features arrays as no filter (no extra clause)', async () => {
+            let withFiltersWhere: unknown;
+            const { db: withFiltersDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    withFiltersWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(withFiltersDb as any);
+            await model.countByFilters({ amenities: [], features: [] });
+
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            const withFiltersChunks = (withFiltersWhere as { queryChunks?: unknown[] })
+                ?.queryChunks;
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((withFiltersChunks as unknown[]).length).toBe(
+                (baselineChunks as unknown[]).length
+            );
         });
     });
 
