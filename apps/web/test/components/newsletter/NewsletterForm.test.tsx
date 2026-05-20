@@ -657,6 +657,120 @@ describe('NewsletterForm', () => {
             });
         });
 
+        it('renders an inline Desuscribirme button in the already-active banner', async () => {
+            vi.stubGlobal(
+                'fetch',
+                mockFetchOk({
+                    subscribed: true,
+                    status: 'active',
+                    subscribedAt: '2026-01-01T00:00:00.000Z',
+                    verifiedAt: '2026-01-02T00:00:00.000Z'
+                })
+            );
+
+            renderAuth();
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+        });
+
+        it('does NOT call DELETE when the confirm prompt is cancelled', async () => {
+            const fetchMock = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    subscribed: true,
+                    status: 'active',
+                    subscribedAt: '2026-01-01T00:00:00.000Z',
+                    verifiedAt: '2026-01-02T00:00:00.000Z'
+                })
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            // Only the initial /status call should have happened — no DELETE.
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('DELETEs /unsubscribe and falls back to idle-auth on confirm', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: true,
+                        status: 'active',
+                        subscribedAt: '2026-01-01T00:00:00.000Z',
+                        verifiedAt: '2026-01-02T00:00:00.000Z'
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ status: 'unsubscribed' })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            // The DELETE call lands as the second invocation.
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                    2,
+                    `${API_URL}/api/v1/protected/newsletter/unsubscribe`,
+                    expect.objectContaining({ method: 'DELETE' })
+                );
+            });
+
+            // After success the banner is gone and the subscribe form re-appears.
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+        });
+
+        it('returns to already-active on DELETE failure (no permanent state loss)', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: true,
+                        status: 'active',
+                        subscribedAt: '2026-01-01T00:00:00.000Z',
+                        verifiedAt: '2026-01-02T00:00:00.000Z'
+                    })
+                })
+                .mockResolvedValueOnce({ ok: false, status: 500 });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            await waitFor(() => {
+                // Still on already-active so the user can retry.
+                const banner = document.querySelector('[data-state="already-active"]');
+                expect(banner).toBeInTheDocument();
+            });
+        });
+
         it('transitions to already-active when subscribe returns status active', async () => {
             const fetchMock = vi
                 .fn()

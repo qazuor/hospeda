@@ -54,6 +54,7 @@ type FormState =
     | 'pending'
     | 'pending-verification'
     | 'already-active'
+    | 'unsubscribing'
     | 'blocked-unverified'
     | 'error';
 
@@ -520,18 +521,83 @@ export function NewsletterForm({
         }
     };
 
+    /**
+     * Inline unsubscribe from the already-active banner.
+     *
+     * Uses `window.confirm` for the "are you sure?" prompt — keeps the
+     * footer-island bundle small and matches the simpler patterns elsewhere
+     * in the app (e.g. CollectionDetailActions). On confirmation, DELETE
+     * /api/v1/protected/newsletter/unsubscribe; on success, the form snaps
+     * back to `idle-auth` so the visitor can re-subscribe without a reload.
+     */
+    const handleInlineUnsubscribe = async (): Promise<void> => {
+        if (formState !== 'already-active') return;
+        if (typeof window === 'undefined') return;
+
+        const confirmed = window.confirm(
+            t(
+                'footer.newsletter.unsubscribeConfirm',
+                '¿Confirmás que querés desuscribirte del newsletter?'
+            )
+        );
+        if (!confirmed) return;
+
+        setFormState('unsubscribing');
+        setStatusText(t('footer.newsletter.loadingText', 'Enviando...'));
+        setErrorMessage('');
+
+        try {
+            const response = await fetch(
+                `${apiUrl.replace(/\/$/, '')}/api/v1/protected/newsletter/unsubscribe`,
+                {
+                    method: 'DELETE',
+                    credentials: 'include'
+                }
+            );
+            if (!response.ok) {
+                const msg = t(
+                    'footer.newsletter.unsubscribeError',
+                    'No pudimos desuscribirte. Probá de nuevo en unos minutos.'
+                );
+                setErrorMessage(msg);
+                setStatusText(msg);
+                setFormState('already-active');
+                return;
+            }
+            setStatusText(
+                t('footer.newsletter.unsubscribeSuccess', 'Te desuscribiste del newsletter.')
+            );
+            // Drop back to idle-auth so a returning visitor can subscribe
+            // again without reloading the page.
+            setFormState('idle-auth');
+            pushDataLayerEvent('newsletter_unsubscribe_success', {
+                locale,
+                source: 'footer'
+            });
+        } catch {
+            const msg = t(
+                'footer.newsletter.unsubscribeError',
+                'No pudimos desuscribirte. Probá de nuevo en unos minutos.'
+            );
+            setErrorMessage(msg);
+            setStatusText(msg);
+            setFormState('already-active');
+        }
+    };
+
     // ---------------------------------------------------------------------------
     // Render helpers
     // ---------------------------------------------------------------------------
 
     const isLoading = formState === 'pending';
+    const isUnsubscribing = formState === 'unsubscribing';
     const managePath = `/${locale}/mi-cuenta/newsletter/`;
 
     // ---------------------------------------------------------------------------
     // Return: already-active banner
     // ---------------------------------------------------------------------------
 
-    if (formState === 'already-active') {
+    if (formState === 'already-active' || formState === 'unsubscribing') {
         return (
             <div
                 className={styles.banner}
@@ -546,12 +612,27 @@ export function NewsletterForm({
                 <p className={styles.bannerText}>
                     {t('footer.newsletter.alreadySubscribed', 'Ya estás suscripto.')}
                 </p>
-                <a
-                    href={managePath}
-                    className={styles.manageLink}
-                >
-                    {t('footer.newsletter.manageLink', 'Gestionar suscripción')}
-                </a>
+                <div className={styles.bannerActions}>
+                    <a
+                        href={managePath}
+                        className={styles.manageLink}
+                    >
+                        {t('footer.newsletter.manageLink', 'Gestionar suscripción')}
+                    </a>
+                    <button
+                        type="button"
+                        className={styles.unsubscribeButton}
+                        onClick={() => {
+                            void handleInlineUnsubscribe();
+                        }}
+                        disabled={isUnsubscribing}
+                        aria-busy={isUnsubscribing}
+                    >
+                        {isUnsubscribing
+                            ? t('footer.newsletter.unsubscribeBusy', 'Desuscribiendo...')
+                            : t('footer.newsletter.unsubscribeCta', 'Desuscribirme')}
+                    </button>
+                </div>
             </div>
         );
     }
