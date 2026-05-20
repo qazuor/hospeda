@@ -135,6 +135,11 @@ export const protectedPatchUserRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        customRateLimit: { requests: 20, windowMs: 60000 }
+        // 60/min is generous enough for human-driven flows on the settings page
+        // (e.g. rapidly toggling several notification preferences in a row) while
+        // still defending the endpoint against automated abuse. Bumped from 20
+        // because 20/min was too tight when combined with reads on the same path
+        // historically sharing the bucket (now fixed by method-scoped keys).
+        customRateLimit: { requests: 60, windowMs: 60000 }
     }
 });

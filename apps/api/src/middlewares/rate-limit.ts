@@ -2,6 +2,7 @@
  * Rate limiting middleware with differentiated limits per endpoint type.
  * Uses Redis when available for multi-instance support, falls back to in-memory Map.
  */
+import { getConnInfo } from '@hono/node-server/conninfo';
 import type { Context, Next } from 'hono';
 import { env, getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -350,16 +351,50 @@ const isTrustedSource = (socketIp: string, explicitProxies: readonly string[]): 
 
 /**
  * Reads the socket remote address from a Hono context when available.
- * Only present when running on the Node.js adapter; undefined in test/edge runtimes.
+ *
+ * Tries multiple sources in order so the IP is detected across runtimes:
+ *
+ *   1. `@hono/node-server/conninfo` (`getConnInfo`) — the official adapter
+ *      API in `@hono/node-server` 1.19+. Exposes the underlying socket's
+ *      remote address.
+ *   2. `c.env.incoming.socket.remoteAddress` — direct access to Node's
+ *      `IncomingMessage` (older adapter pattern, kept as fallback).
+ *   3. `c.req.raw.socket.remoteAddress` — legacy path that worked when
+ *      `c.req.raw` was a Node `IncomingMessage`. Modern @hono/node-server
+ *      passes a Web `Request` here (no `.socket`), so this path now only
+ *      helps custom test harnesses that monkey-patch the raw.
+ *
+ * Returns `undefined` only in edge/test runtimes that expose none of the
+ * above (the caller falls back to header-based IP extraction, then to the
+ * literal string `'unknown'`).
  *
  * @param c - The Hono context.
  */
 const getSocketIp = (c: Context): string | undefined => {
+    // 1) Adapter-provided getConnInfo (preferred under @hono/node-server).
+    try {
+        const info = getConnInfo(c);
+        const address = info?.remote?.address;
+        if (typeof address === 'string' && address.length > 0) return address;
+    } catch {
+        // getConnInfo throws when the adapter doesn't support it (edge, tests).
+        // Fall through to the legacy paths.
+    }
+
+    // 2) Node `IncomingMessage` exposed via `c.env.incoming` (legacy adapter).
+    const env = (c as unknown as { env?: { incoming?: { socket?: { remoteAddress?: string } } } })
+        .env;
+    const envAddress = env?.incoming?.socket?.remoteAddress;
+    if (typeof envAddress === 'string' && envAddress.length > 0) return envAddress;
+
+    // 3) `c.req.raw.socket.remoteAddress` (only when `raw` is a Node IncomingMessage).
     const raw = c.req.raw as unknown;
     if (raw && typeof raw === 'object' && 'socket' in raw) {
         const socket = (raw as { socket?: { remoteAddress?: string } }).socket;
-        return socket?.remoteAddress;
+        const rawAddress = socket?.remoteAddress;
+        if (typeof rawAddress === 'string' && rawAddress.length > 0) return rawAddress;
     }
+
     return undefined;
 };
 
