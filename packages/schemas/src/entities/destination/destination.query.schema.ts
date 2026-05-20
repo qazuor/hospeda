@@ -110,7 +110,14 @@ export const DestinationSearchSchema = BaseSearchSchema.extend({
     parentDestinationId: z.string().uuid().optional(),
     destinationType: DestinationTypeEnumSchema.optional(),
     level: z.number().int().min(0).max(6).optional(),
-    ancestorId: z.string().uuid().optional()
+    ancestorId: z.string().uuid().optional(),
+
+    // Search scope: when the `q` text search is provided, controls which
+    // columns it runs against. Defaults to 'all' (name + description) so
+    // generic browse pages keep finding destinations by descriptive text.
+    // The autocomplete picker passes 'name' to avoid noise from descriptions
+    // that just reference a nearby city in their prose.
+    searchScope: z.enum(['all', 'name']).optional()
 });
 export type DestinationSearchInput = z.infer<typeof DestinationSearchSchema>;
 

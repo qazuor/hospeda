@@ -156,6 +156,10 @@ export function CityDestinationPicker({
                 const response = await destinationsApi.list({
                     destinationType: 'CITY',
                     q: trimmed,
+                    // Restrict the `q` filter to the name column so descriptions
+                    // referencing a nearby city (e.g. "San Justo" mentioning
+                    // "Concepción del Uruguay") don't pollute the suggestions.
+                    searchScope: 'name',
                     pageSize: MAX_RESULTS
                 });
                 if (cancelled) return;
