@@ -9,6 +9,14 @@
  */
 import type { IconProps } from './types';
 
+// System icons routinely referenced by `icon` strings in declarative
+// configs (filter section headers, etc). Kept in this resolver so callers
+// can stay declarative instead of importing component refs per usage.
+import { CarIcon } from './icons/amenities/CarIcon';
+import { DogIcon } from './icons/amenities/DogIcon';
+import { MapIcon } from './icons/system/MapIcon';
+import { PriceIcon } from './icons/system/PriceIcon';
+
 // Amenity icons
 import { AirConditioningIcon } from './icons/amenities/AirConditioningIcon';
 import { BabyMonitorIcon } from './icons/amenities/BabyMonitorIcon';
@@ -492,7 +500,13 @@ export const ICON_MAP: Record<string, IconComponent> = {
     TouristPierIcon,
     TouristRanchIcon,
     WellnessCenterIcon,
-    WetlandsIcon
+    WetlandsIcon,
+
+    // System / additional declarative icons (see top-of-file imports).
+    CarIcon,
+    DogIcon,
+    MapIcon,
+    PriceIcon
 };
 
 /**
