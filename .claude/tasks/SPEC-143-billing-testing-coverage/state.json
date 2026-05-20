@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 46,
+        "completed": 47,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -587,11 +587,12 @@
             "title": "Author docs/billing-runbooks.md",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-23"],
-            "notes": "Operational runbooks: failed-webhook-handler triage, MP signature failure response, cron failure recovery, dunning-cron stuck recovery, refund procedure, dispute procedure, manual subscription rescue."
+            "notes": "[reconciled 2026-05-20] Shipped via commit c1fdc0b38 (2026-05-20). docs/billing/billing-runbooks.md (646L) covering 7 incident-response procedures (failed-webhook triage, MP signature failure, cron recovery, dunning stuck, refund, dispute, manual sub rescue) + appendices (11 engram bug topics, common queries, when-to-update). README updated to surface the operational cluster (runbooks + smoke checklists + mp-test-cards) at the top. Stale `../runbooks/billing-incidents.md` reference removed. Original task description: Operational runbooks: failed-webhook-handler triage, MP signature failure response, cron failure recovery, dunning-cron stuck recovery, refund procedure, dispute procedure, manual subscription rescue.",
+            "completedAt": "2026-05-20"
         },
         {
             "id": "T-143-49",
