@@ -268,6 +268,11 @@ const SubscribeGuestInputSchema = z.object({
     consentVersion: z.string().max(20).optional()
 });
 
+const ResendGuestVerificationInputSchema = z.object({
+    email: z.string().email().max(255),
+    channel: z.nativeEnum(NewsletterChannelEnum).default(NewsletterChannelEnum.EMAIL)
+});
+
 const AdminListInputSchema = z.object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(200).default(50),
@@ -1579,6 +1584,97 @@ export class NewsletterSubscriberService extends BaseService {
                     token
                 });
                 return { status: 'pending_verification' };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API — resendGuestVerification
+    // -------------------------------------------------------------------------
+
+    /**
+     * Re-sends the double opt-in verification email for an ANONYMOUS subscriber
+     * matched by email. Used by the public "didn't receive the email?" button
+     * on `/{locale}/newsletter/confirma-tu-email`.
+     *
+     * Behavior (anti-enumeration):
+     *   - The method ALWAYS returns `{ sent: true }` regardless of whether a
+     *     matching row exists. This prevents the endpoint from being used as
+     *     an oracle to probe which emails have a pending subscription.
+     *   - A verification email is dispatched only when an anonymous row in
+     *     `pending_verification` exists for the email. Other states (active,
+     *     unsubscribed, bounced, complained) and linked rows (user_id IS NOT
+     *     NULL) are silently no-ops on the email side.
+     *
+     * Rate limiting is the route's responsibility — the spec asks for
+     * 1 req/minute per IP on the public surface.
+     */
+    public async resendGuestVerification(
+        input: { email: string; channel?: NewsletterChannelEnum },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ sent: true }>> {
+        const systemActor: Actor = {
+            id: '00000000-0000-0000-0000-000000000001',
+            role: 'SUPER_ADMIN' as never,
+            permissions: Object.values(PermissionEnum) as never
+        };
+        return this.runWithLoggingAndValidation({
+            methodName: 'resendGuestVerification',
+            input: { actor: systemActor, ...input },
+            schema: ResendGuestVerificationInputSchema,
+            ctx,
+            execute: async (validated) => {
+                const db = getDb();
+
+                const rows = await db.execute(sql`
+                    SELECT id, user_id AS "userId", status, locale, deleted_at AS "deletedAt"
+                    FROM newsletter_subscribers
+                    WHERE email = ${validated.email}
+                      AND channel = ${validated.channel}
+                      AND deleted_at IS NULL
+                    LIMIT 1
+                `);
+                const row = rows.rows[0] as
+                    | {
+                          id: string;
+                          userId: string | null;
+                          status: string;
+                          locale: string;
+                          deletedAt: string | Date | null;
+                      }
+                    | undefined;
+
+                // Anti-enumeration: any non-matching branch returns success
+                // without an email side-effect.
+                if (!row) {
+                    return { sent: true as const };
+                }
+                if (row.userId != null) {
+                    // Linked row → guest path can't re-send to it.
+                    return { sent: true as const };
+                }
+                if (row.status !== NewsletterSubscriberStatusEnum.PENDING_VERIFICATION) {
+                    return { sent: true as const };
+                }
+
+                const now = new Date();
+                await db.execute(sql`
+                    UPDATE newsletter_subscribers
+                    SET subscribed_at = ${now.toISOString()},
+                        updated_at = ${now.toISOString()}
+                    WHERE id = ${row.id}
+                `);
+                const channelVal = validated.channel as 'email' | 'whatsapp';
+                const token = this._genVerificationToken(row.id, channelVal);
+                await this._sendVerification({
+                    subscriberId: row.id,
+                    email: validated.email,
+                    userId: '',
+                    locale: row.locale,
+                    token
+                });
+
+                return { sent: true as const };
             }
         });
     }

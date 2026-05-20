@@ -1068,6 +1068,78 @@ describe('NewsletterSubscriberService.subscribeGuest', () => {
 });
 
 // ===========================================================================
+// resendGuestVerification
+// ===========================================================================
+
+describe('NewsletterSubscriberService.resendGuestVerification', () => {
+    const GUEST_EMAIL = 'guest@example.com';
+
+    it('refreshes and re-sends when an anonymous pending row matches', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            { id: SUBSCRIBER_ID, userId: null, status: 'pending_verification', locale: 'es' }
+        ]);
+        enqueueResponse([]); // UPDATE response
+
+        const result = await svc.resendGuestVerification({ email: GUEST_EMAIL });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.sent).toBe(true);
+        expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+    });
+
+    it('returns sent:true without emailing when no row matches (anti-enumeration)', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([]); // no match
+
+        const result = await svc.resendGuestVerification({ email: GUEST_EMAIL });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.sent).toBe(true);
+        expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+    });
+
+    it('does NOT email when the matched row is linked to a real user (privacy)', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            {
+                id: SUBSCRIBER_ID,
+                userId: USER_ID,
+                status: 'pending_verification',
+                locale: 'es'
+            }
+        ]);
+
+        const result = await svc.resendGuestVerification({ email: GUEST_EMAIL });
+
+        expect(result.data?.sent).toBe(true);
+        expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+    });
+
+    it('does NOT email when the row exists but is not in pending_verification', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([{ id: SUBSCRIBER_ID, userId: null, status: 'active', locale: 'es' }]);
+
+        const result = await svc.resendGuestVerification({ email: GUEST_EMAIL });
+
+        expect(result.data?.sent).toBe(true);
+        expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+    });
+
+    it('rejects malformed email via Zod validation', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.resendGuestVerification({ email: 'not-an-email' });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+// ===========================================================================
 // linkAnonymousSubscribersToUser
 // ===========================================================================
 
