@@ -197,12 +197,51 @@ const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => 
 };
 
 /**
- * Helper function to apply route-specific middlewares
+ * Convert an OpenAPI path expression (`/{id}`, `/users/{userId}/posts/{postId}`)
+ * to Hono's Express-style path expression (`/:id`, `/users/:userId/posts/:postId`).
+ *
+ * The route file defines paths using OpenAPI syntax because that's what the
+ * `@hono/zod-openapi` `createRoute()` factory expects. But `app.use(path, mw)`
+ * is a plain Hono call that treats `{id}` literally — it would only fire when
+ * the URL pathname is the literal string `/{id}`, never for actual values.
+ * Converting to `:id` here lets the same path string serve both routing and
+ * middleware scoping.
  */
-const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: RouteOptions) => {
+const openApiPathToHonoPath = (openApiPath: string): string =>
+    openApiPath.replace(/\{([^}]+)\}/g, ':$1');
+
+/**
+ * Helper function to apply route-specific middlewares.
+ *
+ * **Path-scoping is mandatory.** Each route-factory call creates a fresh
+ * sub-app via `createRouter()` that hosts exactly ONE route. When that
+ * sub-app is later mounted into a parent via `app.route('/api/v1/public', subApp)`,
+ * Hono treats unscoped `app.use(mw)` on the sub-app as "apply this middleware
+ * to every request reaching the parent's mount prefix" — not just to the
+ * sub-app's single route. With multiple sibling sub-apps mounted at the
+ * SAME prefix (e.g. `contactRoutes`, `newsletterRoutes`, and
+ * `publicStatsRoutes` all under `/api/v1/public`), each sub-app's
+ * `app.use(mw)` leaks to its siblings' paths. The observed effect: a
+ * request to `/api/v1/public/stats` triggers the per-route rate limits of
+ * `/contact/submit` (5/min) and `/newsletter/submit` (3/min), tripping a
+ * 429 after three completely unrelated requests.
+ *
+ * Passing `routePath` (the OpenAPI path string from the route definition,
+ * e.g. `/`, `/{id}`, `/me/stats`) to `app.use()` after converting it to
+ * Hono syntax (`/:id`, `/me/stats`) scopes the middleware to just that
+ * path within the sub-app, breaking the leak.
+ */
+const applyRouteMiddlewares = (
+    app: ReturnType<typeof createRouter>,
+    options: RouteOptions | undefined,
+    routePath: string
+) => {
+    const honoPath = openApiPathToHonoPath(routePath);
+
     // Apply per-route rate limiting BEFORE other middlewares
     if (options?.customRateLimit) {
         app.use(
+            honoPath,
             createPerRouteRateLimitMiddleware({
                 requests: options.customRateLimit.requests,
                 windowMs: options.customRateLimit.windowMs
@@ -212,13 +251,13 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: R
 
     if (options?.middlewares) {
         for (const middleware of options.middlewares) {
-            app.use(middleware);
+            app.use(honoPath, middleware);
         }
     }
 
     // Add route-specific options as context for middlewares to use
     if (options) {
-        app.use(async (c: Context, next: () => Promise<void>) => {
+        app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
             // Store route options as a non-standard property on the context object.
             // Route validators and guards read this to determine per-route behavior
             // (e.g. skipValidation). There is no ContextVariableMap entry for this
@@ -263,7 +302,7 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options);
+    applyRouteMiddlewares(app, options.options, options.path);
 
     const route = createRoute({
         method: options.method,
@@ -299,7 +338,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options);
+    applyRouteMiddlewares(app, options.options, options.path);
 
     const route = createRoute({
         method: options.method,
@@ -416,7 +455,7 @@ export const createListRoute = (
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options);
+    applyRouteMiddlewares(app, options.options, options.path);
 
     // Auto-merge pagination with custom query params
     const finalQuery = {
