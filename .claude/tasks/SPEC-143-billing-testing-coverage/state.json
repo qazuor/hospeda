@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 44,
+        "completed": 45,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -786,11 +786,12 @@
             "title": "Infra: fix cross-file test isolation in e2e suite (parallel runs drop pool + add schema preflight)",
             "phase": "phase-0",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": [],
-            "notes": "Reproduced 2026-05-19 during T-143-11 sub-commit 1: running `pnpm test:e2e <fileA> <fileB>` with two or more e2e billing files together fails every test in both files with `Failed query: select id from billing_plans where name = $1` even though each file passes in isolation. Root cause hypothesis: each test file's `beforeAll → testDb.setup()` calls `initializeDb(pool)` which mutates a process-global singleton; when vitest reuses the Node worker (singleFork: true) across files, the second file's setup wins and the first file's afterAll teardown closes a pool that has been replaced — subsequent queries in the leftover hooks hit the closed pool. Additionally, the test DB schema can be silently dropped by external commands (other worktrees, `pnpm db:fresh-dev` against the wrong DSN) and there is no startup guard that verifies the schema exists before tests run. Two-part fix: (1) make `testDb.setup()` idempotent and detect/skip when the global pool already points at the same DSN, OR scope the pool per-file via a vitest globalSetup. (2) Add a schema-existence preflight in `setup/test-database.ts` that throws a clear `pnpm db:push --target=test` instruction if billing_plans/etc are missing, instead of failing the first query mid-test. Until this lands, the canonical commands stay: run one file at a time with `pnpm test:e2e <file>` and rebuild schema via `HOSPEDA_DATABASE_URL=...hospeda_test pnpm db:push && packages/db/scripts/apply-postgres-extras.sh <dsn>` after any external DB reset."
+            "notes": "[reconciled 2026-05-20] Shipped via commit c1efb8b2e (2026-05-20). Reconciliation pass mark — original task description preserved below. Reproduced 2026-05-19 during T-143-11 sub-commit 1: running `pnpm test:e2e <fileA> <fileB>` with two or more e2e billing files together fails every test in both files with `Failed query: select id from billing_plans where name = $1` even though each file passes in isolation. Root cause hypothesis: each test file's `beforeAll → testDb.setup()` calls `initializeDb(pool)` which mutates a process-global singleton; when vitest reuses the Node worker (singleFork: true) across files, the second file's setup wins and the first file's afterAll teardown closes a pool that has been replaced — subsequent queries in the leftover hooks hit the closed pool. Additionally, the test DB schema can be silently dropped by external commands (other worktrees, `pnpm db:fresh-dev` against the wrong DSN) and there is no startup guard that verifies the schema exists before tests run. Two-part fix: (1) make `testDb.setup()` idempotent and detect/skip when the global pool already points at the same DSN, OR scope the pool per-file via a vitest globalSetup. (2) Add a schema-existence preflight in `setup/test-database.ts` that throws a clear `pnpm db:push --target=test` instruction if billing_plans/etc are missing, instead of failing the first query mid-test. Until this lands, the canonical commands stay: run one file at a time with `pnpm test:e2e <file>` and rebuild schema via `HOSPEDA_DATABASE_URL=...hospeda_test pnpm db:push && packages/db/scripts/apply-postgres-extras.sh <dsn>` after any external DB reset.",
+            "completedAt": "2026-05-20"
         }
     ]
 }
