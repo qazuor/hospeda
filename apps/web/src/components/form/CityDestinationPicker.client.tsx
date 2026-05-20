@@ -43,7 +43,34 @@ const DEFAULT_FEEDBACK_SUBJECT = 'Solicitud de nueva ciudad';
 // ---------------------------------------------------------------------------
 
 /** Public-facing fields the picker reads from each destination result. */
-type CityResult = Pick<DestinationPublic, 'id' | 'name' | 'path' | 'slug'>;
+type CityResult = Pick<DestinationPublic, 'id' | 'name'>;
+
+/**
+ * Rank an array of city results by relevance against the current query:
+ *   1. Exact (case-insensitive) name match first.
+ *   2. Prefix matches before substring matches.
+ *   3. Alphabetical inside each bucket so order is stable.
+ *
+ * Done client-side because the API's `q` filter is a substring `ILIKE` —
+ * results come back in arbitrary order, which made the dropdown feel "fuzzy /
+ * noisy" even when filtering correctly.
+ */
+export function rankCityResults(items: readonly CityResult[], query: string): CityResult[] {
+    const needle = query.trim().toLowerCase();
+    if (needle.length === 0) return [...items];
+
+    return [...items].sort((a, b) => {
+        const an = a.name.toLowerCase();
+        const bn = b.name.toLowerCase();
+        const aExact = an === needle;
+        const bExact = bn === needle;
+        if (aExact !== bExact) return aExact ? -1 : 1;
+        const aStarts = an.startsWith(needle);
+        const bStarts = bn.startsWith(needle);
+        if (aStarts !== bStarts) return aStarts ? -1 : 1;
+        return an.localeCompare(bn);
+    });
+}
 
 /** Selected city snapshot held by the parent form. */
 export type CityDestinationValue = {
@@ -149,15 +176,14 @@ export function CityDestinationPicker({
                     .map(
                         (item: DestinationPublic): CityResult => ({
                             id: item.id,
-                            name: item.name,
-                            path: item.path,
-                            slug: item.slug
+                            name: item.name
                         })
                     );
 
-                setResults(items);
-                setHighlightedIndex(items.length > 0 ? 0 : -1);
-                setIsOpen(items.length > 0);
+                const ranked = rankCityResults(items, trimmed);
+                setResults(ranked);
+                setHighlightedIndex(ranked.length > 0 ? 0 : -1);
+                setIsOpen(ranked.length > 0);
             } catch (err) {
                 if (cancelled) return;
                 webLogger.warn('CityDestinationPicker fetch threw', {
@@ -332,7 +358,7 @@ export function CityDestinationPicker({
                         <div
                             key={item.id}
                             id={optionId}
-                            // biome-ignore lint/a11y/useSemanticElements: role=option on a div renders rich name+breadcrumb content that <option> cannot
+                            // biome-ignore lint/a11y/useSemanticElements: keyboard-navigable autocomplete listbox cannot use a native <option>
                             role="option"
                             tabIndex={-1}
                             aria-selected={isHighlighted}
@@ -346,9 +372,6 @@ export function CityDestinationPicker({
                             onMouseEnter={() => setHighlightedIndex(index)}
                         >
                             <span className={styles.optionName}>{item.name}</span>
-                            {item.path ? (
-                                <span className={styles.optionPath}>{item.path}</span>
-                            ) : null}
                         </div>
                     );
                 })}
