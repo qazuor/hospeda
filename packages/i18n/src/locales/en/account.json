@@ -187,6 +187,7 @@
     },
     "favorites": {
         "tabs": {
+            "all": "All",
             "accommodation": "Accommodations",
             "destination": "Destinations",
             "event": "Events",
@@ -208,7 +209,9 @@
             "removing": "Removing...",
             "removeError": "Error removing favorite from collection",
             "removeConfirm": "Remove this favorite from the collection? It will stay in your saved items.",
-            "fetchError": "Could not load the collection. Please try again later.",
+            "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
+            "errorTitle": "We couldn't load the collection",
+            "backToList": "Back to my favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
