@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 53,
+        "completed": 54,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -759,11 +759,12 @@
             "title": "E2E: multi-currency price selection (regression-guard of current single-currency behavior)",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09", "T-143-43"],
-            "notes": "[reframed 2026-05-20] Original scope assumed (a) per-customer currency selection (ARS/USD/BRL based on customer locale), (b) FX fallback when plan price absent in customer currency, (c) stale exchange rate warning, (d) addon currency mismatch validation. Audit confirmed NONE of the four are implemented: billing_customers has no currency/locale field, billing_plans has single-currency price columns (no per-currency map nor billing_plan_prices table), checkout service never branches on customer.currency, billing_exchange_rates table exists + cron exists (T-143-43) but is decorative wrt checkout, addon currency-match validation is absent. Constants DEFAULT_CURRENCY=ARS and REFERENCE_CURRENCY=USD in packages/billing/src/constants/billing.constants.ts document the implicit single-currency state. Implementing the four concerns requires schema additions + service refactor deferred to SPEC-150 (Billing multi-currency support). This task now covers a regression-guard test: multi-currency.test.ts pins the current single-currency behavior so SPEC-150 explicitly knows what changes when it lands. Scope: verify that (1) checkout returns the single ARS price regardless of any client-supplied locale hints, (2) the billing_exchange_rates rows are NOT consulted by the checkout path (rate insertion has no effect on returned price), (3) addons inherit subscription currency implicitly with no mismatch check. See [[spec/spec-150/scope-deferred-from-spec-143]]."
+            "notes": "[reframed 2026-05-20] Original scope assumed (a) per-customer currency selection (ARS/USD/BRL based on customer locale), (b) FX fallback when plan price absent in customer currency, (c) stale exchange rate warning, (d) addon currency mismatch validation. Audit confirmed NONE of the four are implemented: billing_customers has no currency/locale field, billing_plans has single-currency price columns (no per-currency map nor billing_plan_prices table), checkout service never branches on customer.currency, billing_exchange_rates table exists + cron exists (T-143-43) but is decorative wrt checkout, addon currency-match validation is absent. Constants DEFAULT_CURRENCY=ARS and REFERENCE_CURRENCY=USD in packages/billing/src/constants/billing.constants.ts document the implicit single-currency state. Implementing the four concerns requires schema additions + service refactor deferred to SPEC-150 (Billing multi-currency support). This task now covers a regression-guard test: multi-currency.test.ts pins the current single-currency behavior so SPEC-150 explicitly knows what changes when it lands. Scope: verify that (1) checkout returns the single ARS price regardless of any client-supplied locale hints, (2) the billing_exchange_rates rows are NOT consulted by the checkout path (rate insertion has no effect on returned price), (3) addons inherit subscription currency implicitly with no mismatch check. See [[spec/spec-150/scope-deferred-from-spec-143]].",
+            "completedAt": "2026-05-20T06:30:00Z"
         },
         {
             "id": "T-143-63",
