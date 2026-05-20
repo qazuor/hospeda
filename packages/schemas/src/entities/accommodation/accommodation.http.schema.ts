@@ -260,6 +260,8 @@ export const httpToDomainAccommodationSearch = (
     maxRating: httpParams.maxRating,
     amenities: httpParams.amenities,
     features: httpParams.features,
+    includeAmenities: httpParams.includeAmenities,
+    includeFeatures: httpParams.includeFeatures,
     checkIn: httpParams.checkIn,
     checkOut: httpParams.checkOut,
     isAvailable: httpParams.isAvailable

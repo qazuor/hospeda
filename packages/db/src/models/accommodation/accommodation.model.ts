@@ -775,7 +775,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                         lifecycleState: true,
                         createdAt: true
                     }
-                }
+                },
+                // Optional projections, opt-in via params. Same nested
+                // junction shape that `findTopRated` uses, which the web's
+                // `extractRelationItems(item.amenities, 'amenity')` expects.
+                // Drizzle expands these via lateral joins in a single query,
+                // so pagination on the outer accommodations stays correct.
+                ...(params.includeAmenities ? { amenities: { with: { amenity: true } } } : {}),
+                ...(params.includeFeatures ? { features: { with: { feature: true } } } : {})
             },
             orderBy,
             limit: pageSize,

@@ -202,12 +202,12 @@ export class AccommodationService extends BaseCrudService<
         // entityId+entityType, no direct FK). Pending dedicated SPEC for a polymorphic
         // helper; load tags separately when needed.
         // NOTE: `amenities` and `features` are intentionally NOT loaded here (SPEC-117 A-6).
-        // They go through r_accommodation_{amenity,feature} join tables. Drizzle's `with`
-        // clause cannot resolve the nested entity (`{ with: { amenity: true } }` triggers
-        // a `referencedTable undefined` error in the relational query builder). The detail
-        // page in the admin loads them via dedicated tab endpoints
-        // (`/accommodations/{id}/amenities`, `/accommodations/{id}/features`), so they are
-        // not required in the base detail response.
+        // They go through r_accommodation_{amenity,feature} join tables and can be loaded
+        // via Drizzle RQB with `{ amenities: { with: { amenity: true } } }` — see
+        // `accommodation.model.findTopRated` and the `includeAmenities` / `includeFeatures`
+        // branches in `searchWithRelations`. The detail page in the admin still loads them
+        // via dedicated tab endpoints (`/accommodations/{id}/amenities`,
+        // `/accommodations/{id}/features`) to keep the base detail response light.
         return {
             destination: true,
             owner: true,
