@@ -952,6 +952,123 @@ describe('NewsletterSubscriberService.updatePreferences', () => {
 });
 
 // ===========================================================================
+// linkAnonymousSubscribersToUser
+// ===========================================================================
+
+describe('NewsletterSubscriberService.linkAnonymousSubscribersToUser', () => {
+    it('returns zero counts and skips the UPDATE when no anonymous rows match', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([]); // lookup returns nothing
+
+        const result = await svc.linkAnonymousSubscribersToUser({
+            userId: USER_ID,
+            email: EMAIL,
+            accountEmailVerified: true
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.linkedCount).toBe(0);
+        expect(result.data?.promotedToActiveCount).toBe(0);
+        expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+
+        // Only the SELECT should have run; no UPDATE on an empty match set.
+        expect(
+            capturedSqlStrings.find((s) => s.includes('UPDATE newsletter_subscribers'))
+        ).toBeUndefined();
+    });
+
+    it('links anonymous rows and promotes pending_verification rows when account email is verified', async () => {
+        const { svc, dispatcher } = makeService();
+
+        // Lookup returns one pending row + one already-active row (e.g. the
+        // user had two subscription attempts that both produced anon rows).
+        enqueueResponse([
+            {
+                id: '99999999-9999-4999-a999-999999999991',
+                status: 'pending_verification',
+                email: EMAIL,
+                channel: 'email',
+                locale: 'es'
+            },
+            {
+                id: '99999999-9999-4999-a999-999999999992',
+                status: 'active',
+                email: EMAIL,
+                channel: 'email',
+                locale: 'es'
+            }
+        ]);
+        // UPDATE response (not consumed beyond captured SQL).
+        enqueueResponse([]);
+
+        const result = await svc.linkAnonymousSubscribersToUser({
+            userId: USER_ID,
+            email: EMAIL,
+            accountEmailVerified: true
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.linkedCount).toBe(2);
+        // Only the pending row was promoted → one welcome email.
+        expect(result.data?.promotedToActiveCount).toBe(1);
+        expect(dispatcher.sendWelcome).toHaveBeenCalledOnce();
+
+        // SQL intent: the UPDATE should use the CASE/promotion form.
+        const updateSql = capturedSqlStrings.find((s) =>
+            s.includes('UPDATE newsletter_subscribers')
+        );
+        expect(updateSql).toContain('CASE');
+        expect(updateSql).toContain('verified_at');
+    });
+
+    it('links anonymous rows without promoting when account email is not verified', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            {
+                id: '99999999-9999-4999-a999-999999999991',
+                status: 'pending_verification',
+                email: EMAIL,
+                channel: 'email',
+                locale: 'es'
+            }
+        ]);
+        enqueueResponse([]);
+
+        const result = await svc.linkAnonymousSubscribersToUser({
+            userId: USER_ID,
+            email: EMAIL,
+            accountEmailVerified: false
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.linkedCount).toBe(1);
+        expect(result.data?.promotedToActiveCount).toBe(0);
+        expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+
+        // SQL intent: the simpler UPDATE form (no CASE, just user_id +
+        // updated_at) — guarantees the row's lifecycle is untouched.
+        const updateSql = capturedSqlStrings.find((s) =>
+            s.includes('UPDATE newsletter_subscribers')
+        );
+        expect(updateSql).not.toContain('CASE');
+    });
+
+    it('rejects invalid input via Zod validation', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.linkAnonymousSubscribersToUser({
+            userId: 'not-a-uuid',
+            email: EMAIL,
+            accountEmailVerified: true
+        });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+// ===========================================================================
 // getEligibleForCampaign
 // ===========================================================================
 

@@ -224,6 +224,21 @@ const GetEligibleInputSchema = z.object({
     contentType: z.nativeEnum(NewsletterContentTypeEnum).optional()
 });
 
+const LinkAnonymousSubscribersInputSchema = z.object({
+    userId: z.string().uuid(),
+    /** Account email of the freshly signed-up user. Lowercased before lookup. */
+    email: z.string().email(),
+    /**
+     * Whether the new user's account email is verified (Better Auth
+     * `users.email_verified`). When `true`, any matched anonymous row in
+     * `pending_verification` is promoted to `active` and a welcome email is
+     * dispatched. When `false`, the rows are only linked — the user still
+     * needs to verify their account email before the subscription becomes
+     * active, mirroring the gate in `subscribe`.
+     */
+    accountEmailVerified: z.boolean()
+});
+
 const AdminListInputSchema = z.object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(200).default(50),
@@ -280,6 +295,18 @@ export interface GetEligibleForCampaignResult {
     readonly eligibleIds: string[];
     readonly softCappedCount: number;
     readonly totalCandidates: number;
+}
+
+/** Result returned by `linkAnonymousSubscribersToUser`. */
+export interface LinkAnonymousSubscribersResult {
+    /** Total number of anonymous rows that were linked to the user. */
+    readonly linkedCount: number;
+    /**
+     * Number of rows that ALSO transitioned `pending_verification` → `active`
+     * during the link (only when `accountEmailVerified === true`). One welcome
+     * email is dispatched per promoted row.
+     */
+    readonly promotedToActiveCount: number;
 }
 
 /** Result returned by `adminList`. */
@@ -1206,6 +1233,148 @@ export class NewsletterSubscriberService extends BaseService {
                 };
 
                 return { preferences: merged };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API — linkAnonymousSubscribersToUser
+    // -------------------------------------------------------------------------
+
+    /**
+     * Backfills `user_id` on every anonymous subscriber row that matches the
+     * freshly signed-up user's email, and (when `accountEmailVerified === true`)
+     * promotes any matched row in `pending_verification` to `active` with a
+     * transactional welcome email.
+     *
+     * Designed to be invoked from a post-signup hook so a guest who subscribed
+     * via the public footer flow before creating an account is seamlessly
+     * connected to their new user record — and, for OAuth providers that
+     * deliver a pre-verified email, the subscription becomes active without
+     * the user having to click the verification link a second time.
+     *
+     * Idempotent on re-runs: rows that were already linked don't match
+     * `user_id IS NULL`, so a duplicate call returns `{ linkedCount: 0 }`.
+     *
+     * No actor parameter: this method runs under a synthetic system actor
+     * because the new user does not yet "own" the anonymous rows when the
+     * hook fires (the link itself transfers ownership).
+     *
+     * @param input - `{ userId, email, accountEmailVerified }`.
+     * @param ctx - Optional service context.
+     * @returns `{ linkedCount, promotedToActiveCount }`.
+     *
+     * @example
+     * ```ts
+     * await svc.linkAnonymousSubscribersToUser({
+     *   userId: newUser.id,
+     *   email: newUser.email,
+     *   accountEmailVerified: newUser.emailVerified
+     * });
+     * ```
+     */
+    public async linkAnonymousSubscribersToUser(
+        input: {
+            userId: string;
+            email: string;
+            accountEmailVerified: boolean;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<LinkAnonymousSubscribersResult>> {
+        const systemActor: Actor = {
+            id: '00000000-0000-0000-0000-000000000001',
+            role: 'SUPER_ADMIN' as never,
+            permissions: Object.values(PermissionEnum) as never
+        };
+        return this.runWithLoggingAndValidation({
+            methodName: 'linkAnonymousSubscribersToUser',
+            input: { actor: systemActor, ...input },
+            schema: LinkAnonymousSubscribersInputSchema,
+            ctx,
+            execute: async (validated) => {
+                const db = getDb();
+
+                // Find anonymous rows matching the email. We capture the
+                // pre-update status here so we can decide which rows trigger
+                // a welcome email after the atomic UPDATE.
+                const lookupRows = await db.execute(sql`
+                    SELECT id, status, email, channel, locale
+                    FROM newsletter_subscribers
+                    WHERE email = ${validated.email}
+                      AND user_id IS NULL
+                      AND deleted_at IS NULL
+                `);
+                const anonRows = lookupRows.rows as Array<{
+                    id: string;
+                    status: string;
+                    email: string;
+                    channel: string;
+                    locale: string;
+                }>;
+
+                if (anonRows.length === 0) {
+                    return { linkedCount: 0, promotedToActiveCount: 0 };
+                }
+
+                const now = new Date();
+                const ids = anonRows.map((r) => r.id);
+
+                // Build the UPDATE — when the account email is verified we
+                // also flip `pending_verification` → `active` and stamp
+                // `verified_at`. Otherwise we just link `user_id` and leave
+                // the lifecycle state alone (the user can verify later and
+                // re-subscribe to promote).
+                if (validated.accountEmailVerified) {
+                    await db.execute(sql`
+                        UPDATE newsletter_subscribers
+                        SET user_id = ${validated.userId},
+                            status = CASE
+                                WHEN status = ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION}
+                                    THEN ${NewsletterSubscriberStatusEnum.ACTIVE}
+                                ELSE status
+                            END,
+                            verified_at = CASE
+                                WHEN status = ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION}
+                                    THEN ${now.toISOString()}::timestamptz
+                                ELSE verified_at
+                            END,
+                            updated_at = ${now.toISOString()}
+                        WHERE id = ANY(${ids}::uuid[])
+                    `);
+                } else {
+                    await db.execute(sql`
+                        UPDATE newsletter_subscribers
+                        SET user_id = ${validated.userId},
+                            updated_at = ${now.toISOString()}
+                        WHERE id = ANY(${ids}::uuid[])
+                    `);
+                }
+
+                // Dispatch welcome emails for rows that just transitioned
+                // pending_verification → active. The dispatcher swallows its
+                // own errors so a mailer hiccup doesn't undo the link.
+                const promotedRows = validated.accountEmailVerified
+                    ? anonRows.filter(
+                          (r) => r.status === NewsletterSubscriberStatusEnum.PENDING_VERIFICATION
+                      )
+                    : [];
+
+                for (const row of promotedRows) {
+                    const channel = row.channel as 'email' | 'whatsapp';
+                    const unsubscribeToken = this._genUnsubscribeToken(row.id, channel);
+                    await this._sendWelcome({
+                        subscriberId: row.id,
+                        email: row.email,
+                        userId: validated.userId,
+                        locale: row.locale,
+                        unsubscribeToken
+                    });
+                }
+
+                return {
+                    linkedCount: anonRows.length,
+                    promotedToActiveCount: promotedRows.length
+                };
             }
         });
     }

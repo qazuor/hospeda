@@ -34,10 +34,15 @@ export const newsletterSubscribers = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
 
-        /** FK → users.id. ON DELETE CASCADE: a hard-deleted user takes their subscription with them (consent gone). */
-        userId: uuid('user_id')
-            .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
+        /**
+         * FK → users.id. Nullable to support GUEST subscriptions (the guest
+         * subscribe flow creates a row with `user_id IS NULL` and the
+         * post-signup hook backfills it via
+         * `NewsletterSubscriberService.linkAnonymousSubscribersToUser`).
+         * ON DELETE CASCADE: a hard-deleted user takes their subscription
+         * with them (consent gone).
+         */
+        userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
 
         /** Recipient email captured at subscribe time. Denormalised so we never have to JOIN users on dispatch. */
         email: varchar('email', { length: 255 }).notNull(),
