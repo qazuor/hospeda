@@ -119,7 +119,99 @@ Files in scope are billing-named OR billing-semantic (subscription, addon, promo
 
 ### 2.1 Unit coverage (`vitest.config.ts`)
 
-_Pending baseline run._
+**Run command (verbatim)**:
+
+```bash
+HOSPEDA_DATABASE_URL=postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_test \
+pnpm vitest run --coverage \
+  --coverage.reporter=json-summary \
+  --coverage.reportsDirectory=/tmp/cov-unit \
+  --coverage.include='src/**/*.ts' \
+  --coverage.thresholds.lines=0 \
+  --exclude='test/schema-validation/post-getById-schema.test.ts'
+```
+
+(`post-getById-schema.test.ts` is excluded because two of its tests fail with a `500` from `/api/v1/public/posts/:id` — out of billing scope, not addressed by this audit. Without the exclusion `vitest --coverage` does not serialize the JSON summary on EXIT=1.)
+
+**Pre-audit test cleanup**:
+
+The full unit suite had 26 failing tests at audit start; coverage tooling refused to emit the report. Five fixes shipped as standalone commits to unblock the run:
+
+| Commit | Subject | Files |
+| ------ | ------- | ----- |
+| `08b51492` | `fix(api,cron): add abandoned-pending-subs + trial-pre-end-notif to schedules manifest` | `src/cron/schedules.manifest.ts` |
+| `cacd4d43` | `fix(api,test): align entitlement no-active-sub test with T-143-58 tourist-free fallback` | `test/middlewares/entitlement.test.ts` |
+| `3b601b42` | `fix(api,test): mock billingPayments in payment-logic test` | `test/routes/webhooks/payment-logic.test.ts` |
+| `7c103605` | `fix(api,test): align addon.service purchase test with current preference shape` | `test/services/addon.service.test.ts` |
+| `16345730` | `fix(api,test): refactor mercadopago webhook test mocks for T-143-09 + 23505 SQLSTATE detection` | `test/webhooks/mercadopago.test.ts` |
+
+Final unit suite state (excluding the 1 deferred file): **3707 passed, 0 failed**.
+
+**Aggregate billing-surface coverage**:
+
+- **75 files in scope** (services, routes, middlewares, cron jobs)
+- **49 at 100%** (perfect)
+- **22 at 90–99%** (high)
+- **1 at 50–89%** (mid)
+- **3 at <50%** (low — all dead code, see below)
+- **Total lines**: 12,937
+- **Lines covered**: 12,476
+- **Overall billing line coverage**: **96.44%**
+
+**Dead-code findings (the three 0% files)**:
+
+| File | Status | Action |
+| ---- | ------ | ------ |
+| `routes/billing/metrics.ts` | Duplicate of `routes/billing/admin/metrics.ts`. Never imported anywhere in `src/` — the live router uses the admin/ variant. | **Delete** (separate commit; not done in this audit to keep scope focused — flagged as SPEC-143 follow-up). |
+| `services/promo-code.crud.ts` | Deprecated re-export shim pointing at `@repo/service-core`. Not imported by any file in `src/`. JSDoc carries `@deprecated`. | **Delete** (same follow-up). |
+| `services/promo-code.redemption.ts` | Deprecated re-export shim. Same shape and status as the previous entry. | **Delete** (same follow-up). |
+
+These three drag the overall percentage down by 273 uncovered lines for code that has zero functional value. Removing them lifts the billing-surface coverage to **~98.6%** (12,476 / 12,664).
+
+**Files at 90–99% (gap detail)**:
+
+The 22 files in the high band have between 1 and 30 uncovered lines each. The gaps are dominated by:
+
+- Defensive impossible branches (`never`-type guards, exhaustive switches on enums).
+- Error paths that require provider-side state we cannot stub deterministically from a unit test (MP-side races, qzpay-core internal failures).
+- Cron timezone / startup-only branches that fire once per process and are exercised in e2e.
+
+Full file-level breakdown:
+
+| File | Line % | Covered / Total |
+| ---- | ------ | --------------- |
+| routes/billing/metrics.ts | 0% | 0/271 |
+| services/promo-code.crud.ts | 0% | 0/1 |
+| services/promo-code.redemption.ts | 0% | 0/1 |
+| routes/webhooks/mercadopago/notifications.ts | 89.57% | 232/259 |
+| services/addon.user-addons.ts | 92.99% | 398/428 |
+| routes/webhooks/mercadopago/subscription-logic.ts | 94.22% | 457/485 |
+| cron/jobs/dunning.job.ts | 95.3% | 284/298 |
+| routes/billing/plan-change.ts | 95.54% | 236/247 |
+| routes/billing/start-paid.ts | 96.29% | 130/135 |
+| routes/webhooks/mercadopago/payment-logic.ts | 97.12% | 439/452 |
+| services/addon.checkout.ts | 97.51% | 471/483 |
+| routes/webhooks/mercadopago/utils.ts | 97.53% | 198/203 |
+| cron/jobs/addon-expiry.job.ts | 97.73% | 994/1017 |
+| services/billing-metrics.service.ts | 98.19% | 218/222 |
+| routes/webhooks/mercadopago/payment-handler.ts | 98.92% | 92/93 |
+| cron/jobs/exchange-rate-fetch.job.ts | 99.02% | 102/103 |
+| routes/billing/subscription-status.ts | 99.07% | 107/108 |
+| services/addon-lifecycle-cancellation.service.ts | 99.09% | 219/221 |
+| middlewares/billing-ownership.middleware.ts | 99.11% | 112/113 |
+| routes/billing/trial.ts | 99.15% | 354/357 |
+| services/usage-tracking.service.ts | 99.39% | 329/331 |
+| services/notification-retry.service.ts | 99.55% | 225/226 |
+| services/addon.admin.ts | 99.69% | 328/329 |
+| services/addon-plan-change.service.ts | 99.71% | 345/346 |
+| services/addon-entitlement.service.ts | 99.76% | 432/433 |
+| services/trial.service.ts | 99.85% | 709/710 |
+
+All remaining 49 billing-surface files sit at 100% line coverage.
+
+**Out-of-scope failure (deferred)**:
+
+`test/schema-validation/post-getById-schema.test.ts` — 2 tests fail with HTTP 500 from `/api/v1/public/posts/:id`. Post entity, not billing. Tracked separately; does not affect the billing coverage report.
 
 ### 2.2 E2E coverage (`vitest.config.e2e.ts`)
 
