@@ -145,6 +145,22 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 - `.only()` and hard-coded `.skip()` are **forbidden** in committed code — CI will fail
 - Use `it.skipIf(condition)` for legitimate conditional test skipping
 
+### Billing testing — manual smoke checklist required (SPEC-143)
+
+Any PR that touches the billing surface (checkout, webhooks, cron, refund, admin billing ops, entitlements) MUST have the relevant manual staging smoke executed before merging to `staging`, in addition to CI passing. The vitest e2e suite uses an MP stub and cannot catch divergences between the stub and real MercadoPago behavior; the staging smoke against the real MP sandbox is the gate.
+
+Workflow:
+
+1. Before opening the PR, identify which sections of [`.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) the change exercises.
+2. Run those sections against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`. Use [`.claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) to pick the right card + cardholder combo per sub-flow.
+3. File the sign-off entry inside the relevant section of the checklist (date, executor, PR number, result, notes).
+4. Reference the sign-off in the PR description so reviewers can verify it.
+5. For PRs that change the **billing CORE** (start-paid route, webhook handlers, dunning/exchange-rate crons, refund flow, admin billing ops), the prod smoke ([`.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)) MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
+
+Failed smokes block merge. Notes-only passes (smoke surfaces a known documented bug from an engram entry) can merge but the bug entry must be linked from the PR.
+
+This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
+
 ### Git Conventions
 
 - **Conventional Commits**: `type(scope): description`

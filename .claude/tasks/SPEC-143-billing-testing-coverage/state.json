@@ -627,11 +627,12 @@
             "title": "Add CLAUDE.md rule: billing-touching PR must execute manual smoke checklist",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "owner": "agent",
             "dependsOn": ["T-143-23"],
-            "notes": "Rule added to root CLAUDE.md (or relevant section). Per engram #532 decision Q1."
+            "notes": "Rule added to root CLAUDE.md as a new '### Billing testing — manual smoke checklist required (SPEC-143)' sub-section, slotted between Testing Standards and Git Conventions so it surfaces in the same scan as other test-related rules. Five-step workflow documented: identify relevant smoke sections, run them against staging with MP sandbox creds, file sign-off in the checklist, reference the sign-off in the PR description, and additionally run prod smoke for billing-CORE changes (start-paid / webhooks / crons / refund / admin ops). Routine billing-touching PRs (UI tweaks, copy, schema additions) only need staging. Failed smokes block merge; notes-only passes (known documented bug) can merge with the engram entry linked from the PR. References the three smoke artifacts shipped earlier in this same session (T-143-20, T-143-36, T-143-45, T-143-22, T-143-52). Decision provenance: engram #532 Q1. Dependency was T-143-23 (execute Phase 1 prod smokes) which is still pending and requires real prod credentials; the dependsOn relationship reflected the sequencing intent (rule should ideally land AFTER the gate has been smoked once) but the rule's content is self-contained and standing it up now does not block T-143-23 execution.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-55",
