@@ -13,19 +13,19 @@
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
  *
  * @route /{lang}/publicar/
- * @rendering SSR — the page reads `?from=admin` at request time to render the
- * FromAdminBanner for tourists redirected from the admin. SSG is not viable
- * because `Astro.url.searchParams` is unavailable at build time.
+ * @rendering SSR — the page reads `?from=admin` at request time to render an
+ * eyebrow line inside the hero for tourists redirected from the admin. SSG
+ * is not viable because `Astro.url.searchParams` is unavailable at build time.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import FromAdminBanner from '@/components/host/FromAdminBanner.astro';
 import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { InfoIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -77,16 +77,21 @@ const faqJsonLd = {
 >
 	<JsonLd slot="head-extra" data={faqJsonLd} />
 
-	{cameFromAdmin && (
-		<div class="publicar-from-admin-wrap">
-			<FromAdminBanner locale={locale} />
-		</div>
-	)}
-
 	<!-- Hero -->
 	<section class="publicar-hero section section--warm">
 		<div class="publicar-hero__container">
 			<div class="publicar-hero__text" data-reveal="up">
+				{cameFromAdmin && (
+					<p
+						class="publicar-hero__from-admin"
+						role="status"
+						aria-live="polite"
+						data-testid="from-admin-eyebrow"
+					>
+						<InfoIcon size={16} weight="regular" aria-hidden="true" />
+						<span>{t('host.fromAdminBanner.eyebrow', 'Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos.')}</span>
+					</p>
+				)}
 				<p class="publicar-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
 				<h1 class="publicar-hero__title">{t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}</h1>
 				<p class="publicar-hero__desc">
@@ -184,9 +189,27 @@ const faqJsonLd = {
 </MarketingLayout>
 
 <style>
-	/* ── From-admin banner spacing ─────────────────────────────────────── */
-	.publicar-from-admin-wrap {
-		padding: var(--space-6) var(--space-container-x) 0;
+	/* ── From-admin eyebrow line ───────────────────────────────────────── */
+	.publicar-hero__from-admin {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-3);
+		padding: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		line-height: 1.4;
+	}
+
+	.publicar-hero__from-admin svg {
+		flex-shrink: 0;
+		color: var(--brand-primary);
+		opacity: 0.7;
+	}
+
+	.publicar-hero__from-admin span {
+		max-width: 52ch;
 	}
 
 	/* ── Hero ──────────────────────────────────────────────────────────── */

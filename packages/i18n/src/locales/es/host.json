@@ -145,8 +145,7 @@
         "secondaryCta": "Ver mis propiedades"
     },
     "fromAdminBanner": {
-        "title": "Detectamos que intentaste acceder al panel de administración.",
-        "message": "Para gestionar tus alojamientos primero necesitás publicar uno. Completá los datos básicos y obtenés acceso automático."
+        "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
     },
     "miniForm": {
         "fields": {

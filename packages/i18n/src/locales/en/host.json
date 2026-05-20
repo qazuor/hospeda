@@ -145,7 +145,6 @@
         "secondaryCta": "[TODO]"
     },
     "fromAdminBanner": {
-        "title": "We saw you tried to reach the admin panel.",
-        "message": "To manage your listings you need to publish one first. Fill in the basics and you'll get instant access."
+        "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
     }
 }
