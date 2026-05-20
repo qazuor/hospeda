@@ -37,16 +37,22 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
+import { resolveQuickAmenityFlags } from './quick-amenity-resolver';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * Allowed sort fields for public accommodation list.
  *
- * `mostSaved` is a synthetic field backed by a correlated subquery against
- * `user_bookmarks`. It depends on the compound index
- * `idx_user_bookmarks_entity_active` on `(entity_id, entity_type, deleted_at)`
- * (see SPEC-098 T-008 / T-052 and `0019_user_bookmarks_entity_active_index.sql`).
+ * `mostSaved` and `price` are synthetic fields handled by the model:
+ * - `mostSaved` runs a correlated subquery against `user_bookmarks` and
+ *   depends on `idx_user_bookmarks_entity_active` (SPEC-098 T-008 / T-052,
+ *   migration `0019_user_bookmarks_entity_active_index.sql`).
+ * - `price` extracts the base nightly price from the JSONB `price` column
+ *   via `(price->>'price')::numeric` with NULLS LAST so unpriced rows do
+ *   not dominate the first page of an ascending sort.
+ *
+ * Other entries map directly to columns on the `accommodations` table.
  */
 const ALLOWED_SORT_FIELDS = new Set([
     'name',
@@ -54,7 +60,8 @@ const ALLOWED_SORT_FIELDS = new Set([
     'averageRating',
     'reviewsCount',
     'isFeatured',
-    'mostSaved'
+    'mostSaved',
+    'price'
 ]);
 
 /**
@@ -110,9 +117,20 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // minGuests, maxGuests, minBedrooms, maxBedrooms, minBathrooms,
         // maxBathrooms, minRating, maxRating, amenities, sortBy, sortOrder,
         // currency, latitude, longitude, radius, checkIn, checkOut, isAvailable.
-        const domainParams = httpToDomainAccommodationSearch(
-            (query ?? {}) as AccommodationSearchHttp
-        );
+        const httpQuery = (query ?? {}) as AccommodationSearchHttp;
+        const domainParams = httpToDomainAccommodationSearch(httpQuery);
+
+        // Resolve the public boolean shortcut flags (`hasWifi`, `hasPool`,
+        // `hasParking`, `allowsPets`) to `anyAmenityGroups`. Slug→ID lookup is
+        // cached for the lifetime of the API process. Each flag becomes one
+        // inner array (OR within), and the model AND-joins the groups so
+        // multiple toggles narrow the result set as expected.
+        const quickAmenityGroups = await resolveQuickAmenityFlags({
+            hasWifi: httpQuery.hasWifi,
+            hasPool: httpQuery.hasPool,
+            hasParking: httpQuery.hasParking,
+            allowsPets: httpQuery.allowsPets
+        });
 
         // Enforce the public allow-list for sort fields to prevent sorting
         // on internal or sensitive columns.
@@ -120,6 +138,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
 
         const result = await accommodationService.search(actor, {
             ...domainParams,
+            ...(quickAmenityGroups.length > 0 ? { anyAmenityGroups: quickAmenityGroups } : {}),
             page,
             pageSize,
             sortBy: safeSortBy,

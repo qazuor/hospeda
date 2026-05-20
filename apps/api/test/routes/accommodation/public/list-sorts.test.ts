@@ -56,8 +56,15 @@ describe('sanitizeSorts (public list allow-list)', () => {
             { field: 'createdAt', order: 'desc' },
             { field: 'averageRating', order: 'desc' },
             { field: 'reviewsCount', order: 'desc' },
-            { field: 'isFeatured', order: 'desc' }
+            { field: 'isFeatured', order: 'desc' },
+            { field: 'mostSaved', order: 'desc' },
+            { field: 'price', order: 'asc' }
         ];
+        expect(sanitizeSorts(sorts)).toEqual(sorts);
+    });
+
+    it('keeps `price` (synthetic JSONB-extracted sort) in the allow-list', () => {
+        const sorts: SortField[] = [{ field: 'price', order: 'asc' }];
         expect(sanitizeSorts(sorts)).toEqual(sorts);
     });
 });
