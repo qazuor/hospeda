@@ -6,9 +6,31 @@
 
 import { z } from 'zod';
 import { NewsletterChannelEnum } from '../../enums/newsletter-channel.enum.js';
+import { NewsletterContentTypeEnum } from '../../enums/newsletter-content-type.enum.js';
 import { NewsletterSourceEnum } from '../../enums/newsletter-source.enum.js';
 import { NewsletterSubscriberStatusEnum } from '../../enums/newsletter-subscriber-status.enum.js';
 import { LanguageEnumSchema } from '../user/user.settings.schema.js';
+
+/**
+ * Per-content-type opt-in flags persisted on
+ * `newsletter_subscribers.preferences`. Every {@link NewsletterContentTypeEnum}
+ * value is a required boolean — `true` means the subscriber wants campaigns of
+ * that content type, `false` means skip. The DB default backfills all keys to
+ * `true`, so a parsed row is always complete.
+ *
+ * The schema is intentionally a closed `z.object(...)` (not a `z.record`) so
+ * unknown content types are rejected and the inferred type is `Record<enum,
+ * boolean>` with full literal keys.
+ */
+export const NewsletterContentPreferencesSchema = z.object({
+    [NewsletterContentTypeEnum.OFFERS]: z.boolean(),
+    [NewsletterContentTypeEnum.EVENTS]: z.boolean(),
+    [NewsletterContentTypeEnum.GUIDES]: z.boolean(),
+    [NewsletterContentTypeEnum.PRODUCT_NEWS]: z.boolean()
+});
+
+/** TypeScript type inferred from {@link NewsletterContentPreferencesSchema}. */
+export type NewsletterContentPreferences = z.infer<typeof NewsletterContentPreferencesSchema>;
 
 /**
  * Core newsletter subscriber schema — mirrors the `newsletter_subscribers` DB table.
@@ -45,6 +67,9 @@ export const NewsletterSubscriberSchema = z.object({
 
     /** Acquisition source — used for analytics. */
     source: z.nativeEnum(NewsletterSourceEnum),
+
+    /** Per-content-type opt-in flags. All keys present, all-true by default. */
+    preferences: NewsletterContentPreferencesSchema,
 
     // ---- Consent audit (Ley 25.326 AR / GDPR) ----
 
