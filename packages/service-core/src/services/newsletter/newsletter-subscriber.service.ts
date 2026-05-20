@@ -28,6 +28,25 @@
  *    for the same reason as (1). The filter set matches
  *    NewsletterSubscriberAdminSearchSchema.
  *
+ * TERMINAL-STATE POLICY (bounced / complained):
+ * Rows in `bounced` or `complained` are TERMINAL — only an admin reset (out of
+ * scope here) clears them. Every mutating path on this service enforces this:
+ *   - `subscribe`           → throws `NEWSLETTER_SUBSCRIBER_BLOCKED`.
+ *   - `updatePreferences`   → throws `NEWSLETTER_SUBSCRIBER_BLOCKED`.
+ *   - `verifyToken`         → throws `NEWSLETTER_SUBSCRIBER_NOT_PENDING`
+ *                             (status is not pending_verification).
+ *   - `unsubscribeByToken`  → idempotently returns `'already_unsubscribed'`
+ *                             (terminal rows are effectively unsubscribed).
+ *   - `unsubscribeAuthenticated` → same idempotent return.
+ *   - `resendVerification`  → throws `NEWSLETTER_SUBSCRIBER_NOT_PENDING`.
+ *   - `linkAnonymousSubscribersToUser` → may link an anonymous bounced /
+ *     complained row to a freshly signed-up user (transferring ownership of
+ *     the consent audit trail), but NEVER promotes its status and NEVER
+ *     dispatches a welcome email. The terminal state survives the link, and
+ *     subsequent `subscribe` / `updatePreferences` calls then trip the block
+ *     above. This is intentional: the email itself is poisoned, regardless of
+ *     which account currently owns the row.
+ *
  * @see {@link newsletter-subscriber.permissions}
  * @see {@link newsletter-token.helpers}
  */

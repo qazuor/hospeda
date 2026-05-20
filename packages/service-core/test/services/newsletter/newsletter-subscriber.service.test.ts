@@ -1066,6 +1066,37 @@ describe('NewsletterSubscriberService.linkAnonymousSubscribersToUser', () => {
 
         expect(result.error?.code).toBe('VALIDATION_ERROR');
     });
+
+    // Terminal-state policy regression: a bounced / complained anonymous row
+    // MUST be linked (owner transfers) without promoting status or sending a
+    // welcome. Once linked, every other mutating method on the service trips
+    // the terminal block — the email is poisoned regardless of who owns it.
+    it('links a bounced anonymous row without promoting it or dispatching welcome', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            {
+                id: '99999999-9999-4999-a999-999999999991',
+                status: 'bounced',
+                email: EMAIL,
+                channel: 'email',
+                locale: 'es'
+            }
+        ]);
+        enqueueResponse([]); // UPDATE response
+
+        const result = await svc.linkAnonymousSubscribersToUser({
+            userId: USER_ID,
+            email: EMAIL,
+            accountEmailVerified: true
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.linkedCount).toBe(1);
+        // Bounced does NOT get promoted by the CASE (only pending_verification does).
+        expect(result.data?.promotedToActiveCount).toBe(0);
+        expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+    });
 });
 
 // ===========================================================================
