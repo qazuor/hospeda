@@ -213,7 +213,15 @@ const UpdatePreferencesInputSchema = z.object({
 
 const GetEligibleInputSchema = z.object({
     localeFilter: z.enum(['all', 'es', 'en', 'pt']),
-    softCapWindowDays: z.number().int().min(1)
+    softCapWindowDays: z.number().int().min(1),
+    /**
+     * Optional content-type filter. When provided, only subscribers whose
+     * `preferences[contentType]` is `true` are eligible — implemented as a
+     * COALESCE-defaulted JSONB lookup so missing keys (defensive case) are
+     * treated as opted-in. When omitted, no preference filter is applied
+     * (legacy callers and broadcasts that don't tag a content type).
+     */
+    contentType: z.nativeEnum(NewsletterContentTypeEnum).optional()
 });
 
 const AdminListInputSchema = z.object({
@@ -1210,24 +1218,36 @@ export class NewsletterSubscriberService extends BaseService {
      * Returns subscriber IDs eligible for a campaign dispatch.
      *
      * Eligible = `status='active'`, `deleted_at IS NULL`, locale matches,
-     * AND no delivery row with `delivered_at >= now() - softCapWindowDays days`.
+     * (optionally) `preferences[contentType] = true`, AND no delivery row with
+     * `delivered_at >= now() - softCapWindowDays days`.
      *
      * The soft-cap exclusion is expressed as a single SQL `NOT EXISTS` subquery
      * to avoid fetching all rows and filtering in JS (scales to 50k+ subscribers).
      *
-     * @param input - Locale filter and soft-cap window.
+     * The `contentType` filter uses
+     * `COALESCE((ns.preferences->>contentType)::boolean, TRUE)` so a row whose
+     * preferences JSONB is missing the key (only possible if the 0026 backfill
+     * was skipped) is treated as opted-in — the column default is all-true and
+     * we don't want a stale row to silently mute deliveries.
+     *
+     * @param input - Locale filter, soft-cap window, optional contentType filter.
      * @param ctx - Optional service context.
      * @returns Eligible IDs, soft-capped count, and total candidates.
      *
      * @example
      * ```ts
-     * const result = await svc.getEligibleForCampaign({ localeFilter: 'es', softCapWindowDays: 7 });
+     * const result = await svc.getEligibleForCampaign({
+     *   localeFilter: 'es',
+     *   softCapWindowDays: 7,
+     *   contentType: NewsletterContentTypeEnum.OFFERS
+     * });
      * ```
      */
     public async getEligibleForCampaign(
         input: {
             localeFilter: 'all' | 'es' | 'en' | 'pt';
             softCapWindowDays: number;
+            contentType?: NewsletterContentTypeEnum;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<GetEligibleForCampaignResult>> {
@@ -1250,13 +1270,21 @@ export class NewsletterSubscriberService extends BaseService {
                         ? sql`TRUE`
                         : sql`ns.locale = ${validated.localeFilter}`;
 
-                // Total candidates (active, non-deleted, locale matches)
+                // Build content-type condition: opt-in when the key is true OR
+                // when it's missing entirely (defensive default — matches the
+                // column-level default of all-true).
+                const contentTypeCondition = validated.contentType
+                    ? sql`COALESCE((ns.preferences->>${validated.contentType})::boolean, TRUE) = TRUE`
+                    : sql`TRUE`;
+
+                // Total candidates (active, non-deleted, locale matches, content matches)
                 const totalResult = await db.execute(sql`
                     SELECT COUNT(*)::int AS total
                     FROM newsletter_subscribers ns
                     WHERE ns.status = ${NewsletterSubscriberStatusEnum.ACTIVE}
                       AND ns.deleted_at IS NULL
                       AND ${localeCondition}
+                      AND ${contentTypeCondition}
                 `);
                 const totalCandidates = Number(
                     (totalResult.rows[0] as { total: number }).total ?? 0
@@ -1274,6 +1302,7 @@ export class NewsletterSubscriberService extends BaseService {
                     WHERE ns.status = ${NewsletterSubscriberStatusEnum.ACTIVE}
                       AND ns.deleted_at IS NULL
                       AND ${localeCondition}
+                      AND ${contentTypeCondition}
                       AND NOT EXISTS (
                           SELECT 1
                           FROM newsletter_campaign_deliveries d

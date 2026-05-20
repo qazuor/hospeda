@@ -1008,6 +1008,59 @@ describe('NewsletterSubscriberService.getEligibleForCampaign', () => {
         const eligibleSql = capturedSqlStrings[1] ?? '';
         expect(eligibleSql.toLowerCase()).toContain('not exists');
     });
+
+    it('adds a COALESCE-defaulted preferences JSONB filter when contentType is provided', async () => {
+        const { svc } = makeService();
+
+        enqueueResponse([{ total: 5 }]);
+        enqueueResponse([{ id: 'id-1' }, { id: 'id-2' }, { id: 'id-3' }]);
+
+        const result = await svc.getEligibleForCampaign({
+            localeFilter: 'es',
+            softCapWindowDays: 7,
+            contentType: 'offers' as never
+        });
+
+        expect(result.error).toBeUndefined();
+
+        // Both the count and the eligible query must carry the preferences filter.
+        const countSql = capturedSqlStrings[0] ?? '';
+        const eligibleSql = capturedSqlStrings[1] ?? '';
+        expect(countSql).toContain('preferences->>');
+        expect(countSql).toContain('COALESCE');
+        expect(eligibleSql).toContain('preferences->>');
+        expect(eligibleSql).toContain('COALESCE');
+    });
+
+    it('omits the preferences filter entirely when contentType is not provided', async () => {
+        const { svc } = makeService();
+
+        enqueueResponse([{ total: 5 }]);
+        enqueueResponse([{ id: 'id-1' }]);
+
+        await svc.getEligibleForCampaign({
+            localeFilter: 'es',
+            softCapWindowDays: 7
+            // no contentType
+        });
+
+        const countSql = capturedSqlStrings[0] ?? '';
+        const eligibleSql = capturedSqlStrings[1] ?? '';
+        expect(countSql).not.toContain('preferences');
+        expect(eligibleSql).not.toContain('preferences');
+    });
+
+    it('rejects unknown contentType values via Zod validation', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.getEligibleForCampaign({
+            localeFilter: 'es',
+            softCapWindowDays: 7,
+            contentType: 'unknown-content-type' as never
+        });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+    });
 });
 
 // ===========================================================================
