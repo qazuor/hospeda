@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 47,
+        "completed": 48,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -688,11 +688,12 @@
             "title": "CI tuning for billing e2e (parallelism, time budget, isolation)",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-55"],
-            "notes": "Configure vitest project for billing e2e. Test isolation (DB transaction rollback per test or schema-per-test). Time budget for the suite. Surface in CI report."
+            "notes": "[reconciled 2026-05-20] Shipped via commit 78c92e4c5 (2026-05-20). vitest.config.e2e.ts gets JSDoc-documented isolation contract (singleFork mandatory until 48 files migrate off testDb.clean()) + slowTestThreshold + env-gated JSON reporter. apps/api/scripts/check-e2e-budget.mjs parses JSON output, asserts suite/per-file wallclock budgets, prints top-N slowest. New pnpm test:e2e:ci wraps both with exit-code passthrough. apps/api/test/e2e/README.md gets new Isolation Contract + CI Wiring sections (canonical reference notice points to T-143-53 e2e-infrastructure-design.md). CI workflow YAML snippet included in README for manual application (hook blocks agent edits to .github/workflows/). Path to parallelism documented as future SPEC follow-up (schema-per-fork or 26-file clean()-to-withRollback refactor). Original task description: Configure vitest project for billing e2e. Test isolation (DB transaction rollback per test or schema-per-test). Time budget for the suite. Surface in CI report.",
+            "completedAt": "2026-05-20"
         },
         {
             "id": "T-143-57",
