@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte } from 'drizzle-orm';
+import { and, eq, isNull, lte, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { conversationNotificationSchedules } from '../../schemas/conversation/conversation_notification_schedules.dbschema.ts';
 import type {
@@ -143,28 +143,41 @@ export class NotificationScheduleModel extends BaseModelImpl<SelectConversationN
         const db = this.getClient(tx);
         try {
             const now = new Date();
-            const [row] = await db
-                .insert(conversationNotificationSchedules)
-                .values({
-                    conversationId,
-                    recipientSide,
-                    pendingNotificationAt: scheduledAt,
-                    streakCount: 1,
-                    streakStartedAt: now,
-                    createdAt: now,
-                    updatedAt: now
-                })
-                .onConflictDoUpdate({
-                    target: [
-                        conversationNotificationSchedules.conversationId,
-                        conversationNotificationSchedules.recipientSide
-                    ],
-                    set: {
-                        pendingNotificationAt: scheduledAt,
-                        updatedAt: now
-                    }
-                })
-                .returning();
+            // The unique index on (conversation_id, recipient_side) is PARTIAL
+            // (`WHERE cancelled_at IS NULL`), and Drizzle's onConflictDoUpdate
+            // emits an `ON CONFLICT (cols) DO UPDATE` without the matching
+            // WHERE predicate, which Postgres rejects with:
+            //   "there is no unique or exclusion constraint matching the
+            //    ON CONFLICT specification".
+            // Fall back to a raw upsert that includes the partial-index
+            // predicate so the upsert resolves to the right index.
+            const rows = await db.execute<SelectConversationNotificationSchedule>(sql`
+                INSERT INTO conversation_notification_schedules
+                    (conversation_id, recipient_side, pending_notification_at,
+                     streak_count, streak_started_at, created_at, updated_at)
+                VALUES
+                    (${conversationId}, ${recipientSide}, ${scheduledAt},
+                     1, ${now}, ${now}, ${now})
+                ON CONFLICT (conversation_id, recipient_side)
+                    WHERE cancelled_at IS NULL
+                    DO UPDATE SET
+                        pending_notification_at = EXCLUDED.pending_notification_at,
+                        updated_at = ${now}
+                RETURNING
+                    id,
+                    conversation_id AS "conversationId",
+                    recipient_side AS "recipientSide",
+                    pending_notification_at AS "pendingNotificationAt",
+                    streak_count AS "streakCount",
+                    streak_started_at AS "streakStartedAt",
+                    cancelled_at AS "cancelledAt",
+                    created_at AS "createdAt",
+                    updated_at AS "updatedAt"
+            `);
+
+            const row =
+                (rows as unknown as { rows?: SelectConversationNotificationSchedule[] })
+                    .rows?.[0] ?? (rows as unknown as SelectConversationNotificationSchedule[])[0];
 
             if (!row) {
                 throw new Error('upsertSchedule returned no row');
