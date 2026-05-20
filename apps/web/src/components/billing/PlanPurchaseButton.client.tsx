@@ -4,17 +4,17 @@
  *
  * On click, reads the Better Auth session via `useSession`. If the user is
  * unauthenticated, redirects to the sign-in page with a return redirect. If
- * authenticated, POSTs to the protected billing checkout endpoint and follows
- * the returned `checkoutUrl` to the MercadoPago payment page.
+ * authenticated, calls `billingApi.createCheckout` (the Hospeda-custom
+ * `start-paid` route) and follows the returned `checkoutUrl` to the
+ * MercadoPago payment page.
  *
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { userApi } from '../../lib/api/endpoints-protected';
+import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
-import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -25,23 +25,11 @@ import styles from './PlanPurchaseButton.module.css';
 // ---------------------------------------------------------------------------
 
 /**
- * Shape returned by `POST /api/v1/protected/billing/checkout`.
- * The outer API envelope (`{ success, data }`) is unwrapped by `apiClient`.
- */
-interface CheckoutResponse {
-    readonly checkoutUrl: string;
-    readonly orderId: string;
-    readonly amount: number;
-    readonly currency: string;
-    readonly expiresAt: string | null;
-}
-
-/**
  * Props for the PlanPurchaseButton component.
  */
 export interface PlanPurchaseButtonProps {
-    /** Billing plan identifier sent to the checkout endpoint. */
-    readonly planId: string;
+    /** Billing plan slug sent to the checkout endpoint. */
+    readonly planSlug: string;
     /** Numeric plan price used for display next to the CTA text. */
     readonly price: number;
     /** Currency code shown with the price. */
@@ -125,7 +113,7 @@ function formatPrice({
  * ```astro
  * <PlanPurchaseButton
  *   client:load
- *   planId="plan_starter"
+ *   planSlug="owner-pro"
  *   price={1200}
  *   currency="ARS"
  *   ctaText="Contratar"
@@ -134,7 +122,7 @@ function formatPrice({
  * ```
  */
 export function PlanPurchaseButton({
-    planId,
+    planSlug,
     price,
     currency,
     ctaText,
@@ -179,7 +167,7 @@ export function PlanPurchaseButton({
         };
     }, [isAuthenticated]);
 
-    const isCurrentPlan = isAuthenticated && currentPlanSlug === planId;
+    const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
     /**
      * Handle button click.
@@ -204,32 +192,19 @@ export function PlanPurchaseButton({
         setLoading(true);
 
         try {
-            const url = `${getApiUrl()}/api/v1/protected/billing/checkout`;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ planId })
+            // The pricing grid currently only renders monthly prices; annual is
+            // gated on a future interval-selector (see ui-audit-2026.md §3).
+            const result = await billingApi.createCheckout({
+                planSlug,
+                billingInterval: 'monthly'
             });
 
-            const body: unknown = await response.json().catch(() => null);
-
-            if (!response.ok) {
+            if (!result.ok || !result.data.checkoutUrl) {
                 setError(errorText);
                 return;
             }
 
-            // Unwrap the standard API envelope: { success, data: CheckoutResponse }
-            const envelope = body as { data?: CheckoutResponse } | null;
-            const data = envelope?.data;
-
-            if (!data?.checkoutUrl) {
-                setError(errorText);
-                return;
-            }
-
-            window.location.href = data.checkoutUrl;
+            window.location.href = result.data.checkoutUrl;
         } catch {
             setError(errorText);
         } finally {
