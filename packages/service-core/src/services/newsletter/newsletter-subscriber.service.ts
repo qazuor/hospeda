@@ -109,6 +109,19 @@ const NO_OP_DISPATCHER: NewsletterNotificationDispatcher = {
     sendWelcome: async () => undefined
 };
 
+/**
+ * Coerces a value that may be a Date, an ISO/pg timestamp string, or nullish
+ * into `Date | null`. Drizzle's raw `db.execute(sql)` returns timestamptz
+ * columns as strings; we normalise here so service consumers can rely on the
+ * typed `Date | null` contract.
+ */
+const toDateOrNull = (value: string | Date | null | undefined): Date | null => {
+    if (value == null) return null;
+    if (value instanceof Date) return value;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+};
+
 // ---------------------------------------------------------------------------
 // Service options
 // ---------------------------------------------------------------------------
@@ -981,12 +994,18 @@ export class NewsletterSubscriberService extends BaseService {
                       AND deleted_at IS NULL
                     LIMIT 1
                 `);
+                // Drizzle's raw `db.execute(sql)` via node-postgres returns
+                // `timestamp with time zone` columns as STRINGS (raw pg format),
+                // not JS Date — the schema-based type parsers only run for the
+                // typed query builder. Annotate the cast accordingly and
+                // normalise to Date at this boundary so the public
+                // `GetStatusResult.subscribedAt: Date | null` contract holds.
                 const row = rows.rows[0] as
                     | {
                           status: string;
-                          subscribed_at: Date | null;
-                          verified_at: Date | null;
-                          deleted_at: Date | null;
+                          subscribed_at: string | Date | null;
+                          verified_at: string | Date | null;
+                          deleted_at: string | Date | null;
                       }
                     | undefined;
 
@@ -1003,8 +1022,8 @@ export class NewsletterSubscriberService extends BaseService {
                 return {
                     subscribed: status === NewsletterSubscriberStatusEnum.ACTIVE,
                     status,
-                    subscribedAt: row.subscribed_at ?? null,
-                    verifiedAt: row.verified_at ?? null
+                    subscribedAt: toDateOrNull(row.subscribed_at),
+                    verifiedAt: toDateOrNull(row.verified_at)
                 };
             }
         });

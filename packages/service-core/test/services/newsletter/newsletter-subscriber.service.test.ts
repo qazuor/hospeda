@@ -664,6 +664,38 @@ describe('NewsletterSubscriberService.getStatus', () => {
         expect(result.error?.code).toBe('FORBIDDEN');
         expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_NOT_SELF');
     });
+
+    // Regression: drizzle's raw `db.execute(sql)` via node-postgres returns
+    // `timestamp with time zone` columns as STRINGS (raw pg format), not Date.
+    // The service must normalise those strings into JS Date so the public
+    // `GetStatusResult.subscribedAt: Date | null` contract holds and the
+    // status route handler can safely call `.toISOString()` downstream
+    // without throwing "TypeError: ...toISOString is not a function" (500).
+    it('coerces string timestamps from the pg driver into JS Date objects', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        // Mimic the exact raw-pg format observed in dev:
+        //   '2026-05-20 06:08:09.805+00'
+        enqueueResponse([
+            {
+                status: 'active',
+                subscribed_at: '2026-05-20 06:08:09.805+00',
+                verified_at: '2026-05-20 06:10:00.000+00',
+                deleted_at: null
+            }
+        ]);
+
+        const result = await svc.getStatus(actor, USER_ID);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.subscribed).toBe(true);
+        expect(result.data?.subscribedAt).toBeInstanceOf(Date);
+        expect(result.data?.verifiedAt).toBeInstanceOf(Date);
+        // Round-trip through toISOString to lock the parse target.
+        expect(result.data?.subscribedAt?.toISOString()).toBe('2026-05-20T06:08:09.805Z');
+        expect(result.data?.verifiedAt?.toISOString()).toBe('2026-05-20T06:10:00.000Z');
+    });
 });
 
 // ===========================================================================
