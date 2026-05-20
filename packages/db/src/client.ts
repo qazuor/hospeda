@@ -76,6 +76,29 @@ export function setDb(client: DrizzleClient): void {
 }
 
 /**
+ * Reset the module-level database client to its initial uninitialized state.
+ *
+ * Intended for tests that need to swap the underlying connection pool between
+ * test files. In production the database is initialized exactly once at app
+ * startup and `initializeDb()` is a no-op on subsequent calls — calling
+ * `resetDb()` would defeat that guard and is not appropriate outside of test
+ * setup/teardown.
+ *
+ * Why this exists (SPEC-143 T-143-65): the e2e suite runs each file's
+ * `beforeAll` against a fresh `Pool` but the module-level `runtimeClient`
+ * singleton is preserved across files when vitest reuses the same Node fork
+ * (`singleFork: true`). Without a reset, the second file's
+ * `initializeDb(newPool)` short-circuits to the first file's already-closed
+ * client and every query fails with `Failed query`. Test setup calls
+ * `resetDb()` before `initializeDb()` to clear the stale reference; test
+ * teardown calls it after `pool.end()` so the next file starts from a clean
+ * slate.
+ */
+export function resetDb(): void {
+    runtimeClient = null;
+}
+
+/**
  * Returns the active database client.
  * Requires a prior call to initializeDb() (production) or setDb() (tests).
  *
@@ -105,6 +128,13 @@ export function getDb(): DrizzleClient {
  * Error handling preserves the original error type:
  * - `TransactionRollbackError` is re-thrown as-is (intentional rollback sentinel).
  * - `DbError` is re-thrown as-is (already wrapped with full context).
+ * - Framework-level HTTP errors (any error whose constructor name is
+ *   `HTTPException` — Hono's `HTTPException` class) are re-thrown as-is so
+ *   the framework can map them to the intended HTTP status. Without this,
+ *   route handlers that `throw new HTTPException(404, ...)` inside the
+ *   transaction callback see their error wrapped in `DbError` and the
+ *   response degrades to 500. Matched by `name` to avoid a circular
+ *   dependency between `@repo/db` and the API framework layer.
  * - Unknown errors are wrapped in a new `DbError`.
  *
  * @param callback - Function to execute within the transaction
@@ -145,6 +175,21 @@ export async function withTransaction<T>(
         return await db.transaction(callback);
     } catch (error) {
         if (error instanceof TransactionRollbackError || error instanceof DbError) {
+            throw error;
+        }
+        // Preserve framework-level HTTP errors via duck typing to avoid a
+        // hard dependency on the API framework from this DB-layer package.
+        // Hono's `HTTPException` exposes `getResponse(): Response` and a
+        // numeric `status` — this combination is unique enough to gate the
+        // passthrough without falsely matching unrelated errors.
+        // `name === 'HTTPException'` would NOT work: Hono's class does not
+        // set `this.name`, so it defaults to `"Error"` at runtime.
+        if (
+            error !== null &&
+            typeof error === 'object' &&
+            typeof (error as { getResponse?: unknown }).getResponse === 'function' &&
+            typeof (error as { status?: unknown }).status === 'number'
+        ) {
             throw error;
         }
         const cause = error instanceof Error ? error : new Error(String(error));

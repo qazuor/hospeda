@@ -568,8 +568,20 @@ export async function initiatePaidPlanUpgrade(
         );
     }
 
-    if (sub.planId === newPlanId) {
-        throw new SubscriptionCheckoutError('SAME_PLAN', 'Cannot upgrade to the same plan');
+    // SAME_PLAN is true ONLY when both the plan id AND the billing
+    // interval+count match the user's current subscription. Allowing the
+    // same plan with a different interval enables cycle change flows
+    // (monthly ↔ annual on the same tier) — see SPEC-143 T-143-61.
+    const currentInterval = sub.interval;
+    const currentIntervalCount = sub.intervalCount ?? 1;
+    const isSamePlan = sub.planId === newPlanId;
+    const isSameInterval =
+        currentInterval === billingInterval && currentIntervalCount === intervalCount;
+    if (isSamePlan && isSameInterval) {
+        throw new SubscriptionCheckoutError(
+            'SAME_PLAN',
+            'Cannot upgrade to the same plan with the same billing interval'
+        );
     }
 
     const [currentPlan, targetPlan] = await Promise.all([
@@ -590,22 +602,35 @@ export async function initiatePaidPlanUpgrade(
         );
     }
 
-    const matchesInterval = (p: {
+    const matchesInterval = (
+        wantedInterval: string,
+        wantedIntervalCount: number
+    ): ((p: {
         billingInterval: string;
         intervalCount?: number | null;
         active: boolean;
-    }) =>
-        p.active &&
-        p.billingInterval === billingInterval &&
-        (p.intervalCount ?? 1) === intervalCount;
+    }) => boolean) => {
+        return (p) =>
+            p.active &&
+            p.billingInterval === wantedInterval &&
+            (p.intervalCount ?? 1) === wantedIntervalCount;
+    };
 
-    const currentPrice = currentPlan.prices.find(matchesInterval);
-    const targetPrice = targetPlan.prices.find(matchesInterval);
+    // currentPrice MUST be resolved against the user's CURRENT
+    // subscription interval — otherwise cycle change flows compute a
+    // zero delta (same-plan annual current price === same-plan annual
+    // target price) and the upgrade flow rejects with NOT_AN_UPGRADE.
+    // The target price keeps using the REQUESTED interval since that
+    // is what the user will be billed for going forward.
+    const currentPrice = currentPlan.prices.find(
+        matchesInterval(currentInterval, currentIntervalCount)
+    );
+    const targetPrice = targetPlan.prices.find(matchesInterval(billingInterval, intervalCount));
 
     if (!currentPrice) {
         throw new SubscriptionCheckoutError(
             'NO_MATCHING_PRICE',
-            `Current plan has no active price for interval '${billingInterval}'/${intervalCount}`
+            `Current plan has no active price for the subscription's current interval '${currentInterval}'/${currentIntervalCount}`
         );
     }
     if (!targetPrice) {

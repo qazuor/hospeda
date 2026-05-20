@@ -30,6 +30,7 @@ import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
     SubscriptionCheckoutError,
     initiatePaidAnnualSubscription,
@@ -259,6 +260,13 @@ export const startPaidSubscriptionRoute = createCRUDRoute({
  * exact path so the three siblings coexist without conflict.
  */
 const startPaidRouter = createRouter();
+
+// Enforce X-Idempotency-Key on the mutating POST /start-paid endpoint
+// (SPEC-143 T-143-60). Mount BEFORE the route handler so the middleware
+// short-circuits missing-key requests with a 400 before the handler
+// touches MP. Scoped to /start-paid only — the polling status endpoint
+// (subscriptionStatusRouter) is a GET and does not need idempotency.
+startPaidRouter.use('/start-paid', idempotencyKeyMiddleware({ operation: 'hospeda.start_paid' }));
 
 startPaidRouter.route('/', startPaidSubscriptionRoute);
 

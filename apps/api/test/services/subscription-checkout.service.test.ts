@@ -911,6 +911,12 @@ interface UpgradeBillingMockOpts {
         planId: string;
         currentPeriodStart: Date;
         currentPeriodEnd: Date;
+        // interval + intervalCount surface the sub's current billing
+        // cycle to `initiatePaidPlanUpgrade`. They drive the currentPrice
+        // lookup (SPEC-143 T-143-61 — cycle change support). Mocks default
+        // to monthly when omitted; cycle-change tests override.
+        interval?: string;
+        intervalCount?: number;
     } | null;
     /** Current plan returned by billing.plans.get(sub.planId) */
     currentPlan?: { id: string; name: string; prices: unknown[] } | null;
@@ -931,7 +937,13 @@ function createUpgradeBillingMock(opts: UpgradeBillingMockOpts = {}) {
                   id: UPGRADE_SUB_ID,
                   planId: PLAN_ID,
                   currentPeriodStart: UPGRADE_PERIOD_START,
-                  currentPeriodEnd: UPGRADE_PERIOD_END
+                  currentPeriodEnd: UPGRADE_PERIOD_END,
+                  // Default to monthly so the matchesInterval helper at
+                  // initiatePaidPlanUpgrade resolves a currentPrice that
+                  // matches the monthly price defined on currentPlan.
+                  // Cycle-change scenarios override this explicitly.
+                  interval: 'month',
+                  intervalCount: 1
               }
             : opts.subscription;
 

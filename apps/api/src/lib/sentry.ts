@@ -107,8 +107,28 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
                 : // biome-ignore lint/suspicious/noExplicitAny: Sentry version mismatch between profiling-node and node packages
                   { integrations: [nodeProfilingIntegration()] as any }),
 
-            // Before send hook - filter sensitive data
+            // Before send hook - filter sensitive data + drop expected-error events.
+            //
+            // SPEC-143 T-143-47 introduced the `expected_error:true` tag
+            // convention for noise reduction. When any capture site (route,
+            // service, cron, webhook handler) attaches this tag, the event
+            // is dropped here before it reaches the Sentry quota and alert
+            // pipeline. Use this for errors that are a normal part of the
+            // domain — expired promo codes, revoked sponsorships, customer
+            // overrides past expiry — that the operator does NOT need to
+            // see in the alert stream. Pair with apiLogger.info or .warn
+            // so the events still appear in structured logs.
+            //
+            // Promo expired errors today do NOT reach Sentry (the service
+            // layer uses the Result pattern, see addon.checkout.ts
+            // `validation.valid === false` branch). The filter remains as
+            // defensive infrastructure for future capture sites.
             beforeSend(event, _hint) {
+                // Drop events explicitly tagged as expected.
+                if (event.tags && event.tags.expected_error === 'true') {
+                    return null;
+                }
+
                 // Remove sensitive data from breadcrumbs
                 if (event.breadcrumbs) {
                     event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {

@@ -209,10 +209,26 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 4. Check if user is trying to change to the same plan
-        if (activeSubscription.planId === newPlanId) {
+        // 4. Map the requested billing interval to QZPay's format so we
+        // can compare it against the user's current subscription interval.
+        // The "same plan AND same interval" check at step 4b below is the
+        // only true no-op — a same-plan + different-interval request is a
+        // legitimate cycle change flow (SPEC-143 T-143-61).
+        const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
+            mapBillingIntervalToQZPay(billingInterval);
+
+        // 4b. Reject ONLY when both the plan AND the interval+count
+        // match. Same-plan-same-interval would result in no observable
+        // change, so we surface it as a 400 with a clear message.
+        const currentIntervalAtSub = activeSubscription.interval;
+        const currentIntervalCountAtSub = activeSubscription.intervalCount ?? 1;
+        if (
+            activeSubscription.planId === newPlanId &&
+            currentIntervalAtSub === qzpayInterval &&
+            currentIntervalCountAtSub === qzpayIntervalCount
+        ) {
             throw new HTTPException(400, {
-                message: 'Cannot change to the same plan'
+                message: 'Cannot change to the same plan with the same billing interval'
             });
         }
 
@@ -226,10 +242,6 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         }
 
         // 6. Find the price matching the requested billing interval
-        // Map our enum to QZPay's interval format (includes intervalCount for quarterly/semi_annual)
-        const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
-            mapBillingIntervalToQZPay(billingInterval);
-
         const targetPrice = targetPlan.prices.find(
             (p) =>
                 p.billingInterval === qzpayInterval && (p.intervalCount ?? 1) === qzpayIntervalCount

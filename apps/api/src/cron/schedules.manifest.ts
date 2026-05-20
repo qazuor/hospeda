@@ -38,6 +38,12 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
+        name: 'abandoned-pending-subs',
+        schedule: '0 * * * *',
+        description:
+            'Marks subscriptions stuck in pending_provider/incomplete past the 30-minute TTL as abandoned.'
+    },
+    {
         name: 'addon-expiry',
         schedule: '0 5 * * *',
         description: 'Expire addons whose subscription term has ended.'
@@ -123,6 +129,11 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'trial-expiry',
         schedule: '0 2 * * *',
         description: 'Expire trial subscriptions whose period has ended.'
+    },
+    {
+        name: 'trial-pre-end-notif',
+        schedule: '0 13 * * *',
+        description: 'Daily reminder emails for trials ending in 1-3 days (D-3 and D-1 variants).'
     },
     {
         name: 'webhook-retry',

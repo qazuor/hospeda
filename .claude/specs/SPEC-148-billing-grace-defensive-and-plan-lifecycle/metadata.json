@@ -1,0 +1,20 @@
+{
+    "specId": "SPEC-148",
+    "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+    "type": "feat",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-20T00:00:00Z",
+    "discoveredDuring": "SPEC-143 T-143-63 reframe — original task description conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism. Both are orthogonal safety nets and warrant a dedicated spec.",
+    "tags": [
+        "billing",
+        "subscription",
+        "grace-period",
+        "plan-lifecycle",
+        "cron",
+        "infra-safety",
+        "admin"
+    ],
+    "effortEstimateHours": "12-24",
+    "firstAllocatedViaEngramProtocol": true
+}

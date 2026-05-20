@@ -619,8 +619,9 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT 1: probe BEFORE webhook activation. The sub is in
         // `pending_provider`, so loadEntitlements finds no active sub and
-        // returns an empty set with shouldCache=true; the empty set lands
-        // in the cache for this customer.
+        // returns the tourist-free fallback (SPEC-143 T-143-58) with
+        // shouldCache=true; the fallback set lands in the cache for this
+        // customer.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
         const preBody = (await preRes.json()) as {
@@ -628,8 +629,10 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toEqual([]);
-        expect(preBody.limits).toEqual({});
+        expect(new Set(preBody.entitlements)).toEqual(
+            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'can_view_recommendations'])
+        );
+        expect(preBody.limits).toEqual({ max_favorites: 3 });
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot the cache size so we can prove exactly one entry was

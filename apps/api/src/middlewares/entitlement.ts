@@ -15,7 +15,7 @@
  * @module middlewares/entitlement
  */
 
-import type { EntitlementKey, LimitKey } from '@repo/billing';
+import { type EntitlementKey, type LimitKey, getDefaultEntitlements } from '@repo/billing';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -134,11 +134,41 @@ interface LoadEntitlementsResult {
 }
 
 /**
+ * Build the default free-tier entitlement result (SPEC-143 T-143-58).
+ *
+ * Used when an authenticated customer has no active paid subscription —
+ * tourist-free is the documented default and every authenticated user is
+ * entitled to it. The result is `shouldCache: true` because it derives
+ * exclusively from static in-memory plan config; no customer-level data is
+ * read, so there is nothing to invalidate per-customer.
+ *
+ * @returns A LoadEntitlementsResult populated from {@link getDefaultEntitlements}.
+ */
+function buildDefaultEntitlementsResult(): LoadEntitlementsResult {
+    const fallback = getDefaultEntitlements();
+    return {
+        entitlements: new Set<EntitlementKey>(fallback.entitlements),
+        limits: new Map<LimitKey, number>(fallback.limits.map((l) => [l.key, l.value])),
+        shouldCache: true
+    };
+}
+
+/**
  * Load entitlements and limits for a billing customer.
  *
- * Fetches plan-level entitlements first, then attempts to merge customer-level
- * overrides. If the customer-level calls fail, returns plan-only data with
- * `shouldCache: false` so degraded results are never stored in cache.
+ * Three paths:
+ * 1. Active paid (or trialing) subscription → plan entitlements + customer
+ *    overrides merged on top.
+ * 2. No subscriptions or no active subscription → default free-tier
+ *    entitlements via {@link buildDefaultEntitlementsResult} (SPEC-143 T-143-58).
+ * 3. Active subscription pointing at a deleted plan → empty result; this is a
+ *    data-integrity error, NOT a missing-subscription case, so we deliberately
+ *    do NOT fall back to free-tier — empty trips the downstream `billingLoadFailed`
+ *    guard and surfaces the corruption instead of masking it.
+ *
+ * When merging customer-level overrides on path 1, if the customer-level calls
+ * fail the function returns plan-only data with `shouldCache: false` so degraded
+ * results are never stored in cache.
  *
  * @param customerId - The QZPay customer ID
  * @returns Entitlements, limits, and cache flag, or null if billing unavailable
@@ -155,12 +185,10 @@ async function loadEntitlements(customerId: string): Promise<LoadEntitlementsRes
         const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
         if (!subscriptions || subscriptions.length === 0) {
-            // No subscription - return empty entitlements
-            return {
-                entitlements: new Set<EntitlementKey>(),
-                limits: new Map<LimitKey, number>(),
-                shouldCache: true
-            };
+            // No subscription at all — fall back to the default free-tier
+            // entitlements (SPEC-143 T-143-58). Tourist-free is the documented
+            // default for any authenticated user without a paid subscription.
+            return buildDefaultEntitlementsResult();
         }
 
         // Find active subscription (there should only be one)
@@ -169,12 +197,11 @@ async function loadEntitlements(customerId: string): Promise<LoadEntitlementsRes
         );
 
         if (!activeSubscription) {
-            // No active subscription - return empty entitlements
-            return {
-                entitlements: new Set<EntitlementKey>(),
-                limits: new Map<LimitKey, number>(),
-                shouldCache: true
-            };
+            // Only cancelled / past_due / paused subscriptions — fall back to
+            // the default free-tier entitlements. Same rationale as the
+            // no-subscriptions branch above: the user is authenticated and
+            // entitled to the free baseline.
+            return buildDefaultEntitlementsResult();
         }
 
         // Get the plan for this subscription

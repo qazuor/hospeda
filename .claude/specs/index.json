@@ -1395,6 +1395,89 @@
             "discoveredDuring": "2026-05-18 staging Sentry health check after SPEC-140 PR #1146 verification",
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["sentry", "monitoring", "observability", "web", "admin"]
+        },
+        {
+            "specId": "SPEC-147",
+            "title": "User self-service subscription cancellation",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-147-user-self-service-subscription-cancellation",
+            "created": "2026-05-19T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-27 — user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses soft-cancel branch of qzpay-core",
+            "dependsOn": ["SPEC-143", "SPEC-109"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "subscription",
+                "user-facing",
+                "lifecycle",
+                "mp-preapproval",
+                "cron"
+            ]
+        },
+        {
+            "specId": "SPEC-148",
+            "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "created": "2026-05-20T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-63 reframe — original task scope conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism",
+            "dependsOn": ["SPEC-143"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "subscription",
+                "grace-period",
+                "plan-lifecycle",
+                "cron",
+                "infra-safety",
+                "admin"
+            ]
+        },
+        {
+            "specId": "SPEC-149",
+            "title": "Billing provider error propagation + Sentry context + retry policy",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
+            "created": "2026-05-20T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer",
+            "dependsOn": ["SPEC-143"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "errors",
+                "sentry",
+                "observability",
+                "qzpay",
+                "refactor",
+                "user-facing"
+            ]
+        },
+        {
+            "specId": "SPEC-150",
+            "title": "Billing multi-currency support: per-customer locale, multi-currency plan prices, FX fallback, addon currency match",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-150-billing-multi-currency-support",
+            "created": "2026-05-20T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-62 reframe — multi-currency price selection is aspirational. billing_customers has no currency/locale, billing_plans has single-currency price columns, checkout never branches on customer currency, exchange_rates table exists but is decorative wrt checkout, addon currency mismatch is not validated",
+            "dependsOn": ["SPEC-143"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "multi-currency",
+                "i18n",
+                "fx",
+                "exchange-rates",
+                "feature",
+                "schema-change"
+            ]
         }
     ]
 }
