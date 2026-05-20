@@ -20,6 +20,7 @@ import {
     NewsletterCampaignLocaleFilterEnum,
     NewsletterCampaignStatusEnum,
     NewsletterChannelEnum,
+    NewsletterContentTypeEnum,
     NewsletterDeliveryStatusEnum,
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
@@ -124,6 +125,11 @@ export const NewsletterCampaignStatusPgEnum = pgEnum(
 export const NewsletterChannelPgEnum = pgEnum(
     'newsletter_channel_enum',
     enumToTuple(NewsletterChannelEnum)
+);
+
+export const NewsletterContentTypePgEnum = pgEnum(
+    'newsletter_content_type_enum',
+    enumToTuple(NewsletterContentTypeEnum)
 );
 
 export const NewsletterDeliveryStatusPgEnum = pgEnum(

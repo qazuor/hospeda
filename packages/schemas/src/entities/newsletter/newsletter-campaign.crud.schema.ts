@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { NewsletterCampaignLocaleFilterEnum } from '../../enums/newsletter-campaign-locale-filter.enum.js';
 import { NewsletterCampaignLocaleFilterEnumSchema } from '../../enums/newsletter-campaign-locale-filter.schema.js';
+import { NewsletterContentTypeEnumSchema } from '../../enums/newsletter-content-type.schema.js';
 import { TiptapDocumentSchema } from './newsletter-campaign.schema.js';
 
 // ============================================================================
@@ -53,7 +54,16 @@ export const CreateNewsletterCampaignSchema = z
         /** Audience locale filter for dispatch. Defaults to `'all'`. */
         localeFilter: NewsletterCampaignLocaleFilterEnumSchema.default(
             NewsletterCampaignLocaleFilterEnum.ALL
-        )
+        ),
+
+        /**
+         * Audience content-type filter for dispatch (optional).
+         *
+         * When omitted or `null`, the campaign goes to every active subscriber
+         * matching the locale filter (legacy behavior). When set, only
+         * subscribers with `preferences[contentType] = true` are eligible.
+         */
+        contentType: NewsletterContentTypeEnumSchema.nullable().optional()
     })
     .strict();
 
@@ -96,7 +106,13 @@ export const UpdateNewsletterCampaignSchema = z
         bodyJson: TiptapDocumentSchema,
 
         /** Updated audience locale filter. */
-        localeFilter: NewsletterCampaignLocaleFilterEnumSchema
+        localeFilter: NewsletterCampaignLocaleFilterEnumSchema,
+
+        /**
+         * Updated audience content-type filter. `null` clears segmentation;
+         * a `NewsletterContentTypeEnum` value enables it.
+         */
+        contentType: NewsletterContentTypeEnumSchema.nullable()
     })
     .partial()
     .strict();
