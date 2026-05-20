@@ -41,7 +41,7 @@ export interface StepBasicProps {
     readonly errors: Partial<Record<keyof StepBasicData, string>>;
     /** When true, renders email and name inputs (user not authenticated) */
     readonly showContactFields: boolean;
-    /** Called when user clicks "Agregar mas detalles" */
+    /** Called when user clicks "Agregar más detalles" */
     readonly onGoToStep2: () => void;
     /** Called when user clicks "Enviar" */
     readonly onSubmit: () => void;

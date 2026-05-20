@@ -272,6 +272,25 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                     try {
                         const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
+                            // Dev/test convenience: when no mailer is configured
+                            // there is no realistic way for the user to verify
+                            // their email via UI. Auto-flip emailVerified=true
+                            // so the rest of the flow (sign-in, profile guard,
+                            // protected routes) stays exercisable locally.
+                            // Production environments MUST set the env var and
+                            // never reach this branch.
+                            if (env.NODE_ENV !== 'production') {
+                                const db = getDb();
+                                await db
+                                    .update(users)
+                                    .set({ emailVerified: true })
+                                    .where(eq(users.id, user.id));
+                                logger.warn(
+                                    { userId: user.id, env: env.NODE_ENV },
+                                    'HOSPEDA_EMAIL_API_KEY not set - auto-verified user in non-prod env'
+                                );
+                                return;
+                            }
                             logger.warn(
                                 { userId: user.id },
                                 'HOSPEDA_EMAIL_API_KEY not set - skipping verification email'

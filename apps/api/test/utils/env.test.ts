@@ -100,7 +100,7 @@ describe('Environment Configuration', () => {
             // Rate Limiting Configuration
             expect(envModule.env.API_RATE_LIMIT_ENABLED).toBe(true); // Default value (middleware ignores in tests)
             expect(envModule.env.API_RATE_LIMIT_WINDOW_MS).toBe(900000);
-            expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(100);
+            expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(500);
             expect(envModule.env.API_RATE_LIMIT_KEY_GENERATOR).toBe('user');
             expect(envModule.env.API_RATE_LIMIT_SKIP).toBe('none');
             expect(envModule.env.API_RATE_LIMIT_HEADERS).toBe('standard');

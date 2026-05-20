@@ -5,6 +5,7 @@
  * Supports optional `archivedByGuest` filter and `page`/`pageSize` pagination.
  */
 
+import { AccommodationModel } from '@repo/db';
 import { GuestInboxQuerySchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
@@ -17,6 +18,8 @@ import {
     createPaginatedResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+
+const accommodationModel = new AccommodationModel();
 
 const router = createRouter();
 
@@ -61,7 +64,8 @@ router.get('/', async (c) => {
                 userId: actor.id,
                 page: query.page,
                 pageSize: query.pageSize,
-                archivedByGuest: query.archivedByGuest
+                archivedByGuest: query.archivedByGuest,
+                accommodationId: query.accommodationId
             }
         );
 
@@ -82,7 +86,38 @@ router.get('/', async (c) => {
             total: result.data.total
         });
 
-        return createPaginatedResponse(result.data.items as unknown[], pagination, c);
+        // Enrich each item with the accommodation name + slug so the UI can
+        // render "Hotel X" + a working link without a second round trip.
+        // The service intentionally returns raw rows so admin tooling stays
+        // cheap; the inbox view is where the human-friendly fields belong.
+        const itemsRaw = (result.data.items ?? []) as Array<{
+            accommodationId: string;
+            [k: string]: unknown;
+        }>;
+        const accommodationIds = [
+            ...new Set(itemsRaw.map((item) => item.accommodationId).filter(Boolean))
+        ];
+        const accommodationsById = new Map<string, { name?: string; slug?: string }>();
+        for (const id of accommodationIds) {
+            const row = await accommodationModel.findById(id);
+            if (row) {
+                accommodationsById.set(id, {
+                    name: (row as { name?: string }).name,
+                    slug: (row as { slug?: string }).slug
+                });
+            }
+        }
+
+        const items = itemsRaw.map((item) => {
+            const acc = accommodationsById.get(item.accommodationId);
+            return {
+                ...item,
+                accommodationName: acc?.name ?? null,
+                accommodationSlug: acc?.slug ?? null
+            };
+        });
+
+        return createPaginatedResponse(items as unknown[], pagination, c);
     } catch (error) {
         return handleRouteError(error, c);
     }

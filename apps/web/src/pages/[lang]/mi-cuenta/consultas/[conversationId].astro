@@ -1,8 +1,8 @@
 ---
 /**
- * @file mi-cuenta/messages/[conversationId].astro
+ * @file mi-cuenta/consultas/[conversationId].astro
  * @description Authenticated guest conversation thread page.
- * @route /{lang}/mi-cuenta/messages/{conversationId}/
+ * @route /{lang}/mi-cuenta/consultas/{conversationId}/
  * @rendering SSR (on-demand, auth-protected)
  */
 
@@ -28,10 +28,14 @@ if (!conversationId) return new Response(null, { status: 404 });
 
 // Cursor from URL for older message pagination
 const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
+// Forward the session cookie so the protected endpoint can resolve the actor;
+// without this the SSR fetch arrives anonymous and the thread fails to load.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const result = await protectedConversationsApi.getThread({
     id: conversationId,
     cursor,
-    limit: 50
+    limit: 50,
+    cookieHeader
 });
 
 if (!result.ok) {
@@ -80,7 +84,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
 >
     <div class="conv-thread">
         <div class="conv-thread__header">
-            <a href={buildUrl({ locale, path: 'mi-cuenta/messages' })} class="conv-thread__back">
+            <a href={buildUrl({ locale, path: 'mi-cuenta/consultas' })} class="conv-thread__back">
                 &larr;
             </a>
             <h1 class="conv-thread__title">{pageTitle}</h1>
@@ -90,7 +94,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
         {olderCursor && (
             <div class="conv-thread__load-older">
                 <a
-                    href={buildUrl({ locale, path: `mi-cuenta/messages/${conversationId}` }) +
+                    href={buildUrl({ locale, path: `mi-cuenta/consultas/${conversationId}` }) +
                         `?cursor=${encodeURIComponent(olderCursor)}`}
                     class="conv-thread__older-link"
                 >

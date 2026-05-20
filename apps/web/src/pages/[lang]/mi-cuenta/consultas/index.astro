@@ -1,8 +1,8 @@
 ---
 /**
- * @file mi-cuenta/messages/index.astro
+ * @file mi-cuenta/consultas/index.astro
  * @description Authenticated guest inbox — lists all conversations sorted by last activity.
- * @route /{lang}/mi-cuenta/messages/
+ * @route /{lang}/mi-cuenta/consultas/
  * @rendering SSR (on-demand, auth-protected)
  */
 
@@ -28,7 +28,11 @@ const pageParam = Astro.url.searchParams.get('page');
 const page = Math.max(1, parseInt(pageParam ?? '1', 10));
 const pageSize = 20;
 
-const result = await protectedConversationsApi.list({ page, pageSize });
+// Forward the session cookie so the protected endpoint can resolve the
+// authenticated actor; without this the SSR fetch arrives anonymous and the
+// page silently renders the empty inbox.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await protectedConversationsApi.list({ page, pageSize, cookieHeader });
 
 const conversations = result.ok ? result.data.items : [];
 const pagination = result.ok ? result.data.pagination : null;
@@ -55,7 +59,7 @@ function formatDate(dateStr: string): string {
         ) : (
             <ul class="messages-inbox__list" role="list">
                 {conversations.map((conv) => {
-                    const threadUrl = buildUrl({ locale, path: `mi-cuenta/messages/${conv.id}` });
+                    const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas/${conv.id}` });
                     const excerpt = conv.lastMessageExcerpt
                         ? conv.lastMessageExcerpt.slice(0, 200)
                         : '';
@@ -99,7 +103,7 @@ function formatDate(dateStr: string): string {
             <nav class="messages-inbox__pagination" aria-label="Pagination">
                 {page > 1 && (
                     <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/messages' }) + `?page=${page - 1}`}
+                        href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page - 1}`}
                         class="messages-inbox__page-link"
                     >
                         &larr;
@@ -110,7 +114,7 @@ function formatDate(dateStr: string): string {
                 </span>
                 {page < pagination.totalPages && (
                     <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/messages' }) + `?page=${page + 1}`}
+                        href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page + 1}`}
                         class="messages-inbox__page-link"
                     >
                         &rarr;

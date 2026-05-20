@@ -512,6 +512,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
 
             {collectionPicker && (
                 <CollectionPickerPopover
+                    anchorRef={buttonRef}
                     bookmarkId={collectionPicker.bookmarkId}
                     collections={collectionPicker.collections}
                     locale={locale}

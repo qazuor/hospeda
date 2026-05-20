@@ -101,15 +101,19 @@ const isEmpty = properties.length === 0;
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
-    <!-- Page header -->
+    <!-- Page header. The header CTA is hidden in the empty state to avoid
+         showing two stacked "Publicar ahora" buttons — the empty-state
+         illustration already owns the primary call to action. -->
     <div class="props-page__header">
         <div class="props-page__heading">
             <h2 class="props-page__title">{title}</h2>
             <p class="props-page__subtitle">{subtitle}</p>
         </div>
-        <a href={publishNewUrl} class="props-page__cta-btn">
-            {emptyCta}
-        </a>
+        {!isEmpty && !fetchError && (
+            <a href={publishNewUrl} class="props-page__cta-btn">
+                {t('host.properties.list.publishAnother', 'Publicar otra')}
+            </a>
+        )}
     </div>
 
     {fetchError ? (

@@ -197,7 +197,7 @@ function EmptyReviews({ title, description, ctaLabel, ctaHref }: EmptyReviewsPro
  * Read-only in beta — no inline edit or delete.
  */
 export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
     const [reviews, setReviews] = useState<ReviewItem[]>([]);
@@ -288,7 +288,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     return (
         <div className={styles.root}>
             <p className={styles.sectionTitle}>
-                {t('account.reviews.total', 'Total')}: {reviews.length}
+                {tPlural('account.reviews.total', reviews.length, { count: reviews.length })}
             </p>
 
             {/* ── Review cards ────────────────────────────────────────── */}
@@ -334,6 +334,9 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                             </span>
                         </div>
                     </div>
+
+                    {/* Review title (user-supplied) */}
+                    {review.title && <h4 className={styles.reviewTitle}>{review.title}</h4>}
 
                     {/* Review text */}
                     {review.content && <p className={styles.reviewText}>{review.content}</p>}

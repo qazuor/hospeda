@@ -91,9 +91,14 @@ const result = await userBookmarkCollectionsApi.getById({
 	cookieHeader
 });
 
+// Treat 404 (collection doesn't exist) and 400 (id is not a valid UUID, i.e.
+// someone hit a manually-typed URL) the same way: redirect to the favorites
+// listing. We only render the error state below for 5xx or other unexpected
+// failures the user can actually retry.
 if (!result.ok) {
-	if (result.error.status === 404) {
-		webLogger.warn('[coleccion-detail] collection not found, redirecting', { id });
+	const status = result.error.status;
+	if (status === 404 || status === 400) {
+		webLogger.warn('[coleccion-detail] collection unavailable, redirecting', { id, status });
 		return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
 	}
 	webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
@@ -232,21 +237,25 @@ const apiBase = getApiUrl();
 	</nav>
 
 	<!-- ------------------------------------------------------------------ -->
-	<!-- Error state                                                          -->
+	<!-- Error state — only reached on 5xx or other unexpected failures.    -->
+	<!-- 404 / 400 are handled by the early redirect above.                  -->
 	<!-- ------------------------------------------------------------------ -->
 	{
-		!result.ok && result.error.status !== 404 && (
-			<div class="coleccion-error" role="alert">
-				<p class="coleccion-error__message">
+		!result.ok && (
+			<section class="coleccion-error" aria-labelledby="coleccion-error-title">
+				<h1 id="coleccion-error-title" class="coleccion-error__title">
+					{t('account.favorites.collections.errorTitle', 'No pudimos cargar la colección')}
+				</h1>
+				<p class="coleccion-error__message" role="alert">
 					{t(
 						'account.favorites.collections.fetchError',
-						'No se pudo cargar la colección. Intentá de nuevo más tarde.'
+						'Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.'
 					)}
 				</p>
 				<a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="coleccion-error__back">
-					{t('common.back', 'Volver')}
+					{t('account.favorites.collections.backToList', 'Volver a mis favoritos')}
 				</a>
-			</div>
+			</section>
 		)
 	}
 
@@ -557,10 +566,19 @@ const apiBase = getApiUrl();
 		text-align: center;
 	}
 
+	.coleccion-error__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-2) 0;
+		line-height: 1.2;
+	}
+
 	.coleccion-error__message {
 		font-family: var(--font-sans);
 		color: var(--core-muted-foreground);
-		margin-bottom: var(--space-4);
+		margin: 0 0 var(--space-4) 0;
 	}
 
 	.coleccion-error__back {

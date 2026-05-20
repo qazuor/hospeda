@@ -187,6 +187,7 @@
     },
     "favorites": {
         "tabs": {
+            "all": "Todos",
             "accommodation": "Acomodações",
             "destination": "Destinos",
             "event": "Eventos",
@@ -208,7 +209,9 @@
             "removing": "Removendo...",
             "removeError": "Erro ao remover favorito da coleção",
             "removeConfirm": "Remover este favorito da coleção? Continuará salvo nos seus favoritos.",
-            "fetchError": "Não foi possível carregar a coleção. Tente novamente mais tarde.",
+            "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
+            "errorTitle": "Não conseguimos carregar a coleção",
+            "backToList": "Voltar para meus favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -291,7 +294,8 @@
         "ratingEditLabel": "Avaliação",
         "saving": "Salvando...",
         "deleting": "Excluindo...",
-        "total": "Total: {{count}} avaliações",
+        "total_one": "Total: {{count}} avaliação",
+        "total_other": "Total: {{count}} avaliações",
         "typeAccommodation": "Acomodação",
         "typeDestination": "Destino",
         "errors": {

@@ -8,6 +8,7 @@
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { translateApiError } from '@/lib/api-errors';
 import { forgetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -64,8 +65,14 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
 
             if (result.error) {
                 setError(
-                    result.error.message ??
-                        t('auth.forgotPassword.error', 'Error al enviar el correo de recuperación')
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
+                            'auth.forgotPassword.error',
+                            'Error al enviar el correo de recuperación'
+                        )
+                    })
                 );
             } else {
                 setIsSent(true);

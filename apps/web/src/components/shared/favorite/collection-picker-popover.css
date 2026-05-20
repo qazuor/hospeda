@@ -1,0 +1,190 @@
+/**
+ * collection-picker-popover.css
+ *
+ * Styles for the CollectionPickerPopover React island. Rendered via Portal to
+ * <body> with `position: fixed`. Inline JS sets `top`/`left` from the trigger's
+ * bounding rect. `overflow: visible` is required so the arrow (positioned
+ * outside the box) is not clipped.
+ *
+ * Why this is a plain `.css` file (not `.module.css`):
+ * --------------------------------------------------
+ * CSS Modules for React islands that mount CONDITIONALLY are vulnerable to
+ * Astro's ClientRouter head-merge: the dynamically-injected `<style>` tag for
+ * the module can be stripped when the user navigates away and comes back. The
+ * JS module stays cached so the CSS injection code does not re-run, leaving
+ * the popover unstyled on the second visit (renders as a full-width block in
+ * the body, invisibly off-screen). Moving the styles to a plain stylesheet
+ * imported eagerly from `BaseLayout.astro` makes them part of the page's main
+ * `<link>`ed CSS, which Astro preserves across navigations.
+ *
+ * Class names are manually scoped with the `collection-picker__` prefix
+ * (BEM-lite) to avoid collisions, since automatic scoping is no longer
+ * provided by CSS Modules.
+ */
+
+.collection-picker {
+    position: fixed;
+    z-index: 1000;
+    width: min(17.5rem, calc(100vw - 16px));
+    background-color: var(--surface-elevated);
+    border: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-radius: var(--radius-md, 10px);
+    box-shadow: 0 10px 28px -8px oklch(from var(--core-foreground) l c h / 0.25), 0 4px 10px -4px
+        oklch(from var(--core-foreground) l c h / 0.15);
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.collection-picker--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.collection-picker[data-placement="bottom"].collection-picker--hidden {
+    transform: translateY(-0.25rem) scale(0.97);
+}
+.collection-picker[data-placement="top"].collection-picker--hidden {
+    transform: translateY(0.25rem) scale(0.97);
+}
+
+.collection-picker--visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* ---- Arrow ---- */
+
+.collection-picker__arrow {
+    position: absolute;
+    width: 0.75rem;
+    height: 0.75rem;
+    transform: translateX(-50%) rotate(45deg);
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    pointer-events: none;
+}
+
+.collection-picker[data-placement="bottom"] .collection-picker__arrow {
+    top: -0.375rem;
+    border-top: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-left: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+}
+
+.collection-picker[data-placement="top"] .collection-picker__arrow {
+    bottom: -0.375rem;
+    background-color: var(--surface-elevated);
+    border-bottom: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-right: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+}
+
+/* ---- Header strip ---- */
+
+.collection-picker__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 8px);
+    padding: 0.625rem 0.75rem;
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    border-bottom: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-top-left-radius: var(--radius-md, 10px);
+    border-top-right-radius: var(--radius-md, 10px);
+}
+
+.collection-picker__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.collection-picker__close-btn {
+    background: transparent;
+    border: none;
+    color: var(--brand-primary);
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+    font-size: 1.125rem;
+    border-radius: var(--radius-button, 8px);
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.collection-picker__close-btn:hover {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+}
+
+.collection-picker__close-btn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ---- Collections list ---- */
+
+.collection-picker__list {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.collection-picker__chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    width: 100%;
+    padding: var(--space-2, 8px);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease, border-color
+        var(--duration-fast, 0.15s) ease;
+}
+
+.collection-picker__chip:hover:not(:disabled) {
+    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    border-color: oklch(from var(--brand-primary) l c h / 0.2);
+}
+
+.collection-picker__chip:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.collection-picker__chip:disabled {
+    opacity: 0.5;
+    cursor: progress;
+}
+
+.collection-picker__color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: var(--brand-primary);
+    box-shadow: 0 0 0 1px oklch(from var(--core-foreground) l c h / 0.1);
+}
+
+.collection-picker__chip-name {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.collection-picker__chip-count {
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    flex-shrink: 0;
+}

@@ -8,6 +8,7 @@
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { translateApiError } from '@/lib/api-errors';
 import { resetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -79,8 +80,14 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
 
             if (result.error) {
                 setError(
-                    result.error.message ??
-                        t('auth.resetPassword.error', 'No se pudo restablecer la contraseña')
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
+                            'auth.resetPassword.error',
+                            'No se pudo restablecer la contraseña'
+                        )
+                    })
                 );
             } else {
                 setIsComplete(true);

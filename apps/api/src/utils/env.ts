@@ -186,10 +186,17 @@ export const ApiEnvBaseSchema = z.object({
     API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
     API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
-    // Rate Limiting - global
+    // Rate Limiting - global "general" tier (catch-all for non-auth/admin/public/billing/webhook).
+    //
+    // This is the tier that covers `/api/v1/protected/*` (authenticated user routes — favorites,
+    // collections, preferences, profile reads, etc.). A typical /mi-cuenta visit fires 3–6 API
+    // calls just to render one page (SSR + island hydration + counters), so the previous default
+    // of 100 / 15 min (≈6.7 req/min average) tripped 429 well below normal interactive use.
+    // Bumped to 500 / 15 min (≈33 req/min) which comfortably absorbs human navigation while
+    // still leaving headroom over the public tier ceiling.
     API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
     API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
-    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(500),
     API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
     /**
      * Which response classes to exclude from rate-limit counting.

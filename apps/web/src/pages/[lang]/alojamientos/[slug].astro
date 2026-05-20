@@ -21,6 +21,7 @@ import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
+import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/accommodation/LocationSection.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
@@ -29,6 +30,7 @@ import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
+import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -215,6 +217,28 @@ const currentUser = Astro.locals.user
           email: (Astro.locals.user as { email?: string | null }).email ?? null
       }
     : null;
+
+// --- Review eligibility: only allow leaving a review if the visitor has
+// already initiated a conversation with this property's host. Acts as a
+// lightweight "has the visitor actually engaged with this property?" check
+// — strong enough to block drive-by reviews, weak enough to not require
+// a verified stay/booking workflow we don't have yet.
+let canLeaveReview = false;
+if (isAuthenticated) {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+        const convResult = await protectedConversationsApi.list({
+            accommodationId: accommodation.id,
+            pageSize: 1,
+            cookieHeader
+        });
+        canLeaveReview = convResult.ok && (convResult.data.items?.length ?? 0) > 0;
+    } catch {
+        // Fail-closed: any error reading the inbox means we hide the form
+        // rather than risk surfacing it to someone who shouldn't see it.
+        canLeaveReview = false;
+    }
+}
 
 // --- Bookmark count + favorite status (graceful degradation, never blocks render) ---
 let bookmarkCount: number | undefined;
@@ -476,6 +500,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     initialMessage={prefilledMessage}
                 />
             </OwnerCard>
+            {isAuthenticated && (
+                <ReviewSidebarCard
+                    client:visible
+                    accommodationId={accommodation.id}
+                    accommodationName={accommodation.name}
+                    canLeaveReview={canLeaveReview}
+                    locale={locale}
+                    apiUrl={getApiUrl()}
+                />
+            )}
         </div>
     </Fragment>
 </DetailLayout>

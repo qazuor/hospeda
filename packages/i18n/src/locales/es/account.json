@@ -187,6 +187,7 @@
     },
     "favorites": {
         "tabs": {
+            "all": "Todos",
             "accommodation": "Alojamientos",
             "destination": "Destinos",
             "event": "Eventos",
@@ -208,7 +209,9 @@
             "removing": "Quitando...",
             "removeError": "Error al quitar el favorito de la colección",
             "removeConfirm": "¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.",
-            "fetchError": "No se pudo cargar la colección. Intentá de nuevo más tarde.",
+            "fetchError": "Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.",
+            "errorTitle": "No pudimos cargar la colección",
+            "backToList": "Volver a mis favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -291,7 +294,8 @@
         "ratingEditLabel": "Puntuación",
         "saving": "Guardando...",
         "deleting": "Eliminando...",
-        "total": "Total: {{count}} reseñas",
+        "total_one": "Total: {{count}} reseña",
+        "total_other": "Total: {{count}} reseñas",
         "typeAccommodation": "Alojamiento",
         "typeDestination": "Destino",
         "errors": {

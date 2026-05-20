@@ -288,7 +288,7 @@ function buildMenuItems({
         {
             id: 'messages',
             label: texts.items.messages,
-            href: buildUrl({ locale, path: 'mi-cuenta/messages' }),
+            href: buildUrl({ locale, path: 'mi-cuenta/consultas' }),
             icon: ChatIcon
         },
         {

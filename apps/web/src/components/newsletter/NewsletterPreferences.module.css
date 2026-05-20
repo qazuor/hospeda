@@ -136,11 +136,8 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition:
-        background-color var(--duration-fast) ease,
-        color var(--duration-fast) ease,
-        transform var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+        transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .primaryButton {

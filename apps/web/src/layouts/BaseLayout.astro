@@ -41,6 +41,13 @@ import '@repo/feedback/styles.css';
 // and lift the FAB above the ScrollToTop button. Loaded after the package CSS
 // so the override selectors win without needing higher specificity.
 import '@/styles/feedback-overrides.css';
+// Static stylesheet for the inline CollectionPickerPopover React island.
+// Imported here (not as a CSS Module co-located with the island) so the styles
+// are bundled into the page's main stylesheet and survive ClientRouter swaps.
+// A CSS Module would be dynamically injected by Vite and dropped on head-merge,
+// leaving the popover unstyled (full-width block, invisibly off-screen) after
+// the user navigates away and back.
+import '@/components/shared/favorite/collection-picker-popover.css';
 
 interface Props {
 	readonly locale: SupportedLocale;

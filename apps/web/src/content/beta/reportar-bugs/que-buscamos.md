@@ -65,7 +65,7 @@ Si algo que figura como "tiene que funcionar" no funciona, **es error (bug)**. S
 
 - Desde el detalle de un alojamiento mandás un mensaje al propietario.
 - Si no tenés cuenta, te mandamos un email con un enlace para abrir la conversación.
-- Si tenés cuenta, la conversación queda en tu **bandeja de mensajes** (`/mi-cuenta/messages/`).
+- Si tenés cuenta, la conversación queda en tu **bandeja de mensajes** (`/mi-cuenta/consultas/`).
 - Ves el **historial completo** y respondés.
 
 #### Reseñas
@@ -112,7 +112,7 @@ Además de todo lo de turista:
 
 #### Mensajes recibidos
 
-- Cuando un turista te escribe, te llega a tu **bandeja** (`/mi-cuenta/messages/`).
+- Cuando un turista te escribe, te llega a tu **bandeja** (`/mi-cuenta/consultas/`).
 - Ves la conversación, el huésped, el alojamiento, el estado.
 - **Respondés** y la conversación queda en historial.
 - Tenés acciones disponibles: archivar, bloquear, cerrar, reabrir, eliminar conversación.

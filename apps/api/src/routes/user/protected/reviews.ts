@@ -1,8 +1,11 @@
 /**
  * User reviews endpoint.
  * Returns paginated reviews by the authenticated user (accommodation + destination combined).
+ * Each review is enriched with the parent entity's `name` and `slug` so the
+ * web UI can render the entity link without a second round trip.
  * @route GET /api/v1/protected/users/me/reviews
  */
+import { AccommodationModel, DestinationModel } from '@repo/db';
 import { AccommodationReviewListItemSchema, DestinationReviewListItemSchema } from '@repo/schemas';
 import {
     AccommodationReviewService,
@@ -18,11 +21,25 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationReviewService = new AccommodationReviewService({ logger: apiLogger });
 const destinationReviewService = new DestinationReviewService({ logger: apiLogger });
+const accommodationModel = new AccommodationModel();
+const destinationModel = new DestinationModel();
 
-/** Response schema for combined user reviews */
+/** Response schema for combined user reviews. Items extend the base review
+ * list-item schemas with the parent entity's display name + slug so the UI
+ * can show "Hotel X" instead of an undefined entity label. */
 const UserReviewsResponseSchema = z.object({
-    accommodationReviews: z.array(AccommodationReviewListItemSchema),
-    destinationReviews: z.array(DestinationReviewListItemSchema),
+    accommodationReviews: z.array(
+        AccommodationReviewListItemSchema.extend({
+            accommodationName: z.string().nullable().optional(),
+            accommodationSlug: z.string().nullable().optional()
+        })
+    ),
+    destinationReviews: z.array(
+        DestinationReviewListItemSchema.extend({
+            destinationName: z.string().nullable().optional(),
+            destinationSlug: z.string().nullable().optional()
+        })
+    ),
     totals: z.object({
         accommodationReviews: z.number(),
         destinationReviews: z.number(),
@@ -90,12 +107,72 @@ export const userReviewsRoute = createProtectedRoute({
             throw new ServiceError(destResult.error.code, destResult.error.message);
         }
 
-        const accommodationReviews = accResult.data?.accommodationReviews ?? [];
+        const accommodationReviewsRaw = (accResult.data?.accommodationReviews ?? []) as Array<{
+            accommodationId: string;
+            [k: string]: unknown;
+        }>;
         const accTotal = accResult.data?.total ?? 0;
 
         const destData = destResult.data as { data: unknown[]; pagination: { total: number } };
-        const destinationReviews = destData?.data ?? [];
+        const destinationReviewsRaw = (destData?.data ?? []) as Array<{
+            destinationId: string;
+            [k: string]: unknown;
+        }>;
         const destTotal = destData?.pagination?.total ?? 0;
+
+        // Enrich each review with its parent entity's name + slug. Done as
+        // a batch lookup (one query per distinct id set) so the response is
+        // self-contained for the UI; the underlying services intentionally
+        // return raw rows so admin tooling stays cheap.
+        const accommodationIds = [
+            ...new Set(accommodationReviewsRaw.map((r) => r.accommodationId).filter(Boolean))
+        ];
+        const destinationIds = [
+            ...new Set(destinationReviewsRaw.map((r) => r.destinationId).filter(Boolean))
+        ];
+        const [accommodationsById, destinationsById] = await Promise.all([
+            accommodationIds.length > 0
+                ? (async () => {
+                      const map = new Map<string, { name?: string; slug?: string }>();
+                      for (const id of accommodationIds) {
+                          const row = await accommodationModel.findById(id);
+                          if (row) {
+                              map.set(id, {
+                                  name: (row as { name?: string }).name,
+                                  slug: (row as { slug?: string }).slug
+                              });
+                          }
+                      }
+                      return map;
+                  })()
+                : Promise.resolve(new Map<string, { name?: string; slug?: string }>()),
+            destinationIds.length > 0
+                ? (async () => {
+                      const map = new Map<string, { name?: string; slug?: string }>();
+                      for (const id of destinationIds) {
+                          const row = await destinationModel.findById(id);
+                          if (row) {
+                              map.set(id, {
+                                  name: (row as { name?: string }).name,
+                                  slug: (row as { slug?: string }).slug
+                              });
+                          }
+                      }
+                      return map;
+                  })()
+                : Promise.resolve(new Map<string, { name?: string; slug?: string }>())
+        ]);
+
+        const accommodationReviews = accommodationReviewsRaw.map((r) => ({
+            ...r,
+            accommodationName: accommodationsById.get(r.accommodationId)?.name ?? null,
+            accommodationSlug: accommodationsById.get(r.accommodationId)?.slug ?? null
+        }));
+        const destinationReviews = destinationReviewsRaw.map((r) => ({
+            ...r,
+            destinationName: destinationsById.get(r.destinationId)?.name ?? null,
+            destinationSlug: destinationsById.get(r.destinationId)?.slug ?? null
+        }));
 
         return {
             accommodationReviews,

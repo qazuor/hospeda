@@ -20,6 +20,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -90,8 +91,15 @@ interface ApiResponse<T> {
  */
 async function uploadAvatarFile({
     file,
-    base
-}: { readonly file: File; readonly base: string }): Promise<string> {
+    base,
+    locale,
+    fallbackMessage
+}: {
+    readonly file: File;
+    readonly base: string;
+    readonly locale?: SupportedLocale;
+    readonly fallbackMessage: string;
+}): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -102,19 +110,19 @@ async function uploadAvatarFile({
     });
 
     if (!res.ok) {
-        let msg = 'Error al subir la imagen';
+        let apiError: { code?: string; message?: string } | undefined;
         try {
             const body = (await res.json()) as ApiResponse<unknown>;
-            if (body.error?.message) msg = body.error.message;
+            if (body.error) apiError = body.error;
         } catch {
-            // ignore
+            // ignore — keep apiError undefined; helper will use fallback
         }
-        throw new Error(msg);
+        throw new Error(translateApiError({ error: apiError, locale, fallback: fallbackMessage }));
     }
 
     const body = (await res.json()) as ApiResponse<{ url: string }>;
     const url = body.data?.url;
-    if (!url) throw new Error('Respuesta inesperada del servidor al subir imagen');
+    if (!url) throw new Error(fallbackMessage);
     return url;
 }
 
@@ -291,7 +299,15 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             if (avatarFile) {
                 setAvatarUploading(true);
                 try {
-                    const uploaded = await uploadAvatarFile({ file: avatarFile, base });
+                    const uploaded = await uploadAvatarFile({
+                        file: avatarFile,
+                        base,
+                        locale,
+                        fallbackMessage: t(
+                            'account.avatar.errors.uploadFailed',
+                            'No se pudo subir la imagen. Probá de nuevo.'
+                        )
+                    });
                     finalAvatarUrl = uploaded;
                     setAvatarUrl(uploaded);
                     if (previewUrl) {
@@ -411,16 +427,22 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             });
 
             if (!res.ok) {
-                let msg = t(
+                const localizedFallback = t(
                     'account.editProfile.errors.saveFailed',
                     'No se pudo guardar el perfil'
                 );
+                let apiError: { code?: string; message?: string } | undefined;
                 try {
                     const body = (await res.json()) as ApiResponse<unknown>;
-                    if (body.error?.message) msg = body.error.message;
+                    if (body.error) apiError = body.error;
                 } catch {
-                    // ignore
+                    // ignore — keep apiError undefined; helper will use fallback
                 }
+                const msg = translateApiError({
+                    error: apiError,
+                    t,
+                    fallback: localizedFallback
+                });
                 setFormError(msg);
                 addToast({ type: 'error', message: msg });
                 return;

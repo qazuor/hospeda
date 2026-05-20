@@ -81,7 +81,15 @@ export const GuestInboxQuerySchema = z.object({
      *
      * Coerced from string (`"true"` / `"false"`) for URL query param support.
      */
-    archivedByGuest: z.coerce.boolean().optional()
+    archivedByGuest: z.coerce.boolean().optional(),
+
+    /**
+     * When set, return only conversations attached to this accommodation.
+     * Used by the accommodation detail page to decide whether the visitor
+     * has already contacted the host (and is therefore eligible to leave
+     * a review). Omitted = no filter.
+     */
+    accommodationId: z.string().uuid().optional()
 });
 
 /** TypeScript type inferred from {@link GuestInboxQuerySchema}. */

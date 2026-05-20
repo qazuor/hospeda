@@ -153,11 +153,17 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
      */
     async listByUserId(
         userId: string,
-        options: { page: number; pageSize: number; archivedByGuest?: boolean },
+        options: {
+            page: number;
+            pageSize: number;
+            archivedByGuest?: boolean;
+            /** Optional accommodation filter — narrows the result set to a single property. */
+            accommodationId?: string;
+        },
         tx?: DrizzleClient
     ): Promise<{ items: SelectConversation[]; total: number }> {
         const db = this.getClient(tx);
-        const { page, pageSize, archivedByGuest } = options;
+        const { page, pageSize, archivedByGuest, accommodationId } = options;
         const ctx = { userId, ...options };
 
         try {
@@ -167,6 +173,9 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
             ];
             if (archivedByGuest !== undefined) {
                 conditions.push(eq(conversations.archivedByGuest, archivedByGuest));
+            }
+            if (accommodationId) {
+                conditions.push(eq(conversations.accommodationId, accommodationId));
             }
             const where = and(...conditions);
             const offset = (page - 1) * pageSize;

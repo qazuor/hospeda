@@ -6,12 +6,12 @@
  * the anti-enumeration pattern (404 instead of 403).
  *
  * Routes registered here:
- *   GET  /unread-count              — inbox badge count
- *   GET  /                          — paginated guest inbox
- *   GET  /:id                       — conversation thread
- *   POST /                          — initiate or resume a conversation
- *   POST /:id/messages              — reply to an existing conversation
- *   PATCH /:id/archive              — toggle archived state
+ *   GET   /unread-count              — inbox badge count
+ *   GET   /                          — paginated guest inbox
+ *   GET   /:id                       — conversation thread
+ *   POST  /initiate                  — initiate or resume a conversation
+ *   POST  /:id/messages              — reply to an existing conversation
+ *   PATCH /:id/archive               — toggle archived state
  */
 
 import { createRouter } from '../../../utils/create-app';
@@ -30,8 +30,11 @@ app.route('/', unreadCountProtectedConversationRoute);
 // Paginated inbox list
 app.route('/', listProtectedConversationsRoute);
 
-// Initiate / resume a conversation
-app.route('/', initiateProtectedConversationRoute);
+// Initiate / resume a conversation. Mounted under `/initiate` to mirror the
+// public tier (`POST /api/v1/public/conversations/initiate`) — without this
+// prefix the route would sit on `POST /` and the web client (which posts to
+// `.../conversations/initiate` in both tiers) would get a 404.
+app.route('/initiate', initiateProtectedConversationRoute);
 
 // Conversation thread (GET /:id)
 app.route('/', threadProtectedConversationRoute);
