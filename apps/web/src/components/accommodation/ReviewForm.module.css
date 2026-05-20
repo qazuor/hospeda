@@ -1,40 +1,104 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * Review form on the accommodation detail page.
+ * Visual goals: professional, restrained, with deliberate focus/hover states
+ * and a clear rating affordance. No gradients on the surface itself (only on
+ * the accent header badge) so the form sits cleanly in the existing layout.
+ * ────────────────────────────────────────────────────────────────────────── */
+
 .wrapper {
+    position: relative;
     background-color: var(--core-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: var(--space-6, 24px);
+    border-radius: var(--radius-card, 24px);
+    padding: clamp(20px, 3vw, 32px);
     margin-top: var(--space-6, 24px);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--brand-primary),
+        var(--brand-accent)
+    );
+}
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-5, 20px);
+}
+
+.headerBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(
+        135deg,
+        var(--brand-primary),
+        var(--brand-accent)
+    );
+    color: var(--primary-foreground, #fff);
+    box-shadow: 0 4px 12px oklch(from var(--brand-accent) l c h / 0.25);
 }
 
 .heading {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: clamp(1.125rem, 1.6vw, 1.375rem);
     color: var(--core-foreground);
-    margin: 0 0 var(--space-2, 8px) 0;
+    margin: 0 0 var(--space-1, 4px) 0;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
 }
 
 .subheading {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     color: var(--core-muted-foreground);
-    margin: 0 0 var(--space-4, 16px) 0;
+    margin: 0;
+    line-height: 1.5;
 }
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
 
 .form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4, 16px);
+    gap: var(--space-5, 20px);
 }
 
 .fieldset {
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    padding: var(--space-4, 16px);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-5, 20px);
     margin: 0;
+    background-color: var(--core-background);
+    transition: border-color var(--duration-normal, 0.3s) ease;
+}
+
+.fieldset:focus-within {
+    border-color: oklch(from var(--brand-primary) l c h / 0.4);
+}
+
+.fieldsetHeader {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 12px);
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px) var(--space-3, 12px);
+    margin-bottom: var(--space-4, 16px);
 }
 
 .legend {
@@ -42,20 +106,74 @@
     font-weight: 600;
     font-size: 0.9375rem;
     color: var(--core-foreground);
-    padding: 0 var(--space-2, 8px);
+    padding: 0;
+    margin: 0;
+}
+
+.fieldsetHelp {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.averagePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+    color: var(--brand-accent);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.averagePill strong {
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.averagePillCount {
+    color: var(--core-muted-foreground);
+    font-weight: 500;
+}
+
+/* ── Rating grid ───────────────────────────────────────────────────────── */
+
+.ratingGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 12px);
 }
 
 .ratingRow {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(120px, 1.2fr) auto minmax(70px, 1fr);
     align-items: center;
     gap: var(--space-3, 12px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border-radius: var(--radius-md, 10px);
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.ratingRow:hover,
+.ratingRow:focus-within {
+    background-color: oklch(from var(--brand-primary) l c h / 0.04);
+}
+
+.ratingRowSet .ratingLabel {
+    color: var(--core-foreground);
+    font-weight: 600;
 }
 
 .ratingLabel {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
-    color: var(--core-foreground);
+    color: var(--core-muted-foreground);
+    transition: color var(--duration-fast, 0.15s) ease, font-weight var(--duration-fast, 0.15s) ease;
 }
 
 .starGroup {
@@ -67,22 +185,22 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
+    width: 36px;
+    height: 36px;
+    padding: 4px;
     background: transparent;
     border: none;
-    color: var(--core-muted-foreground);
-    font-size: 1.5rem;
-    line-height: 1;
+    color: oklch(from var(--core-muted-foreground) l c h / 0.4);
     cursor: pointer;
     border-radius: var(--radius-md, 10px);
-    transition: color var(--duration-fast, 0.15s) ease, transform var(--duration-fast, 0.15s) ease;
+    transition:
+        color var(--duration-fast, 0.15s) ease,
+        transform var(--duration-fast, 0.15s) ease,
+        background-color var(--duration-fast, 0.15s) ease;
 }
 
 .starButton:hover {
-    transform: scale(1.1);
-    color: var(--brand-accent);
+    transform: scale(1.12);
 }
 
 .starButton:focus-visible {
@@ -94,17 +212,56 @@
     color: var(--brand-accent);
 }
 
+.starButtonHover {
+    color: var(--brand-accent);
+}
+
+.ratingHint {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    text-align: right;
+    font-style: italic;
+    transition: color var(--duration-fast, 0.15s) ease;
+}
+
+.ratingHintSet {
+    color: var(--brand-accent);
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* ── Text fields ───────────────────────────────────────────────────────── */
+
+.fieldsRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
 .field {
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
+    position: relative;
 }
 
 .fieldLabel {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 8px);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--core-foreground);
+}
+
+.fieldOptional {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .input,
@@ -115,46 +272,118 @@
     background-color: var(--core-background);
     border: 1px solid var(--border);
     border-radius: var(--radius-md, 10px);
-    padding: var(--space-2, 8px) var(--space-3, 12px);
+    padding: var(--space-3, 12px);
     width: 100%;
     box-sizing: border-box;
+    transition:
+        border-color var(--duration-fast, 0.15s) ease,
+        box-shadow var(--duration-fast, 0.15s) ease;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+    color: oklch(from var(--core-muted-foreground) l c h / 0.7);
+}
+
+.input:hover:not(:focus):not(:disabled),
+.textarea:hover:not(:focus):not(:disabled) {
+    border-color: oklch(from var(--core-foreground) l c h / 0.25);
 }
 
 .input:focus,
 .textarea:focus {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
 }
 
 .textarea {
     resize: vertical;
-    min-height: 96px;
+    min-height: 120px;
+    line-height: 1.5;
+}
+
+.charCounter {
+    position: absolute;
+    bottom: var(--space-2, 8px);
+    right: var(--space-3, 12px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    pointer-events: none;
+}
+
+.field:has(.input) .charCounter {
+    bottom: auto;
+    top: 0;
+    right: 0;
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
 }
 
 .submitButton {
-    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2, 8px);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.9375rem;
-    color: var(--accent-foreground);
-    background-color: var(--brand-accent);
+    color: var(--accent-foreground, #fff);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
     border: none;
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
+    border-radius: var(--radius-button, 10px);
+    padding: var(--space-3, 12px) var(--space-6, 24px);
     cursor: pointer;
-    transition: opacity var(--duration-fast, 0.15s) ease;
+    transition:
+        transform var(--duration-fast, 0.15s) ease,
+        box-shadow var(--duration-fast, 0.15s) ease,
+        filter var(--duration-fast, 0.15s) ease;
+    box-shadow: 0 4px 12px oklch(from var(--brand-accent) l c h / 0.25);
 }
 
 .submitButton:hover:not(:disabled) {
-    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px oklch(from var(--brand-accent) l c h / 0.35);
+}
+
+.submitButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
 }
 
 .submitButton:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    box-shadow: none;
+    filter: grayscale(0.3);
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid oklch(from var(--accent-foreground, #fff) l c h / 0.35);
+    border-top-color: var(--accent-foreground, #fff);
+    border-radius: 50%;
+    animation: review-form-spin 0.7s linear infinite;
+}
+
+@keyframes review-form-spin {
+    to { transform: rotate(360deg); }
 }
 
 .helpText {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     color: var(--core-muted-foreground);
@@ -168,14 +397,90 @@
     background-color: oklch(from var(--brand-accent) l c h / 0.08);
     border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
     border-radius: var(--radius-md, 10px);
-    padding: var(--space-2, 8px) var(--space-3, 12px);
+    padding: var(--space-3, 12px);
     margin: 0;
 }
 
+/* ── Success state ─────────────────────────────────────────────────────── */
+
+.successWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: var(--space-8, 32px);
+    text-align: center;
+    animation: review-form-fade-in 0.4s ease-out;
+}
+
+@keyframes review-form-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.successBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    color: var(--accent-foreground, #fff);
+    box-shadow: 0 8px 20px oklch(from var(--brand-accent) l c h / 0.35);
+    animation: review-form-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes review-form-pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
 .successMessage {
-    font-family: var(--font-sans);
-    font-size: 1rem;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
     color: var(--core-foreground);
     margin: 0;
-    text-align: center;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+@media (min-width: 640px) {
+    .ratingGrid {
+        gap: var(--space-2, 8px);
+    }
+    .fieldsRow {
+        flex-direction: row;
+    }
+    .field {
+        flex: 1 1 0;
+    }
+}
+
+@media (max-width: 540px) {
+    .ratingRow {
+        grid-template-columns: 1fr;
+        gap: var(--space-1, 4px);
+        text-align: left;
+    }
+    .ratingHint {
+        text-align: left;
+    }
+    .starButton {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .starButton,
+    .submitButton,
+    .successBadge,
+    .successWrapper,
+    .spinner {
+        animation: none !important;
+        transition: none !important;
+    }
 }
