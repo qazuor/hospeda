@@ -133,8 +133,13 @@
 }
 
 /* Diagonal "Nuevo" status corner (top-left) — same geometry as
- * AccommodationCard.astro (80×80 triangle, 14px font). */
+ * AccommodationCard.astro (80×80 triangle, 14px font). `--corner-bg` and
+ * `--corner-text` are set per card by the JSX inline style; the defaults
+ * here register the names with the css-tokens lint pass and provide a sane
+ * fallback if the inline style is omitted. */
 .cardStatusCorner {
+    --corner-bg: var(--brand-accent);
+    --corner-text: var(--accent-foreground);
     position: absolute;
     top: 0;
     left: 0;

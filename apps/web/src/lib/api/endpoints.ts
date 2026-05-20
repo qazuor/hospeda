@@ -127,6 +127,12 @@ export const accommodationsApi = {
         bboxEast?: number;
         /** SPEC-097 — viewport bbox (left edge longitude). */
         bboxWest?: number;
+        /** Geo radius — latitude of the search center (decimal degrees). */
+        latitude?: number;
+        /** Geo radius — longitude of the search center (decimal degrees). */
+        longitude?: number;
+        /** Geo radius — radius in kilometers around (latitude, longitude). */
+        radius?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
     },

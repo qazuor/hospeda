@@ -95,6 +95,18 @@ const featuresParam = url.searchParams.get('features') ?? undefined;
 const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
 const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
 
+// Geo radius (composite filter) — the backend haversine clause needs the
+// full triplet; missing or non-numeric values are silently ignored, matching
+// the model-layer guard.
+const latitudeRaw = url.searchParams.get('latitude');
+const longitudeRaw = url.searchParams.get('longitude');
+const radiusRaw = url.searchParams.get('radius');
+const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
+const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
+const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
+const hasGeoRadius =
+	Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+
 // --- Hero search context (NOT sent to API; used for disclaimer + handoff to detail) ---
 // These params arrive from the home hero search bar. The listing does not
 // filter by them; they are surfaced in the disclaimer banner and forwarded
@@ -155,6 +167,9 @@ const result = await accommodationsApi.list({
 	hasPool,
 	hasParking,
 	allowsPets,
+	latitude: hasGeoRadius ? latitude : undefined,
+	longitude: hasGeoRadius ? longitude : undefined,
+	radius: hasGeoRadius ? radius : undefined,
 });
 
 const hasError = !result.ok;
@@ -294,6 +309,32 @@ const filterGroups: FilterGroup[] = [
 		type: 'select-search',
 		options: destinations.map((d) => ({ value: d.id, label: d.name })),
 		maxVisible: 8,
+	},
+	{
+		id: 'location',
+		label: t('accommodations.sidebar.geoRadius', 'Cerca de'),
+		type: 'geo-radius',
+		// Build the anchor list from destinations that ship explicit lat/long
+		// coordinates. Strings are parsed once here (the schema stores them as
+		// strings) so the runtime payload is plain numbers.
+		destinationOptions: destinations
+			.map((d) => {
+				const coords = d.location?.coordinates;
+				const lat = coords ? Number.parseFloat(coords.lat) : Number.NaN;
+				const long = coords ? Number.parseFloat(coords.long) : Number.NaN;
+				if (!Number.isFinite(lat) || !Number.isFinite(long)) return null;
+				return { value: d.id, label: d.name, lat, long };
+			})
+			.filter((opt): opt is { value: string; label: string; lat: number; long: number } => opt !== null),
+		radiusPresets: [5, 10, 25, 50, 100],
+		defaultCollapsed: true,
+		destinationModeLabel: t('accommodations.sidebar.geoRadius.destinationMode', 'Un destino'),
+		browserModeLabel: t('accommodations.sidebar.geoRadius.browserMode', 'Mi ubicación'),
+		destinationPlaceholder: t('accommodations.sidebar.geoRadius.destinationPlaceholder', 'Elegí un destino'),
+		browserCtaLabel: t('accommodations.sidebar.geoRadius.browserCta', 'Usar mi ubicación'),
+		browserPendingLabel: t('accommodations.sidebar.geoRadius.browserPending', 'Detectando…'),
+		browserErrorLabel: t('accommodations.sidebar.geoRadius.browserError', 'No pudimos detectar tu ubicación. Revisá los permisos del navegador.'),
+		radiusUnitLabel: t('accommodations.sidebar.geoRadius.radiusUnit', 'km'),
 	},
 	{
 		id: 'section-type',
@@ -503,6 +544,11 @@ if (hasWifi) initialParams.hasWifi = 'true';
 if (hasPool) initialParams.hasPool = 'true';
 if (hasParking) initialParams.hasParking = 'true';
 if (allowsPets) initialParams.allowsPets = 'true';
+if (hasGeoRadius) {
+	initialParams.latitude = String(latitude);
+	initialParams.longitude = String(longitude);
+	initialParams.radius = String(radius);
+}
 
 // ---------------------------------------------------------------------------
 // Empty state recovery: removable filter chips + secondary suggestions.

@@ -178,6 +178,10 @@
 
     /* --- Layout (runtime tokens overridden by JS) --- */
     --navbar-height: 80px;
+    /* Published by the mobile fullscreen-map script in alojamientos/mapa.astro
+     * after measuring the compact wave header. The 77px fallback keeps layout
+     * sane on first paint before measurement. */
+    --wave-bar-compact: 77px;
     --cookie-banner-height: 0px;
     /* Semantic alias consumed by every fixed-bottom UI element (FABs, floating
      * toggles, sheet triggers) so they lift above any bottom-anchored global

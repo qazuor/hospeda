@@ -27,4 +27,7 @@ export type { DateRangeFilterConfig } from './DateRangeFilter';
 export { PriceCompositeFilter } from './PriceCompositeFilter';
 export type { PriceCompositeFilterConfig } from './filter.types';
 
+export { GeoRadiusFilter } from './GeoRadiusFilter';
+export type { GeoRadiusFilterConfig, GeoRadiusState } from './filter.types';
+
 export { FilterGroupContent } from './FilterGroupContent';
