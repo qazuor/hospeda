@@ -622,8 +622,14 @@ export const postsApi = {
         category?: string;
         /** Filter posts by author UUID */
         authorId?: string;
-        /** Filter posts by destination UUID (used by detail pages for "related posts"). */
+        /** Filter posts by destination UUID (mapped server-side to `relatedDestinationId`). */
         destinationId?: string;
+        /** Filter to featured posts only. */
+        isFeatured?: boolean;
+        /** Lower bound on `publishedAt` (ISO datetime). */
+        publishedAfter?: string;
+        /** Upper bound on `publishedAt` (ISO datetime). */
+        publishedBefore?: string;
         /**
          * Filter posts by PostTag UUID(s).
          * Pass a single UUID or a comma-separated list.
