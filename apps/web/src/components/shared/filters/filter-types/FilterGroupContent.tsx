@@ -7,6 +7,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveIcon } from '@repo/icons';
 import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
@@ -238,22 +239,47 @@ export function FilterGroupContent({
 
     if (group.type === 'icon-chips') {
         const iconChipsConfig = group as IconChipsFilterConfig;
+        const priorityOptions = iconChipsConfig.priorityOptions;
         return (
-            <IconChipsFilter
-                config={iconChipsConfig}
-                value={state.selections[group.id] ?? []}
-                onChange={(selected) => {
-                    const current = state.selections[group.id] ?? [];
-                    const toToggle = [
-                        ...selected.filter((v) => !current.includes(v)),
-                        ...current.filter((v) => !selected.includes(v))
-                    ];
-                    for (const v of toToggle) {
-                        dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
-                    }
-                }}
-                locale={locale}
-            />
+            <div className={styles.iconChipsWrapper}>
+                {priorityOptions && priorityOptions.length > 0 && (
+                    <fieldset
+                        className={styles.priorityChipsRow}
+                        aria-label={`${iconChipsConfig.label} — destacados`}
+                    >
+                        {priorityOptions.map((opt) => (
+                            <PriorityChipButton
+                                key={opt.value}
+                                label={opt.label}
+                                icon={opt.icon}
+                                isActive={state.toggles[opt.value] === true}
+                                onToggle={() =>
+                                    dispatch({
+                                        type: 'SET_TOGGLE',
+                                        groupId: opt.value,
+                                        value: !state.toggles[opt.value]
+                                    })
+                                }
+                            />
+                        ))}
+                    </fieldset>
+                )}
+                <IconChipsFilter
+                    config={iconChipsConfig}
+                    value={state.selections[group.id] ?? []}
+                    onChange={(selected) => {
+                        const current = state.selections[group.id] ?? [];
+                        const toToggle = [
+                            ...selected.filter((v) => !current.includes(v)),
+                            ...current.filter((v) => !selected.includes(v))
+                        ];
+                        for (const v of toToggle) {
+                            dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
+                        }
+                    }}
+                    locale={locale}
+                />
+            </div>
         );
     }
 
@@ -358,4 +384,42 @@ export function FilterGroupContent({
     }
 
     return null;
+}
+
+/**
+ * Standalone chip rendered above the regular icon-chips list for a "priority"
+ * (boolean shortcut) option. Same visual language as the normal chips but
+ * with a stronger active state so users perceive these as the marquee
+ * quick-filters of the group (e.g. "WiFi", "Pileta", "Estacionamiento").
+ */
+interface PriorityChipButtonProps {
+    readonly label: string;
+    readonly icon?: string;
+    readonly isActive: boolean;
+    readonly onToggle: () => void;
+}
+
+function PriorityChipButton({ label, icon, isActive, onToggle }: PriorityChipButtonProps) {
+    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    return (
+        <button
+            type="button"
+            className={cn(styles.priorityChip, isActive && styles.priorityChipActive)}
+            aria-pressed={isActive}
+            onClick={onToggle}
+        >
+            {IconComponent && (
+                <span
+                    className={styles.priorityChipIcon}
+                    aria-hidden="true"
+                >
+                    <IconComponent
+                        size={14}
+                        weight="duotone"
+                    />
+                </span>
+            )}
+            {label}
+        </button>
+    );
 }

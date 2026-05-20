@@ -32,6 +32,42 @@ export interface IconChipsFilterConfig {
      * Key = category display name, values = option value strings.
      */
     readonly categories?: Readonly<Record<string, readonly string[]>>;
+    /**
+     * Optional highlighted chips rendered ABOVE the regular options. Each one
+     * emits a boolean toggle URL param (its `value` field) — independent from
+     * the multi-select state of the main `options` list.
+     *
+     * Used for "quick filter" shortcuts such as `hasWifi` / `hasPool` /
+     * `hasParking` / `allowsPets` on the accommodations listing, which the
+     * API resolves server-side into the canonical amenity-id set for each
+     * toggle (including slug variants).
+     */
+    readonly priorityOptions?: readonly {
+        /** URL boolean param name. Becomes `?<value>=true` when active. */
+        readonly value: string;
+        readonly label: string;
+        readonly icon?: string;
+    }[];
+}
+
+/**
+ * Decorative entry that breaks the sidebar into labelled sections. Renders as
+ * a small-caps header (with optional icon) above the next group of filters.
+ *
+ * When `filters` contains at least one section-header, the sidebar switches
+ * from the legacy "inline toggles first, then collapsibles" layout to a
+ * strictly-declaration-order render so each group lands under its intended
+ * header. Listings that don't declare any section-header keep the legacy
+ * order — no migration required for events / posts.
+ */
+export interface SectionHeaderConfig {
+    /** Stable id for keys + a11y. Not used as a URL param. */
+    readonly id: string;
+    readonly type: 'section-header';
+    /** Display text (will be uppercased in CSS). */
+    readonly label: string;
+    /** Optional `@repo/icons` name to render on the left of the label. */
+    readonly icon?: string;
 }
 
 interface SearchFilterGroup {
@@ -108,7 +144,8 @@ export type FilterGroup =
     | SelectSearchFilterConfig
     | IconChipsFilterConfig
     | DateRangeFilterConfig
-    | PriceCompositeFilterConfig;
+    | PriceCompositeFilterConfig
+    | SectionHeaderConfig;
 
 /** Shared reducer state shape. */
 export interface FilterState {
@@ -137,7 +174,17 @@ export type FilterAction =
     | { type: 'SET_TOGGLE'; groupId: string; value: boolean }
     | { type: 'SET_DATE_RANGE'; groupId: string; from: string; to: string }
     | { type: 'REMOVE_FILTER'; groupId: string; value: string }
-    | { type: 'CLEAR_GROUP'; groupId: string }
+    | {
+          type: 'CLEAR_GROUP';
+          groupId: string;
+          /**
+           * Optional additional toggle keys to reset alongside the group's
+           * own state. Used by icon-chips with `priorityOptions` to clear the
+           * independent boolean toggles (e.g. `hasWifi`, `hasPool`) when the
+           * user hits the per-group "× reset" button.
+           */
+          extraToggleKeys?: readonly string[];
+      }
     | { type: 'CLEAR_ALL' };
 
 /** Dispatch function type for the filter reducer. */

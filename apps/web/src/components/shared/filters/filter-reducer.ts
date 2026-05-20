@@ -66,6 +66,10 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
         case 'CLEAR_GROUP': {
             const { [action.groupId]: _removed, ...restRanges } = state.ranges;
             const { [action.groupId]: _removedDate, ...restDates } = state.dates;
+            const extraReset: Record<string, boolean> = {};
+            for (const key of action.extraToggleKeys ?? []) {
+                extraReset[key] = false;
+            }
             return {
                 ...state,
                 selections: { ...state.selections, [action.groupId]: [] },
@@ -78,7 +82,8 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                     // not a price-composite. `includeUnpriced` resets to its
                     // default of TRUE so the URL drops the param.
                     [`${action.groupId}_isFree`]: false,
-                    [`${action.groupId}_includeUnpriced`]: true
+                    [`${action.groupId}_includeUnpriced`]: true,
+                    ...extraReset
                 },
                 ranges: restRanges,
                 dates: restDates
@@ -114,13 +119,15 @@ export function getStepperDefault(group: FilterGroup): number {
  * Returns true when the given group has any active selection in the current state.
  */
 export function groupHasActiveSelection(group: FilterGroup, state: FilterState): boolean {
-    if (
-        group.type === 'checkbox' ||
-        group.type === 'radio' ||
-        group.type === 'select-search' ||
-        group.type === 'icon-chips'
-    ) {
+    if (group.type === 'section-header') return false;
+    if (group.type === 'checkbox' || group.type === 'radio' || group.type === 'select-search') {
         return (state.selections[group.id] ?? []).length > 0;
+    }
+    if (group.type === 'icon-chips') {
+        const hasSelections = (state.selections[group.id] ?? []).length > 0;
+        const hasPriorityActive =
+            group.priorityOptions?.some((p) => state.toggles[p.value] === true) ?? false;
+        return hasSelections || hasPriorityActive;
     }
     if (group.type === 'stepper') {
         const def = getStepperDefault(group);
@@ -179,14 +186,16 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
  * the dot/tint that already signal "this group is active".
  */
 export function groupActiveCount(group: FilterGroup, state: FilterState): number | null {
-    if (
-        group.type === 'checkbox' ||
-        group.type === 'radio' ||
-        group.type === 'select-search' ||
-        group.type === 'icon-chips'
-    ) {
+    if (group.type === 'checkbox' || group.type === 'radio' || group.type === 'select-search') {
         const count = (state.selections[group.id] ?? []).length;
         return count > 0 ? count : null;
+    }
+    if (group.type === 'icon-chips') {
+        const selectionsCount = (state.selections[group.id] ?? []).length;
+        const priorityCount =
+            group.priorityOptions?.filter((p) => state.toggles[p.value] === true).length ?? 0;
+        const total = selectionsCount + priorityCount;
+        return total > 0 ? total : null;
     }
     return null;
 }
@@ -203,11 +212,14 @@ export function computeInitialCollapsed({
     readonly state: FilterState;
 }): Record<string, boolean> {
     const result: Record<string, boolean> = {};
-    let isFirst = true;
+    let isFirstCollapsible = true;
     for (const group of filters) {
+        // Section headers don't have collapsed state — skip them so they
+        // don't burn the "expand the first group" allowance either.
+        if (group.type === 'section-header') continue;
         const hasActive = groupHasActiveSelection(group, state);
-        result[group.id] = !(hasActive || isFirst);
-        isFirst = false;
+        result[group.id] = !(hasActive || isFirstCollapsible);
+        isFirstCollapsible = false;
     }
     return result;
 }
@@ -235,6 +247,7 @@ export function initStateFromParams({
     const sort = params.sortBy ?? defaultSort;
 
     for (const group of filters) {
+        if (group.type === 'section-header') continue;
         if (
             group.type === 'checkbox' ||
             group.type === 'radio' ||
@@ -243,6 +256,14 @@ export function initStateFromParams({
         ) {
             const val = params[group.id];
             if (val) selections[group.id] = val.split(',');
+        }
+        if (group.type === 'icon-chips' && group.priorityOptions) {
+            // Priority chips emit independent boolean toggle params
+            // (e.g. `hasWifi=true`, `hasPool=true`). Each chip's `value`
+            // IS the URL param name.
+            for (const opt of group.priorityOptions) {
+                if (params[opt.value] === 'true') toggles[opt.value] = true;
+            }
         }
         if (group.type === 'dual-range') {
             const cap = group.id.charAt(0).toUpperCase() + group.id.slice(1);
@@ -316,6 +337,16 @@ export function buildParamsFromState({
         if (range.max) params.set(`max${cap}`, range.max);
     }
     for (const group of filters) {
+        if (group.type === 'section-header') continue;
+        if (group.type === 'icon-chips' && group.priorityOptions) {
+            // Emit each priority chip as `?<value>=true` when active. Absent
+            // means the server treats it as off — no need to emit `false`.
+            for (const opt of group.priorityOptions) {
+                if (state.toggles[opt.value] === true) {
+                    params.set(opt.value, 'true');
+                }
+            }
+        }
         if (group.type === 'stepper' || group.type === 'stars') {
             const def = getStepperDefault(group);
             const stateVal = state.steppers[group.id];
