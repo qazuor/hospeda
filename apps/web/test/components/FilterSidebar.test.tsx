@@ -525,6 +525,88 @@ describe('FilterSidebar — active filter badge', () => {
     });
 });
 
+describe('FilterSidebar — per-group active count badge', () => {
+    it('renders a count badge with the number of selections when the group has multi-select active', () => {
+        const props = buildProps({
+            filters: [checkboxGroup],
+            initialParams: { type: 'hotel,hostel' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        // The group header toggle button (id="filter-type") wraps the label
+        // plus, when active, a [N] count badge. We assert the badge digit "2"
+        // sits inside the same toggle button as the label.
+        const toggleBtn = container.querySelector('button[id="filter-type"]');
+        expect(toggleBtn).not.toBeNull();
+        expect(toggleBtn?.textContent).toMatch(/Tipo de alojamiento.*2/);
+    });
+
+    it('does not render the count badge when no options are selected for a multi-select group', () => {
+        const props = buildProps({ filters: [checkboxGroup], initialParams: {} });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const toggleBtn = container.querySelector('button[id="filter-type"]');
+        expect(toggleBtn?.textContent?.trim()).toBe('Tipo de alojamiento');
+    });
+
+    it('does not render a count badge for non-multi-select group types (stepper, dual-range)', () => {
+        // Stepper active (guests=4 > default 1) and dual-range with a min set
+        // are both "hasActive=true" but neither should show a [N] badge.
+        const props = buildProps({
+            filters: [stepperGroup, dualRangeGroup],
+            initialParams: { guests: '4', minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const guestsToggle = container.querySelector('button[id="filter-guests"]');
+        const priceToggle = container.querySelector('button[id="filter-price"]');
+        expect(guestsToggle?.textContent?.trim()).toBe('Huéspedes');
+        expect(priceToggle?.textContent?.trim()).toBe('Precio por noche');
+    });
+});
+
+describe('FilterSidebar — stable group order (no active-first sort)', () => {
+    it('preserves the declaration order of filter groups regardless of which are active', () => {
+        // Declaration order: checkbox (type), then dual-range (price).
+        // Pre-select the SECOND group (price). With the old "active-first
+        // sort" feature, price would move to the top. Now it should stay
+        // second.
+        const props = buildProps({
+            filters: [checkboxGroup, dualRangeGroup],
+            initialParams: { minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        // Two desktop fieldsets in the order they were declared.
+        const fieldsets = Array.from(container.querySelectorAll('fieldset[aria-labelledby]'));
+        // Both desktop + drawer instances render in jsdom; take the first
+        // rendering pass (2 entries for 2 groups).
+        const desktopFieldsets = fieldsets.slice(0, 2);
+        const ids = desktopFieldsets.map((fs) => fs.getAttribute('aria-labelledby'));
+        expect(ids).toEqual(['filter-type', 'filter-price']);
+    });
+});
+
+describe('FilterSidebar — stable group order (no active-first sort)', () => {
+    it('preserves the declaration order of filter groups regardless of which are active', () => {
+        // declaration order: checkbox (type), then dualRange (price)
+        // Pre-select the SECOND group (price) so the old "active-first sort" would
+        // move it to the top. We assert the DOM order is unchanged.
+        const props = buildProps({
+            filters: [checkboxGroup, dualRangeGroup],
+            initialParams: { minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const fieldsets = Array.from(container.querySelectorAll('fieldset[aria-labelledby]'));
+        // Filter to the desktop sidebar instance (both desktop + drawer render in jsdom).
+        // Take the first half of the fieldsets which corresponds to one rendering pass.
+        const desktopFieldsets = fieldsets.slice(0, 2);
+        const ids = desktopFieldsets.map((fs) => fs.getAttribute('aria-labelledby'));
+        expect(ids).toEqual(['filter-type', 'filter-price']);
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Tests: structural snapshot — position='left'
 //

@@ -12,11 +12,28 @@
     border-bottom: 1px solid oklch(from var(--border) l c h / 0.4);
     padding: 0 0 0.875rem;
     margin: 0 0 0.25rem;
+    transition: background-color var(--duration-normal) ease;
 }
 
 .group:last-of-type {
     border-bottom: none;
     margin-bottom: 0;
+}
+
+/*
+ * Active group highlight (no relies on the now-removed "active-first sort"
+ * feature — the group keeps its declared position and signals activity
+ * here, via background tint + count badge in the header). The tint stays
+ * subtle so users can scan a column of 10+ groups and pick out the active
+ * ones without the panel turning into a wall of color.
+ */
+.groupActive {
+    background-color: oklch(from var(--brand-accent) l c h / 0.06);
+    border-radius: var(--radius-md);
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    margin-left: -0.625rem;
+    margin-right: -0.625rem;
 }
 
 .groupActive > .groupHeader {
@@ -114,6 +131,28 @@
     height: 0.4375rem;
     border-radius: var(--radius-pill);
     background-color: var(--brand-accent);
+    flex-shrink: 0;
+}
+
+/*
+ * Count badge for multi-select groups (e.g. "Comodidades [3]"). Rendered
+ * only when `activeCount > 0`. Sits to the right of the label, uses pill
+ * radius + accent tint so it reads as a count, not as a button.
+ */
+.groupCountBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.4375rem;
+    background-color: oklch(from var(--brand-accent) l c h / 0.18);
+    color: var(--brand-accent);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
     flex-shrink: 0;
 }
 
