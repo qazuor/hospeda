@@ -604,11 +604,12 @@
             "title": "Author docs/mp-test-cards-reference.md",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": [],
-            "notes": "MP-published test card numbers + cvv + expiry combos for approve/reject/pending/dispute outcomes. Referenced by smoke checklists."
+            "notes": ".claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md created (210L). Sourced from live MP developer docs via the MP MCP server (`tarjetas de prueba` topic, MLA / Spanish). Focuses on Argentina because Hospeda is AR-only. Contents: how-to-use (card number + cardholder name combo drives outcome), cards table for MLA (5 cards: Mastercard/Visa/Amex credit + Mastercard/Visa debit, all expiry 11/30, all CVV 123 except Amex 1234), full payment-status outcome table (17 cardholder codes APRO/OTHE/CONT/CALL/FUND/SECU/EXPI/FORM/CARD/INST/DUPL/LOCK/CTNA/ATTE/BLAC/UNSU/TEST), explicit mapping table from each staging-smoke sub-flow to its recommended card+code pair (covers sub-flows 1.1/1.2/1.4/1.7/1.10, 2.9 four rejection variants, 3.9.b/3.9.c), dispute/chargeback testing notes (manual via MP dashboard, no auto-trigger), trial-period note (no test-card variant needed), refund testing note linking bug/refund-flow-gaps, card rotation policy (MP rotates 2x/year, verify before major releases). Last-validated table at the end tracks when the cards were verified against live MP docs. Cross-refs to staging smoke, prod smoke, billing-runbooks (pending), and bug engram entries.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-53",
