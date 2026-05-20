@@ -23,6 +23,7 @@ import {
     buildParamsFromState,
     computeInitialCollapsed,
     filterReducer,
+    groupActiveCount,
     groupHasActiveSelection,
     initStateFromParams
 } from './filter-reducer';
@@ -213,6 +214,7 @@ function SidebarPanel({
                 {/* Collapsible filter groups */}
                 {collapsibleFilters.map((group) => {
                     const hasActive = groupHasActiveSelection(group, state);
+                    const activeCount = groupActiveCount(group, state);
                     return (
                         <FilterGroup
                             key={group.id}
@@ -221,6 +223,7 @@ function SidebarPanel({
                             locale={locale}
                             collapsed={!!collapsed[group.id]}
                             hasActive={hasActive}
+                            activeCount={activeCount}
                             onToggle={() => onToggleGroup(group.id)}
                             onReset={() => onResetGroup(group.id)}
                         >
@@ -274,23 +277,12 @@ export function FilterSidebar({
             initStateFromParams({ filters: f, defaultSort: ds, params: p })
     );
 
-    /** Pre-sort filters once from initial state so active filters float to top on load only. */
-    const sortedFilters = useMemo(() => {
-        const initialState = initStateFromParams({
-            filters,
-            defaultSort,
-            params: initialParams ?? {}
-        });
-        const active: FilterGroupType[] = [];
-        const inactive: FilterGroupType[] = [];
-        for (const group of filters) {
-            (groupHasActiveSelection(group, initialState) ? active : inactive).push(group);
-        }
-        return [...active, ...inactive];
-    }, [filters, defaultSort, initialParams]);
-
+    // Filter render order is the declaration order from the consuming page —
+    // it stays stable across navigations so users build spatial memory of
+    // where each filter lives. Active filters get a background tint + count
+    // badge in `FilterGroup` (see CSS module) instead of floating to the top.
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
-        computeInitialCollapsed({ filters: sortedFilters, state })
+        computeInitialCollapsed({ filters, state })
     );
 
     // Close drawer when viewport grows beyond mobile breakpoint
@@ -370,7 +362,7 @@ export function FilterSidebar({
     );
 
     const panelProps: SidebarPanelProps = {
-        filters: sortedFilters,
+        filters,
         state,
         dispatch,
         collapsed,

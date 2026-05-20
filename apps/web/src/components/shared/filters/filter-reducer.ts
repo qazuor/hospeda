@@ -166,6 +166,32 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
 }
 
 /**
+ * Returns the number of active selections for a multi-select filter group,
+ * or `null` for filter types where a count is not meaningful (toggles,
+ * single-value ranges, search, date pickers, etc).
+ *
+ * Consumed by `FilterGroup` to render a `[N]` count badge next to the group
+ * label so users can see how many options they have selected at a glance
+ * without expanding the group.
+ *
+ * Only the multi-select families return a number — those are the cases where
+ * the user can stack multiple values, and the count adds information beyond
+ * the dot/tint that already signal "this group is active".
+ */
+export function groupActiveCount(group: FilterGroup, state: FilterState): number | null {
+    if (
+        group.type === 'checkbox' ||
+        group.type === 'radio' ||
+        group.type === 'select-search' ||
+        group.type === 'icon-chips'
+    ) {
+        const count = (state.selections[group.id] ?? []).length;
+        return count > 0 ? count : null;
+    }
+    return null;
+}
+
+/**
  * Computes the initial collapsed state for each filter group.
  * Groups with active values or the first group are expanded; the rest are collapsed.
  */
