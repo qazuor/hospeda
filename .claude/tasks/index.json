@@ -431,7 +431,7 @@
             "specId": "SPEC-143",
             "title": "Billing Testing Coverage (e2e + manual smoke)",
             "status": "in_progress",
-            "progress": "48/65",
+            "progress": "49/65",
             "path": "SPEC-143-billing-testing-coverage",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
             "branch": "spec/SPEC-143-billing-testing-coverage",
