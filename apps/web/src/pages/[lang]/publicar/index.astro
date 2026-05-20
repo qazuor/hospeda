@@ -13,27 +13,24 @@
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
  *
  * @route /{lang}/publicar/
- * @rendering SSG (prerender = true) — no auth required at page level
+ * @rendering SSR — the page reads `?from=admin` at request time to render the
+ * FromAdminBanner for tourists redirected from the admin. SSG is not viable
+ * because `Astro.url.searchParams` is unavailable at build time.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import FromAdminBanner from '@/components/host/FromAdminBanner.astro';
 import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 
 // ---------------------------------------------------------------------------
 // Reuse marketing content from /suscriptores/propietarios/ via shared keys
@@ -79,6 +76,12 @@ const faqJsonLd = {
 	description={t('owners.description', 'Publicá tu propiedad en Hospeda y llegá a miles de viajeros del litoral entrerriano.')}
 >
 	<JsonLd slot="head-extra" data={faqJsonLd} />
+
+	{cameFromAdmin && (
+		<div class="publicar-from-admin-wrap">
+			<FromAdminBanner locale={locale} />
+		</div>
+	)}
 
 	<!-- Hero -->
 	<section class="publicar-hero section section--warm">
@@ -181,6 +184,11 @@ const faqJsonLd = {
 </MarketingLayout>
 
 <style>
+	/* ── From-admin banner spacing ─────────────────────────────────────── */
+	.publicar-from-admin-wrap {
+		padding: var(--space-6) var(--space-container-x) 0;
+	}
+
 	/* ── Hero ──────────────────────────────────────────────────────────── */
 	.publicar-hero__container {
 		max-width: var(--container-max);
