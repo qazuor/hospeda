@@ -24,20 +24,8 @@ import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
  * With `DESC`, Postgres places NULLs FIRST by default — so "sort by rating desc" would
  * bubble up rows WITHOUT rating. We force `NULLS LAST` for these fields regardless of
  * direction so empty values are always last.
- *
- * `minPrice` / `maxPrice` are listed for spec-literal compatibility (SPEC-076) but are
- * NOT actual columns on the accommodations table — price is stored under a JSONB `price`
- * object. These entries are defensive: if a future refactor ever exposes them as direct
- * sort-eligible columns, the `NULLS LAST` rule will apply automatically. Until then the
- * `columns[field]` lookup in `buildAccommodationOrderBy` returns `undefined` and the
- * entry is silently skipped (same as any unknown column).
  */
-const NUMERIC_NULLABLE_FIELDS = new Set<string>([
-    'averageRating',
-    'reviewsCount',
-    'minPrice',
-    'maxPrice'
-]);
+const NUMERIC_NULLABLE_FIELDS = new Set<string>(['averageRating', 'reviewsCount']);
 
 /**
  * Build a Drizzle-compatible sort expression. For nullable numeric fields we emit a raw
@@ -64,6 +52,15 @@ function buildSortExpr(column: AnyColumn, order: 'asc' | 'desc', field: string):
 const MOST_SAVED_SORT_FIELD = 'mostSaved';
 
 /**
+ * Synthetic sort field name that orders accommodations by their JSONB-extracted
+ * base price. Backed by `(price->>'price')::numeric` — the seed/model contract
+ * stores the nightly base price under `price.price` in ARS, with sibling fields
+ * `currency` and `discounts`. Accommodations with `price = NULL` or no `price`
+ * key bubble to the end thanks to `NULLS LAST`.
+ */
+const PRICE_SORT_FIELD = 'price';
+
+/**
  * Build the correlated subquery used as the ORDER BY expression for the
  * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are folded
  * to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
@@ -76,6 +73,40 @@ function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
           AND ${userBookmarks.entityType} = 'ACCOMMODATION'
           AND ${userBookmarks.deletedAt} IS NULL
     ) ${direction}`;
+}
+
+/**
+ * Build the ORDER BY expression for the `price` synthetic sort. Extracts the
+ * base price from the JSONB `price` column (`price.price`) as numeric. NULLs go
+ * last regardless of direction so unpriced rows do not dominate the first page
+ * of a `priceAsc` sort.
+ */
+function buildPriceOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(${accommodations.price}->>'price')::numeric ${direction} NULLS LAST`;
+}
+
+/**
+ * Build WHERE-clause conditions for `minPrice` / `maxPrice` filters. Operates
+ * on the JSONB-extracted base price (`(price->>'price')::numeric`) instead of
+ * comparing the whole JSONB object to a number (which Postgres allows but
+ * yields lexicographic comparisons, not numeric — i.e. silently wrong).
+ *
+ * Returns an empty array when neither bound is set so callers can spread the
+ * result into a `whereClauses` array unconditionally.
+ */
+function buildBasePriceConditions(
+    min: number | undefined,
+    max: number | undefined
+): SQL<unknown>[] {
+    const out: SQL<unknown>[] = [];
+    if (min !== undefined) {
+        out.push(sql`(${accommodations.price}->>'price')::numeric >= ${min}`);
+    }
+    if (max !== undefined) {
+        out.push(sql`(${accommodations.price}->>'price')::numeric <= ${max}`);
+    }
+    return out;
 }
 
 /**
@@ -125,6 +156,14 @@ export function buildAccommodationOrderBy(params: {
             orderBy.push(buildMostSavedOrderExpr(sort.order));
             continue;
         }
+        // Synthetic field that orders by JSONB-extracted base price. `price`
+        // IS a column on the table but it is JSONB — Drizzle's `asc()/desc()`
+        // would compare the whole object lexicographically. We extract the
+        // base value explicitly to get numeric ordering.
+        if (sort.field === PRICE_SORT_FIELD) {
+            orderBy.push(buildPriceOrderExpr(sort.order));
+            continue;
+        }
         const column = accommodations[sort.field as keyof typeof accommodations];
         if (column && typeof column === 'object' && 'name' in column) {
             orderBy.push(buildSortExpr(column as AnyColumn, sort.order, sort.field));
@@ -150,14 +189,58 @@ export function buildAccommodationOrderBy(params: {
  * When a single ID is provided the HAVING clause is `= 1`, which is
  * equivalent to a plain EXISTS but keeps the implementation uniform.
  */
+/**
+ * Build a WHERE clause that restricts accommodations to those that have ALL
+ * of the provided amenity IDs (set intersection — AND semantics).
+ *
+ * Implementation note (`sql.raw` for column refs): when this clause is
+ * composed into `searchWithRelations` (Drizzle's relational query API with
+ * lateral joins), template-literal column refs like
+ * `${rAccommodationAmenity.accommodationId}` get re-aliased to the OUTER
+ * table (`accommodations`) and the subquery fails at runtime — the resulting
+ * SQL reads `WHERE "accommodations"."amenity_id" = ...`, which is nonsense.
+ *
+ * Workaround: emit the column names as raw identifiers so Drizzle doesn't
+ * try to alias them. The table reference (`${rAccommodationAmenity}`) is
+ * kept as a template arg because Drizzle correctly resolves it to the
+ * table name string in the FROM clause.
+ */
 function buildAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unknown> {
     const n = amenityIds.length;
+    const idList = sql.join(
+        amenityIds.map((id) => sql`${id}`),
+        sql`, `
+    );
     return sql<unknown>`${accommodations.id} IN (
-        SELECT ${rAccommodationAmenity.accommodationId}
+        SELECT "r_accommodation_amenity"."accommodation_id"
         FROM ${rAccommodationAmenity}
-        WHERE ${inArray(rAccommodationAmenity.amenityId, amenityIds as string[])}
-        GROUP BY ${rAccommodationAmenity.accommodationId}
-        HAVING COUNT(DISTINCT ${rAccommodationAmenity.amenityId}) = ${n}
+        WHERE "r_accommodation_amenity"."amenity_id" IN (${idList})
+        GROUP BY "r_accommodation_amenity"."accommodation_id"
+        HAVING COUNT(DISTINCT "r_accommodation_amenity"."amenity_id") = ${n}
+    )`;
+}
+
+/**
+ * Build a WHERE clause that restricts accommodations to those that have AT
+ * LEAST ONE of the provided amenity IDs (OR semantics within the set).
+ *
+ * Used to back the public boolean shortcuts (`hasWifi`, `hasPool`,
+ * `hasParking`, `allowsPets`) where the toggle should match against multiple
+ * slug variants (e.g. `pool` + `heated_pool`). Different from
+ * {@link buildAmenityIntersectionClause} which requires ALL ids.
+ *
+ * Same raw-identifier workaround as the intersection clause — see that
+ * function's docstring for the Drizzle-aliasing background.
+ */
+function buildAnyAmenityClause(amenityIds: readonly string[]): SQL<unknown> {
+    const idList = sql.join(
+        amenityIds.map((id) => sql`${id}`),
+        sql`, `
+    );
+    return sql<unknown>`${accommodations.id} IN (
+        SELECT "r_accommodation_amenity"."accommodation_id"
+        FROM ${rAccommodationAmenity}
+        WHERE "r_accommodation_amenity"."amenity_id" IN (${idList})
     )`;
 }
 
@@ -170,12 +253,16 @@ function buildAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unkn
  */
 function buildFeatureIntersectionClause(featureIds: readonly string[]): SQL<unknown> {
     const n = featureIds.length;
+    const idList = sql.join(
+        featureIds.map((id) => sql`${id}`),
+        sql`, `
+    );
     return sql<unknown>`${accommodations.id} IN (
-        SELECT ${rAccommodationFeature.accommodationId}
+        SELECT "r_accommodation_feature"."accommodation_id"
         FROM ${rAccommodationFeature}
-        WHERE ${inArray(rAccommodationFeature.featureId, featureIds as string[])}
-        GROUP BY ${rAccommodationFeature.accommodationId}
-        HAVING COUNT(DISTINCT ${rAccommodationFeature.featureId}) = ${n}
+        WHERE "r_accommodation_feature"."feature_id" IN (${idList})
+        GROUP BY "r_accommodation_feature"."accommodation_id"
+        HAVING COUNT(DISTINCT "r_accommodation_feature"."feature_id") = ${n}
     )`;
 }
 
@@ -226,12 +313,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
         if (params.destinationIds && params.destinationIds.length > 0) {
             whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
         } else if (params.destinationId) {
@@ -306,12 +388,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
         if (params.destinationIds && params.destinationIds.length > 0) {
             whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
         } else if (params.destinationId) {
@@ -356,6 +433,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
             whereClauses.push(buildAmenityIntersectionClause(params.amenities));
+        }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
         }
         if (params.features && params.features.length > 0) {
             // Intersection semantics: accommodation must have ALL provided feature IDs.
@@ -427,12 +517,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
         if (params.destinationIds && params.destinationIds.length > 0) {
             whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
         } else if (params.destinationId) {
@@ -477,6 +562,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
             whereClauses.push(buildAmenityIntersectionClause(params.amenities));
+        }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
         }
         if (params.features && params.features.length > 0) {
             // Intersection semantics: accommodation must have ALL provided feature IDs.
