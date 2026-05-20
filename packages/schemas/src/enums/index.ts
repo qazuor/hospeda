@@ -70,6 +70,9 @@ export * from './newsletter-campaign-status.schema.js';
 export * from './newsletter-channel.enum.js';
 export * from './newsletter-channel.schema.js';
 
+export * from './newsletter-content-type.enum.js';
+export * from './newsletter-content-type.schema.js';
+
 export * from './newsletter-delivery-status.enum.js';
 export * from './newsletter-delivery-status.schema.js';
 
