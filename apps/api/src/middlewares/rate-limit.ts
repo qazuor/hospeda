@@ -463,13 +463,18 @@ export const createPerRouteRateLimitMiddleware = ({
         const baseRateLimitConfig = getBaseRateLimitConfig();
         const clientIp = getClientIp({ c });
         const path = c.req.path;
+        const method = c.req.method.toUpperCase();
         const store = getStore();
         const now = Date.now();
         const windowStart = Math.floor(now / windowMs) * windowMs;
         const resetTime = windowStart + windowMs;
 
-        // Use a distinct key prefix for per-route limits
-        const storeKey = `route:${path}:${clientIp}`;
+        // Per-route limits are method-scoped so endpoints sharing a path
+        // (e.g. GET vs PATCH /users/:id) keep independent buckets. Without
+        // the method in the key, a flurry of reads would tighten the bucket
+        // for writes on the same path — especially painful when the read
+        // limit (e.g. 100/min) is higher than the write limit (e.g. 20/min).
+        const storeKey = `route:${method}:${path}:${clientIp}`;
 
         const currentData = await store.get(storeKey);
         let count = 0;
