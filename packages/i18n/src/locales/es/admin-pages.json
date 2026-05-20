@@ -79,9 +79,25 @@
         "forbidden": {
             "title": "Acceso denegado",
             "message": "No tienes los permisos necesarios para acceder al panel de administración. Contacta a tu administrador si crees que esto es un error.",
+            "greeting": "Hola {{name}},",
+            "email": "Estás autenticado como {{email}}",
             "switchAccount": "Iniciar sesión con otra cuenta",
             "goToSite": "Volver al sitio",
-            "contactAdmin": "Contactar administrador"
+            "contactAdmin": "Contactar soporte",
+            "reason": {
+                "host-missing-permission": {
+                    "title": "Hay un problema con tu cuenta",
+                    "message": "Detectamos que sos anfitrión pero el acceso al panel está deshabilitado. Probablemente sea una configuración faltante en tu cuenta. Escribinos y lo resolvemos."
+                },
+                "generic": {
+                    "title": "Zona reservada",
+                    "message": "Esta zona es para administradores y anfitriones de Hospeda. Tu cuenta no tiene acceso. Si creés que es un error, contactanos o ingresá con otra cuenta."
+                }
+            },
+            "mailto": {
+                "subject": "Solicitud de acceso al panel de administración",
+                "body": "Hola, necesito ayuda para acceder al panel de Hospeda.\n\n— Detalles de mi cuenta —\nEmail: {email}\nID de usuario: {userId}\nMotivo: {reason}\nRuta original: {originalPath}\n\n— Mi mensaje —\n"
+            }
         },
         "callback": {
             "completing": "Completando autenticación..."

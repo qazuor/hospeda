@@ -143,5 +143,9 @@
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
         "secondaryCta": "[TODO]"
+    },
+    "fromAdminBanner": {
+        "title": "Detectamos que você tentou acessar o painel de administração.",
+        "message": "Para gerenciar suas acomodações você precisa publicar uma primeiro. Preencha os dados básicos e ganha acesso automático."
     }
 }
