@@ -68,8 +68,29 @@ vi.mock('../../../src/components/auth/AuthRequiredPopover.client', () => ({
 
 const API_URL = 'http://api.test';
 const USER_EMAIL = 'test@example.com';
+const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+
+/**
+ * Seed the shared `/auth/me` sessionStorage cache so the component's mount
+ * effect short-circuits on cache hit instead of triggering an extra fetch.
+ * The existing assertions in this file count fetch calls (e.g. "does NOT
+ * call GET /status on mount for guest users"), so suppressing the implicit
+ * `/auth/me` call keeps those assertions meaningful.
+ */
+function seedAuthMeCache(input: { isAuthenticated: boolean; email?: string }) {
+    sessionStorage.setItem(
+        AUTH_ME_CACHE_KEY,
+        JSON.stringify({
+            isAuthenticated: input.isAuthenticated,
+            user: input.isAuthenticated ? { id: 'user-1', email: input.email ?? '' } : null,
+            permissions: [],
+            cachedAt: Date.now()
+        })
+    );
+}
 
 function renderGuest() {
+    seedAuthMeCache({ isAuthenticated: false });
     return render(
         <NewsletterForm
             isAuthenticated={false}
@@ -80,6 +101,7 @@ function renderGuest() {
 }
 
 function renderAuth(email = USER_EMAIL) {
+    seedAuthMeCache({ isAuthenticated: true, email });
     return render(
         <NewsletterForm
             isAuthenticated={true}
@@ -104,8 +126,11 @@ function mockFetchOk(body: unknown): ReturnType<typeof vi.fn> {
 
 describe('NewsletterForm', () => {
     beforeEach(() => {
-        // Reset the global fetch mock before each test
+        // Reset the global fetch mock + the /auth/me sessionStorage cache so each
+        // test starts from a clean slate. Helpers (`renderGuest`/`renderAuth`)
+        // re-seed the cache to match the prop shape.
         vi.stubGlobal('fetch', vi.fn());
+        sessionStorage.clear();
     });
 
     // =========================================================================
@@ -892,6 +917,126 @@ describe('NewsletterForm', () => {
 
             // Reset dataLayer after test
             (window as unknown as { dataLayer?: unknown[] }).dataLayer = undefined;
+        });
+    });
+
+    // =========================================================================
+    // Client-side auth resolution (cross-page session detection)
+    //
+    // The Astro Footer reads `Astro.locals.user` and forwards `isAuthenticated`
+    // as a prop. On pages OUTSIDE `SESSION_OPTIONAL_SEGMENTS` (home, contacto,
+    // legal, …) the middleware does NOT parse the cookie, so `Astro.locals.user`
+    // is null even when the visitor has a live session. The island MUST recover
+    // the auth state client-side via the shared /auth/me cache + fetch fallback.
+    // =========================================================================
+
+    describe('client-side auth resolution', () => {
+        it('promotes idle-guest → idle-auth when /auth/me reports an authenticated session via cache', async () => {
+            // SSR thought the visitor was a guest (middleware did not parse session
+            // on this route), but the cached /auth/me snapshot disagrees.
+            seedAuthMeCache({ isAuthenticated: true, email: 'cached@example.com' });
+
+            // The mount effect must NOT hit /auth/me (cache hit) but it WILL hit
+            // /status. Stub the status endpoint with a "not subscribed" response.
+            vi.stubGlobal(
+                'fetch',
+                mockFetchOk({
+                    subscribed: false,
+                    status: null,
+                    subscribedAt: null,
+                    verifiedAt: null
+                })
+            );
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={false}
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            // Read-only email input must be pre-filled with the cache email.
+            await waitFor(() => {
+                const input = screen.getByRole('textbox') as HTMLInputElement;
+                expect(input).toHaveAttribute('readonly');
+                expect(input.value).toBe('cached@example.com');
+            });
+        });
+
+        it('falls back to fetching /api/v1/public/auth/me when no cache is seeded', async () => {
+            // No sessionStorage cache → component must call /auth/me first, then /status.
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        data: {
+                            isAuthenticated: true,
+                            actor: { id: 'u-1', email: 'fetched@example.com' }
+                        }
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={false}
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            await waitFor(() => {
+                const input = screen.getByRole('textbox') as HTMLInputElement;
+                expect(input).toHaveAttribute('readonly');
+                expect(input.value).toBe('fetched@example.com');
+            });
+
+            // First call is /auth/me, second is /status.
+            expect(fetchMock).toHaveBeenNthCalledWith(
+                1,
+                `${API_URL}/api/v1/public/auth/me`,
+                expect.objectContaining({ credentials: 'include' })
+            );
+            expect(fetchMock).toHaveBeenNthCalledWith(
+                2,
+                `${API_URL}/api/v1/protected/newsletter/status`,
+                expect.objectContaining({ credentials: 'include' })
+            );
+        });
+
+        it('demotes idle-auth → idle-guest when /auth/me reports an anonymous visitor', async () => {
+            // SSR thought the visitor was authenticated (e.g. cookie present at
+            // SSR but expired by hydration), but /auth/me says otherwise.
+            seedAuthMeCache({ isAuthenticated: false });
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={true}
+                    userEmail="ssr@example.com"
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            // The input becomes the editable guest input (no `readonly`).
+            await waitFor(() => {
+                expect(screen.getByRole('textbox')).not.toHaveAttribute('readonly');
+            });
+            // /status must NOT be called since the resolved state is guest.
+            expect(fetchMock).not.toHaveBeenCalled();
         });
     });
 });

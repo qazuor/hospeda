@@ -10,8 +10,14 @@
  * - already-active:      User is already an active subscriber — "Ya estás suscripto" banner + manage link.
  * - error:               API failure — inline error, button re-enabled.
  *
- * Authentication decision: `isAuthenticated` and `userEmail` are resolved by the Astro Footer
- * layer from `Astro.locals` and passed as props. The island does NOT call Better Auth directly.
+ * Authentication decision: the Astro Footer passes the server-rendered hint via the
+ * `isAuthenticated` + `userEmail` props (read from `Astro.locals`). Those props are
+ * accurate ONLY on routes where the middleware parses the session (protected, auth,
+ * SESSION_OPTIONAL_SEGMENTS). On home, contact, legal pages, etc. `Astro.locals.user`
+ * is null even when the visitor has a live cookie, so the island MUST re-resolve its
+ * auth state client-side on mount via the cached `/api/v1/public/auth/me` snapshot
+ * (the same cache UserMenu populates). Without this the footer always renders the
+ * guest variant outside session-aware routes.
  *
  * AuthRequiredPopover: reuses the existing component from
  * `apps/web/src/components/auth/AuthRequiredPopover.client.tsx`. It satisfies all AC-101-02
@@ -101,6 +107,70 @@ export interface NewsletterFormProps {
 }
 
 // ---------------------------------------------------------------------------
+// /auth/me resolution (shared cache with UserMenu)
+// ---------------------------------------------------------------------------
+
+/**
+ * sessionStorage key reused from UserMenu.client.tsx to share the `/auth/me`
+ * snapshot across islands. KEEP IN SYNC with the same constant in
+ * `UserMenu.client.tsx` and `AuthedPreferenceSync.client.tsx`.
+ */
+const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
+
+/**
+ * Shape of the cached `/auth/me` snapshot. Only the fields this island
+ * needs are typed — UserMenu writes a richer object but the parse is
+ * structural, so extra fields are ignored.
+ */
+interface AuthMeCacheSnapshot {
+    readonly isAuthenticated: boolean;
+    readonly user: { readonly id?: string; readonly email?: string } | null;
+    readonly cachedAt: number;
+}
+
+interface ResolvedAuth {
+    readonly isAuthenticated: boolean;
+    readonly email: string;
+}
+
+function readAuthMeFromCache(): ResolvedAuth | null {
+    try {
+        const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as AuthMeCacheSnapshot;
+        if (Date.now() - parsed.cachedAt > AUTH_ME_CACHE_TTL_MS) return null;
+        return {
+            isAuthenticated: parsed.isAuthenticated === true,
+            email: parsed.user?.email ?? ''
+        };
+    } catch {
+        return null;
+    }
+}
+
+async function fetchAuthMe(apiUrl: string, signal: AbortSignal): Promise<ResolvedAuth> {
+    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/public/auth/me`, {
+        credentials: 'include',
+        signal
+    });
+    if (!response.ok) {
+        return { isAuthenticated: false, email: '' };
+    }
+    const json = (await response.json()) as {
+        data?: {
+            actor?: { email?: string };
+            isAuthenticated?: boolean;
+        };
+    };
+    const isAuthenticated = json.data?.isAuthenticated === true;
+    return {
+        isAuthenticated,
+        email: isAuthenticated ? (json.data?.actor?.email ?? '') : ''
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Analytics helper
 // ---------------------------------------------------------------------------
 
@@ -160,8 +230,17 @@ export function NewsletterForm({
     // Whether the auth popover is open (guest state only)
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
 
+    // Resolved client-side email. Seeded from the SSR-provided prop so the
+    // first paint matches the server, then overridden after hydration by the
+    // cached `/auth/me` snapshot (or a fresh fetch) so the input pre-fills
+    // correctly on pages where the middleware does NOT parse the session
+    // (home, contacto, legal, etc.). The resolved auth boolean is reflected
+    // in `formState` directly (idle-guest ↔ idle-auth), so we don't keep a
+    // separate piece of state for it.
+    const [resolvedEmail, setResolvedEmail] = useState<string>(userEmail);
+
     // Determine the initial state synchronously from the props so the first
-    // paint (before any effect runs) is already correct.
+    // paint (before any effect runs) is already correct on session-aware routes.
     const [formState, setFormState] = useState<FormState>(
         isAuthenticated ? 'idle-auth' : 'idle-guest'
     );
@@ -175,15 +254,47 @@ export function NewsletterForm({
     // Whether we need to use alreadyPendingMessage (vs pendingMessage) when in pending-verification state
     const [wasAlreadyPending, setWasAlreadyPending] = useState<boolean>(false);
 
-    // Fetch subscription status on mount (authenticated users only).
-    // Guest users never call this endpoint.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: single-shot mount effect; isAuthenticated/apiUrl don't change after hydration
+    // Resolve auth state client-side, then fetch the subscription status if
+    // the resolved state is authenticated. We deliberately do NOT depend on
+    // the SSR-provided props beyond the initial seed because the props are
+    // unreliable on routes outside SESSION_OPTIONAL_SEGMENTS.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: single-shot mount effect; apiUrl is stable after hydration
     useEffect(() => {
-        if (!isAuthenticated) return;
-
         const controller = new AbortController();
 
-        const checkStatus = async (): Promise<void> => {
+        const resolveAndCheck = async (): Promise<void> => {
+            // 1. Resolve auth state: prefer the shared /auth/me cache; fall back to a fresh fetch.
+            let auth = readAuthMeFromCache();
+            if (!auth) {
+                try {
+                    auth = await fetchAuthMe(apiUrl, controller.signal);
+                } catch {
+                    // Network error or abort — keep whatever we already have from props.
+                    return;
+                }
+            }
+
+            if (controller.signal.aborted) return;
+
+            setResolvedEmail(auth.email);
+
+            // 2. If the resolved state is guest, snap the form to idle-guest.
+            //    (Covers the rare case where SSR thought the user was authed
+            //    but the session expired between SSR and hydration.)
+            if (!auth.isAuthenticated) {
+                setFormState((current) =>
+                    current === 'pending-verification' || current === 'already-active'
+                        ? current
+                        : 'idle-guest'
+                );
+                return;
+            }
+
+            // 3. If the resolved state is authed but the form was painted as
+            //    guest (because the server-side hint was wrong), promote it.
+            setFormState((current) => (current === 'idle-guest' ? 'idle-auth' : current));
+
+            // 4. Fetch the current subscription status. Authenticated callers only.
             try {
                 const response = await fetch(
                     `${apiUrl.replace(/\/$/, '')}/api/v1/protected/newsletter/status`,
@@ -215,7 +326,7 @@ export function NewsletterForm({
             }
         };
 
-        void checkStatus();
+        void resolveAndCheck();
 
         return () => {
             controller.abort();
@@ -426,12 +537,21 @@ export function NewsletterForm({
                             </span>
                         )}
                         {formState === 'idle-guest' ? (
-                            // Guest: uncontrolled editable input. The form is intercepted
-                            // before submission so we never read this value.
+                            // Guest: controlled empty input — staying controlled across
+                            // state transitions (e.g. when /auth/me promotes the visitor
+                            // to idle-auth after hydration) avoids React's
+                            // "uncontrolled → controlled" warning. The form is
+                            // intercepted before submission so we never read this value.
                             <input
                                 id={`${emailLabelId}-input`}
                                 type="email"
                                 className={styles.emailInput}
+                                value=""
+                                onChange={() => {
+                                    // Guest input is decorative — focus opens the popover
+                                    // and we never read the value. The handler is required
+                                    // to keep the input controlled.
+                                }}
                                 placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
                                 aria-labelledby={emailLabelId}
                                 aria-invalid="false"
@@ -444,8 +564,8 @@ export function NewsletterForm({
                                 id={`${emailLabelId}-input`}
                                 type="email"
                                 className={styles.emailInput}
-                                value={userEmail}
-                                placeholder={userEmail}
+                                value={resolvedEmail}
+                                placeholder={resolvedEmail}
                                 readOnly
                                 disabled={isLoading}
                                 aria-labelledby={emailLabelId}
