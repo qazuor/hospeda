@@ -173,7 +173,7 @@ describe('DualRangeFilter', () => {
             );
 
             // Assert — labels visible as text (aria-hidden div)
-            const labelDiv = container.querySelector('[aria-hidden="true"]');
+            const labelDiv = container.querySelector('[class*="dualRangeLabels"]');
             expect(labelDiv?.textContent).toContain('100');
             expect(labelDiv?.textContent).toContain('900');
             expect(labelDiv?.textContent).not.toContain('$');
@@ -195,7 +195,7 @@ describe('DualRangeFilter', () => {
             );
 
             // Assert — currency format prefixes $
-            const labelDiv = container.querySelector('[aria-hidden="true"]');
+            const labelDiv = container.querySelector('[class*="dualRangeLabels"]');
             expect(labelDiv?.textContent).toContain('$');
         });
 
@@ -221,7 +221,7 @@ describe('DualRangeFilter', () => {
             );
 
             // Assert
-            const labelDiv = container.querySelector('[aria-hidden="true"]');
+            const labelDiv = container.querySelector('[class*="dualRangeLabels"]');
             expect(labelDiv?.textContent).not.toContain('$');
             expect(labelDiv?.textContent).toContain('2');
             expect(labelDiv?.textContent).toContain('8');
