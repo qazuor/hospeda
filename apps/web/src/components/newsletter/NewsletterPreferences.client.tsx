@@ -25,6 +25,7 @@
  * All copy comes from `account.newsletter.*` keys via `@repo/i18n`.
  */
 
+import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
@@ -56,6 +57,20 @@ type IslandState =
 /** Trim trailing slash so URL concat never yields `/api/v1//newsletter/...`. */
 function joinApi(apiUrl: string, path: string): string {
     return `${apiUrl.replace(/\/$/, '')}${path}`;
+}
+
+/**
+ * Try to read the API error envelope from a failing fetch response.
+ * Returns the `error` object when present, or `null` if the body is empty,
+ * non-JSON, or doesn't match the standard `{ success, error }` shape.
+ */
+async function readApiError(res: Response): Promise<ApiErrorShape | null> {
+    try {
+        const body = (await res.json()) as { readonly error?: ApiErrorShape };
+        return body?.error ?? null;
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -91,6 +106,7 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
 
     const fetchStatus = useCallback(
         async (signal?: AbortSignal): Promise<void> => {
+            const genericFallback = t('newsletter.error', 'Ocurrió un error. Intentá de nuevo.');
             try {
                 const res = await fetch(joinApi(apiUrl, '/api/v1/protected/newsletter/status'), {
                     credentials: 'include',
@@ -98,9 +114,14 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 });
                 if (!res.ok) {
                     if (!isMountedRef.current) return;
+                    const apiError = await readApiError(res);
                     setIsland({
                         kind: 'error',
-                        message: t('newsletter.error', 'Ocurrió un error. Intentá de nuevo.')
+                        message: translateApiError({
+                            error: apiError,
+                            locale,
+                            fallback: genericFallback
+                        })
                     });
                     return;
                 }
@@ -116,23 +137,17 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 if (!isMountedRef.current) return;
                 const data = envelope.data;
                 if (!data) {
-                    setIsland({
-                        kind: 'error',
-                        message: t('newsletter.error', 'Ocurrió un error. Intentá de nuevo.')
-                    });
+                    setIsland({ kind: 'error', message: genericFallback });
                     return;
                 }
                 setIsland({ kind: 'ready', data });
             } catch (err) {
                 if ((err as Error).name === 'AbortError') return;
                 if (!isMountedRef.current) return;
-                setIsland({
-                    kind: 'error',
-                    message: t('newsletter.error', 'Ocurrió un error. Intentá de nuevo.')
-                });
+                setIsland({ kind: 'error', message: genericFallback });
             }
         },
-        [apiUrl, t]
+        [apiUrl, locale, t]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: single-shot mount effect; deps don't change after hydration
@@ -157,6 +172,10 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
     const callAction = useCallback(
         async (path: string, method: 'POST' | 'DELETE'): Promise<boolean> => {
             setActionInFlight(true);
+            const genericFallback = t(
+                'newsletter.errorMessage',
+                'No se pudo actualizar la suscripción'
+            );
             try {
                 const res = await fetch(joinApi(apiUrl, path), {
                     method,
@@ -168,12 +187,19 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                             : undefined
                 });
                 if (!res.ok) {
-                    announce(t('newsletter.errorMessage', 'No se pudo actualizar la suscripción'));
+                    const apiError = await readApiError(res);
+                    announce(
+                        translateApiError({
+                            error: apiError,
+                            locale,
+                            fallback: genericFallback
+                        })
+                    );
                     return false;
                 }
                 return true;
             } catch {
-                announce(t('newsletter.errorMessage', 'No se pudo actualizar la suscripción'));
+                announce(genericFallback);
                 return false;
             } finally {
                 if (isMountedRef.current) {

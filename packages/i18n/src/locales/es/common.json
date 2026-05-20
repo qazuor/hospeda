@@ -57,7 +57,9 @@
         "NETWORK_ERROR": "No pudimos conectar con el servidor. Probá de nuevo.",
         "LIMIT_REACHED": "Alcanzaste el límite de tu plan. Actualizalo para continuar.",
         "BAD_REQUEST": "La solicitud no es válida.",
-        "CONFLICT": "El recurso está en conflicto con el estado actual."
+        "CONFLICT": "El recurso está en conflicto con el estado actual.",
+        "SERVICE_UNAVAILABLE": "Este servicio no está disponible temporalmente. Probá de nuevo en unos minutos.",
+        "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo."
     },
     "filters": "Filtros",
     "goHome": "Volver al inicio",

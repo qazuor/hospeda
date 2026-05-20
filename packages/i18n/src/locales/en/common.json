@@ -57,7 +57,9 @@
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
         "LIMIT_REACHED": "You've reached your plan's limit. Upgrade to continue.",
         "BAD_REQUEST": "That request isn't valid.",
-        "CONFLICT": "The resource conflicts with the current state."
+        "CONFLICT": "The resource conflicts with the current state.",
+        "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
+        "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back."
     },
     "filters": "Filters",
     "goHome": "Back to home",
