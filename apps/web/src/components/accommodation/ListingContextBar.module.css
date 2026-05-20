@@ -1,0 +1,149 @@
+/* ListingContextBar.module.css
+ * Horizontal trip-context bar above the accommodations grid. Uses semantic
+ * tokens from global.css so dark-mode + theming work automatically.
+ */
+
+.contextBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    background-color: var(--surface-warm);
+    border: 1px solid oklch(from var(--border) l c h / 0.4);
+    border-radius: var(--radius-card);
+    margin-bottom: var(--space-4, 16px);
+}
+
+.field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.fieldLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.fieldLabelText {
+    color: var(--core-muted-foreground);
+    font-weight: 500;
+    text-transform: none;
+    font-size: 0.8125rem;
+}
+
+/* Date inputs */
+.dateInput {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    border-radius: var(--radius-md);
+    padding: 0.25rem 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    min-width: 110px;
+    transition: border-color var(--duration-fast) ease;
+}
+
+.dateInput:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+}
+
+.dateSeparator {
+    color: var(--core-muted-foreground);
+    font-size: 0.875rem;
+}
+
+/* Stepper field */
+.stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--core-background);
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    border-radius: var(--radius-pill);
+    padding: 0.125rem;
+}
+
+.stepperBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.625rem;
+    height: 1.625rem;
+    background: none;
+    border: none;
+    border-radius: var(--radius-pill);
+    color: var(--brand-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.stepperBtn:hover:not(:disabled) {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+}
+
+.stepperBtn:disabled {
+    color: var(--core-muted-foreground);
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.stepperValue {
+    min-width: 1.25rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+/* Clear button — only visible when context differs from defaults */
+.clearButton {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: none;
+    border: 1px solid oklch(from var(--brand-accent) l c h / 0.3);
+    color: var(--brand-accent);
+    border-radius: var(--radius-pill);
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+
+.clearButton:hover {
+    background-color: oklch(from var(--brand-accent) l c h / 0.1);
+    border-color: oklch(from var(--brand-accent) l c h / 0.5);
+}
+
+/* Mobile: stack fields vertically, keep stepper / dates touch-friendly */
+@media (max-width: 640px) {
+    .contextBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .field {
+        justify-content: space-between;
+    }
+
+    .clearButton {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+}
