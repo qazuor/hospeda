@@ -720,14 +720,14 @@
         },
         {
             "id": "T-143-59",
-            "title": "E2E: MercadoPago API error handling (stubbed 4xx / 5xx / timeout / malformed)",
+            "title": "E2E: MercadoPago API error handling (regression-guard of current uniform 500 mapping)",
             "phase": "phase-2-A",
             "workstream": "A",
             "status": "pending",
-            "complexity": 4,
+            "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "mp-error-handling.test.ts. Use mp-stub.ts error modes (T-143-05) to exercise every error branch in packages/billing/src + apps/api/src/services/*billing*: MP returns 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 422 (business rule), 429 (rate limit), 500 (server), 502/503/504 (gateway), network timeout, malformed JSON. Per response: assert no partial DB write, user gets actionable error, Sentry captures correct context, retry policy (if any) is followed."
+            "notes": "[reframed 2026-05-20] Original scope assumed (a) error mode differentiation (4xx vs 5xx vs timeout), (b) Sentry capture per mode, (c) retry policy. All three blocked by qzpay-core providerSyncErrorStrategy=log default which swallows MP API errors before they reach the route layer (see [[bug/qzpay-provider-sync-error-log-strategy]]). Implementing those concerns requires architectural refactor deferred to SPEC-149 (Billing provider error propagation + Sentry context + retry policy). This task now covers a regression-guard test: mp-error-handling.test.ts pins the current behavior so SPEC-149 explicitly knows what changes when it lands. Scope: 11 error modes via mp-stub (400, 401, 403, 404, 422, 429, 500, 502, 503, 504, timeout, malformed) on start-paid endpoint. Per mode assert: response status (currently uniform 500), no partial DB beyond the qzpay log-strategy-persisted sub row, adapter call recorded as error outcome. 3 adjacent bugs pinned in engram: bug/qzpay-provider-sync-error-log-strategy, bug/no-sentry-on-start-paid-mp-errors, bug/no-retry-policy-on-mp-errors. See [[spec/spec-149/scope-deferred-from-spec-143]]."
         },
         {
             "id": "T-143-60",
