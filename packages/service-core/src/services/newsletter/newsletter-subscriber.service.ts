@@ -258,6 +258,16 @@ const LinkAnonymousSubscribersInputSchema = z.object({
     accountEmailVerified: z.boolean()
 });
 
+const SubscribeGuestInputSchema = z.object({
+    email: z.string().email().max(255),
+    channel: z.nativeEnum(NewsletterChannelEnum).default(NewsletterChannelEnum.EMAIL),
+    locale: z.enum(['es', 'en', 'pt']).default('es'),
+    source: z.nativeEnum(NewsletterSourceEnum).default(NewsletterSourceEnum.WEB_FOOTER),
+    consentIp: z.string().max(45).optional(),
+    consentUa: z.string().optional(),
+    consentVersion: z.string().max(20).optional()
+});
+
 const AdminListInputSchema = z.object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(200).default(50),
@@ -1394,6 +1404,181 @@ export class NewsletterSubscriberService extends BaseService {
                     linkedCount: anonRows.length,
                     promotedToActiveCount: promotedRows.length
                 };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API — subscribeGuest
+    // -------------------------------------------------------------------------
+
+    /**
+     * Subscribes an anonymous (guest) visitor to the newsletter via the public
+     * footer / standalone subscribe widget.
+     *
+     * Unlike `subscribe` (authed direct-to-active), the guest flow always uses
+     * the double opt-in path: rows are inserted with `user_id = NULL` and
+     * `status = 'pending_verification'`, and a verification email is dispatched
+     * with an HMAC token the visitor clicks to flip the row to active.
+     *
+     * State machine (lookup is by `email + channel + deleted_at IS NULL`):
+     *   - Terminal row (bounced / complained) → throw `NEWSLETTER_SUBSCRIBER_BLOCKED`.
+     *   - Active row → no-op, return `'active'` (whether the row is anonymous or
+     *     already linked to a user, the email IS subscribed already — privacy-safe).
+     *   - Linked row in pending / unsubscribed → return `'already_pending'` WITHOUT
+     *     side-effects. We don't refresh tokens or send emails to a row that
+     *     belongs to a real account, otherwise the linked user could be spammed
+     *     by anyone who knows their email.
+     *   - Anonymous row in pending → refresh `subscribed_at`, re-issue token,
+     *     send verification, return `'already_pending'`.
+     *   - Anonymous row in unsubscribed → reactivate to `pending_verification`,
+     *     re-issue token, send verification, return `'pending_verification'`.
+     *   - No row → INSERT anonymous pending row, send verification, return
+     *     `'pending_verification'`.
+     *
+     * @param input - Guest subscription details (email, locale, source, consent).
+     * @param ctx - Optional service context.
+     * @returns Status discriminator.
+     */
+    public async subscribeGuest(
+        input: {
+            email: string;
+            channel?: NewsletterChannelEnum;
+            locale?: 'es' | 'en' | 'pt';
+            source?: NewsletterSourceEnum;
+            consentIp?: string;
+            consentUa?: string;
+            consentVersion?: string;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<SubscribeResult>> {
+        const systemActor: Actor = {
+            id: '00000000-0000-0000-0000-000000000001',
+            role: 'SUPER_ADMIN' as never,
+            permissions: Object.values(PermissionEnum) as never
+        };
+        return this.runWithLoggingAndValidation({
+            methodName: 'subscribeGuest',
+            input: { actor: systemActor, ...input },
+            schema: SubscribeGuestInputSchema,
+            ctx,
+            execute: async (validated) => {
+                const db = getDb();
+
+                const rows = await db.execute(sql`
+                    SELECT id, user_id AS "userId", status, locale,
+                           deleted_at AS "deletedAt"
+                    FROM newsletter_subscribers
+                    WHERE email = ${validated.email}
+                      AND channel = ${validated.channel}
+                      AND deleted_at IS NULL
+                    LIMIT 1
+                `);
+                const row = rows.rows[0] as
+                    | {
+                          id: string;
+                          userId: string | null;
+                          status: string;
+                          locale: string;
+                          deletedAt: string | Date | null;
+                      }
+                    | undefined;
+
+                const status = row?.status as NewsletterSubscriberStatusEnum | undefined;
+                const channelVal = validated.channel as 'email' | 'whatsapp';
+
+                if (
+                    status === NewsletterSubscriberStatusEnum.BOUNCED ||
+                    status === NewsletterSubscriberStatusEnum.COMPLAINED
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'This email address is blocked from newsletter subscriptions',
+                        undefined,
+                        'NEWSLETTER_SUBSCRIBER_BLOCKED'
+                    );
+                }
+
+                if (status === NewsletterSubscriberStatusEnum.ACTIVE) {
+                    return { status: 'active' };
+                }
+
+                // Privacy guard: never side-effect on a row that already belongs
+                // to a signed-up user. We don't even reveal the difference between
+                // pending / unsubscribed here — both report 'already_pending'.
+                if (row && row.userId != null) {
+                    return { status: 'already_pending' };
+                }
+
+                const now = new Date();
+
+                if (!row) {
+                    // New anonymous pending row.
+                    const inserted = await db.execute(sql`
+                        INSERT INTO newsletter_subscribers
+                            (user_id, email, channel, status, locale, source,
+                             consent_ip, consent_ua, consent_version,
+                             subscribed_at, created_at, updated_at)
+                        VALUES
+                            (NULL, ${validated.email}, ${validated.channel},
+                             ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION},
+                             ${validated.locale}, ${validated.source},
+                             ${validated.consentIp ?? null}, ${validated.consentUa ?? null},
+                             ${validated.consentVersion ?? null},
+                             ${now.toISOString()}, ${now.toISOString()}, ${now.toISOString()})
+                        RETURNING id
+                    `);
+                    const newId = (inserted.rows[0] as { id: string }).id;
+                    const token = this._genVerificationToken(newId, channelVal);
+                    await this._sendVerification({
+                        subscriberId: newId,
+                        email: validated.email,
+                        // No user yet — pass '' so the dispatcher can branch on
+                        // anonymous templates without dereferencing undefined.
+                        userId: '',
+                        locale: validated.locale,
+                        token
+                    });
+                    return { status: 'pending_verification' };
+                }
+
+                // Anonymous row in pending or unsubscribed.
+                if (status === NewsletterSubscriberStatusEnum.PENDING_VERIFICATION) {
+                    await db.execute(sql`
+                        UPDATE newsletter_subscribers
+                        SET subscribed_at = ${now.toISOString()},
+                            updated_at = ${now.toISOString()}
+                        WHERE id = ${row.id}
+                    `);
+                    const token = this._genVerificationToken(row.id, channelVal);
+                    await this._sendVerification({
+                        subscriberId: row.id,
+                        email: validated.email,
+                        userId: '',
+                        locale: row.locale,
+                        token
+                    });
+                    return { status: 'already_pending' };
+                }
+
+                // status === UNSUBSCRIBED → reactivate to pending_verification.
+                await db.execute(sql`
+                    UPDATE newsletter_subscribers
+                    SET status = ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION},
+                        unsubscribed_at = NULL,
+                        subscribed_at = ${now.toISOString()},
+                        updated_at = ${now.toISOString()}
+                    WHERE id = ${row.id}
+                `);
+                const token = this._genVerificationToken(row.id, channelVal);
+                await this._sendVerification({
+                    subscriberId: row.id,
+                    email: validated.email,
+                    userId: '',
+                    locale: row.locale,
+                    token
+                });
+                return { status: 'pending_verification' };
             }
         });
     }

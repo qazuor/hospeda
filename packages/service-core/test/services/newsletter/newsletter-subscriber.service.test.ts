@@ -952,6 +952,122 @@ describe('NewsletterSubscriberService.updatePreferences', () => {
 });
 
 // ===========================================================================
+// subscribeGuest
+// ===========================================================================
+
+describe('NewsletterSubscriberService.subscribeGuest', () => {
+    const GUEST_EMAIL = 'guest@example.com';
+
+    it('inserts an anonymous pending row and sends verification when no row exists', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([]); // lookup
+        enqueueResponse([{ id: SUBSCRIBER_ID }]); // INSERT RETURNING id
+
+        const result = await svc.subscribeGuest({
+            email: GUEST_EMAIL,
+            locale: 'es',
+            source: NewsletterSourceEnum.WEB_FOOTER
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.status).toBe('pending_verification');
+        expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+        expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+
+        // INSERT must use NULL user_id for the anonymous row.
+        const insertSql = capturedSqlStrings.find((s) =>
+            s.includes('INSERT INTO newsletter_subscribers')
+        );
+        expect(insertSql).toBeDefined();
+        expect(insertSql).toContain('NULL');
+    });
+
+    it('refreshes the anonymous pending row and returns already_pending', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            { id: SUBSCRIBER_ID, userId: null, status: 'pending_verification', locale: 'es' }
+        ]);
+        enqueueResponse([]); // UPDATE response
+
+        const result = await svc.subscribeGuest({ email: GUEST_EMAIL });
+
+        expect(result.data?.status).toBe('already_pending');
+        expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+    });
+
+    it('reactivates an anonymous unsubscribed row back to pending_verification', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            { id: SUBSCRIBER_ID, userId: null, status: 'unsubscribed', locale: 'es' }
+        ]);
+        enqueueResponse([]); // UPDATE response
+
+        const result = await svc.subscribeGuest({ email: GUEST_EMAIL });
+
+        expect(result.data?.status).toBe('pending_verification');
+        expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+    });
+
+    it('returns active idempotently when an active row already exists', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([{ id: SUBSCRIBER_ID, userId: null, status: 'active', locale: 'es' }]);
+
+        const result = await svc.subscribeGuest({ email: GUEST_EMAIL });
+
+        expect(result.data?.status).toBe('active');
+        expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+    });
+
+    it('blocks with NEWSLETTER_SUBSCRIBER_BLOCKED on a bounced row', async () => {
+        const { svc } = makeService();
+
+        enqueueResponse([{ id: SUBSCRIBER_ID, userId: null, status: 'bounced', locale: 'es' }]);
+
+        const result = await svc.subscribeGuest({ email: GUEST_EMAIL });
+
+        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_BLOCKED');
+    });
+
+    // Privacy guard: a row linked to a real user must not be touched by the
+    // guest flow — refreshing tokens or reactivating would spam the linked user.
+    it('does NOT send email when the matched row is linked to a real user (privacy guard)', async () => {
+        const { svc, dispatcher } = makeService();
+
+        enqueueResponse([
+            {
+                id: SUBSCRIBER_ID,
+                userId: USER_ID, // <- linked
+                status: 'pending_verification',
+                locale: 'es'
+            }
+        ]);
+
+        const result = await svc.subscribeGuest({ email: GUEST_EMAIL });
+
+        expect(result.data?.status).toBe('already_pending');
+        expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+
+        // No UPDATE either — the row stays exactly as it was.
+        expect(
+            capturedSqlStrings.find((s) => s.includes('UPDATE newsletter_subscribers'))
+        ).toBeUndefined();
+    });
+
+    it('rejects malformed email via Zod validation', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.subscribeGuest({ email: 'not-an-email' });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+// ===========================================================================
 // linkAnonymousSubscribersToUser
 // ===========================================================================
 
