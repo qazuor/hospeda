@@ -132,3 +132,57 @@
     flex-shrink: 0;
     font-size: 0.75rem;
 }
+
+/* ============================================================
+   Icon-chips with priority shortcuts
+   ============================================================ */
+
+.iconChipsWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Highlighted row above the regular icon-chips list. Each entry maps to an
+ * independent boolean URL param (e.g. ?hasWifi=true) instead of the multi-
+ * select selections of the group. */
+.priorityChipsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed oklch(from var(--border) l c h / 0.4);
+}
+
+.priorityChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background-color: var(--surface-warm);
+    color: var(--core-foreground);
+    border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+}
+
+.priorityChip:hover {
+    border-color: oklch(from var(--brand-accent) l c h / 0.5);
+}
+
+.priorityChipActive {
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    border-color: var(--brand-accent);
+}
+
+.priorityChipIcon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}

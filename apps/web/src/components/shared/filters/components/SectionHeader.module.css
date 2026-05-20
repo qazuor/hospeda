@@ -1,0 +1,34 @@
+/* SectionHeader.module.css
+ * Small-caps divider header for grouped filter sections.
+ */
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0.25rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid oklch(from var(--border) l c h / 0.35);
+    color: var(--core-muted-foreground);
+}
+
+/* First header has no top margin — sits flush with sidebar header */
+.sectionHeader:first-child {
+    margin-top: 0;
+}
+
+.sectionHeaderIcon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.sectionHeaderLabel {
+    font-family: var(--font-heading);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--core-muted-foreground);
+}
