@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 8,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 55,
+        "completed": 59,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -576,11 +576,12 @@
             "title": "Sentry filter tuning for promo/sponsorship/override noise",
             "phase": "phase-3-BD",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-38", "T-143-39", "T-143-40"],
-            "notes": "Phase 3 flows produce expected errors (expired codes, revoked sponsorships). Filter these out of Sentry to avoid alert fatigue."
+            "notes": "Phase 3 flows produce expected errors (expired codes, revoked sponsorships). Filter these out of Sentry to avoid alert fatigue. [completed 2026-05-20] Shipped via commit ca5b7f8fc. Audit findings: (a) promo errors today do NOT reach Sentry — service layer uses Result pattern, not throws; no current noise. (b) Sponsorship (T-143-39) and customer override (T-143-40) are obsolete — features never implemented in v1. (c) Added defensive expected_error:true tag convention in lib/sentry.ts beforeSend hook to drop tagged events before they reach quota/alert pipeline; no-op today but available for future capture sites. Documented convention in docs/billing/sentry-alerts-runbook.md §1.",
+            "completedAt": "2026-05-20T16:55:00Z"
         },
         {
             "id": "T-143-48",
@@ -599,33 +600,36 @@
             "title": "Sentry alerts: failed-payment webhook handler + MP signature validation failure",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-17", "T-143-16"],
-            "notes": "Two alerts. Threshold + notification target documented. Go-live gate requirement."
+            "notes": "Two alerts. Threshold + notification target documented. Go-live gate requirement. [completed 2026-05-20] Shipped via commit 4338435fc — docs/billing/sentry-alerts-runbook.md §2.1 (failed-payment webhook, Slack, 1 event in 5min) and §2.2 (MP signature, Slack + PagerDuty, 5 events in 10min — rogue-request noise floor). Both alerts rely on the existing captureWebhookError hook in lib/sentry.ts (module:billing + event_type:webhook_failure tags). Operator setup instructions step-by-step in §2.1 and §2.2. Smoke-test gate in §4 checklist. Code prereq already shipped (event-handler.ts:262 captureWebhookError pre-existing).",
+            "completedAt": "2026-05-20T16:55:00Z"
         },
         {
             "id": "T-143-50",
             "title": "Sentry alerts: cron job failure + dunning cron failure",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-13", "T-143-30"],
-            "notes": "Two alerts. Threshold + notification target documented. Go-live gate requirement."
+            "notes": "Two alerts. Threshold + notification target documented. Go-live gate requirement. [completed 2026-05-20] Shipped via commits 62cc7ec0d (cron bootstrap Sentry capture) + 4338435fc (alert runbook). Pre-existing gap surfaced and closed: cron/bootstrap.ts previously only logged handler failures via apiLogger.error — Sentry never received events, so any alert rule would silently miss. Code change in 62cc7ec0d adds Sentry.captureException in the per-tick catch block with tags module:cron, job_name:<name>, and event_type that splits dunning (event_type=dunning_failure) from everything else (event_type=cron_failure) — lets the two alert rules in docs/billing/sentry-alerts-runbook.md §2.3 (generic, Slack) and §2.4 (dunning, Slack + PagerDuty) match cleanly without crossing.",
+            "completedAt": "2026-05-20T16:55:00Z"
         },
         {
             "id": "T-143-51",
             "title": "Billing health dashboard (Sentry / metrics view)",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-49", "T-143-50"],
-            "notes": "Dashboard surfacing active subscriptions, MRR, webhook error rate, cron last-run timestamps, signature failures (24h)."
+            "notes": "Dashboard surfacing active subscriptions, MRR, webhook error rate, cron last-run timestamps, signature failures (24h). [completed 2026-05-20] Shipped via commit 4338435fc — docs/billing/sentry-alerts-runbook.md §3. Layout: 3 Sentry Discover widgets (webhook error rate 24h with 1h buckets grouped by webhook_event, signature failures 24h big-number, top failure reasons 24h bar grouped by failure_reason tag) + 3 DB-backed text widgets with exact SQL (active subs from billing_subscriptions where status in active/trialing, MRR normalized monthly+annual/12 from billing_subscriptions+billing_prices, cron last-run timestamps from cron_run_history grouped by job_name with last_success and last_failure). Split between live (Sentry) and manual (DB) is documented — operator refreshes DB widgets daily; future SPEC follow-up could wire a hops dashboard-export script.",
+            "completedAt": "2026-05-20T16:55:00Z"
         },
         {
             "id": "T-143-52",
