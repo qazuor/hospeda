@@ -385,6 +385,23 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // SPEC-097 — Viewport bbox filter on EXACT coordinates stored under
+        // location.coordinates (JSONB). Mirrors the predicate in
+        // searchWithRelations so paginated counts and totals agree.
+        if (
+            params.bboxNorth !== undefined &&
+            params.bboxSouth !== undefined &&
+            params.bboxEast !== undefined &&
+            params.bboxWest !== undefined
+        ) {
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'lat')::numeric BETWEEN ${params.bboxSouth} AND ${params.bboxNorth}`
+            );
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
         const where = and(...whereClauses);
 
         const totalQuery = db.select({ count: count() }).from(this.table).where(where);
@@ -478,6 +495,24 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     safeIlike(accommodations.name, params.q),
                     safeIlike(accommodations.description, params.q)
                 ) as SQL<unknown>
+            );
+        }
+
+        // SPEC-097 — Viewport bbox filter on EXACT coordinates stored under
+        // location.coordinates (JSONB). Mirrors the predicate in
+        // searchWithRelations so the flat-list search also honors the map
+        // viewport.
+        if (
+            params.bboxNorth !== undefined &&
+            params.bboxSouth !== undefined &&
+            params.bboxEast !== undefined &&
+            params.bboxWest !== undefined
+        ) {
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'lat')::numeric BETWEEN ${params.bboxSouth} AND ${params.bboxNorth}`
+            );
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
             );
         }
 

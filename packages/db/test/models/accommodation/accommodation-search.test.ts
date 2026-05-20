@@ -605,6 +605,117 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
     });
 
     // =========================================================================
+    // bbox viewport filter (SPEC-097) — countByFilters + search parity
+    // =========================================================================
+
+    describe('viewport bbox filter (SPEC-097)', () => {
+        const FULL_BBOX = {
+            bboxNorth: -32.0,
+            bboxSouth: -34.0,
+            bboxEast: -57.0,
+            bboxWest: -59.0
+        };
+
+        it('countByFilters() adds two clauses when the four bbox params are present', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let bboxWhere: unknown;
+            const { db: bboxDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    bboxWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(bboxDb as any);
+            await model.countByFilters(FULL_BBOX);
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const bboxChunks = (bboxWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(baselineChunks)).toBe(true);
+            expect(Array.isArray(bboxChunks)).toBe(true);
+            // Two `and(...)` chunks come from the lat + long predicates.
+            expect((bboxChunks as unknown[]).length).toBeGreaterThan(
+                (baselineChunks as unknown[]).length
+            );
+        });
+
+        it('countByFilters() ignores a partial bbox (missing one bound = no filter)', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let partialWhere: unknown;
+            const { db: partialDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    partialWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(partialDb as any);
+            await model.countByFilters({
+                bboxNorth: FULL_BBOX.bboxNorth,
+                bboxSouth: FULL_BBOX.bboxSouth,
+                bboxEast: FULL_BBOX.bboxEast
+                // bboxWest intentionally omitted
+            });
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const partialChunks = (partialWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((partialChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        });
+
+        it('search() and countByFilters() compose the same WHERE clause for a full bbox', async () => {
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(FULL_BBOX);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(FULL_BBOX);
+
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('searchWithRelations() resolves when a full bbox is supplied', async () => {
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.searchWithRelations(FULL_BBOX);
+            expect(result.items).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+    });
+
+    // =========================================================================
     // buildAccommodationOrderBy — export smoke-test
     // =========================================================================
 
