@@ -396,3 +396,33 @@ export function getDefaultPlan(category: PlanDefinition['category']): PlanDefini
     }
     return plan;
 }
+
+/**
+ * Returns the entitlements and limits granted to authenticated users that do
+ * not have an active paid subscription (SPEC-143 T-143-58).
+ *
+ * The fallback resolves to {@link TOURIST_FREE_PLAN} unconditionally — owner
+ * and complex defaults are paid plans (with trials) so auto-granting their
+ * entitlements without a payment intent is incorrect; those flows go through
+ * an explicit checkout. Tourist-free is the only truly free default plan and
+ * it is what every authenticated user should receive by default.
+ *
+ * Returned as the raw plan shape (`EntitlementKey[]` + `LimitDefinition[]`).
+ * The caller is responsible for materializing to the runtime shape the
+ * entitlement middleware uses (`Set<EntitlementKey>` + `Map<LimitKey, number>`).
+ *
+ * Pure: reads only the in-memory plan config — safe to call on every request.
+ *
+ * @example
+ * ```ts
+ * const { entitlements, limits } = getDefaultEntitlements();
+ * const entitlementSet = new Set(entitlements);
+ * const limitMap = new Map(limits.map((l) => [l.key, l.value]));
+ * ```
+ */
+export function getDefaultEntitlements(): Pick<PlanDefinition, 'entitlements' | 'limits'> {
+    return {
+        entitlements: TOURIST_FREE_PLAN.entitlements,
+        limits: TOURIST_FREE_PLAN.limits
+    };
+}

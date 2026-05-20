@@ -99,7 +99,7 @@ export class TestDatabaseManager {
         if (!this.db) throw new Error('Database not initialized');
 
         try {
-            const result = await this.db.execute<{ exists: boolean }>(sql`
+            const result = await this.db.execute(sql`
                 SELECT EXISTS (
                     SELECT 1
                     FROM information_schema.tables
@@ -108,7 +108,7 @@ export class TestDatabaseManager {
                 ) AS exists
             `);
 
-            const exists = result.rows[0]?.exists === true;
+            const exists = (result.rows[0] as { exists?: boolean } | undefined)?.exists === true;
             if (!exists) {
                 throw new Error(
                     [
