@@ -2,6 +2,15 @@
 
 > Decision records and operational guides for the Hospeda billing system.
 
+## Operational Runbooks
+
+| Document | Description |
+|----------|-------------|
+| [Billing Runbooks](billing-runbooks.md) | 7 incident-response procedures for oncall: failed-webhook triage, MP signature failure, cron recovery, dunning stuck, refund, dispute, manual subscription rescue |
+| [Staging Smoke Checklist](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) | Pre-merge manual smoke for billing-touching PRs (SPEC-143) |
+| [Prod Smoke + Rollback](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) | Post-deploy production smoke and rollback procedures for billing-CORE changes |
+| [MP Test Cards Reference](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) | MercadoPago sandbox card numbers and outcome codes |
+
 ## Decision Records
 
 | Document | Description |
@@ -29,7 +38,6 @@ For billing package implementation details, API reference, and integration guide
 ## Related Documentation
 
 - [Billing Deployment Checklist](../deployment/billing-checklist.md)
-- [Billing Incidents Runbook](../runbooks/billing-incidents.md)
 - [QA E2E Checklist](../testing/billing-e2e-checklist.md)
 - [QA Manual Testing](../testing/billing-manual-testing.md)
 - [Security Audit](../security/billing-audit-2026-02.md)
