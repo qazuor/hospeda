@@ -116,7 +116,8 @@
     "properties": {
         "list": {
             "title": "[TODO]",
-            "subtitle": "[TODO]"
+            "subtitle": "[TODO]",
+            "publishAnother": "Publish another"
         },
         "card": {
             "status": {
