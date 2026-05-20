@@ -15,7 +15,7 @@ import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridS
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import SearchContextBanner from '@/components/shared/feedback/SearchContextBanner.astro';
+import { ListingContextBar } from '@/components/accommodation/ListingContextBar.client';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
@@ -47,13 +47,41 @@ const types = url.searchParams.get('types') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
-const sortBy = url.searchParams.get('sortBy') ?? undefined;
-// SPEC-098 T-052 — `mostSaved` should default to descending so accommodations
-// with the most active bookmarks appear first. Other fields keep their existing
-// behavior (server-side fallback to `asc`).
-const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
-const sortOrder: 'asc' | 'desc' | undefined =
-    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
+/**
+ * Maps the URL's user-friendly sort key (e.g. `featured`, `priceAsc`) to the
+ * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
+ * UI offer pre-baked options like "Mejor valorados" / "Precio menor a mayor"
+ * without exposing a separate direction toggle.
+ *
+ * All sortBy fields here MUST be whitelisted in
+ * `apps/api/src/routes/accommodation/public/list.ts > ALLOWED_SORT_FIELDS`.
+ * `price` and `mostSaved` are synthetic fields handled by the model.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured:     { sortBy: 'isFeatured',    sortOrder: 'desc' },
+    mostSaved:    { sortBy: 'mostSaved',     sortOrder: 'desc' },
+    ratingDesc:   { sortBy: 'averageRating', sortOrder: 'desc' },
+    mostReviewed: { sortBy: 'reviewsCount',  sortOrder: 'desc' },
+    newest:       { sortBy: 'createdAt',     sortOrder: 'desc' },
+    nameAsc:      { sortBy: 'name',          sortOrder: 'asc'  },
+    nameDesc:     { sortBy: 'name',          sortOrder: 'desc' },
+    priceAsc:     { sortBy: 'price',         sortOrder: 'asc'  },
+    priceDesc:    { sortBy: 'price',         sortOrder: 'desc' }
+};
+/** Default sort key when the URL has no `sortBy`. */
+const DEFAULT_SORT_KEY = 'featured';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+const sortBy = sortResolved.sortBy;
+const sortOrder = sortResolved.sortOrder;
+
+// Public quick-amenity boolean shortcuts. The backend resolves these to
+// canonical amenity IDs server-side (PR fix/accommodation-backend-filters-sort).
+const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
+const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
+const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
+const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
 const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
@@ -123,6 +151,10 @@ const result = await accommodationsApi.list({
 	includeAmenities: true,
 	includeNoPrice,
 	includeNoReviews,
+	hasWifi,
+	hasPool,
+	hasParking,
+	allowsPets,
 });
 
 const hasError = !result.ok;
@@ -233,42 +265,41 @@ const filterSummary = buildAccommodationListingSummary({
 	},
 });
 
-// Filter configuration for sidebar
-// Order: dates/guests context → search → featured (toggle, inline) → type → destination → amenities → features → price → rest
+// Filter configuration for sidebar.
+// Sectioned layout: 4 themed groups (Ubicación / Tipo y Características /
+// Capacidad / Precio y Calidad). `section-header` entries divide the panel
+// with small-caps headers; the FilterSidebar switches to declaration-order
+// rendering when any section-header is declared, so inline toggles
+// (`isFeatured`) land under their intended section.
+//
+// `dates` / `adults` / `children` no longer live in this sidebar — they're
+// surfaced by the ListingContextBar above the grid, since they don't
+// actually narrow the result set (no availability system yet).
 const filterGroups: FilterGroup[] = [
 	{
-		id: 'dates',
-		label: t('accommodations.sidebar.dates', 'Fechas'),
-		type: 'date-range',
-		checkInPlaceholder: t('accommodations.sidebar.checkInPlaceholder', 'Llegada'),
-		checkOutPlaceholder: t('accommodations.sidebar.checkOutPlaceholder', 'Salida'),
-	},
-	{
-		id: 'adults',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
-		type: 'stepper',
-		min: 1,
-		max: 10,
-		defaultValue: 2,
-		// Hero search context: keep the value in URL even when at default,
-		// so it survives across other filter changes and keeps the banner
-		// + detail-page prefill in sync.
-		emitWhenAtDefault: true,
-	},
-	{
-		id: 'children',
-		label: t('accommodations.sidebar.children', 'Niños'),
-		type: 'stepper',
-		min: 0,
-		max: 6,
-		defaultValue: 0,
-		emitWhenAtDefault: true,
+		id: 'section-location',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.location', 'Ubicación'),
+		icon: 'MapIcon',
 	},
 	{
 		id: 'q',
 		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
 		type: 'search',
 		placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...'),
+	},
+	{
+		id: 'destinationIds',
+		label: t('accommodations.sidebar.destination', 'Destino'),
+		type: 'select-search',
+		options: destinations.map((d) => ({ value: d.id, label: d.name })),
+		maxVisible: 8,
+	},
+	{
+		id: 'section-type',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.type', 'Tipo y características'),
+		icon: 'AccommodationIcon',
 	},
 	{
 		id: 'isFeatured',
@@ -292,18 +323,21 @@ const filterGroups: FilterGroup[] = [
 		],
 	},
 	{
-		id: 'destinationIds',
-		label: t('accommodations.sidebar.destination', 'Destino'),
-		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
-		maxVisible: 8,
-	},
-	{
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
 		options: amenities.map((a) => ({ value: a.id, label: a.name, icon: a.icon ?? undefined })),
 		maxVisible: 10,
+		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
+		// Each `value` is the URL boolean param name that the backend resolves
+		// to canonical amenity IDs server-side (with slug variants — e.g.
+		// `hasPool` matches both `pool` and `heated_pool`).
+		priorityOptions: [
+			{ value: 'hasWifi', label: t('accommodations.quickAmenity.wifi', 'WiFi'), icon: 'WifiIcon' },
+			{ value: 'hasPool', label: t('accommodations.quickAmenity.pool', 'Pileta'), icon: 'PoolIcon' },
+			{ value: 'hasParking', label: t('accommodations.quickAmenity.parking', 'Estacionamiento'), icon: 'CarIcon' },
+			{ value: 'allowsPets', label: t('accommodations.quickAmenity.pets', 'Acepta mascotas'), icon: 'DogIcon' },
+		],
 	},
 	{
 		id: 'features',
@@ -311,6 +345,68 @@ const filterGroups: FilterGroup[] = [
 		type: 'icon-chips',
 		options: features.map((f) => ({ value: f.id, label: f.name, icon: f.icon ?? undefined })),
 		maxVisible: 10,
+	},
+	{
+		id: 'section-capacity',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.capacity', 'Capacidad'),
+		icon: 'UsersIcon',
+	},
+	{
+		id: 'minGuests',
+		label: t('accommodations.sidebar.minCapacity', 'Huéspedes (mínimo)'),
+		type: 'stepper',
+		min: 0,
+		max: 20,
+		defaultValue: 0,
+		suffix: t('accommodations.chips.guests', 'huéspedes'),
+	},
+	{
+		id: 'maxGuests',
+		label: t('accommodations.sidebar.maxCapacity', 'Huéspedes (máximo)'),
+		type: 'stepper',
+		min: 0,
+		max: 20,
+		defaultValue: 0,
+		suffix: t('accommodations.chips.guests', 'huéspedes'),
+	},
+	{
+		id: 'minBedrooms',
+		label: t('accommodations.sidebar.bedrooms', 'Dormitorios (mínimo)'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+	{
+		id: 'maxBedrooms',
+		label: t('accommodations.sidebar.maxBedrooms', 'Dormitorios (máximo)'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+	{
+		id: 'minBathrooms',
+		label: t('accommodations.sidebar.bathrooms', 'Baños (mínimo)'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+	{
+		id: 'maxBathrooms',
+		label: t('accommodations.sidebar.maxBathrooms', 'Baños (máximo)'),
+		type: 'stepper',
+		min: 0,
+		max: 10,
+		defaultValue: 0,
+	},
+	{
+		id: 'section-price-quality',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.priceAndQuality', 'Precio y calidad'),
+		icon: 'PriceIcon',
 	},
 	{
 		id: 'price',
@@ -324,48 +420,29 @@ const filterGroups: FilterGroup[] = [
 		includeNullParam: 'includeNoPrice',
 	},
 	{
-		id: 'minGuests',
-		label: t('accommodations.sidebar.minCapacity', 'Capacidad mínima'),
-		type: 'stepper',
-		min: 0,
-		max: 20,
-		defaultValue: 0,
-		suffix: t('accommodations.chips.guests', 'huéspedes'),
-	},
-	{
 		id: 'minRating',
-		label: t('accommodations.sidebar.rating', 'Calificación'),
+		label: t('accommodations.sidebar.rating', 'Calificación mínima'),
 		type: 'stars',
 		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
 		includeNullParam: 'includeNoReviews',
 	},
-	{
-		id: 'minBedrooms',
-		label: t('accommodations.sidebar.bedrooms', 'Dormitorios'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
-	{
-		id: 'minBathrooms',
-		label: t('accommodations.sidebar.bathrooms', 'Baños'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
 ];
 
+// Sort options expose 9 encoded keys, each resolved to a concrete
+// `(sortBy, sortOrder)` pair via the SORT_OPTION_MAP at the top of this
+// file. Default = `featured` so paid / promoted accommodations land at the
+// top of the first page. All sortBy values are whitelisted in the API
+// route's ALLOWED_SORT_FIELDS — see PR fix/accommodation-backend-filters-sort.
 const sortOptions = [
-	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
-	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
-	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
-	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
-	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
-	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
-	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
-	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
+	{ value: 'featured',     label: t('accommodations.sort.featured',     'Destacados primero') },
+	{ value: 'mostSaved',    label: t('accommodations.sort.mostSaved',    'Más guardados') },
+	{ value: 'ratingDesc',   label: t('accommodations.sort.ratingDesc',   'Mejor valorados') },
+	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
+	{ value: 'newest',       label: t('accommodations.sort.newest',       'Recién agregados') },
+	{ value: 'nameAsc',      label: t('accommodations.sort.nameAsc',      'Nombre (A-Z)') },
+	{ value: 'nameDesc',     label: t('accommodations.sort.nameDesc',     'Nombre (Z-A)') },
+	{ value: 'priceAsc',     label: t('accommodations.sort.priceAsc',     'Precio: menor a mayor') },
+	{ value: 'priceDesc',    label: t('accommodations.sort.priceDesc',    'Precio: mayor a menor') },
 ];
 
 // ItemList JSON-LD
@@ -399,28 +476,33 @@ const typeBadges = Object.values(AccommodationTypeEnum).map((value) => {
     };
 });
 
-// Build initial filter params for the sidebar (avoids hydration flash)
+// Build initial filter params for the sidebar (avoids hydration flash).
+// The encoded `sortKey` is what the SortPopover reads — NOT the resolved
+// backend sortBy column, which is internal to this page.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
 if (types) initialParams.types = types;
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
-if (sortBy) initialParams.sortBy = sortBy;
+initialParams.sortBy = sortKey;
 if (isFeatured) initialParams.isFeatured = 'true';
 if (minGuests !== undefined) initialParams.minGuests = String(minGuests);
+if (maxGuests !== undefined) initialParams.maxGuests = String(maxGuests);
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
+if (maxBedrooms !== undefined) initialParams.maxBedrooms = String(maxBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
+if (maxBathrooms !== undefined) initialParams.maxBathrooms = String(maxBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
 if (includeNoPrice) initialParams.includeNoPrice = 'true';
 if (includeNoReviews) initialParams.includeNoReviews = 'true';
-// Hero search context, also exposed as editable filters in the sidebar.
-if (checkIn) initialParams.checkIn = checkIn;
-if (checkOut) initialParams.checkOut = checkOut;
-if (adults !== undefined && !Number.isNaN(adults)) initialParams.adults = String(adults);
-if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.children = String(childrenCount);
+// Quick-amenity boolean shortcuts (priority chips inside the Comodidades group).
+if (hasWifi) initialParams.hasWifi = 'true';
+if (hasPool) initialParams.hasPool = 'true';
+if (hasParking) initialParams.hasParking = 'true';
+if (allowsPets) initialParams.allowsPets = 'true';
 
 // ---------------------------------------------------------------------------
 // Empty state recovery: removable filter chips + secondary suggestions.
@@ -628,12 +710,13 @@ const emptyStateSuggestions = [
 		/>
 	)}
 
-	<SearchContextBanner
+	<ListingContextBar
+		client:load
 		locale={locale}
-		checkIn={checkIn}
-		checkOut={checkOut}
-		adults={adults}
-		children={childrenCount}
+		initialCheckIn={checkIn ?? ''}
+		initialCheckOut={checkOut ?? ''}
+		initialAdults={adults ?? 2}
+		initialChildren={childrenCount ?? 0}
 	/>
 
 	{!hasError && cards.length > 0 && (
@@ -669,27 +752,11 @@ const emptyStateSuggestions = [
 			baseUrl={baseUrl.slice(0, -1)}
 			locale={locale}
 			searchParams={(() => {
-				const sp = new URLSearchParams();
-				if (q) sp.set('q', q);
-				if (types) sp.set('types', types);
-				if (destinationIds) sp.set('destinationIds', destinationIds);
-				if (minPrice !== undefined) sp.set('minPrice', String(minPrice));
-				if (maxPrice !== undefined) sp.set('maxPrice', String(maxPrice));
-				if (sortBy) sp.set('sortBy', sortBy);
-				if (sortOrder) sp.set('sortOrder', sortOrder);
-				if (isFeatured) sp.set('isFeatured', 'true');
-				if (minGuests !== undefined) sp.set('minGuests', String(minGuests));
-				if (minBedrooms !== undefined) sp.set('minBedrooms', String(minBedrooms));
-				if (minBathrooms !== undefined) sp.set('minBathrooms', String(minBathrooms));
-				if (minRating !== undefined) sp.set('minRating', String(minRating));
-				if (amenitiesParam) sp.set('amenities', amenitiesParam);
-				if (featuresParam) sp.set('features', featuresParam);
-				if (includeNoPrice) sp.set('includeNoPrice', 'true');
-				if (includeNoReviews) sp.set('includeNoReviews', 'true');
-				if (checkIn) sp.set('checkIn', checkIn);
-				if (checkOut) sp.set('checkOut', checkOut);
-				if (adults !== undefined && !Number.isNaN(adults)) sp.set('adults', String(adults));
-				if (childrenCount !== undefined && !Number.isNaN(childrenCount)) sp.set('children', String(childrenCount));
+				// Forward every URL param except `page` so pagination links
+				// preserve the full filter/sort/context set. Cheaper and more
+				// future-proof than re-listing every supported field.
+				const sp = new URLSearchParams(url.searchParams);
+				sp.delete('page');
 				return sp;
 			})()}
 		/>
