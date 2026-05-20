@@ -716,6 +716,128 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
     });
 
     // =========================================================================
+    // Geo radius filter (haversine) — countByFilters + search + searchWithRelations
+    // =========================================================================
+
+    describe('geo radius filter (haversine)', () => {
+        const FULL_GEO = {
+            latitude: -32.4846,
+            longitude: -58.2326,
+            radius: 25
+        };
+
+        it('countByFilters() adds one clause when the latitude/longitude/radius triplet is present', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let geoWhere: unknown;
+            const { db: geoDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    geoWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(geoDb as any);
+            await model.countByFilters(FULL_GEO);
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const geoChunks = (geoWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((geoChunks as unknown[]).length).toBeGreaterThan(
+                (baselineChunks as unknown[]).length
+            );
+        });
+
+        it('countByFilters() ignores a partial triplet (missing radius = no filter)', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let partialWhere: unknown;
+            const { db: partialDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    partialWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(partialDb as any);
+            await model.countByFilters({
+                latitude: FULL_GEO.latitude,
+                longitude: FULL_GEO.longitude
+                // radius intentionally omitted
+            });
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const partialChunks = (partialWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((partialChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        });
+
+        it('search() and countByFilters() compose the same WHERE clause for a full triplet', async () => {
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(FULL_GEO);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(FULL_GEO);
+
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('searchWithRelations() resolves when the full triplet is supplied', async () => {
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.searchWithRelations(FULL_GEO);
+            expect(result.items).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+
+        it('countByFilters() resolves when bbox and geo radius are combined', async () => {
+            // Both predicates are AND-composed at the model layer, so the
+            // count query must still resolve without throwing.
+            const { db } = makeCountMock({ total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({
+                bboxNorth: -32.0,
+                bboxSouth: -34.0,
+                bboxEast: -57.0,
+                bboxWest: -59.0,
+                ...FULL_GEO
+            });
+            expect(result.count).toBe(0);
+        });
+    });
+
+    // =========================================================================
     // buildAccommodationOrderBy — export smoke-test
     // =========================================================================
 

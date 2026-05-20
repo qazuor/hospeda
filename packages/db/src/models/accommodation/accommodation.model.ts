@@ -266,6 +266,29 @@ function buildFeatureIntersectionClause(featureIds: readonly string[]): SQL<unkn
     )`;
 }
 
+/**
+ * Builds a WHERE clause that keeps accommodations whose stored coordinates are
+ * within `radiusKm` of the supplied center using the haversine formula. The
+ * coordinates live under `location.coordinates.{lat,long}` (JSONB, stored as
+ * strings) and are cast to numeric on the fly. Earth radius is 6371 km.
+ */
+function buildGeoRadiusClause(
+    centerLat: number,
+    centerLong: number,
+    radiusKm: number
+): SQL<unknown> {
+    return sql<unknown>`(
+        2 * 6371 * asin(
+            sqrt(
+                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
+                + cos(radians(${centerLat}))
+                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
+                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
+            )
+        )
+    ) <= ${radiusKm}`;
+}
+
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
@@ -402,6 +425,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // Geo radius filter — haversine distance in kilometers between the
+        // accommodation's stored coordinates and the supplied center, capped at
+        // `radius`. Requires the full triplet; partial input is ignored.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
+            );
+        }
+
         const where = and(...whereClauses);
 
         const totalQuery = db.select({ count: count() }).from(this.table).where(where);
@@ -513,6 +549,17 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
             whereClauses.push(
                 sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
+        // Geo radius filter — see countByFilters() for rationale.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
             );
         }
 
@@ -659,6 +706,17 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
             whereClauses.push(
                 sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
+        // Geo radius filter — see countByFilters() for rationale.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
             );
         }
 
