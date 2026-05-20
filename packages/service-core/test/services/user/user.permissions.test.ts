@@ -8,59 +8,76 @@ import {
     canUpdateUser,
     canViewUser
 } from '../../../src/services/user/user.permissions';
+import type { Actor } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 describe('user permission helpers', () => {
+    // The actor-only helpers (canAssignRole, canAddPermission, canRemovePermission,
+    // canSetPermissions) consume just `Actor` — id + role + permissions. Building
+    // them as bare `Actor` literals avoids the `User.image: string | null` →
+    // `Actor.image: string | undefined` mismatch (production normalises null →
+    // undefined in the actor middleware; see apps/api/src/middlewares/actor.ts).
+    //
+    // canViewUser/canUpdateUser take a `target: User` second argument, so the
+    // `self` fixture is kept as a real `User` (via the factory) and `selfActor`
+    // exposes the Actor-shape projection of the same identity for the
+    // self-as-actor call sites.
+
     // Regular user with no special permissions
     const self = createUser({ id: getMockId('user'), role: RoleEnum.USER, permissions: [] });
+    const selfActor: Actor = {
+        id: self.id,
+        role: self.role,
+        permissions: self.permissions
+    };
 
     // Super admin has ALL permissions (as assigned by actor middleware in production)
-    const superAdmin = createUser({
-        id: getMockId('user'),
+    const superAdmin: Actor = {
+        id: getMockId('user') as string,
         role: RoleEnum.SUPER_ADMIN,
         permissions: Object.values(PermissionEnum)
-    });
+    };
 
     // Admin with USER_READ_ALL but no role management or update permissions
-    const adminWithReadAll = createUser({
+    const adminWithReadAll: Actor = {
         id: getMockId('user', 'admin-read') as string,
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.USER_READ_ALL]
-    });
+    };
 
     // Admin with USER_UPDATE_ANY permission (can update any user's profile)
-    const adminWithUpdateAny = createUser({
+    const adminWithUpdateAny: Actor = {
         id: getMockId('user', 'admin-update') as string,
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.USER_UPDATE_ANY]
-    });
+    };
 
     // Admin with USER_UPDATE_ROLES permission
-    const adminWithRolePerms = createUser({
+    const adminWithRolePerms: Actor = {
         id: getMockId('user', 'admin-roles') as string,
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.USER_UPDATE_ROLES]
-    });
+    };
 
     // Admin with no relevant permissions
-    const adminNoPerm = createUser({
+    const adminNoPerm: Actor = {
         id: getMockId('user', 'admin-noperm') as string,
         role: RoleEnum.ADMIN,
         permissions: []
-    });
+    };
 
     // Guest with no permissions
-    const guestOther = createUser({
+    const guestOther: Actor = {
         id: getMockId('user', 'guest-other') as string,
         role: RoleEnum.GUEST,
         permissions: []
-    });
+    };
 
     describe('canViewUser', () => {
         it('allows self', () => {
-            expect(() => canViewUser(self, self)).not.toThrow();
+            expect(() => canViewUser(selfActor, self)).not.toThrow();
         });
         it('allows super admin (has all permissions)', () => {
             expect(() => canViewUser(superAdmin, self)).not.toThrow();
@@ -97,7 +114,7 @@ describe('user permission helpers', () => {
 
     describe('canUpdateUser', () => {
         it('allows self', () => {
-            expect(() => canUpdateUser(self, self)).not.toThrow();
+            expect(() => canUpdateUser(selfActor, self)).not.toThrow();
         });
         it('allows super admin', () => {
             expect(() => canUpdateUser(superAdmin, self)).not.toThrow();
