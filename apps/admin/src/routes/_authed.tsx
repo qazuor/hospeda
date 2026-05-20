@@ -4,10 +4,10 @@ import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
 import { fetchAuthSession } from '@/lib/auth-session';
+import { decideAuthedGuard } from '@/lib/authed-guard';
 import { fetchPreferredLocale } from '@/lib/locale';
 import { adminLogger } from '@/utils/logger';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
-import { decideAuthedGuard } from './_authed.guard';
 
 /**
  * NotFoundComponent for authenticated routes

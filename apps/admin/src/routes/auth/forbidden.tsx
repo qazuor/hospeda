@@ -21,12 +21,12 @@ import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { type AuthState, fetchAuthSession } from '@/lib/auth-session';
+import { type ForbiddenReason, buildSupportMailto } from '@/lib/forbidden-mailto';
 import { ShieldAlertIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
-import { type ForbiddenReason, buildSupportMailto } from './forbidden.mailto';
 
 const searchSchema = z.object({
     reason: z.enum(['host-missing-permission', 'generic']).optional().catch(undefined),
