@@ -1,0 +1,20 @@
+{
+    "specId": "SPEC-150",
+    "title": "Billing multi-currency support: per-customer locale, multi-currency plan prices, FX fallback, addon currency match",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-20T00:00:00Z",
+    "discoveredDuring": "SPEC-143 T-143-62 reframe — multi-currency price selection is aspirational. billing_customers has no currency/locale, billing_plans has single-currency price columns, checkout never branches on customer currency, exchange_rates table exists but is decorative wrt checkout, addon currency mismatch is not validated.",
+    "tags": [
+        "billing",
+        "multi-currency",
+        "i18n",
+        "fx",
+        "exchange-rates",
+        "feature",
+        "schema-change"
+    ],
+    "effortEstimateHours": "24-40",
+    "firstAllocatedViaEngramProtocol": true
+}
