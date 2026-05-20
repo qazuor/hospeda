@@ -545,7 +545,7 @@ describe('FEEDBACK_STRINGS errorBoundary keys', () => {
     });
 
     it('errorBoundary.title should match the expected Spanish text', () => {
-        expect(FEEDBACK_STRINGS.errorBoundary.title).toBe('Algo salio mal');
+        expect(FEEDBACK_STRINGS.errorBoundary.title).toBe('Algo salió mal');
     });
 
     it('buttons.reportError should match the expected Spanish text', () => {

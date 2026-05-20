@@ -28,7 +28,7 @@
  *
  * // Use a validation message
  * const msg = FEEDBACK_STRINGS.validation.titleMin;
- * // 'El titulo debe tener al menos 5 caracteres'
+ * // 'El título debe tener al menos 5 caracteres'
  * ```
  */
 export const FEEDBACK_STRINGS = {
@@ -52,10 +52,10 @@ export const FEEDBACK_STRINGS = {
     /** Input field labels and placeholder text */
     fields: {
         type: 'Tipo',
-        title: 'Titulo',
+        title: 'Título',
         titlePlaceholder: 'Resumen breve del problema...',
-        description: 'Descripcion',
-        descriptionPlaceholder: 'Describe que paso...',
+        description: 'Descripción',
+        descriptionPlaceholder: 'Describí qué pasó...',
         email: 'Email',
         name: 'Nombre',
         severity: 'Severidad',
@@ -64,16 +64,16 @@ export const FEEDBACK_STRINGS = {
         expectedResult: 'Resultado esperado',
         expectedResultPlaceholder: 'Lo que esperabas que pasara...',
         actualResult: 'Resultado actual',
-        actualResultPlaceholder: 'Lo que realmente ocurrio...',
+        actualResultPlaceholder: 'Lo que realmente ocurrió...',
         severityOptional: '-- Opcional --',
         emailPlaceholder: 'email@ejemplo.com',
         namePlaceholder: 'Tu nombre',
         attachments: 'Capturas de pantalla',
         uploadButton: 'Subir',
-        fileTooBig: 'El archivo supera el tamaño maximo permitido',
+        fileTooBig: 'El archivo supera el tamaño máximo permitido',
         fileTypeInvalid: 'Tipo de archivo no permitido',
         fileHintFormat: 'PNG, JPG, WebP, GIF',
-        fileHintMaxSize: 'max {size} por archivo',
+        fileHintMaxSize: 'máx. {size} por archivo',
         removeFileLabel: 'Eliminar {name}',
         consoleErrorsCount: '{count} error(es) capturado(s)'
     },
@@ -81,7 +81,7 @@ export const FEEDBACK_STRINGS = {
     /** Action button labels */
     buttons: {
         submit: 'Enviar',
-        addDetails: 'Agregar mas detalles',
+        addDetails: 'Agregar más detalles',
         back: 'Volver',
         close: 'Cerrar',
         submitAnother: 'Enviar otro',
@@ -91,7 +91,7 @@ export const FEEDBACK_STRINGS = {
 
     /** Collapsible technical details section (auto-collected environment data) */
     techDetails: {
-        title: 'Detalles tecnicos (auto-recolectados)',
+        title: 'Detalles técnicos (auto-recolectados)',
         url: 'URL',
         browser: 'Navegador',
         os: 'Sistema operativo',
@@ -107,11 +107,11 @@ export const FEEDBACK_STRINGS = {
         locale: 'Idioma',
         timezone: 'Zona horaria',
         deviceType: 'Tipo de dispositivo',
-        connectionType: 'Conexion',
+        connectionType: 'Conexión',
         colorScheme: 'Tema',
-        featureFlags: 'Feature flags (clave=valor por linea)',
-        navigationHistory: 'Historial de navegacion (una URL por linea)',
-        lastInteractions: 'Ultimas interacciones',
+        featureFlags: 'Feature flags (clave=valor por línea)',
+        navigationHistory: 'Historial de navegación (una URL por línea)',
+        lastInteractions: 'Últimas interacciones',
         clearField: 'Limpiar',
         sentryEventId: 'Sentry event ID',
         errorMessage: 'Mensaje de error',
@@ -127,33 +127,33 @@ export const FEEDBACK_STRINGS = {
 
     /** Success state after a report is submitted */
     success: {
-        title: 'Reporte enviado!',
+        title: '¡Reporte enviado!',
         message: 'Tu reporte fue enviado correctamente.',
         issueLabel: 'Issue',
         fallbackMessage: 'Tu reporte fue enviado por email. Lo revisaremos a la brevedad.',
-        thanks: 'Gracias por ayudarnos a mejorar!'
+        thanks: '¡Gracias por ayudarnos a mejorar!'
     },
 
     /** Error boundary fallback UI */
     errorBoundary: {
-        title: 'Algo salio mal',
+        title: 'Algo salió mal',
         message:
-            'Ocurrio un error inesperado. Podes reportar este problema para ayudarnos a solucionarlo.'
+            'Ocurrió un error inesperado. Podés reportar este problema para ayudarnos a solucionarlo.'
     },
 
     /** Form field validation error messages */
     validation: {
-        titleMin: 'El titulo debe tener al menos 5 caracteres',
-        titleMax: 'El titulo no puede superar los 200 caracteres',
-        descriptionMin: 'La descripcion debe tener al menos 10 caracteres',
-        descriptionMax: 'La descripcion no puede superar los 5000 caracteres',
+        titleMin: 'El título debe tener al menos 5 caracteres',
+        titleMax: 'El título no puede superar los 200 caracteres',
+        descriptionMin: 'La descripción debe tener al menos 10 caracteres',
+        descriptionMax: 'La descripción no puede superar los 5000 caracteres',
         emailRequired: 'El email es obligatorio',
-        emailInvalid: 'El email no es valido',
+        emailInvalid: 'El email no es válido',
         nameRequired: 'El nombre es obligatorio'
     },
 
     /** Rate limit error message */
     rateLimit: {
-        message: 'Demasiados reportes. Intenta de nuevo mas tarde.'
+        message: 'Demasiados reportes. Intentá de nuevo más tarde.'
     }
 } as const;

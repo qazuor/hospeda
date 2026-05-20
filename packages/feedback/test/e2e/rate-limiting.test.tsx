@@ -116,7 +116,7 @@ describe('Rate limiting: FEEDBACK_STRINGS.rateLimit', () => {
 
     it('rateLimit.message should match the expected Spanish text', () => {
         expect(FEEDBACK_STRINGS.rateLimit.message).toBe(
-            'Demasiados reportes. Intenta de nuevo mas tarde.'
+            'Demasiados reportes. Intentá de nuevo más tarde.'
         );
     });
 });
