@@ -765,14 +765,14 @@
         },
         {
             "id": "T-143-63",
-            "title": "E2E: grace period past current_period_end + plan disabled while subscription active",
+            "title": "E2E: past_due grace period enforcement (window + expiry + exempt paths)",
             "phase": "phase-2-A",
             "workstream": "A",
             "status": "pending",
-            "complexity": 3,
+            "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-19", "T-143-30"],
-            "notes": "grace-and-plan-lifecycle.test.ts. (a) Subscription reaches current_period_end and renewal cron has not fired yet → entitlements remain active within N-hour grace window + Sentry alert if grace exceeded. (b) Admin disables a plan while customer subscriptions are active → existing subs keep entitlements until cycle end, no new signups on that plan, existing renewals follow migration policy."
+            "notes": "[reframed 2026-05-20] Original scope had two parts: (a) cron-lag grace for renewal-cron-not-fired-yet, (b) admin disables a plan while customer subscriptions are active. Both are orthogonal to the shipped past_due grace mechanism (apps/api/src/middlewares/past-due-grace.middleware.ts) and are deferred to SPEC-148 (Billing defensive grace + plan lifecycle). This task now covers the past_due grace as actually implemented. New scope: past-due-grace.test.ts. Cover (1) past_due sub within grace window allows request and emits X-Grace-Period-Days-Remaining header, (2) past_due sub outside grace window returns 402 GRACE_PERIOD_EXPIRED with daysOverdue, (3) exempt paths (/trial/reactivate, /checkout, /subscriptions/reactivate, /payment-methods) bypass enforcement even when grace is exceeded, (4) non-past_due subs pass through cleanly without header. See [[spec/spec-148/scope-deferred-from-spec-143]] and SPEC-148 spec.md for the deferred work."
         },
         {
             "id": "T-143-64",
