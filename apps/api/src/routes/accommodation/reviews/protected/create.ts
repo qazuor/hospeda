@@ -5,7 +5,7 @@
 import type { z } from '@hono/zod-openapi';
 import {
     AccommodationIdSchema,
-    AccommodationReviewCreateInputSchema,
+    AccommodationReviewCreateBodySchema,
     AccommodationReviewProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -17,7 +17,12 @@ import { createProtectedRoute } from '../../../../utils/route-factory';
 
 /**
  * POST /api/v1/protected/accommodations/:accommodationId/reviews
- * Create accommodation review - Protected endpoint
+ * Create accommodation review - Protected endpoint.
+ *
+ * The route validates ONLY the review payload (rating + optional title +
+ * optional content). `accommodationId` and `userId` are supplied by the
+ * URL path and the authenticated actor respectively, so the client never
+ * needs to echo them in the body.
  */
 export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
     method: 'post',
@@ -30,11 +35,11 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
     requestParams: {
         accommodationId: AccommodationIdSchema
     },
-    requestBody: AccommodationReviewCreateInputSchema,
+    requestBody: AccommodationReviewCreateBodySchema,
     responseSchema: AccommodationReviewProtectedSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const input = body as z.infer<typeof AccommodationReviewCreateInputSchema>;
+        const input = body as z.infer<typeof AccommodationReviewCreateBodySchema>;
         const payload = {
             ...input,
             accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,

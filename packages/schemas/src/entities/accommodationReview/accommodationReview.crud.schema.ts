@@ -33,6 +33,22 @@ export const AccommodationReviewCreateInputSchema = AccommodationReviewSchema.om
 });
 
 /**
+ * Body-only variant of {@link AccommodationReviewCreateInputSchema} for HTTP
+ * routes where `accommodationId` is sourced from the URL path and `userId`
+ * is resolved from the authenticated actor. Validating against this variant
+ * lets the client POST just the review payload (rating + optional title +
+ * optional content) without redundantly echoing identifiers the server
+ * already knows.
+ *
+ * The original input schema remains intact (service-layer callers and admin
+ * tooling still pass the full payload), per the schemas additive-only policy.
+ */
+export const AccommodationReviewCreateBodySchema = AccommodationReviewCreateInputSchema.omit({
+    accommodationId: true,
+    userId: true
+});
+
+/**
  * Schema for accommodation review creation response
  * Returns the complete accommodation review object
  */
