@@ -237,6 +237,47 @@ describe('AccommodationService.searchWithRelations', () => {
         expect(result.error).toBeUndefined();
     });
 
+    it('forwards anyAmenityGroups and capacity/bedroom/rating filters to the model', async () => {
+        // Regression: prior to the spread refactor, the manual modelParams
+        // literal omitted anyAmenityGroups, minGuests/maxGuests,
+        // minBedrooms/maxBedrooms, minBathrooms/maxBathrooms, minRating and
+        // sorts. The web list endpoint resolves the public boolean shortcuts
+        // (hasWifi etc.) into anyAmenityGroups before calling the service, so
+        // those filters MUST reach the model.
+        asMock(model.searchWithRelations).mockResolvedValue(
+            paginatedWithRelations(entitiesWithRelations)
+        );
+
+        await service.searchWithRelations(actor, {
+            page: 1,
+            pageSize: 10,
+            anyAmenityGroups: [
+                ['11111111-1111-4111-8111-111111111111'],
+                ['22222222-2222-4222-8222-222222222222']
+            ],
+            minGuests: 2,
+            maxGuests: 6,
+            minBedrooms: 1,
+            minBathrooms: 1,
+            minRating: 4
+        });
+
+        expect(model.searchWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({
+                anyAmenityGroups: [
+                    ['11111111-1111-4111-8111-111111111111'],
+                    ['22222222-2222-4222-8222-222222222222']
+                ],
+                minGuests: 2,
+                maxGuests: 6,
+                minBedrooms: 1,
+                minBathrooms: 1,
+                minRating: 4,
+                excludeRestricted: false
+            })
+        );
+    });
+
     it('should call lifecycle hooks in correct order', async () => {
         const beforeSearchSpy = vi.spyOn(service as any, '_beforeSearch');
         const afterSearchSpy = vi.spyOn(service as any, '_afterSearch');

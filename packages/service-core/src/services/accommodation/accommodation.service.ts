@@ -1378,31 +1378,17 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.entitlements?.has('vip_promotions_access') ||
                     hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
-                // Convert AccommodationSearchInput to model parameters format
+                // Forward every validated field to the model via spread so the
+                // search path stays in lockstep with `_executeSearch`. The
+                // previous manual literal silently dropped fields added later
+                // (anyAmenityGroups, capacity/bedroom/bathroom ranges, minRating,
+                // sorts) — spreading processedParams guarantees new optional
+                // filters added to the schema reach the model automatically.
                 const modelParams = {
+                    ...processedParams,
                     page,
                     pageSize,
-                    sortBy: processedParams.sortBy,
-                    sortOrder: processedParams.sortOrder,
-                    sorts: processedParams.sorts,
-                    featuredFirst: processedParams.featuredFirst,
-                    q: processedParams.q,
-                    type: processedParams.type,
-                    types: processedParams.types,
-                    minPrice: processedParams.minPrice,
-                    maxPrice: processedParams.maxPrice,
-                    destinationId: processedParams.destinationId,
-                    destinationIds: processedParams.destinationIds,
-                    amenities: processedParams.amenities,
-                    features: processedParams.features,
-                    isFeatured: processedParams.isFeatured,
-                    isAvailable: processedParams.isAvailable,
-                    excludeRestricted: !hasVipAccess,
-                    // SPEC-097 — viewport bbox filter for listing maps
-                    bboxNorth: processedParams.bboxNorth,
-                    bboxSouth: processedParams.bboxSouth,
-                    bboxEast: processedParams.bboxEast,
-                    bboxWest: processedParams.bboxWest
+                    excludeRestricted: !hasVipAccess
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
