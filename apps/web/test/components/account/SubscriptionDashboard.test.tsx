@@ -5,8 +5,8 @@
  * Covers:
  * - Loading state renders correctly
  * - Resolved subscription renders plan name, status, billing date
- * - Cancel modal opens on button click
- * - Cancel modal confirms and updates status
+ * - Cancel modal opens on button click and shows support contact instructions
+ * - Cancel modal exposes a mailto link to support (self-cancel API pending; SPEC-147)
  * - HOST role shows admin escalation button
  * - USER role hides admin escalation button
  * - Empty state when no subscription
@@ -52,6 +52,8 @@ vi.mock('@/lib/env', () => ({
 // Mock the API endpoints
 const mockGetSubscription = vi.fn();
 const mockListInvoices = vi.fn();
+// cancelSubscription was removed from the user dashboard — self-cancel is
+// pending (SPEC-147). The mock stays so we can assert it is NEVER called.
 const mockCancelSubscription = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
@@ -292,7 +294,7 @@ describe('SubscriptionDashboard — cancel modal', () => {
         });
     });
 
-    it('closes the modal when dismiss button is clicked', async () => {
+    it('closes the modal when the close button is clicked', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
 
@@ -308,15 +310,9 @@ describe('SubscriptionDashboard — cancel modal', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
-        // Dismiss button text comes from t('common.cancel', 'No, volver') which
-        // resolves to "Cancelar" via the active i18n locale. Match the dismiss
-        // button uniquely (the modal also has a confirm button "Sí, cancelar"
-        // and the page has a trigger "Cancelar suscripción").
-        const dismissButton = screen
-            .getAllByRole('button')
-            .find((btn) => btn.textContent?.trim().toLowerCase() === 'cancelar');
-        expect(dismissButton).toBeDefined();
-        fireEvent.click(dismissButton as HTMLElement);
+        // The modal's secondary button is "Cerrar" (t('common.close', 'Cerrar')).
+        const closeButton = screen.getByRole('button', { name: /cerrar/i });
+        fireEvent.click(closeButton);
 
         await waitFor(() => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -346,7 +342,7 @@ describe('SubscriptionDashboard — cancel modal', () => {
         });
     });
 
-    it('calls the cancel API and shows success toast on confirm', async () => {
+    it('renders a mailto link to support inside the modal', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
 
@@ -362,22 +358,11 @@ describe('SubscriptionDashboard — cancel modal', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
-        await act(async () => {
-            // The confirm button text is "Sí, cancelar" (the fallback string)
-            const confirmBtn = screen.getByRole('button', { name: /sí, cancelar/i });
-            fireEvent.click(confirmBtn);
-        });
-
-        await waitFor(() => {
-            expect(mockCancelSubscription).toHaveBeenCalledOnce();
-        });
-
-        await waitFor(() => {
-            expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
-        });
+        const supportLink = screen.getByRole('link', { name: /soporte/i });
+        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\?subject=/);
     });
 
-    it('closes modal after successful cancellation', async () => {
+    it('does not call the cancel API when the modal opens (self-cancel pending; SPEC-147)', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
 
@@ -393,44 +378,10 @@ describe('SubscriptionDashboard — cancel modal', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
-        await act(async () => {
-            const confirmBtn = screen.getByRole('button', { name: /sí, cancelar/i });
-            fireEvent.click(confirmBtn);
-        });
-
-        await waitFor(() => {
-            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-        });
-    });
-
-    it('shows error toast when cancel API fails', async () => {
-        mockSubscriptionSuccess();
-        mockCancelSubscription.mockResolvedValue({
-            ok: false,
-            error: { status: 500, message: 'Error del servidor' }
-        });
-        renderDashboard();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
-        });
-
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
-
-        await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
-        });
-
-        await act(async () => {
-            const confirmBtn = screen.getByRole('button', { name: /sí, cancelar/i });
-            fireEvent.click(confirmBtn);
-        });
-
-        await waitFor(() => {
-            expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
-        });
+        // The dashboard should NOT call the protected cancel endpoint — that
+        // route does not exist (legacy DELETE /protected/billing/subscriptions/current).
+        // Self-cancel is tracked under SPEC-147.
+        expect(mockCancelSubscription).not.toHaveBeenCalled();
     });
 });
 

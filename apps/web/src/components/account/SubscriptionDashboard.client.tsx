@@ -186,16 +186,21 @@ function EmptyState({ locale }: { readonly locale: SupportedLocale }) {
     );
 }
 
-/** Confirmation modal for cancel subscription action. */
+/** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
+const SUPPORT_EMAIL = 'info@hospeda.com';
+
+/**
+ * Cancel-instructions modal.
+ *
+ * User self-cancel via API is not yet implemented (tracked under SPEC-147),
+ * so this modal directs the user to email support instead. Once the
+ * self-cancel endpoint ships the modal can revert to a confirm-and-call flow.
+ */
 function CancelConfirmModal({
     locale,
-    isLoading,
-    onConfirm,
     onDismiss
 }: {
     readonly locale: SupportedLocale;
-    readonly isLoading: boolean;
-    readonly onConfirm: () => void;
     readonly onDismiss: () => void;
 }) {
     const { t } = createTranslations(locale);
@@ -220,6 +225,11 @@ function CancelConfirmModal({
         };
     }, [onDismiss]);
 
+    const subject = encodeURIComponent(
+        t('account.pages.subscription.cancelModal.emailSubject', 'Cancelación de suscripción')
+    );
+    const mailtoHref = `mailto:${SUPPORT_EMAIL}?subject=${subject}`;
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
         <div
@@ -240,7 +250,7 @@ function CancelConfirmModal({
                 <p className={styles.modalBody}>
                     {t(
                         'account.pages.subscription.cancelModal.body',
-                        'Al cancelar, tu suscripción seguirá activa hasta el final del período de facturación actual. ¿Confirmás la cancelación?'
+                        `Para cancelar tu suscripción, escribinos a ${SUPPORT_EMAIL} y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.`
                     )}
                 </p>
                 <div className={styles.modalActions}>
@@ -248,21 +258,18 @@ function CancelConfirmModal({
                         type="button"
                         className={styles.btnSecondary}
                         onClick={onDismiss}
-                        disabled={isLoading}
                     >
-                        {t('common.cancel', 'No, volver')}
+                        {t('common.close', 'Cerrar')}
                     </button>
-                    <button
-                        type="button"
+                    <a
+                        href={mailtoHref}
                         className={styles.btnDanger}
-                        onClick={onConfirm}
-                        disabled={isLoading}
-                        aria-busy={isLoading}
                     >
-                        {isLoading
-                            ? t('common.loading', 'Procesando...')
-                            : t('account.pages.subscription.cancelModal.confirm', 'Sí, cancelar')}
-                    </button>
+                        {t(
+                            'account.pages.subscription.cancelModal.contactSupport',
+                            'Escribir a soporte'
+                        )}
+                    </a>
                 </div>
             </dialog>
         </div>
@@ -295,7 +302,6 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const isAdminRole = ADMIN_ROLES.has(user.role);
@@ -332,49 +338,6 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     }, [fetchData]);
 
     // ── Actions ────────────────────────────────────────────────────────────
-
-    async function handleCancelConfirm() {
-        setIsCancelling(true);
-        try {
-            // The protected cancel endpoint doesn't require a subscriptionId in our API
-            // It cancels the current user's active subscription server-side.
-            // We pass a placeholder that the endpoint ignores (per existing billingApi pattern).
-            const result = await billingApi.cancelSubscription({
-                subscriptionId: 'current'
-            });
-
-            if (!result.ok) {
-                addToast({
-                    type: 'error',
-                    message: translateApiError({
-                        error: result.error,
-                        t,
-                        fallback: t(
-                            'account.pages.subscription.cancelError',
-                            'No se pudo cancelar la suscripción. Intentá de nuevo.'
-                        )
-                    })
-                });
-                return;
-            }
-
-            // Optimistically update the local status
-            setSubscription((prev) =>
-                prev ? { ...prev, status: 'cancelled', cancelAtPeriodEnd: true } : prev
-            );
-
-            setShowCancelModal(false);
-            addToast({
-                type: 'success',
-                message: t(
-                    'account.pages.subscription.cancelSuccess',
-                    'Suscripción cancelada. Seguirá activa hasta el fin del período actual.'
-                )
-            });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
 
     async function handleDownloadInvoice() {
         setIsDownloading(true);
@@ -600,12 +563,10 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                 </div>
             </section>
 
-            {/* ── Cancel confirmation modal ── */}
+            {/* ── Cancel instructions modal (self-cancel pending; SPEC-147) ── */}
             {showCancelModal && (
                 <CancelConfirmModal
                     locale={locale}
-                    isLoading={isCancelling}
-                    onConfirm={() => void handleCancelConfirm()}
                     onDismiss={() => {
                         setShowCancelModal(false);
                     }}
