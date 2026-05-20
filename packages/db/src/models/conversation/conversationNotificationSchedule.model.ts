@@ -175,6 +175,7 @@ export class NotificationScheduleModel extends BaseModelImpl<SelectConversationN
                     updated_at AS "updatedAt"
             `);
 
+            // DRIZZLE-LIMITATION: db.execute() with a raw `sql` template returns either an array of rows (postgres-js) or a `{ rows }` envelope (pg) depending on the driver/runtime. Drizzle's typings don't union the two shapes, so we narrow both branches here to support either return convention.
             const row =
                 (rows as unknown as { rows?: SelectConversationNotificationSchedule[] })
                     .rows?.[0] ?? (rows as unknown as SelectConversationNotificationSchedule[])[0];

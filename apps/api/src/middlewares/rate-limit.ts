@@ -382,6 +382,7 @@ const getSocketIp = (c: Context): string | undefined => {
     }
 
     // 2) Node `IncomingMessage` exposed via `c.env.incoming` (legacy adapter).
+    // TYPE-WORKAROUND: Hono's `Context.env` is generic and untyped at our integration layer; older adapters surface the Node IncomingMessage via `c.env.incoming.socket.remoteAddress`, which the framework does not type. The cast lets us inspect that shape defensively when present.
     const env = (c as unknown as { env?: { incoming?: { socket?: { remoteAddress?: string } } } })
         .env;
     const envAddress = env?.incoming?.socket?.remoteAddress;
