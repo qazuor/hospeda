@@ -29,16 +29,29 @@ import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { NewsletterContentTypeToggles } from './NewsletterContentTypeToggles.client';
 import styles from './NewsletterPreferences.module.css';
+import { NewsletterStatusBadge } from './NewsletterStatusBadge';
 
 /** Subset of NewsletterSubscriberStatusEnum values returned by GET /status. */
 type Status = 'active' | 'pending_verification' | 'unsubscribed' | 'bounced' | 'complained' | null;
+
+type Preferences = Record<'offers' | 'events' | 'guides' | 'productNews', boolean>;
+
+/** Canonical all-true default used when the server returns null preferences. */
+const ALL_TRUE_PREFERENCES: Preferences = {
+    offers: true,
+    events: true,
+    guides: true,
+    productNews: true
+};
 
 interface StatusResponse {
     readonly subscribed: boolean;
     readonly status: Status;
     readonly subscribedAt: string | null;
     readonly verifiedAt: string | null;
+    readonly preferences: Preferences | null;
 }
 
 /** Public props consumed from `mi-cuenta/newsletter.astro`. */
@@ -292,7 +305,7 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 <span className={styles.statusLabel}>
                     {t('account.newsletter.statusLabel', 'Estado')}
                 </span>
-                <StatusBadge
+                <NewsletterStatusBadge
                     status={status}
                     t={t}
                 />
@@ -315,7 +328,19 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 {statusText}
             </div>
 
-            {/* === Active state — cancel with confirmation === */}
+            {/* === Active state — per-channel + per-content-type + cancel === */}
+            {status === 'active' && (
+                <>
+                    <ChannelList t={t} />
+                    <NewsletterContentTypeToggles
+                        locale={locale}
+                        apiUrl={apiUrl}
+                        initialPreferences={data.preferences ?? ALL_TRUE_PREFERENCES}
+                        disabled={actionInFlight || confirmCancel}
+                    />
+                </>
+            )}
+
             {status === 'active' && !confirmCancel && (
                 <button
                     type="button"
@@ -405,53 +430,49 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
 }
 
 // ---------------------------------------------------------------------------
-// Sub-component: status badge with label + colour AND text (a11y)
+// Sub-component: per-channel section (Email always enabled, WhatsApp soon)
 // ---------------------------------------------------------------------------
 
-interface BadgeProps {
-    readonly status: Status;
+interface ChannelListProps {
     // biome-ignore lint/suspicious/noExplicitAny: t-function signature varies by overload
     readonly t: (...args: any[]) => string;
 }
 
-function StatusBadge({ status, t }: BadgeProps) {
-    if (status === null) {
-        return (
-            <span className={`${styles.badge} ${styles.badgeNeutral}`}>
-                {t('account.newsletter.statusUnsubscribed', 'No suscripto')}
-            </span>
-        );
-    }
-    const map: Record<
-        Exclude<Status, null>,
-        { className: string; key: string; fallback: string }
-    > = {
-        active: {
-            className: styles.badgeActive,
-            key: 'account.newsletter.statusActive',
-            fallback: 'Activo'
-        },
-        pending_verification: {
-            className: styles.badgePending,
-            key: 'account.newsletter.statusPending',
-            fallback: 'Pendiente de verificación'
-        },
-        unsubscribed: {
-            className: styles.badgeNeutral,
-            key: 'account.newsletter.statusUnsubscribed',
-            fallback: 'No suscripto'
-        },
-        bounced: {
-            className: styles.badgeError,
-            key: 'account.newsletter.statusBounced',
-            fallback: 'Email inválido'
-        },
-        complained: {
-            className: styles.badgeError,
-            key: 'account.newsletter.statusComplained',
-            fallback: 'Cancelado'
-        }
-    };
-    const cfg = map[status];
-    return <span className={`${styles.badge} ${cfg.className}`}>{t(cfg.key, cfg.fallback)}</span>;
+/**
+ * Static channel summary for active subscribers. Email is the only MVP
+ * delivery channel; WhatsApp ships disabled with a "próximamente" badge so
+ * the user sees it's on the roadmap but can't toggle it yet.
+ */
+function ChannelList({ t }: ChannelListProps) {
+    return (
+        <section
+            className={styles.channelSection}
+            aria-labelledby="newsletter-channels-heading"
+        >
+            <h3
+                id="newsletter-channels-heading"
+                className={styles.channelHeading}
+            >
+                {t('account.newsletter.channels.title', 'Cómo te llegan')}
+            </h3>
+            <ul className={styles.channelList}>
+                <li className={styles.channelItem}>
+                    <span className={styles.channelLabel}>
+                        {t('account.newsletter.channels.email', 'Email')}
+                    </span>
+                    <span className={`${styles.channelBadge} ${styles.channelBadgeOn}`}>
+                        {t('account.newsletter.channels.enabled', 'Activado')}
+                    </span>
+                </li>
+                <li className={`${styles.channelItem} ${styles.channelItemDisabled}`}>
+                    <span className={styles.channelLabel}>
+                        {t('account.newsletter.channels.whatsapp', 'WhatsApp')}
+                    </span>
+                    <span className={`${styles.channelBadge} ${styles.channelBadgeSoon}`}>
+                        {t('account.newsletter.channels.comingSoon', 'Próximamente')}
+                    </span>
+                </li>
+            </ul>
+        </section>
+    );
 }

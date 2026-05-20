@@ -316,6 +316,13 @@ export interface GetStatusResult {
     readonly status: NewsletterSubscriberStatusEnum | null;
     readonly subscribedAt: Date | null;
     readonly verifiedAt: Date | null;
+    /**
+     * Per-content-type opt-in flags. `null` when no subscriber row exists for
+     * the user/channel pair — callers default to the all-true preset in that
+     * case. Populated from `newsletter_subscribers.preferences` (JSONB) and
+     * passes through verbatim (no merge / coercion here).
+     */
+    readonly preferences: NewsletterContentPreferences | null;
 }
 
 /** Result returned by `updatePreferences`. */
@@ -1107,7 +1114,7 @@ export class NewsletterSubscriberService extends BaseService {
 
                 const db = getDb();
                 const rows = await db.execute(sql`
-                    SELECT status, subscribed_at, verified_at, deleted_at
+                    SELECT status, subscribed_at, verified_at, deleted_at, preferences
                     FROM newsletter_subscribers
                     WHERE user_id = ${validated.userId}
                       AND channel = ${validated.channel}
@@ -1126,6 +1133,7 @@ export class NewsletterSubscriberService extends BaseService {
                           subscribed_at: string | Date | null;
                           verified_at: string | Date | null;
                           deleted_at: string | Date | null;
+                          preferences: NewsletterContentPreferences | null;
                       }
                     | undefined;
 
@@ -1134,7 +1142,8 @@ export class NewsletterSubscriberService extends BaseService {
                         subscribed: false,
                         status: null,
                         subscribedAt: null,
-                        verifiedAt: null
+                        verifiedAt: null,
+                        preferences: null
                     };
                 }
 
@@ -1143,7 +1152,8 @@ export class NewsletterSubscriberService extends BaseService {
                     subscribed: status === NewsletterSubscriberStatusEnum.ACTIVE,
                     status,
                     subscribedAt: toDateOrNull(row.subscribed_at),
-                    verifiedAt: toDateOrNull(row.verified_at)
+                    verifiedAt: toDateOrNull(row.verified_at),
+                    preferences: row.preferences ?? null
                 };
             }
         });
