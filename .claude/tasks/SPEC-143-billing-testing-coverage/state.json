@@ -4,12 +4,13 @@
     "specRef": "SPEC-143",
     "created": "2026-05-17T23:55:00Z",
     "summary": {
-        "total": 64,
-        "pending": 55,
+        "total": 65,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 44,
         "blocked": 0,
-        "averageComplexity": 2.88
+        "averageComplexity": 2.88,
+        "obsolete": 2
     },
     "coverageTarget": "100% functional + 100% line on apps/api billing services/routes/webhooks and packages/billing — with documented true-impossible-in-e2e exceptions in T-143-55.",
     "phases": {
@@ -117,121 +118,132 @@
             "title": "E2E: annual checkout flow (preference → payment.approved webhook → subscription active)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "apps/api/test/e2e/flows/billing/annual-checkout.test.ts. Validates entitlements load after activation."
+            "notes": "[reconciled 2026-05-20] Shipped via commits bc1974d97..32b3948f8 (2026-05-19). Reconciliation pass mark — original task description preserved below. apps/api/test/e2e/flows/billing/annual-checkout.test.ts. Validates entitlements load after activation.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-10",
             "title": "E2E: monthly checkout flow (preapproval setup → first charge → subscription active)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "apps/api/test/e2e/flows/billing/monthly-checkout.test.ts. Preapproval-based recurring flow distinct from one-time annual."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 798c54723..32b3948f8 (2026-05-19). Reconciliation pass mark — original task description preserved below. apps/api/test/e2e/flows/billing/monthly-checkout.test.ts. Preapproval-based recurring flow distinct from one-time annual.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-11",
             "title": "E2E: plan upgrade with delta calculation",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-09", "T-143-10"],
-            "notes": "plan-upgrade.test.ts. Active subscription on cheap plan → upgrade to expensive → assert prorated delta charge + entitlements updated immediately."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 48cee73e1..c54dfaf4e (2026-05-19). Reconciliation pass mark — original task description preserved below. plan-upgrade.test.ts. Active subscription on cheap plan → upgrade to expensive → assert prorated delta charge + entitlements updated immediately.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-12",
             "title": "E2E: plan downgrade scheduling (queued for next cycle)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09", "T-143-10"],
-            "notes": "plan-downgrade.test.ts. Active on expensive → schedule downgrade → assert pending change row + entitlements unchanged until cycle boundary."
+            "notes": "[reconciled 2026-05-20] Shipped via commits b6ac58307..c54dfaf4e (2026-05-19). Reconciliation pass mark — original task description preserved below. plan-downgrade.test.ts. Active on expensive → schedule downgrade → assert pending change row + entitlements unchanged until cycle boundary.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-13",
             "title": "E2E: downgrade cron execution applies queued change",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-12"],
-            "notes": "downgrade-cron.test.ts. Setup queued downgrade → advance virtual clock → trigger cron → assert plan flipped + entitlements recalculated + entitlement cache invalidated."
+            "notes": "[reconciled 2026-05-20] Shipped via commits b6ac58307..52f72203c (2026-05-19). Reconciliation pass mark — original task description preserved below. downgrade-cron.test.ts. Setup queued downgrade → advance virtual clock → trigger cron → assert plan flipped + entitlements recalculated + entitlement cache invalidated.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-14",
             "title": "E2E: addon one-time purchase",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "addon-purchase.test.ts. Preference → payment.approved → addon credit granted + JSONB CHECK constraint validated (no schema drift)."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 7fd8e85cb..5de7b07c9 (2026-05-19). Reconciliation pass mark — original task description preserved below. addon-purchase.test.ts. Preference → payment.approved → addon credit granted + JSONB CHECK constraint validated (no schema drift).",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-15",
             "title": "E2E: webhook idempotency (duplicate event ID)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "webhook-idempotency.test.ts. POST same MP webhook event twice → second call is no-op, no duplicate subscription/payment row, response 200."
+            "notes": "[reconciled 2026-05-20] Shipped via commits fd82f03fb..fd82f03fb (2026-05-19). Reconciliation pass mark — original task description preserved below. webhook-idempotency.test.ts. POST same MP webhook event twice → second call is no-op, no duplicate subscription/payment row, response 200.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-16",
             "title": "E2E: webhook signature validation rejects unsigned/bad-sig",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "webhook-signature.test.ts. Send webhook without signature, with bad signature, with replayed timestamp → all rejected 401 + Sentry event captured."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 1d3914428..1d3914428 (2026-05-19). Reconciliation pass mark — original task description preserved below. webhook-signature.test.ts. Send webhook without signature, with bad signature, with replayed timestamp → all rejected 401 + Sentry event captured.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-17",
             "title": "E2E: failed payment webhook handler",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "webhook-failed-payment.test.ts. payment.rejected webhook → subscription flips to past_due, dunning queue entry created, user notification dispatched."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 8e557d366..8e557d366 (2026-05-19). Reconciliation pass mark — original task description preserved below. webhook-failed-payment.test.ts. payment.rejected webhook → subscription flips to past_due, dunning queue entry created, user notification dispatched.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-18",
             "title": "E2E: subscription activation — annual + monthly post-payment",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09", "T-143-10"],
-            "notes": "subscription-activation.test.ts. Covers both flows: payment.approved → subscription row active + current_period_end set correctly + cache primed."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 69dceb36d..69dceb36d (2026-05-19). Reconciliation pass mark — original task description preserved below. subscription-activation.test.ts. Covers both flows: payment.approved → subscription row active + current_period_end set correctly + cache primed.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-19",
             "title": "E2E: entitlement load post-activation (covers SPEC-141 unit gap)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-18"],
-            "notes": "entitlement-load.test.ts. Closes the structural gap from SPEC-141 — proves real activation produces real entitlements that real /entitlements/* endpoints return correctly."
+            "notes": "[reconciled 2026-05-20] Shipped via commits a8f0930a8..d64af76cf (2026-05-19). Reconciliation pass mark — original task description preserved below. entitlement-load.test.ts. Closes the structural gap from SPEC-141 — proves real activation produces real entitlements that real /entitlements/* endpoints return correctly.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-20",
@@ -286,132 +298,144 @@
             "title": "E2E: trial activation",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "trial-lifecycle.test.ts (activation case). User signs up with eligible plan → trial subscription row + trial_ends_at set + entitlements active."
+            "notes": "[reconciled 2026-05-20] Shipped via commits a4d51cfe8..2f2aa1df3 (2026-05-19). Reconciliation pass mark — original task description preserved below. trial-lifecycle.test.ts (activation case). User signs up with eligible plan → trial subscription row + trial_ends_at set + entitlements active.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-25",
             "title": "E2E: trial expiration cron",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-24"],
-            "notes": "trial-lifecycle.test.ts (expiration case). Advance clock past trial_ends_at → cron downgrades to free + entitlements revoked + user notified."
+            "notes": "[reconciled 2026-05-20] Shipped via commits a4d51cfe8..5f1f167d4 (2026-05-19). Reconciliation pass mark — original task description preserved below. trial-lifecycle.test.ts (expiration case). Advance clock past trial_ends_at → cron downgrades to free + entitlements revoked + user notified.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-26",
             "title": "E2E: trial → paid conversion before expiration",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-24"],
-            "notes": "trial-lifecycle.test.ts (conversion case). Mid-trial checkout → paid subscription active + trial_ends_at cleared + no double-billing."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 5f1f167d4..5f1f167d4 (2026-05-19). Reconciliation pass mark — original task description preserved below. trial-lifecycle.test.ts (conversion case). Mid-trial checkout → paid subscription active + trial_ends_at cleared + no double-billing.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-27",
             "title": "E2E: subscription cancel",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "subscription-cancel.test.ts. Active → cancel → access continues until current_period_end + no further billing + MP preapproval paused."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 041d67979..8969c001c (2026-05-19). Reconciliation pass mark — original task description preserved below. subscription-cancel.test.ts. Active → cancel → access continues until current_period_end + no further billing + MP preapproval paused.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-28",
             "title": "E2E: subscription pause",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "subscription-pause-resume.test.ts (pause case). Active → pause → entitlements revoked + MP preapproval paused + paused_at set."
+            "notes": "[reconciled 2026-05-20] Shipped via commits e57e71462..03c460554 (2026-05-19). Reconciliation pass mark — original task description preserved below. subscription-pause-resume.test.ts (pause case). Active → pause → entitlements revoked + MP preapproval paused + paused_at set.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-29",
             "title": "E2E: subscription resume",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-28"],
-            "notes": "subscription-pause-resume.test.ts (resume case). Paused → resume → entitlements restored + MP preapproval reactivated + next-charge scheduled."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 03c460554..03c460554 (2026-05-19). Reconciliation pass mark — original task description preserved below. subscription-pause-resume.test.ts (resume case). Paused → resume → entitlements restored + MP preapproval reactivated + next-charge scheduled.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-30",
             "title": "E2E: dunning cron retries failed payments and ages out",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-17"],
-            "notes": "dunning-cron.test.ts. past_due subscription → cron retries with exponential backoff → after N failures, subscription canceled + user notified."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 03aa8bc3f..03aa8bc3f (2026-05-19). Reconciliation pass mark — original task description preserved below. dunning-cron.test.ts. past_due subscription → cron retries with exponential backoff → after N failures, subscription canceled + user notified.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-31",
             "title": "E2E: addon expiration cron",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-14"],
-            "notes": "addon-expiration-cron.test.ts. addon past expires_at → cron revokes credit + JSONB metadata updated + cache invalidated."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 0fd85fe8e..0fd85fe8e (2026-05-19). Reconciliation pass mark — original task description preserved below. addon-expiration-cron.test.ts. addon past expires_at → cron revokes credit + JSONB metadata updated + cache invalidated.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-32",
             "title": "E2E: addon cancel + subscription price recalc",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-14"],
-            "notes": "addon-cancel-recalc.test.ts. Subscription with addon → cancel addon → next-period charge amount recalculated correctly."
+            "notes": "[reconciled 2026-05-20] Shipped via commits e44556961..6dc5218a6 (2026-05-19). Reconciliation pass mark — original task description preserved below. addon-cancel-recalc.test.ts. Subscription with addon → cancel addon → next-period charge amount recalculated correctly.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-33",
             "title": "E2E: authorized payment (D4 flow — pre-authorize then capture)",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "authorized-payment.test.ts. Pre-authorize on signup → capture on conversion → assert no double-charge + MP authorization-id tracked."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 7f365c3d8..efda2bf78 (2026-05-19). Reconciliation pass mark — original task description preserved below. authorized-payment.test.ts. Pre-authorize on signup → capture on conversion → assert no double-charge + MP authorization-id tracked.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-34",
             "title": "E2E: refund flow",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "refund.test.ts. Active subscription → refund payment via admin → MP refund webhook → payment row flipped + entitlements end-dated."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 8969c001c..8969c001c (2026-05-19). Reconciliation pass mark — original task description preserved below. refund.test.ts. Active subscription → refund payment via admin → MP refund webhook → payment row flipped + entitlements end-dated.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-35",
             "title": "E2E: dispute flow (chargeback webhook)",
             "phase": "phase-2-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "dispute.test.ts. MP chargeback webhook → subscription frozen + admin notified + Sentry event captured."
+            "notes": "[reconciled 2026-05-20] Shipped via commits a079ebe71..a079ebe71 (2026-05-19). Reconciliation pass mark — original task description preserved below. dispute.test.ts. MP chargeback webhook → subscription frozen + admin notified + Sentry event captured.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-36",
@@ -442,11 +466,12 @@
             "title": "E2E: promo code apply / validate / expire",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09"],
-            "notes": "promo-code.test.ts. Exhaustive cases: valid code applies discount, expired code rejected, max-uses overflow rejected, percent-off vs fixed-off, code applied then payment canceled (code use-count not consumed), code applied then payment failed (use-count not consumed), code stacking attempt rejected, code applied to ineligible plan rejected, code case-insensitive match, code with min-purchase threshold."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 40c7b23dc..40c7b23dc (2026-05-19). Reconciliation pass mark — original task description preserved below. promo-code.test.ts. Exhaustive cases: valid code applies discount, expired code rejected, max-uses overflow rejected, percent-off vs fixed-off, code applied then payment canceled (code use-count not consumed), code applied then payment failed (use-count not consumed), code stacking attempt rejected, code applied to ineligible plan rejected, code case-insensitive match, code with min-purchase threshold.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-39",
@@ -479,22 +504,24 @@
             "title": "E2E: entitlement cache hit/miss/invalidation/TTL",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "entitlement-cache.test.ts. Exhaustive cases: cache miss → DB hit → primed, cache hit on second read, TTL boundary expiry, manual invalidation on subscription change/cancel/pause/upgrade/downgrade, invalidation on override add/remove, invalidation on sponsorship grant/revoke, cache stampede protection (concurrent reads on miss), Redis down → degrade to DB (no error)."
+            "notes": "[reconciled 2026-05-20] Shipped via commits d64af76cf..0e6cd1650 (2026-05-19). Reconciliation pass mark — original task description preserved below. entitlement-cache.test.ts. Exhaustive cases: cache miss → DB hit → primed, cache hit on second read, TTL boundary expiry, manual invalidation on subscription change/cancel/pause/upgrade/downgrade, invalidation on override add/remove, invalidation on sponsorship grant/revoke, cache stampede protection (concurrent reads on miss), Redis down → degrade to DB (no error).",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-42",
             "title": "E2E: admin billing ops (list / customer detail / subscription manual ops / addon manual ops)",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-19"],
-            "notes": "admin-billing-ops.test.ts. Every /api/v1/admin/billing/* endpoint validated: list endpoints (plans, customers, subscriptions, addons, promo-codes, sponsorships, overrides, exchange-rates, cron-jobs) with pagination + filters + sort; customer detail; manual subscription ops (activate/cancel/pause/resume/refund); manual addon ops (grant/revoke); manual cron trigger; permission enforcement (PermissionEnum, not roles); admin actor required."
+            "notes": "[reconciled 2026-05-20] Shipped via commits 6c30ee585..6c30ee585 (2026-05-19). Reconciliation pass mark — original task description preserved below. admin-billing-ops.test.ts. Every /api/v1/admin/billing/* endpoint validated: list endpoints (plans, customers, subscriptions, addons, promo-codes, sponsorships, overrides, exchange-rates, cron-jobs) with pagination + filters + sort; customer detail; manual subscription ops (activate/cancel/pause/resume/refund); manual addon ops (grant/revoke); manual cron trigger; permission enforcement (PermissionEnum, not roles); admin actor required.",
+            "completedAt": "2026-05-19"
         },
         {
             "id": "T-143-43",
