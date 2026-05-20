@@ -41,6 +41,15 @@
         "title": "Primero escribile al anfitrión",
         "description": "Para mantener las reseñas honestas, solo pueden dejarlas las personas que ya contactaron al anfitrión. Mandale una consulta desde el botón de contacto y volvé acá cuando quieras opinar."
     },
+    "sidebar": {
+        "title": "Tu opinión",
+        "canLeaveReview": "Contaste con el anfitrión. Compartí tu experiencia para ayudar a otros viajeros.",
+        "cta": "Dejar reseña",
+        "locked": "Para dejar reseña, primero escribile al anfitrión desde el botón de contacto."
+    },
+    "dialog": {
+        "close": "Cerrar"
+    },
     "list": {
         "title": "Reseñas",
         "totalReviews_one": "{{count}} reseña",

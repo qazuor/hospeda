@@ -41,6 +41,15 @@
         "title": "Contact the host first",
         "description": "To keep reviews honest, only travellers who have already contacted the host can leave one. Send an enquiry from the contact button and come back when you're ready to share your opinion."
     },
+    "sidebar": {
+        "title": "Your review",
+        "canLeaveReview": "You've contacted the host. Share your experience to help other travellers.",
+        "cta": "Leave a review",
+        "locked": "To leave a review, first message the host from the contact button."
+    },
+    "dialog": {
+        "close": "Close"
+    },
     "list": {
         "title": "Reviews",
         "totalReviews_one": "{{count}} review",
