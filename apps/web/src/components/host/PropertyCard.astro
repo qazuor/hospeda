@@ -11,6 +11,7 @@
  * - ARCHIVED → red background    → i18n key `host.properties.card.status.SUSPENDED`
  */
 
+import { getAdminUrlOrThrow } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -82,16 +83,21 @@ const priceText = hasPrice
     : null;
 const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
 
-/** Action URLs. */
-const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
+/** Action URLs.
+ *
+ * Edit and publish actions live in the admin panel — that's where the
+ * authoritative listing editor (photos, prices, amenities, contact info,
+ * publish flow) is implemented. The web's own `/mi-cuenta/propiedades/`
+ * surface is a read-only summary; sending the host to a non-existent web
+ * editor was a dead end. View-on-site stays in the web.
+ */
+const adminBase = getAdminUrlOrThrow().replace(/\/$/, '');
+const editUrl = `${adminBase}/accommodations/${property.id}/edit`;
+const publishUrl = `${adminBase}/accommodations/${property.id}/edit?action=publish`;
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
 const unpublishUrl = buildUrl({
     locale,
     path: `mi-cuenta/propiedades/${property.id}?action=unpublish`
-});
-const publishUrl = buildUrl({
-    locale,
-    path: `mi-cuenta/propiedades/${property.id}/editar?action=publish`
 });
 
 const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
