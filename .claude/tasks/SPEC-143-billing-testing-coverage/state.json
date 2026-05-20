@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 45,
+        "completed": 46,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -709,11 +709,12 @@
             "title": "E2E: free plan signup + entitlements (no payment flow)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "free-plan-signup.test.ts. New user with no checkout → free-tier entitlements active immediately + no billing_customer row required initially + upgrade-to-paid path from free works. Edge: free-tier rate limits enforced."
+            "notes": "[reconciled 2026-05-20] Shipped via commit 228c2534b (2026-05-20). Reconciliation pass mark — original task description preserved below. free-plan-signup.test.ts. New user with no checkout → free-tier entitlements active immediately + no billing_customer row required initially + upgrade-to-paid path from free works. Edge: free-tier rate limits enforced.",
+            "completedAt": "2026-05-20"
         },
         {
             "id": "T-143-59",
