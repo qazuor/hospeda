@@ -17,6 +17,7 @@
             "communication": "Communication",
             "location": "Location"
         },
+        "subheading": "Share your experience at {{name}} to help other travellers.",
         "titleLabel": "Title",
         "titlePlaceholder": "Summary of your experience",
         "contentLabel": "Review",

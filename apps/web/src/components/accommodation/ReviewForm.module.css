@@ -1,0 +1,181 @@
+.wrapper {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: var(--space-6, 24px);
+    margin-top: var(--space-6, 24px);
+}
+
+.heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 8px) 0;
+}
+
+.subheading {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-4, 16px) 0;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.fieldset {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-4, 16px);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.legend {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    padding: 0 var(--space-2, 8px);
+}
+
+.ratingRow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.ratingLabel {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.starGroup {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.starButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--core-muted-foreground);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-md, 10px);
+    transition: color var(--duration-fast, 0.15s) ease, transform var(--duration-fast, 0.15s) ease;
+}
+
+.starButton:hover {
+    transform: scale(1.1);
+    color: var(--brand-accent);
+}
+
+.starButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.starButtonOn {
+    color: var(--brand-accent);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.fieldLabel {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.input,
+.textarea {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.input:focus,
+.textarea:focus {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 96px;
+}
+
+.submitButton {
+    align-self: flex-start;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--accent-foreground);
+    background-color: var(--brand-accent);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    cursor: pointer;
+    transition: opacity var(--duration-fast, 0.15s) ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.helpText {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.errorMessage {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--brand-accent);
+    background-color: oklch(from var(--brand-accent) l c h / 0.08);
+    border: 1px solid oklch(from var(--brand-accent) l c h / 0.25);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    margin: 0;
+}
+
+.successMessage {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+    text-align: center;
+}

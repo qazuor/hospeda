@@ -21,6 +21,7 @@ import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
+import { ReviewForm } from '@/components/accommodation/ReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/accommodation/LocationSection.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
@@ -29,6 +30,7 @@ import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
+import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -404,6 +406,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 locale={locale}
             />
         </ReviewPreview>
+
+        {isAuthenticated && (
+            <ReviewForm
+                client:visible
+                accommodationId={accommodation.id}
+                accommodationName={accommodation.name}
+                locale={locale}
+                apiUrl={getApiUrl()}
+            />
+        )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
         <LocationSection
