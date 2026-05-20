@@ -107,6 +107,15 @@
     border-radius: var(--radius-pill, 9999px);
 }
 
+.reviewTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 8px) 0;
+    line-height: 1.3;
+}
+
 .reviewText {
     font-family: var(--font-sans);
     font-size: 0.9375rem;

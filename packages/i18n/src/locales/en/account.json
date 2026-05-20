@@ -294,7 +294,8 @@
         "ratingEditLabel": "Rating",
         "saving": "Saving...",
         "deleting": "Deleting...",
-        "total": "Total: {{count}} reviews",
+        "total_one": "Total: {{count}} review",
+        "total_other": "Total: {{count}} reviews",
         "typeAccommodation": "Accommodation",
         "typeDestination": "Destination",
         "errors": {

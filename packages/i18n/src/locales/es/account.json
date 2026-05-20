@@ -294,7 +294,8 @@
         "ratingEditLabel": "Puntuación",
         "saving": "Guardando...",
         "deleting": "Eliminando...",
-        "total": "Total: {{count}} reseñas",
+        "total_one": "Total: {{count}} reseña",
+        "total_other": "Total: {{count}} reseñas",
         "typeAccommodation": "Alojamiento",
         "typeDestination": "Destino",
         "errors": {
