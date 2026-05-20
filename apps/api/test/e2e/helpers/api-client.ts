@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Actor } from '@repo/service-core';
 import { expect } from 'vitest';
 import { createAuthenticatedRequest } from '../../helpers/auth.js';
@@ -29,17 +30,36 @@ export class E2EApiClient {
     }
 
     /**
-     * Make authenticated POST request
+     * Make authenticated POST request.
+     *
+     * Auto-injects `X-Idempotency-Key: <fresh-uuid>` on every call so the
+     * billing endpoints protected by `idempotencyKeyMiddleware` (SPEC-143
+     * T-143-60 — start-paid, addons/:slug/purchase, addons/:id/cancel)
+     * accept the request without explicit per-test wiring. The default
+     * fresh-uuid produces NO cache hit between calls (matches the
+     * pre-T-143-60 behavior of every call producing a fresh side effect).
+     *
+     * Override via `opts.idempotencyKey`:
+     * - `string` — pin the key (use to exercise replay or conflict paths).
+     * - `null`   — skip the header (use to exercise the 400 missing-header
+     *              path; calls to non-billing endpoints don't care either way).
+     *
      * @param path - API path
      * @param body - Request body
-     * @returns Response object
+     * @param opts - Optional overrides
      */
-    async post(path: string, body: any) {
+    async post(path: string, body: any, opts: { readonly idempotencyKey?: string | null } = {}) {
         const headers = createAuthenticatedRequest(this.actor);
+        const idempotencyKey =
+            opts.idempotencyKey === undefined ? randomUUID() : opts.idempotencyKey;
+
+        const requestHeaders = idempotencyKey
+            ? { ...headers.headers, 'x-idempotency-key': idempotencyKey }
+            : headers.headers;
 
         return await this.app.request(path, {
             method: 'POST',
-            headers: headers.headers,
+            headers: requestHeaders,
             body: JSON.stringify(body)
         });
     }
