@@ -215,44 +215,174 @@ All remaining 49 billing-surface files sit at 100% line coverage.
 
 ### 2.2 E2E coverage (`vitest.config.e2e.ts`)
 
-_Pending baseline run._
+**Tooling constraint**: a single `vitest run --config vitest.config.e2e.ts --coverage` over the full 33-file billing e2e suite **runs out of memory** (V8 heap exhausted around the 1GB default). The combined v8 instrumentation overhead plus the e2e setup-fixture-teardown lifecycle exceeds Node's default heap for any single process. Documented as a pre-pinned gotcha in the SPEC-143 checkpoint (`OOM corriendo full billing suite junta`).
 
-### 2.3 `packages/billing` coverage
+**Workaround**: chunk the run into 5–6 batches of 4–7 files each. The audit was produced from six chunks:
 
-_Pending baseline run._
+| Chunk | Files | Output |
+| ----- | ----- | ------ |
+| 1 | monthly-checkout, annual-checkout, free-plan-signup, subscription-activation, authorized-payment, api-idempotency, smoke-plans | `/tmp/cov-e2e-c1/` |
+| 2 | plan-upgrade, plan-downgrade, plan-downgrade-cron, plan-migration-matrix, multi-currency, subscription-pause-resume | `/tmp/cov-e2e-c2/` |
+| 3 | addon-purchase, addon-cancel-recalc, addon-expiration-cron, promo-code | `/tmp/cov-e2e-c3/` |
+| 4 | webhook-concurrency, webhook-failed-payment, webhook-idempotency, webhook-signature, mp-error-handling, chargeback | `/tmp/cov-e2e-c4/` |
+| 5a | refund, dunning-cron, exchange-rate-cron, entitlement-cache, entitlement-load | `/tmp/cov-e2e-c5a/` |
+| 5b | past-due-grace, trial-lifecycle, subscription-cancel, auth-redirect-cancel-flows, admin-billing-ops | `/tmp/cov-e2e-c5b/` |
+
+The six `coverage-summary.json` files were merged via `jq` taking `max(covered)` per file across chunks. This approximation is **directionally accurate but slightly conservative**: when two chunks cover disjoint line ranges of the same file, the merge picks the higher count rather than the true union. To get the exact union we would need `coverage-final.json` per chunk (line-level) and a merge against istanbul-merge, which is out of audit scope.
+
+**Aggregate billing-surface coverage (e2e merged)**:
+
+- **74 files in scope** (1 file in the unit set had `total: 0` and was filtered)
+- **65 at 100%**
+- **4 at 90–99%**
+- **1 at 50–89%**
+- **4 at <50%** (the 3 dead-code files + 1 file that the e2e chunks did not exercise but unit covered)
+- **Total lines**: 12,937
+- **Lines covered**: 12,508
+- **E2E line coverage**: **96.68%**
+
+E2E adds 32 covered lines over the unit baseline by exercising paths only reachable through the HTTP layer (signature middleware, route auth, response shaping). This is a small absolute gain because the unit baseline is already at 96.44%.
+
+### 2.3 Combined unit + e2e coverage
+
+The headline number for "is this surface tested" is the **union** of unit + e2e — a line covered in either run is covered. Merged via the same `jq max(covered)` approach:
+
+- **74 files in scope**
+- **67 at 100%** (perfect)
+- **4 at 90–99%** (high)
+- **0 at 50–89%**
+- **3 at <50%** (the 3 dead-code files)
+- **Total lines**: 12,937
+- **Lines covered**: 12,621
+- **Combined line coverage**: **97.56%**
+- **Excluding dead code**: **99.66%** (12,621 / 12,664)
+
+The 4 files in the 90–99% band after merging unit+e2e:
+
+| File | Combined Line % | Covered / Total | Note |
+| ---- | --------------- | --------------- | ---- |
+| `routes/webhooks/mercadopago/subscription-logic.ts` | 94.22% | 457/485 | Webhook lifecycle branches (cancel/pause/resume transitions on the QZPay-side). |
+| `routes/webhooks/mercadopago/payment-logic.ts` | 97.12% | 439/452 | Annual-confirmation + plan-upgrade error paths (logged-but-swallowed branches). |
+| `routes/webhooks/mercadopago/payment-handler.ts` | 98.92% | 92/93 | One MP-retrieve-error early-return branch. |
+| `routes/billing/subscription-status.ts` | 99.07% | 107/108 | One default-case in a switch on subscription status. |
+
+All four are webhook / route handlers and the uncovered lines are within `catch` blocks or defensive default-cases — see section 4 for the exception list.
+
+### 2.4 `packages/billing` coverage
+
+`@repo/billing` carries its own unit suite under `packages/billing/test/`. A targeted coverage run is out of scope for this audit because:
+
+- The package has no e2e equivalent (it's pure logic — config, types, validation, adapters).
+- It is exercised transitively by both the API unit suite and the API e2e suite (every checkout / webhook flow imports `@repo/billing`).
+- The API combined coverage above (97.56%) already counts `@repo/billing` lines that get imported by the API tests.
+
+If a future audit needs per-package numbers for `@repo/billing` in isolation, run `pnpm --filter @repo/billing test --coverage` directly. The audit owner judged that the API-level union number is sufficient for the v1 go-live gate.
 
 ---
 
 ## 3. Functional audit — runbooks vs e2e test inventory
 
-> _**TBD** — to be filled by sub-commit D. Each section below maps a runbook scenario to ≥ 1 e2e test reference, plus any documented gap._
+Every operational scenario in [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) is cross-checked against the e2e test inventory at [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/). The audit covers the seven actionable runbook sections (§1–§7); §8–§10 are reference / metadata sections that do not map to test flows.
 
-| Runbook section | Scenario | Covering e2e test(s) | Status |
-| --------------- | -------- | -------------------- | ------ |
-| §1 | Failed webhook handler triage | _pending audit_ | _pending_ |
-| §2 | Stuck `incomplete` subscriptions | _pending audit_ | _pending_ |
-| §3 | Dunning / past-due grace | _pending audit_ | _pending_ |
-| §4 | Refund flow | _pending audit_ | _pending_ |
-| §5 | Disputes / chargebacks | _pending audit_ | _pending_ |
-| §6 | Cron lag / missed runs | _pending audit_ | _pending_ |
-| §7 | Admin manual interventions | _pending audit_ | _pending_ |
+| Runbook § | Scenario | Covering e2e test(s) | Notes |
+| --------- | -------- | -------------------- | ----- |
+| **§1** | Failed webhook handler triage (signature class, MP race, DB error, dead-letter replay) | `webhook-concurrency.test.ts`, `webhook-idempotency.test.ts`, `webhook-failed-payment.test.ts`, `webhook-signature.test.ts`, `mp-error-handling.test.ts` | The retry / dead-letter cron is **not** exercised in e2e — it lives in `apps/api/test/cron/webhook-retry.test.ts` as a unit test only. The runbook's manual replay command (`hops cron-trigger webhook-retry --event-id=<UUID>`) is operational tooling, not a code path. |
+| **§2** | MP signature validation failure (secret rotation vs rogue request) | `webhook-signature.test.ts` | Invalid-signature path covered. Secret-rotation procedure is operational (env-set + redeploy); not a code path. |
+| **§3** | Cron failure recovery (general) | Per-cron e2e files: `exchange-rate-cron.test.ts`, `dunning-cron.test.ts`, `addon-expiration-cron.test.ts`, `plan-downgrade-cron.test.ts` | The §3 table lists 8 cron jobs. 5 of the 8 have dedicated e2e files: dunning, trial-expiry, addon-expiry, apply-scheduled-plan-changes, exchange-rate-fetch. The other 3 (`trial-pre-end-notif`, `abandoned-pending-subs`, `webhook-retry`) only have unit tests under `apps/api/test/cron/`. Gap is documented but acceptable — those three are non-financial-correctness cron paths. |
+| **§4** | Dunning cron stuck recovery (past-due age buckets, per-customer rescue) | `dunning-cron.test.ts`, `past-due-grace.test.ts` | Both happy-path and grace-expired cases pinned. Manual rescue path (case "Bypass to manual rescue") is operational; tested via §7 below. |
+| **§5** | Refund procedure (manual via MP dashboard + DB record) | `refund.test.ts` | E2E pins the webhook side: `payment.refunded` → `billing_refunds.status = 'succeeded'`. The runbook acknowledges `bug/refund-flow-gaps` (engram) — in-app refund flow has 5 known gaps, all refunds go through MP dashboard manually in v1. **Out-of-scope by design**, tracked in engram. |
+| **§6** | Dispute procedure (contest vs concede) | `chargeback.test.ts` | E2E pins the webhook side: `chargebacks` event → `billing_disputes` row created. The "Presentar evidencia" UI flow is **out of scope by design** (manual via MP dashboard, see [`docs/billing/dispute-handling-v1.md`](./dispute-handling-v1.md)). |
+| **§7** | Manual subscription rescue (reactivate cancelled, cancel post-refund orphan, fix stuck `pending_provider`) | `admin-billing-ops.test.ts`, `subscription-activation.test.ts`, `subscription-cancel.test.ts`, `subscription-pause-resume.test.ts` | The 3 manual-rescue cases in §7 (A reactivate, B cancel, C un-stick `pending_provider`) are SQL `UPDATE` / `INSERT` statements, not API calls. The e2e tests cover the equivalent API-level admin paths but **not the raw SQL rescue path itself**, which is intentional (manual eyes-on-glass operations). Cache invalidation after rescue is covered by `entitlement-cache.test.ts` and `entitlement-load.test.ts`. |
+
+### Cron-job e2e gap summary
+
+| Job | Cron schedule | E2E test? | Notes |
+| --- | ------------- | --------- | ----- |
+| `dunning` | every 30 min | ✅ `dunning-cron.test.ts` | Financial-correctness. |
+| `trial-expiry` | hourly | ✅ (covered by `trial-lifecycle.test.ts` + cron unit test) | Financial-correctness. |
+| `addon-expiry` | hourly | ✅ `addon-expiration-cron.test.ts` | Entitlement-correctness. |
+| `apply-scheduled-plan-changes` | hourly | ✅ `plan-downgrade-cron.test.ts` | Plan-correctness. |
+| `exchange-rate-fetch` | daily 03:00 | ✅ `exchange-rate-cron.test.ts` | Decorative wrt checkout (see SPEC-150). |
+| `trial-pre-end-notif` | daily 09:00 | ❌ Unit only (`apps/api/test/cron/trial-pre-end-notif.test.ts`) | Non-financial: email reminders. |
+| `abandoned-pending-subs` | daily 02:00 | ❌ Unit only (`apps/api/test/cron/abandoned-pending-subs.test.ts`) | Janitorial: flips stuck rows. |
+| `webhook-retry` | every 5 min | ❌ Unit only (`apps/api/test/cron/webhook-retry.test.ts`) | Retry infrastructure; failure modes covered by mp-error-handling. |
+
+The three crons without e2e coverage are documented gaps. Each is unit-tested and exercises pure DB mutations + service calls; an e2e for any of them would add I/O cost without changing the assertion shape. Closing these gaps is **out of audit scope** — flagged as a low-priority follow-up.
+
+### Webhook handlers coverage (§1 detail)
+
+The webhook handlers (`payment-handler`, `subscription-handler`, `subscription-payment-handler`, `dispute-handler`) all sit at 100% unit line coverage (see section 2.1). E2E coverage adds the round-trip from HTTP request through signature verification through processing into the DB. All four handlers have ≥ 1 e2e test:
+
+- `payment.updated` → `monthly-checkout.test.ts`, `annual-checkout.test.ts`, `webhook-failed-payment.test.ts`, `mp-error-handling.test.ts`, `webhook-concurrency.test.ts`, `webhook-idempotency.test.ts`
+- `subscription_preapproval.updated` → `monthly-checkout.test.ts` (sub-commit 3), `subscription-pause-resume.test.ts`
+- `authorized_payment` → `authorized-payment.test.ts`, `monthly-checkout.test.ts` (recurring renewal sub-commit)
+- `chargebacks` → `chargeback.test.ts`
+
+### Admin-ops coverage
+
+`admin-billing-ops.test.ts` covers the admin tier endpoints (list customers, view subscription, cancel-as-admin, manual addon grant, etc.). These map to the §7 "automated paths" tier — when an admin uses the UI instead of raw SQL. The §7 raw-SQL rescue path is intentionally untested (operational).
+
+### Out-of-scope by design (documented gaps)
+
+These flows have **no automated e2e coverage** and are explicitly out of scope per existing decisions:
+
+1. **In-app refund flow** — `bug/refund-flow-gaps`, manual via MP dashboard in v1 (§5).
+2. **In-app dispute resolution** — `dispute-handling-v1.md`, manual via MP dashboard in v1 (§6).
+3. **Raw SQL rescue queries** — eyes-on-glass operations (§7).
+4. **`trial-pre-end-notif`, `abandoned-pending-subs`, `webhook-retry` e2e** — unit-only by design.
+5. **Multi-currency price selection** — SPEC-150, single-currency in v1 (regression-guarded by `multi-currency.test.ts`).
+6. **MP provider error propagation + Sentry context + retry policy** — SPEC-149 (regression-guarded by `mp-error-handling.test.ts`).
+7. **Cron-lag grace + plan disable lifecycle** — SPEC-148 (regression-guarded by `past-due-grace.test.ts`).
 
 ---
 
 ## 4. Exception list
 
-> _**TBD** — to be filled by sub-commit E. Each entry lists the file, the line range, the istanbul-ignore annotation if present, and the true-impossible-in-e2e justification (one line)._
+The 316 uncovered lines across the billing surface (12,937 − 12,621) split into three buckets:
 
-The four allowed categories are:
+1. **Dead code (273 lines)** — `routes/billing/metrics.ts` (271) + `services/promo-code.crud.ts` (1) + `services/promo-code.redemption.ts` (1). These are SHIMs / duplicates that no live code imports. Deletion (separate PR) zeroes this bucket and lifts coverage to 99.66%.
+2. **True-impossible-in-e2e in the 4 webhook/route handler files (43 lines)** — see categorial breakdown below.
+3. **No source-level `/* istanbul ignore */` annotations** were added during this audit. The covered/total split is the natural state of the codebase as of HEAD `77ae0c02d`. Future PRs that introduce defensive `never` guards or 3DS subpaths should annotate them inline rather than dragging the overall percentage down.
 
-1. **Real MercadoPago card internals** — code paths that only fire on real MP-side state we cannot simulate (e.g. specific 3DS challenge subtypes).
-2. **Real fraud detection ML** — code that delegates to MP's fraud model whose output we cannot stub deterministically.
+### Categorial exception list (43 lines in 4 files)
+
+The four allowed categories (per T-143-55 notes):
+
+1. **Real MercadoPago card internals** — code paths that only fire on real MP-side state we cannot simulate.
+2. **Real fraud detection ML** — code delegating to MP's fraud model whose output we cannot stub deterministically.
 3. **Non-deterministic network races** — branches that fire only on specific timing windows we cannot reliably reproduce in a stub.
 4. **Defensive impossible branches** — exhaustive switch defaults, `never` type guards, branches behind invariants enforced upstream by schema validation.
 
-| File | Line(s) | Category | Justification |
-| ---- | ------- | -------- | ------------- |
-| _pending_ | | | |
+| File | Uncovered lines | Dominant category | Notes |
+| ---- | --------------- | ----------------- | ----- |
+| `routes/webhooks/mercadopago/subscription-logic.ts` | 28 | (4) defensive impossible branches + (3) MP race | The handler covers cancel/pause/resume/expired transitions on the QZPay-side. Some `if (sub.status === '<unexpected>') { logger.warn; return; }` guards fire only when the MP-side preapproval is in a state our stub cannot generate (e.g. a preapproval that was simultaneously authorized AND cancelled by two parallel admin actions on MP — a race we cannot deterministically reproduce). |
+| `routes/webhooks/mercadopago/payment-logic.ts` | 13 | (4) defensive + (3) MP race | `confirmAnnualSubscription` and `confirmPlanUpgrade` both have inner `try/catch` blocks around best-effort steps (clear scheduled change, addon recalc). The catch arms are documented "logged-but-swallowed" — to exercise them we would need the inner service call to throw, which only happens in real failure modes (DB timeout mid-transaction, etc.) that the stub layer cannot model. |
+| `routes/webhooks/mercadopago/payment-handler.ts` | 1 | (3) MP race | The MP `payments.retrieve(paymentId)` retrieval has a defensive `catch` arm that logs and acks the event. The stub layer always returns a payment object; to exercise the catch we would need MP to delete the payment between webhook fire and our retrieve, a race we cannot reproduce. |
+| `routes/billing/subscription-status.ts` | 1 | (4) defensive | One `default:` arm in a switch over `SubscriptionStatusEnum`. The Zod schema validates the enum upstream so the default is unreachable in practice. |
+
+### Why these are NOT marked with `/* istanbul ignore */`
+
+The four allowed categories above describe lines that are **structurally unreachable from a stubbed environment**. We deliberately do NOT annotate them with `/* istanbul ignore next */` because:
+
+- The branches are present in the source for a reason (defensive logging, race-resilience). Adding `istanbul ignore` would semantically signal "this code is dead" — which is incorrect; it is reachable in production.
+- The reported uncovered-line count is already small (43 lines, 0.33% of the billing surface). The signal-to-noise ratio of annotations would be worse than the current state.
+- Future SPECs (148, 149) will exercise some of these paths once the corresponding refactors land (Sentry capture, retry policy, grace-period defensive guards). Adding `istanbul ignore` now would have to be reverted then.
+
+The audit's recommendation: **leave the 43 lines uncovered, document why here, and revisit when SPEC-148/149 ship**. Going to 100% before then would either require adding `istanbul ignore` (which we reject) or building MP-side state generators that are out of scope for v1.
+
+### Out-of-scope failure (still deferred)
+
+`test/schema-validation/post-getById-schema.test.ts` — 2 tests fail with HTTP 500 on `/api/v1/public/posts/:id`. Post entity, not billing. Coverage runs were produced with this file excluded; the exclusion does not affect billing-surface coverage numbers because the file is unrelated to the billing layer.
+
+### Follow-up recommendations
+
+| Priority | Action | Affects |
+| -------- | ------ | ------- |
+| Low | Delete the 3 dead-code files in a separate PR (`routes/billing/metrics.ts`, `services/promo-code.crud.ts`, `services/promo-code.redemption.ts`). | Lifts overall coverage from 97.56% to 99.66%. |
+| Low | Audit `apps/api/test/cron/` for `trial-pre-end-notif`, `abandoned-pending-subs`, `webhook-retry` to confirm unit-level coverage of their failure modes. | Closes the §3-table gap noted in functional audit. |
+| Low | Fix the 2 `post-getById-schema.test.ts` failures (out of billing scope). | Unblocks future `pnpm test:coverage` runs without `--exclude`. |
+| Defer | Add e2e for `trial-pre-end-notif`, `abandoned-pending-subs`, `webhook-retry`. | Negligible — these crons are non-financial. |
+| Defer | Investigate Sentry-capture and retry-policy exercises for the 4 webhook handler gaps. | Happens naturally when SPEC-149 ships. |
 
 ---
 
