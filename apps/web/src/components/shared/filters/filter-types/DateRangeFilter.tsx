@@ -96,7 +96,10 @@ const CALENDAR_LOCALE_MAP = { es: esLocale, en: enLocale, pt: ptLocale } as cons
  * Anchored popover positioning shared between range and bounds modes.
  * Re-anchors on scroll / window resize so the popover follows the trigger.
  */
-function usePopoverPosition(isOpen: boolean, triggerRef: React.RefObject<HTMLButtonElement>) {
+function usePopoverPosition(
+    isOpen: boolean,
+    triggerRef: React.RefObject<HTMLButtonElement | null>
+) {
     const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
         top: 0,
         left: 0,
@@ -136,8 +139,8 @@ function usePopoverPosition(isOpen: boolean, triggerRef: React.RefObject<HTMLBut
 function useDismiss(
     isOpen: boolean,
     onClose: () => void,
-    triggerRef: React.RefObject<HTMLButtonElement>,
-    popoverRef: React.RefObject<HTMLDivElement>
+    triggerRef: React.RefObject<HTMLButtonElement | null>,
+    popoverRef: React.RefObject<HTMLDivElement | null>
 ) {
     useEffect(() => {
         if (!isOpen) return;
