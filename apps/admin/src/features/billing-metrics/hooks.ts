@@ -75,31 +75,16 @@ async function fetchRecentActivity(
 }
 
 /**
- * Search for customers by email
+ * Customer-level metrics endpoints are NOT implemented on the backend yet.
+ *
+ * `GET /api/v1/admin/billing/customers/search` and
+ * `GET /api/v1/admin/billing/customers/:id/usage` both return 404 in staging
+ * (the legacy `/protected` paths the UI used to call also do not exist).
+ * Until those endpoints ship, the corresponding hooks below stay disabled
+ * via TanStack Query's `enabled: false` so we don't fire failing requests.
+ *
+ * Tracked in `docs/billing/ui-audit-2026.md`.
  */
-async function searchCustomers(query: string): Promise<CustomerSearchResult[]> {
-    if (!query || query.trim().length < 2) {
-        return [];
-    }
-
-    const params = new URLSearchParams();
-    params.append('q', query.trim());
-
-    const result = await fetchApi<{ success: boolean; data: CustomerSearchResult[] }>({
-        path: `/api/v1/protected/billing/customers/search?${params.toString()}`
-    });
-    return result.data.data;
-}
-
-/**
- * Fetch customer usage summary
- */
-async function fetchCustomerUsage(customerId: string): Promise<CustomerUsageSummary> {
-    const result = await fetchApi<{ success: boolean; data: CustomerUsageSummary }>({
-        path: `/api/v1/protected/billing/customers/${customerId}/usage`
-    });
-    return result.data.data;
-}
 
 /**
  * Hook to fetch billing metrics
@@ -136,33 +121,30 @@ export const useRecentActivityQuery = (
 };
 
 /**
- * Hook to search for customers
+ * Hook to search for customers — currently disabled. The backend search
+ * endpoint does not exist; the hook returns an empty list with a stable
+ * shape so the UI can render a banner without conditional plumbing.
  */
 export const useCustomerSearchQuery = (query: string) => {
-    return useQuery({
+    return useQuery<CustomerSearchResult[]>({
         queryKey: metricsQueryKeys.customers.search(query),
-        queryFn: () => searchCustomers(query),
-        enabled: query.trim().length >= 2,
-        staleTime: 60_000,
-        retry: 1
+        queryFn: () => Promise.resolve([]),
+        enabled: false,
+        initialData: [],
+        staleTime: Number.POSITIVE_INFINITY
     });
 };
 
 /**
- * Hook to fetch customer usage summary
+ * Hook to fetch customer usage summary — currently disabled (see note above).
  */
-export const useCustomerUsageQuery = (customerId: string | null) => {
-    return useQuery({
-        queryKey: metricsQueryKeys.customers.usage(customerId || ''),
-        queryFn: () => {
-            if (!customerId) {
-                throw new Error('Customer ID is required');
-            }
-            return fetchCustomerUsage(customerId);
-        },
-        enabled: !!customerId,
-        staleTime: 30_000, // 30 seconds
-        retry: 1
+export const useCustomerUsageQuery = (_customerId: string | null) => {
+    return useQuery<CustomerUsageSummary | null>({
+        queryKey: metricsQueryKeys.customers.usage(_customerId || ''),
+        queryFn: () => Promise.resolve(null),
+        enabled: false,
+        initialData: null,
+        staleTime: Number.POSITIVE_INFINITY
     });
 };
 
