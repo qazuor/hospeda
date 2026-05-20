@@ -607,6 +607,64 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                 'Failed to link anonymous conversations on user registration'
                             );
                         }
+
+                        // Anonymous newsletter linking (non-blocking).
+                        // Attaches every anonymous `newsletter_subscribers` row whose
+                        // `email` matches the new user's email — and, when the
+                        // account email is verified at signup time (typical for
+                        // OAuth providers), promotes any pending row to active
+                        // with a transactional welcome email. Mirrors the
+                        // anonymous-conversations link above; same constraint
+                        // applies: registration MUST NOT fail because of this.
+                        //
+                        // The newsletter service singleton may throw on access
+                        // when HOSPEDA_NEWSLETTER_HMAC_SECRET is unset (e.g. local
+                        // dev without a mailer config). We swallow that path so
+                        // the registration finishes cleanly — the eventually-set
+                        // secret will let the user trigger the link via a
+                        // subsequent subscribe / resend.
+                        try {
+                            const { getDefaultNewsletterService } = await import(
+                                '../routes/newsletter/protected/_singletons'
+                            );
+                            const newsletterSvc = getDefaultNewsletterService();
+                            const result = await newsletterSvc.linkAnonymousSubscribersToUser({
+                                userId: user.id,
+                                email: user.email,
+                                accountEmailVerified: user.emailVerified === true
+                            });
+                            if (result.error) {
+                                logger.warn(
+                                    {
+                                        userId: user.id,
+                                        code: result.error.code,
+                                        reason: (result.error as { reason?: string }).reason
+                                    },
+                                    'linkAnonymousSubscribersToUser returned an error result'
+                                );
+                            } else if (
+                                result.data &&
+                                (result.data.linkedCount > 0 ||
+                                    result.data.promotedToActiveCount > 0)
+                            ) {
+                                logger.info(
+                                    {
+                                        userId: user.id,
+                                        linkedCount: result.data.linkedCount,
+                                        promotedToActiveCount: result.data.promotedToActiveCount
+                                    },
+                                    'Linked anonymous newsletter subscribers to new user'
+                                );
+                            }
+                        } catch (err) {
+                            logger.error(
+                                {
+                                    err,
+                                    userId: user.id
+                                },
+                                'Failed to link anonymous newsletter subscribers on user registration'
+                            );
+                        }
                     }
                 },
                 update: {
