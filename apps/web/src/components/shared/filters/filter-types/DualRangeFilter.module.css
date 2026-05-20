@@ -91,9 +91,7 @@
     border: 2.5px solid white;
     box-shadow: 0 1px 4px oklch(0 0 0 / 0.25);
     pointer-events: auto;
-    transition:
-        transform var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease;
+    transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .dualRangeInput::-moz-range-thumb {
@@ -113,9 +111,8 @@
 }
 
 .dualRangeInput:focus-visible::-webkit-slider-thumb {
-    box-shadow:
-        0 0 0 3px oklch(from var(--brand-primary) l c h / 0.25),
-        0 1px 4px oklch(0 0 0 / 0.2);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.25), 0 1px 4px
+        oklch(0 0 0 / 0.2);
 }
 
 /* Z-order matters when the two thumbs sit at the same position: the one
@@ -131,7 +128,7 @@
 /* When the min thumb is at or above the midpoint, raise it so the user can
    still grab it (otherwise the max thumb covers it). Toggled via a data attr
    set on the JSX side. */
-.dualRangeInputMin[data-above-mid='true'] {
+.dualRangeInputMin[data-above-mid="true"] {
     z-index: 5;
 }
 

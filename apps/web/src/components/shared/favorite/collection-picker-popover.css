@@ -29,9 +29,8 @@
     background-color: var(--surface-elevated);
     border: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
     border-radius: var(--radius-md, 10px);
-    box-shadow:
-        0 10px 28px -8px oklch(from var(--core-foreground) l c h / 0.25),
-        0 4px 10px -4px oklch(from var(--core-foreground) l c h / 0.15);
+    box-shadow: 0 10px 28px -8px oklch(from var(--core-foreground) l c h / 0.25), 0 4px 10px -4px
+        oklch(from var(--core-foreground) l c h / 0.15);
     font-family: var(--font-sans);
     color: var(--core-foreground);
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -149,9 +148,8 @@
     color: var(--core-foreground);
     text-align: left;
     cursor: pointer;
-    transition:
-        background-color var(--duration-fast, 0.15s) ease,
-        border-color var(--duration-fast, 0.15s) ease;
+    transition: background-color var(--duration-fast, 0.15s) ease, border-color
+        var(--duration-fast, 0.15s) ease;
 }
 
 .collection-picker__chip:hover:not(:disabled) {

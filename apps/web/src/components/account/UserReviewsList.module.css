@@ -243,9 +243,7 @@
     border: 1px solid var(--brand-accent);
     border-radius: var(--radius-button);
     text-decoration: none;
-    transition:
-        background-color var(--duration-fast) ease,
-        transform var(--duration-fast) ease,
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
         box-shadow var(--duration-fast) ease;
 }
 
