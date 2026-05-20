@@ -756,14 +756,14 @@
         },
         {
             "id": "T-143-62",
-            "title": "E2E: multi-currency price selection (ARS / USD / BRL per customer)",
+            "title": "E2E: multi-currency price selection (regression-guard of current single-currency behavior)",
             "phase": "phase-3-A",
             "workstream": "A",
             "status": "pending",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-09", "T-143-43"],
-            "notes": "multi-currency.test.ts. Customer with ARS locale → plan ARS price selected; USD locale → USD price; BRL locale → BRL price. Edge: plan with only USD price + customer ARS → fallback to USD with FX conversion using latest billing_exchange_rates row. Stale exchange rate (cron didn't run today) → warning + use last known rate. Currency mismatch between subscription and addon → error."
+            "notes": "[reframed 2026-05-20] Original scope assumed (a) per-customer currency selection (ARS/USD/BRL based on customer locale), (b) FX fallback when plan price absent in customer currency, (c) stale exchange rate warning, (d) addon currency mismatch validation. Audit confirmed NONE of the four are implemented: billing_customers has no currency/locale field, billing_plans has single-currency price columns (no per-currency map nor billing_plan_prices table), checkout service never branches on customer.currency, billing_exchange_rates table exists + cron exists (T-143-43) but is decorative wrt checkout, addon currency-match validation is absent. Constants DEFAULT_CURRENCY=ARS and REFERENCE_CURRENCY=USD in packages/billing/src/constants/billing.constants.ts document the implicit single-currency state. Implementing the four concerns requires schema additions + service refactor deferred to SPEC-150 (Billing multi-currency support). This task now covers a regression-guard test: multi-currency.test.ts pins the current single-currency behavior so SPEC-150 explicitly knows what changes when it lands. Scope: verify that (1) checkout returns the single ARS price regardless of any client-supplied locale hints, (2) the billing_exchange_rates rows are NOT consulted by the checkout path (rate insertion has no effect on returned price), (3) addons inherit subscription currency implicitly with no mismatch check. See [[spec/spec-150/scope-deferred-from-spec-143]]."
         },
         {
             "id": "T-143-63",
