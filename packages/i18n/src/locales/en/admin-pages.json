@@ -79,9 +79,25 @@
         "forbidden": {
             "title": "Access Denied",
             "message": "You don't have the required permissions to access the admin panel. Contact your administrator if you believe this is an error.",
+            "greeting": "Hi {{name}},",
+            "email": "You're signed in as {{email}}",
             "switchAccount": "Sign in with another account",
             "goToSite": "Go to website",
-            "contactAdmin": "Contact administrator"
+            "contactAdmin": "Contact support",
+            "reason": {
+                "host-missing-permission": {
+                    "title": "There's a problem with your account",
+                    "message": "We see you're a host but your admin panel access is disabled. This is likely a missing config on your account. Drop us a line and we'll sort it out."
+                },
+                "generic": {
+                    "title": "Restricted area",
+                    "message": "This area is for Hospeda admins and hosts. Your account doesn't have access. If you think this is a mistake, contact us or sign in with another account."
+                }
+            },
+            "mailto": {
+                "subject": "Admin panel access request",
+                "body": "Hi, I need help accessing the Hospeda admin panel.\n\n— My account details —\nEmail: {email}\nUser ID: {userId}\nReason: {reason}\nOriginal path: {originalPath}\n\n— My message —\n"
+            }
         },
         "callback": {
             "completing": "Completing authentication..."

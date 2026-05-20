@@ -143,5 +143,9 @@
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
         "secondaryCta": "[TODO]"
+    },
+    "fromAdminBanner": {
+        "title": "We saw you tried to reach the admin panel.",
+        "message": "To manage your listings you need to publish one first. Fill in the basics and you'll get instant access."
     }
 }

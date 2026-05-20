@@ -79,9 +79,25 @@
         "forbidden": {
             "title": "Acesso negado",
             "message": "Você não tem as permissões necessárias para acessar o painel de administração. Entre em contato com seu administrador se acredita que isso é um erro.",
+            "greeting": "Olá {{name}},",
+            "email": "Você está autenticado como {{email}}",
             "switchAccount": "Entrar com outra conta",
             "goToSite": "Ir para o site",
-            "contactAdmin": "Contatar administrador"
+            "contactAdmin": "Contatar suporte",
+            "reason": {
+                "host-missing-permission": {
+                    "title": "Há um problema com sua conta",
+                    "message": "Detectamos que você é anfitrião mas o acesso ao painel está desabilitado. Provavelmente é uma configuração faltando na sua conta. Nos escreva e resolvemos."
+                },
+                "generic": {
+                    "title": "Área restrita",
+                    "message": "Esta área é para administradores e anfitriões da Hospeda. Sua conta não tem acesso. Se acredita que é um erro, entre em contato ou entre com outra conta."
+                }
+            },
+            "mailto": {
+                "subject": "Solicitação de acesso ao painel de administração",
+                "body": "Olá, preciso de ajuda para acessar o painel da Hospeda.\n\n— Detalhes da minha conta —\nEmail: {email}\nID do usuário: {userId}\nMotivo: {reason}\nRota original: {originalPath}\n\n— Minha mensagem —\n"
+            }
         },
         "callback": {
             "completing": "Concluindo autenticação..."
