@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 50,
+        "completed": 51,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -780,11 +780,12 @@
             "title": "E2E: webhook concurrency (duplicate concurrent + out-of-order delivery)",
             "phase": "phase-1-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-15"],
-            "notes": "webhook-concurrency.test.ts. (a) Same event ID delivered twice concurrently (parallel POSTs) → only one DB mutation, both return 200, no race-induced duplicate row (rely on DB unique constraint on event_id). (b) Out-of-order delivery: payment.approved arrives BEFORE preference.created/preapproval.authorized in the same flow → reconciliation logic catches up correctly without ending in inconsistent state."
+            "notes": "webhook-concurrency.test.ts. (a) Same event ID delivered twice concurrently (parallel POSTs) → only one DB mutation, both return 200, no race-induced duplicate row (rely on DB unique constraint on event_id). (b) Out-of-order delivery: payment.approved arrives BEFORE preference.created/preapproval.authorized in the same flow → reconciliation logic catches up correctly without ending in inconsistent state.",
+            "completedAt": "2026-05-20T05:00:00Z"
         },
         {
             "id": "T-143-65",
