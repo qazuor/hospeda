@@ -103,6 +103,9 @@ vi.mock('@/components/shared/filters/components/MobileDrawer.module.css', () => 
 vi.mock('@/components/shared/filters/components/SortPopover.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
+vi.mock('@/components/shared/filters/components/SectionHeader.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -702,5 +705,132 @@ describe('FilterSidebar — snapshot position="top"', () => {
         expect(wrapperLeft.getAttribute('data-position')).toBe('left');
         expect(wrapperTop.getAttribute('data-position')).toBe('top');
         expect(wrapperLeft.className).not.toBe(wrapperTop.className);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: section-header decorative entry + sectioned layout
+//
+// When `filters` declares at least one `section-header`, the sidebar switches
+// from the legacy "inline toggles first, collapsibles below" layout to a
+// strictly-declaration-order render so each group lands under its intended
+// header. Listings that don't declare any section-header keep the legacy
+// ordering — covered by the "stable group order" describes above.
+// ---------------------------------------------------------------------------
+
+const locationHeader: FilterGroup = {
+    id: 'section-location',
+    type: 'section-header',
+    label: 'UBICACIÓN'
+};
+
+const priceHeader: FilterGroup = {
+    id: 'section-price',
+    type: 'section-header',
+    label: 'PRECIO Y CALIDAD',
+    icon: 'PriceIcon'
+};
+
+describe('FilterSidebar — section-header decorative entry', () => {
+    it('renders the section-header label text in the sidebar body', () => {
+        // Arrange / Act
+        render(<FilterSidebar {...buildProps({ filters: [locationHeader, selectSearchGroup] })} />);
+
+        // Assert — label appears at least once (desktop sidebar; the drawer
+        // also renders an instance, so we use getAllByText).
+        expect(screen.getAllByText('UBICACIÓN').length).toBeGreaterThan(0);
+    });
+
+    it('renders the section-header as a non-interactive presentation element', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [locationHeader, selectSearchGroup] })} />
+        );
+
+        // Assert — the header is announced as role="presentation" and is NOT
+        // wrapped in a button / fieldset / collapsible toggle. Section
+        // headers carry no state; they're a visual divider only.
+        const headers = container.querySelectorAll('[role="presentation"]');
+        const labels = Array.from(headers).map((h) => h.textContent ?? '');
+        expect(labels.some((l) => l.includes('UBICACIÓN'))).toBe(true);
+        // None of the header nodes should themselves be buttons.
+        for (const node of headers) {
+            expect(node.tagName.toLowerCase()).not.toBe('button');
+        }
+    });
+
+    it('renders the optional icon when the section-header config carries one', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [priceHeader, dualRangeGroup] })} />
+        );
+
+        // Assert — the header with an `icon` field renders an icon slot
+        // (sectionHeaderIcon class) right next to the label.
+        const headerNodes = container.querySelectorAll('[role="presentation"]');
+        const priceHeaderNode = Array.from(headerNodes).find((n) =>
+            n.textContent?.includes('PRECIO Y CALIDAD')
+        );
+        expect(priceHeaderNode).toBeDefined();
+        expect(priceHeaderNode?.querySelector('.sectionHeaderIcon')).not.toBeNull();
+    });
+
+    it('switches to sectioned layout (declaration order) when filters contain a section-header', () => {
+        // Arrange — declare a toggle group AFTER a checkbox group. In the
+        // legacy "inline toggles first" layout the toggle would be hoisted
+        // above the checkbox. With a section-header present the layout
+        // switches to strict declaration order, so the checkbox stays first.
+        const sectioned: FilterGroup[] = [
+            locationHeader,
+            checkboxGroup, // 'Tipo de alojamiento'
+            toggleGroup // 'Solo destacados'
+        ];
+
+        // Act
+        const { container } = render(<FilterSidebar {...buildProps({ filters: sectioned })} />);
+
+        // Assert — find the checkbox group toggle and the toggle filter in
+        // the desktop sidebar, and confirm the toggle does NOT appear
+        // before the checkbox group in document order.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        expect(desktopSidebar).not.toBeNull();
+        const checkboxToggle = desktopSidebar?.querySelector('button[id="filter-type"]');
+        const toggleLabel = Array.from(desktopSidebar?.querySelectorAll('label') ?? []).find((n) =>
+            n.textContent?.includes('Solo destacados')
+        );
+        expect(checkboxToggle).not.toBeNull();
+        expect(toggleLabel).toBeDefined();
+        // checkbox group must come BEFORE the inline toggle in the DOM.
+        if (checkboxToggle && toggleLabel) {
+            const cmp = checkboxToggle.compareDocumentPosition(toggleLabel);
+            // DOCUMENT_POSITION_FOLLOWING === 0x04 — toggleLabel is after
+            // checkboxToggle in document order.
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
+    });
+
+    it('keeps legacy layout (inline toggles first) when no section-header is declared', () => {
+        // Arrange — same group set without a section-header. The toggle
+        // should now be hoisted above the checkbox group (legacy layout).
+        const legacy: FilterGroup[] = [checkboxGroup, toggleGroup];
+
+        // Act
+        const { container } = render(<FilterSidebar {...buildProps({ filters: legacy })} />);
+
+        // Assert — in the desktop sidebar the toggle's inline label comes
+        // BEFORE the checkbox group's collapsible header.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const checkboxToggle = desktopSidebar?.querySelector('button[id="filter-type"]');
+        const toggleLabel = Array.from(desktopSidebar?.querySelectorAll('label') ?? []).find((n) =>
+            n.textContent?.includes('Solo destacados')
+        );
+        expect(checkboxToggle).not.toBeNull();
+        expect(toggleLabel).toBeDefined();
+        if (checkboxToggle && toggleLabel) {
+            const cmp = toggleLabel.compareDocumentPosition(checkboxToggle);
+            // DOCUMENT_POSITION_FOLLOWING means `checkboxToggle` is after
+            // `toggleLabel` — i.e. the toggle was hoisted to the top.
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
     });
 });
