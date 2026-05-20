@@ -511,6 +511,92 @@ describe('NewsletterForm', () => {
     });
 
     // =========================================================================
+    // STATE: blocked-unverified
+    // =========================================================================
+
+    describe('blocked-unverified state', () => {
+        it('switches to blocked-unverified banner when the API returns NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED', async () => {
+            // First call: /status (returns not-subscribed). Second call: subscribe
+            // returns the 403 with the reason.
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: false,
+                    status: 403,
+                    json: async () => ({
+                        success: false,
+                        error: {
+                            code: 'FORBIDDEN',
+                            message: 'unverified',
+                            reason: 'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED'
+                        }
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            renderAuth();
+
+            // Wait for the initial status check to land us in idle-auth.
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                const banner = document.querySelector('[data-state="blocked-unverified"]');
+                expect(banner).toBeInTheDocument();
+                expect(banner?.textContent).toMatch(/verificá el email de tu cuenta/i);
+            });
+        });
+
+        it('renders a "go to my account" link in the blocked-unverified banner', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: false,
+                    status: 403,
+                    json: async () => ({
+                        success: false,
+                        error: { reason: 'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED' }
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                const link = screen.getByRole('link', { name: /ir a mi cuenta/i });
+                expect(link).toHaveAttribute('href', '/es/mi-cuenta/');
+            });
+        });
+    });
+
+    // =========================================================================
     // STATE: already-active
     // =========================================================================
 

@@ -54,7 +54,23 @@ type FormState =
     | 'pending'
     | 'pending-verification'
     | 'already-active'
+    | 'blocked-unverified'
     | 'error';
+
+/**
+ * Shape of an API error response envelope. The `reason` field carries the
+ * machine-readable identifier the route layer attaches to ServiceError; the
+ * island branches on it (e.g. NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED) to render
+ * a specific UI rather than the generic error banner.
+ */
+type ApiErrorResponse = {
+    readonly success?: false;
+    readonly error?: {
+        readonly code?: string;
+        readonly message?: string;
+        readonly reason?: string;
+    };
+};
 
 /**
  * Shape of the POST /api/v1/protected/newsletter/subscribe response.
@@ -384,6 +400,28 @@ export function NewsletterForm({
             });
 
             if (!response.ok) {
+                // Try to parse the error envelope so we can branch on the
+                // service-level reason. A malformed body still lands in the
+                // generic error banner below.
+                let reason: string | undefined;
+                try {
+                    const errBody = (await response.json()) as ApiErrorResponse;
+                    reason = errBody?.error?.reason;
+                } catch {
+                    // Body wasn't JSON — fall through to the generic error.
+                }
+
+                if (!isGuest && reason === 'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED') {
+                    setFormState('blocked-unverified');
+                    setStatusText(
+                        t(
+                            'footer.newsletter.blockedUnverifiedMessage',
+                            'Verificá el email de tu cuenta antes de suscribirte al newsletter.'
+                        )
+                    );
+                    return;
+                }
+
                 const msg = t(
                     'footer.newsletter.errorMessage',
                     'No pudimos procesar tu suscripción. Intentá de nuevo.'
@@ -513,6 +551,39 @@ export function NewsletterForm({
                     className={styles.manageLink}
                 >
                     {t('footer.newsletter.manageLink', 'Gestionar suscripción')}
+                </a>
+            </div>
+        );
+    }
+
+    // ---------------------------------------------------------------------------
+    // Return: blocked-unverified banner (authed user, account email not verified)
+    // ---------------------------------------------------------------------------
+
+    if (formState === 'blocked-unverified') {
+        return (
+            <div
+                className={styles.banner}
+                data-state="blocked-unverified"
+                aria-live="polite"
+            >
+                <span
+                    className={styles.bannerIcon}
+                    aria-hidden="true"
+                >
+                    ⚠
+                </span>
+                <p className={styles.bannerText}>
+                    {t(
+                        'footer.newsletter.blockedUnverifiedMessage',
+                        'Verificá el email de tu cuenta antes de suscribirte al newsletter.'
+                    )}
+                </p>
+                <a
+                    href={`/${locale}/mi-cuenta/`}
+                    className={styles.manageLink}
+                >
+                    {t('footer.newsletter.blockedUnverifiedCta', 'Ir a mi cuenta')}
                 </a>
             </div>
         );
