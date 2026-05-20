@@ -76,6 +76,29 @@ export function setDb(client: DrizzleClient): void {
 }
 
 /**
+ * Reset the module-level database client to its initial uninitialized state.
+ *
+ * Intended for tests that need to swap the underlying connection pool between
+ * test files. In production the database is initialized exactly once at app
+ * startup and `initializeDb()` is a no-op on subsequent calls — calling
+ * `resetDb()` would defeat that guard and is not appropriate outside of test
+ * setup/teardown.
+ *
+ * Why this exists (SPEC-143 T-143-65): the e2e suite runs each file's
+ * `beforeAll` against a fresh `Pool` but the module-level `runtimeClient`
+ * singleton is preserved across files when vitest reuses the same Node fork
+ * (`singleFork: true`). Without a reset, the second file's
+ * `initializeDb(newPool)` short-circuits to the first file's already-closed
+ * client and every query fails with `Failed query`. Test setup calls
+ * `resetDb()` before `initializeDb()` to clear the stale reference; test
+ * teardown calls it after `pool.end()` so the next file starts from a clean
+ * slate.
+ */
+export function resetDb(): void {
+    runtimeClient = null;
+}
+
+/**
  * Returns the active database client.
  * Requires a prior call to initializeDb() (production) or setDb() (tests).
  *
