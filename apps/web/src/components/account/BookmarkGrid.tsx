@@ -8,6 +8,7 @@
  * T-049d: Each card now includes an inline note editor via `EditableNote`.
  */
 
+import type { SupportedLocale } from '@/lib/i18n';
 import { EditableNote } from './EditableNote';
 import styles from './UserFavoritesList.module.css';
 
@@ -107,7 +108,7 @@ export interface BookmarkGridProps {
     readonly page: number;
     readonly totalPages: number;
     readonly removingIds: ReadonlySet<string>;
-    readonly locale: string;
+    readonly locale: SupportedLocale;
     /**
      * Path segment for the bookmark's detail URL. Can be a literal (single
      * entity type tab) or a function that resolves per-bookmark (the "Todos"
