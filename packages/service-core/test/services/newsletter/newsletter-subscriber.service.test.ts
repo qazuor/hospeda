@@ -699,6 +699,152 @@ describe('NewsletterSubscriberService.getStatus', () => {
 });
 
 // ===========================================================================
+// updatePreferences
+// ===========================================================================
+
+describe('NewsletterSubscriberService.updatePreferences', () => {
+    it('merges the partial onto the existing preferences and returns the result', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        // First query: SELECT row (active subscriber, current prefs)
+        enqueueResponse([
+            {
+                id: SUBSCRIBER_ID,
+                status: 'active',
+                preferences: {
+                    offers: true,
+                    events: true,
+                    guides: true,
+                    productNews: true
+                },
+                deletedAt: null
+            }
+        ]);
+        // Second query: UPDATE ... RETURNING preferences (server-side merge result)
+        enqueueResponse([
+            {
+                preferences: {
+                    offers: false,
+                    events: true,
+                    guides: true,
+                    productNews: true
+                }
+            }
+        ]);
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: { offers: false }
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.preferences).toEqual({
+            offers: false,
+            events: true,
+            guides: true,
+            productNews: true
+        });
+
+        // SQL intent: the UPDATE uses JSONB || to merge.
+        const updateSql = capturedSqlStrings.find((s) =>
+            s.includes('UPDATE newsletter_subscribers')
+        );
+        expect(updateSql).toBeDefined();
+        expect(updateSql).toContain('preferences');
+        expect(updateSql).toContain('||');
+    });
+
+    it('throws NOT_FOUND when no active subscriber row exists', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        enqueueResponse([]); // SELECT returns no rows
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: { offers: false }
+        });
+
+        expect(result.error?.code).toBe('NOT_FOUND');
+        expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_NOT_FOUND');
+    });
+
+    it('throws FORBIDDEN with NEWSLETTER_SUBSCRIBER_BLOCKED for bounced subscribers', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        enqueueResponse([
+            {
+                id: SUBSCRIBER_ID,
+                status: 'bounced',
+                preferences: { offers: true, events: true, guides: true, productNews: true },
+                deletedAt: null
+            }
+        ]);
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: { offers: false }
+        });
+
+        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_BLOCKED');
+        // No UPDATE should have been dispatched after the gate fired.
+        expect(
+            capturedSqlStrings.find((s) => s.includes('UPDATE newsletter_subscribers'))
+        ).toBeUndefined();
+    });
+
+    it('throws FORBIDDEN with NEWSLETTER_SUBSCRIBER_BLOCKED for complained subscribers', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        enqueueResponse([
+            {
+                id: SUBSCRIBER_ID,
+                status: 'complained',
+                preferences: { offers: true, events: true, guides: true, productNews: true },
+                deletedAt: null
+            }
+        ]);
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: { events: false }
+        });
+
+        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_BLOCKED');
+    });
+
+    it('returns FORBIDDEN when actor is not the owner', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor('66666666-6666-4666-a666-666666666666');
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: { offers: false }
+        });
+
+        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_NOT_SELF');
+    });
+
+    it('rejects empty preferences objects via the input schema refinement', async () => {
+        const { svc } = makeService();
+        const actor = makeOwnerActor();
+
+        const result = await svc.updatePreferences(actor, {
+            userId: USER_ID,
+            preferences: {}
+        });
+
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+// ===========================================================================
 // getEligibleForCampaign
 // ===========================================================================
 

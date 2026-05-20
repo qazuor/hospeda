@@ -35,14 +35,19 @@
 import { getDb } from '@repo/db';
 import type { InsertNewsletterSubscriber, SelectNewsletterSubscriber } from '@repo/db';
 import {
+    DEFAULT_NEWSLETTER_PREFERENCES,
     NewsletterChannelEnum,
+    NewsletterContentTypeEnum,
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { NewsletterSubscriberAdminSearch } from '@repo/schemas';
-import type { NewsletterSubscriberStatsResponse } from '@repo/schemas';
+import type {
+    NewsletterContentPreferences,
+    NewsletterSubscriberAdminSearch,
+    NewsletterSubscriberStatsResponse
+} from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -185,6 +190,27 @@ const GetStatusInputSchema = z.object({
     channel: z.nativeEnum(NewsletterChannelEnum).default(NewsletterChannelEnum.EMAIL)
 });
 
+const UpdatePreferencesInputSchema = z.object({
+    userId: z.string().uuid(),
+    channel: z.nativeEnum(NewsletterChannelEnum).default(NewsletterChannelEnum.EMAIL),
+    /**
+     * Partial map of NewsletterContentTypeEnum → boolean. Validated by the
+     * route layer with `UpdateNewsletterPreferencesInputSchema`; here we only
+     * accept the same enum keys to keep the SQL merge well-typed.
+     */
+    preferences: z
+        .object({
+            [NewsletterContentTypeEnum.OFFERS]: z.boolean().optional(),
+            [NewsletterContentTypeEnum.EVENTS]: z.boolean().optional(),
+            [NewsletterContentTypeEnum.GUIDES]: z.boolean().optional(),
+            [NewsletterContentTypeEnum.PRODUCT_NEWS]: z.boolean().optional()
+        })
+        .strict()
+        .refine((value) => Object.keys(value).length > 0, {
+            message: 'At least one preference key must be provided'
+        })
+});
+
 const GetEligibleInputSchema = z.object({
     localeFilter: z.enum(['all', 'es', 'en', 'pt']),
     softCapWindowDays: z.number().int().min(1)
@@ -233,6 +259,12 @@ export interface GetStatusResult {
     readonly status: NewsletterSubscriberStatusEnum | null;
     readonly subscribedAt: Date | null;
     readonly verifiedAt: Date | null;
+}
+
+/** Result returned by `updatePreferences`. */
+export interface UpdatePreferencesResult {
+    /** The full merged preferences object after the partial was applied. */
+    readonly preferences: NewsletterContentPreferences;
 }
 
 /** Result returned by `getEligibleForCampaign`. */
@@ -1025,6 +1057,128 @@ export class NewsletterSubscriberService extends BaseService {
                     subscribedAt: toDateOrNull(row.subscribed_at),
                     verifiedAt: toDateOrNull(row.verified_at)
                 };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API — updatePreferences
+    // -------------------------------------------------------------------------
+
+    /**
+     * Merges a partial preferences payload onto the subscriber's stored
+     * `preferences` JSONB. Owner-only.
+     *
+     * - Only keys included in `input.preferences` are updated; the others retain
+     *   whatever value they already had (PostgreSQL JSONB `||` merge).
+     * - Terminal states (`BOUNCED`, `COMPLAINED`) are read-only per spec: this
+     *   method throws `NEWSLETTER_SUBSCRIBER_BLOCKED` and never mutates the row.
+     *   The UI surfaces this as a "contact us" banner instead of toggle controls.
+     * - Missing row throws `NEWSLETTER_SUBSCRIBER_NOT_FOUND` — callers create
+     *   the subscription via `subscribe` first.
+     *
+     * @param actor - The authenticated actor (must match `userId`).
+     * @param input - `{ userId, channel, preferences }`.
+     * @param ctx - Optional service context.
+     * @returns The full merged preferences object.
+     *
+     * @example
+     * ```ts
+     * await svc.updatePreferences(actor, {
+     *   userId: actor.id,
+     *   preferences: { offers: false }
+     * });
+     * ```
+     */
+    public async updatePreferences(
+        actor: Actor,
+        input: {
+            userId: string;
+            channel?: NewsletterChannelEnum;
+            preferences: Partial<Record<NewsletterContentTypeEnum, boolean>>;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UpdatePreferencesResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updatePreferences',
+            input: { actor, ...input },
+            schema: UpdatePreferencesInputSchema,
+            ctx,
+            execute: async (validated) => {
+                requireSelf(actor, validated.userId);
+
+                const db = getDb();
+
+                // Fetch current row to gate on terminal status BEFORE mutating.
+                const rows = await db.execute(sql`
+                    SELECT id, status, preferences, deleted_at AS "deletedAt"
+                    FROM newsletter_subscribers
+                    WHERE user_id = ${validated.userId}
+                      AND channel = ${validated.channel}
+                      AND deleted_at IS NULL
+                    LIMIT 1
+                `);
+                const row = rows.rows[0] as
+                    | {
+                          id: string;
+                          status: string;
+                          preferences: NewsletterContentPreferences | null;
+                          deletedAt: string | Date | null;
+                      }
+                    | undefined;
+
+                if (!row) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No newsletter subscription found for this user and channel',
+                        undefined,
+                        'NEWSLETTER_SUBSCRIBER_NOT_FOUND'
+                    );
+                }
+
+                const status = row.status as NewsletterSubscriberStatusEnum;
+                if (
+                    status === NewsletterSubscriberStatusEnum.BOUNCED ||
+                    status === NewsletterSubscriberStatusEnum.COMPLAINED
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Preferences cannot be updated on a blocked subscriber row',
+                        undefined,
+                        'NEWSLETTER_SUBSCRIBER_BLOCKED'
+                    );
+                }
+
+                const partial = validated.preferences as Partial<
+                    Record<NewsletterContentTypeEnum, boolean>
+                >;
+                const now = new Date();
+
+                // Use JSONB `||` to merge atomically server-side. If for any
+                // reason the column was NULL (pre-migration row that escaped
+                // the backfill), seed from the canonical default first.
+                const partialJson = JSON.stringify(partial);
+                const updated = await db.execute(sql`
+                    UPDATE newsletter_subscribers
+                    SET preferences = COALESCE(preferences, ${JSON.stringify(DEFAULT_NEWSLETTER_PREFERENCES)}::jsonb)
+                        || ${partialJson}::jsonb,
+                        updated_at = ${now.toISOString()}
+                    WHERE id = ${row.id}
+                    RETURNING preferences
+                `);
+
+                const updatedRow = updated.rows[0] as
+                    | { preferences: NewsletterContentPreferences }
+                    | undefined;
+
+                // Defensive: should never happen since the SELECT above found the row.
+                const merged: NewsletterContentPreferences = updatedRow?.preferences ?? {
+                    ...DEFAULT_NEWSLETTER_PREFERENCES,
+                    ...(row.preferences ?? {}),
+                    ...partial
+                };
+
+                return { preferences: merged };
             }
         });
     }
