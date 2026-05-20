@@ -1415,6 +1415,27 @@
                 "mp-preapproval",
                 "cron"
             ]
+        },
+        {
+            "specId": "SPEC-148",
+            "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "created": "2026-05-20T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-63 reframe — original task scope conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism",
+            "dependsOn": ["SPEC-143"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "subscription",
+                "grace-period",
+                "plan-lifecycle",
+                "cron",
+                "infra-safety",
+                "admin"
+            ]
         }
     ]
 }
