@@ -70,6 +70,45 @@ type FieldErrors = Readonly<{
 
 type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
 
+/** Permission string the admin guard checks before letting the user in. */
+const ADMIN_PANEL_PERMISSION = 'access.panelAdmin';
+
+/**
+ * Result of {@link fetchFreshPanelAccess}. Wraps the boolean in an object so
+ * the caller can distinguish "fetched and false" from "could not check".
+ */
+type FreshPanelAccessResult =
+    | { readonly status: 'ok'; readonly canAccess: boolean }
+    | { readonly status: 'unknown' };
+
+/**
+ * Re-fetch the current session's permissions from /api/v1/public/auth/me
+ * after the onboarding endpoint promotes the user USER → HOST. Used to
+ * decide whether to redirect to the admin panel or to the web property list.
+ *
+ * Returns `{ status: 'unknown' }` on transport errors so the caller can fall
+ * back to the pre-submit flag without surfacing a UI error.
+ */
+async function fetchFreshPanelAccess(apiUrl: string): Promise<FreshPanelAccessResult> {
+    try {
+        const response = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/public/auth/me`, {
+            credentials: 'include',
+            // Bust any 304 / browser cache so we read the post-promotion state.
+            cache: 'no-store'
+        });
+        if (!response.ok) return { status: 'unknown' };
+        const json = (await response.json()) as {
+            readonly data?: {
+                readonly actor?: { readonly permissions?: readonly string[] };
+            };
+        };
+        const permissions = json.data?.actor?.permissions ?? [];
+        return { status: 'ok', canAccess: permissions.includes(ADMIN_PANEL_PERMISSION) };
+    } catch {
+        return { status: 'unknown' };
+    }
+}
+
 type OnboardingStartResponse = {
     readonly data?: {
         readonly status: OnboardingStartStatus;
@@ -208,17 +247,35 @@ export function CreatePropertyMiniForm({
                 return;
             }
 
-            // Users without admin panel access (plain HOST role) cannot
-            // open /admin/* — they would land on /auth/forbidden. Send
-            // them to the web property list instead.
-            if (!canAccessAdminPanel) {
+            const adminBase = adminUrl.replace(/\/$/, '');
+
+            // Resolve whether the user can access the admin panel right now.
+            //
+            // For `already_host` we trust the pre-submit flag: it was computed
+            // from the same user's session before any mutation, so it is
+            // already accurate.
+            //
+            // For `created` / `resumed` the user was just promoted USER → HOST
+            // inside the endpoint, so the pre-submit flag is stale. Re-fetch
+            // /auth/me with `cache: 'no-store'` to read the post-promotion
+            // permissions; if that probe fails (network, 5xx), we fall back to
+            // assuming HOST does have panel access — the admin guard will
+            // route to /auth/forbidden?reason=host-missing-permission as a
+            // last-resort surface if that turns out wrong.
+            let effectiveCanAccess = canAccessAdminPanel;
+            if (data.status !== 'already_host') {
+                const fresh = await fetchFreshPanelAccess(apiUrl);
+                effectiveCanAccess = fresh.status === 'ok' ? fresh.canAccess : true;
+            }
+
+            if (!effectiveCanAccess) {
                 window.location.href = accountPropertiesUrl;
                 return;
             }
 
-            const adminBase = adminUrl.replace(/\/$/, '');
-            // Branch on status: created/resumed go to the edit page, already_host
-            // goes to the admin home where the user creates listings normally.
+            // Branch on status: created/resumed go to the edit page,
+            // already_host goes to the admin home where the user creates
+            // listings normally.
             if (data.status === 'already_host') {
                 window.location.href = `${adminBase}/accommodations`;
                 return;
