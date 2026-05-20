@@ -92,6 +92,14 @@ vi.mock('@repo/db', () => {
             status: 'STATUS',
             deletedAt: 'DELETED_AT'
         },
+        // billingPayments columns are read by confirmAnnualSubscription
+        // (payment dedupe lookup) and confirmPlanUpgrade. The mocked select
+        // chain ignores the column object shape — these are just sentinels
+        // so the SQL template literal does not throw on property access.
+        billingPayments: {
+            id: 'PAYMENT_ID',
+            providerPaymentIds: 'PROVIDER_PAYMENT_IDS'
+        },
         and: (...args: unknown[]) => ({ _and: args }),
         eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
         isNull: (a: unknown) => ({ _isNull: a }),
