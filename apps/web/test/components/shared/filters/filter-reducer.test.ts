@@ -11,8 +11,16 @@
  * this file zooms in on the wiring that is easy to silently regress.
  */
 
-import { filterReducer } from '@/components/shared/filters/filter-reducer';
-import type { FilterState } from '@/components/shared/filters/filter-types/filter.types';
+import {
+    buildParamsFromState,
+    filterReducer,
+    initStateFromParams
+} from '@/components/shared/filters/filter-reducer';
+import type {
+    FilterGroup,
+    FilterState,
+    GeoRadiusFilterConfig
+} from '@/components/shared/filters/filter-types/filter.types';
 import { describe, expect, it } from 'vitest';
 
 function makeState(overrides: Partial<FilterState> = {}): FilterState {
@@ -22,6 +30,7 @@ function makeState(overrides: Partial<FilterState> = {}): FilterState {
         steppers: {},
         toggles: {},
         dates: {},
+        geo: {},
         search: '',
         sort: '',
         ...overrides
@@ -124,6 +133,153 @@ describe('filterReducer — CLEAR_GROUP with extraToggleKeys', () => {
         expect(cleared.ranges.price).toBeUndefined();
         expect(cleared.ranges.other).toEqual({ min: '1', max: '2' });
         expect(cleared.dates.stay).toEqual({ from: '2026-01-01', to: '2026-01-05' });
+    });
+
+    it('SET_GEO stores the value under state.geo and SET_GEO with null removes it', () => {
+        const empty = makeState();
+        const withValue = filterReducer(empty, {
+            type: 'SET_GEO',
+            groupId: 'location',
+            value: { mode: 'destination', lat: -32.48, long: -58.23, radius: 25, destId: 'cdu' }
+        });
+        expect(withValue.geo.location).toEqual({
+            mode: 'destination',
+            lat: -32.48,
+            long: -58.23,
+            radius: 25,
+            destId: 'cdu'
+        });
+
+        const cleared = filterReducer(withValue, {
+            type: 'SET_GEO',
+            groupId: 'location',
+            value: null
+        });
+        expect(cleared.geo.location).toBeUndefined();
+    });
+
+    it('CLEAR_GROUP also drops the matching geo slot', () => {
+        const state = makeState({
+            geo: { location: { mode: 'browser', lat: 1, long: 2, radius: 25 } }
+        });
+        const cleared = filterReducer(state, { type: 'CLEAR_GROUP', groupId: 'location' });
+        expect(cleared.geo.location).toBeUndefined();
+    });
+
+    it('CLEAR_ALL wipes state.geo together with the rest', () => {
+        const state = makeState({
+            geo: { location: { mode: 'browser', lat: 1, long: 2, radius: 25 } }
+        });
+        const cleared = filterReducer(state, { type: 'CLEAR_ALL' });
+        expect(cleared.geo).toEqual({});
+    });
+
+    it('initStateFromParams restores destination mode when coords match an option', () => {
+        const config: GeoRadiusFilterConfig = {
+            id: 'location',
+            label: 'Ubicación',
+            type: 'geo-radius',
+            destinationOptions: [
+                { value: 'cdu', label: 'Concepción del Uruguay', lat: -32.48, long: -58.23 }
+            ],
+            destinationModeLabel: 'Cerca de un destino',
+            browserModeLabel: 'Mi ubicación',
+            destinationPlaceholder: 'Elegí un destino',
+            browserCtaLabel: 'Usar mi ubicación',
+            browserPendingLabel: 'Detectando…',
+            browserErrorLabel: 'No pudimos detectar tu ubicación',
+            radiusUnitLabel: 'km'
+        };
+        const filters: readonly FilterGroup[] = [config];
+
+        const state = initStateFromParams({
+            filters,
+            defaultSort: 'featured',
+            params: { latitude: '-32.48', longitude: '-58.23', radius: '25' }
+        });
+
+        expect(state.geo.location).toEqual({
+            mode: 'destination',
+            lat: -32.48,
+            long: -58.23,
+            radius: 25,
+            destId: 'cdu'
+        });
+    });
+
+    it('initStateFromParams falls back to browser mode when coords do not match any option', () => {
+        const config: GeoRadiusFilterConfig = {
+            id: 'location',
+            label: 'Ubicación',
+            type: 'geo-radius',
+            destinationOptions: [{ value: 'cdu', label: 'CDU', lat: -32.48, long: -58.23 }],
+            destinationModeLabel: 'Destino',
+            browserModeLabel: 'Mi ubicación',
+            destinationPlaceholder: 'Elegí',
+            browserCtaLabel: 'Usar ubicación',
+            browserPendingLabel: 'Detectando…',
+            browserErrorLabel: 'Error',
+            radiusUnitLabel: 'km'
+        };
+        const state = initStateFromParams({
+            filters: [config],
+            defaultSort: 'featured',
+            params: { latitude: '-34.6', longitude: '-58.4', radius: '50' }
+        });
+        expect(state.geo.location).toEqual({
+            mode: 'browser',
+            lat: -34.6,
+            long: -58.4,
+            radius: 50
+        });
+    });
+
+    it('initStateFromParams ignores partial geo params (missing radius)', () => {
+        const config: GeoRadiusFilterConfig = {
+            id: 'location',
+            label: 'Ubicación',
+            type: 'geo-radius',
+            destinationOptions: [],
+            destinationModeLabel: 'Destino',
+            browserModeLabel: 'Mi ubicación',
+            destinationPlaceholder: 'Elegí',
+            browserCtaLabel: 'Usar ubicación',
+            browserPendingLabel: 'Detectando…',
+            browserErrorLabel: 'Error',
+            radiusUnitLabel: 'km'
+        };
+        const state = initStateFromParams({
+            filters: [config],
+            defaultSort: 'featured',
+            params: { latitude: '-34.6', longitude: '-58.4' }
+        });
+        expect(state.geo.location).toBeUndefined();
+    });
+
+    it('buildParamsFromState emits latitude / longitude / radius when a geo slot is set', () => {
+        const config: GeoRadiusFilterConfig = {
+            id: 'location',
+            label: 'Ubicación',
+            type: 'geo-radius',
+            destinationOptions: [],
+            destinationModeLabel: 'Destino',
+            browserModeLabel: 'Mi ubicación',
+            destinationPlaceholder: 'Elegí',
+            browserCtaLabel: 'Usar ubicación',
+            browserPendingLabel: 'Detectando…',
+            browserErrorLabel: 'Error',
+            radiusUnitLabel: 'km'
+        };
+        const state = makeState({
+            geo: {
+                location: { mode: 'browser', lat: -34.6, long: -58.4, radius: 25 }
+            }
+        });
+
+        const params = buildParamsFromState({ state, filters: [config] });
+        expect(params.get('latitude')).toBe('-34.6');
+        expect(params.get('longitude')).toBe('-58.4');
+        expect(params.get('radius')).toBe('25');
     });
 
     it('is a no-op for keys not provided when extraToggleKeys is omitted', () => {

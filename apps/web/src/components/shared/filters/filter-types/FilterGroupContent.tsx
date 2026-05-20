@@ -11,6 +11,7 @@ import { resolveIcon } from '@repo/icons';
 import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
+import { GeoRadiusFilter } from './GeoRadiusFilter';
 import { IconChipsFilter } from './IconChipsFilter';
 import { PriceCompositeFilter } from './PriceCompositeFilter';
 import { SearchFilter } from './SearchFilter';
@@ -22,6 +23,7 @@ import type {
     FilterDispatch,
     FilterGroup,
     FilterState,
+    GeoRadiusFilterConfig,
     IconChipsFilterConfig,
     PriceCompositeFilterConfig
 } from './filter.types';
@@ -280,6 +282,20 @@ export function FilterGroupContent({
                     locale={locale}
                 />
             </div>
+        );
+    }
+
+    if (group.type === 'geo-radius') {
+        const geoConfig = group as GeoRadiusFilterConfig;
+        return (
+            <GeoRadiusFilter
+                config={geoConfig}
+                value={state.geo[geoConfig.id]}
+                onChange={(next) =>
+                    dispatch({ type: 'SET_GEO', groupId: geoConfig.id, value: next })
+                }
+                locale={locale}
+            />
         );
     }
 

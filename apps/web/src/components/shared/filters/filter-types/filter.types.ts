@@ -131,6 +131,65 @@ export interface PriceCompositeFilterConfig {
     readonly rangeLabel: string;
 }
 
+/**
+ * Composite geo-radius filter: lets users center the search either on their
+ * device location (browser geolocation) or on a known destination from a
+ * caller-provided list, and pick a radius from a preset chip row. Emits the
+ * `latitude` / `longitude` / `radius` URL params consumed by the backend
+ * haversine clause; `mode` and `destId` stay in the reducer state only.
+ */
+export interface GeoRadiusFilterConfig {
+    readonly id: string;
+    readonly label: string;
+    readonly type: 'geo-radius';
+    /**
+     * Optional anchor destinations the user can pick instead of falling back
+     * to browser geolocation. Each option carries its own coordinates so the
+     * page does not need an extra API round-trip when the user picks one.
+     */
+    readonly destinationOptions: readonly {
+        readonly value: string;
+        readonly label: string;
+        readonly lat: number;
+        readonly long: number;
+    }[];
+    /** Radius presets in km. Defaults to [5, 10, 25, 50, 100]. */
+    readonly radiusPresets?: readonly number[];
+    /**
+     * Collapsed by default in the sidebar. Honored by `computeInitialCollapsed`
+     * to keep the section quiet until the user opens it.
+     */
+    readonly defaultCollapsed?: boolean;
+    /** Display string for the destination radio mode. */
+    readonly destinationModeLabel: string;
+    /** Display string for the browser-geolocation radio mode. */
+    readonly browserModeLabel: string;
+    /** Placeholder for the destination select. */
+    readonly destinationPlaceholder: string;
+    /** CTA copy for the "use my location" browser-mode button. */
+    readonly browserCtaLabel: string;
+    /** Status copy shown while the geolocation prompt is pending. */
+    readonly browserPendingLabel: string;
+    /** Status copy when the browser denies / cannot resolve geolocation. */
+    readonly browserErrorLabel: string;
+    /** Suffix appended to each preset chip (e.g. "km"). */
+    readonly radiusUnitLabel: string;
+}
+
+/**
+ * Reducer slot value for a geo-radius filter. `null` (or no entry) = inactive.
+ * `mode` distinguishes between browser geolocation (`'browser'`) and the
+ * destination picker (`'destination'`) so the UI can stay on the user's last
+ * choice across re-renders. `destId` is only meaningful when `mode === 'destination'`.
+ */
+export interface GeoRadiusState {
+    readonly mode: 'browser' | 'destination';
+    readonly lat: number;
+    readonly long: number;
+    readonly radius: number;
+    readonly destId?: string;
+}
+
 /** Union of all supported filter group configurations. */
 export type FilterGroup =
     | SearchFilterGroup
@@ -145,6 +204,7 @@ export type FilterGroup =
     | IconChipsFilterConfig
     | DateRangeFilterConfig
     | PriceCompositeFilterConfig
+    | GeoRadiusFilterConfig
     | SectionHeaderConfig;
 
 /** Shared reducer state shape. */
@@ -159,6 +219,12 @@ export interface FilterState {
      * `checkIn` / `checkOut` params.
      */
     readonly dates: Record<string, { readonly from: string; readonly to: string }>;
+    /**
+     * Geo-radius selections keyed by their config id. Absent = inactive.
+     * Coordinates and radius emit to the URL as `latitude` / `longitude` /
+     * `radius`; the `mode` and `destId` fields are reducer-only state.
+     */
+    readonly geo: Record<string, GeoRadiusState>;
     readonly search: string;
     readonly sort: string;
 }
@@ -173,6 +239,7 @@ export type FilterAction =
     | { type: 'SET_STEPPER'; groupId: string; value: number }
     | { type: 'SET_TOGGLE'; groupId: string; value: boolean }
     | { type: 'SET_DATE_RANGE'; groupId: string; from: string; to: string }
+    | { type: 'SET_GEO'; groupId: string; value: GeoRadiusState | null }
     | { type: 'REMOVE_FILTER'; groupId: string; value: string }
     | {
           type: 'CLEAR_GROUP';

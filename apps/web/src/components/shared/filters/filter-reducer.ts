@@ -53,6 +53,16 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                     [action.groupId]: { from: action.from, to: action.to }
                 }
             };
+        case 'SET_GEO': {
+            if (action.value === null) {
+                const { [action.groupId]: _removed, ...rest } = state.geo;
+                return { ...state, geo: rest };
+            }
+            return {
+                ...state,
+                geo: { ...state.geo, [action.groupId]: action.value }
+            };
+        }
         case 'REMOVE_FILTER': {
             const current = state.selections[action.groupId] ?? [];
             return {
@@ -66,6 +76,7 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
         case 'CLEAR_GROUP': {
             const { [action.groupId]: _removed, ...restRanges } = state.ranges;
             const { [action.groupId]: _removedDate, ...restDates } = state.dates;
+            const { [action.groupId]: _removedGeo, ...restGeo } = state.geo;
             const extraReset: Record<string, boolean> = {};
             for (const key of action.extraToggleKeys ?? []) {
                 extraReset[key] = false;
@@ -86,7 +97,8 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                     ...extraReset
                 },
                 ranges: restRanges,
-                dates: restDates
+                dates: restDates,
+                geo: restGeo
             };
         }
         case 'CLEAR_ALL':
@@ -96,6 +108,7 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                 steppers: {},
                 toggles: {},
                 dates: {},
+                geo: {},
                 search: '',
                 sort: state.sort
             };
@@ -169,6 +182,9 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
         const v = state.dates[group.id];
         return !!(v?.from || v?.to);
     }
+    if (group.type === 'geo-radius') {
+        return state.geo[group.id] !== undefined;
+    }
     return false;
 }
 
@@ -197,6 +213,9 @@ export function groupActiveCount(group: FilterGroup, state: FilterState): number
         const total = selectionsCount + priorityCount;
         return total > 0 ? total : null;
     }
+    if (group.type === 'geo-radius') {
+        return state.geo[group.id] !== undefined ? 1 : null;
+    }
     return null;
 }
 
@@ -218,7 +237,11 @@ export function computeInitialCollapsed({
         // don't burn the "expand the first group" allowance either.
         if (group.type === 'section-header') continue;
         const hasActive = groupHasActiveSelection(group, state);
-        result[group.id] = !(hasActive || isFirstCollapsible);
+        // Groups can opt into a forced-collapsed default so secondary sections
+        // stay quiet until the user opens them, regardless of their position.
+        const forcedCollapsed = group.type === 'geo-radius' && group.defaultCollapsed === true;
+        const expand = (hasActive || isFirstCollapsible) && !forcedCollapsed;
+        result[group.id] = !expand;
         isFirstCollapsible = false;
     }
     return result;
@@ -243,6 +266,7 @@ export function initStateFromParams({
     const steppers: Record<string, number> = {};
     const toggles: Record<string, boolean> = {};
     const dates: Record<string, { from: string; to: string }> = {};
+    const geo: Record<string, FilterState['geo'][string]> = {};
     const search = params.q ?? '';
     const sort = params.sortBy ?? defaultSort;
 
@@ -309,9 +333,32 @@ export function initStateFromParams({
             const max = params.maxPrice ?? '';
             if (min || max) ranges[group.id] = { min, max };
         }
+        if (group.type === 'geo-radius') {
+            const lat = Number.parseFloat(params.latitude ?? '');
+            const long = Number.parseFloat(params.longitude ?? '');
+            const radius = Number.parseFloat(params.radius ?? '');
+            if (Number.isFinite(lat) && Number.isFinite(long) && Number.isFinite(radius)) {
+                // Decide which mode the URL belongs to: if the coordinates
+                // match one of the config's destinations, restore destination
+                // mode and remember the matched id; otherwise fall back to
+                // browser mode (user shared their location previously).
+                const matchedDest = group.destinationOptions.find(
+                    (opt) => opt.lat === lat && opt.long === long
+                );
+                geo[group.id] = matchedDest
+                    ? {
+                          mode: 'destination',
+                          lat,
+                          long,
+                          radius,
+                          destId: matchedDest.value
+                      }
+                    : { mode: 'browser', lat, long, radius };
+            }
+        }
     }
 
-    return { selections, ranges, steppers, toggles, dates, search, sort };
+    return { selections, ranges, steppers, toggles, dates, geo, search, sort };
 }
 
 /**
@@ -390,6 +437,14 @@ export function buildParamsFromState({
                     params.set('minPrice', range.min);
                 if (range?.max && range.max !== String(group.max))
                     params.set('maxPrice', range.max);
+            }
+        }
+        if (group.type === 'geo-radius') {
+            const value = state.geo[group.id];
+            if (value) {
+                params.set('latitude', String(value.lat));
+                params.set('longitude', String(value.long));
+                params.set('radius', String(value.radius));
             }
         }
     }
