@@ -98,17 +98,17 @@ function BillingSubscriptionsPage() {
     };
 
     // Handlers: mutations
-    const handleConfirmCancel = (immediate: boolean, reason?: string) => {
+    const handleConfirmCancel = (reason?: string) => {
         if (!selectedSubscription) return;
 
+        // Backend only supports end-of-period cancellation today (see
+        // billing-subscriptions/hooks.ts → cancelSubscription).
         cancelMutation.mutate(
-            { id: selectedSubscription.id, immediate, reason },
+            { id: selectedSubscription.id, reason },
             {
                 onSuccess: () => {
                     addToast({
-                        message: immediate
-                            ? t('admin-billing.subscriptions.toasts.cancelledImmediate')
-                            : t('admin-billing.subscriptions.toasts.cancelledScheduled'),
+                        message: t('admin-billing.subscriptions.toasts.cancelledScheduled'),
                         variant: 'success'
                     });
                     setCancelDialogOpen(false);

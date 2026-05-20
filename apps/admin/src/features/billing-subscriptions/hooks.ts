@@ -64,18 +64,18 @@ async function fetchSubscription(id: string) {
 }
 
 /**
- * Cancel a subscription
+ * Cancel a subscription via the admin tier endpoint.
+ *
+ * The backend only supports end-of-period cancellation today — there is
+ * no immediate-cancel path on `POST /admin/billing/subscriptions/:id/cancel`
+ * (only `reason` is accepted by SubscriptionCancelBodySchema). If admins
+ * need true immediate revocation it has to be added on the backend first.
  */
-async function cancelSubscription(payload: {
-    id: string;
-    immediate: boolean;
-    reason?: string;
-}) {
+async function cancelSubscription(payload: { id: string; reason?: string }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/subscriptions/${payload.id}`,
-        method: 'DELETE',
+        path: `/api/v1/admin/billing/subscriptions/${payload.id}/cancel`,
+        method: 'POST',
         body: {
-            immediate: payload.immediate,
             reason: payload.reason
         }
     });
@@ -83,17 +83,25 @@ async function cancelSubscription(payload: {
 }
 
 /**
- * Change subscription plan
+ * Change a subscription's plan from the admin panel.
+ *
+ * **Currently not implemented.** The `POST /admin/billing/subscriptions/:id/
+ * change-plan` endpoint does not exist on the backend. The legacy
+ * `PUT /protected/billing/subscriptions/:id` route operates against the
+ * authenticated user's own subscription, which is incompatible with the
+ * admin use case (admin changing another user's plan). This function
+ * therefore throws synchronously so the UI surfaces a clear error toast
+ * instead of silently hitting the wrong endpoint.
+ *
+ * Tracked as a billing UI gap in `docs/billing/ui-audit-2026.md`.
  */
-async function changePlan(payload: { subscriptionId: string; newPlanSlug: string }) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/subscriptions/${payload.subscriptionId}`,
-        method: 'PUT',
-        body: {
-            planSlug: payload.newPlanSlug
-        }
-    });
-    return result.data.data;
+async function changePlan(_payload: {
+    subscriptionId: string;
+    newPlanSlug: string;
+}): Promise<Record<string, unknown>> {
+    throw new Error(
+        'Admin plan-change is not implemented yet — no backend endpoint exists. Contact the dev team to roll out the change manually.'
+    );
 }
 
 /**
@@ -122,14 +130,13 @@ export const useSubscriptionQuery = (id: string) => {
 };
 
 /**
- * Hook to cancel a subscription
+ * Hook to cancel a subscription (end-of-period only — see {@link cancelSubscription}).
  */
 export const useCancelSubscriptionMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: { id: string; immediate: boolean; reason?: string }) =>
-            cancelSubscription(payload),
+        mutationFn: (payload: { id: string; reason?: string }) => cancelSubscription(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: subscriptionQueryKeys.subscriptions.lists()

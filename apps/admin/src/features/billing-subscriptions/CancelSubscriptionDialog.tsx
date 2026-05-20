@@ -20,13 +20,16 @@ export interface CancelSubscriptionDialogProps {
     readonly subscription: Subscription;
     readonly isOpen: boolean;
     readonly onClose: () => void;
-    readonly onConfirm: (immediate: boolean, reason?: string) => void;
+    readonly onConfirm: (reason?: string) => void;
 }
 
 /**
  * Cancel confirmation dialog component.
- * Allows admins to cancel a subscription at period end or immediately,
- * with an optional cancellation reason.
+ *
+ * The backend's admin cancel endpoint only supports end-of-period
+ * cancellation today; the immediate-cancel toggle that used to live
+ * here was removed in the billing UI audit (see docs/billing/
+ * ui-audit-2026.md) until the API supports `immediate`.
  */
 export function CancelSubscriptionDialog({
     subscription,
@@ -35,13 +38,11 @@ export function CancelSubscriptionDialog({
     onConfirm
 }: CancelSubscriptionDialogProps) {
     const { t, locale } = useTranslations();
-    const [cancelImmediate, setCancelImmediate] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
 
     const handleConfirm = () => {
-        onConfirm(cancelImmediate, cancelReason || undefined);
+        onConfirm(cancelReason || undefined);
         setCancelReason('');
-        setCancelImmediate(false);
     };
 
     return (
@@ -59,24 +60,14 @@ export function CancelSubscriptionDialog({
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="cancel-timing">
+                    <div className="rounded-md border border-input bg-muted/30 p-3 text-sm">
+                        <Label className="font-medium">
                             {t('admin-billing.subscriptions.cancelDialog.timingLabel')}
                         </Label>
-                        <select
-                            id="cancel-timing"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            value={cancelImmediate ? 'immediate' : 'end_of_period'}
-                            onChange={(e) => setCancelImmediate(e.target.value === 'immediate')}
-                        >
-                            <option value="end_of_period">
-                                {t('admin-billing.subscriptions.cancelDialog.endOfPeriod')} (
-                                {formatDate(subscription.currentPeriodEnd, locale)})
-                            </option>
-                            <option value="immediate">
-                                {t('admin-billing.subscriptions.cancelDialog.immediate')}
-                            </option>
-                        </select>
+                        <p className="mt-1 text-muted-foreground">
+                            {t('admin-billing.subscriptions.cancelDialog.endOfPeriod')} (
+                            {formatDate(subscription.currentPeriodEnd, locale)})
+                        </p>
                     </div>
 
                     <div className="space-y-2">
@@ -120,14 +111,6 @@ export function CancelSubscriptionDialog({
                             </option>
                         </select>
                     </div>
-
-                    {cancelImmediate && (
-                        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
-                            <p className="text-destructive text-sm">
-                                {t('admin-billing.subscriptions.cancelDialog.immediateWarning')}
-                            </p>
-                        </div>
-                    )}
                 </div>
 
                 <DialogFooter>
