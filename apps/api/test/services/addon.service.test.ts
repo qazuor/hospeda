@@ -251,6 +251,7 @@ const { mockPreferenceCreate, mockApplyAddonEntitlements, mockRemoveAddonEntitle
         mockEnv: {
             NODE_ENV: 'test',
             HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token',
+            HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
             HOSPEDA_SITE_URL: 'http://localhost:4321',
             HOSPEDA_API_URL: 'http://localhost:3001'
         } as Record<string, string>
@@ -334,6 +335,7 @@ describe('AddonService', () => {
         // Reset default environment values on the hoisted mockEnv object
         mockEnv.NODE_ENV = 'test';
         mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
+        mockEnv.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR = 'HOSPEDA';
         mockEnv.HOSPEDA_SITE_URL = 'http://localhost:4321';
         mockEnv.HOSPEDA_API_URL = 'http://localhost:3001';
 
@@ -580,7 +582,11 @@ describe('AddonService', () => {
 
         it('should return error when customer has no subscriptions', async () => {
             // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([]);
 
             // Act
@@ -594,7 +600,11 @@ describe('AddonService', () => {
 
         it('should return error when no active subscription exists', async () => {
             // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'canceled' },
                 { id: 'sub_2', status: 'expired' }
@@ -612,7 +622,11 @@ describe('AddonService', () => {
         it('should return error when MERCADO_PAGO_ACCESS_TOKEN not set', async () => {
             // Arrange - set env var to empty string (falsy) to trigger check
             mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = '';
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
@@ -634,7 +648,11 @@ describe('AddonService', () => {
                 sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/pref_123'
             };
 
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
@@ -656,46 +674,57 @@ describe('AddonService', () => {
             // Verify MercadoPago preference creation
             // Phase 5 wrapped the SDK in createMercadoPagoPreference which passes
             // { accessToken, preferenceData } to the wrapper, and the wrapper calls
-            // Preference.create(preferenceData). So mockPreferenceCreate receives
-            // the preferenceData object (which has a `body` key).
-            expect(mockPreferenceCreate).toHaveBeenCalledWith({
-                body: expect.objectContaining({
-                    items: [
-                        {
-                            id: 'boost-7',
-                            title: 'Boost 7 días',
-                            description: 'Boost visibility for 7 days',
-                            quantity: 1,
-                            // Phase 5: price is now converted from centavos to ARS (5000 / 100 = 50)
-                            unit_price: 50,
-                            currency_id: 'ARS'
-                        }
-                    ],
-                    metadata: expect.objectContaining({
-                        addon_slug: 'boost-7',
-                        addonSlug: 'boost-7',
-                        customer_id: 'cust_123',
-                        customerId: 'cust_123',
-                        user_id: 'user_123',
-                        userId: 'user_123',
-                        type: 'addon_purchase',
-                        promo_code: null,
-                        promo_code_id: null,
-                        discount_amount: 0,
-                        original_price: 5000
-                    }),
-                    external_reference: expect.stringContaining('addon_boost-7_'),
-                    auto_return: 'approved',
-                    notification_url: 'http://localhost:3001/api/v1/webhooks/mercadopago',
-                    statement_descriptor: 'HOSPEDA',
-                    expires: true
+            // Preference.create(preferenceData). The wrapper then merges
+            // `requestOptions` into the call, so the actual arg shape is
+            // `{ body, requestOptions }` — use `objectContaining` to allow the
+            // extra `requestOptions` key. Items use objectContaining too
+            // because addon.checkout.ts annotates each item with
+            // `category_id: 'services'` (MP fraud-engine hint, not asserted
+            // here — separately covered by the SDK-shape contract).
+            expect(mockPreferenceCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    body: expect.objectContaining({
+                        items: [
+                            expect.objectContaining({
+                                id: 'boost-7',
+                                title: 'Boost 7 días',
+                                description: 'Boost visibility for 7 days',
+                                quantity: 1,
+                                // Phase 5: price is now converted from centavos to ARS (5000 / 100 = 50)
+                                unit_price: 50,
+                                currency_id: 'ARS'
+                            })
+                        ],
+                        metadata: expect.objectContaining({
+                            addon_slug: 'boost-7',
+                            addonSlug: 'boost-7',
+                            customer_id: 'cust_123',
+                            customerId: 'cust_123',
+                            user_id: 'user_123',
+                            userId: 'user_123',
+                            type: 'addon_purchase',
+                            promo_code: null,
+                            promo_code_id: null,
+                            discount_amount: 0,
+                            original_price: 5000
+                        }),
+                        external_reference: expect.stringContaining('addon_boost-7_'),
+                        auto_return: 'approved',
+                        notification_url: 'http://localhost:3001/api/v1/webhooks/mercadopago',
+                        statement_descriptor: 'HOSPEDA',
+                        expires: true
+                    })
                 })
-            });
+            );
         });
 
         it('should accept trialing subscriptions as active', async () => {
             // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'trialing' }
             ]);
@@ -713,7 +742,11 @@ describe('AddonService', () => {
 
         it('should return error when preference has no checkout URL', async () => {
             // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
@@ -734,7 +767,11 @@ describe('AddonService', () => {
 
         it('should handle MercadoPago errors gracefully', async () => {
             // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
+            (mockBilling.customers.get as Mock).mockResolvedValue({
+                id: 'cust_123',
+                email: 'user@test.com',
+                metadata: { name: 'Test User' }
+            });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
