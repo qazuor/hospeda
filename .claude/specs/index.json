@@ -1436,6 +1436,27 @@
                 "infra-safety",
                 "admin"
             ]
+        },
+        {
+            "specId": "SPEC-149",
+            "title": "Billing provider error propagation + Sentry context + retry policy",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
+            "created": "2026-05-20T00:00:00Z",
+            "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer",
+            "dependsOn": ["SPEC-143"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": [
+                "billing",
+                "errors",
+                "sentry",
+                "observability",
+                "qzpay",
+                "refactor",
+                "user-facing"
+            ]
         }
     ]
 }
