@@ -5,9 +5,9 @@
     "created": "2026-05-17T23:55:00Z",
     "summary": {
         "total": 65,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 52,
+        "completed": 53,
         "blocked": 0,
         "averageComplexity": 2.88,
         "obsolete": 2
@@ -747,11 +747,12 @@
             "title": "E2E: plan migration matrix (free↔paid, cycle changes, tier moves)",
             "phase": "phase-3-A",
             "workstream": "A",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-143-11", "T-143-12"],
-            "notes": "plan-migration-matrix.test.ts. Matrix beyond simple upgrade/downgrade: free → paid (no proration), paid → free (cancel-to-free), monthly → annual same tier (proration + cycle realign), annual → monthly same tier (queued to renewal), tier-up monthly → tier-up annual (combined upgrade + cycle change), paid plan with addon → paid plan without addon (addon transfer or revoke)."
+            "notes": "plan-migration-matrix.test.ts. Matrix beyond simple upgrade/downgrade: free → paid (no proration), paid → free (cancel-to-free), monthly → annual same tier (proration + cycle realign), annual → monthly same tier (queued to renewal), tier-up monthly → tier-up annual (combined upgrade + cycle change), paid plan with addon → paid plan without addon (addon transfer or revoke).",
+            "completedAt": "2026-05-20T05:50:00Z"
         },
         {
             "id": "T-143-62",
