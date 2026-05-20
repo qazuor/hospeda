@@ -24,6 +24,7 @@
 
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
@@ -160,16 +161,11 @@ const TEXTS = {
 // ---------------------------------------------------------------------------
 
 /**
- * sessionStorage key used by UserMenu to cache the `/auth/me` snapshot.
- * Exported so other modules (notably `refreshBetterAuthSession()` in
- * `lib/auth-client.ts`) can invalidate the cache after operations that
- * change the user record — e.g. submitting the SPEC-113 profile
- * completion form. Without invalidation, the UserMenu paints from the
- * stale snapshot for up to {@link AUTH_ME_CACHE_TTL_MS} after the change,
- * which is what made the navbar look empty after first-time profile
- * completion.
+ * Re-exported from `@/lib/auth-cache` so existing importers of
+ * `AUTH_ME_CACHE_KEY` from this module keep working without churn.
+ * The canonical declaration lives in the shared module — see the JSDoc there.
  */
-export const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+export { AUTH_ME_CACHE_KEY };
 const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
 
 interface AuthMeSnapshot {

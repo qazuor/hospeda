@@ -35,6 +35,7 @@
 
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
+import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useEffect, useId, useState } from 'react';
@@ -129,12 +130,6 @@ export interface NewsletterFormProps {
 // /auth/me resolution (shared cache with UserMenu)
 // ---------------------------------------------------------------------------
 
-/**
- * sessionStorage key reused from UserMenu.client.tsx to share the `/auth/me`
- * snapshot across islands. KEEP IN SYNC with the same constant in
- * `UserMenu.client.tsx` and `AuthedPreferenceSync.client.tsx`.
- */
-const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
 const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
 
 /**

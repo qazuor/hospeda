@@ -15,6 +15,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewsletterForm } from '../../../src/components/newsletter/NewsletterForm.client';
+import { AUTH_ME_CACHE_KEY } from '../../../src/lib/auth-cache';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -68,7 +69,6 @@ vi.mock('../../../src/components/auth/AuthRequiredPopover.client', () => ({
 
 const API_URL = 'http://api.test';
 const USER_EMAIL = 'test@example.com';
-const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
 
 /**
  * Seed the shared `/auth/me` sessionStorage cache so the component's mount

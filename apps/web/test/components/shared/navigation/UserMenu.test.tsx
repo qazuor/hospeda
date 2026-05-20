@@ -10,6 +10,7 @@ import type {
     UserMenuProps,
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
 vi.mock('../../../../src/lib/auth-client', () => ({
@@ -169,7 +170,7 @@ describe('UserMenu — permission-gated items', () => {
 
     it('shows "Mis alojamientos" for users with accommodation.create permission', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
@@ -186,7 +187,7 @@ describe('UserMenu — permission-gated items', () => {
 
     it('shows "Panel de administración" for users with access.panelAdmin', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Admin', email: 'a@e.com' },
@@ -208,7 +209,7 @@ describe('UserMenu — permission-gated items', () => {
 
     it('does NOT show admin panel link for users without the permission', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'User', email: 'u@e.com' },

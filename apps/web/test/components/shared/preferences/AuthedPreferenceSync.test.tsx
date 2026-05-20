@@ -6,6 +6,7 @@
 import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthedPreferenceSync } from '../../../../src/components/shared/preferences/AuthedPreferenceSync.client';
+import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { clearToasts, getToasts } from '../../../../src/store/toast-store';
 
 vi.mock('../../../../src/lib/env', () => ({
@@ -20,7 +21,7 @@ function setAuth({ authed, userId }: { authed: boolean; userId: string | null })
     document.documentElement.setAttribute('data-user-authenticated', authed ? 'true' : 'false');
     if (authed && userId) {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: userId },
@@ -29,7 +30,7 @@ function setAuth({ authed, userId }: { authed: boolean; userId: string | null })
             })
         );
     } else {
-        sessionStorage.removeItem('authMeSnapshot');
+        sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
     }
 }
 
