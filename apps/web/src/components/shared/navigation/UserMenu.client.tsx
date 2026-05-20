@@ -39,6 +39,7 @@ import {
     FavoriteIcon,
     type IconProps,
     LogoutIcon,
+    NewsletterIcon,
     SettingsIcon,
     ShieldIcon,
     StarIcon,
@@ -113,11 +114,13 @@ const TEXTS = {
             dashboard: 'Mi cuenta',
             favorites: 'Mis favoritos',
             properties: 'Mis alojamientos',
-            messages: 'Mis mensajes',
+            messages: 'Mis consultas',
             reviews: 'Mis reseñas',
             subscription: 'Mi suscripción',
             preferences: 'Preferencias',
-            adminPanel: 'Panel de administración'
+            newsletter: 'Boletín de novedades',
+            adminPanel: 'Panel de administración',
+            hostMode: 'Modo anfitrión'
         }
     },
     en: {
@@ -130,11 +133,13 @@ const TEXTS = {
             dashboard: 'My account',
             favorites: 'My favorites',
             properties: 'My listings',
-            messages: 'My messages',
+            messages: 'My inquiries',
             reviews: 'My reviews',
             subscription: 'My subscription',
             preferences: 'Preferences',
-            adminPanel: 'Admin panel'
+            newsletter: 'Newsletter',
+            adminPanel: 'Admin panel',
+            hostMode: 'Host mode'
         }
     },
     pt: {
@@ -147,14 +152,26 @@ const TEXTS = {
             dashboard: 'Minha conta',
             favorites: 'Meus favoritos',
             properties: 'Meus imóveis',
-            messages: 'Minhas mensagens',
+            messages: 'Minhas consultas',
             reviews: 'Minhas avaliações',
             subscription: 'Minha assinatura',
             preferences: 'Preferências',
-            adminPanel: 'Painel de administração'
+            newsletter: 'Boletim de novidades',
+            adminPanel: 'Painel de administração',
+            hostMode: 'Modo anfitrião'
         }
     }
 } as const;
+
+/**
+ * Permission that distinguishes platform staff (ADMIN / SUPER_ADMIN /
+ * CLIENT_MANAGER / EDITOR) from a HOST. All five roles share
+ * `access.panelAdmin`, but only staff get `access.apiAdmin`. We use this to
+ * pick between the "Modo anfitrión" label (for a HOST that just got admin
+ * access to manage their own listings) and "Panel de administración" (for
+ * actual Hospeda staff doing platform-wide work).
+ */
+const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;
 
 // ---------------------------------------------------------------------------
 // /auth/me fetch with sessionStorage cache
@@ -255,12 +272,19 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
 function buildMenuItems({
     texts,
     locale,
-    adminPanelUrl
+    adminPanelUrl,
+    permissions
 }: {
     readonly texts: (typeof TEXTS)[keyof typeof TEXTS];
     readonly locale: SupportedLocale;
     readonly adminPanelUrl: string | undefined;
+    readonly permissions: ReadonlyArray<string>;
 }): ReadonlyArray<MenuItem> {
+    // Discriminate HOST vs staff: a HOST has `access.panelAdmin` but NOT
+    // `access.apiAdmin`. See STAFF_DISCRIMINATOR_PERMISSION JSDoc above.
+    const isStaff = permissions.includes(STAFF_DISCRIMINATOR_PERMISSION);
+    const adminPanelLabel = isStaff ? texts.items.adminPanel : texts.items.hostMode;
+
     return [
         {
             id: 'dashboard',
@@ -300,6 +324,12 @@ function buildMenuItems({
             icon: CreditCardIcon
         },
         {
+            id: 'newsletter',
+            label: texts.items.newsletter,
+            href: buildUrl({ locale, path: 'mi-cuenta/newsletter' }),
+            icon: NewsletterIcon
+        },
+        {
             id: 'preferences',
             label: texts.items.preferences,
             href: buildUrl({ locale, path: 'mi-cuenta/preferencias' }),
@@ -309,7 +339,7 @@ function buildMenuItems({
             ? ([
                   {
                       id: 'admin-panel',
-                      label: texts.items.adminPanel,
+                      label: adminPanelLabel,
                       href: adminPanelUrl,
                       icon: ShieldIcon,
                       external: true,
@@ -441,7 +471,15 @@ export function UserMenu({
 
     // ── Item filtering ──────────────────────────────────────────────────
     const visibleItems = useMemo(() => {
-        const all = buildMenuItems({ texts, locale, adminPanelUrl });
+        // Empty array while permissions are still resolving — `buildMenuItems`
+        // uses it to pick the staff-vs-host label, and the filter below hides
+        // gated items until permissions arrive.
+        const all = buildMenuItems({
+            texts,
+            locale,
+            adminPanelUrl,
+            permissions: permissions ?? []
+        });
         return all.filter((item) => {
             if (!item.requiredPermission) return true;
             // While permissions are loading, hide gated items so we don't flash items the user can't actually use.

@@ -461,11 +461,14 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                     className={styles.sectionTitle}
                     id="newsletter-title"
                 >
-                    {t('account.preferences.sections.newsletter', 'Newsletter')}
+                    {t('account.preferences.sections.newsletter', 'Boletín de novedades')}
                 </h3>
 
                 <ToggleRow
-                    label={t('account.preferences.newsletter.label', 'Newsletter de Hospeda')}
+                    label={t(
+                        'account.preferences.newsletter.label',
+                        'Recibir el boletín de novedades'
+                    )}
                     description={t(
                         'account.preferences.newsletter.description',
                         'Recibir novedades, ofertas y destinos destacados'

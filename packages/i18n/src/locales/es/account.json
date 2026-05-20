@@ -69,7 +69,7 @@
         "sections": {
             "appearance": "Apariencia",
             "notifications": "Notificaciones",
-            "newsletter": "Newsletter"
+            "newsletter": "Boletín de novedades"
         },
         "theme": {
             "label": "Tema",
@@ -93,7 +93,7 @@
             "label": "Idioma del sitio"
         },
         "newsletter": {
-            "label": "Recibir newsletter"
+            "label": "Recibir el boletín de novedades"
         },
         "errors": {
             "fetchFailed": "Error al cargar las preferencias"
@@ -386,7 +386,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Boletín de novedades",
         "statusLabel": "Estado",
         "statusActive": "Activo",
         "statusPending": "Pendiente de verificación",
