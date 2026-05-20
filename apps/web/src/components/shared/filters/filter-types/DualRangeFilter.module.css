@@ -37,8 +37,12 @@
 }
 
 /* Highlighted segment between the two thumbs.
-   `--start` and `--end` are percentages set from the JSX inline style. */
+   `--start` and `--end` are percentages set from the JSX inline style. The
+   declarations here act as defaults until the JSX style overrides them, and
+   register the names with the css-tokens lint pass. */
 .trackActive {
+    --start: 0%;
+    --end: 100%;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
