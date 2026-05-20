@@ -18,6 +18,7 @@
             "location": "Localização"
         },
         "subheading": "Compartilhe sua experiência em {{name}} para ajudar outros viajantes.",
+        "ratingHelp": "Toque nas estrelas para avaliar cada aspecto",
         "titleLabel": "Título",
         "titlePlaceholder": "Resumo da sua experiência",
         "contentLabel": "Comentário",
@@ -35,6 +36,10 @@
             "submitFailed": "Erro ao enviar a avaliação. Por favor, tente novamente.",
             "alreadyReviewed": "Você já enviou uma avaliação para esta hospedagem."
         }
+    },
+    "locked": {
+        "title": "Fale primeiro com o anfitrião",
+        "description": "Para manter as avaliações honestas, apenas viajantes que já contataram o anfitrião podem deixar uma. Envie uma consulta pelo botão de contato e volte quando quiser compartilhar sua opinião."
     },
     "list": {
         "title": "Avaliações",

@@ -847,6 +847,12 @@ export const protectedConversationsApi = {
         readonly pageSize?: number;
         readonly archivedByGuest?: boolean;
         /**
+         * Filter the inbox by a single accommodation. Useful to answer
+         * "has the visitor already contacted the host of this property?"
+         * — the accommodation detail page uses this to gate the review form.
+         */
+        readonly accommodationId?: string;
+        /**
          * SSR-only: raw `Cookie` header forwarded to the API so the request
          * carries the user's session. Browser callers should omit this.
          */

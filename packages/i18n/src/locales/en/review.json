@@ -18,6 +18,7 @@
             "location": "Location"
         },
         "subheading": "Share your experience at {{name}} to help other travellers.",
+        "ratingHelp": "Tap the stars to rate each aspect",
         "titleLabel": "Title",
         "titlePlaceholder": "Summary of your experience",
         "contentLabel": "Review",
@@ -35,6 +36,10 @@
             "submitFailed": "Failed to submit your review. Please try again.",
             "alreadyReviewed": "You have already submitted a review for this accommodation."
         }
+    },
+    "locked": {
+        "title": "Contact the host first",
+        "description": "To keep reviews honest, only travellers who have already contacted the host can leave one. Send an enquiry from the contact button and come back when you're ready to share your opinion."
     },
     "list": {
         "title": "Reviews",

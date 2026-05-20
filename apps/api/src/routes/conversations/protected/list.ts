@@ -64,7 +64,8 @@ router.get('/', async (c) => {
                 userId: actor.id,
                 page: query.page,
                 pageSize: query.pageSize,
-                archivedByGuest: query.archivedByGuest
+                archivedByGuest: query.archivedByGuest,
+                accommodationId: query.accommodationId
             }
         );
 

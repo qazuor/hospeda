@@ -146,7 +146,8 @@ const ListForGuestInputSchema = z.object({
     userId: z.string().uuid(),
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(DEFAULT_INBOX_PAGE_SIZE),
-    archivedByGuest: z.boolean().optional()
+    archivedByGuest: z.boolean().optional(),
+    accommodationId: z.string().uuid().optional()
 });
 
 const ListForOwnerInputSchema = z.object({
@@ -841,6 +842,12 @@ export class ConversationService extends BaseService {
             page?: number;
             pageSize?: number;
             archivedByGuest?: boolean;
+            /**
+             * Optional filter — when set, only return conversations attached
+             * to this accommodation. Powers the "has the visitor contacted
+             * the host?" check used by the accommodation detail page.
+             */
+            accommodationId?: string;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<ConversationListResult>> {
@@ -855,7 +862,8 @@ export class ConversationService extends BaseService {
                     {
                         page: validated.page,
                         pageSize: validated.pageSize,
-                        archivedByGuest: validated.archivedByGuest
+                        archivedByGuest: validated.archivedByGuest,
+                        accommodationId: validated.accommodationId
                     }
                 );
                 return {
