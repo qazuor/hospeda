@@ -232,7 +232,14 @@ describe('entitlementMiddleware', () => {
             mockBilling.limits.getByCustomerId.mockResolvedValue([]);
         });
 
-        it('should set empty entitlements', async () => {
+        it('should set tourist-free fallback entitlements (SPEC-143 T-143-58)', async () => {
+            // SPEC-143 T-143-58 shipped a tourist-free fallback in
+            // loadEntitlements: when getByCustomerId returns no subs, the
+            // middleware now seeds the 4 TOURIST_FREE_PLAN entitlements
+            // (SAVE_FAVORITES, WRITE_REVIEWS, READ_REVIEWS,
+            // CAN_VIEW_RECOMMENDATIONS) instead of an empty set. This pins
+            // the new contract so a future regression to "empty set" fails
+            // here loudly.
             app.use((c, next) => {
                 c.set('billingEnabled', true);
                 c.set('billingCustomerId', 'test-customer-id');
@@ -241,13 +248,27 @@ describe('entitlementMiddleware', () => {
             app.use(entitlementMiddleware());
             app.get('/test', (c) => {
                 const entitlements = c.get('userEntitlements');
-                return c.json({ entitlementsCount: entitlements.size });
+                return c.json({
+                    entitlementsCount: entitlements.size,
+                    keys: Array.from(entitlements).sort()
+                });
             });
 
             const res = await app.request('/test');
-            const data = await res.json();
+            const data = (await res.json()) as {
+                readonly entitlementsCount: number;
+                readonly keys: readonly string[];
+            };
 
-            expect(data.entitlementsCount).toBe(0);
+            expect(data.entitlementsCount).toBe(4);
+            expect(data.keys).toEqual(
+                [
+                    EntitlementKey.SAVE_FAVORITES,
+                    EntitlementKey.WRITE_REVIEWS,
+                    EntitlementKey.READ_REVIEWS,
+                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+                ].sort()
+            );
         });
     });
 
