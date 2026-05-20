@@ -147,8 +147,21 @@ export async function scheduleSubscriptionDowngrade(
         );
     }
 
-    if (sub.planId === newPlanId) {
-        throw new SubscriptionDowngradeError('SAME_PLAN', 'Cannot downgrade to the same plan');
+    // SAME_PLAN is true ONLY when both the plan id AND the billing
+    // interval+count match the user's current subscription. Allowing the
+    // same plan with a different interval enables cycle change flows
+    // (annual → monthly on the same tier, scheduled-at-period-end) —
+    // see SPEC-143 T-143-61.
+    const currentInterval = sub.interval;
+    const currentIntervalCount = sub.intervalCount ?? 1;
+    const isSamePlan = sub.planId === newPlanId;
+    const isSameInterval =
+        currentInterval === billingInterval && currentIntervalCount === intervalCount;
+    if (isSamePlan && isSameInterval) {
+        throw new SubscriptionDowngradeError(
+            'SAME_PLAN',
+            'Cannot downgrade to the same plan with the same billing interval'
+        );
     }
 
     const [currentPlan, targetPlan] = await Promise.all([
@@ -169,13 +182,23 @@ export async function scheduleSubscriptionDowngrade(
         );
     }
 
-    const currentPrice = findPriceForInterval(currentPlan.prices, billingInterval, intervalCount);
+    // currentPrice MUST be resolved against the user's CURRENT
+    // subscription interval — otherwise cycle change flows
+    // (annual $1000 → monthly $100 same plan) compare two identical
+    // prices (both annual) and incorrectly throw NOT_A_DOWNGRADE. The
+    // target price keeps using the REQUESTED interval since that is
+    // what the user will be billed for after the schedule applies.
+    const currentPrice = findPriceForInterval(
+        currentPlan.prices,
+        currentInterval,
+        currentIntervalCount
+    );
     const targetPrice = findPriceForInterval(targetPlan.prices, billingInterval, intervalCount);
 
     if (!currentPrice) {
         throw new SubscriptionDowngradeError(
             'NO_MATCHING_PRICE',
-            `Current plan has no active price for interval '${billingInterval}'/${intervalCount}`
+            `Current plan has no active price for the subscription's current interval '${currentInterval}'/${currentIntervalCount}`
         );
     }
     if (!targetPrice) {

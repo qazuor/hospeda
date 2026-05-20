@@ -56,6 +56,13 @@ function makeSub(opts: SubFixtureOpts = {}) {
         status: 'active' as const,
         currentPeriodStart: PERIOD_START,
         currentPeriodEnd: PERIOD_END,
+        // interval + intervalCount drive `scheduleSubscriptionDowngrade`'s
+        // currentPrice lookup (SPEC-143 T-143-61 cycle change support).
+        // Default monthly so the existing test mocks (monthly current price
+        // + cheaper monthly target) keep computing the same delta. Cycle-
+        // change scenarios override these.
+        interval: 'month' as const,
+        intervalCount: 1,
         providerSubscriptionIds: { mercadopago: 'mp-pre-xyz' },
         scheduledPlanChange:
             opts.scheduledPlanChange === undefined
