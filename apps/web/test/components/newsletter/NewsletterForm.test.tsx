@@ -154,13 +154,6 @@ describe('NewsletterForm', () => {
             expect(input).not.toHaveAttribute('readonly');
         });
 
-        it('shows lock badge for guest state', () => {
-            renderGuest();
-            // The lock badge has the title attribute with the lock label
-            const badge = document.querySelector('[title]');
-            expect(badge?.getAttribute('title')).toMatch(/iniciá sesión/i);
-        });
-
         it('does NOT call GET /status on mount for guest users', () => {
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
@@ -168,74 +161,112 @@ describe('NewsletterForm', () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it('opens AuthRequiredPopover when subscribe button is clicked', async () => {
-            renderGuest();
-            const button = screen.getByRole('button', { name: /suscribirme/i });
-            fireEvent.click(button);
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
-            });
-        });
-
-        it('opens AuthRequiredPopover when email input is focused', async () => {
-            renderGuest();
-            const input = screen.getByRole('textbox');
-            fireEvent.focus(input);
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
-            });
-        });
-
-        it('does NOT send a POST request when guest clicks subscribe', async () => {
+        it('rejects an empty submit with a validation error message', async () => {
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
+
+            // Use form submission rather than button click so the empty-email
+            // validator fires.
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
             await waitFor(() => {
-                expect(fetchMock).not.toHaveBeenCalledWith(
-                    expect.stringContaining('/subscribe'),
-                    expect.anything()
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+                expect(screen.getByRole('alert').textContent).toMatch(/email/i);
+            });
+            // No network round-trip for a client-side invalid payload.
+            expect(fetchMock).not.toHaveBeenCalledWith(
+                expect.stringContaining('/subscribe'),
+                expect.anything()
+            );
+        });
+
+        it('POSTs the typed email to /api/v1/public/newsletter/subscribe', async () => {
+            const fetchMock = mockFetchOk({ status: 'pending_verification' });
+            vi.stubGlobal('fetch', fetchMock);
+            // Stub window.location.assign so the redirect doesn't navigate jsdom.
+            const assignMock = vi.fn();
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                value: { ...originalLocation, assign: assignMock, href: originalLocation.href },
+                writable: true
+            });
+
+            renderGuest();
+
+            const input = screen.getByRole('textbox') as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'guest@example.com' } });
+
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledWith(
+                    `${API_URL}/api/v1/public/newsletter/subscribe`,
+                    expect.objectContaining({
+                        method: 'POST',
+                        body: expect.stringContaining('guest@example.com')
+                    })
                 );
             });
         });
 
-        it('closes AuthRequiredPopover when popover close button is clicked', async () => {
-            renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
-
-            await waitFor(() => {
-                expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
+        it('redirects to /{locale}/newsletter/confirma-tu-email on pending_verification', async () => {
+            const fetchMock = mockFetchOk({ status: 'pending_verification' });
+            vi.stubGlobal('fetch', fetchMock);
+            const assignMock = vi.fn();
+            Object.defineProperty(window, 'location', {
+                value: { assign: assignMock, href: 'http://test/' },
+                writable: true
             });
 
-            fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
+            renderGuest();
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
             await waitFor(() => {
-                expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
+                expect(assignMock).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        '/es/newsletter/confirma-tu-email?email=guest%40example.com'
+                    )
+                );
             });
         });
 
-        it('closes AuthRequiredPopover on Escape key', async () => {
+        it('shows already-active banner inline when the email is somehow already active', async () => {
+            const fetchMock = mockFetchOk({ status: 'active' });
+            vi.stubGlobal('fetch', fetchMock);
+
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
-
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'already@example.com' }
             });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
-            // The mock doesn't implement Escape itself — the real AuthRequiredPopover does.
-            // We test the NewsletterForm's `isPopoverOpen` flag via closing the mock's button.
-            // (The actual Escape behavior is covered in AuthRequiredPopover's own tests.)
-            fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
             await waitFor(() => {
-                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+                const banner = document.querySelector('[data-state="already-active"]');
+                expect(banner).toBeInTheDocument();
             });
         });
 
-        it('popover message contains newsletter-specific copy', async () => {
+        it('shows the generic error banner on a non-2xx response', async () => {
+            const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+            vi.stubGlobal('fetch', fetchMock);
+
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
             await waitFor(() => {
-                expect(screen.getByText(/creá una cuenta gratuita/i)).toBeInTheDocument();
+                expect(screen.getByRole('alert').textContent).toMatch(/no pudimos/i);
             });
         });
     });
@@ -518,10 +549,7 @@ describe('NewsletterForm', () => {
             await waitFor(() => {
                 const manageLink = screen.getByRole('link', { name: /gestionar suscripción/i });
                 expect(manageLink).toBeInTheDocument();
-                expect(manageLink).toHaveAttribute(
-                    'href',
-                    '/es/mi-cuenta/preferencias/newsletter/'
-                );
+                expect(manageLink).toHaveAttribute('href', '/es/mi-cuenta/newsletter/');
             });
         });
 
@@ -904,16 +932,30 @@ describe('NewsletterForm', () => {
             win.dataLayer = originalDl;
         });
 
-        it('pushes newsletter_subscribe_clicked to dataLayer on guest click', async () => {
+        it('pushes newsletter_subscribe_clicked to dataLayer on guest form submit', async () => {
             const dl: unknown[] = [];
             (window as unknown as { dataLayer: unknown[] }).dataLayer = dl;
+            vi.stubGlobal('fetch', mockFetchOk({ status: 'pending_verification' }));
+            Object.defineProperty(window, 'location', {
+                value: { assign: vi.fn(), href: 'http://test/' },
+                writable: true
+            });
 
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
-            expect(dl).toContainEqual(
-                expect.objectContaining({ event: 'newsletter_subscribe_clicked' })
-            );
+            await waitFor(() => {
+                expect(dl).toContainEqual(
+                    expect.objectContaining({
+                        event: 'newsletter_subscribe_clicked',
+                        auth: false
+                    })
+                );
+            });
 
             // Reset dataLayer after test
             (window as unknown as { dataLayer?: unknown[] }).dataLayer = undefined;

@@ -2,28 +2,29 @@
  * @file NewsletterForm.client.tsx
  * @description React island replacing the static footer newsletter form.
  *
- * Implements the 6 visual states from SPEC-101 §5.1:
- * - idle-guest:          Not authenticated — editable empty email, lock badge, AuthRequiredPopover on click.
- * - idle-auth:           Authenticated, not yet subscribed — email pre-filled from session, read-only.
- * - pending:             Subscription request in-flight — spinner, button disabled, aria-busy.
- * - pending-verification: Subscribe succeeded — success banner replaces form.
- * - already-active:      User is already an active subscriber — "Ya estás suscripto" banner + manage link.
- * - error:               API failure — inline error, button re-enabled.
+ * Visual states:
+ * - idle-guest:           Guest visitor — editable email input, submit → POST /public/subscribe → redirect.
+ * - idle-auth:            Authenticated, not yet subscribed — email pre-filled from session, read-only.
+ * - pending:              Subscription request in-flight — spinner, button disabled, aria-busy.
+ * - pending-verification: Submit succeeded with pending status — fallback banner (when redirect doesn't happen).
+ * - already-active:       Already subscribed — banner with manage link.
+ * - error:                API failure — inline error, button re-enabled.
+ *
+ * Guest path (feat/newsletter-polish): the visitor types their email into the
+ * input and clicks submit; the form POSTs to /api/v1/public/newsletter/subscribe
+ * and redirects to `/{locale}/newsletter/confirma-tu-email?email=<their-email>`
+ * regardless of pending_verification / already_pending — both responses mean
+ * the same thing for UX ("we sent an email, go check"). No AuthRequiredPopover,
+ * no login gate.
  *
  * Authentication decision: the Astro Footer passes the server-rendered hint via the
  * `isAuthenticated` + `userEmail` props (read from `Astro.locals`). Those props are
  * accurate ONLY on routes where the middleware parses the session (protected, auth,
- * SESSION_OPTIONAL_SEGMENTS). On home, contact, legal pages, etc. `Astro.locals.user`
+ * SESSION_OPTIONAL_SEGMENTS). On home, contacto, legal pages, etc. `Astro.locals.user`
  * is null even when the visitor has a live cookie, so the island MUST re-resolve its
  * auth state client-side on mount via the cached `/api/v1/public/auth/me` snapshot
  * (the same cache UserMenu populates). Without this the footer always renders the
  * guest variant outside session-aware routes.
- *
- * AuthRequiredPopover: reuses the existing component from
- * `apps/web/src/components/auth/AuthRequiredPopover.client.tsx`. It satisfies all AC-101-02
- * requirements via its configurable `message`, `signInLabel`, and `registerLabel` props.
- * No new file is created; `AuthRequiredPopover.tsx` in this directory is a thin re-export
- * for backward-compat with the task file list.
  *
  * Hydration: designed for `client:visible` (lazy hydration on scroll into view).
  * SSR renders the input + button without JavaScript; hydration adds interactive behavior.
@@ -32,12 +33,11 @@
  * to `window.dataLayer` when available.
  */
 
-import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import styles from './NewsletterForm.module.css';
 
 // ---------------------------------------------------------------------------
@@ -86,7 +86,8 @@ export interface NewsletterFormProps {
     /**
      * Whether the current user is authenticated.
      * Resolved from `Astro.locals` in the Footer Astro component.
-     * When false, the guest state with AuthRequiredPopover is shown.
+     * Used as the initial SSR seed; the client re-resolves on mount via
+     * the shared `/auth/me` cache.
      */
     readonly isAuthenticated: boolean;
     /**
@@ -96,12 +97,13 @@ export interface NewsletterFormProps {
     readonly userEmail?: string;
     /**
      * Base URL of the API (e.g. "https://api.hospeda.com.ar").
-     * Used to build the endpoint URLs for subscribe and status calls.
+     * Used to build the endpoint URLs for subscribe, resend, status, and
+     * the guest /public/auth/me lookup.
      */
     readonly apiUrl: string;
     /**
-     * Active UI locale, forwarded to AuthRequiredPopover for building
-     * auth page URLs and to the subscribe POST body.
+     * Active UI locale, forwarded as the `locale` field in subscribe
+     * payloads and used to build the redirect target for guest signups.
      */
     readonly locale: SupportedLocale;
 }
@@ -224,19 +226,13 @@ export function NewsletterForm({
     const statusRegionId = useId();
     const consentNoteId = useId();
 
-    // Ref to the submit button — used as the anchor for AuthRequiredPopover
-    const submitButtonRef = useRef<HTMLButtonElement>(null);
+    // Email value typed by a guest visitor. Authenticated visitors don't use
+    // this — their input is read-only and bound to `resolvedEmail`.
+    const [guestEmail, setGuestEmail] = useState<string>('');
 
-    // Whether the auth popover is open (guest state only)
-    const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
-
-    // Resolved client-side email. Seeded from the SSR-provided prop so the
-    // first paint matches the server, then overridden after hydration by the
-    // cached `/auth/me` snapshot (or a fresh fetch) so the input pre-fills
-    // correctly on pages where the middleware does NOT parse the session
-    // (home, contacto, legal, etc.). The resolved auth boolean is reflected
-    // in `formState` directly (idle-guest ↔ idle-auth), so we don't keep a
-    // separate piece of state for it.
+    // Resolved client-side email for AUTHED visitors. Seeded from the SSR-
+    // provided prop so the first paint matches the server, then overridden
+    // after hydration by the cached `/auth/me` snapshot (or a fresh fetch).
     const [resolvedEmail, setResolvedEmail] = useState<string>(userEmail);
 
     // Determine the initial state synchronously from the props so the first
@@ -337,34 +333,55 @@ export function NewsletterForm({
     // Event handlers
     // ---------------------------------------------------------------------------
 
-    const handleGuestClick = (): void => {
-        setIsPopoverOpen(true);
-        pushDataLayerEvent('newsletter_subscribe_clicked', { auth: false });
-    };
-
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault();
-        if (formState !== 'idle-auth') return;
+        if (formState !== 'idle-guest' && formState !== 'idle-auth') return;
 
-        pushDataLayerEvent('newsletter_subscribe_clicked', { auth: true });
+        const isGuest = formState === 'idle-guest';
+
+        // Guest path: light client-side email validation before the round-trip
+        // so an obviously-invalid typo doesn't burn the IP's rate-limit budget
+        // (3 req/min on the public endpoint).
+        if (isGuest) {
+            const trimmed = guestEmail.trim();
+            const isPlausibleEmail =
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) && trimmed.length <= 255;
+            if (!isPlausibleEmail) {
+                const msg = t('footer.newsletter.invalidEmail', 'Ingresá un email válido.');
+                setErrorMessage(msg);
+                setStatusText(msg);
+                setFormState('error');
+                return;
+            }
+        }
+
+        pushDataLayerEvent('newsletter_subscribe_clicked', { auth: !isGuest });
 
         setFormState('pending');
         setStatusText(t('footer.newsletter.loadingText', 'Enviando...'));
         setErrorMessage('');
 
+        const endpoint = isGuest
+            ? `${apiUrl.replace(/\/$/, '')}/api/v1/public/newsletter/subscribe`
+            : `${apiUrl.replace(/\/$/, '')}/api/v1/protected/newsletter/subscribe`;
+        const body = isGuest
+            ? JSON.stringify({
+                  email: guestEmail.trim(),
+                  locale,
+                  source: 'web_footer'
+              })
+            : JSON.stringify({
+                  locale,
+                  source: 'web_footer'
+              });
+
         try {
-            const response = await fetch(
-                `${apiUrl.replace(/\/$/, '')}/api/v1/protected/newsletter/subscribe`,
-                {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        locale,
-                        source: 'web_footer'
-                    })
-                }
-            );
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body
+            });
 
             if (!response.ok) {
                 const msg = t(
@@ -377,9 +394,43 @@ export function NewsletterForm({
                 return;
             }
 
-            const body = (await response.json()) as SubscribeResponse;
+            const payload = (await response.json()) as SubscribeResponse;
 
-            if (body.status === 'already_pending') {
+            // Guest path always redirects to the dedicated confirma-tu-email
+            // page. We treat `pending_verification` and `already_pending`
+            // identically — both mean "we sent an email, go check". An
+            // `'active'` response (the email is somehow already subscribed)
+            // surfaces inline as the already-active banner.
+            if (isGuest) {
+                if (payload.status === 'active') {
+                    setFormState('already-active');
+                    return;
+                }
+                pushDataLayerEvent('newsletter_subscribe_success', {
+                    locale,
+                    auth: false,
+                    status: payload.status
+                });
+                trackEvent(WebEvents.NewsletterSubscribed, {
+                    source: 'footer',
+                    locale,
+                    auth: false
+                });
+                const trimmed = guestEmail.trim();
+                const target = `/${locale}/newsletter/confirma-tu-email?email=${encodeURIComponent(trimmed)}`;
+                if (typeof window !== 'undefined') {
+                    window.location.assign(target);
+                }
+                // While the navigation lands, keep the form in a stable banner
+                // state so the brief flicker before the redirect doesn't show
+                // the form again.
+                setWasAlreadyPending(payload.status === 'already_pending');
+                setFormState('pending-verification');
+                return;
+            }
+
+            // Authed path retains the in-place transitions.
+            if (payload.status === 'already_pending') {
                 setWasAlreadyPending(true);
                 setStatusText(
                     t(
@@ -391,8 +442,18 @@ export function NewsletterForm({
                 return;
             }
 
-            if (body.status === 'active') {
+            if (payload.status === 'active') {
                 setFormState('already-active');
+                pushDataLayerEvent('newsletter_subscribe_success', {
+                    locale,
+                    auth: true,
+                    status: 'active'
+                });
+                trackEvent(WebEvents.NewsletterSubscribed, {
+                    source: 'footer',
+                    locale,
+                    auth: true
+                });
                 return;
             }
 
@@ -404,8 +465,12 @@ export function NewsletterForm({
                 )
             );
             setFormState('pending-verification');
-            pushDataLayerEvent('newsletter_subscribe_success', { locale });
-            trackEvent(WebEvents.NewsletterSubscribed, { source: 'footer', locale });
+            pushDataLayerEvent('newsletter_subscribe_success', {
+                locale,
+                auth: true,
+                status: 'pending_verification'
+            });
+            trackEvent(WebEvents.NewsletterSubscribed, { source: 'footer', locale, auth: true });
         } catch {
             const msg = t(
                 'footer.newsletter.errorMessage',
@@ -422,7 +487,7 @@ export function NewsletterForm({
     // ---------------------------------------------------------------------------
 
     const isLoading = formState === 'pending';
-    const managePath = `/${locale}/mi-cuenta/preferencias/newsletter/`;
+    const managePath = `/${locale}/mi-cuenta/newsletter/`;
 
     // ---------------------------------------------------------------------------
     // Return: already-active banner
@@ -523,40 +588,29 @@ export function NewsletterForm({
                 <div className={styles.inputRow}>
                     {/* Email input */}
                     <div className={styles.inputWrapper}>
-                        {formState === 'idle-guest' && (
-                            /* Lock badge for guest users */
-                            <span
-                                className={styles.lockBadge}
-                                aria-hidden="true"
-                                title={t(
-                                    'footer.newsletter.guestLockLabel',
-                                    'Iniciá sesión para suscribirte'
-                                )}
-                            >
-                                🔒
-                            </span>
-                        )}
                         {formState === 'idle-guest' ? (
-                            // Guest: controlled empty input — staying controlled across
-                            // state transitions (e.g. when /auth/me promotes the visitor
-                            // to idle-auth after hydration) avoids React's
-                            // "uncontrolled → controlled" warning. The form is
-                            // intercepted before submission so we never read this value.
+                            // Guest: editable controlled input. The visitor types
+                            // their email here and the form submits to the public
+                            // endpoint, which then redirects to confirma-tu-email.
                             <input
                                 id={`${emailLabelId}-input`}
                                 type="email"
                                 className={styles.emailInput}
-                                value=""
-                                onChange={() => {
-                                    // Guest input is decorative — focus opens the popover
-                                    // and we never read the value. The handler is required
-                                    // to keep the input controlled.
+                                value={guestEmail}
+                                onChange={(event) => {
+                                    setGuestEmail(event.currentTarget.value);
+                                    if (formState !== 'idle-guest') {
+                                        // Recover from the error state on the next keystroke.
+                                        setErrorMessage('');
+                                    }
                                 }}
                                 placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
                                 aria-labelledby={emailLabelId}
                                 aria-invalid="false"
-                                onFocus={() => setIsPopoverOpen(true)}
                                 autoComplete="email"
+                                inputMode="email"
+                                disabled={isLoading}
+                                required
                             />
                         ) : (
                             // Authenticated / in-flight / error: controlled read-only input
@@ -578,14 +632,13 @@ export function NewsletterForm({
                         )}
                     </div>
 
-                    {/* Submit button */}
+                    {/* Submit button — always type=submit now that guests
+                        also submit (the public POST + redirect path). */}
                     <button
-                        ref={submitButtonRef}
-                        type={formState === 'idle-guest' ? 'button' : 'submit'}
+                        type="submit"
                         className={styles.submitButton}
                         disabled={isLoading}
                         aria-busy={isLoading}
-                        onClick={formState === 'idle-guest' ? handleGuestClick : undefined}
                     >
                         {isLoading ? (
                             <>
@@ -624,26 +677,6 @@ export function NewsletterForm({
                     )}
                 </p>
             </form>
-
-            {/* AuthRequiredPopover — shown only when a guest clicks subscribe */}
-            {isPopoverOpen && formState === 'idle-guest' && (
-                <AuthRequiredPopover
-                    anchorRef={submitButtonRef}
-                    message={t(
-                        'newsletter.authPopover.message',
-                        'Creá una cuenta gratuita y recibí novedades del Litoral en tu email.'
-                    )}
-                    dialogLabel={t(
-                        'newsletter.authPopover.title',
-                        'Iniciá sesión para suscribirte'
-                    )}
-                    signInLabel={t('newsletter.authPopover.loginLink', 'Ya tengo cuenta')}
-                    registerLabel={t('newsletter.authPopover.registerCta', 'Registrarse')}
-                    onClose={() => setIsPopoverOpen(false)}
-                    locale={locale}
-                    returnUrl={typeof window !== 'undefined' ? window.location.href : ''}
-                />
-            )}
         </div>
     );
 }
