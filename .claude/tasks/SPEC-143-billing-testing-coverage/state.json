@@ -616,11 +616,12 @@
             "title": "Author docs/e2e-infrastructure-design.md + docs/mp-stub-architecture.md",
             "phase": "phase-4",
             "workstream": "D",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-143-08"],
-            "notes": "Two design docs: overall e2e infra (test DB, fixtures, factories) + the mp-stub contract (what it stubs, what it does not). For future maintainers."
+            "notes": "Two design docs shipped at .claude/specs/SPEC-143-billing-testing-coverage/docs/. e2e-infrastructure-design.md (451L): 14 sections covering the unit-vs-e2e boundary (the DB), directory layout, vitest configs (e2e + sandbox), env loading (.env.test, SPEC-035 no-fallback), TestDatabaseManager strategies (withRollback / clean / cleanupAllTestData) plus the deprecated beginTransaction pair preserved for legacy tests, seeds (seedBillingTestPlans idempotency + ARS-only baseline), RO-RO factories with naming gotchas (segment vs category, plan_id varchar vs UUID, createTestBillingCustomer returns customerId not id), fixtures barrel (webhook-events + mp-responses + signature-helpers), E2EApiClient with the createMockAdminActor missing ACCESS_API_ADMIN gotcha, seven sealed test patterns (vi.hoisted+vi.mock dance, importOriginal partial mocks, cron handler direct invocation, multi-describe nesting, Date.now spy for TTL boundaries, validator .partial requirement, splitAstroSrc helper), Workstream A vs B distinction, run commands, and the file-placement decision table. mp-stub-architecture.md (342L): 12 sections covering why a stub (CI without creds, deterministic, model-vs-MP framing), the contract (6 sub-adapters mirroring QZPayPaymentAdapter, MpStubOperation union, sync webhooks), four response modes (success/error/timeout/malformed) plus unconfigured-throw fail-loud behavior, dispatcher internals (async + sync split, record-before-timeout, .unref timer), call recording (MpStubCall shape, getCalls(op?) inspection), reset semantics, the full wiring pattern with five load-bearing steps (vi.hoisted ref / vi.mock with importOriginal / factory returning adapter / stubRef.current population / per-test reset), distinction from qzpay-test-control (comparative table), provider-shape gotchas (status spelling US/UK drift, customers.create returns string not object, payments.create/refund arg order), limits the stub does NOT model (no state, no event fan-out, no retries, no signature verification, no rate limits), and how to add a new operation. Commit `b446c8831`.",
+            "completedAt": "2026-05-20"
         },
         {
             "id": "T-143-54",
