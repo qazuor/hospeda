@@ -261,7 +261,8 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
         expect(Math.abs(canceledAtMs - Date.now())).toBeLessThan(TWO_SECONDS_MS);
 
         // ASSERT: entitlement cache was cleared (admin handler:505) and
-        // the next entitlement load drops the now-canceled sub.
+        // the next entitlement load drops the now-canceled sub, falling
+        // back to the tourist-free baseline (SPEC-143 T-143-58).
         clearEntitlementCache(customerId);
         const probeRes = await buildProbeApp().request('/probe');
         const probeBody = (await probeRes.json()) as {
@@ -269,8 +270,10 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(probeBody.entitlements).toEqual([]);
-        expect(probeBody.limits).toEqual({});
+        expect(new Set(probeBody.entitlements)).toEqual(
+            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'can_view_recommendations'])
+        );
+        expect(probeBody.limits).toEqual({ max_favorites: 3 });
         expect(probeBody.billingLoadFailed).toBe(false);
     });
 

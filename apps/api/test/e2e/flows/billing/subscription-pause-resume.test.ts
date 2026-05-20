@@ -238,18 +238,24 @@ describe('SPEC-143 trial pause/resume e2e', () => {
             // manually to prove the post-pause state).
             clearEntitlementCache(customerId);
 
-            // ASSERT: the next probe drops the entitlements. The
-            // middleware's active-sub filter (entitlement.ts:167-169)
-            // only matches status='active' or 'trialing'. A paused
-            // sub falls through to the "no active sub" branch
-            // (entitlement.ts:171-178) which returns an empty set.
+            // ASSERT: the next probe drops the active-sub entitlements
+            // (paused sub fails the middleware's active-sub filter at
+            // entitlement.ts:167-169) and falls back to the tourist-free
+            // baseline per SPEC-143 T-143-58.
             const postBody = (await (await buildProbeApp().request('/probe')).json()) as {
                 readonly entitlements: readonly string[];
                 readonly limits: Readonly<Record<string, number>>;
                 readonly billingLoadFailed: boolean;
             };
-            expect(postBody.entitlements).toEqual([]);
-            expect(postBody.limits).toEqual({});
+            expect(new Set(postBody.entitlements)).toEqual(
+                new Set([
+                    'save_favorites',
+                    'write_reviews',
+                    'read_reviews',
+                    'can_view_recommendations'
+                ])
+            );
+            expect(postBody.limits).toEqual({ max_favorites: 3 });
             expect(postBody.billingLoadFailed).toBe(false);
         });
     });
@@ -307,15 +313,18 @@ describe('SPEC-143 trial pause/resume e2e', () => {
                 throw new Error('Billing instance not initialized — check the @repo/billing mock');
             }
 
-            // Sanity pre-resume: paused sub yields empty entitlements
-            // (the no-active-sub branch of the loader). Without this
-            // anchor, the post-resume assertion is ambiguous — the
-            // entitlements could have been there all along.
+            // Sanity pre-resume: paused sub yields the tourist-free
+            // fallback (SPEC-143 T-143-58) — the no-active-sub branch of
+            // the loader. Asserting against `save_favorites` (a free-tier
+            // entitlement) instead of `expensive:feature` (the paid plan's
+            // entitlement) is the unambiguous anchor for the post-resume
+            // assertion below.
             clearEntitlementCache(customerId);
             const preBody = (await (await buildProbeApp().request('/probe')).json()) as {
                 readonly entitlements: readonly string[];
             };
-            expect(preBody.entitlements).toEqual([]);
+            expect(preBody.entitlements).toContain('save_favorites');
+            expect(preBody.entitlements).not.toContain('expensive:feature');
 
             // ACT
             await billing.subscriptions.resume(pausedId);

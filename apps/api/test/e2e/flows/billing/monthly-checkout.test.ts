@@ -698,8 +698,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
 
         // ACT 1: probe BEFORE webhook activation. The sub is in `incomplete`
         // (qzpay-core 1.6.4 post-fix initial status for mode 'paid'), so
-        // loadEntitlements finds no active sub and returns an empty set
-        // with shouldCache=true; the empty set lands in the cache.
+        // loadEntitlements finds no active sub and returns the tourist-free
+        // fallback (SPEC-143 T-143-58). The fallback set lands in the cache.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
         const preBody = (await preRes.json()) as {
@@ -707,8 +707,13 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toEqual([]);
-        expect(preBody.limits).toEqual({});
+        // Tourist-free entitlements: SAVE_FAVORITES, WRITE_REVIEWS,
+        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS (4 keys, max_favorites=3).
+        // The exact shape comes from TOURIST_FREE_PLAN.
+        expect(new Set(preBody.entitlements)).toEqual(
+            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'can_view_recommendations'])
+        );
+        expect(preBody.limits).toEqual({ max_favorites: 3 });
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot the cache size so we can prove exactly one entry was
