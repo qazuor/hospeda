@@ -70,42 +70,30 @@ type FieldErrors = Readonly<{
 
 type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
 
-/** Permission string the admin guard checks before letting the user in. */
-const ADMIN_PANEL_PERMISSION = 'access.panelAdmin';
-
 /**
- * Result of {@link fetchFreshPanelAccess}. Wraps the boolean in an object so
- * the caller can distinguish "fetched and false" from "could not check".
- */
-type FreshPanelAccessResult =
-    | { readonly status: 'ok'; readonly canAccess: boolean }
-    | { readonly status: 'unknown' };
-
-/**
- * Re-fetch the current session's permissions from /api/v1/public/auth/me
- * after the onboarding endpoint promotes the user USER → HOST. Used to
- * decide whether to redirect to the admin panel or to the web property list.
+ * Force Better Auth to re-read the session from the database and rotate its
+ * cookie cache. Required after the onboarding endpoint promotes the user
+ * USER → HOST in DB: without this call, the cached session cookie still
+ * carries `role=USER` for up to 5 minutes (Better Auth's default
+ * `cookieCache.maxAge`), and the admin guard would route the freshly
+ * promoted host straight to `/auth/forbidden`.
  *
- * Returns `{ status: 'unknown' }` on transport errors so the caller can fall
- * back to the pre-submit flag without surfacing a UI error.
+ * See:
+ *   https://better-auth.com/docs/concepts/session-management
+ *     → "Disable Cookie Cache"
+ *
+ * Best-effort: errors are swallowed so a network blip on this call does not
+ * block the post-submit redirect.
  */
-async function fetchFreshPanelAccess(apiUrl: string): Promise<FreshPanelAccessResult> {
+async function refreshSessionFromDatabase(apiUrl: string): Promise<void> {
     try {
-        const response = await fetch(`${apiUrl.replace(/\/$/, '')}/api/v1/public/auth/me`, {
+        await fetch(`${apiUrl.replace(/\/$/, '')}/api/auth/get-session?disableCookieCache=true`, {
             credentials: 'include',
-            // Bust any 304 / browser cache so we read the post-promotion state.
             cache: 'no-store'
         });
-        if (!response.ok) return { status: 'unknown' };
-        const json = (await response.json()) as {
-            readonly data?: {
-                readonly actor?: { readonly permissions?: readonly string[] };
-            };
-        };
-        const permissions = json.data?.actor?.permissions ?? [];
-        return { status: 'ok', canAccess: permissions.includes(ADMIN_PANEL_PERMISSION) };
     } catch {
-        return { status: 'unknown' };
+        // Non-fatal: the admin guard will still resolve correctly once the
+        // 5-minute cookie cache expires.
     }
 }
 
@@ -249,37 +237,26 @@ export function CreatePropertyMiniForm({
 
             const adminBase = adminUrl.replace(/\/$/, '');
 
-            // Resolve whether the user can access the admin panel right now.
-            //
-            // For `already_host` we trust the pre-submit flag: it was computed
-            // from the same user's session before any mutation, so it is
-            // already accurate.
-            //
-            // For `created` / `resumed` the user was just promoted USER → HOST
-            // inside the endpoint, so the pre-submit flag is stale. Re-fetch
-            // /auth/me with `cache: 'no-store'` to read the post-promotion
-            // permissions; if that probe fails (network, 5xx), we fall back to
-            // assuming HOST does have panel access — the admin guard will
-            // route to /auth/forbidden?reason=host-missing-permission as a
-            // last-resort surface if that turns out wrong.
-            let effectiveCanAccess = canAccessAdminPanel;
-            if (data.status !== 'already_host') {
-                const fresh = await fetchFreshPanelAccess(apiUrl);
-                effectiveCanAccess = fresh.status === 'ok' ? fresh.canAccess : true;
-            }
-
-            if (!effectiveCanAccess) {
-                window.location.href = accountPropertiesUrl;
-                return;
-            }
-
-            // Branch on status: created/resumed go to the edit page,
-            // already_host goes to the admin home where the user creates
-            // listings normally.
+            // `already_host`: the user already held a privileged role before
+            // this submit, so the pre-submit `canAccessAdminPanel` flag is
+            // still accurate. No session refresh is needed because nothing
+            // changed in the user's role / permissions.
             if (data.status === 'already_host') {
-                window.location.href = `${adminBase}/accommodations`;
+                window.location.href = canAccessAdminPanel
+                    ? `${adminBase}/accommodations`
+                    : accountPropertiesUrl;
                 return;
             }
+
+            // `created` / `resumed`: the endpoint just promoted the user
+            // USER → HOST atomically with the draft creation. Better Auth's
+            // cookie cache still carries the pre-promotion `role=USER` for
+            // up to 5 minutes, so we force a session refresh from the DB
+            // before redirecting to the admin. Otherwise the admin guard
+            // would read the stale cookie and bounce the host to
+            // `/auth/forbidden?reason=host-missing-permission`.
+            await refreshSessionFromDatabase(apiUrl);
+
             if (!data.accommodationId) {
                 setSubmitError(
                     t(
