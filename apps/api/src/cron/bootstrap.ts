@@ -13,6 +13,7 @@
  * @module cron/bootstrap
  */
 
+import * as Sentry from '@sentry/node';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { getEnabledCronJobs } from './registry';
@@ -125,6 +126,32 @@ export const startCronScheduler = async (): Promise<void> => {
                         error: errorMessage,
                         durationMs: Date.now() - startTime
                     });
+
+                    // Capture to Sentry with consistent tags so the Sentry alert
+                    // rules in docs/billing/sentry-alerts-runbook.md can match.
+                    // Tags pinned by the alert configuration: module=cron,
+                    // job_name=<name>. The dunning job carries an extra
+                    // event_type=dunning_failure tag for its dedicated alert.
+                    Sentry.captureException(
+                        error instanceof Error ? error : new Error(errorMessage),
+                        {
+                            level: 'error',
+                            tags: {
+                                module: 'cron',
+                                job_name: job.name,
+                                ...(job.name === 'dunning'
+                                    ? { event_type: 'dunning_failure' }
+                                    : { event_type: 'cron_failure' })
+                            },
+                            contexts: {
+                                cron: {
+                                    jobName: job.name,
+                                    schedule: job.schedule,
+                                    durationMs: Date.now() - startTime
+                                }
+                            }
+                        }
+                    );
                 }
             });
 
