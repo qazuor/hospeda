@@ -11,7 +11,7 @@
     margin: 0 auto;
     padding: var(--space-6, 1.5rem);
     background-color: var(--core-card);
-    border-radius: var(--radius-organic-sm, 0px 75px);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
 }
 
