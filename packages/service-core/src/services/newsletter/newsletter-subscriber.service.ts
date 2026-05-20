@@ -427,23 +427,40 @@ export class NewsletterSubscriberService extends BaseService {
     /**
      * Subscribes an authenticated user to the newsletter.
      *
-     * State machine:
-     * - No row (or only soft-deleted rows) → INSERT `pending_verification`, send verification email.
-     * - Row with `pending_verification` → refresh `subscribedAt`, re-issue token, send verification email.
-     * - Row with `active` → no-op, return `'active'` (no email).
-     * - Row with `unsubscribed` → reactivate to `pending_verification`, send verification email.
-     * - Row with `bounced` or `complained` → BLOCKED, return Err `NEWSLETTER_SUBSCRIBER_BLOCKED`.
+     * Spec rules (from the consolidated newsletter functional spec):
+     * - Authed user with VERIFIED account email → DIRECT to `active`, send
+     *   welcome email. No double opt-in.
+     * - Authed user with UNVERIFIED account email → BLOCKED with
+     *   `NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED`. The UI surfaces this as
+     *   "verify your account email first" — the user is bounced back to
+     *   the verification flow before they can subscribe.
+     * - Row with `bounced` or `complained` → BLOCKED with
+     *   `NEWSLETTER_SUBSCRIBER_BLOCKED` (admin-only reset).
+     *
+     * State machine (only reached when `actor.emailVerified === true`):
+     * - No row → INSERT `active` + `verified_at = NOW()`, send welcome.
+     * - Row `active` → no-op, return `'active'`.
+     * - Row `pending_verification` (e.g. seeded by a guest flow that the user
+     *   later signed up to) → flip to `active`, set `verified_at`, send welcome.
+     * - Row `unsubscribed` → reactivate to `active`, set `verified_at`, send welcome.
+     *
+     * Guest subscribe (no actor / no userId) does NOT go through this method —
+     * it lives in the public-tier subscribe flow which retains the
+     * `pending_verification` + double-opt-in path.
      *
      * Owner-only: actor must equal `input.userId`.
      *
      * @param actor - The authenticated actor.
-     * @param input - Subscription details.
+     * @param input - Subscription details (email pulled from the user record by the route).
      * @param ctx - Optional service context.
-     * @returns Outcome status discriminator.
+     * @returns Outcome status discriminator. For authed callers always `'active'`
+     *   (or an error). The `'pending_verification'` / `'already_pending'` variants
+     *   are reserved for the guest path documented in the spec.
      *
      * @example
      * ```ts
-     * const result = await svc.subscribe(actor, { userId: actor.id, email: 'a@b.com', channel: 'email', locale: 'es', source: 'web_footer' });
+     * const result = await svc.subscribe(actor, { userId: actor.id, email: actor.email, locale: 'es' });
+     * // result.data.status === 'active' (or error if email unverified / blocked)
      * ```
      */
     public async subscribe(
@@ -492,7 +509,8 @@ export class NewsletterSubscriberService extends BaseService {
 
                 const status = row?.status as NewsletterSubscriberStatusEnum | undefined;
 
-                // Blocked terminal states
+                // Blocked terminal states win over every other gate: an admin
+                // reset is the only way out.
                 if (
                     status === NewsletterSubscriberStatusEnum.BOUNCED ||
                     status === NewsletterSubscriberStatusEnum.COMPLAINED
@@ -505,79 +523,80 @@ export class NewsletterSubscriberService extends BaseService {
                     );
                 }
 
-                const now = new Date();
-                const channelVal = validated.channel as 'email' | 'whatsapp';
-
-                if (!row) {
-                    // New subscription
-                    const inserted = await db.execute(sql`
-                        INSERT INTO newsletter_subscribers
-                            (user_id, email, channel, status, locale, source,
-                             consent_ip, consent_ua, consent_version,
-                             subscribed_at, created_at, updated_at)
-                        VALUES
-                            (${validated.userId}, ${validated.email}, ${validated.channel},
-                             ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION},
-                             ${validated.locale}, ${validated.source},
-                             ${validated.consentIp ?? null}, ${validated.consentUa ?? null},
-                             ${validated.consentVersion ?? null},
-                             ${now.toISOString()}, ${now.toISOString()}, ${now.toISOString()})
-                        RETURNING id
-                    `);
-                    const newId = (inserted.rows[0] as { id: string }).id;
-                    const token = this._genVerificationToken(newId, channelVal);
-                    await this._sendVerification({
-                        subscriberId: newId,
-                        email: validated.email,
-                        userId: validated.userId,
-                        locale: validated.locale,
-                        token
-                    });
-                    return { status: 'pending_verification' };
-                }
-
-                const subscriberId = row.id;
-
+                // An already-active row is a no-op regardless of emailVerified —
+                // the user is subscribed; nothing to do, no welcome email.
                 if (status === NewsletterSubscriberStatusEnum.ACTIVE) {
                     return { status: 'active' };
                 }
 
-                if (status === NewsletterSubscriberStatusEnum.PENDING_VERIFICATION) {
-                    // Refresh subscribedAt to extend TTL
-                    await db.execute(sql`
-                        UPDATE newsletter_subscribers
-                        SET subscribed_at = ${now.toISOString()}, updated_at = ${now.toISOString()}
-                        WHERE id = ${subscriberId}
-                    `);
-                    const token = this._genVerificationToken(subscriberId, channelVal);
-                    await this._sendVerification({
-                        subscriberId,
-                        email: row.email,
-                        userId: validated.userId,
-                        locale: row.locale,
-                        token
-                    });
-                    return { status: 'already_pending' };
+                // Authed subscribe requires a verified account email. We treat
+                // `undefined` as "not verified" so legacy / partial actors fail
+                // safe instead of slipping into the direct-to-active path.
+                if (actor.emailVerified !== true) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Verify your account email before subscribing to the newsletter.',
+                        undefined,
+                        'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED'
+                    );
                 }
 
-                // status === UNSUBSCRIBED → reactivate
+                const now = new Date();
+                const channelVal = validated.channel as 'email' | 'whatsapp';
+
+                if (!row) {
+                    // New subscription — straight to ACTIVE since the account
+                    // email is verified.
+                    const inserted = await db.execute(sql`
+                        INSERT INTO newsletter_subscribers
+                            (user_id, email, channel, status, locale, source,
+                             consent_ip, consent_ua, consent_version,
+                             subscribed_at, verified_at, created_at, updated_at)
+                        VALUES
+                            (${validated.userId}, ${validated.email}, ${validated.channel},
+                             ${NewsletterSubscriberStatusEnum.ACTIVE},
+                             ${validated.locale}, ${validated.source},
+                             ${validated.consentIp ?? null}, ${validated.consentUa ?? null},
+                             ${validated.consentVersion ?? null},
+                             ${now.toISOString()}, ${now.toISOString()},
+                             ${now.toISOString()}, ${now.toISOString()})
+                        RETURNING id
+                    `);
+                    const newId = (inserted.rows[0] as { id: string }).id;
+                    const unsubscribeToken = this._genUnsubscribeToken(newId, channelVal);
+                    await this._sendWelcome({
+                        subscriberId: newId,
+                        email: validated.email,
+                        userId: validated.userId,
+                        locale: validated.locale,
+                        unsubscribeToken
+                    });
+                    return { status: 'active' };
+                }
+
+                const subscriberId = row.id;
+
+                // Pre-existing row in `pending_verification` (typically seeded by
+                // the guest subscribe flow that the user later signed up to) or
+                // `unsubscribed`. Flip it to active in either case.
                 await db.execute(sql`
                     UPDATE newsletter_subscribers
-                    SET status = ${NewsletterSubscriberStatusEnum.PENDING_VERIFICATION},
+                    SET status = ${NewsletterSubscriberStatusEnum.ACTIVE},
+                        verified_at = ${now.toISOString()},
                         unsubscribed_at = NULL,
                         subscribed_at = ${now.toISOString()},
                         updated_at = ${now.toISOString()}
                     WHERE id = ${subscriberId}
                 `);
-                const token = this._genVerificationToken(subscriberId, channelVal);
-                await this._sendVerification({
+                const unsubscribeToken = this._genUnsubscribeToken(subscriberId, channelVal);
+                await this._sendWelcome({
                     subscriberId,
                     email: row.email,
                     userId: validated.userId,
                     locale: row.locale,
-                    token
+                    unsubscribeToken
                 });
-                return { status: 'pending_verification' };
+                return { status: 'active' };
             }
         });
     }

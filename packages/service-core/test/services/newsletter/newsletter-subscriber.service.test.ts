@@ -87,13 +87,17 @@ const USER_ID = '22222222-2222-4222-b222-222222222222';
 const EMAIL = 'user@example.com';
 
 /**
- * Creates an authenticated actor owning USER_ID.
+ * Creates an authenticated actor owning USER_ID. Defaults to
+ * `emailVerified: true` so the common newsletter subscribe path
+ * (direct-to-active for authed verified users) is exercised; tests for the
+ * NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED block override this explicitly.
  */
-function makeOwnerActor(id = USER_ID): Actor {
+function makeOwnerActor(id = USER_ID, options: { emailVerified?: boolean } = {}): Actor {
     return {
         id,
         role: RoleEnum.USER,
-        permissions: []
+        permissions: [],
+        emailVerified: options.emailVerified ?? true
     };
 }
 
@@ -199,8 +203,8 @@ afterEach(() => {
 // ===========================================================================
 
 describe('NewsletterSubscriberService.subscribe', () => {
-    describe('state machine transitions', () => {
-        it('creates a new row and sends verification email when no row exists', async () => {
+    describe('direct-to-active path (emailVerified=true)', () => {
+        it('inserts an active row and sends WELCOME (not verification) when no row exists', async () => {
             const { svc, dispatcher } = makeService();
             const actor = makeOwnerActor();
 
@@ -216,18 +220,24 @@ describe('NewsletterSubscriberService.subscribe', () => {
             });
 
             expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('pending_verification');
-            expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
-            expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+            expect(result.data?.status).toBe('active');
+            expect(dispatcher.sendWelcome).toHaveBeenCalledOnce();
+            expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+
+            // SQL intent: INSERT must persist status=active + verified_at.
+            const insertSql = capturedSqlStrings.find((s) =>
+                s.includes('INSERT INTO newsletter_subscribers')
+            );
+            expect(insertSql).toBeDefined();
+            expect(insertSql).toContain('verified_at');
         });
 
-        it('returns already_pending and re-sends verification when row is pending_verification', async () => {
+        it('flips a pending_verification row to active and sends welcome', async () => {
             const { svc, dispatcher } = makeService();
             const actor = makeOwnerActor();
 
             enqueueResponse([makeSubscriberRow({ status: 'pending_verification' })]);
-            // UPDATE response
-            enqueueResponse([]);
+            enqueueResponse([]); // UPDATE response
 
             const result = await svc.subscribe(actor, {
                 userId: USER_ID,
@@ -235,8 +245,32 @@ describe('NewsletterSubscriberService.subscribe', () => {
             });
 
             expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('already_pending');
-            expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+            expect(result.data?.status).toBe('active');
+            expect(dispatcher.sendWelcome).toHaveBeenCalledOnce();
+            expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+
+            const updateSql = capturedSqlStrings.find((s) =>
+                s.includes('UPDATE newsletter_subscribers')
+            );
+            expect(updateSql).toContain('verified_at');
+        });
+
+        it('reactivates unsubscribed row directly to active and sends welcome', async () => {
+            const { svc, dispatcher } = makeService();
+            const actor = makeOwnerActor();
+
+            enqueueResponse([makeSubscriberRow({ status: 'unsubscribed' })]);
+            enqueueResponse([]); // UPDATE response
+
+            const result = await svc.subscribe(actor, {
+                userId: USER_ID,
+                email: EMAIL
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.status).toBe('active');
+            expect(dispatcher.sendWelcome).toHaveBeenCalledOnce();
+            expect(dispatcher.sendVerification).not.toHaveBeenCalled();
         });
 
         it('returns active (no-op, no email) when row is already active', async () => {
@@ -255,13 +289,72 @@ describe('NewsletterSubscriberService.subscribe', () => {
             expect(dispatcher.sendVerification).not.toHaveBeenCalled();
             expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
         });
+    });
 
-        it('reactivates unsubscribed row to pending_verification and sends verification', async () => {
+    describe('unverified-account-email block (emailVerified !== true)', () => {
+        it('blocks with NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED when no row exists', async () => {
             const { svc, dispatcher } = makeService();
-            const actor = makeOwnerActor();
+            const actor = makeOwnerActor(USER_ID, { emailVerified: false });
 
-            enqueueResponse([makeSubscriberRow({ status: 'unsubscribed' })]);
-            // UPDATE response
+            enqueueResponse([]); // lookup empty
+
+            const result = await svc.subscribe(actor, {
+                userId: USER_ID,
+                email: EMAIL
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe('FORBIDDEN');
+            expect(result.error?.reason).toBe('NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED');
+            expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+            expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+            // Must NOT write anything when the gate fires.
+            expect(
+                capturedSqlStrings.find((s) => s.startsWith('\n                    INSERT'))
+            ).toBeUndefined();
+        });
+
+        it('blocks with NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED when row is pending', async () => {
+            const { svc } = makeService();
+            const actor = makeOwnerActor(USER_ID, { emailVerified: false });
+
+            enqueueResponse([makeSubscriberRow({ status: 'pending_verification' })]);
+
+            const result = await svc.subscribe(actor, {
+                userId: USER_ID,
+                email: EMAIL
+            });
+
+            expect(result.error?.code).toBe('FORBIDDEN');
+            expect(result.error?.reason).toBe('NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED');
+        });
+
+        it('does NOT block when row is already active (active no-op wins over the gate)', async () => {
+            const { svc, dispatcher } = makeService();
+            const actor = makeOwnerActor(USER_ID, { emailVerified: false });
+
+            enqueueResponse([makeSubscriberRow({ status: 'active' })]);
+
+            const result = await svc.subscribe(actor, {
+                userId: USER_ID,
+                email: EMAIL
+            });
+
+            // Already subscribed — no error, no welcome resend.
+            expect(result.error).toBeUndefined();
+            expect(result.data?.status).toBe('active');
+            expect(dispatcher.sendWelcome).not.toHaveBeenCalled();
+        });
+
+        it('treats emailVerified=undefined as not verified (safe default)', async () => {
+            const { svc } = makeService();
+            // Force-strip emailVerified to mimic a legacy actor.
+            const actor: Actor = {
+                id: USER_ID,
+                role: RoleEnum.USER,
+                permissions: []
+            };
+
             enqueueResponse([]);
 
             const result = await svc.subscribe(actor, {
@@ -269,12 +362,12 @@ describe('NewsletterSubscriberService.subscribe', () => {
                 email: EMAIL
             });
 
-            expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('pending_verification');
-            expect(dispatcher.sendVerification).toHaveBeenCalledOnce();
+            expect(result.error?.reason).toBe('NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED');
         });
+    });
 
-        it('blocks re-subscribe when row is bounced', async () => {
+    describe('terminal blocks (bounced / complained beat every other gate)', () => {
+        it('blocks re-subscribe when row is bounced (even with verified email)', async () => {
             const { svc } = makeService();
             const actor = makeOwnerActor();
 
@@ -303,6 +396,20 @@ describe('NewsletterSubscriberService.subscribe', () => {
 
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe('FORBIDDEN');
+            expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_BLOCKED');
+        });
+
+        it('bounced beats unverified-email gate too', async () => {
+            const { svc } = makeService();
+            const actor = makeOwnerActor(USER_ID, { emailVerified: false });
+
+            enqueueResponse([makeSubscriberRow({ status: 'bounced' })]);
+
+            const result = await svc.subscribe(actor, {
+                userId: USER_ID,
+                email: EMAIL
+            });
+
             expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_BLOCKED');
         });
     });

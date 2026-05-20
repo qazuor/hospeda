@@ -86,6 +86,16 @@ export type Actor = {
      */
     email?: string;
     /**
+     * Whether the actor's account email is verified. Mirrors
+     * `users.email_verified` populated by Better Auth on signup / verification
+     * link click. Optional because guests and system actors have no notion of
+     * email verification; callers MUST treat `undefined` as "not verified"
+     * (safe default). Consumed by `NewsletterSubscriberService.subscribe` to
+     * branch between direct-to-active (verified) and the
+     * `NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED` block (unverified).
+     */
+    emailVerified?: boolean;
+    /**
      * Avatar URL of the actor — mirrors `users.image`. Better Auth
      * auto-populates this from the OAuth provider on signin (Google `picture`
      * claim, Facebook profile photo). Optional because users without an
