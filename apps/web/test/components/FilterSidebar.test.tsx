@@ -834,3 +834,143 @@ describe('FilterSidebar — section-header decorative entry', () => {
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// Tests: icon-chips `priorityOptions` (quick-filter chips)
+//
+// `priorityOptions` are highlighted "shortcut" chips rendered ABOVE the
+// regular icon-chips list. Each chip emits an independent boolean URL param
+// (e.g. `hasWifi=true`) and is reset by the per-group "× reset" button via
+// the `extraToggleKeys` field on `CLEAR_GROUP`. The accommodations listing
+// is the only consumer today; coverage protects the wiring against silent
+// regressions during future refactors of the filter system.
+// ---------------------------------------------------------------------------
+
+const amenitiesWithPriority: FilterGroup = {
+    id: 'amenities',
+    label: 'Comodidades',
+    type: 'icon-chips',
+    options: [
+        { value: 'desayuno', label: 'Desayuno' },
+        { value: 'aire-acondicionado', label: 'Aire acondicionado' },
+        { value: 'tv', label: 'TV' }
+    ],
+    priorityOptions: [
+        { value: 'hasWifi', label: 'Wi-Fi' },
+        { value: 'hasPool', label: 'Pileta' },
+        { value: 'hasParking', label: 'Estacionamiento' },
+        { value: 'allowsPets', label: 'Acepta mascotas' }
+    ]
+};
+
+describe('FilterSidebar — icon-chips priorityOptions', () => {
+    it('renders a separate priority fieldset above the regular chip list', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — the priority fieldset is announced with a "… — destacados"
+        // aria-label so screen reader users can distinguish the two regions.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        expect(priorityFieldset).not.toBeNull();
+    });
+
+    it('renders each priorityOption as a button with aria-pressed', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — each priority chip is a button carrying aria-pressed (the
+        // toggle state). The pressed state is `"false"` when the URL has no
+        // matching boolean param.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        const buttons = priorityFieldset?.querySelectorAll('button[aria-pressed]') ?? [];
+        const labels = Array.from(buttons).map((b) => b.textContent?.trim());
+        expect(labels).toContain('Wi-Fi');
+        expect(labels).toContain('Pileta');
+        expect(labels).toContain('Estacionamiento');
+        expect(labels).toContain('Acepta mascotas');
+        for (const btn of buttons) {
+            expect(btn).toHaveAttribute('aria-pressed', 'false');
+        }
+    });
+
+    it('marks a priority chip aria-pressed=true when its URL boolean is set', () => {
+        // Arrange — hydrate the sidebar from a URL like `?hasWifi=true`. Per
+        // the reducer (`initStateFromParams`), each priority chip's `value`
+        // is the URL param name and `'true'` flips the toggle on.
+        const { container } = render(
+            <FilterSidebar
+                {...buildProps({
+                    filters: [amenitiesWithPriority],
+                    initialParams: { hasWifi: 'true' }
+                })}
+            />
+        );
+
+        // Assert — only the Wi-Fi chip is pressed; the rest stay unpressed.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        const buttons = priorityFieldset?.querySelectorAll('button[aria-pressed]') ?? [];
+        const byLabel = new Map<string, Element>();
+        for (const btn of buttons) byLabel.set(btn.textContent?.trim() ?? '', btn);
+        expect(byLabel.get('Wi-Fi')).toHaveAttribute('aria-pressed', 'true');
+        expect(byLabel.get('Pileta')).toHaveAttribute('aria-pressed', 'false');
+        expect(byLabel.get('Estacionamiento')).toHaveAttribute('aria-pressed', 'false');
+        expect(byLabel.get('Acepta mascotas')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('renders priority chips BEFORE the regular icon-chips list in DOM order', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — the priority fieldset is positioned ahead of the regular
+        // chip group in document order so users see shortcuts first.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        // The regular icon-chips list lives inside the .chipGroup wrapper
+        // emitted by IconChipsFilter (mocked CSS module returns the class
+        // name verbatim).
+        const regularChipGroup = desktopSidebar?.querySelector('.chipGroup');
+        expect(priorityFieldset).not.toBeNull();
+        expect(regularChipGroup).not.toBeNull();
+        if (priorityFieldset && regularChipGroup) {
+            const cmp = priorityFieldset.compareDocumentPosition(regularChipGroup);
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
+    });
+
+    it('counts priority chips alongside regular selections in the group badge', () => {
+        // Arrange — pre-select one regular chip (`desayuno`) AND flip one
+        // priority chip on (`hasWifi=true`). The badge next to the group
+        // toggle should read "2" (1 priority + 1 regular). `groupActiveCount`
+        // sums both sources for icon-chips groups.
+        const { container } = render(
+            <FilterSidebar
+                {...buildProps({
+                    filters: [amenitiesWithPriority],
+                    initialParams: { amenities: 'desayuno', hasWifi: 'true' }
+                })}
+            />
+        );
+
+        // Assert
+        const toggleBtn = container.querySelector('button[id="filter-amenities"]');
+        expect(toggleBtn).not.toBeNull();
+        expect(toggleBtn?.textContent).toMatch(/Comodidades.*2/);
+    });
+});
