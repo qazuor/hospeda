@@ -70,6 +70,33 @@ type FieldErrors = Readonly<{
 
 type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
 
+/**
+ * Force Better Auth to re-read the session from the database and rotate its
+ * cookie cache. Required after the onboarding endpoint promotes the user
+ * USER → HOST in DB: without this call, the cached session cookie still
+ * carries `role=USER` for up to 5 minutes (Better Auth's default
+ * `cookieCache.maxAge`), and the admin guard would route the freshly
+ * promoted host straight to `/auth/forbidden`.
+ *
+ * See:
+ *   https://better-auth.com/docs/concepts/session-management
+ *     → "Disable Cookie Cache"
+ *
+ * Best-effort: errors are swallowed so a network blip on this call does not
+ * block the post-submit redirect.
+ */
+async function refreshSessionFromDatabase(apiUrl: string): Promise<void> {
+    try {
+        await fetch(`${apiUrl.replace(/\/$/, '')}/api/auth/get-session?disableCookieCache=true`, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+    } catch {
+        // Non-fatal: the admin guard will still resolve correctly once the
+        // 5-minute cookie cache expires.
+    }
+}
+
 type OnboardingStartResponse = {
     readonly data?: {
         readonly status: OnboardingStartStatus;
@@ -208,21 +235,28 @@ export function CreatePropertyMiniForm({
                 return;
             }
 
-            // Users without admin panel access (plain HOST role) cannot
-            // open /admin/* — they would land on /auth/forbidden. Send
-            // them to the web property list instead.
-            if (!canAccessAdminPanel) {
-                window.location.href = accountPropertiesUrl;
+            const adminBase = adminUrl.replace(/\/$/, '');
+
+            // `already_host`: the user already held a privileged role before
+            // this submit, so the pre-submit `canAccessAdminPanel` flag is
+            // still accurate. No session refresh is needed because nothing
+            // changed in the user's role / permissions.
+            if (data.status === 'already_host') {
+                window.location.href = canAccessAdminPanel
+                    ? `${adminBase}/accommodations`
+                    : accountPropertiesUrl;
                 return;
             }
 
-            const adminBase = adminUrl.replace(/\/$/, '');
-            // Branch on status: created/resumed go to the edit page, already_host
-            // goes to the admin home where the user creates listings normally.
-            if (data.status === 'already_host') {
-                window.location.href = `${adminBase}/accommodations`;
-                return;
-            }
+            // `created` / `resumed`: the endpoint just promoted the user
+            // USER → HOST atomically with the draft creation. Better Auth's
+            // cookie cache still carries the pre-promotion `role=USER` for
+            // up to 5 minutes, so we force a session refresh from the DB
+            // before redirecting to the admin. Otherwise the admin guard
+            // would read the stale cookie and bounce the host to
+            // `/auth/forbidden?reason=host-missing-permission`.
+            await refreshSessionFromDatabase(apiUrl);
+
             if (!data.accommodationId) {
                 setSubmitError(
                     t(

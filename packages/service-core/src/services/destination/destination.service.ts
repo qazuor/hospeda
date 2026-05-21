@@ -212,6 +212,7 @@ export class DestinationService extends BaseCrudService<
         page: number;
         pageSize: number;
         q?: string;
+        searchScope?: 'all' | 'name';
         country?: string;
         state?: string;
         city?: string;
@@ -227,6 +228,7 @@ export class DestinationService extends BaseCrudService<
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q,
+            searchScope,
             country,
             state,
             city,
@@ -271,6 +273,7 @@ export class DestinationService extends BaseCrudService<
             page,
             pageSize,
             q,
+            searchScope,
             country,
             state,
             city,
@@ -295,6 +298,7 @@ export class DestinationService extends BaseCrudService<
     ) {
         const {
             q,
+            searchScope,
             country,
             state,
             city,
@@ -330,12 +334,17 @@ export class DestinationService extends BaseCrudService<
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
-        // Build optional ILIKE search condition over getSearchableColumns()
-        // (name + description). Used by the city autocomplete picker.
+        // Build optional ILIKE search condition. The columns it runs against
+        // depend on `searchScope`: 'name' restricts the match to the name
+        // column (used by the city autocomplete picker so descriptions that
+        // reference a nearby city don't pollute suggestions); 'all' (default)
+        // keeps the legacy behavior over `getSearchableColumns()` so generic
+        // browse pages can match descriptive text.
         const trimmedQ = q?.trim();
+        const searchColumns = searchScope === 'name' ? ['name'] : this.getSearchableColumns();
         const searchCondition =
             trimmedQ && trimmedQ.length > 0
-                ? buildSearchCondition(trimmedQ, this.getSearchableColumns(), this.model.getTable())
+                ? buildSearchCondition(trimmedQ, searchColumns, this.model.getTable())
                 : undefined;
         const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
@@ -354,11 +363,11 @@ export class DestinationService extends BaseCrudService<
             }
             if (trimmedQ && trimmedQ.length > 0) {
                 const needle = trimmedQ.toLowerCase();
-                filtered = filtered.filter(
-                    (d) =>
-                        d.name?.toLowerCase().includes(needle) ||
-                        d.description?.toLowerCase().includes(needle)
-                );
+                filtered = filtered.filter((d) => {
+                    if (d.name?.toLowerCase().includes(needle)) return true;
+                    if (searchScope === 'name') return false;
+                    return d.description?.toLowerCase().includes(needle) ?? false;
+                });
             }
             // Manual pagination
             const total = filtered.length;

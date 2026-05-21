@@ -408,7 +408,19 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         plugins: [
             admin({
-                defaultRole: RoleEnum.HOST,
+                // Default role for new sign-ups. Tourist (USER) is the safer
+                // assumption because the public web is where the vast majority
+                // of organic sign-ups happen, and permissions are gated by
+                // `access.panelAdmin` (only HOST/ADMIN/SUPER_ADMIN have it).
+                // Hosts who sign up from the admin form do NOT auto-promote
+                // here — they go through the host-onboarding funnel on first
+                // publish, which atomically flips them to HOST + grants admin
+                // panel access. Investigating an Origin-based discriminator
+                // turned out to be more invasive than expected (Better Auth's
+                // databaseHooks do not fire under this setup; the input
+                // validator rejects `role` on the sign-up body), so we keep
+                // the default explicit and document the trade-off here.
+                defaultRole: RoleEnum.USER,
                 adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
                 roles: {
                     SUPER_ADMIN: fullAdminRole,

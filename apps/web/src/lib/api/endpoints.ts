@@ -386,6 +386,12 @@ export const destinationsApi = {
         page?: number;
         pageSize?: number;
         q?: string;
+        /**
+         * Restricts the columns the `q` text search runs against. 'name'
+         * matches only the destination name; 'all' (default) matches name +
+         * description. The city autocomplete picker uses 'name'.
+         */
+        searchScope?: 'all' | 'name';
         isFeatured?: boolean;
         country?: string;
         state?: string;

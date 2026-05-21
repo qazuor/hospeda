@@ -51,7 +51,14 @@ export const DestinationSearchHttpSchema = BaseHttpSearchSchema.extend({
     parentDestinationId: z.string().uuid().optional(),
     destinationType: DestinationTypeEnumSchema.optional(),
     level: z.coerce.number().int().min(0).max(6).optional(),
-    ancestorId: z.string().uuid().optional()
+    ancestorId: z.string().uuid().optional(),
+
+    // Search scope: limits the columns the `q` text search runs against.
+    // 'all' (default) keeps the legacy behavior (name + description);
+    // 'name' restricts the match to the destination name only — used by the
+    // city autocomplete picker so descriptions referencing other cities
+    // don't pollute the suggestions.
+    searchScope: z.enum(['all', 'name']).optional()
 });
 
 export type DestinationSearchHttp = z.infer<typeof DestinationSearchHttpSchema>;
@@ -134,7 +141,11 @@ export const httpToDomainDestinationSearch = (
     // SPEC-095: forward destinationType so the public list endpoint can
     // filter by hierarchy level (e.g. ?destinationType=CITY for the property
     // form's city autocomplete).
-    destinationType: httpParams.destinationType
+    destinationType: httpParams.destinationType,
+
+    // Forward the search scope so the picker can restrict `q` to the name
+    // column only (default is name + description).
+    searchScope: httpParams.searchScope
 
     // Note: hasAttractions, climate, bestSeason exist in HTTP schema but
     // may not exist in domain search schema - these are handled by the service layer

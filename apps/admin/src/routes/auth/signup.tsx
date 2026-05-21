@@ -1,5 +1,5 @@
+import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
-import { signUp } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -60,14 +60,24 @@ function SignUpPage(): React.JSX.Element {
         setIsSubmitting(true);
 
         try {
-            const result = await signUp.email({
-                email,
-                password,
-                name
+            // Sign-ups from the admin panel hit the dedicated server endpoint
+            // /api/v1/public/auth/signup-as-host instead of Better Auth's
+            // default /sign-up/email so the new user is created with
+            // role=HOST. The server enforces this by checking the Origin
+            // header against HOSPEDA_ADMIN_URL — only requests from the
+            // admin can reach this path.
+            const apiBase = env.VITE_API_URL.replace(/\/$/, '');
+            const response = await fetch(`${apiBase}/api/v1/public/auth/signup-as-host`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, name })
             });
 
-            if (result.error) {
-                setFormError(result.error.message || 'Sign up failed');
+            if (!response.ok) {
+                const body = await response.json().catch(() => null);
+                const apiError = (body as { error?: { message?: string } } | null)?.error;
+                setFormError(apiError?.message ?? 'Sign up failed');
                 return;
             }
 
