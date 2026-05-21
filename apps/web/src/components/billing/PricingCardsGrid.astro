@@ -32,8 +32,6 @@ interface Props {
 	readonly emptyMessage: string;
 	readonly emptyActionUrl: string;
 	readonly emptyActionLabel: string;
-	/** Currency period label rendered next to the price (e.g. "/mes"). */
-	readonly periodLabel: string;
 	/** CTA button text on each card. */
 	readonly ctaText: string;
 }
@@ -47,12 +45,18 @@ const {
 	emptyMessage,
 	emptyActionUrl,
 	emptyActionLabel,
-	periodLabel,
 	ctaText,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
 const hasPlans = plans.length > 0;
+
+// Annual toggle: only render the UI when at least one plan in the grid has
+// an annual price configured. If every plan is monthly-only, the toggle is
+// a no-op surface that just adds clutter.
+const hasAnyAnnualPrice = plans.some(
+	(plan) => plan.annualPriceArs !== null && plan.annualPriceArs > 0
+);
 
 const recommendedLabel = t('pricing.recommended', 'Recomendado');
 const featuresLabel = t('pricing.features.label', 'Incluye');
@@ -61,6 +65,31 @@ const includesEverythingTemplate = t(
 	'pricing.includesEverything',
 	'Todo lo del plan {plan}, más:'
 );
+const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
+const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
+const toggleAriaLabel = t(
+	'pricing.toggle.ariaLabel',
+	'Elegí la frecuencia de facturación'
+);
+const annualSavingTemplate = t('pricing.toggle.annualSaving', 'Ahorrá {percent}%');
+const periodMonthLabel = t('pricing.period.month', '/mes');
+const periodYearLabel = t('pricing.period.year', '/año');
+const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
+
+/**
+ * Compute the per-plan annual saving percentage. Returns null when the
+ * plan has no annual price (saving label gets hidden) or when the
+ * annual price is greater than 12 monthly cycles (saving would be
+ * negative — bad config, hide the label).
+ */
+function computeAnnualSavingPercent(plan: PlanDefinition): number | null {
+	if (plan.annualPriceArs === null || plan.annualPriceArs <= 0) return null;
+	if (plan.monthlyPriceArs <= 0) return null;
+	const yearAtMonthly = plan.monthlyPriceArs * 12;
+	if (plan.annualPriceArs >= yearAtMonthly) return null;
+	const saving = (yearAtMonthly - plan.annualPriceArs) / yearAtMonthly;
+	return Math.round(saving * 100);
+}
 
 /**
  * Compute the entitlements that this plan adds on top of the previous tier.
@@ -102,8 +131,32 @@ function formatPriceArs(cents: number): string {
 }
 ---
 
-<div class="pricing-cards__container">
+<div class="pricing-cards__container" data-billing="monthly">
 	<h2 class="sr-only">{sectionHeading}</h2>
+
+	{hasPlans && hasAnyAnnualPrice && (
+		<div class="pricing-toggle" role="radiogroup" aria-label={toggleAriaLabel}>
+			<button
+				type="button"
+				class="pricing-toggle__option pricing-toggle__option--active"
+				data-pricing-toggle="monthly"
+				role="radio"
+				aria-checked="true"
+			>
+				{toggleMonthlyLabel}
+			</button>
+			<button
+				type="button"
+				class="pricing-toggle__option"
+				data-pricing-toggle="annual"
+				role="radio"
+				aria-checked="false"
+			>
+				{toggleAnnualLabel}
+			</button>
+		</div>
+	)}
+
 	{!hasPlans ? (
 		<EmptyState
 			locale={locale}
@@ -116,10 +169,20 @@ function formatPriceArs(cents: number): string {
 		<div class="pricing-cards__grid">
 			{plans.map((plan, i) => {
 				const isHighlighted = plan.slug === highlightedSlug;
-				const formattedPrice =
+				const monthlyFormatted =
 					plan.monthlyPriceArs === 0
 						? t('pricing.free', 'Gratis')
 						: formatPriceArs(plan.monthlyPriceArs);
+				const hasAnnualPrice =
+					plan.annualPriceArs !== null && plan.annualPriceArs > 0;
+				const annualFormatted = hasAnnualPrice
+					? formatPriceArs(plan.annualPriceArs as number)
+					: '';
+				const savingPercent = computeAnnualSavingPercent(plan);
+				const savingLabel =
+					savingPercent !== null
+						? annualSavingTemplate.replace('{percent}', String(savingPercent))
+						: '';
 				const previousPlan = i > 0 ? plans[i - 1] : undefined;
 				const visibleEntitlements = computeAddedEntitlements({ plan, previous: previousPlan });
 				const showsIncremental = i > 0 && visibleEntitlements !== plan.entitlements;
@@ -137,13 +200,43 @@ function formatPriceArs(cents: number): string {
 						<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
 						<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>
 						<div class="pricing-card__price">
-							<span class="pricing-card__amount">{formattedPrice}</span>
+							{/*
+								Render both prices in the markup and let CSS toggle visibility
+								based on the ancestor's data-billing attribute. Avoids shipping
+								an island for the price display; the React PlanPurchaseButton
+								below reads the same data attribute when forming the checkout
+								payload.
+							*/}
+							<span class="pricing-card__amount pricing-card__amount--monthly">
+								{monthlyFormatted}
+							</span>
 							{plan.monthlyPriceArs > 0 && (
-								<span class="pricing-card__period">{periodLabel}</span>
+								<span class="pricing-card__period pricing-card__period--monthly">
+									{periodMonthLabel}
+								</span>
+							)}
+							{hasAnnualPrice ? (
+								<>
+									<span class="pricing-card__amount pricing-card__amount--annual">
+										{annualFormatted}
+									</span>
+									<span class="pricing-card__period pricing-card__period--annual">
+										{periodYearLabel}
+									</span>
+									{savingLabel && (
+										<span class="pricing-card__saving pricing-card__saving--annual">
+											{savingLabel}
+										</span>
+									)}
+								</>
+							) : (
+								<span class="pricing-card__amount pricing-card__amount--annual pricing-card__monthly-only">
+									{monthlyOnlyLabel}
+								</span>
 							)}
 						</div>
 						{plan.hasTrial && plan.trialDays > 0 && (
-							<p class="pricing-card__trial">
+							<p class="pricing-card__trial pricing-card__trial--monthly">
 								{trialFallback.replace('{days}', String(plan.trialDays))}
 							</p>
 						)}
@@ -198,7 +291,8 @@ function formatPriceArs(cents: number): string {
 							<PlanPurchaseButton
 								client:load
 								planSlug={plan.slug}
-								price={plan.monthlyPriceArs}
+								monthlyPrice={plan.monthlyPriceArs}
+								annualPrice={plan.annualPriceArs ?? null}
 								currency="ARS"
 								ctaText={ctaText}
 								locale={locale}
@@ -374,4 +468,122 @@ function formatPriceArs(cents: number): string {
 			transform: translateY(-4px);
 		}
 	}
+
+	/* ─── Toggle UI ────────────────────────────────────────────────── */
+	.pricing-toggle {
+		display: inline-flex;
+		gap: 0;
+		margin: 0 auto var(--space-6);
+		background-color: var(--surface-warm);
+		border-radius: var(--radius-pill);
+		padding: var(--space-1);
+		position: relative;
+		justify-self: center;
+		align-self: center;
+	}
+	.pricing-cards__container .pricing-toggle {
+		margin-left: auto;
+		margin-right: auto;
+		display: flex;
+		max-width: max-content;
+	}
+	.pricing-toggle__option {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-muted-foreground);
+		background-color: transparent;
+		border: none;
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-pill);
+		cursor: pointer;
+		transition: background-color var(--duration-normal) ease,
+			color var(--duration-normal) ease;
+	}
+	.pricing-toggle__option:hover {
+		color: var(--core-foreground);
+	}
+	.pricing-toggle__option--active {
+		background-color: var(--core-card);
+		color: var(--brand-accent);
+		box-shadow: var(--shadow-card);
+	}
+	.pricing-toggle__option:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+	}
+
+	/* ─── Dual price visibility ──────────────────────────────────────
+	   The grid container carries `data-billing="monthly"|"annual"`. The
+	   toggle script (below) flips it on user interaction. Cards render
+	   both monthly and annual price spans; CSS hides the inactive set.
+	   This keeps the toggle as zero-cost SSG markup — the React island
+	   below (PlanPurchaseButton) reads the same attribute on click to
+	   send the right `billingInterval` to /start-paid.
+	 */
+	.pricing-card__amount--annual,
+	.pricing-card__period--annual,
+	.pricing-card__saving--annual {
+		display: none;
+	}
+	[data-billing='annual'] .pricing-card__amount--monthly,
+	[data-billing='annual'] .pricing-card__period--monthly,
+	[data-billing='annual'] .pricing-card__trial--monthly {
+		display: none;
+	}
+	[data-billing='annual'] .pricing-card__amount--annual,
+	[data-billing='annual'] .pricing-card__period--annual,
+	[data-billing='annual'] .pricing-card__saving--annual {
+		display: inline;
+	}
+	.pricing-card__saving {
+		display: block;
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		font-weight: 600;
+		color: var(--success, var(--brand-accent));
+		margin-top: var(--space-1);
+	}
+	.pricing-card__monthly-only {
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		font-style: italic;
+		font-weight: 400;
+	}
 </style>
+
+<script>
+	/**
+	 * Vanilla JS toggle for monthly / annual billing interval. Lives outside
+	 * any React island so the grid stays SSG-friendly (no hydration cost).
+	 * Updates the closest `.pricing-cards__container` data-billing attribute;
+	 * CSS handles all visual changes for the cards, and the React
+	 * PlanPurchaseButton island observes the attribute via MutationObserver
+	 * to keep the displayed checkout price + the /start-paid payload in
+	 * sync. Pattern documented inline in PlanPurchaseButton.client.tsx.
+	 */
+	function initPricingToggle(container: HTMLElement): void {
+		const options = container.querySelectorAll<HTMLButtonElement>(
+			'[data-pricing-toggle]'
+		);
+		if (options.length === 0) return;
+		const setActive = (interval: 'monthly' | 'annual'): void => {
+			container.setAttribute('data-billing', interval);
+			for (const opt of options) {
+				const isActive = opt.dataset.pricingToggle === interval;
+				opt.classList.toggle('pricing-toggle__option--active', isActive);
+				opt.setAttribute('aria-checked', String(isActive));
+			}
+		};
+		for (const opt of options) {
+			opt.addEventListener('click', () => {
+				const interval = opt.dataset.pricingToggle === 'annual' ? 'annual' : 'monthly';
+				setActive(interval);
+			});
+		}
+	}
+
+	document.querySelectorAll<HTMLElement>('.pricing-cards__container[data-billing]').forEach(
+		(container) => initPricingToggle(container)
+	);
+</script>

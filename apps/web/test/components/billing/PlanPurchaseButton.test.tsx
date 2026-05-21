@@ -72,8 +72,11 @@ type MockUseSession = ReturnType<typeof vi.fn>;
 
 /** Default props used across most tests. */
 const defaultProps = {
-    planId: 'plan_starter',
-    price: 1200,
+    planSlug: 'plan_starter',
+    // 120000 cents = $1200 ARS — formatPrice divides by 100 internally
+    // to convert to the major-unit display value.
+    monthlyPrice: 120000,
+    annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const
@@ -645,7 +648,7 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    planId="plan_pro"
+                    planSlug="plan_pro"
                 />
             );
 
@@ -655,10 +658,13 @@ describe('PlanPurchaseButton', () => {
                 expect(fetchMock).toHaveBeenCalled();
             });
 
-            // Assert — body contains planId from props
+            // Assert — body contains planSlug + billingInterval (default 'monthly')
             const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
-            const body = JSON.parse(requestInit.body as string) as { planId: string };
-            expect(body).toEqual({ planId: 'plan_pro' });
+            const body = JSON.parse(requestInit.body as string) as {
+                planSlug: string;
+                billingInterval: string;
+            };
+            expect(body).toEqual({ planSlug: 'plan_pro', billingInterval: 'monthly' });
         });
 
         it('sends POST method with Content-Type application/json', async () => {
@@ -780,7 +786,9 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    price={1200}
+                    // 120000 cents = $1200 ARS; the component divides by 100
+                    // for display.
+                    monthlyPrice={120000}
                     currency="ARS"
                 />
             );
@@ -795,7 +803,8 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    price={12}
+                    // 1200 cents = $12 USD
+                    monthlyPrice={1200}
                     currency="USD"
                 />
             );
@@ -811,7 +820,7 @@ describe('PlanPurchaseButton', () => {
                 <PlanPurchaseButton
                     {...defaultProps}
                     ctaText="Contratar"
-                    price={1200}
+                    monthlyPrice={120000}
                     currency="ARS"
                 />
             );
