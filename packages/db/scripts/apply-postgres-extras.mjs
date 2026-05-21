@@ -12,9 +12,10 @@
 //
 // Usage:
 //   HOSPEDA_DATABASE_URL='postgresql://...' node packages/db/scripts/apply-postgres-extras.mjs
+//   node packages/db/scripts/apply-postgres-extras.mjs 'postgresql://user:pass@host:5432/db'
 // =============================================================================
 import 'dotenv/config';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pkg from 'pg';
@@ -23,11 +24,41 @@ const { Client } = pkg;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MANUAL_DIR = resolve(__dirname, '..', 'src', 'migrations', 'manual');
+const API_ENV_LOCAL = resolve(__dirname, '..', '..', '..', 'apps', 'api', '.env.local');
+
+/**
+ * Resolve the database URL, mirroring the legacy .sh behavior:
+ *   1. First CLI argument
+ *   2. HOSPEDA_DATABASE_URL or DATABASE_URL from the environment
+ *   3. HOSPEDA_DATABASE_URL from apps/api/.env.local (canonical per SPEC-035)
+ */
+function resolveDatabaseUrl() {
+    if (process.argv[2]) return process.argv[2];
+    if (process.env.HOSPEDA_DATABASE_URL) return process.env.HOSPEDA_DATABASE_URL;
+    if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
+    if (existsSync(API_ENV_LOCAL)) {
+        const contents = readFileSync(API_ENV_LOCAL, 'utf8');
+        for (const line of contents.split('\n')) {
+            const match = line.match(/^\s*HOSPEDA_DATABASE_URL\s*=\s*(.+?)\s*$/);
+            if (match) {
+                return match[1].replace(/^["']|["']$/g, '');
+            }
+        }
+    }
+
+    return undefined;
+}
 
 async function main() {
-    const url = process.env.HOSPEDA_DATABASE_URL ?? process.env.DATABASE_URL;
+    const url = resolveDatabaseUrl();
     if (!url) {
-        console.error('ERROR: HOSPEDA_DATABASE_URL or DATABASE_URL must be set');
+        console.error(
+            'ERROR: No database URL provided.\n' +
+                '  Set HOSPEDA_DATABASE_URL or DATABASE_URL in your environment,\n' +
+                '  define it in apps/api/.env.local,\n' +
+                '  or pass the URL as the first CLI argument.'
+        );
         process.exit(1);
     }
 
