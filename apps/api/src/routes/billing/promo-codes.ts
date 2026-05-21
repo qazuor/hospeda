@@ -409,17 +409,29 @@ export const applyPromoCodeRoute = createProtectedRoute({
 });
 
 /**
- * Promo codes router
+ * Admin promo codes router
  *
- * Combines all promo code routes
+ * Bundles the 5 admin-only verbs (list/create/get/update/delete). Mounted by
+ * `apps/api/src/routes/billing/admin/index.ts` under `/api/v1/admin/billing/
+ * promo-codes` so the admin app calls the proper `/admin/*` tier per
+ * project convention.
  */
-export const promoCodesRouter = createRouter();
+export const adminPromoCodesRouter = createRouter();
 
-// Mount all routes
-promoCodesRouter.route('/', listPromoCodesRoute);
-promoCodesRouter.route('/', createPromoCodeRoute);
-promoCodesRouter.route('/', getPromoCodeRoute);
-promoCodesRouter.route('/', updatePromoCodeRoute);
-promoCodesRouter.route('/', deletePromoCodeRoute);
-promoCodesRouter.route('/', validatePromoCodeRoute);
-promoCodesRouter.route('/', applyPromoCodeRoute);
+adminPromoCodesRouter.route('/', listPromoCodesRoute);
+adminPromoCodesRouter.route('/', createPromoCodeRoute);
+adminPromoCodesRouter.route('/', getPromoCodeRoute);
+adminPromoCodesRouter.route('/', updatePromoCodeRoute);
+adminPromoCodesRouter.route('/', deletePromoCodeRoute);
+
+/**
+ * User-facing promo codes router
+ *
+ * Bundles the 2 user-self verbs (validate/apply). Mounted by
+ * `apps/api/src/routes/billing/index.ts` under
+ * `/api/v1/protected/billing/promo-codes`.
+ */
+export const userPromoCodesRouter = createRouter();
+
+userPromoCodesRouter.route('/', validatePromoCodeRoute);
+userPromoCodesRouter.route('/', applyPromoCodeRoute);

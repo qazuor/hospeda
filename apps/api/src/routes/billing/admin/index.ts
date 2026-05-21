@@ -31,6 +31,7 @@ import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-lim
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
 import { notificationsRouter } from '../notifications';
+import { adminPromoCodesRouter } from '../promo-codes';
 import { settingsRouter } from '../settings';
 import { adminAddonsRouter } from './addons';
 import {
@@ -144,6 +145,13 @@ app.route('/addons', adminAddonsRouter);
 
 // GET /plans, /plans/:id - Hospeda plan view (admin only)
 app.route('/plans', adminPlansRouter);
+
+// GET/POST/PUT/DELETE /promo-codes - Hospeda promo code catalog (admin only).
+// User-self verbs (validate, apply) stay under /protected/billing/promo-codes.
+// Mounted BEFORE the qzpay admin tier so this Hospeda-specific implementation
+// wins over qzpay-hono's read-only `/admin/promo-codes` GET (which would
+// otherwise shadow our richer list with audit log + livemode handling).
+app.route('/promo-codes', adminPromoCodesRouter);
 
 // ── QZPay admin tier (mounted LAST; covers everything custom routes don't) ──
 

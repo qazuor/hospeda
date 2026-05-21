@@ -36,7 +36,7 @@ import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
-import { promoCodesRouter } from './promo-codes';
+import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
@@ -182,8 +182,9 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     qzpayWrapper.route('/', qzpayRoutes);
     router.route('/', qzpayWrapper);
 
-    // Mount custom promo code routes
-    router.route('/promo-codes', promoCodesRouter);
+    // Mount user-facing promo code routes (validate + apply).
+    // Admin promo code CRUD is mounted separately under /admin/billing/promo-codes.
+    router.route('/promo-codes', userPromoCodesRouter);
 
     // Mount custom add-on routes
     router.route('/addons', addonsRouter);
