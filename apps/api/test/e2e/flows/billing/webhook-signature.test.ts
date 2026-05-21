@@ -4,10 +4,11 @@
  * Validates that `apps/api/src/middlewares/webhook-signature.ts` rejects
  * every malformed-signature shape MercadoPago could realistically deliver
  * before any downstream dispatch runs. The middleware computes an
- * HMAC-SHA256 over `id:<data.id>;request-id:<ts>;ts:<ts>;` keyed on
- * `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`, parses `x-signature` for the
- * `ts=…,v1=…` pair, enforces a 5-minute timestamp tolerance, and
- * compares the recomputed v1 against the supplied one in constant time.
+ * HMAC-SHA256 over `id:<dataId>;request-id:<requestId>;ts:<ts>;` (per MP
+ * docs) keyed on `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`, parses `x-signature`
+ * for the `ts=…,v1=…` pair, requires the `x-request-id` header, enforces a
+ * 5-minute timestamp tolerance, and compares the recomputed v1 against the
+ * supplied one in constant time.
  *
  * Rejection branches pinned by this test:
  *

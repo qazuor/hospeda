@@ -74,6 +74,32 @@ async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     return plansResult.data.find((p) => p.name === planSlug) ?? null;
 }
 
+/**
+ * Get the human-facing display name for a plan, falling back to the slug
+ * when no display name is configured.
+ *
+ * Hospeda stores the slug as `billing_plans.name` (the QZPay-facing lookup
+ * key) and the human label in `billing_plans.metadata.displayName` (set by
+ * the seed from `PlanDefinition.name`). MercadoPago shows whatever string we
+ * pass as the line-item title to the buyer, so this helper centralises the
+ * "prefer display name, fall back to slug" rule used by every checkout
+ * builder in this file. Slugs like `owner-basico` look bad in the MP
+ * checkout screen — display names like `Basic` are what we want.
+ */
+function getPlanDisplayName(plan: { readonly name: string; readonly metadata?: unknown }): string {
+    if (
+        typeof plan.metadata === 'object' &&
+        plan.metadata !== null &&
+        'displayName' in plan.metadata
+    ) {
+        const displayName = (plan.metadata as Record<string, unknown>).displayName;
+        if (typeof displayName === 'string' && displayName.length > 0) {
+            return displayName;
+        }
+    }
+    return plan.name;
+}
+
 interface PriceShape {
     id: string;
     billingInterval: string;
@@ -428,7 +454,7 @@ export async function initiatePaidAnnualSubscription(
                 unitAmount: annualPrice.unitAmount,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${plan.name} (Annual)`,
+                title: `${getPlanDisplayName(plan)} (Annual)`,
                 categoryId: 'services'
             }
         ],
@@ -678,7 +704,7 @@ export async function initiatePaidPlanUpgrade(
                 unitAmount: deltaCentavos,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${targetPlan.name} (Upgrade prorated)`,
+                title: `${getPlanDisplayName(targetPlan)} (Upgrade prorated)`,
                 categoryId: 'services'
             }
         ],

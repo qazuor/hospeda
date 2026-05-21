@@ -10,10 +10,14 @@
  * The `x-signature` header uses the format `ts=<unix_seconds>,v1=<hmac_hex>`.
  * The HMAC is computed over:
  * ```
- * id:<data.id>;request-id:<ts>;ts:<ts>;
+ * id:<dataId>;request-id:<x-request-id>;ts:<ts>;
  * ```
- * where `data.id` comes from the JSON body and `ts` is the Unix timestamp from
- * the header.
+ * where:
+ * - `dataId` is the lowercased `data.id` value (from query param or body)
+ * - `x-request-id` is the value of the `x-request-id` HTTP header
+ * - `ts` is the Unix timestamp from the `x-signature` header
+ *
+ * Reference: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
  *
  * ## Replay protection
  *
@@ -39,6 +43,9 @@ const DEFAULT_TIMESTAMP_TOLERANCE_SECS = 300; // 5 minutes
 
 /** Name of the HTTP header that carries the MercadoPago signature. */
 const SIGNATURE_HEADER = 'x-signature';
+
+/** Name of the HTTP header that carries the MercadoPago request id. */
+const REQUEST_ID_HEADER = 'x-request-id';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -89,16 +96,30 @@ function parseSignatureHeader(headerValue: string): ParsedSignature | null {
 }
 
 /**
- * Extract the `data.id` field from the raw request body.
+ * Extract the `data.id` value from the request query string.
  *
- * MercadoPago IPN payloads always contain a top-level `data.id` string that
- * is included in the signed payload.
+ * MP sends webhooks with the id available as either `?data.id=…` (Webhooks v1
+ * format) or `?id=…` (legacy IPN). The signed manifest uses the URL value, so
+ * we prefer the query over the body.
  *
- * @param rawBody - Raw UTF-8 request body
- * @returns The `data.id` value or `null` when the body is not parseable or the
- *   field is absent
+ * Returns `null` when neither parameter is present.
  */
-function extractDataId(rawBody: string): string | null {
+function extractDataIdFromQuery(c: Context): string | null {
+    const fromDataDotId = c.req.query('data.id');
+    if (fromDataDotId) return fromDataDotId;
+    const fromId = c.req.query('id');
+    if (fromId) return fromId;
+    return null;
+}
+
+/**
+ * Extract the `data.id` field from the raw JSON request body.
+ *
+ * Fallback for payload variants that only carry the id in the body. Returns
+ * `null` when the body is not valid JSON or the field is absent.
+ */
+function extractDataIdFromBody(rawBody: string): string | null {
+    if (!rawBody) return null;
     try {
         const parsed: unknown = JSON.parse(rawBody);
         if (
@@ -122,28 +143,42 @@ function extractDataId(rawBody: string): string | null {
 /**
  * Compute the expected HMAC-SHA256 hex digest for a MercadoPago webhook.
  *
- * The signed payload format is:
+ * The signed payload (manifest) format per MP docs is:
  * ```
- * id:<dataId>;request-id:<ts>;ts:<ts>;
+ * id:<dataId>;request-id:<requestId>;ts:<ts>;
  * ```
  *
  * @param params - Parameters for HMAC computation
- * @param params.dataId - Value from `data.id` in the webhook body
+ * @param params.dataId - Value of `data.id` (lowercased, see {@link normalizeDataId})
+ * @param params.requestId - Value of the `x-request-id` HTTP header
  * @param params.ts - Unix timestamp from the `x-signature` header
  * @param params.secret - Webhook signing secret
  * @returns Lowercase hex HMAC-SHA256 digest
  */
 function computeExpectedSignature({
     dataId,
+    requestId,
     ts,
     secret
 }: {
     readonly dataId: string;
+    readonly requestId: string;
     readonly ts: number;
     readonly secret: string;
 }): string {
-    const signedPayload = `id:${dataId};request-id:${ts};ts:${ts};`;
+    const signedPayload = `id:${dataId};request-id:${requestId};ts:${ts};`;
     return createHmac('sha256', secret).update(signedPayload).digest('hex');
+}
+
+/**
+ * Normalize `data.id` values to lowercase before HMAC computation.
+ *
+ * MP docs note that alphanumeric `data.id` values may arrive uppercased on the
+ * URL but must be used in lowercase when constructing the manifest. Numeric ids
+ * are unaffected. We apply this defensively to every id.
+ */
+function normalizeDataId(value: string): string {
+    return value.toLowerCase();
 }
 
 /**
@@ -190,11 +225,14 @@ export interface WebhookSignatureOptions {
  * Create a Hono middleware that verifies MercadoPago webhook signatures.
  *
  * The middleware:
- * 1. Reads the `x-signature` header (`ts=<unix>,v1=<hmac-hex>`).
+ * 1. Reads the `x-signature` (`ts=<unix>,v1=<hmac-hex>`) and `x-request-id`
+ *    headers.
  * 2. Validates the timestamp against the server clock (replay protection).
- * 3. Reads the raw request body and extracts `data.id`.
- * 4. Recomputes the HMAC-SHA256 over `id:<dataId>;request-id:<ts>;ts:<ts>;`
- *    using `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`.
+ * 3. Extracts `data.id` from either the query string (`?data.id=...` or
+ *    `?id=...`) or the JSON body.
+ * 4. Recomputes the HMAC-SHA256 over
+ *    `id:<dataId>;request-id:<requestId>;ts:<ts>;` using
+ *    `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`.
  * 5. Compares signatures via `crypto.timingSafeEqual`.
  * 6. Calls `next()` on success or throws `HTTPException(401)` on failure.
  *
@@ -248,7 +286,7 @@ export function createWebhookSignatureMiddleware(
         }
 
         // ----------------------------------------------------------------
-        // 1. Extract and parse the signature header
+        // 1. Extract and parse the signature + request-id headers
         // ----------------------------------------------------------------
         const signatureHeader = c.req.header(SIGNATURE_HEADER);
 
@@ -276,6 +314,18 @@ export function createWebhookSignatureMiddleware(
 
         const { ts, v1: receivedSignature } = parsed;
 
+        const requestId = c.req.header(REQUEST_ID_HEADER);
+
+        if (!requestId) {
+            apiLogger.warn(
+                { path: c.req.path },
+                'Webhook request missing x-request-id header — rejecting'
+            );
+            throw new HTTPException(401, {
+                message: 'Missing x-request-id header'
+            });
+        }
+
         // ----------------------------------------------------------------
         // 2. Replay protection — check timestamp window
         // ----------------------------------------------------------------
@@ -299,37 +349,37 @@ export function createWebhookSignatureMiddleware(
         }
 
         // ----------------------------------------------------------------
-        // 3. Read raw body and extract data.id
+        // 3. Extract data.id (query string preferred — MP signs using the
+        //    URL value, see docs; falls back to JSON body for compatibility
+        //    with payloads that omit it from the query).
         // ----------------------------------------------------------------
-        const rawBody = await c.req.text();
-
-        if (!rawBody) {
-            apiLogger.warn({ path: c.req.path }, 'Webhook request has empty body — rejecting');
-            throw new HTTPException(401, {
-                message: 'Webhook request body is empty'
-            });
-        }
-
-        const dataId = extractDataId(rawBody);
+        const dataId = extractDataIdFromQuery(c) ?? extractDataIdFromBody(await c.req.text());
 
         if (!dataId) {
             apiLogger.warn(
                 { path: c.req.path },
-                'Webhook body does not contain data.id field — rejecting'
+                'Webhook request missing data.id (query and body) — rejecting'
             );
             throw new HTTPException(401, {
-                message: 'Webhook body missing required data.id field'
+                message: 'Webhook missing required data.id'
             });
         }
+
+        const normalizedDataId = normalizeDataId(dataId);
 
         // ----------------------------------------------------------------
         // 4 & 5. Compute expected signature and compare (timing-safe)
         // ----------------------------------------------------------------
-        const expectedSignature = computeExpectedSignature({ dataId, ts, secret });
+        const expectedSignature = computeExpectedSignature({
+            dataId: normalizedDataId,
+            requestId,
+            ts,
+            secret
+        });
 
         if (!safeCompareHex(expectedSignature, receivedSignature)) {
             apiLogger.warn(
-                { path: c.req.path, dataId, ts },
+                { path: c.req.path, dataId: normalizedDataId, requestId, ts },
                 'Webhook signature mismatch — rejecting'
             );
             throw new HTTPException(401, {
@@ -337,7 +387,10 @@ export function createWebhookSignatureMiddleware(
             });
         }
 
-        apiLogger.debug({ path: c.req.path, dataId, ts }, 'Webhook signature verified');
+        apiLogger.debug(
+            { path: c.req.path, dataId: normalizedDataId, requestId, ts },
+            'Webhook signature verified'
+        );
 
         await next();
     };
