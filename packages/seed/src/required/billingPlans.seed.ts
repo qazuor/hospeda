@@ -36,10 +36,17 @@ async function ensurePlan(
     livemode: boolean,
     db: DrizzleClient = getDb()
 ): Promise<EnsurePlanResult> {
+    // Lookup AND insert use the slug as `name`. The Hospeda backend treats
+    // `QZPayPlan.name` as the slug (see apps/api/src/services/
+    // subscription-checkout.service.ts:72 — `resolvePlanBySlug` matches by
+    // `p.name === planSlug`). Storing the human display name here would
+    // make every checkout fail with PLAN_NOT_FOUND because the resolver
+    // never finds a match. The human label still lives in metadata.displayName
+    // for any UI that wants it.
     const existing = await db
         .select({ id: billingPlans.id })
         .from(billingPlans)
-        .where(eq(billingPlans.name, plan.name))
+        .where(eq(billingPlans.name, plan.slug))
         .limit(1);
 
     const existingRow = existing[0];
@@ -55,7 +62,7 @@ async function ensurePlan(
     const inserted = await db
         .insert(billingPlans)
         .values({
-            name: plan.name,
+            name: plan.slug,
             description: plan.description,
             active: plan.isActive,
             entitlements: plan.entitlements as string[],
@@ -63,6 +70,7 @@ async function ensurePlan(
             livemode,
             metadata: {
                 slug: plan.slug,
+                displayName: plan.name,
                 category: plan.category,
                 isDefault: plan.isDefault,
                 sortOrder: plan.sortOrder,
@@ -77,7 +85,7 @@ async function ensurePlan(
 
     const insertedRow = inserted[0];
     if (!insertedRow) {
-        throw new Error(`Insert of plan "${plan.name}" returned no row`);
+        throw new Error(`Insert of plan "${plan.slug}" returned no row`);
     }
 
     return { planId: insertedRow.id, status: 'created' };

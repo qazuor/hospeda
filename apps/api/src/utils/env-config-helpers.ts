@@ -105,7 +105,15 @@ export const getCorsConfig = () => {
             _safe.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
         ),
         allowHeaders: parseCommaSeparated(
-            _safe.get('API_CORS_ALLOW_HEADERS', 'Content-Type,Authorization,X-Requested-With')
+            _safe.get(
+                'API_CORS_ALLOW_HEADERS',
+                // X-Idempotency-Key is required by `idempotencyKeyMiddleware`
+                // (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
+                // /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
+                // Browser preflight rejects the request when this header is
+                // not in the allowlist.
+                'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key'
+            )
         ),
         exposeHeaders: parseCommaSeparated(
             _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')

@@ -154,9 +154,41 @@ app.route('/plans', adminPlansRouter);
 app.route('/promo-codes', adminPromoCodesRouter);
 
 // ── QZPay admin tier (mounted LAST; covers everything custom routes don't) ──
+//
+// IMPORTANT: This mount is DEFERRED via `mountQZPayAdminTier()` instead of
+// running at module load. Why: this module is statically imported by
+// `routes/index.ts` which is statically imported by `app.ts` which is
+// statically imported by `index.ts`. ESM hoists static imports BEFORE
+// `index.ts:startServer()` runs `await initializeDatabase()`, so calling
+// `getQZPayBilling()` at module-load time hits "Database not initialized"
+// and silently skips the mount — leaving every qzpay admin endpoint as 404
+// in production. Caller (index.ts) must invoke `mountQZPayAdminTier()` AFTER
+// the DB is ready.
 
-const billing = getQZPayBilling();
-if (billing) {
+let qzpayAdminMounted = false;
+
+/**
+ * Mounts the qzpay-hono admin tier (subscriptions, payments, invoices, etc.)
+ * under `/api/v1/admin/billing/*`. Idempotent: the mount only runs once even
+ * if called multiple times.
+ *
+ * Must be invoked AFTER `initializeDatabase()` so `getQZPayBilling()` can
+ * resolve the storage adapter against a live `getDb()`.
+ */
+export function mountQZPayAdminTier(): void {
+    if (qzpayAdminMounted) {
+        return;
+    }
+    qzpayAdminMounted = true;
+
+    const billing = getQZPayBilling();
+    if (!billing) {
+        apiLogger.warn(
+            'QZPay admin tier not mounted under /admin/billing: billing service unavailable'
+        );
+        return;
+    }
+
     const qzpayAdmin = createAdminRoutes({
         billing,
         prefix: '',
@@ -164,10 +196,7 @@ if (billing) {
         hooks: adminBillingHooks
     });
     app.route('/', qzpayAdmin);
-} else {
-    apiLogger.warn(
-        'QZPay admin tier not mounted under /admin/billing: billing service unavailable'
-    );
+    apiLogger.info('QZPay admin tier mounted under /api/v1/admin/billing');
 }
 
 export { app as adminBillingRoutes };

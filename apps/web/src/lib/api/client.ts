@@ -66,7 +66,8 @@ async function request<T>({
     params,
     body,
     withCredentials,
-    cookieHeader
+    cookieHeader,
+    headers: extraHeaders
 }: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
@@ -79,6 +80,13 @@ async function request<T>({
      * context — server-to-server fetch has no cookie jar to draw from.
      */
     cookieHeader?: string;
+    /**
+     * Additional request headers to merge in alongside the defaults (Accept,
+     * Content-Type, cookie). Used by callers that hit endpoints requiring
+     * extra headers like `X-Idempotency-Key` (the billing mutating endpoints
+     * enforce this via `idempotencyKeyMiddleware` — see SPEC-143 T-143-60).
+     */
+    headers?: Record<string, string>;
 }): Promise<ApiResult<T>> {
     const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
     const controller = new AbortController();
@@ -86,7 +94,8 @@ async function request<T>({
 
     try {
         const headers: Record<string, string> = {
-            Accept: 'application/json'
+            Accept: 'application/json',
+            ...extraHeaders
         };
         if (body) {
             headers['Content-Type'] = 'application/json';
@@ -200,18 +209,33 @@ export const apiClient = {
         });
     },
 
-    /** POST request with authentication credentials */
+    /**
+     * POST request with authentication credentials.
+     *
+     * @param headers - Optional extra request headers. Required when hitting
+     *   endpoints wrapped by `idempotencyKeyMiddleware`
+     *   (`/billing/subscriptions/start-paid`, `/billing/addons/:slug/purchase`,
+     *   `/billing/addons/:id/cancel`) which enforce `X-Idempotency-Key`. Send
+     *   a fresh UUID v4 per logical user action (`crypto.randomUUID()`).
+     */
     postProtected<T>({
         path,
         body,
-        cookieHeader
-    }: { path: string; body?: unknown; cookieHeader?: string }): Promise<ApiResult<T>> {
+        cookieHeader,
+        headers
+    }: {
+        path: string;
+        body?: unknown;
+        cookieHeader?: string;
+        headers?: Record<string, string>;
+    }): Promise<ApiResult<T>> {
         return request<T>({
             method: 'POST',
             path,
             body,
             withCredentials: true,
-            cookieHeader
+            cookieHeader,
+            headers
         });
     }
 };
