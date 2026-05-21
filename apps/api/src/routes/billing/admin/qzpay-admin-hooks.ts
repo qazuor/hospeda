@@ -1,0 +1,386 @@
+/**
+ * Hospeda-side hooks for `@qazuor/qzpay-hono`'s admin tier.
+ *
+ * `createAdminRoutes` ships in qzpay-hono v1.3 with an optional `hooks`
+ * object on the config. When provided, the package invokes each callback
+ * at a documented point of the relevant write operation:
+ *
+ *  - `onBeforeSubscriptionCancel` runs BEFORE the cancel commits in QZPay.
+ *    Returning `{ ok: false, reason }` aborts the cancel with HTTP 422.
+ *  - `onAfter*` callbacks run AFTER QZPay has committed the operation.
+ *    They run inside a `try/catch` in qzpay-hono — if they throw, the
+ *    error is logged but the response stays 200 (the core operation has
+ *    already committed, we cannot roll it back).
+ *
+ * The hooks below replace the lifecycle that used to live in the now-deleted
+ * `apps/api/src/routes/billing/admin/subscription-cancel.ts` route handler
+ * and consolidate the side effects for cancel, change-plan, extend-trial,
+ * payment refund and invoice pay/void operations.
+ *
+ * Authentication is enforced upstream by `adminBillingAuthMiddleware`
+ * (see `./index.ts`); hooks assume the actor in `ctx` is already authorized.
+ *
+ * @module routes/billing/admin/qzpay-admin-hooks
+ */
+
+import type { QZPayAdminLifecycleHooks } from '@qazuor/qzpay-hono';
+import { billingAddonPurchases, billingSubscriptionEvents, getDb } from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
+import * as Sentry from '@sentry/node';
+import { and, eq, isNull } from 'drizzle-orm';
+import { getActorFromContext } from '../../../middlewares/actor';
+import { getQZPayBilling } from '../../../middlewares/billing';
+import { clearEntitlementCache } from '../../../middlewares/entitlement';
+import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { apiLogger } from '../../../utils/logger';
+
+// ---------------------------------------------------------------------------
+// Internal types
+// ---------------------------------------------------------------------------
+
+interface ActiveAddonPurchase {
+    readonly id: string;
+    readonly addonSlug: string;
+    readonly customerId: string;
+}
+
+interface AddonRevocationSummary {
+    readonly purchaseId: string;
+    readonly addonSlug: string;
+    readonly outcome: 'success' | 'failed';
+    readonly error?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Hook implementations
+// ---------------------------------------------------------------------------
+
+/**
+ * Before-cancel hook: revoke linked Hospeda addon entitlements/limits and
+ * record a compensating event before qzpay-hono cancels the subscription in
+ * the DB + payment provider.
+ *
+ * Aborts with `{ ok: false, reason }` when any addon revocation fails so the
+ * cancel itself never commits.
+ */
+const onBeforeSubscriptionCancel: NonNullable<
+    QZPayAdminLifecycleHooks['onBeforeSubscriptionCancel']
+> = async ({ subscriptionId, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const adminUserId = actor.id;
+
+    const billing = getQZPayBilling();
+    if (!billing) {
+        apiLogger.error({ subscriptionId }, 'Admin cancel hook: billing service unavailable');
+        return { ok: false, reason: 'Billing service is not configured.' };
+    }
+
+    const db = getDb();
+
+    // Resolve customer + active purchases for the subscription.
+    const purchases: ActiveAddonPurchase[] = await db
+        .select({
+            id: billingAddonPurchases.id,
+            addonSlug: billingAddonPurchases.addonSlug,
+            customerId: billingAddonPurchases.customerId
+        })
+        .from(billingAddonPurchases)
+        .where(
+            and(
+                eq(billingAddonPurchases.subscriptionId, subscriptionId),
+                eq(billingAddonPurchases.status, 'active'),
+                isNull(billingAddonPurchases.deletedAt)
+            )
+        );
+
+    if (purchases.length === 0) {
+        return { ok: true };
+    }
+
+    const { getAddonBySlug } = await import('@repo/billing');
+
+    const customerId = purchases[0]?.customerId ?? '';
+
+    apiLogger.info(
+        { subscriptionId, customerId, count: purchases.length },
+        'Admin cancel hook: revoking addon purchases in parallel'
+    );
+
+    const settled = await Promise.allSettled(
+        purchases.map(async (purchase): Promise<AddonRevocationSummary> => {
+            const addonDef = getAddonBySlug(purchase.addonSlug);
+            try {
+                await revokeAddonForSubscriptionCancellation({
+                    customerId,
+                    purchase: { id: purchase.id, addonSlug: purchase.addonSlug },
+                    addonDef,
+                    billing
+                });
+                return {
+                    purchaseId: purchase.id,
+                    addonSlug: purchase.addonSlug,
+                    outcome: 'success'
+                };
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                apiLogger.error(
+                    { subscriptionId, customerId, purchaseId: purchase.id, errorMessage },
+                    'Admin cancel hook: addon revocation failed'
+                );
+                return {
+                    purchaseId: purchase.id,
+                    addonSlug: purchase.addonSlug,
+                    outcome: 'failed',
+                    error: errorMessage
+                };
+            }
+        })
+    );
+
+    const results: AddonRevocationSummary[] = settled.map((r, i) =>
+        r.status === 'fulfilled'
+            ? r.value
+            : {
+                  purchaseId: purchases[i]?.id ?? 'unknown',
+                  addonSlug: purchases[i]?.addonSlug ?? 'unknown',
+                  outcome: 'failed' as const,
+                  error: r.reason instanceof Error ? r.reason.message : String(r.reason)
+              }
+    );
+
+    const failed = results.filter((r) => r.outcome === 'failed');
+    const succeeded = results.filter((r) => r.outcome === 'success');
+
+    // Compensating event records which addon QZPay entitlements were already
+    // revoked so the DB and the provider can be reconciled if Phase 2 fails.
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId,
+        eventType: BILLING_EVENT_TYPES.ADDON_REVOCATIONS_PENDING,
+        triggerSource: 'admin-cancel-compensating',
+        metadata: {
+            revokedAddonPurchaseIds: succeeded.map((r) => r.purchaseId),
+            failedAddonPurchaseIds: failed.map((r) => r.purchaseId),
+            timestamp: new Date().toISOString()
+        }
+    });
+
+    if (failed.length > 0) {
+        const failedSlugs = failed.map((r) => r.addonSlug).join(', ');
+        Sentry.captureException(
+            new Error(
+                `Admin subscription cancel: addon revocation failed for ${failed.length} purchase(s). Failed slugs: ${failedSlugs}`
+            ),
+            {
+                tags: {
+                    subsystem: 'billing-addon-lifecycle',
+                    action: 'admin_subscription_cancel'
+                },
+                extra: {
+                    subscriptionId,
+                    customerId,
+                    adminUserId,
+                    failedPurchases: failed,
+                    succeededPurchases: succeeded
+                }
+            }
+        );
+        return {
+            ok: false,
+            reason: `Addon entitlement cleanup failed for: ${failedSlugs}. Cancel aborted.`
+        };
+    }
+
+    return { ok: true };
+};
+
+/**
+ * After-cancel hook: mark Hospeda addon purchases as canceled, insert the
+ * audit log entry, and clear the entitlement cache so the user is dropped
+ * from cached feature access immediately.
+ */
+const onAfterSubscriptionCancel: NonNullable<
+    QZPayAdminLifecycleHooks['onAfterSubscriptionCancel']
+> = async ({ subscription, immediate, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const adminUserId = actor.id;
+    const db = getDb();
+
+    // Mark the linked addon purchases as canceled (American spelling on the
+    // purchases table, intentional asymmetry with the subscription's
+    // CANCELLED status).
+    await db
+        .update(billingAddonPurchases)
+        .set({
+            status: 'canceled',
+            canceledAt: new Date(),
+            updatedAt: new Date()
+        })
+        .where(
+            and(
+                eq(billingAddonPurchases.subscriptionId, subscription.id),
+                eq(billingAddonPurchases.status, 'active'),
+                isNull(billingAddonPurchases.deletedAt)
+            )
+        );
+
+    // Audit log entry — keeps the lifecycle event trail in sync with the
+    // admin actor that triggered the cancellation.
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: subscription.id,
+        newStatus: SubscriptionStatusEnum.CANCELLED,
+        triggerSource: 'admin-cancel',
+        metadata: {
+            adminUserId,
+            immediate
+        }
+    });
+
+    clearEntitlementCache(subscription.customerId);
+
+    apiLogger.info(
+        { subscriptionId: subscription.id, customerId: subscription.customerId, adminUserId },
+        'Admin cancel hook: post-cancel side effects applied'
+    );
+};
+
+/**
+ * After-change-plan hook: audit-log the plan transition.
+ */
+const onAfterSubscriptionChangePlan: NonNullable<
+    QZPayAdminLifecycleHooks['onAfterSubscriptionChangePlan']
+> = async ({ subscription, previousPlanId, newPlanId, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const db = getDb();
+
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: subscription.id,
+        triggerSource: 'admin-change-plan',
+        metadata: {
+            adminUserId: actor.id,
+            previousPlanId,
+            newPlanId
+        }
+    });
+
+    clearEntitlementCache(subscription.customerId);
+
+    apiLogger.info(
+        {
+            subscriptionId: subscription.id,
+            previousPlanId,
+            newPlanId,
+            adminUserId: actor.id
+        },
+        'Admin change-plan hook: audit logged'
+    );
+};
+
+/**
+ * After-trial-extended hook: audit-log the trial extension.
+ */
+const onAfterSubscriptionTrialExtended: NonNullable<
+    QZPayAdminLifecycleHooks['onAfterSubscriptionTrialExtended']
+> = async ({ subscription, additionalDays, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const db = getDb();
+
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: subscription.id,
+        triggerSource: 'admin-extend-trial',
+        metadata: {
+            adminUserId: actor.id,
+            additionalDays,
+            newTrialEnd: subscription.trialEnd?.toISOString() ?? null
+        }
+    });
+
+    apiLogger.info(
+        { subscriptionId: subscription.id, additionalDays, adminUserId: actor.id },
+        'Admin extend-trial hook: audit logged'
+    );
+};
+
+/**
+ * After-refund hook: emit a Sentry breadcrumb + structured log entry for
+ * the admin refund. There is no dedicated audit table for payment-level
+ * actions; subscription audit log only covers subscription lifecycle.
+ */
+const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPaymentRefund']> = async ({
+    payment,
+    amount,
+    reason,
+    ctx
+}) => {
+    const actor = getActorFromContext(ctx);
+
+    Sentry.addBreadcrumb({
+        category: 'billing.admin',
+        type: 'info',
+        message: 'admin_payment_refund',
+        data: {
+            paymentId: payment.id,
+            amount,
+            reason,
+            adminUserId: actor.id
+        }
+    });
+
+    apiLogger.info(
+        {
+            paymentId: payment.id,
+            customerId: payment.customerId,
+            refundAmount: amount,
+            reason,
+            adminUserId: actor.id
+        },
+        'Admin refund hook: refund committed'
+    );
+};
+
+/**
+ * After-invoice-pay hook: structured log entry.
+ */
+const onAfterInvoicePay: NonNullable<QZPayAdminLifecycleHooks['onAfterInvoicePay']> = async ({
+    invoice,
+    ctx
+}) => {
+    const actor = getActorFromContext(ctx);
+    apiLogger.info(
+        { invoiceId: invoice.id, customerId: invoice.customerId, adminUserId: actor.id },
+        'Admin invoice pay hook: payment recorded'
+    );
+};
+
+/**
+ * After-invoice-void hook: structured log entry.
+ */
+const onAfterInvoiceVoid: NonNullable<QZPayAdminLifecycleHooks['onAfterInvoiceVoid']> = async ({
+    invoice,
+    ctx
+}) => {
+    const actor = getActorFromContext(ctx);
+    apiLogger.info(
+        { invoiceId: invoice.id, customerId: invoice.customerId, adminUserId: actor.id },
+        'Admin invoice void hook: invoice voided'
+    );
+};
+
+// ---------------------------------------------------------------------------
+// Public hooks bundle
+// ---------------------------------------------------------------------------
+
+/**
+ * All Hospeda lifecycle hooks for the qzpay-hono admin tier.
+ *
+ * Pass this bundle to `createAdminRoutes({ ..., hooks: adminBillingHooks })`.
+ */
+export const adminBillingHooks: QZPayAdminLifecycleHooks = {
+    onBeforeSubscriptionCancel,
+    onAfterSubscriptionCancel,
+    onAfterSubscriptionChangePlan,
+    onAfterSubscriptionTrialExtended,
+    onAfterPaymentRefund,
+    onAfterInvoicePay,
+    onAfterInvoiceVoid
+};
