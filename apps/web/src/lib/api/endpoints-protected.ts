@@ -410,19 +410,19 @@ export const billingApi = {
      *
      * @example
      * ```ts
-     * const result = await billingApi.changePlan({ planId: 'plan-uuid', billingInterval: 'monthly' });
+     * const result = await billingApi.changePlan({ newPlanId: 'plan-uuid', billingInterval: 'monthly' });
      * ```
      */
     changePlan({
-        planId,
+        newPlanId,
         billingInterval
     }: {
-        readonly planId: string;
+        readonly newPlanId: string;
         readonly billingInterval: string;
     }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/change-plan`,
-            body: { planId, billingInterval }
+            body: { newPlanId, billingInterval }
         });
     },
 
@@ -472,25 +472,30 @@ export const billingApi = {
     /**
      * Create a checkout session to purchase a plan.
      *
-     * @param params - Plan ID and billing interval
+     * Uses the Hospeda-custom `start-paid` route which handles the full paid
+     * subscription bootstrap: customer creation, MercadoPago preapproval,
+     * trial-to-paid transitions, and idempotency. The legacy `/checkout`
+     * endpoint was deprecated in SPEC-126.
+     *
+     * @param params - Plan slug and billing interval
      * @returns The checkout URL to redirect the user to
      *
      * @example
      * ```ts
-     * const result = await billingApi.createCheckout({ planId: 'plan-uuid', billingInterval: 'yearly' });
+     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual' });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
      * ```
      */
     createCheckout({
-        planId,
+        planSlug,
         billingInterval
     }: {
-        readonly planId: string;
-        readonly billingInterval: string;
+        readonly planSlug: string;
+        readonly billingInterval: 'monthly' | 'annual';
     }): Promise<ApiResult<{ readonly checkoutUrl: string }>> {
         return apiClient.postProtected({
-            path: `${PROTECTED}/billing/checkout`,
-            body: { planId, billingInterval }
+            path: `${PROTECTED}/billing/subscriptions/start-paid`,
+            body: { planSlug, billingInterval }
         });
     },
 

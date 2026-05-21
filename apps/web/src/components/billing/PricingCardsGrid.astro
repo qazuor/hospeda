@@ -197,7 +197,7 @@ function formatPriceArs(cents: number): string {
 						<div class="pricing-card__btn-wrapper">
 							<PlanPurchaseButton
 								client:load
-								planId={plan.slug}
+								planSlug={plan.slug}
 								price={plan.monthlyPriceArs}
 								currency="ARS"
 								ctaText={ctaText}
