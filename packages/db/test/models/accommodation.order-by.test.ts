@@ -164,4 +164,82 @@ describe('buildAccommodationOrderBy', () => {
         expect(rendered[1]).toMatch(/NULLS LAST/i);
         expect(rendered[2]).toMatch(/"id" desc/i);
     });
+
+    describe('distance sort (haversine)', () => {
+        it('emits a haversine ORDER BY when distance is requested with a geo center', () => {
+            const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
+            const orderBy = buildAccommodationOrderBy({
+                sorts,
+                latitude: -32.4846,
+                longitude: -58.2326
+            });
+            expect(orderBy).toHaveLength(2);
+            const rendered = renderOrderBy(orderBy);
+            // Haversine SQL contains asin / sqrt / radians and references the
+            // JSONB coordinates path.
+            expect(rendered[0]).toMatch(/asin/i);
+            expect(rendered[0]).toMatch(/sqrt/i);
+            expect(rendered[0]).toMatch(/radians/i);
+            expect(rendered[0]).toMatch(/coordinates/i);
+            expect(rendered[0]).toMatch(/NULLS LAST/i);
+            expect(rendered[1]).toMatch(/"id" desc/i);
+        });
+
+        it('honors `desc` direction for distance (farthest first)', () => {
+            const sorts: SortField[] = [{ field: 'distance', order: 'desc' }];
+            const orderBy = buildAccommodationOrderBy({
+                sorts,
+                latitude: -32,
+                longitude: -58
+            });
+            const rendered = renderOrderBy(orderBy);
+            expect(rendered[0]).toMatch(/DESC/i);
+        });
+
+        it('silently drops distance when no geo center is supplied', () => {
+            const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
+            const orderBy = buildAccommodationOrderBy({ sorts });
+            // Only the id tiebreaker survives.
+            expect(orderBy).toHaveLength(1);
+            const rendered = renderOrderBy(orderBy);
+            expect(rendered[0]).toMatch(/"id" desc/i);
+        });
+
+        it('silently drops distance when only latitude (not longitude) is supplied', () => {
+            const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
+            const orderBy = buildAccommodationOrderBy({
+                sorts,
+                latitude: -32.4846
+                // longitude intentionally omitted
+            });
+            expect(orderBy).toHaveLength(1);
+        });
+
+        it('works via the legacy sortBy/sortOrder fallback path', () => {
+            const orderBy = buildAccommodationOrderBy({
+                sortBy: 'distance',
+                sortOrder: 'asc',
+                latitude: -32.4846,
+                longitude: -58.2326
+            });
+            expect(orderBy).toHaveLength(2);
+            const rendered = renderOrderBy(orderBy);
+            expect(rendered[0]).toMatch(/asin/i);
+        });
+
+        it('combines featuredFirst with distance — pin still wins', () => {
+            const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
+            const orderBy = buildAccommodationOrderBy({
+                featuredFirst: true,
+                sorts,
+                latitude: -32.4846,
+                longitude: -58.2326
+            });
+            expect(orderBy).toHaveLength(3);
+            const rendered = renderOrderBy(orderBy);
+            expect(rendered[0]).toMatch(/"is_featured" desc/i);
+            expect(rendered[1]).toMatch(/asin/i);
+            expect(rendered[2]).toMatch(/"id" desc/i);
+        });
+    });
 });

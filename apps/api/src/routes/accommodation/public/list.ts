@@ -61,7 +61,12 @@ const ALLOWED_SORT_FIELDS = new Set([
     'reviewsCount',
     'isFeatured',
     'mostSaved',
-    'price'
+    'price',
+    // Synthetic sort field — orders by haversine distance from the
+    // (latitude, longitude) center. Silently dropped by the model layer when
+    // no center is supplied, so it stays inert until the user activates the
+    // geo-radius filter.
+    'distance'
 ]);
 
 /**

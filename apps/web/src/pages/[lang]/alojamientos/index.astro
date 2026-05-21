@@ -66,15 +66,16 @@ const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc
     nameAsc:      { sortBy: 'name',          sortOrder: 'asc'  },
     nameDesc:     { sortBy: 'name',          sortOrder: 'desc' },
     priceAsc:     { sortBy: 'price',         sortOrder: 'asc'  },
-    priceDesc:    { sortBy: 'price',         sortOrder: 'desc' }
+    priceDesc:    { sortBy: 'price',         sortOrder: 'desc' },
+    // Synthetic — backend orders by haversine distance from the geo center
+    // when `latitude`/`longitude` are present, otherwise drops the field and
+    // falls through to the id tiebreaker.
+    distance:     { sortBy: 'distance',      sortOrder: 'asc'  }
 };
 /** Default sort key when the URL has no `sortBy`. */
 const DEFAULT_SORT_KEY = 'featured';
 
-const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
-const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
-const sortBy = sortResolved.sortBy;
-const sortOrder = sortResolved.sortOrder;
+const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 
 // Public quick-amenity boolean shortcuts. The backend resolves these to
 // canonical amenity IDs server-side (PR fix/accommodation-backend-filters-sort).
@@ -106,6 +107,17 @@ const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Numb
 const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
 const hasGeoRadius =
 	Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+
+// Resolve the encoded sort key. `distance` is only meaningful when the geo
+// filter is active, so degrade it to the default if the URL still carries
+// `?sortBy=distance` but the user removed the geo center. The backend would
+// silently drop it too, but cleaning it up here keeps the SortPopover label
+// matching what's actually being applied.
+const sortKey =
+	rawSortKey === 'distance' && !hasGeoRadius ? DEFAULT_SORT_KEY : rawSortKey;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+const sortBy = sortResolved.sortBy;
+const sortOrder = sortResolved.sortOrder;
 
 // --- Hero search context (NOT sent to API; used for disclaimer + handoff to detail) ---
 // These params arrive from the home hero search bar. The listing does not
@@ -484,6 +496,14 @@ const sortOptions = [
 	{ value: 'nameDesc',     label: t('accommodations.sort.nameDesc',     'Nombre (Z-A)') },
 	{ value: 'priceAsc',     label: t('accommodations.sort.priceAsc',     'Precio: menor a mayor') },
 	{ value: 'priceDesc',    label: t('accommodations.sort.priceDesc',    'Precio: mayor a menor') },
+	// Distance sort is only meaningful while the geo-radius filter is active
+	// (otherwise the backend has no center to measure from and silently
+	// drops the field). Surface it as an option only when the user already
+	// picked a destination / "Mi ubicación" so the menu stays uncluttered
+	// for the common case.
+	...(hasGeoRadius
+		? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }]
+		: []),
 ];
 
 // ItemList JSON-LD
