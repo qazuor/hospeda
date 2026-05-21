@@ -296,7 +296,7 @@ After any `db:push`, always run the extras script to apply triggers, materialize
 JSONB CHECK constraints that Drizzle cannot manage:
 
 ```bash
-packages/db/scripts/apply-postgres-extras.sh
+pnpm db:apply-extras
 ```
 
 ### Production workflow
@@ -634,10 +634,17 @@ Three categories of PostgreSQL features are **not** visible to `drizzle-kit push
 After any `drizzle-kit push` or `pnpm db:fresh-dev`, run:
 
 ```bash
-packages/db/scripts/apply-postgres-extras.sh
+pnpm db:apply-extras
+# or directly:
+node packages/db/scripts/apply-postgres-extras.mjs
 # or with an explicit URL:
-packages/db/scripts/apply-postgres-extras.sh "postgresql://user:pass@host:5432/hospeda"
+node packages/db/scripts/apply-postgres-extras.mjs "postgresql://user:pass@host:5432/hospeda"
 ```
+
+The implementation lives in `apply-postgres-extras.mjs` (Node + the `pg` driver, no
+`psql` dependency — works on hosts without postgres-client installed, e.g. the VPS host
+where `hops db-seed` runs). The legacy `apply-postgres-extras.sh` is a thin wrapper kept
+for backwards compatibility with existing call-sites.
 
 The script is **idempotent** (uses `IF NOT EXISTS` / `CREATE OR REPLACE` throughout).
 
