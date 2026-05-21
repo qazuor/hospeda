@@ -25,7 +25,16 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { InfoIcon } from '@repo/icons';
+import {
+	InfoIcon,
+	BuildingsIcon,
+	TrendingUpIcon,
+	ChatIcon,
+	StarIcon,
+	EyeIcon,
+	SettingsIcon,
+	ReceiptIcon
+} from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -37,9 +46,9 @@ const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 // ---------------------------------------------------------------------------
 
 const benefits = [
-	{ titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
-	{ titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
-	{ titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
+	{ Icon: EyeIcon, titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
+	{ Icon: SettingsIcon, titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
+	{ Icon: ReceiptIcon, titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
 ] as const;
 
 const steps = [
@@ -79,6 +88,15 @@ const faqJsonLd = {
 
 	<!-- Hero -->
 	<section class="publicar-hero section section--warm">
+		<div class="publicar-hero__decoratives" aria-hidden="true">
+			<img
+				src="/assets/images/shapes/deco-arrow-1.svg"
+				alt=""
+				class="publicar-hero__deco publicar-hero__deco--arrow"
+				loading="eager"
+			/>
+		</div>
+
 		<div class="publicar-hero__container">
 			<div class="publicar-hero__text" data-reveal="up">
 				{cameFromAdmin && (
@@ -110,9 +128,21 @@ const faqJsonLd = {
 				-->
 				<HostLandingCta client:only="react" locale={locale} />
 			</div>
-			<div class="publicar-hero__image" data-reveal="scale" aria-hidden="true">
-				<div class="publicar-hero__image-placeholder"></div>
-			</div>
+			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
+				<div class="publicar-hero__blob"></div>
+				<div class="publicar-hero__icon-wrap">
+					<BuildingsIcon size={96} weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--trend">
+					<TrendingUpIcon size="md" weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--chat">
+					<ChatIcon size="md" weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--star">
+					<StarIcon size="md" weight="duotone" />
+				</div>
+			</aside>
 		</div>
 	</section>
 
@@ -122,23 +152,32 @@ const faqJsonLd = {
 			<p class="publicar-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline', '¿Por qué Hospeda?')}</p>
 			<h2 class="publicar-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
 			<div class="publicar-benefits__grid">
-				{benefits.map((b, i) => (
-					<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<div class="publicar-benefit-card__icon" aria-hidden="true">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
-							</svg>
+				{benefits.map((b, i) => {
+					const Icon = b.Icon;
+					return (
+						<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+							<span class="publicar-benefit-card__icon" aria-hidden="true">
+								<Icon size="lg" weight="duotone" />
+							</span>
+							<h3 class="publicar-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
+							<p class="publicar-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
 						</div>
-						<h3 class="publicar-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
-						<p class="publicar-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</div>
 	</section>
 
 	<!-- How it works — reuses owners.steps.* keys -->
 	<section class="publicar-steps section section--warm">
+		<div class="publicar-steps__decoratives" aria-hidden="true">
+			<img
+				src="/assets/images/shapes/deco-arrow-2.svg"
+				alt=""
+				class="publicar-steps__deco publicar-steps__deco--arrow"
+				loading="lazy"
+			/>
+		</div>
 		<div class="publicar-steps__container">
 			<p class="publicar-steps__tagline" data-reveal="up">{t('owners.steps.tagline', 'Es así de fácil')}</p>
 			<h2 class="publicar-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
@@ -213,7 +252,42 @@ const faqJsonLd = {
 	}
 
 	/* ── Hero ──────────────────────────────────────────────────────────── */
+	.publicar-hero {
+		position: relative;
+		overflow: hidden;
+		/*
+		 * Override .section's `var(--space-section)` (clamp 48px-120px) with a
+		 * smaller window so the hero feels close in height to the
+		 * `/publicar/nueva/` hero — without that, navigating between the two
+		 * showed a ~190px jump in vertical rhythm.
+		 */
+		padding-block: clamp(2.5rem, 6.5vw, 5rem);
+	}
+
+	.publicar-hero__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.publicar-hero__deco--arrow {
+		position: absolute;
+		top: clamp(18%, 22%, 28%);
+		right: clamp(2%, 4vw, 6%);
+		width: clamp(60px, 8vw, 110px);
+		height: auto;
+		opacity: 0.5;
+		transform: rotate(15deg);
+	}
+
+	@media (max-width: 900px) {
+		.publicar-hero__deco--arrow { display: none; }
+	}
+
 	.publicar-hero__container {
+		position: relative;
+		z-index: 1;
 		max-width: var(--container-max);
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
@@ -225,19 +299,20 @@ const faqJsonLd = {
 
 	.publicar-hero__tagline {
 		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		font-weight: 700;
+		font-size: var(--text-tagline);
 		color: var(--brand-accent);
-		font-style: italic;
 		margin: 0 0 var(--space-2);
 	}
 
 	.publicar-hero__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.75rem);
+		font-size: var(--text-h2);
 		color: var(--core-foreground);
 		margin: 0 0 var(--space-4);
-		line-height: 1.2;
+		line-height: 1.15;
+		text-wrap: balance;
 	}
 
 	.publicar-hero__desc {
@@ -248,11 +323,88 @@ const faqJsonLd = {
 		margin: 0 0 var(--space-6);
 	}
 
-	.publicar-hero__image-placeholder {
-		width: 100%;
-		aspect-ratio: 4/3;
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
-		border-radius: var(--radius-card);
+	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */
+	.publicar-hero__visual {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 320px;
+	}
+
+	.publicar-hero__blob {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		width: clamp(260px, 28vw, 400px);
+		height: clamp(260px, 28vw, 400px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 30% 30%,
+			oklch(from var(--brand-primary) l c h / 0.18),
+			oklch(from var(--brand-accent) l c h / 0.08) 60%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.publicar-hero__icon-wrap {
+		position: relative;
+		z-index: 2;
+		width: clamp(140px, 16vw, 200px);
+		height: clamp(140px, 16vw, 200px);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--core-card);
+		border-radius: 50%;
+		box-shadow: var(--shadow-card);
+		color: var(--brand-primary);
+	}
+
+	.publicar-hero__floating {
+		position: absolute;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		color: var(--brand-accent);
+		animation: publicar-float 6s ease-in-out infinite;
+	}
+
+	.publicar-hero__floating--trend {
+		top: 10%;
+		left: 6%;
+		color: oklch(0.65 0.18 145);
+		animation-delay: 0s;
+	}
+
+	.publicar-hero__floating--chat {
+		bottom: 16%;
+		left: 2%;
+		color: var(--brand-primary);
+		animation-delay: 1.5s;
+	}
+
+	.publicar-hero__floating--star {
+		top: 18%;
+		right: 4%;
+		color: var(--brand-accent);
+		animation-delay: 3s;
+	}
+
+	@keyframes publicar-float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-10px); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.publicar-hero__floating { animation: none; }
 	}
 
 	/* ── Benefits ──────────────────────────────────────────────────────── */
@@ -270,9 +422,9 @@ const faqJsonLd = {
 	.publicar-faq__tagline,
 	.publicar-cta__tagline {
 		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		font-weight: 700;
+		font-size: var(--text-tagline);
 		color: var(--brand-accent);
-		font-style: italic;
 		margin: 0 0 var(--space-2);
 	}
 
@@ -282,8 +434,10 @@ const faqJsonLd = {
 	.publicar-cta__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		font-size: var(--text-h2);
 		color: var(--core-foreground);
+		text-wrap: balance;
+		line-height: 1.1;
 		margin: 0 0 var(--space-8);
 	}
 
@@ -301,7 +455,27 @@ const faqJsonLd = {
 		box-shadow: var(--shadow-card);
 	}
 
-	.publicar-benefit-card__icon { margin-bottom: var(--space-4); }
+	.publicar-benefit-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius-md);
+		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		color: var(--brand-primary);
+		margin-bottom: var(--space-4);
+	}
+
+	.publicar-benefit-card:nth-child(2) .publicar-benefit-card__icon {
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
+	}
+
+	.publicar-benefit-card:nth-child(3) .publicar-benefit-card__icon {
+		background-color: oklch(0.65 0.18 145 / 0.12);
+		color: oklch(0.55 0.18 145);
+	}
 
 	.publicar-benefit-card__title {
 		font-family: var(--font-heading);
@@ -320,6 +494,37 @@ const faqJsonLd = {
 	}
 
 	/* ── Steps ─────────────────────────────────────────────────────────── */
+	.publicar-steps {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.publicar-steps__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.publicar-steps__deco--arrow {
+		position: absolute;
+		bottom: clamp(10%, 14%, 18%);
+		left: clamp(2%, 4vw, 6%);
+		width: clamp(50px, 7vw, 90px);
+		height: auto;
+		opacity: 0.35;
+		transform: rotate(-25deg) scaleX(-1);
+	}
+
+	@media (max-width: 900px) {
+		.publicar-steps__deco--arrow { display: none; }
+	}
+
+	.publicar-steps__container {
+		position: relative;
+		z-index: 1;
+	}
+
 	.publicar-steps__grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
@@ -416,7 +621,7 @@ const faqJsonLd = {
 	/* ── Responsive ────────────────────────────────────────────────────── */
 	@media (max-width: 768px) {
 		.publicar-hero__container { grid-template-columns: 1fr; }
-		.publicar-hero__image { order: -1; }
+		.publicar-hero__visual { order: -1; min-height: 280px; }
 		.publicar-benefits__grid { grid-template-columns: 1fr; }
 		.publicar-steps__grid { grid-template-columns: repeat(2, 1fr); }
 	}
