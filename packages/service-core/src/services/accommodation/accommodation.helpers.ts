@@ -3,13 +3,24 @@ import type { Accommodation } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
- * Flattens nested join rows produced by Drizzle's `with` clause into the canonical
- * `Amenity[]` / `Feature[]` shapes that `AccommodationAdminSchema` declares.
+ * Flattens nested join rows produced by Drizzle's `with` clause into a single
+ * merged record per relation, exposing BOTH the join metadata and the related
+ * entity fields at the top level.
  *
- * Drizzle's `findFirst({ with: { amenities: true, features: true } })` returns
- * join-table rows shaped as `[{ accommodationId, amenityId, amenity: Amenity }, ...]`.
- * Schema consumers expect a flat array of the related entity, so we lift the
- * nested `amenity` / `feature` field to the top level and discard the join metadata.
+ * Drizzle's `findFirst({ with: { amenities: { with: { amenity: true } } } })`
+ * returns junction rows shaped as
+ * `[{ accommodationId, amenityId, isOptional, additionalCost, amenity: Amenity }, ...]`.
+ *
+ * Downstream response schemas pick different subsets of those fields:
+ * - `AccommodationPublicSchema.amenities` picks `{ amenityId, name, icon, isOptional, additionalCost }`
+ *   — a merge of junction (`amenityId`, `isOptional`, `additionalCost`) and entity (`name`, `icon`).
+ * - `AccommodationProtectedSchema.amenities` / `AccommodationAdminSchema.amenities` pick the
+ *   entity-only shape (`{ id, slug, name, icon, ... }`).
+ *
+ * By merging `{ ...joinRow, ...joinRow[nestedKey] }` per row we produce a flat
+ * object that satisfies all three schemas — Zod's `.pick()` strips whatever each
+ * tier doesn't declare. The nested entity wrapper key (`amenity` / `feature`) is
+ * removed so it doesn't leak into the response payload.
  *
  * Mutates and returns the same entity reference for parity with `flattenPostTagsRelation`
  * in `PostService` (SPEC-117 A-6 fix).
@@ -28,11 +39,21 @@ export function flattenAccommodationJoinRelations<T extends Accommodation | null
         if (!Array.isArray(raw)) return;
         const flat = raw
             .map((row: unknown) => {
-                if (row && typeof row === 'object' && nestedKey in row) {
-                    const nested = (row as Record<string, unknown>)[nestedKey];
-                    return nested ?? null;
+                if (!row || typeof row !== 'object') return null;
+                const rec = row as Record<string, unknown>;
+                if (!(nestedKey in rec)) return rec;
+                const nested = rec[nestedKey];
+                if (!nested || typeof nested !== 'object') {
+                    // No nested entity to merge in — drop the nestedKey to avoid
+                    // leaking the wrapper and return the bare junction row.
+                    const { [nestedKey]: _drop, ...rest } = rec;
+                    return rest;
                 }
-                return row ?? null;
+                // Merge nested entity fields on top of join fields. Entity fields
+                // (name, icon, ...) win for keys that exist in both; join-only
+                // fields (amenityId, isOptional, additionalCost) survive intact.
+                const { [nestedKey]: _drop, ...joinFields } = rec;
+                return { ...joinFields, ...(nested as Record<string, unknown>) };
             })
             .filter((item: unknown) => item !== null && item !== undefined);
         // TYPE-WORKAROUND: same generic-record cast as above to write the flattened relation back
@@ -42,6 +63,22 @@ export function flattenAccommodationJoinRelations<T extends Accommodation | null
     flattenJoin('amenities', 'amenity');
     flattenJoin('features', 'feature');
     return entity;
+}
+
+/**
+ * Convenience wrapper around {@link flattenAccommodationJoinRelations} for use
+ * in list/search lifecycle hooks. Applies the in-place flattening to every item
+ * in a paginated result and returns the same array reference so the result
+ * envelope can be spread without an extra allocation.
+ *
+ * @param items - List of accommodation entities (may be empty)
+ * @returns The same array, with each entity's `amenities`/`features` flattened.
+ */
+export function flattenAccommodationJoinRelationsList<T extends Accommodation>(items: T[]): T[] {
+    for (const item of items) {
+        flattenAccommodationJoinRelations(item);
+    }
+    return items;
 }
 
 /**

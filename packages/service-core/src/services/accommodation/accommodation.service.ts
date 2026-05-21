@@ -87,7 +87,11 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
-import { flattenAccommodationJoinRelations, generateSlug } from './accommodation.helpers';
+import {
+    flattenAccommodationJoinRelations,
+    flattenAccommodationJoinRelationsList,
+    generateSlug
+} from './accommodation.helpers';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -329,6 +333,12 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Applies SPEC-095 + SPEC-097 projections to every item in a list result.
+     *
+     * Flattens `amenities`/`features` junction rows when the model populated them
+     * via `includeAmenities`/`includeFeatures` — the public response schema picks
+     * a merged shape (`amenityId` + entity fields) that the raw Drizzle output
+     * does not satisfy. The flatten is a no-op when those relations weren't
+     * requested.
      */
     protected override async _afterList(
         result: PaginatedListOutput<Accommodation>,
@@ -336,7 +346,8 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
-        const withCity = projectAccommodationCityDestinationList(result.items);
+        const flattened = flattenAccommodationJoinRelationsList(result.items);
+        const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
         if (!salt) return { ...result, items: withOwnerAvatar };
@@ -348,6 +359,12 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Applies SPEC-095 + SPEC-097 projections to every item in a search result.
+     *
+     * Flattens `amenities`/`features` junction rows when the model populated them
+     * via `includeAmenities`/`includeFeatures` — the public response schema picks
+     * a merged shape (`amenityId` + entity fields) that the raw Drizzle output
+     * does not satisfy. The flatten is a no-op when those relations weren't
+     * requested.
      */
     protected override async _afterSearch(
         result: PaginatedListOutput<Accommodation>,
@@ -355,7 +372,8 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
-        const withCity = projectAccommodationCityDestinationList(result.items);
+        const flattened = flattenAccommodationJoinRelationsList(result.items);
+        const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
         if (!salt) return { ...result, items: withOwnerAvatar };
