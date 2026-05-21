@@ -9,10 +9,19 @@ export const OWNER_TRIAL_DAYS = 14;
 export const COMPLEX_TRIAL_DAYS = 14;
 
 /**
- * Default grace period in days after payment failure.
+ * Reference constant for the initial-payment grace window, in days.
  *
- * This is the initial grace period before the dunning process starts.
- * The operational dunning grace period is defined by DUNNING_GRACE_PERIOD_DAYS.
+ * IMPORTANT: This constant is NOT the value enforced at runtime. qzpay-core's
+ * `daysRemainingInGrace()` and `isInGracePeriod()` use `DUNNING_GRACE_PERIOD_DAYS=7`
+ * against `current_period_end` for both the grace window and the dunning cutoff.
+ * There is currently no separate payment-grace enforcement.
+ *
+ * This constant is kept as a reference for documentation and as a tripwire for
+ * the warning log in `apps/api/src/middlewares/past-due-grace.middleware.ts`. The
+ * middleware logs a warning at import time if this value diverges from 3, but
+ * the runtime grace behavior follows qzpay-core regardless.
+ *
+ * See `docs/billing/grace-period-source-of-truth.md` for the full picture.
  */
 export const PAYMENT_GRACE_PERIOD_DAYS = 3;
 

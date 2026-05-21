@@ -24,14 +24,36 @@ import { getQZPayBilling } from './billing';
 /**
  * Reference validation: log a warning at import time if the reference constant
  * diverges from the expected value. QZPay is the actual source of truth for
- * grace period enforcement. See: docs/billing/grace-period-source-of-truth.md
+ * grace period enforcement.
+ *
+ * NOTE: This is a tripwire, not enforcement. The runtime grace window honored by
+ * qzpay-core's `isInGracePeriod()` + `daysRemainingInGrace()` is actually 7 days
+ * (DUNNING_GRACE_PERIOD_DAYS), not 3. `PAYMENT_GRACE_PERIOD_DAYS=3` is a reference
+ * constant from `@repo/billing` that no consumer reads for enforcement. See:
+ * docs/billing/grace-period-source-of-truth.md
  */
 if (PAYMENT_GRACE_PERIOD_DAYS !== 3) {
     apiLogger.warn(
         { configuredDays: PAYMENT_GRACE_PERIOD_DAYS, expectedDays: 3 },
-        'PAYMENT_GRACE_PERIOD_DAYS diverges from expected value. Verify QZPay config is in sync.'
+        'PAYMENT_GRACE_PERIOD_DAYS reference constant diverges from expected value (purely informational; runtime enforcement is independent of this).'
     );
 }
+
+/**
+ * Milliseconds in one day, used by the `daysOverdue` fallback in the 402 branch.
+ */
+const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+
+/**
+ * The grace window length honored by qzpay-core at runtime, in days. This must
+ * match qzpay-core's `DUNNING_GRACE_PERIOD_DAYS` so that the middleware's
+ * `daysOverdue` calculation in the 402 path agrees with the helper's
+ * `isInGracePeriod()` boundary.
+ *
+ * If qzpay-core changes the window, update this constant — there is no shared
+ * symbol to import; the helpers expose the boolean only.
+ */
+const QZPAY_GRACE_WINDOW_DAYS = 7;
 
 /**
  * Paths exempt from grace period enforcement.
@@ -174,8 +196,22 @@ export function pastDueGraceMiddleware(): AppMiddleware {
                 return;
             }
 
-            // Grace period has expired: calculate how many days overdue
-            const daysOverdue = Math.abs(pastDueSub.daysRemainingInGrace() ?? 0);
+            // Grace period has expired: calculate how many days overdue.
+            //
+            // qzpay-core's `daysRemainingInGrace()` returns `null` (not a negative
+            // number) once `isInGracePeriod()` is false, so the previous
+            // `Math.abs(daysRemainingInGrace() ?? 0)` would always collapse to 0.
+            // We compute the value directly from `current_period_end`:
+            //
+            //   daysOverdue = days since current_period_end - grace window length
+            //
+            // This matches what the helper would return if it had negative semantics.
+            const periodEnd = pastDueSub.currentPeriodEnd;
+            const daysSincePeriodEnd =
+                periodEnd instanceof Date
+                    ? Math.ceil((Date.now() - periodEnd.getTime()) / ONE_DAY_MS)
+                    : 0;
+            const daysOverdue = Math.max(0, daysSincePeriodEnd - QZPAY_GRACE_WINDOW_DAYS);
 
             apiLogger.warn(
                 {
