@@ -495,7 +495,15 @@ export const billingApi = {
     }): Promise<ApiResult<{ readonly checkoutUrl: string }>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,
-            body: { planSlug, billingInterval }
+            body: { planSlug, billingInterval },
+            // `/start-paid` is wrapped by `idempotencyKeyMiddleware` (SPEC-143
+            // T-143-60). A fresh UUID v4 per click means double-click retries
+            // get the cached response (no duplicate MP preference + sub row)
+            // while two distinct user actions remain independent. The
+            // disabled-while-loading guard on the button covers the simultaneous
+            // double-click case; the middleware covers the network-level retry
+            // case (slow network → user reloads, etc.).
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
 
