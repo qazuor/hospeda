@@ -736,3 +736,317 @@
         background-color: oklch(from var(--core-foreground) l c h / 0.92);
     }
 }
+
+/* =======================================================================
+   FORM PRIMITIVES — shared classes for inputs, labels, and form layout
+   used across the web (ContactForm, CreatePropertyMiniForm, etc.).
+   Mirrors the visual language of ContactForm.module.css.
+   ======================================================================= */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 1.25rem);
+    width: 100%;
+    text-align: left;
+}
+
+.form--card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: var(--space-6, 1.5rem);
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4, 1rem);
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.form-label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.form-required {
+    color: var(--brand-accent);
+    margin-left: var(--space-1, 0.25rem);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.15));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    box-sizing: border-box;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--core-muted-foreground);
+    opacity: 0.7;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.18);
+}
+
+.form-input[aria-invalid="true"],
+.form-select[aria-invalid="true"],
+.form-textarea[aria-invalid="true"] {
+    border-color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.form-input[aria-invalid="true"]:focus,
+.form-select[aria-invalid="true"]:focus,
+.form-textarea[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.18);
+}
+
+.form-select {
+    cursor: pointer;
+}
+
+.form-textarea {
+    min-height: 5rem;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.form-hint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+}
+
+.form-error {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.form-error-banner {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.1);
+    border: 1px solid var(--destructive, oklch(0.6 0.22 25));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}
+
+.form-disclaimer {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+    line-height: 1.5;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        justify-content: stretch;
+    }
+    .form-actions > .btn-gradient {
+        width: 100%;
+    }
+}
+
+/* =======================================================================
+   COMBOBOX — shared single/multi-select dropdown primitives.
+   Used by SearchableSelect / SearchableMultiSelect React islands and by
+   the home page SearchBar dropdowns. Visual language matches the home
+   page search panels (rich items with optional icon + checkbox).
+   ======================================================================= */
+
+.combobox {
+    position: relative;
+    width: 100%;
+}
+
+.combobox__input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.combobox__loading-hint {
+    position: absolute;
+    top: 50%;
+    right: var(--space-3, 0.75rem);
+    transform: translateY(-50%);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    pointer-events: none;
+}
+
+.combobox__listbox {
+    position: absolute;
+    top: calc(100% + var(--space-1, 0.25rem));
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    box-shadow: var(--shadow-card);
+    max-height: 18rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.combobox__listbox[hidden] {
+    display: none;
+}
+
+.combobox__status {
+    padding: 10px 12px;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    text-align: center;
+}
+
+.combobox__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    line-height: 1.35;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
+}
+
+.combobox__option:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+}
+
+.combobox__option--highlighted {
+    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+}
+
+.combobox__option--selected {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.combobox__option--selected.combobox__option--highlighted {
+    background-color: oklch(from var(--brand-primary) l c h / 0.14);
+}
+
+.combobox__option-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    color: var(--brand-primary);
+}
+
+.combobox__option--selected .combobox__option-icon {
+    background-color: var(--brand-primary);
+    color: var(--core-card);
+}
+
+.combobox__option-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.combobox__option-check {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--core-card);
+    transition: background-color var(--duration-fast, 0.15s) ease, border-color
+        var(--duration-fast, 0.15s) ease;
+}
+
+.combobox__option--selected .combobox__option-check {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--core-card);
+}
+
+.combobox__footer {
+    padding: 6px 8px 2px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+
+.combobox__helper-link {
+    align-self: flex-start;
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--brand-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.combobox__helper-link:hover {
+    color: var(--brand-primary);
+}

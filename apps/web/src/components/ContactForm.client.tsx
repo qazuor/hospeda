@@ -15,7 +15,7 @@ import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import styles from './ContactForm.module.css';
 
 // API base URL — must be absolute because the web app (host A) and the API
@@ -117,6 +117,28 @@ export function ContactForm({ locale }: ContactFormProps) {
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // Prefill from URL params so other pages can deep-link into the contact
+    // form with a topic + message already filled in (e.g. the
+    // CityDestinationPicker's "No encuentro mi ciudad" link). Only the
+    // `type` value is honored if it matches a known option; `message` is
+    // length-capped to match the schema bound and prevent UI blow-out.
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const rawType = params.get('type');
+        const rawMessage = params.get('message');
+        const allowedTypes = new Set<string>(CONTACT_TYPE_OPTIONS.map((opt) => opt.value));
+        const nextType =
+            rawType && allowedTypes.has(rawType) ? (rawType as FormFields['type']) : null;
+        const nextMessage = rawMessage ? rawMessage.slice(0, 2000) : null;
+        if (!nextType && !nextMessage) return;
+        setFields((prev) => ({
+            ...prev,
+            ...(nextType ? { type: nextType } : {}),
+            ...(nextMessage ? { message: nextMessage } : {})
+        }));
+    }, []);
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
