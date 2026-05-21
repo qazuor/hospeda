@@ -10,6 +10,17 @@
     "empty": {
         "contact": "Contactanos"
     },
+    "toggle": {
+        "monthly": "Mensual",
+        "annual": "Anual",
+        "annualSaving": "Ahorrá {percent}%",
+        "ariaLabel": "Elegí la frecuencia de facturación"
+    },
+    "period": {
+        "month": "/mes",
+        "year": "/año"
+    },
+    "monthlyOnly": "Solo plan mensual",
     "owner": {
         "title": "Planes para propietarios — Hospeda",
         "description": "Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.",

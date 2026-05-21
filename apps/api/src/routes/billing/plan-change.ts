@@ -298,8 +298,15 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                     intervalCount: qzpayIntervalCount,
                     billing,
                     urls: {
-                        successUrl: `${env.HOSPEDA_SITE_URL}/billing/return`,
-                        cancelUrl: `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`,
+                        // Point at existing locale-prefixed checkout pages so
+                        // Astro's locale middleware does not rewrite `/billing/return`
+                        // into a 404 surface (Finding #8 from staging smoke
+                        // 2026-05-21). Hardcoded `es` matches the default
+                        // locale used by `buildPaymentMethodReturnUrl` in
+                        // `start-paid.ts`; both should pull the user's
+                        // preferred locale when that propagation lands.
+                        successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,
+                        cancelUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/failure/`,
                         notificationUrl: `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`
                     },
                     statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR

@@ -10,6 +10,17 @@
     "empty": {
         "contact": "Fale conosco"
     },
+    "toggle": {
+        "monthly": "Mensal",
+        "annual": "Anual",
+        "annualSaving": "Economize {percent}%",
+        "ariaLabel": "Escolha a frequência de cobrança"
+    },
+    "period": {
+        "month": "/mês",
+        "year": "/ano"
+    },
+    "monthlyOnly": "Apenas plano mensal",
     "owner": {
         "title": "Planos para anfitriões — Hospeda",
         "description": "Publique sua hospedagem com o plano que melhor se adapta ao seu negócio.",
