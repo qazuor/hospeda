@@ -47,9 +47,8 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
         data: Record<string, unknown>[];
         pagination: Record<string, unknown>;
     }>({
-        path: `/api/v1/protected/billing/subscriptions?${params.toString()}`
+        path: `/api/v1/admin/billing/subscriptions?${params.toString()}`
     });
-    // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
     return { items: result.data.data, pagination: result.data.pagination };
 }
 
@@ -58,24 +57,28 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
  */
 async function fetchSubscription(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/subscriptions/${id}`
+        path: `/api/v1/admin/billing/subscriptions/${id}`
     });
     return result.data.data;
 }
 
 /**
- * Cancel a subscription via the admin tier endpoint.
+ * Cancel a subscription via the admin tier endpoint (qzpay-hono v1.3).
  *
- * The backend only supports end-of-period cancellation today — there is
- * no immediate-cancel path on `POST /admin/billing/subscriptions/:id/cancel`
- * (only `reason` is accepted by SubscriptionCancelBodySchema). If admins
- * need true immediate revocation it has to be added on the backend first.
+ * `immediate: true` cancels at once; the default is end-of-period
+ * (cancelAtPeriodEnd: true on the backend). Optional `reason` is logged in
+ * the subscription event audit trail.
  */
-async function cancelSubscription(payload: { id: string; reason?: string }) {
+async function cancelSubscription(payload: {
+    id: string;
+    immediate?: boolean;
+    reason?: string;
+}) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/billing/subscriptions/${payload.id}/cancel`,
         method: 'POST',
         body: {
+            immediate: payload.immediate ?? false,
             reason: payload.reason
         }
     });
@@ -85,23 +88,20 @@ async function cancelSubscription(payload: { id: string; reason?: string }) {
 /**
  * Change a subscription's plan from the admin panel.
  *
- * **Currently not implemented.** The `POST /admin/billing/subscriptions/:id/
- * change-plan` endpoint does not exist on the backend. The legacy
- * `PUT /protected/billing/subscriptions/:id` route operates against the
- * authenticated user's own subscription, which is incompatible with the
- * admin use case (admin changing another user's plan). This function
- * therefore throws synchronously so the UI surfaces a clear error toast
- * instead of silently hitting the wrong endpoint.
- *
- * Tracked as a billing UI gap in `docs/billing/ui-audit-2026.md`.
+ * Calls the qzpay-hono v1.3 admin route, which delegates to
+ * `billing.subscriptions.changePlan` and fires the onAfter hook so the
+ * Hospeda audit log gets the previousPlanId/newPlanId entry.
  */
-async function changePlan(_payload: {
+async function changePlan(payload: {
     subscriptionId: string;
-    newPlanSlug: string;
+    newPlanId: string;
 }): Promise<Record<string, unknown>> {
-    throw new Error(
-        'Admin plan-change is not implemented yet — no backend endpoint exists. Contact the dev team to roll out the change manually.'
-    );
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/billing/subscriptions/${payload.subscriptionId}/change-plan`,
+        method: 'POST',
+        body: { newPlanId: payload.newPlanId }
+    });
+    return result.data.data;
 }
 
 /**
@@ -130,13 +130,15 @@ export const useSubscriptionQuery = (id: string) => {
 };
 
 /**
- * Hook to cancel a subscription (end-of-period only — see {@link cancelSubscription}).
+ * Hook to cancel a subscription. Pass `immediate: true` to cancel right
+ * away; default is end-of-period.
  */
 export const useCancelSubscriptionMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: { id: string; reason?: string }) => cancelSubscription(payload),
+        mutationFn: (payload: { id: string; immediate?: boolean; reason?: string }) =>
+            cancelSubscription(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: subscriptionQueryKeys.subscriptions.lists()
@@ -152,8 +154,7 @@ export const useChangePlanMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: { subscriptionId: string; newPlanSlug: string }) =>
-            changePlan(payload),
+        mutationFn: (payload: { subscriptionId: string; newPlanId: string }) => changePlan(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: subscriptionQueryKeys.subscriptions.lists()
@@ -163,13 +164,13 @@ export const useChangePlanMutation = () => {
 };
 
 /**
- * Extend a trial subscription
+ * Extend a trial subscription via the admin tier endpoint (qzpay-hono v1.3).
  */
 async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/billing/trial/extend',
+        path: `/api/v1/admin/billing/subscriptions/${payload.subscriptionId}/extend-trial`,
         method: 'POST',
-        body: payload
+        body: { additionalDays: payload.additionalDays }
     });
     return result.data.data;
 }
@@ -199,7 +200,7 @@ async function fetchPaymentHistory(subscriptionId: string): Promise<PaymentHisto
     params.append('subscriptionId', subscriptionId);
 
     const result = await fetchApi<{ success: boolean; data: unknown[] }>({
-        path: `/api/v1/protected/billing/payments?${params.toString()}`
+        path: `/api/v1/admin/billing/payments?${params.toString()}`
     });
     return z.array(PaymentHistoryRecordSchema).parse(result.data.data);
 }
