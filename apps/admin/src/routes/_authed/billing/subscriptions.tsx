@@ -1,5 +1,6 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useToast } from '@/components/ui/ToastProvider';
+import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
@@ -68,6 +69,10 @@ function BillingSubscriptionsPage() {
         return matchesStatus && matchesPlan && matchesSearch;
     });
 
+    // Plans query — needed to resolve plan slug -> UUID for the qzpay
+    // change-plan endpoint, which only accepts UUIDs.
+    const { data: plansData } = usePlansQuery();
+
     // Mutations
     const cancelMutation = useCancelSubscriptionMutation();
     const changePlanMutation = useChangePlanMutation();
@@ -98,17 +103,17 @@ function BillingSubscriptionsPage() {
     };
 
     // Handlers: mutations
-    const handleConfirmCancel = (reason?: string) => {
+    const handleConfirmCancel = (immediate: boolean, reason?: string) => {
         if (!selectedSubscription) return;
 
-        // Backend only supports end-of-period cancellation today (see
-        // billing-subscriptions/hooks.ts → cancelSubscription).
         cancelMutation.mutate(
-            { id: selectedSubscription.id, reason },
+            { id: selectedSubscription.id, immediate, reason },
             {
                 onSuccess: () => {
                     addToast({
-                        message: t('admin-billing.subscriptions.toasts.cancelledScheduled'),
+                        message: immediate
+                            ? t('admin-billing.subscriptions.toasts.cancelledImmediate')
+                            : t('admin-billing.subscriptions.toasts.cancelledScheduled'),
                         variant: 'success'
                     });
                     setCancelDialogOpen(false);
@@ -127,13 +132,28 @@ function BillingSubscriptionsPage() {
     const handleConfirmChangePlan = (newPlanSlug: string) => {
         if (!selectedSubscription) return;
 
+        // The dialog selects by slug (the local plan config), but qzpay
+        // change-plan needs the DB UUID. Resolve via the admin /plans query.
+        const planRow = plansData?.items?.find(
+            (p) => (p as { slug?: string }).slug === newPlanSlug
+        ) as { id?: string } | undefined;
+        const newPlanId = planRow?.id;
+        const newPlanDef = getPlanBySlug(newPlanSlug);
+
+        if (!newPlanId) {
+            addToast({
+                message: `${t('admin-billing.subscriptions.toasts.planChangeError')} unknown plan`,
+                variant: 'error'
+            });
+            return;
+        }
+
         changePlanMutation.mutate(
-            { subscriptionId: selectedSubscription.id, newPlanSlug },
+            { subscriptionId: selectedSubscription.id, newPlanId },
             {
                 onSuccess: () => {
-                    const newPlan = getPlanBySlug(newPlanSlug);
                     addToast({
-                        message: `${t('admin-billing.subscriptions.toasts.planChanged')} ${newPlan?.name}`,
+                        message: `${t('admin-billing.subscriptions.toasts.planChanged')} ${newPlanDef?.name ?? newPlanSlug}`,
                         variant: 'success'
                     });
                     setChangePlanDialogOpen(false);
