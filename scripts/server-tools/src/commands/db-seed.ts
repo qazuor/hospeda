@@ -53,21 +53,36 @@ hops db-seed [--target=prod|staging]
              [--no-reset] [--no-required] [--no-example]
              [--clean-images]
              [--no-build]
+             [--no-push] [--no-apply-extras]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour:
-  --reset, --required, --example, --build are ON. --clean-images is
-  OFF. The default invocation:
+  --reset, --required, --example, --build, --push, --apply-extras are
+  ON. --clean-images is OFF. The default invocation:
     1. (optional) git pull \$HOPS_REPO_ROOT
     2. pnpm turbo run build --filter=@repo/seed^...   (turbo-cached)
-    3. pnpm --filter @repo/seed seed --reset --required --example
+    3. pnpm --filter @repo/db db:push                  (drizzle-kit push)
+    4. pnpm db:apply-extras                            (triggers / extras)
+    5. pnpm --filter @repo/seed seed --reset --required --example
 
   Step 2 is required because the seed's workspace deps (@repo/db,
   @repo/billing, etc.) export from \`./dist/index.js\`. Without it,
   the seed crashes with ERR_MODULE_NOT_FOUND on the first import.
   Turbo caches outputs, so subsequent runs are ~1-2s.
+
+  Steps 3 and 4 mirror the local \`pnpm db:fresh-dev\` workflow.
+  Step 3 syncs the schema (\`drizzle-kit push\`) so any new columns
+  introduced since the previous seed are present before the data is
+  loaded. Step 4 applies hospeda-side Postgres extras that Drizzle
+  cannot declare (triggers like \`set_updated_at\`, the search_index
+  materialized view, JSONB CHECK constraints on
+  \`billing_addon_purchases\`). Skipping either of them leaves the
+  database in a state where some queries succeed and others fail —
+  see hospeda smoke 2026-05-21 Finding #2 (a missing
+  \`billing_subscriptions.scheduled_plan_change\` column took the
+  entitlement-load middleware offline silently).
 
   NODE_ENV is set to 'production' for --target=prod (billing seeds
   use livemode: true) and 'development' for --target=staging.
@@ -90,6 +105,16 @@ Flags:
                       workspace deps' dist/ outputs are already up to
                       date (e.g. CI just built them). Without it, the
                       seed will likely crash with ERR_MODULE_NOT_FOUND.
+  --no-push           Skip \`drizzle-kit push\`. Only use when the schema
+                      is already known to be in sync with the deployed
+                      code (e.g. you just ran a previous \`db-seed\` and
+                      no schema changes landed since). The default ON
+                      behaviour is safe-by-default — it is a no-op when
+                      the schema is already current.
+  --no-apply-extras   Skip the Postgres extras script. Only use when
+                      the triggers / matviews / JSONB CHECK constraints
+                      are known current. The default ON behaviour is
+                      safe-by-default — the script is idempotent.
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -136,6 +161,8 @@ export interface ParsedArgs {
     readonly example: boolean;
     readonly cleanImages: boolean;
     readonly build: boolean;
+    readonly push: boolean;
+    readonly applyExtras: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
 }
@@ -155,6 +182,8 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         example: !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
         build: !args.includes('--no-build'),
+        push: !args.includes('--no-push'),
+        applyExtras: !args.includes('--no-apply-extras'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
@@ -182,6 +211,8 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     (parsed.example ? on : off).push('example');
     (parsed.cleanImages ? on : off).push('clean-images');
     (parsed.build ? on : off).push('build');
+    (parsed.push ? on : off).push('push');
+    (parsed.applyExtras ? on : off).push('apply-extras');
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
@@ -251,19 +282,73 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
  */
 async function buildSeedDependencies(repoRoot: string): Promise<void> {
     log.info('Building workspace dependencies of @repo/seed (turbo, cached)...');
-    const result = await runner.run(
-        ['pnpm', 'turbo', 'run', 'build', '--filter=@repo/seed^...'],
-        {
-            cwd: repoRoot,
-            inherit: true
-        }
-    );
+    const result = await runner.run(['pnpm', 'turbo', 'run', 'build', '--filter=@repo/seed^...'], {
+        cwd: repoRoot,
+        inherit: true
+    });
     if (result.exitCode !== 0) {
         die(
             `Build failed (exit ${result.exitCode}). The seed cannot run without dist/ files for its workspace deps. Inspect the output above; if the issue is transient, pass --no-build to skip.`
         );
     }
     log.ok('Dependencies built.');
+}
+
+/**
+ * Sync the Postgres schema with the deployed Drizzle definitions via
+ * \`pnpm --filter @repo/db db:push\`. This is the same step the local
+ * \`pnpm db:fresh-dev\` workflow runs after \`docker compose up\` and
+ * before \`pnpm db:seed\`. Without it, columns added to the schema since
+ * the previous seed are absent, every query that enumerates them blows
+ * up, and the silent-fallback middleware patterns hide the breakage.
+ *
+ * Why we shell out via pnpm rather than calling drizzle-kit directly:
+ * the package's \`db:push\` script already resolves the correct config
+ * file path and respects the workspace tsconfig — keeping the
+ * invocation consistent between local dev and the VPS toolkit avoids
+ * drift the next time the package layout changes.
+ */
+async function runDbPush(params: {
+    readonly repoRoot: string;
+    readonly databaseUrl: string;
+}): Promise<void> {
+    log.info('Syncing schema (pnpm --filter @repo/db db:push)...');
+    const result = await runner.run(['pnpm', '--filter', '@repo/db', 'db:push'], {
+        cwd: params.repoRoot,
+        inherit: true,
+        env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
+    });
+    if (result.exitCode !== 0) {
+        die(
+            `db:push failed (exit ${result.exitCode}). The schema is out of sync with the deployed code and the seed cannot run safely. Inspect the output above; if you intentionally want to seed against the existing (stale) schema, pass --no-push.`
+        );
+    }
+    log.ok('Schema synced.');
+}
+
+/**
+ * Apply hospeda-side Postgres extras (triggers, materialized views,
+ * JSONB CHECK constraints) that Drizzle cannot declare in its schema.
+ * The script lives at \`packages/db/scripts/apply-postgres-extras.sh\`
+ * and is idempotent — safe to run repeatedly. See CLAUDE.md's "Common
+ * Gotchas" section for the full list of what it covers.
+ */
+async function runApplyExtras(params: {
+    readonly repoRoot: string;
+    readonly databaseUrl: string;
+}): Promise<void> {
+    log.info('Applying Postgres extras (pnpm db:apply-extras)...');
+    const result = await runner.run(['pnpm', 'db:apply-extras'], {
+        cwd: params.repoRoot,
+        inherit: true,
+        env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
+    });
+    if (result.exitCode !== 0) {
+        die(
+            `db:apply-extras failed (exit ${result.exitCode}). The schema is current but Postgres-side triggers / matviews / CHECK constraints did not apply. Inspect the output above; if you intentionally want to seed without them, pass --no-apply-extras.`
+        );
+    }
+    log.ok('Postgres extras applied.');
 }
 
 async function runSeed(params: {
@@ -373,7 +458,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
                 '--clean-images deletes Cloudinary assets under hospeda/<env>/seed/ before reseeding.'
             );
         }
-        const ok = await confirm(`Type yes to PROCEED with db-seed against PRODUCTION`, {
+        const ok = await confirm('Type yes to PROCEED with db-seed against PRODUCTION', {
             defaultValue: false
         });
         if (!ok) {
@@ -382,7 +467,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         }
     } else if (target === 'prod' && !parsed.reset && !parsed.skipConfirm) {
         // Non-reset prod run is non-destructive but still worth a heads-up.
-        const ok = await confirm(`Run db-seed (no --reset) against PRODUCTION?`, {
+        const ok = await confirm('Run db-seed (no --reset) against PRODUCTION?', {
             defaultValue: false
         });
         if (!ok) {
@@ -391,13 +476,32 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
+    // ── Schema sync ──────────────────────────────────────────────────
+    // Drizzle's push reconciles the database with the deployed schema.
+    // Without this step columns added since the previous seed are
+    // missing and every query that enumerates them fails silently in
+    // middleware paths — see hospeda smoke 2026-05-21 Finding #2.
+    if (parsed.push) {
+        await runDbPush({ repoRoot, databaseUrl });
+    } else {
+        log.hint('Skipping db:push (--no-push).');
+    }
+
+    // ── Apply Postgres extras ────────────────────────────────────────
+    // Idempotent script that adds triggers, matviews, and JSONB CHECK
+    // constraints Drizzle cannot declare. Safe to run repeatedly.
+    if (parsed.applyExtras) {
+        await runApplyExtras({ repoRoot, databaseUrl });
+    } else {
+        log.hint('Skipping db:apply-extras (--no-apply-extras).');
+    }
+
     // ── Seed ─────────────────────────────────────────────────────────
     // NODE_ENV controls billing seeds' `livemode`. For prod target we
     // want livemode: true (real MercadoPago plans); for staging we
     // want livemode: false (test mode plans the sandbox accepts).
     const cloudinaryEnv = collectCloudinaryEnv(parsed.cleanImages);
-    const nodeEnv: 'production' | 'development' =
-        target === 'prod' ? 'production' : 'development';
+    const nodeEnv: 'production' | 'development' = target === 'prod' ? 'production' : 'development';
     await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv, nodeEnv });
 
     log.ok(`db-seed completed against ${target}.`);
