@@ -219,16 +219,14 @@ describe('SPEC-143 T-143-63 (reframed) — past-due grace middleware (e2e)', () 
         // future. Both fields are pinned so the test is robust to
         // whichever one qzpay-core's helper actually reads.
         //
-        // QZPay quirk discovered while writing this test: the visible
-        // `daysRemainingInGrace()` window appears to use
-        // DUNNING_GRACE_PERIOD_DAYS (7) rather than
-        // PAYMENT_GRACE_PERIOD_DAYS (3). With `currentPeriodEnd = now-1`
-        // the helper returns 6 (≈ -1 + 7), not the 2 the docs imply.
-        // The middleware does not reinterpret this value — it forwards
-        // it verbatim into the header — so the assertion below uses
-        // [0, 7] to track the actual qzpay behavior. See
-        // [[bug/payment-vs-dunning-grace-days-mismatch]] in engram for
-        // the docs-vs-code mismatch.
+        // The visible `daysRemainingInGrace()` window uses
+        // DUNNING_GRACE_PERIOD_DAYS (7) — NOT PAYMENT_GRACE_PERIOD_DAYS (3).
+        // With `currentPeriodEnd = now-1` the helper returns 6 (≈ -1 + 7).
+        // The middleware forwards this value verbatim into the header, so
+        // the assertion below uses [0, 7] to match qzpay's actual contract.
+        // The docs (`docs/billing/grace-period-source-of-truth.md`) and the
+        // `PAYMENT_GRACE_PERIOD_DAYS` comment were updated to reflect that
+        // the constant is reference-only, not enforced.
         const { subscriptionId } = await createTestSubscription({
             customerId,
             planId: cheapPlanId,
@@ -271,19 +269,20 @@ describe('SPEC-143 T-143-63 (reframed) — past-due grace middleware (e2e)', () 
         const body = (await res.json()) as GraceExpiredBody;
         expect(body.error).toBe('GRACE_PERIOD_EXPIRED');
         expect(body.message).toContain('grace period has expired');
-        // Empirical: when grace has expired, qzpay-core's
-        // `daysRemainingInGrace()` returns `null`, not a negative
-        // number. The middleware then `?? 0`'s it before
-        // `Math.abs()`, so `daysOverdue` collapses to 0 instead of
-        // tracking how many days the sub is past grace. This is a
-        // separate UX-leaning bug ([[bug/grace-expired-daysoverdue-collapses-to-zero]]
-        // in engram) that does NOT change the block decision — the
-        // 402 + error code are what gates access. We assert `>= 0` to
-        // document the current behavior; tightening to `>= 1` would
-        // require fixing qzpay to return the negative remaining count
-        // OR the middleware to compute its own delta from
-        // `current_period_end`.
-        expect(body.daysOverdue).toBeGreaterThanOrEqual(0);
+        // The middleware now computes `daysOverdue` directly from
+        // `current_period_end` (previously collapsed to 0 via
+        // `Math.abs(daysRemainingInGrace() ?? 0)`).
+        //
+        // With `currentPeriodEnd = now - 10 days` and qzpay's 7-day
+        // grace window, the expected calculation is:
+        //   daysOverdue = ceil((now - currentPeriodEnd) / 1d) - 7
+        //              ≈ 10 - 7 = 3
+        //
+        // Allow a 1-day tolerance to absorb sub-second drift between
+        // the test's `now` snapshot inside `patchGraceWindow` and the
+        // middleware's `Date.now()` call when the request flows through.
+        expect(body.daysOverdue).toBeGreaterThanOrEqual(3);
+        expect(body.daysOverdue).toBeLessThanOrEqual(4);
     });
 
     it('bypasses grace enforcement on exempt path suffixes even when grace is expired', async () => {
