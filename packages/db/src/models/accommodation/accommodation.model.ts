@@ -87,6 +87,33 @@ function buildPriceOrderExpr(order: 'asc' | 'desc'): SQL {
 }
 
 /**
+ * Synthetic sort field that orders accommodations by haversine distance from a
+ * caller-supplied `(centerLat, centerLong)` center. Only honored when the
+ * caller passes the coordinates in (otherwise the field is silently dropped
+ * upstream so the URL stays usable when no geo center is active). Mirrors the
+ * SQL formula used by `buildGeoRadiusClause` (Earth radius 6371 km) so the
+ * sort distance and the filter distance match exactly.
+ *
+ * Rows missing JSONB coordinates bubble to the end via `NULLS LAST`, which
+ * also keeps the result deterministic when the cast yields NULL.
+ */
+const DISTANCE_SORT_FIELD = 'distance';
+
+function buildDistanceOrderExpr(centerLat: number, centerLong: number, order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(
+        2 * 6371 * asin(
+            sqrt(
+                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
+                + cos(radians(${centerLat}))
+                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
+                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
+            )
+        )
+    ) ${direction} NULLS LAST`;
+}
+
+/**
  * Build WHERE-clause conditions for `minPrice` / `maxPrice` filters. Operates
  * on the JSONB-extracted base price (`(price->>'price')::numeric`) instead of
  * comparing the whole JSONB object to a number (which Postgres allows but
@@ -130,6 +157,15 @@ export function buildAccommodationOrderBy(params: {
     sorts?: SortField[];
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /**
+     * Center latitude for the `distance` synthetic sort. Required for the
+     * `distance` sort to be honored; if absent (or `longitude` is absent), any
+     * `distance` entry in `sorts`/`sortBy` is silently dropped so the URL
+     * remains usable when no geo center is active.
+     */
+    latitude?: number;
+    /** Center longitude for the `distance` synthetic sort. See `latitude`. */
+    longitude?: number;
 }): SQL[] {
     const orderBy: SQL[] = [];
 
@@ -148,6 +184,8 @@ export function buildAccommodationOrderBy(params: {
         ? rawSortFields.filter((s) => s.field !== 'isFeatured')
         : rawSortFields;
 
+    const hasGeoCenter = params.latitude !== undefined && params.longitude !== undefined;
+
     for (const sort of sortFields) {
         // SPEC-098 T-052 — synthetic field backed by a correlated subquery
         // against `user_bookmarks`. Handled before the column lookup because
@@ -162,6 +200,22 @@ export function buildAccommodationOrderBy(params: {
         // base value explicitly to get numeric ordering.
         if (sort.field === PRICE_SORT_FIELD) {
             orderBy.push(buildPriceOrderExpr(sort.order));
+            continue;
+        }
+        // Synthetic field that orders by haversine distance from a geo
+        // center. Silently dropped if the caller did not supply
+        // `latitude`/`longitude` — keeps the URL roundtrip stable when the
+        // user toggles geo-radius off without changing the sort param.
+        if (sort.field === DISTANCE_SORT_FIELD) {
+            if (hasGeoCenter) {
+                orderBy.push(
+                    buildDistanceOrderExpr(
+                        params.latitude as number,
+                        params.longitude as number,
+                        sort.order
+                    )
+                );
+            }
             continue;
         }
         const column = accommodations[sort.field as keyof typeof accommodations];
@@ -569,7 +623,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder
+            sortOrder: params.sortOrder,
+            latitude: params.latitude,
+            longitude: params.longitude
         });
 
         const page = params.page ?? 1;
@@ -726,7 +782,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder
+            sortOrder: params.sortOrder,
+            latitude: params.latitude,
+            longitude: params.longitude
         });
 
         const page = params.page ?? 1;
