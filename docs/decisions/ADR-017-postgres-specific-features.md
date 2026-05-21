@@ -32,10 +32,15 @@ We manage all four feature categories exclusively through **manual SQL migration
 a single location: `packages/db/src/migrations/manual/`. Each file is an idempotent SQL script
 (using `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DO` blocks with existence checks).
 
-A shell script `packages/db/scripts/apply-postgres-extras.sh` acts as a **generic orchestrator**:
-it iterates every `manual/*.sql` file in lexical order and applies it with
-`psql --file --single-transaction`. Files matching `*_down.sql` are skipped automatically — those
-are reversal scripts applied only through ad-hoc rollback procedures.
+A Node script `packages/db/scripts/apply-postgres-extras.mjs` acts as a **generic orchestrator**:
+it iterates every `manual/*.sql` file in lexical order and applies it via the `pg` driver. Files
+matching `*_down.sql` are skipped automatically — those are reversal scripts applied only through
+ad-hoc rollback procedures.
+
+The script intentionally uses the `pg` driver (not `psql`) so it works on hosts that do not have
+the postgres client tools installed — most notably the VPS host where `hops db-seed` runs, and CI
+runners that do not install `postgresql-client`. A thin `apply-postgres-extras.sh` wrapper is
+kept for backwards compatibility with existing call-sites; it forwards to the `.mjs`.
 
 The script is wrapped by the root `pnpm db:apply-extras` command, which is chained automatically
 into `db:fresh`, `db:fresh-dev`, and `db:reset`. Developers never need to invoke the script manually
@@ -130,8 +135,8 @@ pnpm db:reset       # drop + migrate + apply-extras
 For ad-hoc or CI usage you can invoke it directly:
 
 ```bash
-pnpm db:apply-extras                                          # resolves URL from env or apps/api/.env.local
-packages/db/scripts/apply-postgres-extras.sh "$CUSTOM_URL"    # explicit URL as first arg
+pnpm db:apply-extras                                                  # resolves URL from env or apps/api/.env.local
+node packages/db/scripts/apply-postgres-extras.mjs "$CUSTOM_URL"      # explicit URL as first arg
 ```
 
 The script is idempotent — it can be re-run safely after adding new `manual/*.sql` files or when a
