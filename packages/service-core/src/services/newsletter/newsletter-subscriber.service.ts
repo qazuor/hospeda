@@ -121,7 +121,7 @@ export interface NewsletterNotificationDispatcher {
     sendWelcome(input: {
         subscriberId: string;
         email: string;
-        userId: string;
+        userId: string | null;
         locale: string;
         unsubscribeToken: string;
     }): Promise<void>;
@@ -482,7 +482,7 @@ export class NewsletterSubscriberService extends BaseService {
     private async _sendWelcome(input: {
         subscriberId: string;
         email: string;
-        userId: string;
+        userId: string | null;
         locale: string;
         unsubscribeToken: string;
     }): Promise<void> {
