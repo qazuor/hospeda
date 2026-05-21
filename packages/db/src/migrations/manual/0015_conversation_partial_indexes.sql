@@ -25,6 +25,12 @@
 -- ---------------------------------------------------------------------------
 -- 1. One active conversation per (authenticated user, accommodation)
 -- ---------------------------------------------------------------------------
+-- We rely on Postgres' native `CREATE UNIQUE INDEX IF NOT EXISTS` (9.5+) so
+-- the script stays idempotent. A previous version of this file used a manual
+-- guard that compared `pg_indexes.indexname` against the mixed-case literal
+-- 'conversations_userId_accommodationId_unique', but Postgres lowercases
+-- unquoted identifiers on storage, so the guard always evaluated to "not
+-- exists" and the subsequent CREATE would fail on re-runs.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -36,17 +42,10 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE tablename = 'conversations'
-      AND indexname = 'conversations_userId_accommodationId_unique'
-  ) THEN
-    CREATE UNIQUE INDEX conversations_userId_accommodationId_unique
-      ON conversations (user_id, accommodation_id)
-      WHERE user_id IS NOT NULL
-        AND deleted_at IS NULL;
-    RAISE NOTICE 'Created index conversations_userId_accommodationId_unique.';
-  END IF;
+  CREATE UNIQUE INDEX IF NOT EXISTS conversations_userId_accommodationId_unique
+    ON conversations (user_id, accommodation_id)
+    WHERE user_id IS NOT NULL
+      AND deleted_at IS NULL;
 END;
 $$;
 
@@ -64,18 +63,11 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE tablename = 'conversations'
-      AND indexname = 'conversations_anonymousEmail_accommodationId_unique'
-  ) THEN
-    CREATE UNIQUE INDEX conversations_anonymousEmail_accommodationId_unique
-      ON conversations (anonymous_email, accommodation_id)
-      WHERE anonymous_email IS NOT NULL
-        AND anonymous_email_verified = true
-        AND deleted_at IS NULL;
-    RAISE NOTICE 'Created index conversations_anonymousEmail_accommodationId_unique.';
-  END IF;
+  CREATE UNIQUE INDEX IF NOT EXISTS conversations_anonymousEmail_accommodationId_unique
+    ON conversations (anonymous_email, accommodation_id)
+    WHERE anonymous_email IS NOT NULL
+      AND anonymous_email_verified = true
+      AND deleted_at IS NULL;
 END;
 $$;
 
@@ -93,15 +85,8 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE tablename = 'conversation_notification_schedules'
-      AND indexname = 'conv_notif_schedules_conversation_recipient_unique'
-  ) THEN
-    CREATE UNIQUE INDEX conv_notif_schedules_conversation_recipient_unique
-      ON conversation_notification_schedules (conversation_id, recipient_side)
-      WHERE cancelled_at IS NULL;
-    RAISE NOTICE 'Created index conv_notif_schedules_conversation_recipient_unique.';
-  END IF;
+  CREATE UNIQUE INDEX IF NOT EXISTS conv_notif_schedules_conversation_recipient_unique
+    ON conversation_notification_schedules (conversation_id, recipient_side)
+    WHERE cancelled_at IS NULL;
 END;
 $$;
