@@ -526,6 +526,33 @@ two short-lived branches.
 | 8 | back_url redirects to 404 | **RESOLVED** in hospeda `2e3e14f35`. |
 | 9 | Smoke pre-flight: MP test-buyer browser login | OPEN procedural — to be folded into `staging-smoke-checklist.md` prerequisites section. |
 
+### #7b — prod-api rejects MP webhook deliveries with 403 (signature mismatch)
+
+**Severity**: BLOCKER for prod go-live, not for staging smoke.
+
+**Observed**: while diagnosing #7, we found that the MP dashboard's webhook URL was set to the **prod** endpoint (`https://api.hospeda.com.ar/api/v1/webhooks/mercadopago`) when it should have been pointing at staging. Operator changed it to staging. While checking the prod logs, we saw MP HAD attempted to deliver 5 webhook events to prod-api during the smoke window — all 5 returned **403** with `webhook-signature` middleware-level rejection.
+
+**Confirmed by operator (2026-05-21)**: staging and prod use **different** `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` values. That is the right setup architecturally — they are isolated environments. But it means each environment's secret MUST match what the MP dashboard signs with **for that environment's URL**. When MP delivered staging-flow webhooks to prod-api by mistake, prod-api's secret didn't match the staging-app signature, hence 403 across the board.
+
+The setup is consistent if and only if:
+
+- Staging env `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` matches the secret configured for the MP dashboard's "test" notification URL.
+- Prod env `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` matches the secret configured for the MP dashboard's "production" notification URL.
+
+For staging, the upcoming smoke retry will verify this implicitly: if MP delivery shows up in `hospeda-api-staging` logs with 200 (not 403), the staging secret is correct. Pending.
+
+For **prod**, the secret pairing must be verified **before go-live** — otherwise the first real subscription will mute itself (sub stuck `incomplete` because prod-api rejects every MP webhook with 403). Verification steps:
+
+1. Pull prod env secret prefix: `hops exec api --target=prod printenv HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET | head -c 20`
+2. Open MP dashboard for the prod app (or the prod section of the shared app — depends on the MP account setup) and read the webhook secret configured there.
+3. If the prefixes do not match, fix one or the other:
+   - If the env value is "the source of truth" (e.g. set by tooling), update the MP dashboard secret to match.
+   - If the dashboard value is "the source of truth", update the prod env in Coolify and redeploy.
+
+**Engram pin**: TBD on close — `bug/prod-webhook-secret-pairing-needs-verification`.
+
+---
+
 ### Finding #7 (webhook) — diagnostic action plan for next session
 
 Code-side investigation completed: `apps/api/src/routes/webhooks/mercadopago/router.ts` mounts a `createWebhookRouter` from `@qazuor/qzpay-hono` with handlers for the full set of MP events needed (`payment.created/updated`, `subscription_preapproval.created/updated`, `subscription_authorized_payment.created/updated`, `chargebacks`, `payment.dispute`). The endpoint responds `401 Missing webhook signature` when posted without a signature, confirming both that it is mounted and that signature verification is in front of the handler. `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is populated on staging (74-char value). So the hospeda side is wired correctly; the gap is between MP and hospeda.
