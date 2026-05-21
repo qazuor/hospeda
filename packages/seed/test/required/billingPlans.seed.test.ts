@@ -137,11 +137,14 @@ describe('ensurePlan', () => {
         expect(result).toEqual({ planId: 'new-plan-uuid', status: 'created' });
         expect(state.insertCalls).toHaveLength(1);
         const inserted = state.insertCalls[0]?.values;
-        expect(inserted?.name).toBe('Brand New');
+        // `billing_plans.name` stores the slug (the QZPay backend resolves
+        // plans by it). The human label travels in metadata.displayName.
+        expect(inserted?.name).toBe('plan-test');
         expect(inserted?.active).toBe(true);
         expect(inserted?.livemode).toBe(false);
         const metadata = inserted?.metadata as Record<string, unknown>;
         expect(metadata.slug).toBe('plan-test');
+        expect(metadata.displayName).toBe('Brand New');
         expect(metadata.monthlyPriceArs).toBe(1_000_000);
         expect(metadata.annualPriceArs).toBe(10_000_000);
     });
@@ -152,8 +155,14 @@ describe('ensurePlan', () => {
         state.returningResults.push([]); // insert returns nothing
 
         await expect(
-            _internals.ensurePlan(makePlan({ name: 'Crash' }), false, makeStubDb(state))
-        ).rejects.toThrow(/Insert of plan "Crash" returned no row/);
+            _internals.ensurePlan(
+                makePlan({ slug: 'crash-plan', name: 'Crash' }),
+                false,
+                makeStubDb(state)
+            )
+            // The error identifies the plan by slug — that's what
+            // `billing_plans.name` stores and what downstream lookups use.
+        ).rejects.toThrow(/Insert of plan "crash-plan" returned no row/);
     });
 
     it('forwards livemode=true to the insert', async () => {
