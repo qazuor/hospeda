@@ -838,6 +838,82 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
     });
 
     // =========================================================================
+    // Optional include flags (amenities / features projections)
+    // =========================================================================
+
+    describe('searchWithRelations() — include flags', () => {
+        it('omits amenities/features from the with-clause by default', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({});
+
+            expect(mocks.findManyFn).toHaveBeenCalledTimes(1);
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            // Default relations are still loaded.
+            expect(findManyArg.with).toHaveProperty('destination');
+            expect(findManyArg.with).toHaveProperty('owner');
+            // Amenities/features should NOT be present when not asked for.
+            expect(findManyArg.with).not.toHaveProperty('amenities');
+            expect(findManyArg.with).not.toHaveProperty('features');
+        });
+
+        it('adds the amenities relation when includeAmenities is true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({ includeAmenities: true });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('amenities');
+            // The nested `with: { amenity: true }` is what flattens the
+            // junction row to the canonical {amenity: {...}} shape the web
+            // transforms expect.
+            expect((findManyArg.with.amenities as { with?: unknown }).with).toEqual({
+                amenity: true
+            });
+            // Features still skipped because the flag was not set.
+            expect(findManyArg.with).not.toHaveProperty('features');
+        });
+
+        it('adds the features relation when includeFeatures is true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({ includeFeatures: true });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('features');
+            expect((findManyArg.with.features as { with?: unknown }).with).toEqual({
+                feature: true
+            });
+            expect(findManyArg.with).not.toHaveProperty('amenities');
+        });
+
+        it('adds both relations when both flags are true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({
+                includeAmenities: true,
+                includeFeatures: true
+            });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('amenities');
+            expect(findManyArg.with).toHaveProperty('features');
+        });
+    });
+
+    // =========================================================================
     // buildAccommodationOrderBy — export smoke-test
     // =========================================================================
 

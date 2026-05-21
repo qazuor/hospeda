@@ -129,6 +129,19 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
      * `pool` + `heated_pool` so the toggle reads as "has some kind of pool".
      */
     anyAmenityGroups: z.array(z.array(z.string().uuid())).optional(),
+    /**
+     * Opt-in projection flag: include the accommodation's amenities as a
+     * relation array on each row of the search result. Off by default to
+     * keep the public listing query cheap; turn on only for views that
+     * actually render amenity badges/icons on the cards.
+     */
+    includeAmenities: z.boolean().optional(),
+    /**
+     * Opt-in projection flag: include the accommodation's features as a
+     * relation array on each row of the search result. Off by default for
+     * the same reason as `includeAmenities`.
+     */
+    includeFeatures: z.boolean().optional(),
     ownerId: z.string().uuid().optional(),
     checkIn: z.date().optional(),
     checkOut: z.date().optional(),
