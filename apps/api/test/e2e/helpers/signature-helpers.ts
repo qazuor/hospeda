@@ -2,11 +2,14 @@
  * MercadoPago webhook signature helpers for E2E tests (SPEC-143 T-143-06).
  *
  * Builds the `x-signature` header that `apps/api/src/middlewares/webhook-signature.ts`
- * validates. Algorithm mirrors the middleware exactly:
+ * validates. Algorithm mirrors the middleware exactly per MP docs:
  * - Format: `ts=<unix_seconds>,v1=<hmac-sha256-hex>`
- * - Signed payload: `id:<data.id>;request-id:<ts>;ts:<ts>;`
+ * - Signed payload: `id:<dataId>;request-id:<x-request-id>;ts:<ts>;`
+ *   where `dataId` is lowercased and `x-request-id` comes from the header.
  * - HMAC key: `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` from env (set in `.env.test`
  *   to `test-webhook-secret-hospeda-spec-143`).
+ *
+ * Reference: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
  *
  * Use {@link signWebhookPayload} to build valid headers and
  * {@link invalidSignatureHeaders} to build headers that intentionally fail
@@ -61,10 +64,10 @@ interface SignWebhookPayloadInput {
 /**
  * Build a valid `x-signature` + `x-request-id` pair for a webhook body.
  *
- * Signed payload format (matches `webhook-signature.ts`):
+ * Signed payload format (matches `webhook-signature.ts`, per MP docs):
  *
  * ```
- * id:<data.id>;request-id:<ts>;ts:<ts>;
+ * id:<dataId>;request-id:<requestId>;ts:<ts>;
  * ```
  *
  * @param input - Body + optional overrides
@@ -82,7 +85,10 @@ export function signWebhookPayload(input: SignWebhookPayloadInput): SignedWebhoo
         throw new Error('signWebhookPayload: body does not parse to JSON with a `data.id` field.');
     }
 
-    const signedPayload = `id:${dataId};request-id:${ts};ts:${ts};`;
+    // dataId is lowercased to match the middleware's `normalizeDataId`. MP
+    // sometimes sends alphanumeric ids uppercased; the canonical manifest is
+    // always lowercase.
+    const signedPayload = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
     const v1 = createHmac('sha256', secret).update(signedPayload).digest('hex');
 
     return {

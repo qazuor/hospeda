@@ -603,3 +603,224 @@ These local SQL operations were applied to the staging DB during the smoke sessi
    - Pricing → owner-basico monthly → Suscribirme
    - Expected: `/start-paid` → 201 with `checkoutUrl`. Redirect to MP works, authorize with `APRO` card, redirect to `/es/suscriptores/checkout/success/?status=...`, webhook fires, sub flips to `active`.
 
+---
+
+## Session continuation 2026-05-21 (smoke resumed, late-evening)
+
+After the fixes above merged and staging was reseeded, we resumed smoke 1.1 from zero. Four more findings surfaced. Two are now fixed in code, two are tracked as billing-bug follow-ups.
+
+### #10 — `dbReset` hardcoded table list never included billing tables (FIXED)
+
+**Severity**: SETUP BUG — silently undermines `hops db-seed --target=staging --reset` for the billing surface; previous session's manual `UPDATE billing_prices SET unit_amount = 100` workaround survived reseeds and re-polluted state.
+
+**What**: `packages/seed/src/utils/dbReset.ts` maintained a hardcoded `allTables[]` of 28 tables enumerating the entities to wipe before reseed. The ~30 `billing_*` tables (added later via the qzpay-drizzle integration) were never added to that list, so the reset silently skipped all billing data. Manual customisations and stale rows accumulated across reseeds.
+
+**Symptoms in this session**:
+
+- Ran `hops db-seed --target=staging --pull --yes` post-merge.
+- `SELECT unit_amount FROM billing_prices WHERE plan_id=(owner-basico) AND billing_interval='month'` still returned `100` (the previous session's workaround), not the expected `1500000`.
+- Confirmed by inspecting `allTables[]`: every other entity in the codebase was listed, billing was completely absent.
+
+**Fix**: rewrite `dbReset.ts` to use runtime introspection of `pg_tables` (public schema) plus a single `TRUNCATE TABLE … RESTART IDENTITY CASCADE`. The set of tables to reset is now the live truth from Postgres, not a parallel declaration that has to be kept in sync by hand. Tables added by any future package will be reset automatically.
+
+Also fixed two pre-existing test failures in `billingPlans.seed.test.ts` left over from the earlier `plan.slug` rename (commit `fd025b93c`): the seed now stores `billing_plans.name = plan.slug`, but the tests still expected `plan.name`.
+
+**PR**: #1220 — branch `fix/seed-db-reset-introspect-tables` off `staging`. 2 files changed, 96 +/117 −.
+
+---
+
+### #11 — MP checkout shows plan slug as the human description (UX, pending fix)
+
+**Severity**: UX — payment screen shows `owner-basico` to the user where it should show something like "Hospeda — Basic (Annual)". Reflects badly on the brand but does not block any flow.
+
+**What**: When the preference is created via `start-paid.ts`, the `description` and `additional_info.items[0].title` fields are populated with the plan slug (`owner-basico`). MP renders that string in both the checkout screen and the post-payment confirmation page. The MP test buyer sees a bare slug instead of a polished label.
+
+Confirmed by querying `https://api.mercadopago.com/v1/payments/160428694188`:
+
+```json
+"description": "owner-basico (Annual)",
+"additional_info": {
+    "items": [
+        {
+            "title": "owner-basico (Annual)",
+            ...
+        }
+    ]
+}
+```
+
+**Fix path**: the plan config (`packages/billing/src/config/plans.config.ts`) already carries a human label (`name: 'Basic'`). The preference creation code in `start-paid.ts` (or the subscription-checkout service it delegates to) needs to pass `plan.name` instead of `plan.slug` for these two MP fields. The slug should still travel in metadata/external_reference for traceability.
+
+**Tracked as**: billing-bug to be addressed alongside other billing UX fixes. Not a separate spec.
+
+---
+
+### #12 — Same MP app shared across environments creates webhook secret/URL mismatch
+
+**Severity**: ARCHITECTURAL — blocks all webhook-dependent smoke flows on staging until either (A) workaround applied, or (B) staging gets its own MP app.
+
+**What**: Hospeda uses a single MP app whose webhook config has two sections — "Producción" and "Pruebas" — each with its own URL but, in this account, **the same secret**. The "Producción" URL points at `api.hospeda.com.ar`, the "Pruebas" URL at `staging-api.hospeda.com.ar`.
+
+The gotcha (engram `mp-preapproval-no-sandbox-variant`): MP test users always report `live_mode: true` on payment objects regardless of how the test is set up. When MP needs to send a webhook for a `live_mode: true` event, it picks the **"Producción"** section's URL — which on staging is the wrong one (it points at `api.hospeda.com.ar`, not `staging-api.hospeda.com.ar`). The notification_url embedded in the preference is honoured for the destination, so the webhook still arrives at staging, but the signature was computed for the production webhook URL configuration; whether it lands signed or unsigned depends on whether MP considers the registered URL matches.
+
+**Symptoms**:
+
+- Payment APRO succeeds, frontend lands on success page, but `billing_subscriptions.status` stays `pending_provider`.
+- API log: `Webhook request missing x-signature header — rejecting` → 401.
+- Repro stable: every paid checkout fails the same way.
+
+**Workaround applied in this session (Option 1, ugly-but-fast)**:
+
+- In MP dashboard → Webhooks → **"Producción"** section, temporarily change the URL to `https://staging-api.hospeda.com.ar/api/v1/webhooks/mercadopago` (same URL as the "Pruebas" section).
+- Since prod is pre-beta and not receiving real traffic yet, this has no operational cost.
+- Operator note: revert the URL to `api.hospeda.com.ar` BEFORE beta cutover.
+
+**Definitive fix (Option 2, post-smoke)**:
+
+- Create a second MP app dedicated to staging.
+- Configure that app's "Producción" webhook with `staging-api.hospeda.com.ar` + its own secret.
+- Update `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` and `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` in the staging env to use the new app's credentials.
+- Create a new MP test buyer in the new app (test users are scoped per app).
+- Update `billing_customers.email` UPDATE in the smoke procedure to use the new test buyer's email.
+- Production stays on the existing MP app, untouched.
+
+**Tracked as**: billing-bug — schedule alongside the prod cutover work.
+
+---
+
+### #13 — `originVerificationMiddleware` blocks ALL webhook endpoints by Origin header
+
+**Severity**: BUG — silent blocker for any external webhook integration (MP, Brevo, etc). Applies to every POST/PUT/PATCH/DELETE in the API.
+
+**What**: `apps/api/src/middlewares/security.ts:136-219` defines `originVerificationMiddleware` which rejects with 403 any mutating request whose `Origin` header does not match `API_CORS_ORIGINS`. The middleware is mounted globally in `apps/api/src/utils/create-app.ts:126` via `.use(originVerificationMiddleware)`, meaning it intercepts the webhook endpoint too.
+
+MP webhooks arrive with `Origin: https://mercadopago.com.ar`. The header is set by MP server-side, not by a browser. Since `mercadopago.com.ar` is not in the hospeda CORS whitelist (and should never be — it is not a hospeda surface), every webhook hits this middleware first and gets 403'd before reaching the signature verification layer.
+
+The webhook endpoint already has its own authentication mechanism (HMAC-SHA256 signature via `webhook-signature.ts`). Origin verification is a CSRF defense for browser-driven flows and is semantically wrong for server-to-server webhooks.
+
+**Symptoms in this session**:
+
+- After Finding #12 workaround applied, retried the smoke. MP webhook now reaches the endpoint (URL correct, signature should pass).
+- API log: `Origin verification failed`, `origin: https://mercadopago.com.ar`, `allowedOrigins: [staging.hospeda.com.ar, staging-admin.hospeda.com.ar]` → 403.
+- Reproduces for both `payment` and `topic_merchant_order_wh` webhook types.
+
+**Workaround applied (temporary, env-level)**:
+
+- Added MP origins to staging's `API_CORS_ORIGINS`:
+  ```
+  hops env-set api --target=staging API_CORS_ORIGINS \
+      "https://staging.hospeda.com.ar,https://staging-admin.hospeda.com.ar,https://mercadopago.com.ar,https://www.mercadopago.com.ar,https://api.mercadopago.com"
+  hops redeploy api --target=staging
+  ```
+- This whitelists MP at the CORS level so the request passes the origin check; signature verification then validates legitimacy.
+- Side effect: `mercadopago.com.ar` becomes a valid CORS origin for the entire API, not just the webhook path. Acceptable on staging but ugly architecturally.
+
+**Definitive fix (code, billing-bug followup)**:
+
+Modify `originVerificationMiddleware` (security.ts:136) to skip paths under `/api/v1/webhooks/`:
+
+```ts
+export const originVerificationMiddleware = async (c, next) => {
+    if (c.req.path.startsWith('/api/v1/webhooks/')) {
+        await next();
+        return;
+    }
+    // … existing logic unchanged …
+};
+```
+
+Webhook endpoints are server-to-server, already protected by HMAC signature verification, and have no business hitting CSRF/origin defenses meant for browser flows. After the fix, revert the staging `API_CORS_ORIGINS` to only hospeda surfaces.
+
+**Tracked as**: billing-bug — pair with #12 in the next billing bug-fix pass.
+
+---
+
+## Status summary after late-evening continuation
+
+| Finding | Status |
+|---|---|
+| #1 (annual UI toggle missing) | Fixed (PR #1217) |
+| #2 (`/start-paid` 500) | Fixed (qzpay PR #27) |
+| #3 (reset doesn't sync schema) | Fixed (hops PR #1217) |
+| #4 (qzpay providerCustomerId validation) | Fixed (qzpay PR #27) |
+| #5/5b (MP test buyer email format) | Documented in checklist (#1217) |
+| #6 (cents → MP decimal conversion) | Fixed (qzpay PR #27) |
+| #7 (webhook never reached hospeda) | Fixed operator-side (URL in MP dashboard) |
+| #7b (prod webhook secret pairing) | Documented for pre-go-live verification |
+| #8 (back_url 404) | Fixed (PR #1217) |
+| #9 (smoke pre-flight procedure) | Fixed in checklist (#1217) |
+| **#10 (dbReset hardcoded list)** | **Fixed (PR #1220)** |
+| **#11 (MP shows slug as description)** | **Fixed (PR #1221) — annual + upgrade titles now use `plan.metadata.displayName` with slug fallback** |
+| **#12 (MP app shared cross-env)** | **Workaround applied; definitive = separate MP app (operational, not code)** |
+| **#13 (originVerificationMiddleware blocks webhooks)** | **Fixed (PR #1221) — middleware skips `/api/v1/webhooks/` paths; reverted CORS env after deploy** |
+| **#14 (webhook-signature manifest uses `ts` instead of `x-request-id`)** | **Fixed (PR #1221) — manifest now uses `x-request-id` header; `data.id` extracted from query (preferred) or body; lowercased for HMAC** |
+
+---
+
+### #14 — `webhook-signature.ts` constructs HMAC manifest with wrong template (BUG)
+
+**Severity**: CRITICAL — every MP webhook with body+signature fails verification on staging (and would fail in prod too). Subscriptions stuck in `pending_provider`, no `active` flip after payment.
+
+**What**: The MercadoPago webhook signing template per [MP docs](https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks#editor_5) is:
+
+```
+id:[data.id_url];request-id:[x-request-id_header];ts:[ts_header];
+```
+
+Where:
+
+- `data.id_url` is the `data.id` query parameter (lowercased)
+- `x-request-id_header` is the HTTP header `x-request-id`
+- `ts_header` is the `ts=` component of the `x-signature` header
+
+Hospeda's implementation in `apps/api/src/middlewares/webhook-signature.ts:145` instead constructs:
+
+```ts
+const signedPayload = `id:${dataId};request-id:${ts};ts:${ts};`;
+```
+
+Note `request-id:${ts}` — the timestamp is being reused for `request-id` instead of reading the `x-request-id` header. The middleware never reads `x-request-id` anywhere.
+
+This produces an HMAC over the wrong manifest, so MP's signature and hospeda's expected signature never match. Every signed webhook gets `Webhook signature mismatch — rejecting` → 401.
+
+Compounding bug: 3 test files use the same incorrect template, so the test suite passes against the buggy code and no one caught it:
+
+- `apps/api/test/middlewares/webhook-signature-prod-guard.test.ts`
+- `apps/api/test/integration/webhooks/webhook-signature.test.ts`
+- `apps/api/test/e2e/flows/billing/webhook-signature.test.ts`
+
+**Symptoms in this session**:
+
+- After the CORS workaround (Finding #13), webhooks passed origin check.
+- Log: `Webhook signature mismatch — rejecting`, `dataId: "160445417222"`, `ts: 1779403859` → 401.
+- Reproduces deterministically for every MP webhook with a body.
+
+**Fix path (definitive)**:
+
+In `webhook-signature.ts:218-344` (middleware factory):
+
+1. Extract the `x-request-id` header:
+   ```ts
+   const requestId = c.req.header('x-request-id');
+   if (!requestId) {
+       apiLogger.warn({ path: c.req.path }, 'Webhook request missing x-request-id header — rejecting');
+       throw new HTTPException(401, { message: 'Missing x-request-id header' });
+   }
+   ```
+2. Pass it through to `computeExpectedSignature`:
+   ```ts
+   const expectedSignature = computeExpectedSignature({ dataId, requestId, ts, secret });
+   ```
+3. Update `computeExpectedSignature` (line 136) to take `requestId` and build:
+   ```ts
+   const signedPayload = `id:${dataId};request-id:${requestId};ts:${ts};`;
+   ```
+4. Update JSDoc references on lines 12-14 and 196 to reflect the correct template.
+
+Secondary consideration: the docs also say `data.id_url` is lowercased — investigate whether MP sometimes uppercases alphanumeric data IDs (e.g. `ORD01JQ...`) and whether we should `.toLowerCase()` before passing to HMAC. For numeric payment IDs this is a no-op, but if subscription preapprovals use alphanumeric IDs it could matter.
+
+Update all 3 test files with the corrected template + use a realistic `x-request-id` UUID in fixtures.
+
+**Tracked as**: billing-bug — same bucket as #11, #13. This is the most critical of the three because it breaks the whole webhook flow.
+
+**Workaround during this session** (temporary, env-level): if `NODE_ENV` on staging is not `production`, vaciar `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` triggers the warn-and-pass branch in the middleware (line 232-247) so signature check is skipped. Smoke can continue. Revert at session close. If `NODE_ENV=production` on staging, this workaround is not available and the definitive fix must ship first.
