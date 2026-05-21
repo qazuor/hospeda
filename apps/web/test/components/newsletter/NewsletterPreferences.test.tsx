@@ -39,21 +39,50 @@ interface StatusFixture {
     status: 'active' | 'pending_verification' | 'unsubscribed' | 'bounced' | 'complained' | null;
     subscribedAt: string | null;
     verifiedAt: string | null;
+    preferences?: Record<'offers' | 'events' | 'guides' | 'productNews', boolean> | null;
 }
 
-function mockFetchSequence(...responses: Array<StatusFixture | { error: number }>) {
+const ALL_TRUE_PREFS = {
+    offers: true,
+    events: true,
+    guides: true,
+    productNews: true
+} as const;
+
+function mockFetchSequence(...responses: Array<StatusFixture | { error: number } | 'ok'>) {
     const fetchMock = vi.fn().mockImplementation(async () => {
         const next = responses.shift();
         if (!next) {
             throw new Error('Unexpected fetch call');
         }
-        if ('error' in next) {
-            return new Response('error', { status: next.error });
+        if (typeof next === 'object' && 'error' in next) {
+            return new Response(JSON.stringify({ success: false, error: { message: 'err' } }), {
+                status: next.error,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
-        return new Response(JSON.stringify(next), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        if (next === 'ok') {
+            // Used for action endpoints (subscribe / resend / unsubscribe / preferences)
+            // where the route returns `{ data: ... }` and the component only checks res.ok.
+            return new Response(JSON.stringify({ success: true, data: {} }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        // The protected status route wraps its payload in `{ success, data, metadata }`.
+        // We mirror that envelope here so the component's `envelope.data` extraction
+        // resolves correctly.
+        return new Response(
+            JSON.stringify({
+                success: true,
+                data: { ...next, preferences: next.preferences ?? null },
+                metadata: { timestamp: new Date().toISOString(), requestId: 'test' }
+            }),
+            {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
     });
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
@@ -327,5 +356,115 @@ describe('NewsletterPreferences — accessibility', () => {
             const live = container.querySelector('[aria-live="polite"]');
             expect(live).not.toBeNull();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Newsletter polish additions: per-channel section + per-content-type toggles
+// ---------------------------------------------------------------------------
+
+describe('NewsletterPreferences — channels + content types (active state)', () => {
+    const activeWithDefaults: StatusFixture = {
+        ...subscribed,
+        preferences: { ...ALL_TRUE_PREFS }
+    };
+
+    it('renders the per-channel section with Email enabled and WhatsApp coming soon', async () => {
+        mockFetchSequence(activeWithDefaults);
+        render(
+            <NewsletterPreferences
+                locale="es"
+                apiUrl={API_URL}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getByText('Email')).toBeInTheDocument();
+        });
+        // Both labels and badges are rendered.
+        expect(screen.getByText(/activado/i)).toBeInTheDocument();
+        expect(screen.getByText('WhatsApp')).toBeInTheDocument();
+        expect(screen.getByText(/próximamente/i)).toBeInTheDocument();
+    });
+
+    it('renders the four content-type checkboxes pre-filled from the status response', async () => {
+        mockFetchSequence({
+            ...subscribed,
+            preferences: { offers: false, events: true, guides: true, productNews: false }
+        });
+        render(
+            <NewsletterPreferences
+                locale="es"
+                apiUrl={API_URL}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getByText('Ofertas')).toBeInTheDocument();
+        });
+
+        const offers = screen.getByLabelText(/ofertas/i) as HTMLInputElement;
+        const events = screen.getByLabelText(/eventos/i) as HTMLInputElement;
+        const guides = screen.getByLabelText(/guías/i) as HTMLInputElement;
+        const productNews = screen.getByLabelText(/novedades del producto/i) as HTMLInputElement;
+
+        expect(offers.checked).toBe(false);
+        expect(events.checked).toBe(true);
+        expect(guides.checked).toBe(true);
+        expect(productNews.checked).toBe(false);
+    });
+
+    it('defaults to all-true preferences when the status payload returns null', async () => {
+        mockFetchSequence({ ...subscribed, preferences: null });
+        render(
+            <NewsletterPreferences
+                locale="es"
+                apiUrl={API_URL}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getByText('Ofertas')).toBeInTheDocument();
+        });
+        const offers = screen.getByLabelText(/ofertas/i) as HTMLInputElement;
+        expect(offers.checked).toBe(true);
+    });
+
+    it('PATCHes /api/v1/protected/newsletter/preferences when a content-type checkbox is toggled', async () => {
+        const fetchMock = mockFetchSequence(activeWithDefaults, 'ok');
+        render(
+            <NewsletterPreferences
+                locale="es"
+                apiUrl={API_URL}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getByText('Ofertas')).toBeInTheDocument();
+        });
+
+        const offers = screen.getByLabelText(/ofertas/i);
+        fireEvent.click(offers);
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledWith(
+                `${API_URL}/api/v1/protected/newsletter/preferences`,
+                expect.objectContaining({
+                    method: 'PATCH',
+                    body: JSON.stringify({ offers: false })
+                })
+            );
+        });
+    });
+
+    it('does NOT render the per-channel section or content toggles on bounced (terminal)', async () => {
+        mockFetchSequence(bounced);
+        render(
+            <NewsletterPreferences
+                locale="es"
+                apiUrl={API_URL}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getAllByText('Email inválido').length).toBeGreaterThanOrEqual(1);
+        });
+        expect(screen.queryByText('Email')).not.toBeInTheDocument();
+        expect(screen.queryByText('Ofertas')).not.toBeInTheDocument();
     });
 });

@@ -30,7 +30,12 @@
 import { getDb } from '@repo/db';
 import type { InsertNewsletterCampaignDelivery, SelectNewsletterCampaign } from '@repo/db';
 import { newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
-import { NewsletterCampaignStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    NewsletterCampaignStatusEnum,
+    NewsletterContentTypeEnum,
+    PermissionEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/schemas';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -112,6 +117,9 @@ const CreateCampaignInputSchema = z.object({
     subject: z.string().min(1).max(120),
     bodyJson: z.object({ type: z.literal('doc') }).passthrough(),
     localeFilter: z.enum(['all', 'es', 'en', 'pt']).default('all'),
+    // `null` means "no segmentation"; same as undefined. The column is nullable
+    // so we accept both shapes from the route layer.
+    contentType: z.nativeEnum(NewsletterContentTypeEnum).nullable().optional(),
     createdBy: z.string().uuid()
 });
 
@@ -125,7 +133,8 @@ const UpdateCampaignInputSchema = z.object({
                 .object({ type: z.literal('doc') })
                 .passthrough()
                 .optional(),
-            localeFilter: z.enum(['all', 'es', 'en', 'pt']).optional()
+            localeFilter: z.enum(['all', 'es', 'en', 'pt']).optional(),
+            contentType: z.nativeEnum(NewsletterContentTypeEnum).nullable().optional()
         })
         .strict()
 });
@@ -401,6 +410,9 @@ export class NewsletterCampaignService extends BaseService {
                         subject: validated.subject,
                         bodyJson: validated.bodyJson,
                         localeFilter: validated.localeFilter as 'all' | 'es' | 'en' | 'pt',
+                        // `null` and `undefined` collapse to NULL in the column;
+                        // the dispatcher treats NULL as "no segmentation".
+                        contentType: validated.contentType ?? null,
                         status: NewsletterCampaignStatusEnum.DRAFT,
                         createdBy: validated.createdBy
                     })
@@ -683,7 +695,13 @@ export class NewsletterCampaignService extends BaseService {
                 const softCapDays = validated.ignoreSoftCap ? 0 : this.softCapDays;
                 const eligibleResult = await this.subscriberService.getEligibleForCampaign({
                     localeFilter: campaign.localeFilter as 'all' | 'es' | 'en' | 'pt',
-                    softCapWindowDays: softCapDays === 0 ? 99999 : softCapDays
+                    softCapWindowDays: softCapDays === 0 ? 99999 : softCapDays,
+                    // NULL contentType collapses to undefined → no preferences
+                    // filter applied; non-NULL gates the audience by
+                    // `preferences[contentType] = true` (with a defensive
+                    // COALESCE-to-TRUE inside the SQL for rows missing the key).
+                    contentType:
+                        (campaign.contentType as NewsletterContentTypeEnum | null) ?? undefined
                 });
 
                 if (eligibleResult.error) {

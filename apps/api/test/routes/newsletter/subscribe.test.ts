@@ -209,13 +209,20 @@ describe('statusHandler', () => {
     it('returns the subscription snapshot serialised as ISO strings', async () => {
         const subscribedAt = new Date('2026-05-12T15:00:00.000Z');
         const verifiedAt = new Date('2026-05-12T15:05:00.000Z');
+        const preferences = {
+            offers: true,
+            events: true,
+            guides: false,
+            productNews: true
+        };
         const newsletterService: StatusNewsletterService = {
             getStatus: vi.fn().mockResolvedValue({
                 data: {
                     subscribed: true,
                     status: NewsletterSubscriberStatusEnum.ACTIVE,
                     subscribedAt,
-                    verifiedAt
+                    verifiedAt,
+                    preferences
                 },
                 error: null
             })
@@ -228,7 +235,8 @@ describe('statusHandler', () => {
             subscribed: true,
             status: NewsletterSubscriberStatusEnum.ACTIVE,
             subscribedAt: subscribedAt.toISOString(),
-            verifiedAt: verifiedAt.toISOString()
+            verifiedAt: verifiedAt.toISOString(),
+            preferences
         });
         expect(newsletterService.getStatus).toHaveBeenCalledWith(
             expect.objectContaining({ id: ACTOR_ID }),
@@ -236,14 +244,15 @@ describe('statusHandler', () => {
         );
     });
 
-    it('returns null timestamps when the user has no subscription row', async () => {
+    it('returns null timestamps and null preferences when the user has no subscription row', async () => {
         const newsletterService: StatusNewsletterService = {
             getStatus: vi.fn().mockResolvedValue({
                 data: {
                     subscribed: false,
                     status: null,
                     subscribedAt: null,
-                    verifiedAt: null
+                    verifiedAt: null,
+                    preferences: null
                 },
                 error: null
             })
@@ -256,7 +265,8 @@ describe('statusHandler', () => {
             subscribed: false,
             status: null,
             subscribedAt: null,
-            verifiedAt: null
+            verifiedAt: null,
+            preferences: null
         });
     });
 

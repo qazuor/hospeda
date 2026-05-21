@@ -3,6 +3,7 @@
  */
 
 import { createRouter } from '../../../utils/create-app';
+import { newsletterPreferencesRoute } from './preferences';
 import { newsletterResendRoute } from './resend';
 import { newsletterStatusRoute } from './status';
 import { newsletterSubscribeRoute } from './subscribe';
@@ -12,9 +13,11 @@ export const newsletterProtectedRoutes = createRouter()
     .route('/', newsletterSubscribeRoute)
     .route('/', newsletterStatusRoute)
     .route('/', newsletterResendRoute)
-    .route('/', newsletterUnsubscribeRoute);
+    .route('/', newsletterUnsubscribeRoute)
+    .route('/', newsletterPreferencesRoute);
 
 export { _resetNewsletterRouteSingletons } from './_singletons';
+export { type PreferencesBody, preferencesHandler } from './preferences';
 export { resendHandler } from './resend';
 export { statusHandler } from './status';
 export { type SubscribeBody, subscribeHandler } from './subscribe';

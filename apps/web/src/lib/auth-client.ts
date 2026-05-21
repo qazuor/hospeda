@@ -13,6 +13,7 @@
  */
 
 import { createAuthClient } from 'better-auth/react';
+import { AUTH_ME_CACHE_KEY } from './auth-cache';
 
 /**
  * Resolve the API base URL for the browser-side auth client.
@@ -186,18 +187,6 @@ export async function verifyEmail({
         return { error: { message: 'Error de red. Por favor, intenta de nuevo.' } };
     }
 }
-
-/**
- * sessionStorage key used by `UserMenu.client.tsx` to cache the `/auth/me`
- * snapshot for 60 seconds. Mirrored here so `refreshBetterAuthSession` can
- * clear it without importing the React component module (which would pull
- * in @repo/icons and other client-only dependencies into anywhere this
- * helper is used).
- *
- * KEEP IN SYNC with `AUTH_ME_CACHE_KEY` in
- * `apps/web/src/components/shared/navigation/UserMenu.client.tsx`.
- */
-const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
 
 /**
  * Force Better Auth to bypass its cookie cache and re-fetch the user record

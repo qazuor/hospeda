@@ -141,6 +141,13 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 const userName = typeof user.name === 'string' ? user.name : undefined;
                 const userEmail = typeof user.email === 'string' ? user.email : undefined;
                 const userImage = typeof user.image === 'string' ? user.image : undefined;
+                // Better Auth's session.user mirrors `users.email_verified` here.
+                // We forward the flag onto Actor so NewsletterSubscriberService.subscribe
+                // can branch between direct-to-active (verified) and the
+                // NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED block (unverified) without a
+                // second DB read on every call.
+                const userEmailVerified =
+                    typeof user.emailVerified === 'boolean' ? user.emailVerified : undefined;
 
                 // SUPER_ADMIN gets all permissions without a DB lookup
                 if (userRole === RoleEnum.SUPER_ADMIN) {
@@ -150,6 +157,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions: Object.values(PermissionEnum),
                         name: userName,
                         email: userEmail,
+                        emailVerified: userEmailVerified,
                         image: userImage
                     };
                 } else {
@@ -170,6 +178,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions: allPermissions,
                         name: userName,
                         email: userEmail,
+                        emailVerified: userEmailVerified,
                         image: userImage
                     };
                 }

@@ -2,7 +2,8 @@ import { relations } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import {
     NewsletterCampaignLocaleFilterPgEnum,
-    NewsletterCampaignStatusPgEnum
+    NewsletterCampaignStatusPgEnum,
+    NewsletterContentTypePgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
@@ -40,6 +41,24 @@ export const newsletterCampaigns = pgTable(
         localeFilter: NewsletterCampaignLocaleFilterPgEnum('locale_filter')
             .notNull()
             .default('all'),
+
+        /**
+         * Audience content-type filter at dispatch time.
+         *
+         * NULL → no segmentation; the campaign reaches every active subscriber
+         * matching the locale filter (legacy behavior, default for back-compat
+         * with pre-Phase-6 campaigns).
+         *
+         * Non-NULL (`offers | events | guides | productNews`) → only subscribers
+         * whose `preferences[contentType]` is `true` are eligible. The dispatch
+         * service threads this into
+         * `NewsletterSubscriberService.getEligibleForCampaign`.
+         *
+         * KEEP IN SYNC with the `contentType` field on
+         * `packages/schemas/src/entities/newsletter/newsletter-campaign.schema.ts`
+         * and migration 0028.
+         */
+        contentType: NewsletterContentTypePgEnum('content_type'),
 
         /**
          * Number of subscribers enqueued for delivery. Set at dispatch time
