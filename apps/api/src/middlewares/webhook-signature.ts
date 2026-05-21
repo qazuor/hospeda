@@ -378,9 +378,25 @@ export function createWebhookSignatureMiddleware(
         });
 
         if (!safeCompareHex(expectedSignature, receivedSignature)) {
+            // TEMPORARY DIAGNOSTIC LOG (SPEC-143 smoke 2026-05-21): when
+            // signature does not match, dump enough info to compare manifests
+            // and HMAC fragments byte-by-byte against what MP sent. Remove or
+            // downgrade to debug once root cause is identified.
+            const signedPayloadDiagnostic = `id:${normalizedDataId};request-id:${requestId};ts:${ts};`;
             apiLogger.warn(
-                { path: c.req.path, dataId: normalizedDataId, requestId, ts },
-                'Webhook signature mismatch — rejecting'
+                {
+                    path: c.req.path,
+                    dataId: normalizedDataId,
+                    requestId,
+                    ts,
+                    manifest: signedPayloadDiagnostic,
+                    expectedHmacPrefix: expectedSignature.substring(0, 24),
+                    receivedHmacPrefix: receivedSignature.substring(0, 24),
+                    rawSignatureHeader: signatureHeader,
+                    queryString: c.req.url.split('?')[1] ?? '',
+                    bodyDataIdSeen: extractDataIdFromQuery(c) ?? '(via body fallback)'
+                },
+                'Webhook signature mismatch — rejecting (with diagnostic dump)'
             );
             throw new HTTPException(401, {
                 message: 'Webhook signature verification failed'
