@@ -42,15 +42,36 @@ import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 /**
- * MercadoPago `back_url` for the preapproval. MP requires a non-empty
- * `back_url` at create time; the actual checkout URL the user is
- * redirected to is `providerInitPoint` so this placeholder is harmless.
- * A follow-up could rewrite it post-create to embed the local sub UUID,
- * but the front already gets the UUID from the response and uses
- * `?ref=<localId>` on its own return page.
+ * Default locale prefix for the user-facing return URLs.
+ *
+ * The MP preapproval / preference flow does not propagate the caller's
+ * accepted-languages, so the API has to pick a locale at preapproval-create
+ * time. Hospeda's primary market is Argentina, and the locale fallback in
+ * the web middleware is `es`, so hardcoding here matches the user-facing
+ * behaviour for the overwhelming majority of users. When per-user locale
+ * propagation lands (tracked separately), thread the user's preferred
+ * locale through `start-paid` and replace this constant with that value.
+ */
+const RETURN_URL_LOCALE = 'es';
+
+/**
+ * MercadoPago `back_url` for the preapproval (monthly subscriptions).
+ *
+ * MP requires a non-empty `back_url` at preapproval-create time and
+ * redirects the user there after they authorise the recurring charge.
+ * The URL MUST land on an existing route — Astro's locale middleware
+ * rewrites unknown segments (e.g. `/billing/return`) into a 404 surface,
+ * so we point directly at the checkout success page which already exists
+ * at `apps/web/src/pages/[lang]/suscriptores/checkout/success.astro` and
+ * is set up to read `?status=` / `?preapproval_id=` query parameters MP
+ * appends post-authorise.
+ *
+ * History: until 2026-05-21 this returned
+ * `${HOSPEDA_SITE_URL}/billing/return`, which Astro's middleware rewrote
+ * to `/es/return/` (404). Surfaced during staging smoke as Finding #8.
  */
 function buildPaymentMethodReturnUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return`;
+    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/success/`;
 }
 
 /**
@@ -65,19 +86,36 @@ function buildNotificationUrl(): string {
 /**
  * MP Checkout return URLs for the annual one-time flow.
  *
- * The front-end receives `localSubscriptionId` in the response body
- * and persists it in sessionStorage BEFORE redirecting to MP, so the
- * URLs themselves don't need to carry the id. `cancelled=1` lets the
- * UI render an "abandoned checkout" message instead of the
- * success-pending spinner.
+ * Checkout preferences accept three back_urls (success / failure / pending)
+ * and MP redirects to the matching one based on payment outcome. The pages
+ * already exist at:
+ *
+ *   - `[lang]/suscriptores/checkout/success.astro`
+ *   - `[lang]/suscriptores/checkout/failure.astro`
+ *   - `[lang]/suscriptores/checkout/pending.astro`
+ *
+ * Pointing the URLs there directly avoids the locale-middleware rewrite
+ * that bit the monthly flow (Finding #8).
+ *
+ * The front-end receives `localSubscriptionId` in the response body and
+ * persists it in sessionStorage BEFORE redirecting to MP, so the URLs do
+ * not need to carry the id. MP appends `?status=approved` /
+ * `?payment_id=...` / `?preference_id=...` on its own at redirect time.
  */
 function buildAnnualSuccessUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return`;
+    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/success/`;
 }
 
 function buildAnnualCancelUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`;
+    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/failure/`;
 }
+
+// NOTE: a `pending` outcome URL would point at
+// `${HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/pending/`
+// but the current subscription-checkout service only accepts success +
+// cancel. Pending payments today fall back to the cancel URL until the
+// service is extended to thread the pending URL through to MP's
+// `back_urls.pending`. Tracked as a follow-up.
 
 /**
  * Map a `SubscriptionCheckoutError` from the service layer to an HTTP
