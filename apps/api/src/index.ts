@@ -76,6 +76,14 @@ const startServer = async (): Promise<void> => {
         // Validate billing configuration
         validateBillingConfigOrThrow();
 
+        // Mount qzpay-hono admin tier under /api/v1/admin/billing/*.
+        // Deferred until after initializeDatabase() because the mount calls
+        // getQZPayBilling() which needs the DB pool ready. See the comment on
+        // mountQZPayAdminTier() in routes/billing/admin/index.ts for the
+        // ESM-hoisting reason this cannot live at module-load time.
+        const { mountQZPayAdminTier } = await import('./routes/billing/admin');
+        mountQZPayAdminTier();
+
         // Ensure default promo codes exist (HOSPEDA_FREE, etc.)
         await ensureDefaultPromoCodes();
 
