@@ -22,7 +22,7 @@ describe('PostService.search', () => {
 
     it('should return a paginated list of posts if actor is authenticated', async () => {
         const posts = [createMockPost(), createMockPost()];
-        (modelMock.findAll as Mock).mockResolvedValue({
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
             items: posts,
             page: 1,
             pageSize: 20,
@@ -49,11 +49,11 @@ describe('PostService.search', () => {
         const result = await service.search(unauthenticatedActor, { page: 1, pageSize: 10 });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('UNAUTHORIZED');
-        expect(modelMock.findAll as Mock).not.toHaveBeenCalled();
+        expect(modelMock.findAllWithRelations as Mock).not.toHaveBeenCalled();
     });
 
     it('should return an empty list if there are no posts', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue({
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
             items: [],
             page: 1,
             pageSize: 20,
@@ -68,7 +68,7 @@ describe('PostService.search', () => {
     });
 
     it('should return INTERNAL_ERROR if model.search throws', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        (modelMock.findAllWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, { page: 1, pageSize: 10 });
         expectInternalError(result);
     });
