@@ -1,8 +1,9 @@
 /**
  * MercadoPago webhook signature helpers for E2E tests (SPEC-143 T-143-06).
  *
- * Builds the `x-signature` header that `apps/api/src/middlewares/webhook-signature.ts`
- * validates. Algorithm mirrors the middleware exactly per MP docs:
+ * Builds the `x-signature` header that `@qazuor/qzpay-mercadopago`'s
+ * `QZPayMercadoPagoWebhookAdapter.verifySignature()` validates. Algorithm
+ * mirrors the adapter exactly per MP docs:
  * - Format: `ts=<unix_seconds>,v1=<hmac-sha256-hex>`
  * - Signed payload: `id:<dataId>;request-id:<x-request-id>;ts:<ts>;`
  *   where `dataId` is lowercased and `x-request-id` comes from the header.
@@ -103,7 +104,7 @@ export function signWebhookPayload(input: SignWebhookPayloadInput): SignedWebhoo
 
 /**
  * Modes for {@link invalidSignatureHeaders}. Each forces a different rejection
- * branch in `webhookSignatureMiddleware`.
+ * branch in the qzpay-mercadopago webhook adapter.
  */
 export type InvalidSignatureMode =
     | 'missing'
