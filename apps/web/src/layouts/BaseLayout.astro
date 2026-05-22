@@ -230,7 +230,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
 
-		<ToastViewport client:idle />
+		<ToastViewport client:idle locale={locale} />
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
 		<PaginationLoading client:idle />

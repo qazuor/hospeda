@@ -100,7 +100,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			</div>
 		</footer>
 
-		<ToastViewport client:idle />
+		<ToastViewport client:idle locale={locale} />
 	</body>
 </html>
 
