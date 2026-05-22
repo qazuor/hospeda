@@ -261,7 +261,7 @@ Common biome errors that block commits:
 - Use `client:*` directives wisely (prefer `client:idle` or `client:visible`)
 - i18n for all user-facing text
 - **Styling**: vanilla CSS / CSS Modules (`*.module.css` colocated with the component). Do NOT use Tailwind utility classes here — Tailwind is admin-only.
-- Forms: native HTML + small custom hooks (NOT React Hook Form — that's admin-only)
+- Forms: native HTML + small custom hooks (NOT TanStack Form — that's admin-only)
 
 ### Admin (TanStack Start)
 
@@ -270,7 +270,7 @@ Common biome errors that block commits:
 - Shadcn UI components for consistent UI
 - Better Auth authentication with `beforeLoad` guards
 - **Styling**: Tailwind CSS v4 utility classes. Do NOT use CSS Modules here.
-- Forms: React Hook Form + Zod
+- Forms: TanStack Form (`@tanstack/react-form`) + Zod schemas from `@repo/schemas` (validation via `schema.safeParse()` inside form handlers — NOT `zodResolver`)
 
 ## Environment Configuration
 
@@ -320,7 +320,7 @@ API_PORT=3001
 | Validation | Zod via `@repo/schemas` | yup, joi, class-validator |
 | UI (Admin) | Shadcn UI | MUI, Ant Design, Chakra |
 | UI (Web) | Astro components, React islands | Full React pages |
-| Forms | React Hook Form + Zod (admin), native HTML (web) | Formik |
+| Forms | TanStack Form + Zod (admin), native HTML (web) | Formik, React Hook Form |
 | Tables | TanStack Table | ag-grid |
 | Data fetching | TanStack Query (admin) | SWR, axios |
 | Styling (Admin) | Tailwind CSS v4 | CSS modules, styled-components, vanilla CSS |
