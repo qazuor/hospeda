@@ -1,10 +1,10 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.9
+version: 0.10
 date-started: 2026-05-22
 last-updated: 2026-05-22
-related: 02-config-schema.md, 03-dashboards.md, 04-settings.md, 99-future-enhancements.md
+related: 02-config-schema.md, 03-dashboards.md, 03b-endpoint-verification.md, 04-settings.md, 04b-mi-facturacion-verification.md, 99-future-enhancements.md
 ---
 
 # Admin Panel — Information Architecture Proposal
@@ -594,12 +594,13 @@ HOST: {
    3.2- Activas
    3.3- Archivadas
 
-4- Mi facturación
-   4.1- Mi plan actual
-   4.2- Próximo cobro
-   4.3- Historial de facturas
-   4.4- Métodos de pago
-   4.5- Uso de mi plan
+4- Mi facturación                [single landing page per A3 plan, see 04-settings.md §3]
+   4.1- Resumen y administración
+        Sections within the page:
+        - Plan actual + status (read-only summary)
+        - Uso de mi plan (consumes /protected/billing/usage — NEW UI)
+        - Acciones: deep link a hospeda.com.ar para administración completa
+        + "Descargar última factura" si PDF disponible
 
 5- Mi cuenta
    5.1- Mi perfil público
@@ -1218,6 +1219,8 @@ _None remaining — Q-A (config file split) was resolved in `02-config-schema.md
 | 2026-05-22 | V1 SCOPE RULE: redesign reorganizes UI for features WHOSE CODE ALREADY EXISTS. Aspirational items (2FA, sessions, GDPR, OAuth UI, email infra UI, audit log, in-app notifications backend, bookings, host revenue tracking, host calendar, etc.) tracked in `99-future-enhancements.md` until promoted | global |
 | 2026-05-22 | Inicio sidebar trimmed to V1 reality: 2 items (Dashboard + Mi inbox-beta). 5 items (Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades) moved to future-enhancements §1 | §19 |
 | 2026-05-22 | Mi inbox uses existing `/notifications` route labeled `(beta)` until backend wired — honest disclosure | §19 |
+| 2026-05-22 | Mi facturación (HOST §12.4) V1 = single landing page (Option A3), NOT 5 sub-pages. Sub-items 4.1-4.5 collapse to sections within one page. Detail in 04-settings.md §3; verification in 04b-mi-facturacion-verification.md | §12, 04 §3 |
+| 2026-05-22 | Usage/limits widget in Mi facturación is the ONE genuinely new admin UI for HOST V1 — consumes existing `/protected/billing/usage` endpoint that no UI consumes today | §12, 04 §3 |
 
 ---
 
@@ -1234,3 +1237,4 @@ _None remaining — Q-A (config file split) was resolved in `02-config-schema.md
 | 2026-05-22 | 0.7 | Q-A (config file split) resolved: split-file approach `apps/admin/src/config/ia/` per 02-config-schema.md §2. Open questions section is now empty — all IA decisions are locked. The proposal is ready for the next phase (visual identity tokens, dashboards in detail, settings page detail, or implementation spec). |
 | 2026-05-22 | 0.8 | **Reality pass**: V1 scope rule added — redesign covers reorganization of EXISTING code only. §19 Inicio sidebar trimmed from 7 items to 2 (Dashboard + Mi inbox beta). 5 aspirational Inicio items + dashboard/settings aspirational features moved to new `99-future-enhancements.md` companion doc. Mi inbox uses existing `/notifications` stub route labeled (beta) until backend wires up. Cross-references added to docs 03 (dashboards reality-passed) and 04 (settings reality-passed). |
 | 2026-05-22 | 0.9 | **Housekeeping pass**: marked status tags clearly across all sections. Promoted §1, §2, §5 to `[LOCKED]`. Marked §3, §4, §6, §7, §9, §10 as `[SUPERSEDED]` with explicit pointers to the source-of-truth sections / sister docs (§3→§12-18, §4→§13, §6→03-dashboards, §7→04-settings, §9+§10→per-role configs). Added `[SUPERSEDED]` to the legend in "How to read this doc". Original content of superseded sections preserved as orientation/history — they are NOT authoritative when in conflict with the source of truth. |
+| 2026-05-22 | 0.10 | **Mi facturación A3 applied**: §12 HOST menu tree updated — sub-items 4.1-4.5 collapse to ONE landing page (4.1 Resumen y administración) with sections internally per 04-settings.md §3. `related` field expanded to include 03b and 04b verification reports. Decisions log entries added. |

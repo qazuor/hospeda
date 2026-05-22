@@ -1,10 +1,11 @@
 ---
 proposal: settings
 status: DRAFT (in active discussion)
-version: 0.2
+version: 0.3
 date-started: 2026-05-22
 last-updated: 2026-05-22
 depends-on: 01-information-architecture.md (v0.7+), 02-config-schema.md (v0.2+)
+related: 04b-mi-facturacion-verification.md
 scope: V1 = reorganize UI for SETTINGS THAT ALREADY EXIST IN CODE. Aspirational items moved to 99-future-enhancements.md
 ---
 
@@ -110,26 +111,74 @@ These stay as-is in the reorganized "Mi cuenta → Perfil" area for informationa
 
 ---
 
-## 3. Mi facturación (HOST only — needs verification)
+## 3. Mi facturación (HOST only — A3 plan locked)
 
-Per IA §12.4, HOST has "Mi facturación" as a separate main menu item with 5 sub-pages. **CAVEAT**: today HOST doesn't have a self-service billing view in the admin (`/me/billing` route does NOT exist).
+Per IA §12.4, HOST has "Mi facturación" as a main menu item. After verification audit (`04b-mi-facturacion-verification.md`), V1 = **Option A3**: thin landing page that surfaces existing data + links to the web app for full management.
 
-### Verification needed
+### Decision rationale
 
-The web app may already expose subscription/invoice/payment-method pages to logged-in HOSTs. If so, the V1 question is:
+Verification revealed:
 
-- **Option A**: keep self-service billing in the web app; admin shows "Ver mi suscripción en hospeda.com.ar" link only.
-- **Option B**: build `/me/billing/*` admin pages that consume the same `/api/v1/protected/billing/me/*` endpoints (qzpay-hono routes — verify which exist).
+- Web app already has a polished `SubscriptionDashboard.client.tsx` for HOST self-service (`/{lang}/mi-cuenta/suscripcion`).
+- Backend has comprehensive read endpoints (qzpay-hono + custom hospeda) for subscriptions, invoices, payments, plans, add-ons, promo codes, usage.
+- NO admin pages exist today for HOST billing self-service.
+- NO payment-method management endpoints exist anywhere.
+- The `/api/v1/protected/billing/usage` endpoint exists but no UI consumes it (high-value low-cost addition).
 
-**Action**: spawn a focused audit before locking this section. For now, the IA reserves the menu item; the content is TBD.
+Building full admin pages for invoices/payments/add-ons/promos/payment-methods would violate V1 scope (= reorganize existing UI). The HYBRID path the verification agent recommended is post-V1 territory and is captured in `99-future-enhancements.md`.
 
-If endpoints exist (qzpay-hono likely has them per audit findings):
-- Mi plan: read-only display of current subscription
-- Métodos de pago: read-only list (add/edit via web app for V1)
-- Historial de facturas: read-only list with download
-- Próximo cobro: read-only preview
+### V1 structure: single landing page
 
-Everything write-related (cancel subscription, change plan, add payment method) deferred to web app for V1 unless explicitly needed in admin.
+"Mi facturación" in admin = ONE landing page (not 5 sub-pages as the IA initial sketch suggested). Sections within the page:
+
+#### Section 1: Mi plan actual (read-only summary)
+
+| Field | Source |
+|-------|--------|
+| Nombre del plan + badge de estado (active/trial/past-due/etc.) | `GET /api/v1/protected/billing/subscriptions` (list, pick first active per 03b §3) |
+| Próximo cobro: fecha | same |
+| Método de pago: brand + last4, o "MercadoPago" fallback | same |
+| Última factura: link "Descargar PDF" si `pdfUrl` está disponible | `GET /api/v1/protected/billing/invoices?pageSize=1&sort=date_desc` |
+
+#### Section 2: Uso de mi plan (NEW UI, existing endpoint)
+
+| Field | Source |
+|-------|--------|
+| Lista de límites por recurso (alojamientos, imágenes, almacenamiento, etc.) | `GET /api/v1/protected/billing/usage` (exists, not consumed today — per 03b §4) |
+| Barra de progreso por recurso con thresholds: 80% warning, 95% danger, 100% bloqueo | client-side calc |
+| Indicador "Actualizar plan" cuando algún recurso está cerca del límite | client-side conditional |
+
+This is the **ONE genuinely new piece of admin UI** in Mi facturación. Builds on an endpoint that exists but is currently unconsumed.
+
+#### Section 3: Actions
+
+- **CTA primaria**: "Administrar mi suscripción en hospeda.com.ar" → deep link a `/{lang}/mi-cuenta/suscripcion` (la UI completa del web)
+- **CTA secundaria**: "Cambiar de plan" → deep link a `/{lang}/suscriptores/planes`
+- **Link inline**: "Descargar última factura" (si PDF disponible)
+
+### What HOST does NOT do in admin (deferred to web)
+
+All write operations + multi-page data exploration:
+
+- Cancel subscription (today still routes to email per SPEC-147 — same in web)
+- Change plan (web checkout flow)
+- Manage payment methods (no endpoints exist anyway)
+- Browse invoice history beyond latest
+- Add-ons purchase / cancel
+- Promo code application
+
+### Sidebar structure
+
+The IA doc §12 originally listed 5 sub-items under "Mi facturación" (4.1-4.5). For A3 / V1, Mi facturación has **1 sidebar item = the landing page**. The sub-items 4.1-4.5 become sections WITHIN the page, not separate routes. (IA doc §12 will be updated in next version.)
+
+### V1 work involved
+
+1. Build the landing page: 1 admin page (route `/me/facturacion`) with 3 sections.
+2. Wire `GET /api/v1/protected/billing/usage` (only new data binding in admin V1).
+3. Read-only display of current subscription summary (consumes existing list endpoints with pageSize=1 + client-side pick).
+4. Deep links to web app for write actions.
+
+**Scope**: ~1 page + 1 hook for usage + 1 hook for subscription summary. Honest small addition; not feature creation.
 
 ---
 
@@ -350,9 +399,9 @@ Summary of actual work the V1 settings reorganization requires:
 
 ## Open questions
 
-### A. Mi facturación (HOST self-service in admin) — needs audit [OPEN]
+### A. Mi facturación (HOST self-service in admin) [RESOLVED 2026-05-22]
 
-Per §3, this section is reserved in the IA but unclear if endpoints exist today (qzpay-hono likely has them). **Action**: spawn focused audit on `/api/v1/protected/billing/*` endpoints before locking the section.
+Focused audit completed (`04b-mi-facturacion-verification.md`). Decision: **A3 — thin landing page + usage widget + deep links to web**. See §3.
 
 ### B. SMS/Push notification toggles UX [OPEN]
 
@@ -378,6 +427,8 @@ Storage migrations (localStorage → API) for SEO + Critical settings are small 
 | 2026-05-22 | Mi cuenta keeps existing 4 sub-pages: Perfil, Preferencias, Notificaciones, Cambiar contraseña. NO new sub-pages added in V1 | §2 |
 | 2026-05-22 | SMS/Push notification toggles labeled `(no disponible)` until backend wired (honest disclosure) | §2.3 |
 | 2026-05-22 | Mi facturación (HOST) needs verification audit before locking — qzpay-hono endpoints + admin UI mapping | §3 |
+| 2026-05-22 | Mi facturación (HOST) audit COMPLETE — A3 plan locked: thin admin landing page with (1) read-only subscription summary, (2) usage/limits widget consuming existing `/protected/billing/usage` endpoint, (3) deep links to web for all write actions. Sub-items 4.1-4.5 become sections within ONE page (not separate routes). HYBRID full-admin-pages approach deferred to post-V1 | §3, 04b |
+| 2026-05-22 | Usage/limits widget is the ONE genuinely new admin UI in Mi facturación V1 — endpoint exists, no UI consumes it today | §3 (Section 2) |
 | 2026-05-22 | Auditoría (SUPER_ADMIN) section deferred to post-V1 — no audit log code exists today | §9 |
 | 2026-05-22 | Anuncios globales gets minimal editor in V1 (text + variant + dismissible + dates). Multi-banner editor with audience targeting deferred | §8.2 |
 | 2026-05-22 | Danger zone empty in V1 (current state preserved). Specific actions deferred | §8.4 |
@@ -390,3 +441,4 @@ Storage migrations (localStorage → API) for SEO + Critical settings are small 
 |------|---------|--------|
 | 2026-05-22 | 0.1 | Initial draft — went out of scope inventing 2FA, sessions, GDPR, email infra UI, notification matrix, etc. |
 | 2026-05-22 | 0.2 | **Reality pass** — full rewrite scoped to V1 = reorganize EXISTING settings only. Aspirational features moved to `99-future-enhancements.md`. Reduced from ~815 lines to ~350. Sections: Mi cuenta (4 existing sub-pages), Mi facturación (HOST — needs audit, §3), Plataforma → Configuración general (SEO migration), Cache y deploy (revalidación), Operaciones (cron + webhooks + notification logs relocated from /billing/*), Tags del sistema (4 existing routes consolidated), Configuración crítica (maintenance + announcements + cache mgmt; localStorage→API migrations), Comercial → Configuración billing (no changes). Auditoría section deferred. |
+| 2026-05-22 | 0.3 | **Mi facturación verification applied** — §3 rewritten with A3 plan: thin admin landing page with (1) subscription summary read-only, (2) usage/limits widget (NEW UI consuming existing `/protected/billing/usage`), (3) deep links to web for all write actions. Sub-items 4.1-4.5 collapse to sections within ONE page. Open Q-A resolved. Cross-reference added to `04b-mi-facturacion-verification.md`. |
