@@ -1,7 +1,7 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.5
+version: 0.6
 date-started: 2026-05-22
 last-updated: 2026-05-22
 ---
@@ -555,8 +555,13 @@ HOST: {
 
 ```
 1- Inicio
-   (dashboard "Mi negocio": KPIs scoped, consultas sin responder,
-    próximos check-ins, estado de suscripción)
+   1.1- Mi negocio              (dashboard: KPIs scoped, consultas sin
+                                  responder, próximos check-ins, estado
+                                  de suscripción)
+   1.2- Mi inbox                (notificaciones — página completa)
+   1.3- Mis pendientes          (consultas + reseñas sin responder)
+   1.4- Centro de ayuda         (tutorials in-app, FAQ)
+   1.5- Novedades
 
 2- Mis alojamientos
    2.1- Ver mis alojamientos
@@ -639,8 +644,15 @@ SUPER_ADMIN: {
 
 ```
 1- Inicio
-   (dashboard de plataforma: KPIs globales, system health,
-    audit log preview, alertas Sentry/crons fallidos)
+   1.1- Dashboard               (KPIs globales, system health, audit
+                                  log preview, alertas Sentry/crons
+                                  fallidos)
+   1.2- Mi inbox                (notificaciones full UI)
+   1.3- Mis pendientes          (items asignados + alertas del sistema)
+   1.4- Mi actividad reciente   (audit de mis acciones admin)
+   1.5- Mis favoritos           (shortcuts pineados)
+   1.6- Centro de ayuda
+   1.7- Novedades
 
 2- Catálogo
    2.1- Dashboard de Catálogo
@@ -978,9 +990,16 @@ EDITOR: {
 
 ```
 1- Inicio
-   (dashboard editorial: posts esta semana, próximos eventos,
-    métricas newsletter, calendario 14 días, top performers,
-    borradores pendientes)
+   1.1- Dashboard editorial     (posts esta semana, próximos eventos,
+                                  métricas newsletter, calendario 14
+                                  días, top performers, borradores
+                                  pendientes)
+   1.2- Mi inbox
+   1.3- Mis pendientes          (borradores + reviews pendientes)
+   1.4- Mi actividad reciente
+   1.5- Mis favoritos
+   1.6- Centro de ayuda
+   1.7- Novedades
 
 2- Editorial
    2.1- Dashboard Editorial
@@ -1076,6 +1095,102 @@ The dashboards proposed in §6 for SPONSOR and CLIENT_MANAGER are **deferred alo
 
 ---
 
+## 19. Inicio sidebar — "User Home Hub" [LOCKED 2026-05-22]
+
+Like every other section, **Inicio has its own sidebar**. It becomes the **work-oriented personal hub** of the logged-in user, distinct from "Mi cuenta" (which is settings-oriented).
+
+### Distinction
+
+- **Inicio** = "Lo que tengo que hacer hoy" — action-oriented personal workspace.
+- **Mi cuenta** (in main menu for HOST, in topbar avatar for others) = "Cómo me configuro" — settings-oriented.
+
+### Universe of items (7 total)
+
+```
+1.1- Dashboard               (label per role — see below)
+1.2- Mi inbox                (notificaciones — full page, NOT just topbar dropdown)
+1.3- Mis pendientes          (todos / acciones que requieren mi atención)
+1.4- Mi actividad reciente   (audit de MIS acciones)
+1.5- Mis favoritos           (shortcuts pineados por el user)
+1.6- Centro de ayuda         (in-app: tutorials, FAQ, atajos de teclado)
+1.7- Novedades               (changelog, anuncios de la plataforma)
+```
+
+**Note**: "Mi calendario" was considered and dropped for V1. Can be added later as a config-only change if HOST or EDITOR need time-based visualizations.
+
+### Per-role visibility
+
+| Item | HOST | EDITOR | ADMIN | SUPER_ADMIN |
+|------|:----:|:------:|:-----:|:-----------:|
+| Dashboard | ✅ "Mi negocio" | ✅ "Dashboard editorial" | ✅ "Dashboard" | ✅ "Dashboard" |
+| Mi inbox | ✅ | ✅ | ✅ | ✅ |
+| Mis pendientes | ✅ | ✅ | ✅ | ✅ |
+| Mi actividad reciente | ❌ hidden | ✅ | ✅ | ✅ |
+| Mis favoritos | ❌ hidden | ✅ | ✅ | ✅ |
+| Centro de ayuda | ✅ | ✅ | ✅ | ✅ |
+| Novedades | ✅ | ✅ | ✅ | ✅ |
+
+Visible counts: HOST = 5, EDITOR = 7, ADMIN = 7, SUPER_ADMIN = 7.
+
+### Behavior
+
+- **Always visible** when navigating within Inicio, consistent with other sections.
+- The "Dashboard" item label is overridden per role via `labelOverrides` in the role config.
+- "Mis pendientes" content varies per role:
+  - HOST: consultas + reseñas sin responder
+  - EDITOR: borradores + reviews pendientes
+  - ADMIN/SUPER_ADMIN: items asignados + alertas del sistema
+- "Mi inbox" reuses the existing `/notifications` page (audit revealed it exists as a localStorage demo — needs to be wired to the in-app notifications backend per Phase 2 audit item #9).
+- "Centro de ayuda" is **in-app** in V1 (tutorials + FAQ panel embedded in the admin). External docs link can be added as a secondary item later.
+- HOST items missing (Mi actividad, Mis favoritos) use `onMissing: 'hide'` (per §8 rule) — non-tech HOST never sees them, not even greyed out.
+
+### Config representation (sketch)
+
+```ts
+sidebars: {
+  inicioSidebar: {
+    items: [
+      { type: 'link', id: 'dashboard',     label: { es: 'Dashboard', en: 'Dashboard', pt: 'Dashboard' },
+        route: '/inicio',           permissions: ['ACCESS_PANEL_ADMIN'] },
+      { type: 'link', id: 'inbox',         label: { es: 'Mi inbox', ... },
+        route: '/inicio/inbox',     permissions: ['NOTIFICATION_VIEW_OWN'] },
+      { type: 'link', id: 'pendientes',    label: { es: 'Mis pendientes', ... },
+        route: '/inicio/pendientes',permissions: ['ACCESS_PANEL_ADMIN'] },
+      { type: 'link', id: 'mi-actividad',  label: { es: 'Mi actividad reciente', ... },
+        route: '/inicio/mi-actividad', permissions: ['USER_VIEW_OWN_ACTIVITY'],
+        onMissing: 'hide' },
+      { type: 'link', id: 'favoritos',     label: { es: 'Mis favoritos', ... },
+        route: '/inicio/favoritos', permissions: ['FAVORITES_USE'],
+        onMissing: 'hide' },
+      { type: 'link', id: 'ayuda',         label: { es: 'Centro de ayuda', ... },
+        route: '/inicio/ayuda',     permissions: ['ACCESS_PANEL_ADMIN'] },
+      { type: 'link', id: 'novedades',     label: { es: 'Novedades', ... },
+        route: '/inicio/novedades', permissions: ['ACCESS_PANEL_ADMIN'] },
+    ],
+  },
+},
+
+// Role-specific label override for the dashboard item:
+roles: {
+  HOST: {
+    labelOverrides: {
+      'inicioSidebar.dashboard': { es: 'Mi negocio', en: 'My business', pt: 'Meu negócio' },
+    },
+    // ...
+  },
+  EDITOR: {
+    labelOverrides: {
+      'inicioSidebar.dashboard': { es: 'Dashboard editorial', en: 'Editorial dashboard', pt: 'Painel editorial' },
+    },
+    // ...
+  },
+}
+```
+
+The `inicio` section in `sections` config gets `sidebar: 'inicioSidebar'` (instead of `sidebar: null` as in v0.3).
+
+---
+
 ## Open questions
 
 Only one open question remains before the IA is fully locked.
@@ -1109,6 +1224,12 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | Análisis kept as separate section for EDITOR (filtered to Contenido), NOT embedded inside Editorial | §17 |
 | 2026-05-22 | Role config schema gains `enabled: boolean` field. SPONSOR + CLIENT_MANAGER kept in config with `enabled: false` (deferred from V1); activating later is a 1-line flip without code changes | §18 |
 | 2026-05-22 | Label for editor role: "Editor" (not "Redactor" / "Periodista") | §17 |
+| 2026-05-22 | Inicio section gets its own sidebar (universal "User Home Hub"). Always visible when in Inicio, consistent with other sections | §19 |
+| 2026-05-22 | Inicio sidebar items (universe of 7): Dashboard, Mi inbox, Mis pendientes, Mi actividad reciente, Mis favoritos, Centro de ayuda, Novedades | §19 |
+| 2026-05-22 | "Mi calendario" considered and dropped for V1 (can be added later as config-only change) | §19 |
+| 2026-05-22 | Centro de ayuda is in-app (tutorials + FAQ panel embedded in admin), critical for non-tech HOST | §19 |
+| 2026-05-22 | HOST sees 5 Inicio items (Mi negocio, Mi inbox, Mis pendientes, Centro de ayuda, Novedades). Mi actividad + Mis favoritos hidden (`onMissing: 'hide'`) | §19 |
+| 2026-05-22 | EDITOR / ADMIN / SUPER_ADMIN see all 7 Inicio items. Dashboard label overridden per role | §19 |
 
 ---
 
@@ -1121,3 +1242,4 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | 0.3 | Locked: §11 config-driven IA foundation, §12 HOST role, §13 SUPER_ADMIN role, §14 "Crear X" both places. Reorganized open questions (A-D). Decisions log populated. |
 | 2026-05-22 | 0.4 | Added §15 Operations vs. Configuration split principle. Newsletter split applied (Editorial keeps operations; Plataforma gets new Email group for infra). Plataforma sidebar restructured: added 6.3 Email, renumbered 6.4-6.8. Logs de notificaciones moved from Comercial to Plataforma → Email. Open Q-A (Newsletter location) resolved and removed; remaining Qs renumbered (A-C). |
 | 2026-05-22 | 0.5 | Locked: §8 cherry-pick UX rule (two-tier `onMissing`), §16 ADMIN role config, §17 EDITOR role config (4 items, Análisis separate), §18 SPONSOR + CLIENT_MANAGER deferred with `enabled: false`. New principle: data access ≠ navigation access (for selector pattern). Resolved Q-A (other roles' menus) and Q-B (cherry-pick rule). Only Q-A remains (config file split, implementation detail). |
+| 2026-05-22 | 0.6 | Added §19 Inicio sidebar — Inicio gets its own sidebar as "User Home Hub" with 7 universe items (Dashboard, Mi inbox, Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades). Updated menu trees for HOST, SUPER_ADMIN, EDITOR to show sidebar items. Mi calendario considered and dropped for V1. Centro de ayuda is in-app. |
