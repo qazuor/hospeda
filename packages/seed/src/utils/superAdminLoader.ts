@@ -44,13 +44,32 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
         .where(and(eq(accounts.userId, userId), eq(accounts.providerId, 'credential')))
         .limit(1);
 
+    const envPassword = process.env.HOSPEDA_SEED_SUPER_ADMIN_PASSWORD;
+
     if (existing.length > 0) {
-        logger.info(`${STATUS_ICONS.Success} Credential account already exists for super admin`);
+        // Account exists. If env password is set, rehash and update so the seed
+        // is the source of truth for the super admin password. If not set, leave
+        // the existing hash untouched to avoid locking the user out.
+        if (!envPassword) {
+            logger.info(
+                `${STATUS_ICONS.Success} Credential account already exists for super admin (HOSPEDA_SEED_SUPER_ADMIN_PASSWORD not set, password unchanged)`
+            );
+            return;
+        }
+
+        const hashedPassword = await hash(envPassword, 10);
+        await db
+            .update(accounts)
+            .set({ password: hashedPassword, updatedAt: new Date() })
+            .where(and(eq(accounts.userId, userId), eq(accounts.providerId, 'credential')));
+
+        logger.success({
+            msg: `${STATUS_ICONS.Success} Credential account password updated for super admin (email: ${email[0]}***@${email.split('@')[1]})`
+        });
         return;
     }
 
-    // Hash the password with bcrypt (matching Better Auth's expected format)
-    const envPassword = process.env.HOSPEDA_SEED_SUPER_ADMIN_PASSWORD;
+    // No account yet. Create one, using env password if provided, else random.
     const password = envPassword || generateRandomPassword();
     if (!envPassword) {
         logger.warn(
