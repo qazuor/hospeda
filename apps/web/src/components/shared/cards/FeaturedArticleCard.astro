@@ -20,7 +20,7 @@ import {
     formatReadingTime,
 } from '@/lib/article-card-utils';
 import { Image } from 'astro:assets';
-import { CalendarIcon, ClockIcon } from '@repo/icons';
+import { CalendarIcon, ClockIcon, UserIcon } from '@repo/icons';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
 
@@ -160,7 +160,7 @@ const mutedColorScheme = getMutedColorScheme();
             <div class="featured-card__author-row">
                 {data.authorName && (
                     <span class="featured-card__avatar-wrapper">
-                        {data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') && (
+                        {data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') ? (
                             <Image
                                 src={data.authorAvatar}
                                 alt={data.authorName}
@@ -171,13 +171,14 @@ const mutedColorScheme = getMutedColorScheme();
                                 format="webp"
                                 data-hide-on-error
                             />
+                        ) : (
+                            <span
+                                class="featured-card__avatar featured-card__avatar--placeholder"
+                                aria-hidden="true"
+                            >
+                                <UserIcon size={18} weight="fill" />
+                            </span>
                         )}
-                        <span
-                            class="featured-card__avatar featured-card__avatar--placeholder"
-                            aria-hidden="true"
-                        >
-                            {data.authorName.charAt(0)}
-                        </span>
                     </span>
                 )}
                 {data.authorName && (

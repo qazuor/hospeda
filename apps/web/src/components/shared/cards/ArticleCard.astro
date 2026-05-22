@@ -150,7 +150,7 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
             <p class="article-card__excerpt">{excerpt}</p>
 
             <CardMeta
-                author={{ name: data.authorName }}
+                author={{ name: data.authorName, avatarUrl: data.authorAvatar }}
                 date={data.publishedAt}
                 readingTimeMinutes={data.readingTimeMinutes}
                 locale={locale}
