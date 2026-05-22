@@ -1,7 +1,7 @@
 ---
 proposal: config-schema
 status: DRAFT (in active discussion)
-version: 0.1
+version: 0.2
 date-started: 2026-05-22
 last-updated: 2026-05-22
 depends-on: 01-information-architecture.md (v0.6+)
@@ -209,27 +209,30 @@ export const LinkItemSchema = z.object({
   exact: z.boolean().default(false),          // whether route match is exact or prefix
 });
 
-// Group (recursive)
-export type GroupItem = z.infer<typeof LinkItemSchema> & {  // forward declaration
-  type: 'group';
-  defaultOpen: boolean;
-  items: SidebarItem[];
-};
-
-export const GroupItemSchema: z.ZodType<GroupItem> = z.object({
-  type: z.literal('group'),
-  ...ItemBaseFields,
-  defaultOpen: z.boolean().default(false),
-  items: z.lazy(() => z.array(SidebarItemSchema).min(1)),
-});
-
 // Separator (no permissions — always shown if any sibling is visible)
 export const SeparatorItemSchema = z.object({
   type: z.literal('separator'),
   id: z.string().min(1),
 });
 
-// Discriminated union
+// Items allowed INSIDE a group — NO nested groups (capped at 2 levels of nesting,
+// which is sidebar root + one group deep). Deeper nesting is a UX anti-pattern.
+export const GroupChildItemSchema = z.discriminatedUnion('type', [
+  LinkItemSchema,
+  SeparatorItemSchema,
+]);
+
+export type GroupChildItem = z.infer<typeof GroupChildItemSchema>;
+
+// Group — non-recursive (cannot contain other groups)
+export const GroupItemSchema = z.object({
+  type: z.literal('group'),
+  ...ItemBaseFields,
+  defaultOpen: z.boolean().default(false),
+  items: z.array(GroupChildItemSchema).min(1),
+});
+
+// Top-level sidebar item: link | group | separator
 export const SidebarItemSchema = z.discriminatedUnion('type', [
   LinkItemSchema,
   GroupItemSchema,
@@ -327,6 +330,8 @@ export const WidgetTypeSchema = z.enum([
   'feed',                                    // chronological feed (activity, audit log preview)
   'callout',                                 // notice/banner with CTA (e.g., "Tu plan vence en 5 días")
   'shortcut',                                // group of quick-action buttons
+  'map',                                     // geographic visualization (e.g., accommodations by destination)
+  'calendar',                                // date-based visualization (e.g., upcoming events, publishing schedule)
 ]);
 
 export const WidgetSchema = z.object({
@@ -493,9 +498,23 @@ export type RoleConfig = z.infer<typeof RoleConfigSchema>;
 
 ---
 
-## 11. Create actions (referenced by topbar + mobile FAB)
+## 11. Create actions (referenced by topbar + mobile FAB) [LOCKED — Option A: separate registry]
 
-To keep `showQuickCreate` and `mobile.fab` declarative, define create actions explicitly:
+Create actions live in a **separate registry**, not inline. Multiple places reference them by ID: topbar `showQuickCreate`, mobile `fab`, and (by convention in V1) sidebar "Crear X" link items.
+
+### V1 convention
+
+Sidebar "Crear X" items are regular `link` items that share `route` + `permissions` with their corresponding create action. If they drift, manual reconciliation is required.
+
+### Post-V1 hardening
+
+A new sidebar item type `createActionRef` can be added so sidebar items reference the registry directly and stay DRY automatically:
+
+```ts
+{ type: 'createActionRef', actionId: 'newPost' }   // post-V1 only — not in V1 schema
+```
+
+For V1, sidebars keep using plain `link` items for create actions.
 
 ```ts
 export const CreateActionSchema = z.object({
@@ -688,7 +707,7 @@ Within a single sidebar (recursively flattened), all `id` fields must be unique.
 for (const [sidebarId, sidebar] of Object.entries(config.sidebars)) {
   const ids = new Set<string>();
   const dup: string[] = [];
-  const visit = (items: SidebarItem[]) => {
+  const visit = (items: (SidebarItem | GroupChildItem)[]) => {
     for (const item of items) {
       if (ids.has(item.id)) dup.push(item.id);
       ids.add(item.id);
@@ -703,6 +722,23 @@ for (const [sidebarId, sidebar] of Object.entries(config.sidebars)) {
   }
 }
 ```
+
+### 13.9 Universal wildcard `*` restricted to SUPER_ADMIN
+
+The `*` permission expression expands to every PermissionEnum value. Only the SUPER_ADMIN role is allowed to declare it.
+
+```ts
+for (const [roleId, role] of Object.entries(config.roles)) {
+  if (role.defaultPermissions.includes('*') && roleId !== 'SUPER_ADMIN') {
+    ctx.addIssue({ code: 'custom',
+      path: ['roles', roleId, 'defaultPermissions'],
+      message: `Universal wildcard '*' is only allowed for SUPER_ADMIN role; ` +
+               `use prefix wildcards like 'FOO_*' for other roles` });
+  }
+}
+```
+
+This prevents accidental privilege escalation via the wildcard shortcut.
 
 ---
 
@@ -824,23 +860,7 @@ Components import these and never duplicate shapes.
 
 ## Open questions
 
-### A. Schema location: `apps/admin` vs `@repo/schemas` [OPEN]
-
-Currently proposed at `apps/admin/src/config/ia/schema.ts`. Alternative: move to `@repo/schemas` so other apps could read role/permission bundles (e.g., the API for permission-bundle previews in an admin UI).
-
-Recommend keeping in `apps/admin` for V1 — it's admin-specific config. Move later if a cross-package need emerges.
-
-### B. Widget `config` typing [OPEN — V1 acceptable]
-
-For V1, `WidgetSchema.config: z.record(z.unknown())` is loose. Each widget renderer validates its own `config` shape with a local schema. Post-V1 hardening: replace with a discriminated union by widget `type`.
-
-### C. Permission expansion timing [DECIDED — boot time]
-
-Expansion happens once at boot via `expandPermissions()`. The expanded array is what the runtime uses for permission checks. Wildcards never reach the runtime.
-
-### D. Hot-reload behavior in dev [OPEN]
-
-Vite HMR on a TS config change → does the app re-validate and rebuild? Likely yes (TanStack Start dev server triggers a full reload on config changes). To be confirmed in implementation.
+_None remaining — all 4 original open questions are resolved (see Decisions log)._
 
 ---
 
@@ -852,14 +872,17 @@ Vite HMR on a TS config change → does the app re-validate and rebuild? Likely 
 | 2026-05-22 | All user-facing labels are tri-locale `{ es, en, pt }`, all required at compile time | §3.1 |
 | 2026-05-22 | Permission expressions support: exact `PermissionEnum`, suffix wildcard `FOO_*`, universal `*`. Boot-time expansion via `expandPermissions()` | §3.2 |
 | 2026-05-22 | `onMissing` field on items (default `'disable'`, opt-in `'hide'`) per IA doc §8 | §3.4 |
-| 2026-05-22 | Sidebar items as discriminated union by `type`: `link`, `group` (recursive), `separator` | §5 |
+| 2026-05-22 | Sidebar items as discriminated union by `type`: `link`, `group`, `separator` | §5 |
+| 2026-05-22 | Sidebar nesting capped at 2 levels: top-level can be `link`/`group`/`separator`; groups can ONLY contain `link`/`separator` (no nested groups — UX anti-pattern) | §5 |
 | 2026-05-22 | Detail page tabs capped at max 9 (per IA doc §5 design rule) | §6 |
-| 2026-05-22 | Widget types in V1: `kpi`, `list`, `chart`, `feed`, `callout`, `shortcut`. Widget `config` field loose for V1, tightened post-V1 | §7 |
+| 2026-05-22 | Widget types in V1: `kpi`, `list`, `chart`, `feed`, `callout`, `shortcut`, `map`, `calendar`. Widget `config` field loose for V1, tightened post-V1 | §7 |
 | 2026-05-22 | `mobile.bottomNav` cap: min 2, max 5 sections | §9 |
 | 2026-05-22 | Roles with `enabled: false` can have partial config (mainMenu/dashboard/topbar/mobile optional) | §10 |
-| 2026-05-22 | Create actions defined separately and referenced by ID from topbar.showQuickCreate + mobile.fab | §11 |
-| 2026-05-22 | Cross-reference validations run in top-level `superRefine`: sidebars, mainMenu, dashboards, create actions, bottomNav, label override paths, permission expansion, unique IDs | §13 |
+| 2026-05-22 | Create actions live in a separate registry (Option A), referenced by ID from topbar.showQuickCreate + mobile.fab. V1 convention: sidebar "Crear X" items are plain `link`s that share route+permissions with the corresponding create action. Post-V1: optional `createActionRef` sidebar item type for DRY | §11 |
+| 2026-05-22 | Cross-reference validations run in top-level `superRefine`: sidebars, mainMenu, dashboards, create actions, bottomNav, label override paths, permission expansion, unique IDs, wildcard `*` restricted | §13 |
+| 2026-05-22 | Universal wildcard `*` in `defaultPermissions` is ONLY allowed for SUPER_ADMIN role (schema-enforced via §13.9) | §13.9 |
 | 2026-05-22 | Validation entry point throws at module load with a formatted multi-line error pointing to every problem | §14 |
+| 2026-05-22 | HMR: Vite + TanStack Start dev server will re-validate on config TS file save (full module reload). Confirmed acceptable for dev workflow | (resolved Open Q-D) |
 
 ---
 
@@ -868,3 +891,4 @@ Vite HMR on a TS config change → does the app re-validate and rebuild? Likely 
 | Date | Version | Change |
 |------|---------|--------|
 | 2026-05-22 | 0.1 | Initial full draft. 16 sections covering primitives, sections, sidebar items, tabs, widgets, topbar, mobile, roles, create actions, top-level config, cross-reference validations, error examples, and inferred TS types. 4 open questions (A: schema location, B: widget config typing, C: permission expansion, D: HMR behavior). |
+| 2026-05-22 | 0.2 | All 4 open questions resolved. Locked: §2 schema lives in apps/admin (Q-A resolved), §5 sidebar nesting capped at 2 levels (no nested groups), §7 widget types extended to 8 (added map + calendar), §11 create actions registry (Option A) with V1 convention + post-V1 createActionRef escape hatch, §13.9 universal wildcard `*` restricted to SUPER_ADMIN (schema-enforced), §10 widget config loose typing accepted for V1. Open questions section now empty. |

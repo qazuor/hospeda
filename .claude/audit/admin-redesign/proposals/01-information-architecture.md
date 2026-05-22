@@ -1,9 +1,10 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.6
+version: 0.7
 date-started: 2026-05-22
 last-updated: 2026-05-22
+related: 02-config-schema.md
 ---
 
 # Admin Panel — Information Architecture Proposal
@@ -1193,11 +1194,7 @@ The `inicio` section in `sections` config gets `sidebar: 'inicioSidebar'` (inste
 
 ## Open questions
 
-Only one open question remains before the IA is fully locked.
-
-### A. Config file split [OPEN — implementation detail]
-
-Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,sidebars,roles,dashboards,permissions-bundles}.ts` files composed together? Recommend split for editability and lower merge-conflict risk. To be confirmed in implementation spec.
+_None remaining — Q-A (config file split) was resolved in `02-config-schema.md` §2: split-file approach in `apps/admin/src/config/ia/` with one file per concern (sections, sidebars, dashboards, tabs) and one file per role under `roles/`. See the schema doc for the full file structure._
 
 ---
 
@@ -1230,6 +1227,7 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | Centro de ayuda is in-app (tutorials + FAQ panel embedded in admin), critical for non-tech HOST | §19 |
 | 2026-05-22 | HOST sees 5 Inicio items (Mi negocio, Mi inbox, Mis pendientes, Centro de ayuda, Novedades). Mi actividad + Mis favoritos hidden (`onMissing: 'hide'`) | §19 |
 | 2026-05-22 | EDITOR / ADMIN / SUPER_ADMIN see all 7 Inicio items. Dashboard label overridden per role | §19 |
+| 2026-05-22 | Q-A (config file split) resolved: split-file approach in `apps/admin/src/config/ia/` with schema, sections, sidebars, dashboards, tabs, roles/, permission-bundles, index, validate as separate files | 02-config-schema.md §2 |
 
 ---
 
@@ -1243,3 +1241,4 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | 0.4 | Added §15 Operations vs. Configuration split principle. Newsletter split applied (Editorial keeps operations; Plataforma gets new Email group for infra). Plataforma sidebar restructured: added 6.3 Email, renumbered 6.4-6.8. Logs de notificaciones moved from Comercial to Plataforma → Email. Open Q-A (Newsletter location) resolved and removed; remaining Qs renumbered (A-C). |
 | 2026-05-22 | 0.5 | Locked: §8 cherry-pick UX rule (two-tier `onMissing`), §16 ADMIN role config, §17 EDITOR role config (4 items, Análisis separate), §18 SPONSOR + CLIENT_MANAGER deferred with `enabled: false`. New principle: data access ≠ navigation access (for selector pattern). Resolved Q-A (other roles' menus) and Q-B (cherry-pick rule). Only Q-A remains (config file split, implementation detail). |
 | 2026-05-22 | 0.6 | Added §19 Inicio sidebar — Inicio gets its own sidebar as "User Home Hub" with 7 universe items (Dashboard, Mi inbox, Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades). Updated menu trees for HOST, SUPER_ADMIN, EDITOR to show sidebar items. Mi calendario considered and dropped for V1. Centro de ayuda is in-app. |
+| 2026-05-22 | 0.7 | Q-A (config file split) resolved: split-file approach `apps/admin/src/config/ia/` per 02-config-schema.md §2. Open questions section is now empty — all IA decisions are locked. The proposal is ready for the next phase (visual identity tokens, dashboards in detail, settings page detail, or implementation spec). |
