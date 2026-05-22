@@ -1,0 +1,219 @@
+---
+/**
+ * @file MarketingHero.astro
+ * @description Shared centered hero used across marketing landings
+ * (/suscriptores/turistas, /suscriptores/planes, /suscriptores/propietarios).
+ *
+ * Renders a tagline, a heading with an underlined accent on the last word,
+ * a subtitle, an optional CTA slot, and a decorative layer (radial blob +
+ * three floating icon badges). The blob stays visible on mobile to produce
+ * the soft gradient backdrop; the floating badges hide below 900px.
+ *
+ * Icons are passed via slots (`icon-1`, `icon-2`, `icon-3`) so each page
+ * can pick its own iconography while keeping the layout identical.
+ *
+ * @example
+ *   <MarketingHero tagline="..." titleMain="Planes para" titleAccent="turistas" subtitle="...">
+ *     <Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
+ *     <Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
+ *     <Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
+ *   </MarketingHero>
+ */
+
+interface Props {
+	readonly tagline: string;
+	readonly titleMain?: string;
+	readonly titleAccent: string;
+	readonly subtitle: string;
+}
+
+const { tagline, titleMain, titleAccent, subtitle } = Astro.props;
+const hasCta = Astro.slots.has('cta');
+---
+
+<section class="marketing-hero section section--warm">
+	<div class="marketing-hero__decoratives" aria-hidden="true">
+		<div class="marketing-hero__blob"></div>
+		<div class="marketing-hero__floating marketing-hero__floating--top-left">
+			<slot name="icon-1" />
+		</div>
+		<div class="marketing-hero__floating marketing-hero__floating--middle-right">
+			<slot name="icon-2" />
+		</div>
+		<div class="marketing-hero__floating marketing-hero__floating--bottom-left">
+			<slot name="icon-3" />
+		</div>
+	</div>
+
+	<div class="marketing-hero__container" data-reveal="up">
+		<p class="marketing-hero__tagline">{tagline}</p>
+		<h1 class="marketing-hero__title">
+			{titleMain && <>{titleMain}{' '}</>}
+			<span class="marketing-hero__title-accent">
+				{titleAccent}
+				<svg
+					class="marketing-hero__title-underline"
+					viewBox="0 0 200 18"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M 4 12 Q 50 2, 100 10 T 196 8"
+						stroke="currentColor"
+						stroke-width="4"
+						stroke-linecap="round"
+						fill="none"
+					/>
+				</svg>
+			</span>
+		</h1>
+		<p class="marketing-hero__subtitle">{subtitle}</p>
+		{hasCta && (
+			<div class="marketing-hero__cta">
+				<slot name="cta" />
+			</div>
+		)}
+	</div>
+</section>
+
+<style>
+	.marketing-hero {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.marketing-hero__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.marketing-hero__blob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: clamp(360px, 50vw, 640px);
+		height: clamp(360px, 50vw, 640px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 35% 35%,
+			oklch(from var(--brand-primary) l c h / 0.16),
+			oklch(from var(--brand-accent) l c h / 0.08) 55%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.marketing-hero__floating {
+		position: absolute;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		animation: marketing-hero-float 6s ease-in-out infinite;
+	}
+
+	.marketing-hero__floating--top-left {
+		top: 18%;
+		left: clamp(4%, 8vw, 12%);
+		color: var(--brand-accent);
+		animation-delay: 0s;
+	}
+
+	.marketing-hero__floating--middle-right {
+		top: 48%;
+		right: clamp(4%, 7vw, 11%);
+		color: var(--brand-primary);
+		animation-delay: 1.5s;
+	}
+
+	.marketing-hero__floating--bottom-left {
+		bottom: 14%;
+		left: clamp(8%, 12vw, 18%);
+		color: oklch(0.72 0.16 75);
+		animation-delay: 3s;
+	}
+
+	@keyframes marketing-hero-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+
+	@media (max-width: 900px) {
+		.marketing-hero__floating {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.marketing-hero__floating {
+			animation: none;
+		}
+	}
+
+	.marketing-hero__container {
+		position: relative;
+		z-index: 1;
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.marketing-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.marketing-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.marketing-hero__title-accent {
+		position: relative;
+		display: inline-block;
+	}
+
+	.marketing-hero__title-underline {
+		position: absolute;
+		left: -3%;
+		right: -3%;
+		bottom: -0.08em;
+		width: 106%;
+		height: 0.32em;
+		color: var(--brand-accent);
+		opacity: 0.75;
+		pointer-events: none;
+	}
+
+	.marketing-hero__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--core-muted-foreground);
+		max-width: 50ch;
+		margin: 0 auto;
+	}
+
+	.marketing-hero__cta {
+		margin-top: var(--space-6);
+		display: flex;
+		justify-content: center;
+	}
+</style>
