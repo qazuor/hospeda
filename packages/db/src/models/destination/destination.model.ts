@@ -81,15 +81,23 @@ export class DestinationModel extends BaseModelImpl<Destination> {
     }
 
     /**
-     * Overrides {@link BaseModelImpl.findAll} to add support for the synthetic
-     * `mostSaved` sort field. When `options.sortBy === 'mostSaved'`, the query
-     * orders rows by the count of active bookmarks via a correlated subquery on
-     * `user_bookmarks` (entity_type='DESTINATION' AND deleted_at IS NULL), with a
-     * stable `id DESC` tiebreaker so pagination stays deterministic. All other
-     * sort fields delegate to the base implementation unchanged.
+     * Overrides {@link BaseModelImpl.findAll} to:
      *
-     * SPEC-098 T-052c — mirrors the accommodation/event `mostSaved` mechanism
-     * on the destinations listing.
+     * 1. Support the synthetic `mostSaved` sort field. When
+     *    `options.sortBy === 'mostSaved'`, the query orders rows by the count of
+     *    active bookmarks via a correlated subquery on `user_bookmarks`
+     *    (entity_type='DESTINATION' AND deleted_at IS NULL), with a stable
+     *    `id DESC` tiebreaker so pagination stays deterministic.
+     *    SPEC-098 T-052c — mirrors the accommodation/event `mostSaved` mechanism.
+     *
+     * 2. Apply a destination-specific default ordering when no explicit `sortBy`
+     *    is provided: featured destinations first (`is_featured DESC`), then
+     *    alphabetical by name (case-insensitive). This makes every consumer of
+     *    the destinations list — public listings, hero search picker, accommodation
+     *    create form selector, admin tables — share the same baseline order
+     *    without each call site having to re-sort client-side.
+     *
+     * All other explicit sort fields delegate to the base implementation unchanged.
      */
     override async findAll(
         where: Record<string, unknown>,
@@ -97,18 +105,24 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Destination[]; total: number }> {
-        if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
+        if (options?.sortBy && options.sortBy !== MOST_SAVED_SORT_FIELD) {
             return super.findAll(where, options, additionalConditions, tx);
         }
 
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
-        const page = options.page ?? 1;
-        const pageSize = options.pageSize ?? 10;
-        const sortOrder: 'asc' | 'desc' = options.sortOrder ?? 'desc';
+        const page = options?.page ?? 1;
+        const pageSize = options?.pageSize ?? 10;
+        const isMostSaved = options?.sortBy === MOST_SAVED_SORT_FIELD;
+        const sortOrder: 'asc' | 'desc' = options?.sortOrder ?? (isMostSaved ? 'desc' : 'asc');
         const offset = (page - 1) * pageSize;
 
-        const logContext = { where: safeWhere, page, pageSize, sortBy: MOST_SAVED_SORT_FIELD };
+        const logContext = {
+            where: safeWhere,
+            page,
+            pageSize,
+            sortBy: options?.sortBy ?? 'default'
+        };
 
         try {
             const baseWhereClause = buildWhereClause(safeWhere, this.table);
@@ -126,14 +140,17 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                       ? allConditions[0]
                       : and(...allConditions);
 
-            const orderExpr = buildMostSavedOrderExpr(sortOrder);
-            const tieBreaker = desc(destinations.id);
+            // Default: featured first, then alphabetical by name (case-insensitive).
+            // `mostSaved`: bookmark-count subquery + stable `id DESC` tiebreaker.
+            const orderByExprs: SQL[] = isMostSaved
+                ? [buildMostSavedOrderExpr(sortOrder), desc(destinations.id)]
+                : [desc(destinations.isFeatured), sql`LOWER(${destinations.name}) ASC`];
 
             const itemsQuery = db
                 .select()
                 .from(this.table)
                 .where(finalWhereClause)
-                .orderBy(orderExpr, tieBreaker)
+                .orderBy(...orderByExprs)
                 .limit(pageSize)
                 .offset(offset);
 
