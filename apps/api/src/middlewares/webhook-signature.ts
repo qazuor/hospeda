@@ -352,8 +352,13 @@ export function createWebhookSignatureMiddleware(
         // 3. Extract data.id (query string preferred — MP signs using the
         //    URL value, see docs; falls back to JSON body for compatibility
         //    with payloads that omit it from the query).
+        //
+        // Body is read up-front (regardless of where dataId ultimately comes
+        // from) so the mismatch diagnostic log below can include it. Removing
+        // when the smoke is unblocked.
         // ----------------------------------------------------------------
-        const dataId = extractDataIdFromQuery(c) ?? extractDataIdFromBody(await c.req.text());
+        const rawBody = await c.req.text();
+        const dataId = extractDataIdFromQuery(c) ?? extractDataIdFromBody(rawBody);
 
         if (!dataId) {
             apiLogger.warn(
@@ -406,7 +411,12 @@ export function createWebhookSignatureMiddleware(
                     rawSignatureHeader: signatureHeader,
                     queryString: c.req.url.split('?')[1] ?? '',
                     bodyDataIdSeen: extractDataIdFromQuery(c) ?? '(via body fallback)',
-                    allRequestHeaders: allHeaders
+                    allRequestHeaders: allHeaders,
+                    rawBody:
+                        rawBody.length > 1000
+                            ? `${rawBody.substring(0, 1000)}...(truncated)`
+                            : rawBody,
+                    rawBodyLength: rawBody.length
                 },
                 'Webhook signature mismatch — rejecting (with diagnostic dump)'
             );
