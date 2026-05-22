@@ -1,10 +1,10 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.7
+version: 0.8
 date-started: 2026-05-22
 last-updated: 2026-05-22
-related: 02-config-schema.md
+related: 02-config-schema.md, 03-dashboards.md, 04-settings.md, 99-future-enhancements.md
 ---
 
 # Admin Panel — Information Architecture Proposal
@@ -1096,99 +1096,73 @@ The dashboards proposed in §6 for SPONSOR and CLIENT_MANAGER are **deferred alo
 
 ---
 
-## 19. Inicio sidebar — "User Home Hub" [LOCKED 2026-05-22]
+## 19. Inicio sidebar — "User Home Hub" [LOCKED 2026-05-22, V1-scoped 2026-05-22]
 
-Like every other section, **Inicio has its own sidebar**. It becomes the **work-oriented personal hub** of the logged-in user, distinct from "Mi cuenta" (which is settings-oriented).
+Like every other section, **Inicio has its own sidebar**. It's the **work-oriented personal hub** of the logged-in user, distinct from "Mi cuenta" (settings-oriented).
 
 ### Distinction
 
 - **Inicio** = "Lo que tengo que hacer hoy" — action-oriented personal workspace.
 - **Mi cuenta** (in main menu for HOST, in topbar avatar for others) = "Cómo me configuro" — settings-oriented.
 
-### Universe of items (7 total)
+### V1 items (existing code only — 2 items)
+
+After the reality pass, V1 only includes items whose code exists:
 
 ```
-1.1- Dashboard               (label per role — see below)
-1.2- Mi inbox                (notificaciones — full page, NOT just topbar dropdown)
-1.3- Mis pendientes          (todos / acciones que requieren mi atención)
-1.4- Mi actividad reciente   (audit de MIS acciones)
-1.5- Mis favoritos           (shortcuts pineados por el user)
-1.6- Centro de ayuda         (in-app: tutorials, FAQ, atajos de teclado)
-1.7- Novedades               (changelog, anuncios de la plataforma)
+1.1- Dashboard          (label per role — see below)
+1.2- Mi inbox           (uses existing /notifications route — TODO: backend wiring)
 ```
 
-**Note**: "Mi calendario" was considered and dropped for V1. Can be added later as a config-only change if HOST or EDITOR need time-based visualizations.
+**5 items moved to `99-future-enhancements.md` §1**: Mis pendientes (needs aggregator), Mi actividad reciente (no audit log), Mis favoritos (no pinning system), Centro de ayuda (no in-app help), Novedades (no changelog system).
 
-### Per-role visibility
+### Per-role visibility (V1)
 
 | Item | HOST | EDITOR | ADMIN | SUPER_ADMIN |
 |------|:----:|:------:|:-----:|:-----------:|
 | Dashboard | ✅ "Mi negocio" | ✅ "Dashboard editorial" | ✅ "Dashboard" | ✅ "Dashboard" |
-| Mi inbox | ✅ | ✅ | ✅ | ✅ |
-| Mis pendientes | ✅ | ✅ | ✅ | ✅ |
-| Mi actividad reciente | ❌ hidden | ✅ | ✅ | ✅ |
-| Mis favoritos | ❌ hidden | ✅ | ✅ | ✅ |
-| Centro de ayuda | ✅ | ✅ | ✅ | ✅ |
-| Novedades | ✅ | ✅ | ✅ | ✅ |
+| Mi inbox | ✅ (stubbed) | ✅ (stubbed) | ✅ (stubbed) | ✅ (stubbed) |
 
-Visible counts: HOST = 5, EDITOR = 7, ADMIN = 7, SUPER_ADMIN = 7.
+**Visible counts**: 2 items for all roles in V1.
+
+### Mi inbox status (honest disclosure)
+
+The `/notifications` route exists today but is a **localStorage demo** — the backend in-app notifications system is not wired (per Phase 2 audit #9). V1 either:
+
+- **(a) Includes the existing demo page in the sidebar with a `(beta)` label** until backend wires up.
+- **(b) Excludes it from V1 sidebar entirely** until backend ready.
+
+**Recommendation**: (a) include with `(beta)`. The page exists, ships value (even as demo for one user), and the placeholder signals "real backend coming".
+
+If the user is uncomfortable shipping a beta-labeled feature, fall back to (b) → Inicio sidebar is just `Dashboard` until in-app notifications backend lands.
 
 ### Behavior
 
-- **Always visible** when navigating within Inicio, consistent with other sections.
-- The "Dashboard" item label is overridden per role via `labelOverrides` in the role config.
-- "Mis pendientes" content varies per role:
-  - HOST: consultas + reseñas sin responder
-  - EDITOR: borradores + reviews pendientes
-  - ADMIN/SUPER_ADMIN: items asignados + alertas del sistema
-- "Mi inbox" reuses the existing `/notifications` page (audit revealed it exists as a localStorage demo — needs to be wired to the in-app notifications backend per Phase 2 audit item #9).
-- "Centro de ayuda" is **in-app** in V1 (tutorials + FAQ panel embedded in the admin). External docs link can be added as a secondary item later.
-- HOST items missing (Mi actividad, Mis favoritos) use `onMissing: 'hide'` (per §8 rule) — non-tech HOST never sees them, not even greyed out.
+- Sidebar always visible when navigating within Inicio.
+- "Dashboard" item label overridden per role via `labelOverrides` in role config.
 
-### Config representation (sketch)
+### Config representation (V1)
 
 ```ts
 sidebars: {
   inicioSidebar: {
     items: [
-      { type: 'link', id: 'dashboard',     label: { es: 'Dashboard', en: 'Dashboard', pt: 'Dashboard' },
-        route: '/inicio',           permissions: ['ACCESS_PANEL_ADMIN'] },
-      { type: 'link', id: 'inbox',         label: { es: 'Mi inbox', ... },
-        route: '/inicio/inbox',     permissions: ['NOTIFICATION_VIEW_OWN'] },
-      { type: 'link', id: 'pendientes',    label: { es: 'Mis pendientes', ... },
-        route: '/inicio/pendientes',permissions: ['ACCESS_PANEL_ADMIN'] },
-      { type: 'link', id: 'mi-actividad',  label: { es: 'Mi actividad reciente', ... },
-        route: '/inicio/mi-actividad', permissions: ['USER_VIEW_OWN_ACTIVITY'],
-        onMissing: 'hide' },
-      { type: 'link', id: 'favoritos',     label: { es: 'Mis favoritos', ... },
-        route: '/inicio/favoritos', permissions: ['FAVORITES_USE'],
-        onMissing: 'hide' },
-      { type: 'link', id: 'ayuda',         label: { es: 'Centro de ayuda', ... },
-        route: '/inicio/ayuda',     permissions: ['ACCESS_PANEL_ADMIN'] },
-      { type: 'link', id: 'novedades',     label: { es: 'Novedades', ... },
-        route: '/inicio/novedades', permissions: ['ACCESS_PANEL_ADMIN'] },
+      { type: 'link', id: 'dashboard', label: { es: 'Dashboard', en: 'Dashboard', pt: 'Dashboard' },
+        route: '/inicio', permissions: ['ACCESS_PANEL_ADMIN'] },
+      { type: 'link', id: 'inbox',     label: { es: 'Mi inbox (beta)', en: 'My inbox (beta)', pt: 'Minha caixa (beta)' },
+        route: '/inicio/inbox',  permissions: ['ACCESS_PANEL_ADMIN'] },
     ],
   },
 },
 
-// Role-specific label override for the dashboard item:
+// Role label override (HOST + EDITOR keep theirs):
 roles: {
-  HOST: {
-    labelOverrides: {
-      'inicioSidebar.dashboard': { es: 'Mi negocio', en: 'My business', pt: 'Meu negócio' },
-    },
-    // ...
-  },
-  EDITOR: {
-    labelOverrides: {
-      'inicioSidebar.dashboard': { es: 'Dashboard editorial', en: 'Editorial dashboard', pt: 'Painel editorial' },
-    },
-    // ...
-  },
+  HOST:   { labelOverrides: { 'inicioSidebar.dashboard': { es: 'Mi negocio', ... } } },
+  EDITOR: { labelOverrides: { 'inicioSidebar.dashboard': { es: 'Dashboard editorial', ... } } },
 }
 ```
 
-The `inicio` section in `sections` config gets `sidebar: 'inicioSidebar'` (instead of `sidebar: null` as in v0.3).
+When future items are promoted from `99-future-enhancements.md`, they're added to `inicioSidebar.items` — no other code changes needed.
 
 ---
 
@@ -1228,6 +1202,9 @@ _None remaining — Q-A (config file split) was resolved in `02-config-schema.md
 | 2026-05-22 | HOST sees 5 Inicio items (Mi negocio, Mi inbox, Mis pendientes, Centro de ayuda, Novedades). Mi actividad + Mis favoritos hidden (`onMissing: 'hide'`) | §19 |
 | 2026-05-22 | EDITOR / ADMIN / SUPER_ADMIN see all 7 Inicio items. Dashboard label overridden per role | §19 |
 | 2026-05-22 | Q-A (config file split) resolved: split-file approach in `apps/admin/src/config/ia/` with schema, sections, sidebars, dashboards, tabs, roles/, permission-bundles, index, validate as separate files | 02-config-schema.md §2 |
+| 2026-05-22 | V1 SCOPE RULE: redesign reorganizes UI for features WHOSE CODE ALREADY EXISTS. Aspirational items (2FA, sessions, GDPR, OAuth UI, email infra UI, audit log, in-app notifications backend, bookings, host revenue tracking, host calendar, etc.) tracked in `99-future-enhancements.md` until promoted | global |
+| 2026-05-22 | Inicio sidebar trimmed to V1 reality: 2 items (Dashboard + Mi inbox-beta). 5 items (Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades) moved to future-enhancements §1 | §19 |
+| 2026-05-22 | Mi inbox uses existing `/notifications` route labeled `(beta)` until backend wired — honest disclosure | §19 |
 
 ---
 
@@ -1242,3 +1219,4 @@ _None remaining — Q-A (config file split) was resolved in `02-config-schema.md
 | 2026-05-22 | 0.5 | Locked: §8 cherry-pick UX rule (two-tier `onMissing`), §16 ADMIN role config, §17 EDITOR role config (4 items, Análisis separate), §18 SPONSOR + CLIENT_MANAGER deferred with `enabled: false`. New principle: data access ≠ navigation access (for selector pattern). Resolved Q-A (other roles' menus) and Q-B (cherry-pick rule). Only Q-A remains (config file split, implementation detail). |
 | 2026-05-22 | 0.6 | Added §19 Inicio sidebar — Inicio gets its own sidebar as "User Home Hub" with 7 universe items (Dashboard, Mi inbox, Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades). Updated menu trees for HOST, SUPER_ADMIN, EDITOR to show sidebar items. Mi calendario considered and dropped for V1. Centro de ayuda is in-app. |
 | 2026-05-22 | 0.7 | Q-A (config file split) resolved: split-file approach `apps/admin/src/config/ia/` per 02-config-schema.md §2. Open questions section is now empty — all IA decisions are locked. The proposal is ready for the next phase (visual identity tokens, dashboards in detail, settings page detail, or implementation spec). |
+| 2026-05-22 | 0.8 | **Reality pass**: V1 scope rule added — redesign covers reorganization of EXISTING code only. §19 Inicio sidebar trimmed from 7 items to 2 (Dashboard + Mi inbox beta). 5 aspirational Inicio items + dashboard/settings aspirational features moved to new `99-future-enhancements.md` companion doc. Mi inbox uses existing `/notifications` stub route labeled (beta) until backend wires up. Cross-references added to docs 03 (dashboards reality-passed) and 04 (settings reality-passed). |

@@ -1,130 +1,106 @@
 ---
 proposal: dashboards
 status: DRAFT (in active discussion)
-version: 0.1
+version: 0.2
 date-started: 2026-05-22
 last-updated: 2026-05-22
 depends-on: 01-information-architecture.md (v0.7+), 02-config-schema.md (v0.2+)
+scope: V1 = widgets with EXISTING backing data sources. Aspirational widgets moved to 99-future-enhancements.md
 ---
 
-# Per-Role Dashboard Configuration
+# Per-Role Dashboards — V1 (real data only)
 
-> **Living document.** Defines the exact widgets each role sees on their Inicio dashboard. Each widget is configured per the Zod schema in `02-config-schema.md` §7. Lockable decisions live in [Decisions log](#decisions-log).
+> **Scope rule**: every widget below maps to a **data source that already exists** in the codebase (an API endpoint or computable from existing entities). Widgets requiring new backend (bookings, occupancy, revenue per-host, Sentry integration, audit log, etc.) are tracked in `99-future-enhancements.md`.
 
 ## How to read this doc
 
-- Every dashboard is a `Dashboard` object (per schema §7): `{ widgets: Widget[] }`.
-- Widgets are ordered by **priority** — top of array = top of dashboard.
-- The renderer does responsive layout (1-column mobile, 2-3 column desktop). For V1, no explicit `size` field — widgets are full-width unless renderer applies grid rules.
-- Data sources are referenced by **dotted string IDs** (e.g., `'accommodation.count.own'`). The implementation layer maps these to API endpoints / services. Convention in §7.
+Each widget specifies:
+- **Type** (kpi / list / chart / callout / etc. — per schema §7)
+- **Backing source** (existing endpoint or computation)
+- **Scope** (own / all / toggle)
+- **Permissions**
+
+When a source is uncertain (likely exists but not confirmed by audit), it's marked **🟡 verify**.
 
 ---
 
-## 1. Goals
+## 1. Principles
 
-- **Scoped, not global**: HOST sees THEIR business numbers; ADMIN sees platform totals. No widget shows "global count" to a scoped user.
-- **Action-oriented**: the dashboard exists to surface what needs the user's attention TODAY. Not to dump every metric ever.
-- **Per-role mental model honored**: HOST = "Mi negocio". EDITOR = "La redacción". ADMIN = "La plataforma". SUPER_ADMIN = "La plataforma + ops".
-- **No surprises for non-tech HOST**: plain-Spanish labels, no acronyms (MRR → "Ingresos del mes"), explicit CTAs.
+### 1.1 V1 = real data only
 
----
+- Every widget maps to an existing API call or aggregable from existing entities.
+- "Coming Soon" placeholders are NOT included.
+- When a useful widget needs a small new aggregator endpoint (e.g., "drafts + reviews + conversations all in one"), it's flagged separately so we decide whether to include it.
 
-## 2. Universal patterns
+### 1.2 Scoped means per-user, when the entity supports it
 
-Across roles, dashboards follow a consistent skeleton:
+For HOST, KPIs use the `*_VIEW_OWN` permission and the corresponding API endpoint with `ownerId={userId}` filter. Per audit, this works for:
+- `accommodations` (confirmed — `/me/accommodations` page already uses this)
+- `conversations` (confirmed — sidebar uses `useUnreadCount()` scoped)
+- `reviews` (confirmed — `REVIEW_VIEW_OWN` permission exists)
+- `subscriptions` / `invoices` / `billing` (confirmed — `BILLING_VIEW_OWN` permission)
 
-```
-[Welcome / next-action callout]   ← optional, top
-[KPI row]                          ← 3-5 KPIs
-[Action items / lists]             ← things needing attention
-[Charts / trends]                  ← only for ADMIN+
-[Status callouts]                  ← contextual (e.g., suscripción status)
-[Shortcuts]                        ← optional, bottom
-```
+### 1.3 Reuse the existing 6-KPI dashboard for ADMIN+
 
-Not every role has every block. HOST emphasizes action-items; ADMIN emphasizes charts.
+The current `/dashboard` route already loads `useDashboardStats()` for 6 global counts (accommodations, destinations, events, posts, attractions, users) — wired and working. ADMIN+ dashboard PRESERVES these as the first row.
 
 ---
 
-## 3. HOST dashboard — "Mi negocio"
+## 2. HOST dashboard — "Mi negocio"
 
-Mental model: "What's happening with MY business right now?". Designed for non-tech users.
-
-### Widgets in priority order
+V1 widgets (all backed by existing endpoints).
 
 ```ts
 hostDashboard: {
   widgets: [
-    // 1. Welcome + next action
-    {
-      id: 'welcome-host',
-      type: 'callout',
-      label: { es: 'Bienvenido', en: 'Welcome', pt: 'Bem-vindo' },
-      scope: 'own',
-      permissions: ['ACCESS_PANEL_ADMIN'],
-      config: {
-        variant: 'welcome',
-        showUserName: true,
-        primaryAction: 'host.next-action.own',  // dynamic: most urgent pending action
-      },
-    },
-
-    // 2. KPI row — scoped to user's accommodations
+    // KPIs (4)
     {
       id: 'kpi-my-accommodations',
       type: 'kpi',
-      label: { es: 'Mis alojamientos activos', en: 'My active listings', pt: 'Meus alojamentos ativos' },
+      label: { es: 'Mis alojamientos', en: 'My listings', pt: 'Meus alojamentos' },
       scope: 'own',
       permissions: ['ACCOMMODATION_VIEW_OWN'],
       config: {
-        source: 'accommodation.count.own.active',
-        delta: { period: 'month', source: 'accommodation.count.own.active.last-month' },
-        icon: 'home',
+        source: 'accommodation.count.own',  // GET /api/v1/admin/accommodations?ownerId={userId}&pageSize=1 → pagination.total
       },
     },
     {
-      id: 'kpi-consultas-mes',
+      id: 'kpi-consultas-sin-responder',
       type: 'kpi',
-      label: { es: 'Consultas del mes', en: 'Inquiries this month', pt: 'Consultas do mês' },
+      label: { es: 'Consultas sin responder', en: 'Unanswered inquiries', pt: 'Consultas sem resposta' },
       scope: 'own',
       permissions: ['CONVERSATION_VIEW_OWN'],
       config: {
-        source: 'conversation.count.own.month',
-        delta: { period: 'month', source: 'conversation.count.own.last-month' },
-        icon: 'message-circle',
+        source: 'conversation.count.own.unanswered',  // same pattern as the sidebar useUnreadCount()
       },
     },
     {
-      id: 'kpi-ocupacion',
+      id: 'kpi-resenas-pendientes',
       type: 'kpi',
-      label: { es: 'Ocupación promedio', en: 'Avg occupancy', pt: 'Ocupação média' },
+      label: { es: 'Reseñas sin responder', en: 'Unanswered reviews', pt: 'Avaliações sem resposta' },
       scope: 'own',
-      permissions: ['ACCOMMODATION_VIEW_OWN'],
+      permissions: ['REVIEW_VIEW_OWN'],
       config: {
-        source: 'accommodation.occupancy.own.month',
-        format: 'percentage',
-        icon: 'percent',
+        source: 'review.count.own.unanswered',
       },
     },
     {
-      id: 'kpi-ingresos-mes',
+      id: 'kpi-mi-plan',
       type: 'kpi',
-      label: { es: 'Ingresos del mes', en: 'Revenue this month', pt: 'Receita do mês' },
+      label: { es: 'Estado de mi plan', en: 'My plan status', pt: 'Status do meu plano' },
       scope: 'own',
-      permissions: ['BILLING_VIEW_OWN'],
+      permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
-        source: 'revenue.own.month',
-        format: 'currency',
-        delta: { period: 'month', source: 'revenue.own.last-month' },
-        icon: 'dollar-sign',
+        source: 'subscription.status.own',  // active/trial/past-due/etc.
+        format: 'badge',
       },
     },
 
-    // 3. Action items — things needing my attention
+    // Action lists (2)
     {
-      id: 'consultas-sin-responder',
+      id: 'list-consultas-recientes',
       type: 'list',
-      label: { es: 'Consultas sin responder', en: 'Unanswered inquiries', pt: 'Consultas sem resposta' },
+      label: { es: 'Consultas recientes sin responder', en: 'Recent unanswered inquiries', pt: 'Consultas recentes sem resposta' },
       scope: 'own',
       permissions: ['CONVERSATION_VIEW_OWN'],
       config: {
@@ -135,94 +111,81 @@ hostDashboard: {
       },
     },
     {
-      id: 'resenas-nuevas',
+      id: 'list-resenas-recientes',
       type: 'list',
-      label: { es: 'Reseñas nuevas sin responder', en: 'New reviews', pt: 'Novas avaliações' },
+      label: { es: 'Reseñas recientes', en: 'Recent reviews', pt: 'Avaliações recentes' },
       scope: 'own',
       permissions: ['REVIEW_VIEW_OWN'],
       config: {
-        source: 'review.list.own.unanswered',
+        source: 'review.list.own.recent',
         limit: 3,
         emptyState: { variant: 'neutral', message: { es: 'No hay reseñas nuevas', en: 'No new reviews', pt: 'Sem novas avaliações' } },
       },
     },
 
-    // 4. Calendar — próximos eventos en mis alojamientos
-    {
-      id: 'proximos-checkins',
-      type: 'calendar',
-      label: { es: 'Próximos check-ins', en: 'Upcoming check-ins', pt: 'Próximos check-ins' },
-      scope: 'own',
-      permissions: ['ACCOMMODATION_VIEW_OWN'],
-      config: {
-        source: 'booking.upcoming.own.7d',
-        range: 7,
-        emptyState: { message: { es: 'Sin check-ins próximos', en: 'No upcoming check-ins', pt: 'Sem check-ins próximos' } },
-      },
-    },
-
-    // 5. Status — suscripción + límites
+    // Subscription callouts (2)
     {
       id: 'subscription-status',
       type: 'callout',
       label: { es: 'Estado de mi suscripción', en: 'My subscription', pt: 'Minha assinatura' },
       scope: 'own',
-      permissions: ['BILLING_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN'],
+      permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
         source: 'subscription.status.own',
         showNextCharge: true,
-        variantWhen: {
-          expiringSoon: 'warning',
-          expired: 'danger',
-          active: 'info',
-        },
-        actionLabel: { es: 'Ver mi plan', en: 'View my plan', pt: 'Ver meu plano' },
-        actionRoute: '/mi-facturacion',
+        variantWhen: { expiringSoon: 'warning', expired: 'danger', active: 'info' },
       },
     },
     {
-      id: 'plan-usage',
+      id: 'plan-usage-accommodations',
       type: 'kpi',
       label: { es: 'Uso de mi plan', en: 'Plan usage', pt: 'Uso do plano' },
       scope: 'own',
       permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
-        source: 'subscription.usage.own.accommodations',
-        format: 'fraction',  // "3 de 5 alojamientos"
-        warningAt: 0.8,       // 80% triggers visual warning
+        source: 'subscription.usage.own.accommodations',  // "3 de 5 alojamientos publicados"
+        format: 'fraction',
+        warningAt: 0.8,
       },
     },
   ],
 }
 ```
 
-### Layout (responsive)
+**7 widgets** (vs 10 originally proposed). Removed: welcome-host (dynamic next-action), kpi-ocupacion, kpi-ingresos-mes, proximos-checkins-calendar.
 
-- Mobile: full-width stack, each widget below the previous.
-- Desktop: welcome callout full-width; KPIs in a 4-col row; lists side-by-side (2-col); calendar full-width; subscription + plan-usage side-by-side.
+### Removed from V1 (in `99-future-enhancements.md` §2)
+
+- Próximos check-ins calendar — no booking system
+- Ocupación promedio — no booking system
+- Ingresos del mes (per-host) — no per-host revenue tracking
+- Welcome callout with dynamic next-action — no resolver service
 
 ---
 
-## 4. EDITOR dashboard — "La redacción"
+## 3. EDITOR dashboard — "La redacción"
 
-Mental model: "What's happening in editorial this week?". Editor is power user with `Cmd+K`.
-
-### Widgets in priority order
+V1 widgets (backed by existing data).
 
 ```ts
 editorDashboard: {
   widgets: [
-    // 1. KPI row — editorial output
+    // KPIs (4)
     {
       id: 'kpi-posts-mes',
       type: 'kpi',
       label: { es: 'Posts publicados este mes', en: 'Posts published this month', pt: 'Posts deste mês' },
       scope: 'all',
       permissions: ['POST_VIEW_ALL'],
-      config: {
-        source: 'post.count.published.month',
-        delta: { period: 'month', source: 'post.count.published.last-month' },
-      },
+      config: { source: 'post.count.published.month' },
+    },
+    {
+      id: 'kpi-borradores',
+      type: 'kpi',
+      label: { es: 'Borradores pendientes', en: 'Pending drafts', pt: 'Rascunhos pendentes' },
+      scope: 'all',
+      permissions: ['POST_VIEW_ALL'],
+      config: { source: 'post.count.drafts' },
     },
     {
       id: 'kpi-eventos-proximos',
@@ -233,86 +196,55 @@ editorDashboard: {
       config: { source: 'event.count.upcoming' },
     },
     {
-      id: 'kpi-newsletter-open-rate',
+      id: 'kpi-suscriptores',
+      type: 'kpi',
+      label: { es: 'Suscriptores newsletter', en: 'Newsletter subscribers', pt: 'Inscritos do newsletter' },
+      scope: 'all',
+      permissions: ['NEWSLETTER_SUBSCRIBER_VIEW'],
+      config: { source: 'newsletter.subscribers.count.active' },
+    },
+
+    // Last campaign metric
+    {
+      id: 'kpi-newsletter-last-open-rate',
       type: 'kpi',
       label: { es: 'Open rate último envío', en: 'Last newsletter open rate', pt: 'Open rate último envio' },
       scope: 'all',
       permissions: ['NEWSLETTER_CAMPAIGN_VIEW'],
       config: {
-        source: 'newsletter.last-campaign.open-rate',
+        source: 'newsletter.last-campaign.open-rate',  // existing CampaignMetricsPanel data
         format: 'percentage',
       },
     },
-    {
-      id: 'kpi-suscriptores',
-      type: 'kpi',
-      label: { es: 'Suscriptores', en: 'Subscribers', pt: 'Inscritos' },
-      scope: 'all',
-      permissions: ['NEWSLETTER_SUBSCRIBER_VIEW'],
-      config: {
-        source: 'newsletter.subscribers.count.active',
-        delta: { period: 'month', source: 'newsletter.subscribers.count.last-month' },
-      },
-    },
 
-    // 2. Calendario editorial cross-content (posts + events + newsletter)
+    // Action lists (3)
     {
-      id: 'calendario-editorial',
-      type: 'calendar',
-      label: { es: 'Calendario editorial', en: 'Editorial calendar', pt: 'Calendário editorial' },
-      scope: 'all',
-      permissions: ['POST_VIEW_ALL', 'EVENT_VIEW_ALL', 'NEWSLETTER_CAMPAIGN_VIEW'],
-      config: {
-        source: 'editorial.calendar.14d',
-        range: 14,
-        contentTypes: ['post', 'event', 'newsletter'],
-      },
-    },
-
-    // 3. Action items — borradores + reviews pendientes
-    {
-      id: 'borradores-pendientes',
+      id: 'list-borradores',
       type: 'list',
-      label: { es: 'Borradores pendientes', en: 'Pending drafts', pt: 'Rascunhos pendentes' },
+      label: { es: 'Borradores recientes', en: 'Recent drafts', pt: 'Rascunhos recentes' },
       scope: 'all',
       permissions: ['POST_VIEW_ALL'],
       config: {
-        source: 'post.list.drafts',
+        source: 'post.list.drafts',  // GET /api/v1/admin/posts?status=draft
         limit: 5,
         emptyState: { variant: 'positive', message: { es: 'Sin borradores pendientes', en: 'No pending drafts', pt: 'Sem rascunhos' } },
       },
     },
     {
-      id: 'eventos-sin-publicar',
+      id: 'list-eventos-proximos',
       type: 'list',
-      label: { es: 'Eventos por publicar', en: 'Events to publish', pt: 'Eventos a publicar' },
+      label: { es: 'Eventos próximos', en: 'Upcoming events', pt: 'Próximos eventos' },
       scope: 'all',
       permissions: ['EVENT_VIEW_ALL'],
       config: {
-        source: 'event.list.unpublished',
+        source: 'event.list.upcoming',
         limit: 5,
       },
     },
-
-    // 4. Top performers (engagement)
     {
-      id: 'top-posts-semana',
+      id: 'list-campanias-programadas',
       type: 'list',
-      label: { es: 'Top posts esta semana', en: 'Top posts this week', pt: 'Top posts da semana' },
-      scope: 'all',
-      permissions: ['ANALYTICS_CONTENT_VIEW'],
-      config: {
-        source: 'post.list.top-engagement.week',
-        limit: 5,
-        showMetric: 'views',
-      },
-    },
-
-    // 5. Próximas campañas newsletter programadas
-    {
-      id: 'proximas-campanias',
-      type: 'list',
-      label: { es: 'Próximas campañas', en: 'Upcoming campaigns', pt: 'Próximas campanhas' },
+      label: { es: 'Campañas programadas', en: 'Scheduled campaigns', pt: 'Campanhas agendadas' },
       scope: 'all',
       permissions: ['NEWSLETTER_CAMPAIGN_VIEW'],
       config: {
@@ -324,293 +256,245 @@ editorDashboard: {
 }
 ```
 
+**8 widgets**. Removed from V1: editorial calendar cross-content (needs aggregator), top posts by engagement (verify analytics).
+
+### Removed from V1 (in `99-future-enhancements.md` §2)
+
+- Calendario editorial cross-content (posts + events + newsletter unified by date) — needs new aggregator endpoint. **Decision point**: could be added if we're willing to build the small aggregator. Default = defer.
+- Top posts by engagement — depends on whether analytics endpoints expose post-level engagement metrics. Verify before locking.
+
 ---
 
-## 5. ADMIN dashboard — "Vista plataforma"
+## 4. ADMIN / SUPER_ADMIN dashboard
 
-Mental model: "How is the platform doing?". Same dashboard for ADMIN and SUPER_ADMIN, with the "System ops" block tagged `onMissing: 'hide'` so ADMIN doesn't see it.
-
-### Widgets in priority order
+Same dashboard config shared by both roles. V1 builds on the EXISTING dashboard (6 global KPIs already wired in `useDashboardStats()`) + adds billing/subscription widgets.
 
 ```ts
 adminDashboard: {
   widgets: [
-    // 1. KPI row — platform totals
+    // Existing 6 KPIs (already wired in current /dashboard)
+    {
+      id: 'kpi-total-accommodations',
+      type: 'kpi',
+      label: { es: 'Alojamientos', en: 'Listings', pt: 'Alojamentos' },
+      scope: 'all',
+      permissions: ['ACCOMMODATION_VIEW_ALL'],
+      config: { source: 'accommodation.count.all' },  // existing /api/v1/admin/accommodations?pageSize=1
+    },
+    {
+      id: 'kpi-total-destinations',
+      type: 'kpi',
+      label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
+      scope: 'all',
+      permissions: ['DESTINATION_VIEW_ALL'],
+      config: { source: 'destination.count.all' },
+    },
+    {
+      id: 'kpi-total-events',
+      type: 'kpi',
+      label: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
+      scope: 'all',
+      permissions: ['EVENT_VIEW_ALL'],
+      config: { source: 'event.count.all' },
+    },
+    {
+      id: 'kpi-total-posts',
+      type: 'kpi',
+      label: { es: 'Posts', en: 'Posts', pt: 'Posts' },
+      scope: 'all',
+      permissions: ['POST_VIEW_ALL'],
+      config: { source: 'post.count.all' },
+    },
+    {
+      id: 'kpi-total-attractions',
+      type: 'kpi',
+      label: { es: 'Atracciones', en: 'Attractions', pt: 'Atrações' },
+      scope: 'all',
+      permissions: ['ATTRACTION_VIEW'],
+      config: { source: 'attraction.count.all' },
+    },
+    {
+      id: 'kpi-total-users',
+      type: 'kpi',
+      label: { es: 'Usuarios', en: 'Users', pt: 'Usuários' },
+      scope: 'all',
+      permissions: ['USER_VIEW_ALL'],
+      config: { source: 'user.count.all' },
+    },
+
+    // Billing additions (3)
+    {
+      id: 'kpi-active-subscriptions',
+      type: 'kpi',
+      label: { es: 'Suscripciones activas', en: 'Active subscriptions', pt: 'Assinaturas ativas' },
+      scope: 'all',
+      permissions: ['SUBSCRIPTION_VIEW_ALL'],
+      config: { source: 'subscription.count.active' },
+    },
     {
       id: 'kpi-mrr',
       type: 'kpi',
-      label: { es: 'Ingresos recurrentes mensuales', en: 'MRR', pt: 'Receita recorrente mensal' },
+      label: { es: 'Ingresos recurrentes (MRR)', en: 'MRR', pt: 'Receita recorrente (MRR)' },
       scope: 'all',
-      permissions: ['ANALYTICS_VIEW_ALL', 'BILLING_VIEW_ALL'],
+      permissions: ['BILLING_METRICS_VIEW'],
       config: {
-        source: 'revenue.mrr',
+        source: 'billing.metrics.mrr',  // existing /api/v1/admin/billing/metrics endpoint
         format: 'currency',
-        delta: { period: 'month', source: 'revenue.mrr.last-month' },
       },
     },
     {
-      id: 'kpi-churn',
-      type: 'kpi',
-      label: { es: 'Churn mensual', en: 'Monthly churn', pt: 'Churn mensal' },
-      scope: 'all',
-      permissions: ['ANALYTICS_VIEW_ALL', 'SUBSCRIPTION_VIEW_ALL'],
-      config: {
-        source: 'subscription.churn.month',
-        format: 'percentage',
-        delta: { period: 'month', source: 'subscription.churn.last-month' },
-        invertDelta: true,  // higher churn = bad, show negative delta as red
-      },
-    },
-    {
-      id: 'kpi-usuarios-activos',
-      type: 'kpi',
-      label: { es: 'Usuarios activos', en: 'Active users', pt: 'Usuários ativos' },
-      scope: 'all',
-      permissions: ['USER_VIEW_ALL'],
-      config: {
-        source: 'user.count.active.month',
-        delta: { period: 'month', source: 'user.count.active.last-month' },
-      },
-    },
-    {
-      id: 'kpi-conversiones',
-      type: 'kpi',
-      label: { es: 'Conversiones del mes', en: 'Conversions this month', pt: 'Conversões do mês' },
-      scope: 'all',
-      permissions: ['ANALYTICS_VIEW_ALL'],
-      config: {
-        source: 'conversion.count.month',
-        delta: { period: 'month', source: 'conversion.count.last-month' },
-      },
-    },
-
-    // 2. Revenue chart
-    {
-      id: 'chart-revenue',
+      id: 'chart-revenue-monthly',
       type: 'chart',
-      label: { es: 'Revenue mensual', en: 'Monthly revenue', pt: 'Receita mensal' },
+      label: { es: 'Revenue mensual (últimos 12 meses)', en: 'Monthly revenue (last 12)', pt: 'Receita mensal (últimos 12)' },
       scope: 'all',
-      permissions: ['ANALYTICS_VIEW_ALL', 'BILLING_VIEW_ALL'],
+      permissions: ['BILLING_METRICS_VIEW'],
       config: {
-        source: 'revenue.monthly.12m',
+        source: 'billing.metrics.revenue.12m',  // 🟡 verify endpoint supports time series
         chartType: 'line',
         format: 'currency',
       },
     },
 
-    // 3. Top hosts by revenue
+    // Lists (2)
     {
-      id: 'top-hosts',
+      id: 'list-top-hosts',
       type: 'list',
-      label: { es: 'Top hosts por revenue', en: 'Top hosts by revenue', pt: 'Top hosts por receita' },
+      label: { es: 'Top hosts por suscripción', en: 'Top hosts by subscription', pt: 'Top hosts por assinatura' },
       scope: 'all',
-      permissions: ['ANALYTICS_VIEW_ALL'],
+      permissions: ['SUBSCRIPTION_VIEW_ALL', 'USER_VIEW_ALL'],
       config: {
-        source: 'host.list.top-revenue.month',
+        source: 'subscription.list.top-revenue.month',  // 🟡 verify endpoint
         limit: 5,
-        showMetric: 'revenue',
       },
     },
-
-    // 4. Próximos eventos importantes (cross-platform editorial calendar preview)
     {
-      id: 'eventos-importantes',
+      id: 'list-upcoming-events',
       type: 'list',
       label: { es: 'Próximos eventos destacados', en: 'Featured upcoming events', pt: 'Próximos eventos destacados' },
       scope: 'all',
       permissions: ['EVENT_VIEW_ALL'],
       config: {
-        source: 'event.list.featured.upcoming',
+        source: 'event.list.featured.upcoming',  // 🟡 verify "featured" flag exists
         limit: 5,
-      },
-    },
-
-    // 5. System health callout (always visible for ADMIN+)
-    {
-      id: 'system-status',
-      type: 'callout',
-      label: { es: 'Estado del sistema', en: 'System status', pt: 'Status do sistema' },
-      scope: 'all',
-      permissions: ['LOG_VIEW', 'CRON_VIEW'],
-      config: {
-        source: 'platform.health.overall',
-        variantWhen: { ok: 'success', degraded: 'warning', down: 'danger' },
-        showLastIncident: true,
-      },
-    },
-
-    // ── SUPER_ADMIN-only block (System ops, onMissing: 'hide') ──
-
-    // 6. Sentry errors (last 24h)
-    {
-      id: 'sentry-errors-24h',
-      type: 'list',
-      label: { es: 'Errores Sentry (24h)', en: 'Sentry errors (24h)', pt: 'Erros Sentry (24h)' },
-      scope: 'all',
-      permissions: ['LOG_VIEW', 'DEBUG_VIEW'],
-      onMissing: 'hide',
-      config: {
-        source: 'sentry.issues.24h',
-        limit: 5,
-      },
-    },
-
-    // 7. Failed crons
-    {
-      id: 'failed-crons',
-      type: 'list',
-      label: { es: 'Crons fallidos', en: 'Failed crons', pt: 'Crons com falha' },
-      scope: 'all',
-      permissions: ['CRON_VIEW', 'DEBUG_VIEW'],
-      onMissing: 'hide',
-      config: {
-        source: 'cron.list.failed.recent',
-        limit: 5,
-      },
-    },
-
-    // 8. Audit log preview (recent admin actions)
-    {
-      id: 'audit-log-preview',
-      type: 'feed',
-      label: { es: 'Actividad reciente del staff', en: 'Recent staff activity', pt: 'Atividade recente do staff' },
-      scope: 'all',
-      permissions: ['AUDIT_LOG_VIEW'],
-      onMissing: 'hide',
-      config: {
-        source: 'audit.feed.recent',
-        limit: 10,
       },
     },
   ],
 }
 ```
 
-### How ADMIN vs SUPER_ADMIN differ
+**11 widgets**: 6 existing + 3 billing + 2 lists. ADMIN sees all 11 (no super-only widgets in V1). SUPER_ADMIN dashboard = same.
 
-**Same widget config, different `onMissing` results**:
+### Removed from V1 (in `99-future-enhancements.md` §2)
 
-- ADMIN lacks `DEBUG_VIEW` and `AUDIT_LOG_VIEW` permissions → widgets 6, 7, 8 are hidden for them.
-- SUPER_ADMIN has all permissions → sees all 8 widgets.
+- Churn KPI — no churn metric computed today
+- Conversions KPI — definition + tracking missing
+- System status callout — depends on platform health endpoint (uncertain)
+- Sentry errors widget (super-only) — no integration
+- Failed crons widget (super-only) — cron list exists, "failed-only" filter uncertain
+- Audit log preview (super-only) — no audit log system
 
-This means **one dashboard config serves both roles**. The cherry-pick rule does the heavy lifting.
+### 🟡 Items to verify before locking
 
----
+- `billing.metrics.revenue.12m` — does `/api/v1/admin/billing/metrics` return time series or only point-in-time?
+- `subscription.list.top-revenue.month` — does an ordering by revenue exist?
+- `event.list.featured.upcoming` — does an event "featured" flag exist?
 
-## 6. SUPER_ADMIN dashboard
-
-**Same as `adminDashboard` config above**. The 3 super-only widgets (6, 7, 8) appear automatically because SUPER_ADMIN has the required permissions.
-
-Per IA doc §12 + §13 + §16: `adminDashboard` is referenced by both `ADMIN.dashboard` and `SUPER_ADMIN.dashboard`. No duplication.
-
----
-
-## 7. Data sources convention
-
-Widget `config.source` values follow a dotted convention:
-
-```
-<entity>.<aggregation>.<scope?>.<modifier?>
-```
-
-Examples:
-- `accommodation.count.own.active` → count of active accommodations belonging to the user.
-- `revenue.mrr` → platform MRR (no scope = `'all'` implied).
-- `event.list.featured.upcoming` → list of featured events that are upcoming.
-- `sentry.issues.24h` → Sentry issues from the last 24 hours.
-- `editorial.calendar.14d` → editorial calendar items for the next 14 days.
-
-### Source resolver
-
-A central `resolveDataSource(sourceId, ctx)` function in `apps/admin/src/lib/dashboard-sources.ts` maps each source ID to an API endpoint or service call. Examples:
-
-```ts
-'accommodation.count.own.active' → GET /api/v1/protected/accommodations?ownerId={userId}&status=active&pageSize=1 → pagination.total
-'revenue.mrr'                    → GET /api/v1/admin/billing/metrics/mrr
-'sentry.issues.24h'              → external Sentry API (server-to-server)
-'editorial.calendar.14d'         → custom aggregator endpoint composing posts + events + newsletter
-```
-
-For V1, the resolver is hardcoded. Phase 2 may make it a registry (DB-backed for "custom widget sources").
-
-### Why string IDs instead of inline functions?
-
-- The config is **declarative data** — adding a function would require importing it, breaking the "no logic in config" principle.
-- String IDs are stable, lintable, refactorable.
-- Permits future runtime config editing (DB-backed) without code changes.
+If any of these don't exist, drop the widget (don't build new endpoints in V1).
 
 ---
 
-## 8. Empty / loading / error states
+## 5. SUPER_ADMIN dashboard
 
-Per Phase 2 audit finding ("loading states use 3 inconsistent patterns"), V1 standardizes:
+**Same as `adminDashboard`** above. No super-only widgets in V1 (all the super-only ones — Sentry, audit log, failed crons — require code that doesn't exist).
 
-- **Loading**: skeleton placeholder matching widget shape (KPI = greyed box with number-sized rectangle; List = 3 greyed rows; Chart = greyed rectangle).
-- **Empty**: widget shows `config.emptyState` if defined, otherwise generic `"No hay datos"`.
-- **Error**: red callout with retry button + "Reportar problema" link to support.
+V1 difference between ADMIN and SUPER_ADMIN dashboards: **zero**.
 
-Empty state variants in `config.emptyState`:
-
-```ts
-emptyState: {
-  variant: 'positive' | 'neutral' | 'callout',
-  message: I18nLabel,
-  icon?: string,
-  actionLabel?: I18nLabel,
-  actionRoute?: string,
-}
-```
-
-`variant: 'positive'` for "all done" cases (e.g., "¡Estás al día!"); `'neutral'` for "nothing yet" (e.g., "No hay reseñas aún"); `'callout'` for empty-states with CTA (e.g., "Crear tu primer alojamiento").
+When the post-V1 features ship (audit log, Sentry integration, failed-crons widget), they'll be added to `adminDashboard` with permissions that ADMIN lacks (`onMissing: 'hide'`) — exposing them only to SUPER_ADMIN automatically.
 
 ---
 
-## 9. Refresh behavior
+## 6. Data sources reference
 
-- **Auto-refresh**: each widget queries with `staleTime: 60_000` (1 min) and `refetchOnWindowFocus: true`. Override per widget via `config.staleTime`.
-- **Manual refresh**: a global "Actualizar" button at the dashboard top invalidates all queries with `queryKey: ['dashboard', role]`.
-- **Real-time push**: not in V1. Post-V1 may add server-sent events for `consultas-sin-responder` etc.
+Per IA §13 schema config field `source`. V1 source IDs map to existing endpoints:
+
+| Source ID | Existing endpoint | Notes |
+|-----------|-------------------|-------|
+| `accommodation.count.own` | `GET /api/v1/admin/accommodations?ownerId={uid}&pageSize=1` | pagination.total |
+| `accommodation.count.all` | `GET /api/v1/admin/accommodations?pageSize=1` | already used in current dashboard |
+| `conversation.count.own.unanswered` | `GET /api/v1/admin/conversations?ownerId={uid}&status=unanswered&pageSize=1` | 🟡 verify status filter |
+| `conversation.list.own.unanswered` | `GET /api/v1/admin/conversations?ownerId={uid}&status=unanswered&pageSize=5&sort=updated_at_desc` | |
+| `review.count.own.unanswered` | `GET /api/v1/admin/reviews?ownerId={uid}&status=unanswered&pageSize=1` | 🟡 verify |
+| `review.list.own.recent` | `GET /api/v1/admin/reviews?ownerId={uid}&pageSize=3&sort=created_at_desc` | |
+| `subscription.status.own` | `GET /api/v1/protected/subscriptions/me` (qzpay-hono) | 🟡 verify path |
+| `subscription.usage.own.accommodations` | `GET /api/v1/protected/subscriptions/me/usage` | 🟡 verify path |
+| `post.count.published.month` | `GET /api/v1/admin/posts?status=published&publishedAfter={month-start}&pageSize=1` | 🟡 verify date filter |
+| `post.count.drafts` | `GET /api/v1/admin/posts?status=draft&pageSize=1` | |
+| `post.list.drafts` | `GET /api/v1/admin/posts?status=draft&pageSize=5&sort=updated_at_desc` | |
+| `event.count.upcoming` | `GET /api/v1/admin/events?status=upcoming&pageSize=1` | 🟡 verify status enum |
+| `event.list.upcoming` | `GET /api/v1/admin/events?status=upcoming&pageSize=5` | |
+| `newsletter.subscribers.count.active` | `GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1` | |
+| `newsletter.last-campaign.open-rate` | `GET /api/v1/admin/newsletter/campaigns?status=sent&pageSize=1&sort=sent_at_desc` + read metrics from response | |
+| `newsletter.campaigns.scheduled` | `GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3` | |
+| `billing.metrics.mrr` | `GET /api/v1/admin/billing/metrics/mrr` | 🟡 confirm exact path |
+| `billing.metrics.revenue.12m` | `GET /api/v1/admin/billing/metrics/revenue?range=12m` | 🟡 verify time series support |
+| `subscription.count.active` | `GET /api/v1/admin/subscriptions?status=active&pageSize=1` | |
+
+**Items flagged 🟡 need verification** before locking the V1 widget set. If a source doesn't exist, drop the widget — don't build new endpoints for it.
 
 ---
 
-## 10. Per-role dashboard summary
+## 7. Empty / loading / error states (unchanged from v0.1)
 
-| Role | Dashboard config ID | Total widgets | What's emphasized |
-|------|---------------------|:-------------:|-------------------|
-| HOST | `hostDashboard` | 10 | Action items + revenue + subscription |
-| EDITOR | `editorDashboard` | 8 | Editorial output + calendar + top performers |
-| ADMIN | `adminDashboard` | 5 visible (8 total) | Platform KPIs + revenue chart + system status |
-| SUPER_ADMIN | `adminDashboard` | 8 (all visible) | Same as ADMIN + Sentry + crons + audit log |
+- **Loading**: skeleton matching widget shape.
+- **Empty**: configurable `emptyState` per widget (variant: positive / neutral / callout + i18n message).
+- **Error**: red callout with retry + "Reportar problema" link.
+
+---
+
+## 8. Refresh behavior (unchanged from v0.1)
+
+- 60s stale time + refetchOnWindowFocus.
+- Manual "Actualizar" button at dashboard top.
+- No real-time push in V1.
+
+---
+
+## 9. Per-role dashboard summary
+
+| Role | Dashboard config ID | Widgets V1 | Notes |
+|------|---------------------|:----------:|-------|
+| HOST | `hostDashboard` | 7 | Scoped to user's accommodations + own conversations + own reviews + own subscription |
+| EDITOR | `editorDashboard` | 8 | Global counts on content + newsletter metrics |
+| ADMIN | `adminDashboard` | 11 | Existing 6 KPIs + 3 billing + 2 lists |
+| SUPER_ADMIN | `adminDashboard` (shared) | 11 (same) | Zero V1 super-only widgets — all super-only ones need new code |
 
 ---
 
 ## Open questions
 
-### A. Widget sizing in config [OPEN]
+### A. Verify endpoints flagged 🟡 [OPEN]
 
-V1: renderer decides layout based on widget order + breakpoint. No size hint in config.
+Need a focused audit on:
+- conversations / reviews `status=unanswered` filter support
+- subscription.usage.own endpoint location (web app vs admin)
+- billing metrics time-series endpoint
+- event `featured` flag
+- post date filter support
 
-Alternative: add `config.size: 'sm' | 'md' | 'lg' | 'xl'` so config controls grid spans. Less work for renderer, more granular control for whoever edits the config.
+Action: spawn a small audit before implementation spec. If any endpoint doesn't exist, drop the widget (DO NOT build new endpoints in V1 just for dashboards).
 
-Recommend: keep V1 simple (no size in config). Add in V2 if layout edge cases demand it.
+### B. Editorial calendar cross-content widget — build aggregator or defer? [OPEN]
 
-### B. Welcome callout dynamism [OPEN]
+The "Calendario editorial cross-content" widget would need a new aggregator endpoint composing posts + events + newsletter by date. Two options:
 
-The HOST `welcome-host` callout proposes a dynamic `primaryAction` driven by `host.next-action.own` (a server-computed "what should I do next" resolver). This is non-trivial to implement.
+- **(a) Defer** — moved to `99-future-enhancements.md`. EDITOR dashboard stays at 8 widgets.
+- **(b) Build the small aggregator in V1** — reasonable scope addition, the EDITOR's mental model centers on the calendar.
 
-Alternative: drop the dynamic part and show a static "Bienvenido [nombre]" without a CTA, since the action lists below already surface pending items.
+Default = (a) defer. Promote to (b) only if EDITOR feedback says the calendar is essential.
 
-Recommend: drop for V1. Re-add when there's a real "next-action" service.
+### C. SMS/Push notification toggles UX [DEFERRED to settings doc 04]
 
-### C. `host.next-action.own`, `editorial.calendar.14d`, etc. — custom aggregators [OPEN]
-
-Some data sources are composite (e.g., editorial calendar = posts + events + newsletter unified). These need dedicated API endpoints, not generic CRUD reads.
-
-Recommend: list these endpoints explicitly in the implementation spec. For V1: build the aggregators as part of the dashboard SPEC.
-
-### D. Cross-role dashboard sharing [PROPOSED]
-
-`adminDashboard` is referenced by both `ADMIN` and `SUPER_ADMIN`. Should `hostDashboard` ever be referenced by another role? No — host data is fundamentally scoped to one user. Keep host dashboard exclusive to HOST.
+Cross-referenced — see settings doc 04 §2.3.
 
 ---
 
@@ -618,13 +502,15 @@ Recommend: list these endpoints explicitly in the implementation spec. For V1: b
 
 | Date | Decision | Section |
 |------|----------|---------|
-| 2026-05-22 | HOST dashboard widgets (10): welcome callout, 4 KPIs (accommodations/inquiries/occupancy/revenue), 2 action lists, calendar, subscription status, plan usage | §3 |
-| 2026-05-22 | EDITOR dashboard widgets (8): 4 KPIs (posts/events/open rate/subscribers), editorial calendar, 2 action lists (drafts/unpublished events), top posts, upcoming campaigns | §4 |
-| 2026-05-22 | ADMIN dashboard widgets (5 visible): 4 KPIs (MRR/churn/users/conversions), revenue chart, top hosts, featured events, system status. Plus 3 super-only widgets (Sentry, crons, audit log) hidden via `onMissing: 'hide'` | §5 |
-| 2026-05-22 | SUPER_ADMIN reuses `adminDashboard` config — single dashboard config serves both roles via permission-based widget visibility | §6 |
-| 2026-05-22 | Data sources referenced by dotted string IDs (`entity.aggregation.scope.modifier`), resolved by central `resolveDataSource()` registry | §7 |
-| 2026-05-22 | Empty/loading/error states standardized: skeleton on load, configurable emptyState per widget, red callout + retry on error | §8 |
-| 2026-05-22 | Refresh: 60s staleTime + refetchOnWindowFocus; manual "Actualizar" button at dashboard top; no real-time push in V1 | §9 |
+| 2026-05-22 | V1 = widgets with EXISTING backing data only. Aspirational widgets moved to `99-future-enhancements.md` | §1.1 |
+| 2026-05-22 | Reuse existing dashboard 6 KPIs (`useDashboardStats()` already wired) as ADMIN+ base | §1.3, §4 |
+| 2026-05-22 | HOST dashboard = 7 widgets (down from 10): 4 KPIs scoped to user + 2 action lists + subscription status + plan usage | §2 |
+| 2026-05-22 | HOST: removed Próximos check-ins, Ocupación, Ingresos del mes, dynamic welcome (no backing code) | §2 |
+| 2026-05-22 | EDITOR dashboard = 8 widgets: 5 KPIs + 3 action lists. Editorial calendar cross-content widget deferred to Open Q-B | §3 |
+| 2026-05-22 | ADMIN/SUPER_ADMIN dashboard = 11 widgets shared: 6 existing global KPIs + 3 billing + 2 lists | §4, §5 |
+| 2026-05-22 | V1: ZERO super-only widgets. All super-only proposals (Sentry, audit log, failed crons) require new code → moved to future | §5 |
+| 2026-05-22 | If an endpoint flagged 🟡 doesn't exist, DROP the widget — don't build new endpoints in V1 for dashboards | §6, Open Q-A |
+| 2026-05-22 | Data sources reference table (§6) lists each source ID + existing endpoint mapping with 🟡 flags for items needing verification | §6 |
 
 ---
 
@@ -632,4 +518,5 @@ Recommend: list these endpoints explicitly in the implementation spec. For V1: b
 
 | Date | Version | Change |
 |------|---------|--------|
-| 2026-05-22 | 0.1 | Initial full draft. 4 dashboards configured (HOST, EDITOR, ADMIN, SUPER_ADMIN reusing ADMIN). 10+8+8 widgets total. Data source convention, empty/loading/error states, refresh behavior. 4 open questions (widget sizing, welcome dynamism, custom aggregators, cross-role sharing). |
+| 2026-05-22 | 0.1 | Initial draft — included aspirational widgets (check-ins, occupancy, host revenue, Sentry, audit log preview, etc.) without backing code |
+| 2026-05-22 | 0.2 | **Reality pass** — full rewrite scoped to V1 widgets with existing data sources. HOST 10→7, EDITOR 8→8 (1 deferred), ADMIN 8→11 (reusing existing KPIs, removing aspirational). Zero super-only V1 widgets (all moved to future). Data sources reference table added (§6) with 🟡 flags for items needing verification audit. Reduced widget count significantly while remaining honest about what works today. |
