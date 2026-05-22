@@ -13,6 +13,7 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
@@ -71,50 +72,19 @@ const headingMain = headingWords.join(' ');
 >
 	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
 
-	<section class="pricing-hero section section--warm">
-		<div class="pricing-hero__decoratives" aria-hidden="true">
-			<div class="pricing-hero__blob"></div>
-			<div class="pricing-hero__floating pricing-hero__floating--umbrella">
-				<BeachUmbrellaIcon size="md" weight="duotone" />
-			</div>
-			<div class="pricing-hero__floating pricing-hero__floating--compass">
-				<CompassIcon size="md" weight="duotone" />
-			</div>
-			<div class="pricing-hero__floating pricing-hero__floating--sun">
-				<SunIcon size="md" weight="duotone" />
-			</div>
-		</div>
-
-		<div class="pricing-hero__container" data-reveal="up">
-			<p class="pricing-hero__tagline">{t('pricing.tourist.tagline', 'Planes y precios')}</p>
-			<h1 class="pricing-hero__title">
-				{headingMain && <>{headingMain}{' '}</>}
-				<span class="pricing-hero__title-accent">
-					{headingAccent}
-					<svg
-						class="pricing-hero__title-underline"
-						viewBox="0 0 200 18"
-						preserveAspectRatio="none"
-						aria-hidden="true"
-					>
-						<path
-							d="M 4 12 Q 50 2, 100 10 T 196 8"
-							stroke="currentColor"
-							stroke-width="4"
-							stroke-linecap="round"
-							fill="none"
-						/>
-					</svg>
-				</span>
-			</h1>
-			<p class="pricing-hero__subtitle">
-				{t(
-					'pricing.tourist.subtitle',
-					'Elegí el plan que mejor se adapte a tu forma de viajar.'
-				)}
-			</p>
-		</div>
-	</section>
+	<MarketingHero
+		tagline={t('pricing.tourist.tagline', 'Planes y precios')}
+		titleMain={headingMain}
+		titleAccent={headingAccent}
+		subtitle={t(
+			'pricing.tourist.subtitle',
+			'Elegí el plan que mejor se adapte a tu forma de viajar.'
+		)}
+	>
+		<Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
+	</MarketingHero>
 
 	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<PricingCardsGrid
@@ -133,140 +103,3 @@ const headingMain = headingWords.join(' ');
 		/>
 	</section>
 </MarketingLayout>
-
-<style>
-	.pricing-hero {
-		position: relative;
-		overflow: hidden;
-	}
-
-	.pricing-hero__decoratives {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.pricing-hero__blob {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: clamp(360px, 50vw, 640px);
-		height: clamp(360px, 50vw, 640px);
-		border-radius: 50%;
-		background: radial-gradient(
-			circle at 35% 35%,
-			oklch(from var(--brand-primary) l c h / 0.16),
-			oklch(from var(--brand-accent) l c h / 0.08) 55%,
-			transparent 75%
-		);
-		filter: blur(2px);
-	}
-
-	.pricing-hero__title-accent {
-		position: relative;
-		display: inline-block;
-	}
-
-	.pricing-hero__title-underline {
-		position: absolute;
-		left: -3%;
-		right: -3%;
-		bottom: -0.08em;
-		width: 106%;
-		height: 0.32em;
-		color: var(--brand-accent);
-		opacity: 0.75;
-		pointer-events: none;
-	}
-
-	.pricing-hero__floating {
-		position: absolute;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		background-color: var(--core-card);
-		box-shadow: var(--shadow-card);
-		animation: pricing-hero-float 6s ease-in-out infinite;
-	}
-
-	.pricing-hero__floating--umbrella {
-		top: 18%;
-		left: clamp(4%, 8vw, 12%);
-		color: var(--brand-accent);
-		animation-delay: 0s;
-	}
-
-	.pricing-hero__floating--compass {
-		top: 48%;
-		right: clamp(4%, 7vw, 11%);
-		color: var(--brand-primary);
-		animation-delay: 1.5s;
-	}
-
-	.pricing-hero__floating--sun {
-		bottom: 14%;
-		left: clamp(8%, 12vw, 18%);
-		color: oklch(0.72 0.16 75);
-		animation-delay: 3s;
-	}
-
-	@keyframes pricing-hero-float {
-		0%, 100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-10px);
-		}
-	}
-
-	@media (max-width: 900px) {
-		.pricing-hero__deco--arrow,
-		.pricing-hero__floating {
-			display: none;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.pricing-hero__floating {
-			animation: none;
-		}
-	}
-
-	.pricing-hero__container {
-		position: relative;
-		z-index: 1;
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		text-align: center;
-	}
-
-	.pricing-hero__tagline {
-		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-		color: var(--brand-accent);
-		font-style: italic;
-		margin: 0 0 var(--space-2);
-	}
-
-	.pricing-hero__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
-	}
-
-	.pricing-hero__subtitle {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		max-width: 50ch;
-		margin: 0 auto;
-	}
-</style>
