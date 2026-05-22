@@ -1,7 +1,7 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.8
+version: 0.9
 date-started: 2026-05-22
 last-updated: 2026-05-22
 related: 02-config-schema.md, 03-dashboards.md, 04-settings.md, 99-future-enhancements.md
@@ -16,12 +16,13 @@ related: 02-config-schema.md, 03-dashboards.md, 04-settings.md, 99-future-enhanc
 - **Status: DRAFT** means nothing is final yet. Anything here can change.
 - **Each section** is independently discussable. We refine, lock, and move on.
 - **`[LOCKED]`** tag in a section = decided, do not change without revisiting.
+- **`[SUPERSEDED → §X]`** tag = the content here was superseded by a later locked section or sister document; refer there for the source of truth. The original content is preserved as orientation/history.
 - **`[OPEN]`** tag = still under discussion.
 - **`[PROPOSED]`** = this is a proposal, awaiting feedback.
 
 ---
 
-## 1. User mental models [PROPOSED]
+## 1. User mental models [LOCKED 2026-05-22]
 
 The redesign is anchored to what each user **comes to do**, not to what permissions they happen to carry.
 
@@ -40,7 +41,7 @@ These mental models are the **anchor for every other decision** in this doc. If 
 
 ---
 
-## 2. Main menu (Level 1) — universe of sections [PROPOSED]
+## 2. Main menu (Level 1) — universe of sections [LOCKED 2026-05-22]
 
 **7 top-level sections** in the global universe. Not every user sees all of them.
 
@@ -67,7 +68,9 @@ These mental models are the **anchor for every other decision** in this doc. If 
 
 ---
 
-## 3. Per-role main menu visibility [PROPOSED]
+## 3. Per-role main menu visibility [SUPERSEDED 2026-05-22 → see §12 HOST, §13 SUPER_ADMIN, §16 ADMIN, §17 EDITOR, §18 deferred]
+
+> **Source of truth for per-role visibility is now the per-role config sections (§12-§18).** This matrix is kept for quick visual reference but is NOT authoritative — if it conflicts with the per-role configs, the configs win.
 
 Default visibility for each role's permission bundle. **NOT enforcement** — enforcement is per-permission. This is what comes "out of the box" with each role.
 
@@ -85,7 +88,9 @@ Default visibility for each role's permission bundle. **NOT enforcement** — en
 
 ---
 
-## 4. Section sidebars (Level 2) [PROPOSED]
+## 4. Section sidebars (Level 2) [SUPERSEDED 2026-05-22 → see §13 SUPER_ADMIN full menu tree]
+
+> **Source of truth for the SUPER_ADMIN sidebar set is now §13.** This section's tree was the first sketch and includes earlier organization (e.g., Newsletter location, Plataforma → Email pre-restructure) that has since evolved. The §13 tree reflects all locked decisions from §15 (Ops vs Config split) and the verification pass.
 
 Shown assuming SUPER_ADMIN (full universe). Other roles see subsets per their permissions.
 
@@ -254,7 +259,7 @@ Overview
 
 ---
 
-## 5. Detail page tabs (Level 3) [PROPOSED]
+## 5. Detail page tabs (Level 3) [LOCKED 2026-05-22]
 
 Consistent tab sets per entity type. Tabs are permission-aware (hidden if user lacks permission for that tab's data).
 
@@ -297,7 +302,9 @@ Editor │ Audiencia │ Programación │ Métricas │ Entregas fallidas │ P
 
 ---
 
-## 6. Per-role dashboards [PROPOSED]
+## 6. Per-role dashboards [SUPERSEDED 2026-05-22 → see 03-dashboards.md (v0.3+) for verified widget set]
+
+> **Source of truth for per-role dashboard widgets is now `03-dashboards.md`** (current v0.3, verified against endpoints in `03b-endpoint-verification.md`). The conceptual descriptions below were used to draft the proposal but have since been replaced by widget-level configs scoped to V1 reality (HOST 6 widgets, EDITOR 8, ADMIN/SUPER_ADMIN 10).
 
 Each role gets its own dashboard, **scoped to its permissions**. This explicitly fixes today's "global counts shown to everyone" bug.
 
@@ -382,7 +389,9 @@ Same as ADMIN + "System ops" block:
 
 ---
 
-## 7. Settings split in three places [PROPOSED]
+## 7. Settings split in three places [SUPERSEDED 2026-05-22 → see 04-settings.md (v0.2+) for field-level spec]
+
+> **Source of truth for per-page settings fields is now `04-settings.md`** (current v0.2). The principle (Mi cuenta vs Plataforma vs Comercial → Configuración billing) holds, but field-level detail + V1 scope are in doc 04. The conceptual structure below remains valid as orientation.
 
 Today: fragmented across 3 routes with inconsistent storage. Proposal:
 
@@ -453,7 +462,9 @@ This keeps the main menu focused on the user's primary work while letting them r
 
 ---
 
-## 9. Global topbar [PROPOSED]
+## 9. Global topbar [SUPERSEDED 2026-05-22 → see per-role topbar configs in §12, §13, §16, §17]
+
+> **Source of truth for topbar content is now the per-role configs** (HOST §12, SUPER_ADMIN §13, ADMIN §16, EDITOR §17). The summary below is conceptual orientation.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -472,7 +483,9 @@ This keeps the main menu focused on the user's primary work while letting them r
 
 ---
 
-## 10. Mobile / responsive [PROPOSED]
+## 10. Mobile / responsive [SUPERSEDED 2026-05-22 → see per-role mobile configs in §12, §13, §16, §17]
+
+> **Source of truth for mobile bottom-nav and FAB per role is now the per-role configs** (HOST §12, SUPER_ADMIN §13, ADMIN §16, EDITOR §17). The principles below are conceptual orientation.
 
 - **Bottom nav** with the 3-4 most-used items for each role (HOST: Inicio / Alojamientos / Conversaciones / Mi cuenta). Hamburger reserved for "everything else".
 - **FAB** in mobile for the role's quick action.
@@ -1220,3 +1233,4 @@ _None remaining — Q-A (config file split) was resolved in `02-config-schema.md
 | 2026-05-22 | 0.6 | Added §19 Inicio sidebar — Inicio gets its own sidebar as "User Home Hub" with 7 universe items (Dashboard, Mi inbox, Mis pendientes, Mi actividad, Mis favoritos, Centro de ayuda, Novedades). Updated menu trees for HOST, SUPER_ADMIN, EDITOR to show sidebar items. Mi calendario considered and dropped for V1. Centro de ayuda is in-app. |
 | 2026-05-22 | 0.7 | Q-A (config file split) resolved: split-file approach `apps/admin/src/config/ia/` per 02-config-schema.md §2. Open questions section is now empty — all IA decisions are locked. The proposal is ready for the next phase (visual identity tokens, dashboards in detail, settings page detail, or implementation spec). |
 | 2026-05-22 | 0.8 | **Reality pass**: V1 scope rule added — redesign covers reorganization of EXISTING code only. §19 Inicio sidebar trimmed from 7 items to 2 (Dashboard + Mi inbox beta). 5 aspirational Inicio items + dashboard/settings aspirational features moved to new `99-future-enhancements.md` companion doc. Mi inbox uses existing `/notifications` stub route labeled (beta) until backend wires up. Cross-references added to docs 03 (dashboards reality-passed) and 04 (settings reality-passed). |
+| 2026-05-22 | 0.9 | **Housekeeping pass**: marked status tags clearly across all sections. Promoted §1, §2, §5 to `[LOCKED]`. Marked §3, §4, §6, §7, §9, §10 as `[SUPERSEDED]` with explicit pointers to the source-of-truth sections / sister docs (§3→§12-18, §4→§13, §6→03-dashboards, §7→04-settings, §9+§10→per-role configs). Added `[SUPERSEDED]` to the legend in "How to read this doc". Original content of superseded sections preserved as orientation/history — they are NOT authoritative when in conflict with the source of truth. |
