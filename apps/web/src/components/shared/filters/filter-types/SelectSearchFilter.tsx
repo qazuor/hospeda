@@ -6,6 +6,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
 import styles from './SelectSearchFilter.module.css';
 
@@ -14,7 +15,15 @@ export interface SelectSearchFilterConfig {
     readonly id: string;
     readonly label: string;
     readonly type: 'select-search';
-    readonly options: readonly { readonly value: string; readonly label: string }[];
+    readonly options: readonly {
+        readonly value: string;
+        readonly label: string;
+        /**
+         * When true, the option renders with a small filled star indicator
+         * to emphasize curated/featured entries (e.g. featured destinations).
+         */
+        readonly featured?: boolean;
+    }[];
     readonly maxVisible?: number;
     /** When set to 1, behaves as single-select (radio-style with search). */
     readonly maxSelections?: number;
@@ -110,7 +119,19 @@ export function SelectSearchFilter({ config, value, onChange, locale }: SelectSe
                                 checked={isChecked}
                                 onChange={() => toggleOption(opt.value)}
                             />
-                            {opt.label}
+                            <span className={styles.checkboxText}>{opt.label}</span>
+                            {opt.featured && (
+                                <span
+                                    className="featured-indicator"
+                                    aria-label={t('ui.filter.featuredOption', 'Destacado')}
+                                >
+                                    <StarIcon
+                                        size={13}
+                                        weight="fill"
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                            )}
                         </label>
                     );
                 })}

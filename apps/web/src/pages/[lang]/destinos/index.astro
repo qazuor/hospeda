@@ -47,17 +47,14 @@ const url = Astro.url;
 // request server-side.
 const PAGE_SIZE_ALL = 100;
 
-// Default order is fixed: name asc. Featured destinations are pinned to the
-// top by a stable client-side sort below, so users always see "featured first,
-// then alphabetical A-Z" out of the box. The previous sort dropdown was
-// removed — the catalog is small and the default ordering is the only one
-// that meaningfully helps discovery.
+// Default order is fixed: "featured first, then alphabetical A-Z". The API
+// applies that ordering when no explicit sortBy is provided (see
+// DestinationModel.findAll override), so this endpoint relies on the API
+// default instead of re-sorting client-side.
 const result = await destinationsApi.list({
     page: 1,
     pageSize: PAGE_SIZE_ALL,
-    destinationType: 'CITY',
-    sortBy: 'name',
-    sortOrder: 'asc'
+    destinationType: 'CITY'
 });
 
 const hasError = !result.ok;
@@ -67,12 +64,9 @@ const rawCards = items.map((item) =>
     toDestinationCardProps({ item: item as unknown as Record<string, unknown> })
 );
 
-// Pin featured destinations to the top while preserving the alphabetical
-// order returned by the API. `Array.prototype.sort` in V8 is stable since
-// 2019, so non-featured cards keep their A-Z order.
-const sortedCards = [...rawCards].sort(
-    (a, b) => Number(b.isFeatured) - Number(a.isFeatured)
-);
+// API already returns featured-first then alphabetical (see
+// DestinationModel.findAll default ordering), so no client-side sort is needed.
+const sortedCards = rawCards;
 
 // --- Attraction filter state ----------------------------------------------
 // Parse the active attraction ids from the query string. Empty/missing means

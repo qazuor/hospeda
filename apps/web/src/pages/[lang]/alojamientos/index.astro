@@ -140,7 +140,7 @@ const contextQuery = contextQueryParams.toString() || undefined;
 
 // Fetch destinations for filter dropdown (CITY only — accommodations are
 // browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
@@ -319,7 +319,7 @@ const filterGroups: FilterGroup[] = [
 		id: 'destinationIds',
 		label: t('accommodations.sidebar.destination', 'Destino'),
 		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
+		options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
 		maxVisible: 8,
 	},
 	{
@@ -335,9 +335,9 @@ const filterGroups: FilterGroup[] = [
 				const lat = coords ? Number.parseFloat(coords.lat) : Number.NaN;
 				const long = coords ? Number.parseFloat(coords.long) : Number.NaN;
 				if (!Number.isFinite(lat) || !Number.isFinite(long)) return null;
-				return { value: d.id, label: d.name, lat, long };
+				return { value: d.id, label: d.name, lat, long, featured: Boolean(d.isFeatured) };
 			})
-			.filter((opt): opt is { value: string; label: string; lat: number; long: number } => opt !== null),
+			.filter((opt): opt is { value: string; label: string; lat: number; long: number; featured: boolean } => opt !== null),
 		radiusPresets: [5, 10, 25, 50, 100],
 		defaultCollapsed: true,
 		destinationModeLabel: t('accommodations.sidebar.geoRadius.destinationMode', 'Un destino'),

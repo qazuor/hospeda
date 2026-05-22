@@ -66,7 +66,7 @@ const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? t
 
 // Fetch destinations for filter dropdown (CITY only — accommodations are
 // browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips

@@ -150,3 +150,13 @@
     cursor: pointer;
     flex-shrink: 0;
 }
+
+/* Label text inside the checkbox row — flex so featured indicator can be
+ * right-aligned without breaking ellipsis on long names. */
+.checkboxText {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -185,7 +185,13 @@ export function CreatePropertyMiniForm({
                     (item: DestinationPublic): item is DestinationPublic & { id: string } =>
                         typeof item.id === 'string'
                 )
-                .map((item): SelectableItem => ({ id: item.id, label: item.name }))
+                .map(
+                    (item): SelectableItem => ({
+                        id: item.id,
+                        label: item.name,
+                        featured: Boolean(item.isFeatured)
+                    })
+                )
                 .sort((a, b) => {
                     const an = a.label.toLowerCase();
                     const bn = b.label.toLowerCase();

@@ -18,6 +18,7 @@ import {
     CloseIcon,
     LocationIcon,
     SearchIcon,
+    StarIcon,
     UsersIcon
 } from '@repo/icons';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -40,6 +41,8 @@ interface DestinationOption {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
+    /** When true, the option is highlighted as a featured destination. */
+    readonly isFeatured?: boolean;
 }
 
 interface SearchBarProps {
@@ -633,6 +636,21 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                         />
                                     </span>
                                     <span className="combobox__option-label">{dest.name}</span>
+                                    {dest.isFeatured && (
+                                        <span
+                                            className="featured-indicator"
+                                            aria-label={t(
+                                                'home.searchBar.featuredDestinationLabel',
+                                                'Destino destacado'
+                                            )}
+                                        >
+                                            <StarIcon
+                                                size={13}
+                                                weight="fill"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}

@@ -22,6 +22,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { IconProps } from '@repo/icons';
+import { StarIcon } from '@repo/icons';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -41,6 +42,11 @@ export type SelectableItem = {
     readonly label: string;
     /** Optional Phosphor icon component rendered in a 32px badge. */
     readonly icon?: ComponentType<IconProps>;
+    /**
+     * When true, the option is rendered with a small filled star indicator
+     * to emphasize curated/featured entries (e.g. featured destinations).
+     */
+    readonly featured?: boolean;
 };
 
 /** Props for {@link SearchableSelect}. */
@@ -426,6 +432,21 @@ export function SearchableSelect<T extends SelectableItem>({
                                     </span>
                                 )}
                                 <span className="combobox__option-label">{item.label}</span>
+                                {item.featured && (
+                                    <span
+                                        className="featured-indicator"
+                                        aria-label={t(
+                                            'form.searchableSelect.featuredLabel',
+                                            'Destacado'
+                                        )}
+                                    >
+                                        <StarIcon
+                                            size={13}
+                                            weight="fill"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                )}
                             </button>
                         );
                     })}

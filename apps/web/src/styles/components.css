@@ -1012,6 +1012,20 @@
     white-space: nowrap;
 }
 
+/* Featured indicator: a small filled star rendered after the label for
+ * options flagged as featured (e.g. featured destinations). Subtle accent
+ * color, no background tint, so the row stays calm but the visual cue is
+ * unmistakable. Shared by SearchableSelect, SearchBar destination panel,
+ * and SelectSearchFilter (multi-select checkbox list). */
+.featured-indicator {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-accent);
+    opacity: 0.9;
+}
+
 .combobox__option-check {
     flex-shrink: 0;
     width: 16px;
