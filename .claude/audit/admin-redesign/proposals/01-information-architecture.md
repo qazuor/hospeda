@@ -1,7 +1,7 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.1
+version: 0.3
 date-started: 2026-05-22
 last-updated: 2026-05-22
 ---
@@ -460,25 +460,387 @@ Hide all inaccessible items instead of greying them. Cleaner visually, but the u
 
 ---
 
+## 11. Foundational decision — Config-driven IA [LOCKED 2026-05-22]
+
+The entire admin information architecture is defined in a **single declarative TypeScript config**, validated at app boot with Zod. Components only **read** from this config — they contain no IA logic of their own.
+
+### What lives in config
+
+- Sections (labels with i18n, icons, routes, sidebar refs)
+- Sidebars (groups, items, links, separators, permission gates)
+- Roles (default permission bundles, main menu visibility, dashboard ref, topbar config, mobile config, label overrides)
+- Dashboards (widgets per dashboard, with permission gates and scope)
+- Tabs per detail page (per entity type, with permission gates)
+- Topbar elements per role (search, quick create, account location)
+
+### What lives in components
+
+- HOW to render a sidebar (collapse logic, mobile drawer, animations)
+- HOW to apply the permission cherry-pick rules (see §8)
+- HOW to handle responsive breakpoints
+- WHAT happens on click (navigation, modals)
+
+### Format: TypeScript + Zod
+
+- TS file at `apps/admin/src/config/admin-ia.config.ts` (likely split across multiple files in `apps/admin/src/config/ia/` for readability — sections, sidebars, roles, dashboards each in their own file, composed into a final object).
+- Validated by a Zod schema at app boot. **Invalid config crashes the app with a clear error** pointing to the offending key.
+- Type-safe via `import type` from `@repo/schemas` for `PermissionEnum` and `RoleEnum` — typos caught at compile time.
+- No runtime mutation in V1. Future phase may add a DB-backed UI editor (the config shape stays the same, only the source changes).
+
+### Why this matters
+
+- Change "what HOST sees" = **one line in config**, no React touched.
+- Change labels per role/locale = config-only, no JSX touched.
+- Add a new section = register in config + build its sidebar config + optional widget config — no router restructuring.
+- Test "HOST never sees Plataforma" = assert on config object, one-liner.
+- Future Phase 2: PM/UX can edit config from within the admin itself.
+
+---
+
+## 12. HOST role — locked config [LOCKED 2026-05-22]
+
+### Role config (TS)
+
+```ts
+HOST: {
+  label: { es: 'Anfitrión', en: 'Host', pt: 'Anfitrião' },
+  defaultPermissions: [
+    'ACCESS_PANEL_ADMIN',
+    'ACCOMMODATION_VIEW_OWN', 'ACCOMMODATION_EDIT_OWN',
+    'ACCOMMODATION_CREATE',                  // limit-gated by their plan
+    'ACCOMMODATION_DELETE_OWN',
+    'AMENITY_VIEW', 'FEATURE_VIEW',          // catalogs (read-only)
+    'REVIEW_VIEW_OWN', 'REVIEW_REPLY_OWN',
+    'CONVERSATION_VIEW_OWN', 'CONVERSATION_REPLY_OWN',
+    'BILLING_VIEW_OWN', 'INVOICE_VIEW_OWN',
+    'SUBSCRIPTION_VIEW_OWN', 'PAYMENT_METHOD_MANAGE_OWN',
+    'NOTIFICATION_VIEW_OWN', 'NOTIFICATION_PREFERENCES_MANAGE_OWN',
+    'USER_UPDATE_SELF',
+  ],
+  mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miFacturacion', 'miCuenta'],
+  dashboard: 'hostDashboard',
+  topbar: {
+    showSearch: false,                       // no Cmd+K — non-tech users
+    showQuickCreate: ['newAccommodation'],
+    accountInMenu: true,                     // "Mi cuenta" lives as item 5
+  },
+  mobile: {
+    bottomNav: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'],
+    fab: 'newAccommodation',
+  },
+},
+```
+
+### Full menu tree
+
+```
+1- Inicio
+   (dashboard "Mi negocio": KPIs scoped, consultas sin responder,
+    próximos check-ins, estado de suscripción)
+
+2- Mis alojamientos
+   2.1- Ver mis alojamientos
+   2.2- Agregar alojamiento nuevo
+   (detail tabs Level 3):
+        2.x.1- Información general
+        2.x.2- Fotos
+        2.x.3- Amenidades y servicios
+        2.x.4- Precios y temporadas
+        2.x.5- Reseñas de huéspedes
+        2.x.6- Estadísticas
+        2.x.7- Estado y visibilidad
+
+3- Consultas
+   3.1- Sin responder            [badge contador]
+   3.2- Activas
+   3.3- Archivadas
+
+4- Mi facturación
+   4.1- Mi plan actual
+   4.2- Próximo cobro
+   4.3- Historial de facturas
+   4.4- Métodos de pago
+   4.5- Uso de mi plan
+
+5- Mi cuenta
+   5.1- Mi perfil público
+   5.2- Mis datos personales
+   5.3- Preferencias (idioma, tema, zona horaria)
+   5.4- Notificaciones
+   5.5- Seguridad (contraseña, 2FA, sesiones)
+   5.6- Mis datos (descargar, eliminar cuenta)
+```
+
+### Topbar (HOST)
+
+- Logo (→ Inicio)
+- 🔔 Notificaciones (con badge)
+- ➕ "Nuevo alojamiento" (single contextual FAB)
+- 👤 Avatar — solo nombre + "Cerrar sesión". El resto vive en "Mi cuenta" (main menu).
+
+### Mobile bottom nav (HOST)
+
+```
+[🏠 Inicio]  [🏘️ Alojamientos]  [💬 Consultas]  [👤 Cuenta]
+```
+
+"Mi facturación" se llega vía Cuenta o tap en card del dashboard.
+
+### Language principles
+
+- 100% en términos de "lo suyo": "Mis alojamientos", "Mi facturación", "Mi cuenta".
+- Cero jerga: nada de "admin", "panel", "config", "settings", "billing".
+
+---
+
+## 13. SUPER_ADMIN role — locked config [LOCKED 2026-05-22]
+
+### Role config (TS)
+
+```ts
+SUPER_ADMIN: {
+  label: { es: 'Super admin', en: 'Super admin', pt: 'Super admin' },
+  defaultPermissions: ['*'],                 // wildcard expansion at boot to all
+  mainMenu: ['inicio', 'catalogo', 'editorial', 'comunidad',
+             'comercial', 'plataforma', 'analisis'],
+  dashboard: 'superAdminDashboard',
+  topbar: {
+    showSearch: true,                        // Cmd+K active
+    showQuickCreate: 'all',                  // menu with all create actions
+    accountInMenu: false,                    // Mi cuenta in topbar avatar
+  },
+  mobile: {
+    bottomNav: null,                         // hamburger only
+  },
+},
+```
+
+### Full menu tree (7 sections)
+
+```
+1- Inicio
+   (dashboard de plataforma: KPIs globales, system health,
+    audit log preview, alertas Sentry/crons fallidos)
+
+2- Catálogo
+   2.1- Dashboard de Catálogo
+   2.2- Alojamientos
+        2.2.1- Listado
+        2.2.2- Crear alojamiento
+        2.2.3- Amenidades (catálogo)
+        2.2.4- Características (catálogo)
+        2.2.5- Galería compartida (media library)
+   2.3- Destinos
+        2.3.1- Listado
+        2.3.2- Crear destino
+        2.3.3- Atracciones
+   2.4- Reseñas
+        2.4.1- Todas las reseñas
+        2.4.2- Pendientes de moderar
+
+3- Editorial
+   3.1- Dashboard Editorial
+   3.2- Calendario editorial
+   3.3- Blog
+        3.3.1- Posts (todos)
+        3.3.2- Borradores
+        3.3.3- Programados
+        3.3.4- Publicados
+        3.3.5- Crear post
+        3.3.6- Tags de blog
+   3.4- Eventos
+        3.4.1- Próximos
+        3.4.2- En curso
+        3.4.3- Pasados
+        3.4.4- Crear evento
+        3.4.5- Locaciones
+        3.4.6- Organizadores
+   3.5- Newsletter                       [⚠ location pending — see Open Q-A]
+        3.5.1- Campañas
+        3.5.2- Crear campaña
+        3.5.3- Suscriptores
+        3.5.4- Segmentos
+        3.5.5- Plantillas
+
+4- Comunidad
+   4.1- Dashboard Comunidad
+   4.2- Usuarios
+        4.2.1- Todos los usuarios
+        4.2.2- Hosts
+        4.2.3- Editores / staff interno
+        4.2.4- Clientes finales
+        4.2.5- Sponsors (cuenta-usuario)
+        4.2.6- Invitar usuario
+   4.3- Conversaciones
+        4.3.1- Inbox
+        4.3.2- Sin asignar
+        4.3.3- Asignadas a mí
+        4.3.4- Archivadas
+   4.4- Moderación
+        4.4.1- Cola de moderación de contenido
+        4.4.2- Reportes
+        4.4.3- Tags propuestos por usuarios
+   4.5- Roles y permisos
+        4.5.1- Roles
+        4.5.2- Permisos (catálogo)
+        4.5.3- Cambios recientes (audit filtrado)
+
+5- Comercial
+   5.1- Dashboard Comercial (MRR, churn, revenue)
+   5.2- Suscripciones
+        5.2.1- Planes
+        5.2.2- Suscripciones activas
+        5.2.3- Add-ons
+        5.2.4- Métricas de uso (per-customer)
+   5.3- Pagos
+        5.3.1- Transacciones
+        5.3.2- Facturas
+        5.3.3- Métodos de pago
+   5.4- Promociones
+        5.4.1- Códigos promocionales
+        5.4.2- Promos para hosts
+   5.5- Sponsorships
+        5.5.1- Sponsorships activos
+        5.5.2- Sponsors (entidad comercial)
+   5.6- Operaciones billing
+        5.6.1- Tipos de cambio
+        5.6.2- Webhook events
+        5.6.3- Cron de billing
+        5.6.4- Logs de notificaciones
+   5.7- Configuración billing
+
+6- Plataforma
+   6.1- Dashboard de Plataforma (system health)
+   6.2- Configuración general
+        6.2.1- General
+        6.2.2- SEO defaults
+        6.2.3- Email defaults
+        6.2.4- Localización (idiomas, monedas, timezones)
+        6.2.5- Feature flags
+   6.3- Cache y deploy
+        6.3.1- ISR / revalidación (config)
+        6.3.2- Revalidación manual
+        6.3.3- Historial de revalidaciones
+   6.4- Operaciones del sistema
+        6.4.1- Cron jobs
+        6.4.2- Webhook events
+        6.4.3- Logs del sistema
+        6.4.4- Métricas internas
+   6.5- Tags del sistema
+        6.5.1- Tags internas
+        6.5.2- Tags de sistema
+   6.6- Configuración crítica          [SUPER_ADMIN ONLY]
+        6.6.1- Modo mantenimiento
+        6.6.2- Anuncios globales
+        6.6.3- Danger zone
+   6.7- Auditoría                      [SUPER_ADMIN ONLY]
+        6.7.1- Log de acciones admin
+        6.7.2- Log de impersonations
+        6.7.3- Cambios de permisos
+
+7- Análisis
+   7.1- Overview
+   7.2- Negocio
+        7.2.1- KPIs principales
+        7.2.2- Bookings y conversiones
+        7.2.3- Revenue
+        7.2.4- Funnel de signup
+   7.3- Uso del sistema
+        7.3.1- Por plan
+        7.3.2- Límites cerca de alcanzar
+        7.3.3- Tendencias de uso
+   7.4- Contenido
+        7.4.1- Posts (views, engagement)
+        7.4.2- Eventos (asistencia, tickets)
+        7.4.3- Newsletter (open rate, CTR)
+   7.5- SEO
+        7.5.1- Indexación
+        7.5.2- Performance Lighthouse
+        7.5.3- Búsquedas internas
+   7.6- Debug                          [SUPER_ADMIN ONLY]
+```
+
+### Topbar (SUPER_ADMIN)
+
+- Logo (→ Inicio)
+- Menú principal (7 secciones)
+- 🔍 Search Cmd+K (CommandPalette permission-aware)
+- 🔔 Notificaciones (badge)
+- ➕ Quick create — menú con "+ Post / + Evento / + Alojamiento / + Usuario / etc."
+- 👤 Avatar dropdown:
+  - Mi perfil
+  - Preferencias personales
+  - Mis notificaciones
+  - Seguridad (password, 2FA, sesiones)
+  - Cambiar de usuario (impersonation start)
+  - Cerrar sesión
+
+### Impersonation banner
+
+Cuando activa: banner amarillo full-width arriba de todo, con "Estás impersonando a Juan Pérez (HOST)" + botón **Salir** + razón.
+
+### Mobile (SUPER_ADMIN)
+
+Solo hamburger. Bottom nav no aplica — demasiados items para que sea útil.
+
+---
+
+## 14. "Crear X" — both places [LOCKED 2026-05-22]
+
+Las acciones "Crear X" aparecen en **DOS lugares**:
+
+1. **Dentro del grupo correspondiente del sidebar** (ej. grupo "Alojamientos" → item "Crear alojamiento"). Para users que vienen desde el contexto de esa sección.
+2. **En el botón ➕ del topbar** (contextual a los permisos del rol). Para users que quieren crear desde cualquier lugar.
+
+Redundancia intencional — un click extra de overhead vale la pena para que power users no tengan que volver al sidebar.
+
+---
+
 ## Open questions
 
-These are the points pending discussion before locking the IA in. Numbered for easy reference.
+These are the points pending discussion before the IA is fully locked. Lettered for easy reference.
 
-1. **Are the 7 main menu sections the right set?** Add / remove any?
-2. **Is the per-role visibility matrix correct?**
-   - Does `CLIENT_MANAGER` actually exist as a working role, or kill it?
-   - Does `SPONSOR` see only "My campaign", or also Editorial read-only for context?
-3. **Cherry-pick rule** — go with "show disabled in sidebar, hide in main menu" (the recommendation), or **hide everything inaccessible** always?
-4. **Per-role fixed dashboards** (as proposed), or **user-configurable dashboards** with widgets they assemble themselves?
-5. **My account** lives in topbar user menu (recommendation), or as a main menu section?
+### A. Newsletter location [OPEN — owner uncertain]
+
+Currently placed under Editorial (§13, item 3.5). Owner expressed doubt about whether it belongs there or somewhere else. Candidates:
+
+- Editorial (current) — same person creates campaigns + posts + events
+- Comunidad — newsletter audience IS the community
+- Marketing (new 8th section) — alongside sponsorships + promo codes
+- Comercial — newsletter drives revenue indirectly
+
+Awaiting decision before Editorial is fully locked.
+
+### B. Other roles' default menus [OPEN]
+
+HOST and SUPER_ADMIN are locked. Still pending: `EDITOR`, `SPONSOR`, `CLIENT_MANAGER`, `ADMIN`. Note: also pending validation that `CLIENT_MANAGER` is an actively-used role and not nominal.
+
+### C. Permission cherry-pick UX rule [OPEN]
+
+Three options on the table (see §8):
+
+- **Recommended**: show disabled (greyed + tooltip) in sidebar Level 2; hide at Level 1 (main menu) and Level 3 (tabs).
+- **Alternative A**: hide all inaccessible items everywhere — cleaner but less discoverable.
+- **Alternative B**: show disabled at all levels — most discoverable but visually noisy.
+
+### D. Config file split [OPEN — implementation detail]
+
+Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,sidebars,roles,dashboards}.ts`? Recommend split for editability. To be confirmed in implementation spec.
 
 ---
 
 ## Decisions log
 
-> As we lock things, they move here with date + rationale.
-
-_(Nothing locked yet. The whole doc is in DRAFT.)_
+| Date | Decision | Section |
+|------|----------|---------|
+| 2026-05-22 | 7 main menu sections in the universe: Inicio, Catálogo, Editorial, Comunidad, Comercial, Plataforma, Análisis | §2 |
+| 2026-05-22 | Foundational: entire IA is config-driven via single TS+Zod config | §11 |
+| 2026-05-22 | HOST = 5 main menu items; "Mi cuenta" lives in main menu; no Cmd+K | §12 |
+| 2026-05-22 | HOST terminology: "Consultas" (NOT "Mensajes con huéspedes") | §12 |
+| 2026-05-22 | HOST: "Mi facturación" as own main menu item (not buried in Mi cuenta) | §12 |
+| 2026-05-22 | SUPER_ADMIN = 7 main menu items; "Mi cuenta" in topbar avatar; Cmd+K active | §13 |
+| 2026-05-22 | "Crear X" appears in BOTH sidebar groups AND topbar `+` button | §14 |
+| 2026-05-22 | Per-role fixed dashboards in V1 (not user-configurable widgets) | §6, §12, §13 |
 
 ---
 
@@ -487,3 +849,5 @@ _(Nothing locked yet. The whole doc is in DRAFT.)_
 | Date | Version | Change |
 |------|---------|--------|
 | 2026-05-22 | 0.1 | Initial draft, full proposal across all 10 sections + 5 open questions |
+| 2026-05-22 | 0.2 | Version bumped (prep for IA lock-in edits) |
+| 2026-05-22 | 0.3 | Locked: §11 config-driven IA foundation, §12 HOST role, §13 SUPER_ADMIN role, §14 "Crear X" both places. Reorganized open questions (A-D): Newsletter location, other roles, cherry-pick UX, config file split. Decisions log populated. |
