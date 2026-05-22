@@ -36,6 +36,7 @@
 
 import { createWebhookRouter } from '@qazuor/qzpay-hono';
 import { Hono } from 'hono';
+import { qzpayLogger } from '../../../lib/qzpay-logger';
 import {
     // TODO(SPEC-079): Once rate-limit.ts is extended by SPEC-079 to support
     // per-route webhook overrides natively, replace this usage with the updated
@@ -44,7 +45,6 @@ import {
     // SPEC-079 edits in flight.
     createPerRouteRateLimitMiddleware
 } from '../../../middlewares/rate-limit';
-import { webhookSignatureMiddleware } from '../../../middlewares/webhook-signature';
 import type { AppOpenAPI } from '../../../types';
 import { apiLogger } from '../../../utils/logger';
 import { handleDisputeOpened } from './dispute-handler';
@@ -90,6 +90,13 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             billing: dependencies.billing,
             paymentAdapter: dependencies.paymentAdapter,
             signatureHeader: 'x-signature',
+            // qzpay-hono >=1.4 extracts `x-request-id` automatically and
+            // forwards it to the MP adapter's HMAC verifier (which since
+            // qzpay-mercadopago >=2.0 includes it in the signed manifest).
+            // The custom hospeda webhook-signature middleware was removed
+            // because it duplicated this work and ran BEFORE the qzpay
+            // verifier — leaving two implementations to keep in sync.
+            logger: qzpayLogger,
             handlers: {
                 'payment.created': handlePaymentCreated,
                 'payment.updated': handlePaymentUpdated,
@@ -119,10 +126,11 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             onError: handleWebhookError
         });
 
-        // Wrap in an outer Hono app so middleware runs BEFORE any route
-        // handler registered by createWebhookRouter. Order matters:
-        //   1. Per-route rate limit (SPEC-064 T-049/T-050) — blocks floods early
-        //   2. Signature verification (SPEC-064 T-036/T-037/T-038) — validates HMAC
+        // Wrap in an outer Hono app so the per-route rate limit runs BEFORE
+        // any route handler registered by createWebhookRouter. Signature
+        // verification is now performed inside the qzpay-hono middleware
+        // (which forwards x-signature + x-request-id to the MP adapter),
+        // so no extra custom signature middleware is mounted here.
         const securedRouter = new Hono();
         securedRouter.use(
             '*',
@@ -131,7 +139,6 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
                 windowMs: WEBHOOK_RATE_LIMIT_WINDOW_MS
             })
         );
-        securedRouter.use('*', webhookSignatureMiddleware);
         // TYPE-WORKAROUND: webhookRouter from external billing module has its own typed Hono variables; cast aligns it with the local Hono instance signature for mounting.
         securedRouter.route('/', webhookRouter as unknown as Hono);
 

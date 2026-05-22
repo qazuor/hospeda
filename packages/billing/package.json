@@ -22,8 +22,8 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
-        "@qazuor/qzpay-core": "^1.6.5",
-        "@qazuor/qzpay-mercadopago": "^1.4.6",
+        "@qazuor/qzpay-core": "^1.7.0",
+        "@qazuor/qzpay-mercadopago": "^2.0.0",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*"
