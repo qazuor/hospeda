@@ -1,10 +1,11 @@
 ---
 proposal: dashboards
 status: DRAFT (in active discussion)
-version: 0.2
+version: 0.3
 date-started: 2026-05-22
 last-updated: 2026-05-22
 depends-on: 01-information-architecture.md (v0.7+), 02-config-schema.md (v0.2+)
+related: 03b-endpoint-verification.md
 scope: V1 = widgets with EXISTING backing data sources. Aspirational widgets moved to 99-future-enhancements.md
 ---
 
@@ -53,7 +54,7 @@ V1 widgets (all backed by existing endpoints).
 ```ts
 hostDashboard: {
   widgets: [
-    // KPIs (4)
+    // KPIs (3)
     {
       id: 'kpi-my-accommodations',
       type: 'kpi',
@@ -61,27 +62,20 @@ hostDashboard: {
       scope: 'own',
       permissions: ['ACCOMMODATION_VIEW_OWN'],
       config: {
-        source: 'accommodation.count.own',  // GET /api/v1/admin/accommodations?ownerId={userId}&pageSize=1 → pagination.total
+        source: 'accommodation.count.own',
+        // GET /api/v1/admin/accommodations?ownerId={userId}&pageSize=1 → pagination.total
       },
     },
     {
-      id: 'kpi-consultas-sin-responder',
+      id: 'kpi-consultas-pendientes',
       type: 'kpi',
-      label: { es: 'Consultas sin responder', en: 'Unanswered inquiries', pt: 'Consultas sem resposta' },
+      label: { es: 'Consultas pendientes', en: 'Pending inquiries', pt: 'Consultas pendentes' },
       scope: 'own',
       permissions: ['CONVERSATION_VIEW_OWN'],
       config: {
-        source: 'conversation.count.own.unanswered',  // same pattern as the sidebar useUnreadCount()
-      },
-    },
-    {
-      id: 'kpi-resenas-pendientes',
-      type: 'kpi',
-      label: { es: 'Reseñas sin responder', en: 'Unanswered reviews', pt: 'Avaliações sem resposta' },
-      scope: 'own',
-      permissions: ['REVIEW_VIEW_OWN'],
-      config: {
-        source: 'review.count.own.unanswered',
+        source: 'conversation.count.own.pending-owner',
+        // GET /api/v1/admin/conversations?ownerId={uid}&conversationStatus=PENDING_OWNER&pageSize=1
+        // NOTE: "Unanswered" is not a real status — use PENDING_OWNER per endpoint verification (03b §1)
       },
     },
     {
@@ -91,39 +85,30 @@ hostDashboard: {
       scope: 'own',
       permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
-        source: 'subscription.status.own',  // active/trial/past-due/etc.
+        source: 'subscription.list.own.active.first',
+        // GET /api/v1/protected/billing/subscriptions?pageSize=1 → pick active
+        // NOTE: no /me endpoint exists — list-and-pick approach per endpoint verification (03b §3)
         format: 'badge',
       },
     },
 
-    // Action lists (2)
+    // Action list (1)
     {
-      id: 'list-consultas-recientes',
+      id: 'list-consultas-pendientes',
       type: 'list',
-      label: { es: 'Consultas recientes sin responder', en: 'Recent unanswered inquiries', pt: 'Consultas recentes sem resposta' },
+      label: { es: 'Consultas pendientes de tu respuesta', en: 'Inquiries pending your reply', pt: 'Consultas pendentes de sua resposta' },
       scope: 'own',
       permissions: ['CONVERSATION_VIEW_OWN'],
       config: {
-        source: 'conversation.list.own.unanswered',
+        source: 'conversation.list.own.pending-owner',
+        // GET /api/v1/admin/conversations?ownerId={uid}&conversationStatus=PENDING_OWNER&pageSize=5&sort=updated_at_desc
         limit: 5,
         emptyState: { variant: 'positive', message: { es: '¡Estás al día!', en: 'All caught up!', pt: 'Tudo em dia!' } },
         actionPerItem: { route: '/consultas/{id}', label: { es: 'Responder', en: 'Reply', pt: 'Responder' } },
       },
     },
-    {
-      id: 'list-resenas-recientes',
-      type: 'list',
-      label: { es: 'Reseñas recientes', en: 'Recent reviews', pt: 'Avaliações recentes' },
-      scope: 'own',
-      permissions: ['REVIEW_VIEW_OWN'],
-      config: {
-        source: 'review.list.own.recent',
-        limit: 3,
-        emptyState: { variant: 'neutral', message: { es: 'No hay reseñas nuevas', en: 'No new reviews', pt: 'Sem novas avaliações' } },
-      },
-    },
 
-    // Subscription callouts (2)
+    // Subscription (2)
     {
       id: 'subscription-status',
       type: 'callout',
@@ -131,7 +116,8 @@ hostDashboard: {
       scope: 'own',
       permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
-        source: 'subscription.status.own',
+        source: 'subscription.list.own.active.first',
+        // same list-and-pick approach as kpi-mi-plan
         showNextCharge: true,
         variantWhen: { expiringSoon: 'warning', expired: 'danger', active: 'info' },
       },
@@ -143,7 +129,8 @@ hostDashboard: {
       scope: 'own',
       permissions: ['SUBSCRIPTION_VIEW_OWN'],
       config: {
-        source: 'subscription.usage.own.accommodations',  // "3 de 5 alojamientos publicados"
+        source: 'billing.usage.own.accommodations',
+        // GET /api/v1/protected/billing/usage → confirmed exists per 03b §4
         format: 'fraction',
         warningAt: 0.8,
       },
@@ -152,7 +139,7 @@ hostDashboard: {
 }
 ```
 
-**7 widgets** (vs 10 originally proposed). Removed: welcome-host (dynamic next-action), kpi-ocupacion, kpi-ingresos-mes, proximos-checkins-calendar.
+**6 widgets** (verification pass: 7 → 6 after dropping 2 review widgets).
 
 ### Removed from V1 (in `99-future-enhancements.md` §2)
 
@@ -160,6 +147,9 @@ hostDashboard: {
 - Ocupación promedio — no booking system
 - Ingresos del mes (per-host) — no per-host revenue tracking
 - Welcome callout with dynamic next-action — no resolver service
+- **`kpi-resenas-pendientes` (NEW: dropped 2026-05-22)** — accommodation reviews are one-way ratings with NO reply concept. No "unanswered" state exists. Per endpoint verification (03b §2)
+- **`list-resenas-recientes` (NEW: dropped 2026-05-22)** — same as above. If "recent reviews" without a reply concept is desired (just informational list of latest reviews), can be re-evaluated, but it doesn't fit the "needs my attention" framing of the dashboard
+- **"Unanswered" framing across HOST widgets (RENAMED)** — replaced with "pending owner" via `conversationStatus=PENDING_OWNER` filter. Future enhancement: build a unified "needs my attention" cross-entity counter
 
 ---
 
@@ -193,7 +183,11 @@ editorDashboard: {
       label: { es: 'Eventos próximos', en: 'Upcoming events', pt: 'Próximos eventos' },
       scope: 'all',
       permissions: ['EVENT_VIEW_ALL'],
-      config: { source: 'event.count.upcoming' },
+      config: {
+        source: 'event.count.upcoming',
+        // GET /api/v1/admin/events?startDateAfter={now}&pageSize=1
+        // NOTE: no "upcoming" status enum — date-based filter per endpoint verification (03b §7)
+      },
     },
     {
       id: 'kpi-suscriptores',
@@ -238,6 +232,7 @@ editorDashboard: {
       permissions: ['EVENT_VIEW_ALL'],
       config: {
         source: 'event.list.upcoming',
+        // GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc
         limit: 5,
       },
     },
@@ -355,18 +350,7 @@ adminDashboard: {
       },
     },
 
-    // Lists (2)
-    {
-      id: 'list-top-hosts',
-      type: 'list',
-      label: { es: 'Top hosts por suscripción', en: 'Top hosts by subscription', pt: 'Top hosts por assinatura' },
-      scope: 'all',
-      permissions: ['SUBSCRIPTION_VIEW_ALL', 'USER_VIEW_ALL'],
-      config: {
-        source: 'subscription.list.top-revenue.month',  // 🟡 verify endpoint
-        limit: 5,
-      },
-    },
+    // List (1)
     {
       id: 'list-upcoming-events',
       type: 'list',
@@ -374,7 +358,9 @@ adminDashboard: {
       scope: 'all',
       permissions: ['EVENT_VIEW_ALL'],
       config: {
-        source: 'event.list.featured.upcoming',  // 🟡 verify "featured" flag exists
+        source: 'event.list.featured.upcoming',
+        // GET /api/v1/admin/events?isFeatured=true&startDateAfter={now}&pageSize=5
+        // NOTE: isFeatured flag confirmed; upcoming via startDateAfter per endpoint verification (03b §8)
         limit: 5,
       },
     },
@@ -382,7 +368,7 @@ adminDashboard: {
 }
 ```
 
-**11 widgets**: 6 existing + 3 billing + 2 lists. ADMIN sees all 11 (no super-only widgets in V1). SUPER_ADMIN dashboard = same.
+**10 widgets**: 6 existing + 3 billing + 1 list. ADMIN sees all 10 (no super-only widgets in V1). SUPER_ADMIN dashboard = same.
 
 ### Removed from V1 (in `99-future-enhancements.md` §2)
 
@@ -392,14 +378,13 @@ adminDashboard: {
 - Sentry errors widget (super-only) — no integration
 - Failed crons widget (super-only) — cron list exists, "failed-only" filter uncertain
 - Audit log preview (super-only) — no audit log system
+- **`list-top-hosts` (NEW: dropped 2026-05-22)** — qzpay-hono subscription routes don't expose ordering by revenue. Per endpoint verification (03b §11). To add later: build a hospeda-side aggregator that joins users + subscriptions and sorts by plan value
 
-### 🟡 Items to verify before locking
+### Confirmed endpoints (verification complete)
 
-- `billing.metrics.revenue.12m` — does `/api/v1/admin/billing/metrics` return time series or only point-in-time?
-- `subscription.list.top-revenue.month` — does an ordering by revenue exist?
-- `event.list.featured.upcoming` — does an event "featured" flag exist?
-
-If any of these don't exist, drop the widget (don't build new endpoints in V1).
+- `billing.metrics.mrr` ✅ — `/api/v1/admin/billing/metrics` overview includes MRR (03b §9)
+- `billing.metrics.revenue.12m` ✅ — same endpoint supports `months` query param, returns `revenueTimeSeries` array (03b §10)
+- `event.list.featured.upcoming` 🟡 → ✅ — `isFeatured` flag exists; "upcoming" derived via `startDateAfter={now}` (03b §8)
 
 ---
 
@@ -415,31 +400,33 @@ When the post-V1 features ship (audit log, Sentry integration, failed-crons widg
 
 ## 6. Data sources reference
 
-Per IA §13 schema config field `source`. V1 source IDs map to existing endpoints:
+Per IA §13 schema config field `source`. V1 source IDs map to existing endpoints. **Verification complete per `03b-endpoint-verification.md`** — all 🟡 flags resolved.
 
-| Source ID | Existing endpoint | Notes |
-|-----------|-------------------|-------|
-| `accommodation.count.own` | `GET /api/v1/admin/accommodations?ownerId={uid}&pageSize=1` | pagination.total |
-| `accommodation.count.all` | `GET /api/v1/admin/accommodations?pageSize=1` | already used in current dashboard |
-| `conversation.count.own.unanswered` | `GET /api/v1/admin/conversations?ownerId={uid}&status=unanswered&pageSize=1` | 🟡 verify status filter |
-| `conversation.list.own.unanswered` | `GET /api/v1/admin/conversations?ownerId={uid}&status=unanswered&pageSize=5&sort=updated_at_desc` | |
-| `review.count.own.unanswered` | `GET /api/v1/admin/reviews?ownerId={uid}&status=unanswered&pageSize=1` | 🟡 verify |
-| `review.list.own.recent` | `GET /api/v1/admin/reviews?ownerId={uid}&pageSize=3&sort=created_at_desc` | |
-| `subscription.status.own` | `GET /api/v1/protected/subscriptions/me` (qzpay-hono) | 🟡 verify path |
-| `subscription.usage.own.accommodations` | `GET /api/v1/protected/subscriptions/me/usage` | 🟡 verify path |
-| `post.count.published.month` | `GET /api/v1/admin/posts?status=published&publishedAfter={month-start}&pageSize=1` | 🟡 verify date filter |
-| `post.count.drafts` | `GET /api/v1/admin/posts?status=draft&pageSize=1` | |
-| `post.list.drafts` | `GET /api/v1/admin/posts?status=draft&pageSize=5&sort=updated_at_desc` | |
-| `event.count.upcoming` | `GET /api/v1/admin/events?status=upcoming&pageSize=1` | 🟡 verify status enum |
-| `event.list.upcoming` | `GET /api/v1/admin/events?status=upcoming&pageSize=5` | |
-| `newsletter.subscribers.count.active` | `GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1` | |
-| `newsletter.last-campaign.open-rate` | `GET /api/v1/admin/newsletter/campaigns?status=sent&pageSize=1&sort=sent_at_desc` + read metrics from response | |
-| `newsletter.campaigns.scheduled` | `GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3` | |
-| `billing.metrics.mrr` | `GET /api/v1/admin/billing/metrics/mrr` | 🟡 confirm exact path |
-| `billing.metrics.revenue.12m` | `GET /api/v1/admin/billing/metrics/revenue?range=12m` | 🟡 verify time series support |
-| `subscription.count.active` | `GET /api/v1/admin/subscriptions?status=active&pageSize=1` | |
+| Source ID | Existing endpoint | Verification |
+|-----------|-------------------|--------------|
+| `accommodation.count.own` | `GET /api/v1/admin/accommodations?ownerId={uid}&pageSize=1` | ✅ |
+| `accommodation.count.all` | `GET /api/v1/admin/accommodations?pageSize=1` | ✅ (current dashboard already uses) |
+| `conversation.count.own.pending-owner` | `GET /api/v1/admin/conversations?ownerId={uid}&conversationStatus=PENDING_OWNER&pageSize=1` | ✅ (renamed from `unanswered` per 03b §1) |
+| `conversation.list.own.pending-owner` | same endpoint, `&pageSize=5&sort=updated_at_desc` | ✅ |
+| ~~`review.count.own.unanswered`~~ | ~~no reply concept~~ | ❌ DROPPED widget per 03b §2 |
+| ~~`review.list.own.recent`~~ | ~~no "needs attention" framing fits~~ | ❌ DROPPED widget per 03b §2 |
+| `subscription.list.own.active.first` | `GET /api/v1/protected/billing/subscriptions?pageSize=1` | ✅ (replaces `subscription.status.own` — no `/me` endpoint per 03b §3) |
+| `billing.usage.own.accommodations` | `GET /api/v1/protected/billing/usage` | ✅ (replaces `subscription.usage.own.accommodations` per 03b §4) |
+| `post.count.published.month` | `GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1` | ✅ per 03b §5 |
+| `post.count.drafts` | `GET /api/v1/admin/posts?status=DRAFT&pageSize=1` | ✅ per 03b §6 |
+| `post.list.drafts` | `GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc` | ✅ |
+| `event.count.upcoming` | `GET /api/v1/admin/events?startDateAfter={now}&pageSize=1` | ✅ (changed from `status=upcoming` per 03b §7 — no such status) |
+| `event.list.upcoming` | `GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc` | ✅ |
+| `event.list.featured.upcoming` | `GET /api/v1/admin/events?isFeatured=true&startDateAfter={now}&pageSize=5` | ✅ per 03b §8 |
+| `newsletter.subscribers.count.active` | `GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1` | ✅ |
+| `newsletter.last-campaign.open-rate` | `GET /api/v1/admin/newsletter/campaigns?status=sent&pageSize=1&sort=sent_at_desc` + metrics from response | ✅ |
+| `newsletter.campaigns.scheduled` | `GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3` | ✅ |
+| `billing.metrics.mrr` | `GET /api/v1/admin/billing/metrics` → read MRR from overview | ✅ per 03b §9 |
+| `billing.metrics.revenue.12m` | `GET /api/v1/admin/billing/metrics?months=12` → read `revenueTimeSeries` array | ✅ per 03b §10 |
+| `subscription.count.active` | `GET /api/v1/admin/subscriptions?status=active&pageSize=1` | ✅ |
+| ~~`subscription.list.top-revenue.month`~~ | ~~no ordering by revenue~~ | ❌ DROPPED widget per 03b §11 |
 
-**Items flagged 🟡 need verification** before locking the V1 widget set. If a source doesn't exist, drop the widget — don't build new endpoints for it.
+**Verification status**: COMPLETE. 3 widgets dropped due to missing backend capability; 3 endpoint paths/filters corrected.
 
 ---
 
@@ -463,25 +450,24 @@ Per IA §13 schema config field `source`. V1 source IDs map to existing endpoint
 
 | Role | Dashboard config ID | Widgets V1 | Notes |
 |------|---------------------|:----------:|-------|
-| HOST | `hostDashboard` | 7 | Scoped to user's accommodations + own conversations + own reviews + own subscription |
-| EDITOR | `editorDashboard` | 8 | Global counts on content + newsletter metrics |
-| ADMIN | `adminDashboard` | 11 | Existing 6 KPIs + 3 billing + 2 lists |
-| SUPER_ADMIN | `adminDashboard` (shared) | 11 (same) | Zero V1 super-only widgets — all super-only ones need new code |
+| HOST | `hostDashboard` | **6** | Scoped to user's accommodations + own pending conversations + own subscription (review widgets dropped per 03b verification) |
+| EDITOR | `editorDashboard` | 8 | Global counts on content + newsletter metrics. Events filter changed from `status=upcoming` to `startDateAfter={now}` |
+| ADMIN | `adminDashboard` | **10** | Existing 6 KPIs + 3 billing + 1 list (top-hosts dropped per 03b verification) |
+| SUPER_ADMIN | `adminDashboard` (shared) | 10 (same) | Zero V1 super-only widgets — all super-only ones need new code |
 
 ---
 
 ## Open questions
 
-### A. Verify endpoints flagged 🟡 [OPEN]
+### A. Verify endpoints flagged 🟡 [RESOLVED 2026-05-22]
 
-Need a focused audit on:
-- conversations / reviews `status=unanswered` filter support
-- subscription.usage.own endpoint location (web app vs admin)
-- billing metrics time-series endpoint
-- event `featured` flag
-- post date filter support
+Verification audit complete — see `03b-endpoint-verification.md`. Result:
 
-Action: spawn a small audit before implementation spec. If any endpoint doesn't exist, drop the widget (DO NOT build new endpoints in V1 just for dashboards).
+- ✅ **8 endpoints confirmed working** with documented paths and filters
+- 🟡 **3 endpoints needed filter/path changes** (conversations PENDING_OWNER instead of unanswered; events startDateAfter instead of status=upcoming; subscription list-and-pick instead of /me)
+- ❌ **3 widgets dropped** (`kpi-resenas-pendientes`, `list-resenas-recientes`, `list-top-hosts`) — backing capability doesn't exist
+
+Updated widget counts: HOST 7→6, EDITOR 8→8 (with filter changes), ADMIN/SUPER_ADMIN 11→10.
 
 ### B. Editorial calendar cross-content widget — build aggregator or defer? [OPEN]
 
@@ -511,6 +497,13 @@ Cross-referenced — see settings doc 04 §2.3.
 | 2026-05-22 | V1: ZERO super-only widgets. All super-only proposals (Sentry, audit log, failed crons) require new code → moved to future | §5 |
 | 2026-05-22 | If an endpoint flagged 🟡 doesn't exist, DROP the widget — don't build new endpoints in V1 for dashboards | §6, Open Q-A |
 | 2026-05-22 | Data sources reference table (§6) lists each source ID + existing endpoint mapping with 🟡 flags for items needing verification | §6 |
+| 2026-05-22 | Endpoint verification audit completed (`03b-endpoint-verification.md`) — all 🟡 flags resolved | Open Q-A |
+| 2026-05-22 | HOST: dropped `kpi-resenas-pendientes` + `list-resenas-recientes` — accommodation reviews are one-way ratings, no reply concept exists (per 03b §2) | §2 |
+| 2026-05-22 | HOST: renamed "unanswered" framing to "pending owner" — use `conversationStatus=PENDING_OWNER` filter (per 03b §1) | §2 |
+| 2026-05-22 | HOST: subscription status/usage uses list-and-pick approach — no `/me` endpoint exists in qzpay-hono (per 03b §3, §4). Source `subscription.list.own.active.first` + `billing.usage.own.accommodations` (`/protected/billing/usage`) | §2 |
+| 2026-05-22 | EDITOR + ADMIN: events "upcoming" derived via `startDateAfter={now}` — no `status=upcoming` enum exists (per 03b §7, §8) | §3, §4 |
+| 2026-05-22 | ADMIN: dropped `list-top-hosts` — qzpay-hono doesn't expose subscription sorting by revenue (per 03b §11) | §4 |
+| 2026-05-22 | Final widget counts after verification: HOST 6, EDITOR 8, ADMIN/SUPER_ADMIN 10 | §9 |
 
 ---
 
@@ -520,3 +513,4 @@ Cross-referenced — see settings doc 04 §2.3.
 |------|---------|--------|
 | 2026-05-22 | 0.1 | Initial draft — included aspirational widgets (check-ins, occupancy, host revenue, Sentry, audit log preview, etc.) without backing code |
 | 2026-05-22 | 0.2 | **Reality pass** — full rewrite scoped to V1 widgets with existing data sources. HOST 10→7, EDITOR 8→8 (1 deferred), ADMIN 8→11 (reusing existing KPIs, removing aspirational). Zero super-only V1 widgets (all moved to future). Data sources reference table added (§6) with 🟡 flags for items needing verification audit. Reduced widget count significantly while remaining honest about what works today. |
+| 2026-05-22 | 0.3 | **Endpoint verification applied** — based on focused audit (`03b-endpoint-verification.md`). HOST 7→6 (dropped 2 review widgets — reviews have no reply concept), EDITOR 8→8 (events upcoming filter changed to date-based), ADMIN/SUPER_ADMIN 11→10 (dropped top-hosts list — no revenue ordering). Conversations "unanswered" renamed to "pending owner". Subscription endpoints corrected to list-and-pick + `/protected/billing/usage`. Open Q-A resolved. Data sources table (§6) fully verified. |
