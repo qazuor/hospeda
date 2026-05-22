@@ -382,7 +382,18 @@ export function createWebhookSignatureMiddleware(
             // signature does not match, dump enough info to compare manifests
             // and HMAC fragments byte-by-byte against what MP sent. Remove or
             // downgrade to debug once root cause is identified.
+            //
+            // Hypothesis under test: the reverse proxy stack (Cloudflare /
+            // Traefik / Coolify) overwrites the `x-request-id` header that MP
+            // signs with. Railway had the exact same bug (see
+            // https://station.railway.com/questions/railway-is-overwriting-an-important-head-2026cdb4).
+            // Dumping every request header lets us find where the original
+            // value ended up (e.g. `x-original-request-id`, `cf-ray`).
             const signedPayloadDiagnostic = `id:${normalizedDataId};request-id:${requestId};ts:${ts};`;
+            const allHeaders: Record<string, string> = {};
+            for (const [key, value] of Object.entries(c.req.header())) {
+                allHeaders[key] = value;
+            }
             apiLogger.warn(
                 {
                     path: c.req.path,
@@ -394,7 +405,8 @@ export function createWebhookSignatureMiddleware(
                     receivedHmacPrefix: receivedSignature.substring(0, 24),
                     rawSignatureHeader: signatureHeader,
                     queryString: c.req.url.split('?')[1] ?? '',
-                    bodyDataIdSeen: extractDataIdFromQuery(c) ?? '(via body fallback)'
+                    bodyDataIdSeen: extractDataIdFromQuery(c) ?? '(via body fallback)',
+                    allRequestHeaders: allHeaders
                 },
                 'Webhook signature mismatch — rejecting (with diagnostic dump)'
             );
