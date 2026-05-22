@@ -1,7 +1,7 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.4
+version: 0.5
 date-started: 2026-05-22
 last-updated: 2026-05-22
 ---
@@ -409,26 +409,46 @@ Trial rules, payment retry, default currency, webhooks. Already in Comercial →
 
 ---
 
-## 8. Permission cherry-pick UX [PROPOSED]
+## 8. Permission cherry-pick UX [LOCKED 2026-05-22]
 
-Roles are **default permission bundles**. Users can have permissions added or removed individually on top. The UI must handle the resulting overlay gracefully.
+Roles are **default permission bundles**. Users can have permissions added or removed individually on top. The UI handles the resulting overlay via a per-item `onMissing` field in the config.
 
-**Three visibility rules in cascade**:
+### Two-tier visibility default
 
-### Rule 1 — Sidebar items (Level 2)
-Groups with ≥1 visible item show their **full structure**, but inaccessible items appear **disabled (greyed out) with tooltip "Requiere permiso X"**. Gives the user context of what exists.
+| `onMissing` | When to use | Behavior |
+|-------------|-------------|----------|
+| **`'disable'`** (default global) | Permission could plausibly be granted dynamically (most cases) | Item shown greyed out with tooltip "Requiere permiso X" |
+| **`'hide'`** (opt-in per item) | Permission is structurally out of reach (SUPER_ADMIN only, deferred roles, etc.) | Item disappears entirely |
 
-### Rule 2 — Main menu sections (Level 1)
-Sections with ≥1 accessible item appear in the main menu. **Sections with 0 accessible items disappear entirely.**
+### Behavior per navigation level
 
-### Rule 3 — Dashboards scoped by permission, not role
-A user with `accommodation.view.own` only → sees KPIs of THEIR accommodations. A user with `accommodation.view.all` → sees global KPIs. A user with both → sees a "Mine / All" toggle.
+- **Level 1 (main menu)**: section auto-hidden if 0 visible items inside it (regardless of `onMissing` of the section itself).
+- **Level 2 (sidebar)**: items respect their `onMissing` (default: `'disable'`).
+- **Level 3 (tabs)**: items respect their `onMissing` (default: `'disable'`).
+- **Group containers**: hidden if all child items end up `'hide'`. If some items are `'disable'`, the group renders with those items greyed.
 
-### Alternative being considered
+### When to override default to `'hide'`
 
-Hide all inaccessible items instead of greying them. Cleaner visually, but the user has no idea what exists.
+- Permission only granted to one specific role (e.g., SUPER_ADMIN-only)
+- Conceptually irrelevant to non-target users (critical config, audit log)
+- Showing it disabled would mislead user about ability to request it
+- Item belongs to a deferred role (SPONSOR, CLIENT_MANAGER in V1)
 
-**Recommendation**: "show disabled" only in sidebar (Level 2); "hide completely" in main menu (Level 1) and tabs (Level 3). Power users get context; new users don't see a greyed menu.
+### When `'disable'` is right (default)
+
+- Permission is dynamically grantable by admins
+- Discoverability matters — user should know the feature exists
+- Common case for cherry-picked permission overlays
+
+### Dashboard scoping (separate rule)
+
+A user with `accommodation.view.own` only → sees KPIs of THEIR accommodations. A user with `accommodation.view.all` → sees global KPIs. A user with both → sees a "Mine / All" toggle. Dashboard widgets respect permission scope, not just presence.
+
+### Data access ≠ Navigation access [new principle]
+
+A user can hold read permission for an entity (e.g., `ACCOMMODATION_VIEW_ALL`) without having a navigable section for it in their main menu. The data is accessible only via **embedded selectors / pickers** inside forms (e.g., when an editor writes a post and wants to mention an accommodation, they pick from a selector — the section isn't in their sidebar).
+
+This keeps the main menu focused on the user's primary work while letting them reference auxiliary data in context.
 
 ---
 
@@ -836,25 +856,233 @@ Operational rules tightly coupled to a feature (e.g., "default currency for invo
 
 ---
 
+## 16. ADMIN role — locked config [LOCKED 2026-05-22]
+
+ADMIN is conceptually **SUPER_ADMIN minus the most dangerous capabilities**. Same 7-section main menu, same topbar (Cmd+K + ➕ all), same mobile (hamburger only). The differences are item-level inside Plataforma + Análisis, hidden via `onMissing: 'hide'` for the SUPER_ADMIN-only items.
+
+### Role config (TS)
+
+```ts
+ADMIN: {
+  enabled: true,
+  label: { es: 'Admin', en: 'Admin', pt: 'Admin' },
+  defaultPermissions: [
+    'ACCESS_PANEL_ADMIN',
+    // Catálogo (full)
+    'ACCOMMODATION_*', 'DESTINATION_*', 'ATTRACTION_*', 'AMENITY_*', 'FEATURE_*',
+    'REVIEW_*', 'MEDIA_*',
+    // Editorial (full)
+    'POST_*', 'EVENT_*', 'NEWSLETTER_*', 'TAG_*',
+    // Comunidad (full, with non-super impersonation only)
+    'USER_*',                                  // NOT USER_IMPERSONATE_SUPER_ADMIN
+    'CONVERSATION_*', 'MODERATION_*',
+    'ROLE_*', 'PERMISSION_VIEW', 'PERMISSION_ASSIGN_NON_SUPER',
+    // Comercial (full)
+    'BILLING_*', 'SUBSCRIPTION_*', 'PAYMENT_*', 'INVOICE_*',
+    'PROMO_*', 'SPONSORSHIP_*', 'SPONSOR_*',
+    // Plataforma (no critical, no audit)
+    'SETTINGS_GENERAL_*', 'SETTINGS_SEO_*', 'SETTINGS_LOCALIZATION_*', 'FEATURE_FLAG_*',
+    'EMAIL_INFRA_*',
+    'CACHE_*', 'CRON_VIEW', 'CRON_TRIGGER', 'WEBHOOK_*', 'LOG_VIEW',
+    'TAG_SYSTEM_*',
+    'IMPERSONATE_USER',                        // NOT super_admin
+    // Análisis (no debug)
+    'ANALYTICS_VIEW_ALL',
+    // Self
+    'USER_UPDATE_SELF', 'NOTIFICATION_VIEW_OWN', 'NOTIFICATION_PREFERENCES_MANAGE_OWN',
+    // EXCLUDED (super-only):
+    //   MAINTENANCE_MODE_*, ANNOUNCEMENT_GLOBAL_*, DANGER_ZONE_*,
+    //   AUDIT_LOG_VIEW, IMPERSONATION_LOG_VIEW, PERMISSION_CHANGES_LOG_VIEW,
+    //   DEBUG_*, USER_IMPERSONATE_SUPER_ADMIN
+  ],
+  mainMenu: ['inicio', 'catalogo', 'editorial', 'comunidad',
+             'comercial', 'plataforma', 'analisis'],
+  dashboard: 'adminDashboard',                 // similar to super-admin minus System ops block
+  topbar: {
+    showSearch: true,                          // Cmd+K active
+    showQuickCreate: 'all',
+    accountInMenu: false,                      // Mi cuenta in topbar avatar
+  },
+  mobile: {
+    bottomNav: null,                           // hamburger only
+  },
+},
+```
+
+### Menu tree
+
+Same as SUPER_ADMIN (§13) **EXCEPT** the following items are config-tagged `onMissing: 'hide'` for ADMIN (and hidden for them):
+
+| Section | Hidden item | Why |
+|---------|-------------|-----|
+| Plataforma | 6.7 Configuración crítica (maintenance, anuncios, danger zone) | Disruptive changes affecting all users |
+| Plataforma | 6.8 Auditoría (audit log, impersonation log, permission changes) | Supervising admins lives in SUPER tier |
+| Análisis | 7.6 Debug | Internal diagnostics |
+| Comunidad | "Impersonar a SUPER_ADMIN" option | Privilege escalation blocked |
+
+### Dashboard difference vs SUPER_ADMIN
+- ADMIN dashboard = SUPER_ADMIN dashboard MINUS the "System ops" widget block (Sentry errors, failed crons, admin actions audit preview).
+
+---
+
+## 17. EDITOR role — locked config [LOCKED 2026-05-22]
+
+Mental model: "La redacción". Ultra-focused on content creation. Main menu has **4 items**.
+
+### Role config (TS)
+
+```ts
+EDITOR: {
+  enabled: true,
+  label: { es: 'Editor', en: 'Editor', pt: 'Editor' },
+  defaultPermissions: [
+    'ACCESS_PANEL_ADMIN',
+    // Posts
+    'POST_VIEW_ALL', 'POST_CREATE', 'POST_EDIT_OWN', 'POST_EDIT_ALL',
+    'POST_PUBLISH', 'POST_SCHEDULE', 'POST_DELETE_OWN',
+    // Events
+    'EVENT_VIEW_ALL', 'EVENT_CREATE', 'EVENT_EDIT_OWN', 'EVENT_EDIT_ALL',
+    'EVENT_PUBLISH', 'EVENT_DELETE_OWN',
+    'EVENT_LOCATION_*', 'EVENT_ORGANIZER_*',
+    // Newsletter — operations only (NO infra)
+    'NEWSLETTER_CAMPAIGN_VIEW', 'NEWSLETTER_CAMPAIGN_WRITE',
+    'NEWSLETTER_CAMPAIGN_SEND', 'NEWSLETTER_CAMPAIGN_SCHEDULE',
+    'NEWSLETTER_SUBSCRIBER_VIEW', 'NEWSLETTER_SUBSCRIBER_EXPORT',
+    'NEWSLETTER_SEGMENT_*', 'NEWSLETTER_TEMPLATE_CONTENT_*',
+    // Tags
+    'TAG_POST_*', 'TAG_VIEW_PROPOSED',
+    // Media
+    'MEDIA_UPLOAD', 'MEDIA_VIEW_OWN',
+    // Catálogo read access — for SELECTOR use only (no navigable section, see §8 data≠nav)
+    'ACCOMMODATION_VIEW_ALL', 'DESTINATION_VIEW_ALL', 'ATTRACTION_VIEW',
+    // Analytics for own content (Análisis → Contenido)
+    'ANALYTICS_CONTENT_VIEW',
+    // Self
+    'USER_UPDATE_SELF', 'NOTIFICATION_VIEW_OWN', 'NOTIFICATION_PREFERENCES_MANAGE_OWN',
+  ],
+  mainMenu: ['inicio', 'editorial', 'analisis', 'miCuenta'],
+  dashboard: 'editorDashboard',
+  topbar: {
+    showSearch: true,                          // editor is power user — search essential
+    showQuickCreate: ['newPost', 'newEvent', 'newCampaign'],
+    accountInMenu: true,                       // 4 main items, Mi cuenta fits
+  },
+  mobile: {
+    bottomNav: ['inicio', 'editorial', 'analisis', 'miCuenta'],
+    fab: 'newPost',                            // most common create action
+  },
+},
+```
+
+### Full menu tree
+
+```
+1- Inicio
+   (dashboard editorial: posts esta semana, próximos eventos,
+    métricas newsletter, calendario 14 días, top performers,
+    borradores pendientes)
+
+2- Editorial
+   2.1- Dashboard Editorial
+   2.2- Calendario editorial
+   2.3- Blog
+        2.3.1- Posts (todos)
+        2.3.2- Borradores
+        2.3.3- Programados
+        2.3.4- Publicados
+        2.3.5- Crear post
+        2.3.6- Tags de blog
+   2.4- Eventos
+        2.4.1- Próximos
+        2.4.2- En curso
+        2.4.3- Pasados
+        2.4.4- Crear evento
+        2.4.5- Locaciones
+        2.4.6- Organizadores
+   2.5- Newsletter (operaciones)
+        2.5.1- Campañas
+        2.5.2- Crear campaña
+        2.5.3- Suscriptores
+        2.5.4- Segmentos
+        2.5.5- Plantillas de campaña
+
+3- Análisis (filtrado a Contenido)
+   3.1- Overview
+   3.2- Contenido
+        3.2.1- Posts (views, engagement)
+        3.2.2- Eventos (asistencia, tickets)
+        3.2.3- Newsletter (open rate, CTR)
+   (otras sub-secciones de Análisis están con onMissing: 'hide')
+
+4- Mi cuenta
+   4.1- Mi perfil
+   4.2- Datos personales
+   4.3- Preferencias (idioma, tema, timezone)
+   4.4- Notificaciones
+   4.5- Seguridad (contraseña, 2FA, sesiones)
+```
+
+### Topbar (EDITOR)
+
+- Logo (→ Inicio)
+- Menú principal (4 items)
+- 🔍 Cmd+K (search essential for editor)
+- 🔔 Notificaciones (badge)
+- ➕ Quick create — menú: "+ Post / + Evento / + Campaña newsletter"
+- 👤 Avatar — nombre + "Cerrar sesión" (resto en main menu)
+
+### Mobile (EDITOR)
+
+```
+[🏠 Inicio]  [✍️ Editorial]  [📊 Análisis]  [👤 Cuenta]
+```
+
+FAB: "+" Post.
+
+### Data ≠ Navigation principle in action
+
+EDITOR has `ACCOMMODATION_VIEW_ALL` and `DESTINATION_VIEW_ALL` but **does NOT see Catálogo in their main menu**. The data is accessible only via embedded selectors when writing posts/events (e.g., "Mention an accommodation" picker). This is the §8 principle applied: data access does not require a navigable section.
+
+---
+
+## 18. Deferred roles — SPONSOR, CLIENT_MANAGER [LOCKED 2026-05-22]
+
+These roles are **defined in the config but disabled** for V1. They remain in the codebase so future activation is a 1-line change (`enabled: false` → `enabled: true`), no code rework.
+
+```ts
+SPONSOR: {
+  enabled: false,                              // deferred from V1
+  label: { es: 'Sponsor', en: 'Sponsor', pt: 'Patrocinador' },
+  // ... config stub (will be filled when activated)
+},
+
+CLIENT_MANAGER: {
+  enabled: false,                              // deferred from V1
+  label: { es: 'Client manager', en: 'Client manager', pt: 'Gestor de clientes' },
+  // ... config stub
+},
+```
+
+### Behavior when `enabled: false`
+
+- Role **does not appear** in role selector when creating/editing users in admin.
+- Existing users that happen to have the role (via DB) are treated as if they had no panel access (redirected to public funnel).
+- The role's `defaultPermissions`, `mainMenu`, `dashboard`, `topbar`, `mobile` config can be incomplete or stub — Zod schema marks these fields as optional when `enabled: false`.
+- To activate later: flip `enabled: true`, fill missing config, push. Zero React code change.
+
+### Dashboards for deferred roles
+
+The dashboards proposed in §6 for SPONSOR and CLIENT_MANAGER are **deferred along with the roles**. They stay in §6 as reference for when activation happens.
+
+---
+
 ## Open questions
 
-These are the points pending discussion before the IA is fully locked. Lettered for easy reference.
+Only one open question remains before the IA is fully locked.
 
-### A. Other roles' default menus [OPEN]
+### A. Config file split [OPEN — implementation detail]
 
-HOST and SUPER_ADMIN are locked. Still pending: `EDITOR`, `SPONSOR`, `CLIENT_MANAGER`, `ADMIN`. Note: also pending validation that `CLIENT_MANAGER` is an actively-used role and not nominal.
-
-### B. Permission cherry-pick UX rule [OPEN]
-
-Three options on the table (see §8):
-
-- **Recommended**: show disabled (greyed + tooltip) in sidebar Level 2; hide at Level 1 (main menu) and Level 3 (tabs).
-- **Alternative 1**: hide all inaccessible items everywhere — cleaner but less discoverable.
-- **Alternative 2**: show disabled at all levels — most discoverable but visually noisy.
-
-### C. Config file split [OPEN — implementation detail]
-
-Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,sidebars,roles,dashboards}.ts`? Recommend split for editability. To be confirmed in implementation spec.
+Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,sidebars,roles,dashboards,permissions-bundles}.ts` files composed together? Recommend split for editability and lower merge-conflict risk. To be confirmed in implementation spec.
 
 ---
 
@@ -874,6 +1102,13 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | Newsletter split: editorial operations (campañas, suscriptores, segmentos, plantillas de contenido) in Editorial; email infrastructure (provider, sender identity, DKIM, throttling, plantillas de sistema, delivery logs) in Plataforma → Email | §13, §15 |
 | 2026-05-22 | Plataforma reorganized: new dedicated "Email" group (§6.3); old "Email defaults" moved out of "Configuración general"; subsequent groups renumbered (6.4 Cache, 6.5 Ops, 6.6 Tags, 6.7 Crítica, 6.8 Auditoría) | §13 |
 | 2026-05-22 | Email delivery logs centralized in Plataforma → Email → Logs de entregas (removed from Comercial → Operaciones billing) | §13 |
+| 2026-05-22 | Permission cherry-pick UX locked: two-tier `onMissing` (`'disable'` default for grantable permissions, `'hide'` opt-in for structurally inaccessible items) | §8 |
+| 2026-05-22 | New principle: "Data access ≠ Navigation access" — a user can hold read permission for an entity without that entity appearing as a navigable section; data is accessible via embedded selectors instead | §8 |
+| 2026-05-22 | ADMIN locked: same 7-section main menu as SUPER_ADMIN; excluded permissions (maintenance, anuncios, danger zone, audit logs, impersonate super-admin, debug); Cmd+K + Mi cuenta in avatar | §16 |
+| 2026-05-22 | EDITOR locked: 4 main menu items (Inicio, Editorial, Análisis filtered to Contenido, Mi cuenta); Mi cuenta in main menu (consistent with HOST when items are few); Cmd+K active; FAB = newPost; Catálogo read-access via selectors only (no navigable section) | §17 |
+| 2026-05-22 | Análisis kept as separate section for EDITOR (filtered to Contenido), NOT embedded inside Editorial | §17 |
+| 2026-05-22 | Role config schema gains `enabled: boolean` field. SPONSOR + CLIENT_MANAGER kept in config with `enabled: false` (deferred from V1); activating later is a 1-line flip without code changes | §18 |
+| 2026-05-22 | Label for editor role: "Editor" (not "Redactor" / "Periodista") | §17 |
 
 ---
 
@@ -885,3 +1120,4 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | 0.2 | Version bumped (prep for IA lock-in edits) |
 | 2026-05-22 | 0.3 | Locked: §11 config-driven IA foundation, §12 HOST role, §13 SUPER_ADMIN role, §14 "Crear X" both places. Reorganized open questions (A-D). Decisions log populated. |
 | 2026-05-22 | 0.4 | Added §15 Operations vs. Configuration split principle. Newsletter split applied (Editorial keeps operations; Plataforma gets new Email group for infra). Plataforma sidebar restructured: added 6.3 Email, renumbered 6.4-6.8. Logs de notificaciones moved from Comercial to Plataforma → Email. Open Q-A (Newsletter location) resolved and removed; remaining Qs renumbered (A-C). |
+| 2026-05-22 | 0.5 | Locked: §8 cherry-pick UX rule (two-tier `onMissing`), §16 ADMIN role config, §17 EDITOR role config (4 items, Análisis separate), §18 SPONSOR + CLIENT_MANAGER deferred with `enabled: false`. New principle: data access ≠ navigation access (for selector pattern). Resolved Q-A (other roles' menus) and Q-B (cherry-pick rule). Only Q-A remains (config file split, implementation detail). |
