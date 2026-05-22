@@ -68,6 +68,37 @@ const WEBHOOK_RATE_LIMIT_REQUESTS = 100;
 const WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 
 /**
+ * Discriminator query parameter that identifies a MercadoPago Webhooks v2
+ * delivery (as opposed to a legacy IPN "Notificaciones simples" delivery).
+ *
+ * Background: MercadoPago apps can have BOTH "Notificaciones (IPN)" and
+ * "Webhooks (v2)" configured at the same time. When both are enabled MP
+ * sends the same logical event through TWO channels — one IPN delivery
+ * (`?id=<id>&topic=<type>`) and one v2 delivery (`?data.id=<id>&type=<type>`).
+ * The HMAC signing scheme only applies to v2 deliveries; the IPN ones
+ * either use a different/legacy scheme or arrive with a stale signature
+ * that never matches our manifest, so they show up as warn-level
+ * `HMAC mismatch` noise even when the v2 sibling event verifies fine.
+ *
+ * The fix is operational + a one-line filter: in the MercadoPago dashboard
+ * we configure the Webhooks v2 URL with this query parameter appended —
+ *
+ *   https://<host>/api/v1/webhooks/mercadopago?source_news=webhooks
+ *
+ * MP then appends its own params with `&`, so the final URL we receive is
+ *
+ *   .../webhooks/mercadopago?source_news=webhooks&data.id=<id>&type=<type>
+ *
+ * The IPN URL stays as-is (no marker). The middleware below acknowledges
+ * IPN deliveries with 200 (so MP stops retrying) and only forwards v2
+ * deliveries — carrying `source_news=webhooks` — to the signature verifier
+ * + handler dispatch.
+ *
+ * Tracked as SPEC-143 Finding #16.
+ */
+const V2_SOURCE_NEWS_MARKER = 'webhooks';
+
+/**
  * Create MercadoPago webhook router.
  *
  * Instantiates the QZPay webhook router with all configured handlers.
@@ -139,6 +170,30 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
                 windowMs: WEBHOOK_RATE_LIMIT_WINDOW_MS
             })
         );
+        // Drop legacy IPN deliveries — only accept Webhooks v2 (marked by the
+        // `?source_news=webhooks` query parameter we configure in the MP
+        // dashboard). See `V2_SOURCE_NEWS_MARKER` JSDoc for the full rationale.
+        securedRouter.use('*', async (c, next) => {
+            const sourceNews = c.req.query('source_news');
+            if (sourceNews !== V2_SOURCE_NEWS_MARKER) {
+                apiLogger.debug(
+                    {
+                        provider: 'mercadopago',
+                        sourceNews: sourceNews ?? '<missing>',
+                        topic: c.req.query('topic') ?? null,
+                        type: c.req.query('type') ?? null,
+                        dataIdQuery: c.req.query('data.id') ?? null,
+                        idQuery: c.req.query('id') ?? null
+                    },
+                    'Dropping MercadoPago webhook lacking ?source_news=webhooks marker (legacy IPN duplicate of a v2 event)'
+                );
+                // Ack with 200 so MP stops retrying. The body shape mirrors
+                // the qzpay-hono success response for consistency.
+                return c.json({ received: true, dropped: 'legacy-ipn-duplicate' }, 200);
+            }
+            await next();
+            return;
+        });
         // TYPE-WORKAROUND: webhookRouter from external billing module has its own typed Hono variables; cast aligns it with the local Hono instance signature for mounting.
         securedRouter.route('/', webhookRouter as unknown as Hono);
 
