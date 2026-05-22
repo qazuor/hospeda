@@ -1630,7 +1630,7 @@
       "title": "Admin Design Tokens — Shared Brand Tokens for Admin/Web",
       "type": "feature",
       "complexity": "high",
-      "status": "draft",
+      "status": "in-progress",
       "path": "SPEC-153-admin-design-tokens",
       "created": "2026-05-22T00:00:00Z",
       "discoveredDuring": "Admin panel redesign planning session 2026-05-22 — Phase 1 audit revealed admin (shadcn slate, system fonts, 0.625rem radius) and web (oklch brand palette, Roboto+Geologica+Caveat, 0.75rem radius) share NO design tokens. User goal: same brand at token level, admin still feels like admin. See .claude/audit/admin-redesign/proposals/05-visual-tokens.md (v0.1+).",
@@ -1644,7 +1644,10 @@
         "branding",
         "theming",
         "css-vars"
-      ]
+      ],
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-153-admin-design-tokens",
+      "branch": "spec/SPEC-153-admin-design-tokens",
+      "activatedAt": "2026-05-22T20:55:20Z"
     },
     {
       "specId": "SPEC-154",

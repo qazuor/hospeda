@@ -457,14 +457,15 @@
     {
       "specId": "SPEC-153",
       "title": "Admin Design Tokens — Shared Brand Tokens for Admin/Web",
-      "status": "reserved",
+      "status": "in-progress",
       "progress": "0/0",
       "path": "SPEC-153-admin-design-tokens",
-      "worktree": null,
-      "branch": null,
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-153-admin-design-tokens",
+      "branch": "spec/SPEC-153-admin-design-tokens",
       "dependsOn": [],
       "reservedAt": "2026-05-22T00:00:00Z",
-      "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 28 tasks across 3 migration phases)."
+      "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 28 tasks across 3 migration phases).",
+      "activatedAt": "2026-05-22T20:55:20Z"
     },
     {
       "specId": "SPEC-154",
