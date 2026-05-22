@@ -18,6 +18,7 @@ import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { createBillingAdapter, getDb } from '@repo/db';
 import type { MiddlewareHandler } from 'hono';
+import { qzpayLogger } from '../lib/qzpay-logger';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
@@ -85,7 +86,10 @@ function getBillingInstance(): QZPayBilling | null {
 
         // Create payment adapter — factory reads HOSPEDA_MERCADO_PAGO_SANDBOX
         // directly from the environment when no explicit override is passed.
-        const paymentAdapter = createMercadoPagoAdapter();
+        // The qzpayLogger routes all MercadoPago-side logs (webhook
+        // signature verification, HMAC mismatch diagnostics, IPN dispatch,
+        // event mapping) through hospeda's structured apiLogger.
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
 
         // Create billing instance
         billingInstance = createQZPayBilling({
