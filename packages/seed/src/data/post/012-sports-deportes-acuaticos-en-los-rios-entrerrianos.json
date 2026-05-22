@@ -4,8 +4,8 @@
     "slug": "deportes-acuaticos-en-los-rios-entrerrianos",
     "category": "SPORT",
     "title": "Deportes Acuáticos en los Ríos Entrerrianos",
-    "summary": "Practica deportes acuáticos en los ríos Uruguay y Paraná: kayak, windsurf, pesca deportiva y más.",
-    "content": "Los ríos de Entre Ríos ofrecen condiciones ideales para deportes acuáticos. Desde kayak en el delta hasta windsurf en el lago Salto Grande, las opciones son infinitas para los amantes de los deportes acuáticos.",
+    "summary": "Guía completa de deportes acuáticos en Entre Ríos: kayak en el delta, windsurf en Salto Grande, pesca deportiva del dorado y stand up paddle en la costa del Uruguay. Recorridos, mejores épocas y prestadores habilitados.",
+    "content": "Entre Ríos es, literalmente, una provincia rodeada de agua. Los ríos Uruguay y Paraná, los arroyos del delta y el lago artificial de Salto Grande forman un escenario natural inmejorable para quienes disfrutan del deporte sobre el agua. Hay propuestas para todos los niveles, desde el principiante que quiere remar una hora hasta el deportista experimentado que busca aguas abiertas para windsurf.\n\n**Una provincia para vivir el agua**\n\nA diferencia de otros destinos acuáticos de Argentina, los ríos entrerrianos ofrecen aguas cálidas la mayor parte del año, costas amigables sin grandes profundidades, y una temporada útil extensa que va de octubre a mayo. Esto los convierte en un destino accesible tanto para deporte recreativo como para entrenamiento de alto rendimiento.\n\n**Las disciplinas más practicadas:**\n\n**Kayak y canotaje**\nEl delta del Paraná, en la zona de Villa Paranacito e Ibicuy, es el destino por excelencia para kayak. Los recorridos pueden ser de unas horas o de varios días con vivac en islas. La temporada va de octubre a abril, con aguas calmas y abundante fauna (carpinchos, garzas, lobitos de río). También hay travesías guiadas desde Colón y Concepción del Uruguay por el río Uruguay.\n\n**Stand Up Paddle (SUP)**\nEs el deporte de más rápido crecimiento en la provincia. Las playas de Colón, Federación y Gualeguaychú tienen escuelas con tablas en alquiler y clases para principiantes. Lo ideal es practicarlo en horas tempranas, cuando el viento todavía no levantó.\n\n**Windsurf y kitesurf**\nEl lago de Salto Grande, sobre Federación y Concordia, es uno de los mejores spots de Argentina para windsurf. Sus 783 km² de superficie y los vientos termales de la tarde generan condiciones excepcionales entre noviembre y marzo. Hay clubes federados con cursos para principiantes.\n\n**Pesca deportiva**\nEl Paraná es famoso a nivel mundial por la pesca del dorado, el surubí y el pacú. Los embarcaderos de La Paz, Diamante y Victoria son los puntos de partida tradicionales. La modalidad de captura y devolución se está consolidando entre los pescadores deportivos, con guías habilitados que ofrecen jornadas de medio día o día completo.\n\n**Esquí acuático y wakeboard**\nLos clubes náuticos de Concordia, Federación y Concepción del Uruguay organizan jornadas de esquí acuático y wakeboard, con embarcaciones equipadas y instructores certificados. Es una actividad con mejor relación calidad-precio que en destinos costeros.\n\n**Buceo en aguas continentales**\nMenos conocido pero en crecimiento: el río Uruguay tiene pecios y formaciones rocosas que permiten inmersiones a profundidades de hasta 15 metros. Hay un club federado en Concordia que organiza salidas grupales.\n\n**Cuándo y dónde practicar:**\n\n- **Octubre a noviembre:** ideal para kayak y SUP, agua templada, poco viento.\n- **Diciembre a febrero:** temporada alta, condiciones óptimas para windsurf y deportes de motor.\n- **Marzo a abril:** baja la temperatura del aire pero el agua sigue cálida, excelente para pesca deportiva.\n- **Mayo a septiembre:** temporada de aguas frías; sólo recomendable para pesca con neoprene.\n\n**Recomendaciones de seguridad:**\n\nUsá siempre chaleco salvavidas, incluso en aguas calmas. Consultá las condiciones meteorológicas antes de salir: las tormentas del litoral aparecen rápido y se intensifican en cuestión de minutos. Si es tu primera vez, contratá un prestador habilitado por la Subsecretaría de Turismo provincial. Y nunca subestimes la corriente del Paraná: aún en zonas que parecen tranquilas, hay correntadas debajo de la superficie.\n\nEntre Ríos es una provincia donde el agua dejó de ser un paisaje para convertirse en una invitación a sumergirse, remar y deslizarse. Quien la visita y prueba uno de estos deportes, vuelve siempre por más.",
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=600&fit=crop",
@@ -24,12 +24,21 @@
     "likes": 145,
     "comments": 18,
     "shares": 42,
-    "readingTimeMinutes": 3,
+    "readingTimeMinutes": 8,
     "isFeatured": true,
     "seo": {
-        "title": "Deportes Acuáticos en los Ríos Entrerrianos",
-        "description": "Practica deportes acuáticos en los ríos Uruguay y Paraná: kayak, windsurf, pesca deportiva y más.",
-        "keywords": ["sports", "entre rios", "turismo"]
+        "title": "Deportes Acuáticos en Entre Ríos: kayak, SUP, windsurf y pesca",
+        "description": "Guía completa de deportes acuáticos en Entre Ríos: kayak en el delta, windsurf en Salto Grande, pesca del dorado en el Paraná y SUP en Colón. Mejores épocas y prestadores.",
+        "keywords": [
+            "deportes acuáticos entre ríos",
+            "kayak delta paraná",
+            "windsurf salto grande",
+            "pesca dorado paraná",
+            "stand up paddle colón",
+            "wakeboard concordia",
+            "turismo aventura",
+            "río uruguay"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",

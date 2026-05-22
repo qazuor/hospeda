@@ -4,8 +4,8 @@
     "slug": "tradiciones-y-costumbres-de-entre-rios",
     "category": "TRADITIONS",
     "title": "Tradiciones y Costumbres de Entre Ríos",
-    "summary": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
-    "content": "Las tradiciones entrerrianas son el corazón de su identidad cultural. El mate, las empanadas, las festividades patronales y las celebraciones familiares forman parte del ADN provincial que se transmite de generación en generación.",
+    "summary": "Un recorrido por las tradiciones que sostienen la identidad entrerriana: el mate compartido, los asados a la sombra del ombú, las fiestas patronales, los bailes de chamamé y las costumbres del paisano que aún hoy marcan el ritmo de los pueblos.",
+    "content": "Entre Ríos es una provincia donde la tradición no se exhibe como espectáculo turístico: simplemente se vive. La mayoría de las costumbres locales son cotidianas, silenciosas, y forman parte de los gestos pequeños que un visitante observador puede captar en una mañana de mercado o en una tarde a la orilla del río. Esta guía busca acompañar esa mirada con contexto.\n\n**Un cruce de raíces**\n\nLa tradición entrerriana es el resultado de una mezcla larga: la herencia guaraní y charrúa que dejó nombres de ríos y de plantas, la presencia criolla y gauchesca del litoral, las costumbres traídas por los inmigrantes alemanes del Volga (fines del siglo XIX), suizos y franceses de las colonias agrícolas, los judíos rusos que fundaron Villa Domínguez, y los italianos que se instalaron por todo el territorio. Cada comunidad aportó algo a la mesa común.\n\n**El mate, la tradición que nunca se va**\n\nEn Entre Ríos el mate es casi un idioma. Se ceba en cualquier momento del día, se ofrece como saludo, se comparte como pacto. Cada hogar tiene su forma: con azúcar (raro en la provincia), amargo y bien cargado, con yuyos digestivos o con cáscara de naranja en verano. Si te invitan un mate, aceptalo: rechazarlo es socialmente extraño. Y si querés sumarte a la rueda, esperá tu turno y devolvé el mate al cebador, sin agradecer hasta que no quieras más.\n\n**La cocina de la abuela:**\n\n- **Empanadas de pescado:** especialidad del litoral, particularmente con pacú o surubí, en masa frita.\n- **Chipa:** pan de almidón y queso heredado de Paraguay y Corrientes, presente en panaderías y mateadas.\n- **Asado a la cruz:** el cordero o el lechón a la cruz, lentamente cocido al fuego de leña de espinillo, es la forma más tradicional de celebrar cualquier ocasión.\n- **Mbeyú y sopa paraguaya:** legados guaraníes que sobreviven en cocinas familiares, especialmente en el norte provincial.\n- **Dulces caseros:** dulce de naranja en Concordia, dulce de mamón en el sur, dulce de leche cremoso en las colonias.\n\n**Festividades que mueven al pueblo:**\n\n**Fiestas patronales**\nCada pueblo tiene su santo patrono y su fiesta anual. Las celebraciones combinan misa solemne, procesión, jineteadas, asado popular y baile hasta la madrugada. Las más reconocidas son la de la Virgen de Itatí (julio, varias localidades) y la del Patrono San José (marzo).\n\n**Día de la Tradición**\nEl 10 de noviembre, en todo Entre Ríos se realizan jineteadas, desfiles de paisanos a caballo, peñas y degustación de comidas tradicionales. La fiesta más importante se hace en Concepción del Uruguay, en el Predio Ferial.\n\n**Fiestas de las colonias**\nLas comunidades alemanas del Volga celebran su Kerb (fiesta patronal con bailes y comidas típicas) durante el otoño. En Aldea San Antonio, Aldea Brasilera y Crespo se conservan vestimentas, canciones y oraciones que cruzaron el océano hace 150 años.\n\n**Carnaval gauchesco**\nMenos famoso que el de Gualeguaychú, pero igualmente arraigado: en Federación, San Salvador y Villa Elisa se mantienen los carnavales con murgas y comparsas locales, mucho más cercanas al carnaval tradicional argentino.\n\n**Costumbres del paisano:**\n\nEl gaucho entrerriano sigue siendo una figura presente en el campo. Las jineteadas, las domas y las pruebas de destreza son competencias serias, no espectáculos. Los talleres de soguería (trabajo del cuero), platería y guitarra se transmiten en familia y subsisten gracias a clubes de tradicionalistas. Si visitás una estancia, no es raro encontrar al patrón o al peón cebando mate, contando historias del lugar, ofreciendo un asado.\n\n**Respeto y observación**\n\nLa mejor manera de acercarse a las tradiciones entrerrianas es con curiosidad y respeto, sin forzar la conversación ni el registro fotográfico. La gente del litoral es cálida pero reservada: una vez que abrís la puerta del diálogo, vas a escuchar historias que no aparecen en ninguna guía turística. Tener paciencia, sumarse a la mateada y dejar que el tiempo se acomode al ritmo del lugar es la mejor forma de llevarte algo verdadero de la provincia.",
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=600&fit=crop",
@@ -24,12 +24,21 @@
     "likes": 211,
     "comments": 9,
     "shares": 140,
-    "readingTimeMinutes": 4,
+    "readingTimeMinutes": 8,
     "isFeatured": true,
     "seo": {
-        "title": "Tradiciones y Costumbres de Entre Ríos",
-        "description": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
-        "keywords": ["traditions", "entre rios", "turismo"]
+        "title": "Tradiciones y Costumbres de Entre Ríos: identidad del litoral",
+        "description": "Tradiciones vivas de Entre Ríos: el mate, el asado a la cruz, las fiestas patronales, las colonias alemanas del Volga y el legado gauchesco. Cultura del litoral argentino.",
+        "keywords": [
+            "tradiciones entre ríos",
+            "mate argentino",
+            "fiestas patronales",
+            "colonias alemanas volga",
+            "gauchos litoral",
+            "carnaval gualeguaychú",
+            "chamamé",
+            "asado a la cruz"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
