@@ -1,7 +1,7 @@
 ---
 proposal: information-architecture
 status: DRAFT (in active discussion)
-version: 0.3
+version: 0.4
 date-started: 2026-05-22
 last-updated: 2026-05-22
 ---
@@ -655,12 +655,13 @@ SUPER_ADMIN: {
         3.4.4- Crear evento
         3.4.5- Locaciones
         3.4.6- Organizadores
-   3.5- Newsletter                       [⚠ location pending — see Open Q-A]
+   3.5- Newsletter (operaciones)
         3.5.1- Campañas
         3.5.2- Crear campaña
         3.5.3- Suscriptores
         3.5.4- Segmentos
-        3.5.5- Plantillas
+        3.5.5- Plantillas de campaña     [contenido editorial reusable]
+        (config de email/sender/DKIM/throttling → Plataforma → Email)
 
 4- Comunidad
    4.1- Dashboard Comunidad
@@ -704,39 +705,46 @@ SUPER_ADMIN: {
         5.5.2- Sponsors (entidad comercial)
    5.6- Operaciones billing
         5.6.1- Tipos de cambio
-        5.6.2- Webhook events
-        5.6.3- Cron de billing
-        5.6.4- Logs de notificaciones
-   5.7- Configuración billing
+        5.6.2- Webhook events            [vista filtrada — config + management en Plataforma]
+        5.6.3- Cron de billing           [vista filtrada — config + management en Plataforma]
+        (logs de notificaciones de email → Plataforma → Email → Logs de entregas)
+   5.7- Configuración billing            [trial, grace, retry, reminders, default currency]
 
 6- Plataforma
    6.1- Dashboard de Plataforma (system health)
    6.2- Configuración general
         6.2.1- General
         6.2.2- SEO defaults
-        6.2.3- Email defaults
-        6.2.4- Localización (idiomas, monedas, timezones)
-        6.2.5- Feature flags
-   6.3- Cache y deploy
-        6.3.1- ISR / revalidación (config)
-        6.3.2- Revalidación manual
-        6.3.3- Historial de revalidaciones
-   6.4- Operaciones del sistema
-        6.4.1- Cron jobs
-        6.4.2- Webhook events
-        6.4.3- Logs del sistema
-        6.4.4- Métricas internas
-   6.5- Tags del sistema
-        6.5.1- Tags internas
-        6.5.2- Tags de sistema
-   6.6- Configuración crítica          [SUPER_ADMIN ONLY]
-        6.6.1- Modo mantenimiento
-        6.6.2- Anuncios globales
-        6.6.3- Danger zone
-   6.7- Auditoría                      [SUPER_ADMIN ONLY]
-        6.7.1- Log de acciones admin
-        6.7.2- Log de impersonations
-        6.7.3- Cambios de permisos
+        6.2.3- Localización (idiomas, monedas, timezones)
+        6.2.4- Feature flags
+   6.3- Email (infraestructura de envíos)
+        6.3.1- Proveedor (Brevo, Resend, etc.)
+        6.3.2- Identidad del remitente (from, reply-to)
+        6.3.3- Dominios y DKIM/SPF/DMARC
+        6.3.4- Throttling y rate limits
+        6.3.5- Plantillas de sistema (transactional + base marketing)
+        6.3.6- Unsubscribe y compliance (GDPR)
+        6.3.7- Logs de entregas (todo email: newsletter + transactional + sistema)
+   6.4- Cache y deploy
+        6.4.1- ISR / revalidación (config)
+        6.4.2- Revalidación manual
+        6.4.3- Historial de revalidaciones
+   6.5- Operaciones del sistema
+        6.5.1- Cron jobs (todos)
+        6.5.2- Webhook events (todos + config)
+        6.5.3- Logs del sistema
+        6.5.4- Métricas internas
+   6.6- Tags del sistema
+        6.6.1- Tags internas
+        6.6.2- Tags de sistema
+   6.7- Configuración crítica          [SUPER_ADMIN ONLY]
+        6.7.1- Modo mantenimiento
+        6.7.2- Anuncios globales
+        6.7.3- Danger zone
+   6.8- Auditoría                      [SUPER_ADMIN ONLY]
+        6.8.1- Log de acciones admin
+        6.8.2- Log de impersonations
+        6.8.3- Cambios de permisos
 
 7- Análisis
    7.1- Overview
@@ -796,34 +804,55 @@ Redundancia intencional — un click extra de overhead vale la pena para que pow
 
 ---
 
+## 15. Operations vs. Configuration split [LOCKED 2026-05-22]
+
+**Principle**: every feature has two facets — **operational work** and **platform configuration** — that live in different sections of the IA.
+
+- **Operations** (daily use of the feature) live in the **feature's own section**.
+  - Editorial → writing newsletter campaigns, scheduling, managing segments.
+  - Comercial → tuning trial duration, grace period, payment retries.
+  - Comunidad → moderating user-proposed tags, replying to conversations.
+- **Configuration** that is **infrastructure-level** (provider keys, sender identity, DKIM, throttling, webhook secrets, system templates, delivery logs) lives in **Plataforma**.
+
+### Why split
+
+- **Different audiences**: the editor writes the newsletter; the admin configures the email provider. Mixing them puts editor in front of DKIM keys (intimidating) and admin in front of campaign editor (irrelevant).
+- **Different change cadence**: campaigns ship weekly; email provider config changes once a year. Don't crowd high-cadence work with low-cadence settings.
+- **Single source of truth for infra**: ALL email delivery (newsletter + transactional + system) goes through one config. Same for crons, webhooks, logs.
+
+### Concrete application
+
+| Feature | Operations (own section) | Configuration (Plataforma) |
+|---------|--------------------------|---------------------------|
+| Newsletter | Editorial → Newsletter (campañas, suscriptores, segmentos, plantillas de contenido) | Plataforma → Email (provider, sender identity, DKIM, throttling, plantillas de sistema, unsubscribe, delivery logs) |
+| Billing | Comercial → Configuración billing (trial, grace, retry, reminders, currency) | Plataforma → Webhooks (config), Plataforma → Crons (billing cron) |
+| Tags | Editorial → Tags de blog (use), Comunidad → User-proposed tags moderation | Plataforma → Tags del sistema (catálogo) |
+| Crons | Per-section filtered view (e.g., Comercial → cron de billing) | Plataforma → Cron jobs (all + config) |
+| Webhooks | Per-section filtered view (e.g., Comercial → webhook events del billing) | Plataforma → Webhook events (all + config) |
+
+### Exceptions
+
+Operational rules tightly coupled to a feature (e.g., "default currency for invoices" is billing-specific and rarely touched by anyone outside Comercial) stay in the feature's own "Configuración" sub-item to avoid forcing users to navigate to Plataforma for every micro-tweak. Heuristic: if the setting is meaningless outside one feature, it can stay; if it affects infrastructure shared by multiple features, it goes to Plataforma.
+
+---
+
 ## Open questions
 
 These are the points pending discussion before the IA is fully locked. Lettered for easy reference.
 
-### A. Newsletter location [OPEN — owner uncertain]
-
-Currently placed under Editorial (§13, item 3.5). Owner expressed doubt about whether it belongs there or somewhere else. Candidates:
-
-- Editorial (current) — same person creates campaigns + posts + events
-- Comunidad — newsletter audience IS the community
-- Marketing (new 8th section) — alongside sponsorships + promo codes
-- Comercial — newsletter drives revenue indirectly
-
-Awaiting decision before Editorial is fully locked.
-
-### B. Other roles' default menus [OPEN]
+### A. Other roles' default menus [OPEN]
 
 HOST and SUPER_ADMIN are locked. Still pending: `EDITOR`, `SPONSOR`, `CLIENT_MANAGER`, `ADMIN`. Note: also pending validation that `CLIENT_MANAGER` is an actively-used role and not nominal.
 
-### C. Permission cherry-pick UX rule [OPEN]
+### B. Permission cherry-pick UX rule [OPEN]
 
 Three options on the table (see §8):
 
 - **Recommended**: show disabled (greyed + tooltip) in sidebar Level 2; hide at Level 1 (main menu) and Level 3 (tabs).
-- **Alternative A**: hide all inaccessible items everywhere — cleaner but less discoverable.
-- **Alternative B**: show disabled at all levels — most discoverable but visually noisy.
+- **Alternative 1**: hide all inaccessible items everywhere — cleaner but less discoverable.
+- **Alternative 2**: show disabled at all levels — most discoverable but visually noisy.
 
-### D. Config file split [OPEN — implementation detail]
+### C. Config file split [OPEN — implementation detail]
 
 Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,sidebars,roles,dashboards}.ts`? Recommend split for editability. To be confirmed in implementation spec.
 
@@ -841,6 +870,10 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 | 2026-05-22 | SUPER_ADMIN = 7 main menu items; "Mi cuenta" in topbar avatar; Cmd+K active | §13 |
 | 2026-05-22 | "Crear X" appears in BOTH sidebar groups AND topbar `+` button | §14 |
 | 2026-05-22 | Per-role fixed dashboards in V1 (not user-configurable widgets) | §6, §12, §13 |
+| 2026-05-22 | Foundational principle: Operations vs. Configuration split — feature operations live in their section, infrastructure config lives in Plataforma | §15 |
+| 2026-05-22 | Newsletter split: editorial operations (campañas, suscriptores, segmentos, plantillas de contenido) in Editorial; email infrastructure (provider, sender identity, DKIM, throttling, plantillas de sistema, delivery logs) in Plataforma → Email | §13, §15 |
+| 2026-05-22 | Plataforma reorganized: new dedicated "Email" group (§6.3); old "Email defaults" moved out of "Configuración general"; subsequent groups renumbered (6.4 Cache, 6.5 Ops, 6.6 Tags, 6.7 Crítica, 6.8 Auditoría) | §13 |
+| 2026-05-22 | Email delivery logs centralized in Plataforma → Email → Logs de entregas (removed from Comercial → Operaciones billing) | §13 |
 
 ---
 
@@ -850,4 +883,5 @@ Single `admin-ia.config.ts` vs split into `apps/admin/src/config/ia/{sections,si
 |------|---------|--------|
 | 2026-05-22 | 0.1 | Initial draft, full proposal across all 10 sections + 5 open questions |
 | 2026-05-22 | 0.2 | Version bumped (prep for IA lock-in edits) |
-| 2026-05-22 | 0.3 | Locked: §11 config-driven IA foundation, §12 HOST role, §13 SUPER_ADMIN role, §14 "Crear X" both places. Reorganized open questions (A-D): Newsletter location, other roles, cherry-pick UX, config file split. Decisions log populated. |
+| 2026-05-22 | 0.3 | Locked: §11 config-driven IA foundation, §12 HOST role, §13 SUPER_ADMIN role, §14 "Crear X" both places. Reorganized open questions (A-D). Decisions log populated. |
+| 2026-05-22 | 0.4 | Added §15 Operations vs. Configuration split principle. Newsletter split applied (Editorial keeps operations; Plataforma gets new Email group for infra). Plataforma sidebar restructured: added 6.3 Email, renumbered 6.4-6.8. Logs de notificaciones moved from Comercial to Plataforma → Email. Open Q-A (Newsletter location) resolved and removed; remaining Qs renumbered (A-C). |
