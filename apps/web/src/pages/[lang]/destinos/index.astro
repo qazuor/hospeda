@@ -30,9 +30,18 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { toDestinationCardProps } from '@/lib/api/transforms';
+import { getAttractionIcon } from '@/lib/attraction-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { CloseIcon } from '@repo/icons';
+
+/**
+ * How many attraction chips render in the first row before the "Ver más"
+ * disclosure kicks in. Tuned so the row fits in one line on typical desktop
+ * widths and stays calm on mobile.
+ */
+const VISIBLE_ATTRACTION_LIMIT = 12;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -85,6 +94,7 @@ const requestedIds = rawAttractionsParam
 type AttractionBadge = {
     readonly id: string;
     readonly name: string;
+    readonly icon?: string;
     readonly displayWeight: number;
 };
 const attractionMap = new Map<string, AttractionBadge>();
@@ -95,6 +105,7 @@ for (const card of rawCards) {
             attractionMap.set(a.id, {
                 id: a.id,
                 name: a.name,
+                icon: a.icon,
                 displayWeight: a.displayWeight ?? 0
             });
         }
@@ -112,6 +123,22 @@ const availableAttractions: ReadonlyArray<AttractionBadge> = [...attractionMap.v
 // filter from "pretending" to be active with no visible badge.
 const activeIds = new Set(requestedIds.filter((id) => attractionMap.has(id)));
 const isFilterActive = activeIds.size > 0;
+
+// The chip list renders ALL attractions in a single flex-wrap <ul>, and a
+// sibling <details> toggles whether the overflow (chips past the first
+// `VISIBLE_ATTRACTION_LIMIT`) are hidden via CSS `:has(details:not([open]))`.
+// Keeping every chip in the same flex container makes the expanded set
+// continue the wrap from wherever the visible row ended, instead of
+// starting a fresh row from the left.
+//
+// When a selected filter lives in the overflow, the disclosure opens by
+// default so the user can see (and unselect) it without hunting for the
+// "Ver más" toggle.
+const hasOverflowAttractions = availableAttractions.length > VISIBLE_ATTRACTION_LIMIT;
+const overflowCount = Math.max(0, availableAttractions.length - VISIBLE_ATTRACTION_LIMIT);
+const anyOverflowActive = availableAttractions
+    .slice(VISIBLE_ATTRACTION_LIMIT)
+    .some((a) => activeIds.has(a.id));
 
 // AND semantics: a card passes only if it has every active attraction.
 // Implemented as `Array.prototype.every` over the active id set against the
@@ -200,6 +227,7 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 						<ul class="dest-attractions-filter__list">
 							{availableAttractions.map((attr) => {
 								const active = activeIds.has(attr.id);
+								const Icon = getAttractionIcon({ icon: attr.icon });
 								return (
 									<li>
 										<a
@@ -210,24 +238,39 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 											]}
 											aria-pressed={active ? 'true' : 'false'}
 											rel="nofollow"
+											data-astro-reload
 										>
-											{attr.name}
+											<span class="dest-attractions-filter__badge-icon" aria-hidden="true">
+												<Icon size={14} weight="regular" />
+											</span>
+											<span>{attr.name}</span>
+											{active && (
+												<span class="dest-attractions-filter__badge-remove" aria-hidden="true">
+													<CloseIcon size={11} weight="bold" />
+												</span>
+											)}
 										</a>
 									</li>
 								);
 							})}
-							{isFilterActive && (
-								<li>
-									<a
-										href={buildClearHref()}
-										class="dest-attractions-filter__clear"
-										rel="nofollow"
-									>
-										{t('destinations.filter.clear', 'Limpiar filtros')}
-									</a>
-								</li>
-							)}
 						</ul>
+
+						{hasOverflowAttractions && (
+							<details class="dest-attractions-filter__more" open={anyOverflowActive}>
+								<summary class="dest-attractions-filter__more-toggle">
+									<span class="dest-attractions-filter__more-label-closed">
+										{t('destinations.filter.showMore', 'Ver más')}
+									</span>
+									<span class="dest-attractions-filter__more-label-open">
+										{t('destinations.filter.showLess', 'Ver menos')}
+									</span>
+									<span class="dest-attractions-filter__more-count">
+										{overflowCount}
+									</span>
+								</summary>
+							</details>
+						)}
+
 					</nav>
 				)}
 
@@ -308,11 +351,19 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
 
-	/* Attraction filter row.
-	 * Wrapping pill list. Each pill is a plain anchor — no JS — that flips the
-	 * id in the `?attractions=` query param. Active state uses brand-accent for
-	 * affordance; the rest uses surface-warm to stay calm against the grid. */
+	/* Attraction filter block.
+	 * Vertical stack: head row of chips → expanded row of "Ver más" chips
+	 * (when open) → toggle → clear-all action. Each chip is a plain anchor
+	 * — no JS — that flips the id in the `?attractions=` query param. The
+	 * anchors carry `data-astro-reload` so the filter navigates with a
+	 * normal full-page request instead of ClientRouter's soft swap, which
+	 * was producing a brief unstyled flash on the destination cards as
+	 * their `client:visible` islands re-hydrated. */
 	.dest-attractions-filter {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
 		margin: 0 0 1.25rem;
 		/* Used as the anchor target after each badge click. Without scroll
 		 * margin the nav lands flush against the (potentially sticky) site
@@ -324,19 +375,32 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 	.dest-attractions-filter__list {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: 0.375rem;
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
 
+	/* When the "Ver más" disclosure is closed, hide every chip past the
+	 * first VISIBLE_ATTRACTION_LIMIT (currently 12 — keep `nth-child(n+13)`
+	 * in sync if you tweak the constant). Keeping all chips in the same
+	 * <ul> lets the expanded set continue the flex-wrap from wherever the
+	 * head row left off, instead of starting a fresh row from the left. */
+	.dest-attractions-filter:has(details:not([open]))
+		.dest-attractions-filter__list
+		> li:nth-child(n + 13) {
+		display: none;
+	}
+
 	.dest-attractions-filter__badge,
-	.dest-attractions-filter__clear {
+	.dest-attractions-filter__more-toggle {
 		display: inline-flex;
 		align-items: center;
+		gap: 0.375rem;
 		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 0.875rem;
+		font-size: 0.75rem;
+		line-height: 1;
+		padding: 0.3125rem 0.625rem;
 		border-radius: var(--radius-pill);
 		text-decoration: none;
 		transition:
@@ -363,15 +427,88 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		font-weight: 500;
 	}
 
-	.dest-attractions-filter__clear {
+	.dest-attractions-filter__badge-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		opacity: 0.85;
+	}
+
+	.dest-attractions-filter__badge--active .dest-attractions-filter__badge-icon {
+		opacity: 1;
+	}
+
+	.dest-attractions-filter__badge-remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		margin-left: 0.125rem;
+		opacity: 0.7;
+	}
+
+	/* Native <details> disclosure used purely as a stateful toggle — the
+	 * actual chip list lives in the sibling <ul> and is hidden/shown via the
+	 * `:has(details:not([open]))` rule above. align-self keeps the summary
+	 * compact (it would otherwise stretch to the nav's full width). */
+	.dest-attractions-filter__more {
+		align-self: flex-start;
+	}
+
+	.dest-attractions-filter__more-toggle {
 		background-color: transparent;
 		color: var(--core-muted-foreground);
 		border: 1px dashed var(--core-muted-foreground);
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
 	}
 
-	.dest-attractions-filter__clear:hover {
+	.dest-attractions-filter__more-toggle::-webkit-details-marker {
+		display: none;
+	}
+
+	.dest-attractions-filter__more-toggle:hover {
 		color: var(--core-foreground);
 		border-color: var(--core-foreground);
+	}
+
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-toggle {
+		color: var(--core-foreground);
+		border-color: var(--core-foreground);
+	}
+
+	/* Two-state label inside the summary: closed = "Ver más", open =
+	 * "Ver menos". Both strings ship through i18n so translators do not have
+	 * to deal with CSS ::after content swaps. */
+	.dest-attractions-filter__more:not([open]) .dest-attractions-filter__more-label-open {
+		display: none;
+	}
+
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-label-closed {
+		display: none;
+	}
+
+	/* The count is meaningful only while the tail is hidden ("Ver más (45)").
+	 * Once expanded, the chips themselves convey that info and the count
+	 * becomes redundant noise next to "Ver menos". */
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-count {
+		display: none;
+	}
+
+	.dest-attractions-filter__more-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		height: 1.125rem;
+		padding: 0 0.3125rem;
+		border-radius: var(--radius-pill);
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		color: var(--brand-primary);
+		font-size: 0.6875rem;
+		font-weight: 600;
 	}
 
 	/* View toggle (Lista | Mapa) */
