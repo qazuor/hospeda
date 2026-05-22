@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "020-event-business-mercado-itinerante",
     "slug": "mercado-itinerante",
-    "name": "Mercado Itinerante",
-    "summary": "Evento business - Mercado Itinerante",
-    "description": "Descripción detallada del evento Mercado Itinerante. Este es un evento de categoría BUSINESS que se desarrolla en Entre Ríos.",
+    "name": "Mercado Itinerante de Productores",
+    "summary": "Una jornada de venta directa de productores rurales del litoral: quesos artesanales, dulces caseros, embutidos, miel, vinos pequeños, citrus de Chajarí y más. Sin intermediarios, precios justos.",
+    "description": "El Mercado Itinerante es una propuesta que recorre distintas ciudades de Entre Ríos durante el año, conectando a productores rurales directamente con el público urbano. La modalidad de venta directa elimina intermediarios, garantiza precios justos para ambas partes y permite conocer en persona a quien produjo lo que se compra.\n\n**Qué vas a encontrar**\n\n- **Lácteos artesanales:** quesos de las colonias de Crespo (cremoso, semiduro, con hierbas), yogures probióticos, manteca casera.\n- **Embutidos y chacinados:** chorizos secos, salames, jamones crudos, todos elaborados con técnicas heredadas de las colonias.\n- **Dulces tradicionales:** dulce de mamón, naranja amarga, batata, leche, frutilla, frutos del bosque.\n- **Miel y derivados:** miel de monte nativo, propóleo, jalea real, miel saborizada.\n- **Citricultura:** naranjas, mandarinas, pomelos y limones de Chajarí y Concordia, en temporada.\n- **Vinos pequeños:** producciones de bodegas familiares de La Paz y Diamante.\n- **Aceites y aromáticos:** aceite de oliva, hierbas secas, conservas vegetales.\n- **Productos sustentables:** jabones artesanales, velas de cera de abeja, productos naturales.\n\n**Por qué participar**\n\nMás allá de las compras, el Mercado es una experiencia educativa: los productores explican sus técnicas, dan recetas, ofrecen degustaciones y comparten la historia de sus chacras. Es la mejor forma de entender qué hay detrás de los productos que muchas veces consumimos sin saber su origen.\n\n**Información práctica**\n\n- **Cuándo:** un día específico, según la ciudad donde toque la edición (consultá la web del organizador).\n- **Entrada:** GRATUITA.\n- **Horario:** habitualmente de 10 a 18.\n- **Llevá:** efectivo (muchos productores no tienen posnet), bolsas reutilizables, conservadora si vas a comprar lácteos o embutidos para llevar.\n- **Combinar con:** una visita a alguna estancia o chacra de la zona, para profundizar la experiencia del agroturismo.",
     "category": "OTHER",
     "authorId": "002-user-carlos-martínez",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Mercado Itinerante 2025 - Entre Ríos - Hospeda",
-        "description": "Visita el Mercado Itinerante 2025 en Entre Ríos. Productos locales, artesanías y gastronomía regional en un evento único.",
-        "keywords": ["business", "entre rios", "evento", "cultura"]
+        "title": "Mercado Itinerante de Productores en Entre Ríos - Hospeda",
+        "description": "Venta directa de productores del litoral: quesos artesanales, dulces, embutidos, miel, citrus de Chajarí y vinos pequeños. Sin intermediarios. Entrada gratuita.",
+        "keywords": [
+            "mercado itinerante",
+            "productores entre ríos",
+            "venta directa",
+            "quesos artesanales",
+            "dulces caseros",
+            "agricultura familiar",
+            "feria gastronómica",
+            "productos del litoral"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

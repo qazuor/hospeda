@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "024-event-education-encuentro-lectura",
     "slug": "encuentro-lectura",
-    "name": "Encuentro de Lectura",
-    "summary": "Evento education - Encuentro de Lectura",
-    "description": "Descripción detallada del evento Encuentro de Lectura. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
+    "name": "Encuentro de Lectura en Voz Alta",
+    "summary": "Una ronda de lectura abierta donde los participantes comparten textos propios o de autores favoritos. Encuentro mensual, informal, en patio al aire libre, con mate de por medio. Apto para todas las edades.",
+    "description": "Un espacio mensual dedicado a la lectura en voz alta, en formato ronda abierta. La propuesta es simple: cada participante trae un texto que quiere compartir (propio o ajeno, prosa o poesía, en cualquier idioma) y lo lee al grupo. No hay correcciones ni jurados: la idea es disfrutar el placer de leer y de escuchar en compañía.\n\n**Cómo funciona**\n\n- Llegada a las 17, mate de bienvenida y presentaciones.\n- Ronda de lectura: cada participante tiene entre 5 y 10 minutos. El orden es libre, no se anota turno.\n- Pausa con merienda compartida (a la canasta: cada uno trae algo si quiere sumar).\n- Segunda ronda de lectura.\n- Cierre con una lectura colectiva del moderador.\n\n**Algunos textos que circularon en encuentros anteriores**\n\nPoesía de Juan L. Ortiz, Olegario Andrade y Diana Bellessi. Cuentos cortos de Hebe Uhart, Inés Garland y Selva Almada. Fragmentos de libros que cada uno está leyendo. Letras de canciones que valen como poemas. Textos escritos por los propios participantes en talleres literarios. La diversidad es parte del encuentro.\n\n**Para quién es**\n\nAbierto a cualquier persona interesada en la lectura. No hace falta ser escritor ni tener formación literaria: alcanza con tener ganas de compartir un texto que te emociona. Hay habituales que vuelven cada mes y nuevos que se suman cada vez.\n\n**Información práctica**\n\n- **Cuándo:** un sábado de octubre, de 17 a 20 horas (encuentro mensual).\n- **Dónde:** patio al aire libre de un café cultural en Paraná o Colón (según edición).\n- **Entrada:** GRATUITA, sin inscripción previa.\n- **Llevá:** un texto para leer (impreso o en celular), abrigo si la noche refresca, algo para compartir en la merienda si te dan ganas, mate o termo.\n\nUna actividad sencilla, cálida y muy del litoral: leer en voz alta, escucharse, tomar mate, dejar que las palabras circulen sin apuro.",
     "category": "OTHER",
     "authorId": "002-user-carlos-martínez",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Encuentro de Lectura 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en el Encuentro de Lectura 2025 en Entre Ríos. Tres días de literatura, talleres y charlas con escritores locales.",
-        "keywords": ["education", "entre rios", "evento", "cultura"]
+        "title": "Encuentro de Lectura en Voz Alta - Hospeda",
+        "description": "Ronda mensual de lectura en voz alta: textos propios o de autores favoritos, mate y merienda compartida. Encuentro abierto, gratuito y sin inscripción.",
+        "keywords": [
+            "encuentro lectura",
+            "lectura en voz alta",
+            "literatura entre ríos",
+            "poesía argentina",
+            "café cultural",
+            "actividad literaria",
+            "ronda de lectura",
+            "evento gratuito"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

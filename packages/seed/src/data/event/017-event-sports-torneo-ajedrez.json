@@ -3,8 +3,8 @@
     "id": "017-event-sports-torneo-ajedrez",
     "slug": "torneo-ajedrez",
     "name": "Torneo de Ajedrez",
-    "summary": "Evento sports - Torneo de Ajedrez",
-    "description": "Descripción detallada del evento Torneo de Ajedrez. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
+    "summary": "Torneo abierto de ajedrez con sistema suizo a 7 rondas, categorías por ELO y premios en efectivo. Sede en Paraná, dos días de competencia con transmisión en vivo de las partidas principales.",
+    "description": "Torneo abierto de ajedrez organizado por la Fundación Cultural Entre Ríos, parte del circuito provincial de torneos de la disciplina. Reúne a jugadores de todos los niveles, desde aficionados hasta maestros FIDE, en un formato pensado para que cada participante encuentre rivales de su nivel.\n\n**Formato del torneo**\n\n- **Sistema:** suizo a 7 rondas.\n- **Ritmo de juego:** 90 minutos por jugador, más 30 segundos de incremento por jugada.\n- **Categorías:** Absoluto, Sub-2000 ELO, Sub-1600 ELO, Sub-18 y Femenino.\n- **Ronda inaugural:** sábado a las 10. Última ronda: domingo a las 17.\n\n**Premios**\n\n- Premios en efectivo para los primeros tres puestos de la categoría Absoluto.\n- Premios en libros y reconocimientos para las categorías por ELO.\n- Trofeo especial para mejor jugador Sub-18.\n- Trofeo especial para mejor jugadora Femenina.\n- Sorteos entre todos los inscriptos.\n\n**Espacios para el público**\n\nEl torneo es abierto al público: pueden venir a ver las partidas, especialmente las del tablero principal que se transmiten en vivo con análisis de un comentarista invitado. Hay zona de descanso, café y exhibición de partidas históricas en pantallas.\n\n**Información práctica**\n\n- **Cuándo:** dos días en octubre.\n- **Dónde:** Casa de la Cultura, Paraná.\n- **Inscripción:** abierta hasta una semana antes del torneo. El valor incluye participación, almuerzo de los dos días y certificado.\n- **Requisitos:** se aceptan jugadores con o sin afiliación a la FADA.\n- **Tablero y piezas:** los provee la organización. Reloj propio recomendado, hay reservas para préstamo.\n- **Llevá:** anotador, lapicera, paciencia y mate.\n\n**Para quién es**\n\nApto para todo el rango de niveles. Ideal para jugadores de torneos amateur que buscan medirse con rivales de su categoría, principiantes que quieren probar la experiencia de torneo, y maestros que necesitan acumular partidas para su rating.",
     "category": "SPORTS",
     "authorId": "006-user-laura-vega",
     "pricing": {
@@ -25,9 +25,18 @@
         }
     },
     "seo": {
-        "title": "Torneo de Ajedrez 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en el Torneo de Ajedrez 2025 en Entre Ríos. Cuatro días de competencia estratégica con jugadores de todos los niveles.",
-        "keywords": ["sports", "entre rios", "evento", "cultura"]
+        "title": "Torneo Abierto de Ajedrez en Paraná - Hospeda",
+        "description": "Torneo de ajedrez sistema suizo 7 rondas en Paraná: categorías Absoluto, Sub-2000, Sub-1600, Sub-18 y Femenino. Premios en efectivo y transmisión en vivo.",
+        "keywords": [
+            "torneo ajedrez",
+            "ajedrez paraná",
+            "ajedrez entre ríos",
+            "sistema suizo",
+            "torneo abierto",
+            "ajedrez argentina",
+            "FADA",
+            "ELO ajedrez"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

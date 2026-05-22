@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "021-event-family-picnic-familiar",
     "slug": "picnic-familiar",
-    "name": "Picnic Familiar",
-    "summary": "Evento family - Picnic Familiar",
-    "description": "Descripción detallada del evento Picnic Familiar. Este es un evento de categoría FAMILY que se desarrolla en Entre Ríos.",
+    "name": "Picnic Familiar a Orillas del Río",
+    "summary": "Jornada al aire libre con juegos infantiles, espectáculos para chicos, talleres creativos y música en vivo, a orillas del río. Ideal para pasar el día en familia, mate y manta incluidos.",
+    "description": "Un día completo dedicado a las familias en uno de los entornos más amigables del litoral: la costa del río Uruguay. La propuesta combina la simplicidad de un picnic clásico con actividades organizadas pensadas para todas las edades, especialmente para chicos y preadolescentes.\n\n**Programación de actividades**\n\n- **10:00:** apertura, ambientación musical y recepción.\n- **11:00:** taller de pintura al aire libre para chicos.\n- **12:00:** show de títeres en el escenario principal.\n- **13:00:** almuerzo libre (cada familia trae lo suyo o compra en food trucks).\n- **15:00:** juegos tradicionales: rayuela, sapo, sogas, carrera de embolsados.\n- **16:00:** show de animadores con música infantil.\n- **17:00:** taller de cocina creativa para chicos: brochettes de frutas, sandwiches divertidos.\n- **18:00:** cierre musical con artista folclórico para toda la familia.\n\n**Espacios pensados para chicos**\n\n- Área blanda con colchonetas para bebés y niños pequeños.\n- Inflables, toboganes y juegos de plaza.\n- Espacio de lectura con cuentos y mantas.\n- Cancha de fútbol y vóley para chicos más grandes.\n- Zona de hidratación con agua fresca y limonada.\n\n**Información práctica**\n\n- **Cuándo:** un domingo de octubre, de 10 a 19 horas.\n- **Dónde:** parque costero a orillas del río Uruguay.\n- **Entrada:** GRATUITA, sin inscripción previa.\n- **Llevá:** manta o mantel grande, comida y bebida (o efectivo para food trucks), protector solar, sombrero, mate, juegos al aire libre, bicicletas o monopatines si tenés.\n- **Servicios en el lugar:** baños, vestuarios, kioscos, alquiler de bicicletas y juegos acuáticos.\n\nUna propuesta sencilla pero cuidada, ideal para esos domingos de primavera donde sólo hace falta un río, un buen mate y compañía.",
     "category": "OTHER",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Picnic Familiar 2025 - Entre Ríos - Hospeda",
-        "description": "Disfruta del Picnic Familiar 2025 en Entre Ríos. Una jornada al aire libre con actividades para toda la familia y juegos infantiles.",
-        "keywords": ["family", "entre rios", "evento", "cultura"]
+        "title": "Picnic Familiar a Orillas del Río Uruguay - Hospeda",
+        "description": "Día familiar al aire libre: juegos infantiles, shows de títeres, talleres creativos y música en vivo a orillas del río. Entrada gratuita, ideal para toda la familia.",
+        "keywords": [
+            "picnic familiar",
+            "actividades en familia",
+            "eventos para chicos",
+            "río uruguay",
+            "talleres infantiles",
+            "evento gratuito",
+            "domingo familiar",
+            "entre ríos familia"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

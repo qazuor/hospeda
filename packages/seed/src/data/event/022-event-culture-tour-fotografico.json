@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "022-event-culture-tour-fotografico",
     "slug": "tour-fotografico",
-    "name": "Tour Fotográfico",
-    "summary": "Evento culture - Tour Fotográfico",
-    "description": "Descripción detallada del evento Tour Fotográfico. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "name": "Tour Fotográfico por el Litoral",
+    "summary": "Cuatro días de salidas fotográficas guiadas por los paisajes más fotogénicos del litoral entrerriano: termas, delta, El Palmar, atardeceres sobre el río Uruguay. Apto para todos los niveles, con feedback de fotógrafos profesionales.",
+    "description": "Cuatro días intensivos dedicados a la fotografía de paisaje y naturaleza en uno de los entornos más fotogénicos de Argentina. El tour combina salidas a las mejores ubicaciones del litoral con sesiones de feedback técnico y conceptual, en grupos reducidos para garantizar atención personalizada.\n\n**El itinerario**\n\n- **Día 1 - Federación:** salida al amanecer en el complejo termal para capturar vapor y luz dorada. Tarde libre. Atardecer sobre el lago de Salto Grande.\n- **Día 2 - Parque Nacional El Palmar:** amanecer en los miradores, caminatas para fotografía de fauna, atardecer entre las palmeras yatay con cielos abiertos.\n- **Día 3 - Delta del Paraná:** salida en kayak con cámaras (en bolsas estancas), fotografía desde el agua, observación de aves al atardecer en Pre-Delta.\n- **Día 4 - Colón y costa:** casco histórico, costanera, atardecer sobre el río Uruguay desde Banco Pelay.\n\n**Lo que incluye**\n\n- Traslados entre ubicaciones en combi.\n- Guías fotográficos profesionales con experiencia en paisaje y naturaleza.\n- Feedback técnico diario, sesiones de revisión grupal.\n- Material de apoyo digital con tutoriales y referencias.\n- Almuerzo de campo el día del Parque El Palmar.\n- Entrada al Parque Nacional El Palmar.\n- Excursión en lancha por el delta.\n\n**Equipo recomendado**\n\n- Cámara DSLR, mirrorless o avanzada (apto también para celular avanzado).\n- Lente gran angular y teleobjetivo medio.\n- Trípode liviano.\n- Filtros polarizador y ND (recomendados).\n- Tarjetas de memoria adicionales y baterías de repuesto.\n- Bolsa estanca o protector contra lluvia.\n\n**Para quién es**\n\nIdeal para fotógrafos aficionados y semi-profesionales que quieren mejorar su técnica de paisaje y naturaleza, viajeros que combinan turismo con fotografía, y entusiastas que recién están explorando la disciplina y buscan un acompañamiento estructurado.\n\n**Información práctica**\n\n- **Cuándo:** cuatro días consecutivos en septiembre.\n- **Entrada:** GRATUITA (con inscripción previa y cupo muy limitado, sólo 12 participantes).\n- **Alojamiento:** no incluido. Se recomiendan alojamientos en Colón y Concordia.\n- **Comidas:** sólo incluye el almuerzo del día 2. El resto, autogestionadas.\n- **Llevá:** equipo fotográfico, ropa cómoda para senderismo, gorra, protector solar, repelente, agua.",
     "category": "CULTURE",
     "authorId": "006-user-laura-vega",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Tour Fotográfico 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en el Tour Fotográfico 2025 en Entre Ríos. Cuatro días capturando los paisajes más hermosos con expertos fotógrafos.",
-        "keywords": ["culture", "entre rios", "evento", "cultura"]
+        "title": "Tour Fotográfico por el Litoral Entrerriano - Hospeda",
+        "description": "Cuatro días de fotografía guiada en termas, El Palmar, delta del Paraná y costanera del río Uruguay. Grupos reducidos con fotógrafos profesionales.",
+        "keywords": [
+            "tour fotográfico",
+            "fotografía paisaje",
+            "fotografía naturaleza",
+            "el palmar fotografía",
+            "delta paraná fotografía",
+            "salidas fotográficas",
+            "taller fotografía",
+            "litoral argentino"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {
