@@ -9,6 +9,7 @@
 
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { and, billingWebhookEvents, eq, getDb, or } from '@repo/db';
+import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { apiLogger } from '../../../utils/logger';
 import type { AddonMetadata, PaymentInfo } from './types';
@@ -250,7 +251,7 @@ export function getWebhookDependencies(): {
     }
 
     try {
-        const paymentAdapter = createMercadoPagoAdapter();
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
         return { billing, paymentAdapter };
     } catch (error) {
         apiLogger.error(

@@ -32,7 +32,7 @@
         "@linear/sdk": "^75.0.0",
         "@qazuor/qzpay-core": "^1.8.0",
         "@qazuor/qzpay-hono": "^1.5.0",
-        "@qazuor/qzpay-mercadopago": "^2.0.1",
+        "@qazuor/qzpay-mercadopago": "^2.0.2",
         "@react-email/components": "^0.0.30",
         "@react-email/render": "^2.0.4",
         "@repo/billing": "workspace:*",

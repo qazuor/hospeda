@@ -30,6 +30,7 @@ import {
     withTransaction
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
@@ -107,7 +108,7 @@ async function retrySubscriptionUpdated(
 
     let paymentAdapter: ReturnType<typeof createMercadoPagoAdapter>;
     try {
-        paymentAdapter = createMercadoPagoAdapter();
+        paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
     } catch (error) {
         apiLogger.error({ error }, 'Failed to create MercadoPago adapter for subscription retry');
         return false;
