@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -173,11 +173,13 @@
             "id": "T-153-10",
             "title": "Implement src/tokens/radius.ts",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T07:00:00Z",
+            "completedAt": "2026-05-23T07:10:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/tokens/radius.ts (~90 lines) with four layers: (1) radiusBase = '0.75rem' canonical per doc 05 §5.4 + web seed, (2) radiusScale (sm/md/lg/xl) as calc() expressions relative to var(--radius) — propagation-friendly when themes override base, anchored byte-for-byte to web's --radius-{sm,md,lg,xl}, (3) radiusSemantic (card=24px, pill=9999px, button=8px) absolute values for component contexts, anchored to web seed, (4) radiusOrganic (deprecated legacy — kept exported for web compat byte-for-byte, marked @deprecated in JSDoc). radius aggregate groups all 4. Tests: 107 → 122 (15 added). Cover: base value, all 4 scale calc strings, all 3 semantic absolutes, all 3 organic deprecated, aggregate identity. Lint auto-fixed 1 (single-line import collapse).",
             "complexity": 1,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "none/sm/base/lg/full per doc 05 §5.4 base=0.75rem. Plus web semantic --radius-sm/md/lg/xl + --radius-card/--radius-pill/--radius-button from manifest."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-11",
