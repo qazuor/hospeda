@@ -1,0 +1,399 @@
+{
+    "version": "1.0",
+    "title": "Admin Design Tokens — Shared Brand Tokens for Admin/Web",
+    "specRef": "SPEC-153",
+    "created": "2026-05-22T21:30:00Z",
+    "summary": {
+        "total": 32,
+        "pending": 28,
+        "inProgress": 0,
+        "completed": 4,
+        "blocked": 0,
+        "averageComplexity": 2.6,
+        "phasesCompleted": ["phase-0"]
+    },
+    "phases": {
+        "phase-0": {
+            "name": "Baseline capture (no code changes)",
+            "tasks": ["T-153-01", "T-153-02", "T-153-03", "T-153-04"]
+        },
+        "phase-1": {
+            "name": "packages/design-tokens creation",
+            "tasks": [
+                "T-153-05",
+                "T-153-06",
+                "T-153-07",
+                "T-153-08",
+                "T-153-09",
+                "T-153-10",
+                "T-153-11",
+                "T-153-12",
+                "T-153-13",
+                "T-153-14",
+                "T-153-15",
+                "T-153-16",
+                "T-153-17",
+                "T-153-18",
+                "T-153-19"
+            ]
+        },
+        "phase-2": {
+            "name": "Web migration (pixel-diff zero)",
+            "tasks": ["T-153-20", "T-153-21", "T-153-22", "T-153-23"]
+        },
+        "phase-3": {
+            "name": "Admin migration (intentional visual change)",
+            "tasks": [
+                "T-153-24",
+                "T-153-25",
+                "T-153-26",
+                "T-153-27",
+                "T-153-28",
+                "T-153-29",
+                "T-153-30",
+                "T-153-31",
+                "T-153-32"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "id": "T-153-01",
+            "title": "Install @playwright/test in apps/web + write playwright-visual.config.ts",
+            "phase": "phase-0",
+            "status": "completed",
+            "startedAt": "2026-05-22T21:45:00Z",
+            "completedAt": "2026-05-22T22:00:00Z",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": [],
+            "notes": "DONE. Added @playwright/test ^1.58.2 to apps/web devDependencies (aligned with root version). Scripts: test:visual:install (browser deps), test:visual:baseline (--update-snapshots), test:visual (compare). Config apps/web/playwright-visual.config.ts: 4 viewport projects (mobile=375x812, tablet=768x1024, desktop=1280x800, wide=1920x1080), animations=disabled, scale=css, maxDiffPixelRatio=0.001 (0.1% per AC-6), locale es-AR, timezone America/Argentina/Buenos_Aires, webServer runs pnpm dev with reuseExistingServer in non-CI. Theme matrix (light/dark) deferred to capture script (T-153-02) via localStorage manipulation, NOT projects, to keep matrix in one place. apps/web/.gitignore extended for runtime outputs (test-results/, playwright-visual-report/, actual/, diff/). Verified: pnpm install resolves, pnpm exec playwright --version reports 1.58.2, --list dry-run parses config OK (Total: 0 tests as expected since *.visual.ts not yet written)."
+        },
+        {
+            "id": "T-153-02",
+            "title": "Write apps/web/tests/visual-snapshots/capture-baseline.ts",
+            "phase": "phase-0",
+            "status": "completed",
+            "startedAt": "2026-05-22T22:00:00Z",
+            "completedAt": "2026-05-22T22:25:00Z",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-01"],
+            "notes": "DONE. File: apps/web/tests/visual-snapshots/capture-baseline.visual.ts (suffix .visual.ts matches config testMatch). Scope adjusted from spec's 9 pages × 4 × 2 = 72 to 8 × 4 × 2 = 64. Skipped /mi-cuenta/suscripcion (auth-gated — needs login fixture out of V1 scope). Pages confirmed against actual routing: home /es/, listing-accommodations /es/alojamientos/, detail-accommodation (navigate-first from listing), publicar /es/publicar/, blog-index /es/publicaciones/, blog-post (navigate-first from index), contacto /es/contacto/, legal-cookies /es/legal/cookies/ (NOT /legales/ as spec said — actual route is /legal/). Dynamic slugs use navigation-first strategy: visit listing, query first detail link, follow it. Theme handling via page.addInitScript seeding localStorage.theme before FOUC inline script reads it (apps/web/src/components/shared/ThemeFoucScript.astro sets data-theme=dark when storage value is 'dark'; otherwise leaves light). Non-deterministic elements hidden via addStyleTag (cookie banner, animations). Stability waits: document.fonts.ready + networkidle (best-effort) + 500ms settle. Sanity check throws if data-theme mismatch after seeding. Playwright discovers 64 tests across 4 projects. Snapshot path: tests/visual-snapshots/baseline/{page-key}/{viewport}-{theme}.png."
+        },
+        {
+            "id": "T-153-03",
+            "title": "Run baseline capture against local web dev server",
+            "phase": "phase-0",
+            "status": "completed",
+            "startedAt": "2026-05-22T22:30:00Z",
+            "completedAt": "2026-05-22T23:15:00Z",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-02"],
+            "notes": "DONE. 64/64 baselines captured, 31MB total in apps/web/tests/visual-snapshots/baseline/ (NOT committed to repo per user decision — gitignored, local-only V1). Bugs encountered + fixes: (1) tablet project was using devices['iPad Pro 11'] which defaults to WebKit; only chromium installed → ALL 16 tablet tests failed silently. Fix: switched tablet project to explicit { browserName: 'chromium', viewport, hasTouch: true, isMobile: false, deviceScaleFactor: 1 } — all projects now pin Chromium intentionally for visual consistency. Comment added in config explaining engine pinning rationale. (2) webServer command in config (pnpm exec astro dev --port 4322) failed because @repo/media workspace dep wasn't built in this worktree — turbo orchestration of ^build is skipped by direct astro invocation. Workaround: reused existing dev server on :4321 via VISUAL_TEST_NO_WEBSERVER=1 VISUAL_TEST_BASE_URL=http://localhost:4321. Future fix: change webServer.command to 'turbo run dev --filter=@hospeda/web -- --port 4322' so dependencies get built first. (3) detail-accommodation/wide-light failed flaky in first pass (no error visible in tee log because Playwright reporter writes stdout w/ progress chars; tee captured incomplete output); re-run with --grep recovered it. (4) Cookie banner appears in baselines despite hide-non-deterministic styleTag: selectors [data-testid=cookie-banner], #cookie-banner, .cookie-banner did NOT match the actual implementation. Not blocking (Phase 2 captures same state) but should be updated to the real selector before AC-6 validation in T-153-23. Sanity check on 2 sampled baselines (home/desktop-dark, detail-accommodation/wide-dark) shows proper dark-theme application, layout intact, content rendered. Total runtime: 5.5 min for the 47-pass first run + ~2 min for tablet + ~30s for the singletons. Engram saved at spec/SPEC-153/T-153-03/learnings."
+        },
+        {
+            "id": "T-153-04",
+            "title": "Write scripts/extract-web-tokens.ts → packages/design-tokens/seed/web-baseline.json",
+            "phase": "phase-0",
+            "status": "completed",
+            "startedAt": "2026-05-23T00:00:00Z",
+            "completedAt": "2026-05-23T04:35:00Z",
+            "completionNotes": "DONE. Manifest at packages/design-tokens/seed/web-baseline.json (39.2K, 1483 lines, 199 tokens total: 142 light + 56 dark + 1 media). 12/12 canonical doc 05 §5.1 values verified byte-for-byte (river/sky/forest/sand/accent + success/warning/info + radius + fonts). Extractor: scripts/extract-web-tokens.ts (~245 lines). Strategy: line-by-line state machine (no postcss dep — overkill for 406-line hand-authored CSS). Categories auto-detected from /* --- Section --- */ comments; dark tokens inherit categories from their light counterparts (their inline comments don't use the --- delimiter). 2 bugs caught + fixed during build: (1) regex required column-0 anchor missed indented :root inside @media — fixed with \\s* prefix on all block-open regexes. (2) media block (prefers-reduced-motion: reduce) was captured empty (no tokens inside, just animation overrides) — filtered out as post-processing step. Integrity check: 0 dark tokens without a light default (well-formed). Out-of-scope sources documented in manifest: css-var-themes.css (content-type themes), lib/colors.ts (TS color mappers), components.css (BEM consumers), feedback-overrides.css. Manifest is the source of truth for T-153-06+ palette seeding and T-153-17 round-trip validator. Biome auto-formatted one filter callback to one-liner.",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": [],
+            "notes": "Parse apps/web/src/styles/global.css (postcss or simple regex of CSS custom properties). Extract ALL ~90 tokens grouped by category: colors (palette + semantic + neutrals + footer-* + avatar-gradient-* + chart-1..5 + surface-*), fonts (sans/heading/decorative/mono), fontSize scale (xs-5xl + semantic --text-hero/--text-display/--text-h2..h4/--text-body*/--text-caption/--text-tagline/--text-nav/--text-button), spacing (0-24 numeric + --space-section/--space-section-sm/--space-section-lg/--space-container-x/--space-card-gap), radius (--radius-sm/md/lg/xl/--radius-card/--radius-pill/--radius-button), shadows (--shadow-card/--shadow-card-hover/--shadow-search/--shadow-nav), motion (--duration-fast/normal/slow/reveal + --ease-bounce/--ease-reveal), z-index (8 layers), layout (--navbar-height/--wave-bar-compact/--bottom-safe-inset). Output strict JSON manifest with categories + names + raw CSS values. This is the source of truth for the round-trip validator."
+        },
+        {
+            "id": "T-153-05",
+            "title": "Scaffold packages/design-tokens (package.json, tsconfig, README, turbo.json registration)",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-04"],
+            "notes": "package.json: name @repo/design-tokens, type module, exports . → dist/index.js + ./tokens.css → dist/tokens.css. Scripts: build (run gen-css.ts + tsc + validate.ts), dev (watch). Deps: only TS dev. tsconfig extends @repo/typescript-config. Add to turbo.json build pipeline (depends on nothing — leaf package). Register in pnpm-workspace.yaml (it auto-discovers via packages/*). Empty dist/ at scaffold time."
+        },
+        {
+            "id": "T-153-06",
+            "title": "Implement src/tokens/colors.ts — brand palettes (river/sky/forest/sand/accent) w/ 10 shades each",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "Each palette: 10 shades (50,100,200,300,400,500,600,700,800,900). Canonical (500) values from web-baseline.json byte-for-byte: river=oklch(0.63 0.19 259), sky=oklch(0.80 0.08 259), forest=oklch(0.50 0.14 155), sand=oklch(0.70 0.12 75), accent=oklch(0.70 0.18 55). Shade derivation algorithm per doc 05 §5.1: lightness linear from 0.99 (50) to 0.10 (900), chroma scales to ~50% at extremes, hue locked. Implement as deriveShades(canonical: OKLCH): Palette function. Export TS types: Palette, ShadeKey, OKLCHValue."
+        },
+        {
+            "id": "T-153-07",
+            "title": "Implement src/tokens/colors.ts (cont.) — semantic palettes + neutrals + web-specific extras",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-06"],
+            "notes": "Semantic (10 shades each): success=oklch(0.62 0.15 150), warning=oklch(0.74 0.15 78), danger=oklch(0.58 0.22 25), info=oklch(0.66 0.14 240). Neutrals (10 shades, doc 05 §5.1): lightness ladder 0.985→0.10, hue 0, chroma 0. Web-specific extras from web-baseline.json: brand-secondary, brand-tertiary (likely derived from river or accent — confirm from manifest), surface-warm/dark/elevated, footer-* (6 tokens), avatar-gradient-* (8 gradients), chart-1..5 (5 colors)."
+        },
+        {
+            "id": "T-153-08",
+            "title": "Implement src/tokens/typography.ts — base scale + web semantic tokens",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "Base scale per doc 05 §5.2: fontFamily (sans=Roboto+sysfallback, heading=Geologica, decorative=Caveat web-only, mono=JetBrains Mono web-only). fontSize xs-5xl. fontWeight normal/medium/semibold/bold. lineHeight tight/normal/relaxed. Web semantic from web-baseline.json: --text-hero, --text-display, --text-h2..h4, --text-body*, --text-caption, --text-tagline, --text-nav, --text-button, --text-lg, --text-xl (these are composed shorthands — extract raw values or shorthand strings as-is)."
+        },
+        {
+            "id": "T-153-09",
+            "title": "Implement src/tokens/spacing.ts — numeric scale + web semantic",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "Numeric 0-24 per doc 05 §5.3. Web semantic from manifest: --space-section, --space-section-sm, --space-section-lg, --space-container-x, --space-card-gap (these will be aliases of numeric scale; check manifest for current rem values)."
+        },
+        {
+            "id": "T-153-10",
+            "title": "Implement src/tokens/radius.ts",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "none/sm/base/lg/full per doc 05 §5.4 base=0.75rem. Plus web semantic --radius-sm/md/lg/xl + --radius-card/--radius-pill/--radius-button from manifest."
+        },
+        {
+            "id": "T-153-11",
+            "title": "Implement src/tokens/shadows.ts — base scale + web semantic",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "Base none/sm/base/md/lg/xl per doc 05 §5.5. Web semantic from manifest: --shadow-card, --shadow-card-hover, --shadow-search, --shadow-nav."
+        },
+        {
+            "id": "T-153-12",
+            "title": "Implement src/tokens/motion.ts — durations + easings + web extras",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "durations fast/base/slow/slower per doc 05 §5.6. easings out/inOut/spring. Web extras from manifest: --duration-reveal, --ease-bounce, --ease-reveal."
+        },
+        {
+            "id": "T-153-13",
+            "title": "Implement src/tokens/z-index.ts + src/tokens/layout.ts",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "agent",
+            "dependsOn": ["T-153-05"],
+            "notes": "z-index 8 layers from manifest: content, nav, dropdown, modal, toast, cookie-banner, mobile-menu (plus base). layout: --navbar-height, --wave-bar-compact, --bottom-safe-inset."
+        },
+        {
+            "id": "T-153-14",
+            "title": "Implement src/themes/web-light.ts + src/themes/web-dark.ts",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": [
+                "T-153-06",
+                "T-153-07",
+                "T-153-08",
+                "T-153-09",
+                "T-153-10",
+                "T-153-11",
+                "T-153-12",
+                "T-153-13"
+            ],
+            "notes": "Web-light semantic mapping per doc 05 §6.1: --color-primary=palette.river[500], --color-primary-hover=river[400], --color-primary-pressed=river[600], --color-bg-app, --color-bg-elevated, --color-fg-primary/secondary/muted, --color-border, --color-success/warning/danger/info, --font-body, --font-heading, --radius. Web-dark: same structure, dark shades. Extract current web dark theme values from css-var-themes.css or wherever web's dark mode lives."
+        },
+        {
+            "id": "T-153-15",
+            "title": "Implement src/themes/admin-light.ts + src/themes/admin-dark.ts",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-06", "T-153-07"],
+            "notes": "Admin-light per doc 05 §6.2: --color-primary=palette.river[600] (derived, more muted), accent=accent[600], bg-app=neutral[100] (slightly grayer than web), semantics use [600] shades. Admin-dark: river[500] as primary (one shade lighter than admin-light primary since dark BG)."
+        },
+        {
+            "id": "T-153-16",
+            "title": "Implement src/build/generate-css.ts → dist/tokens.css",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-153-14", "T-153-15"],
+            "notes": "Reads all token TS files + theme TS files. Emits dist/tokens.css with structure: :root { palette tokens + web-light semantic (web is the default scope) } / [data-theme='dark']:not([data-app='admin']) { web-dark } / [data-app='admin'] { admin-light semantic } / [data-app='admin'][data-theme='dark'] { admin-dark }. Palette vars stay theme-independent (--palette-river-500 etc., always available). CSS output ordered by category for readability. Token names match web's current names byte-for-byte (so the @import drop-in works in T-153-21)."
+        },
+        {
+            "id": "T-153-17",
+            "title": "Implement src/build/validate.ts — round-trip check vs seed/web-baseline.json",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-153-16"],
+            "notes": "Parse dist/tokens.css after build. Compare every web-baseline.json entry: for each token name in manifest, find matching --token-name in generated CSS, normalize whitespace, compare exact values. Fail build with diff output if any drift. This is AC-4. Hooks into package.json build script: build = gen-css → tsc → validate. CI fails if validate fails."
+        },
+        {
+            "id": "T-153-18",
+            "title": "Implement src/index.ts — type-safe exports for TS consumers",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-14", "T-153-15"],
+            "notes": "Re-export all token objects (typed) and themes. Export TS types Palette, Theme, TokenName etc. Validate via tsc --noEmit that consumers (admin's hypothetical import) get autocomplete. This satisfies AC-3."
+        },
+        {
+            "id": "T-153-19",
+            "title": "Build packages/design-tokens green end-to-end (turbo run build)",
+            "phase": "phase-1",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-16", "T-153-17", "T-153-18"],
+            "notes": "Run pnpm --filter @repo/design-tokens build. Expected: tokens.css generated, tsc passes, validate passes (every web-baseline entry matches). Commit dist/ if policy is to ship built CSS (check other packages' .gitignore convention). Verifies AC-1, AC-2, AC-4."
+        },
+        {
+            "id": "T-153-20",
+            "title": "Add @repo/design-tokens to apps/web workspace deps",
+            "phase": "phase-2",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "agent",
+            "dependsOn": ["T-153-19"],
+            "notes": "apps/web/package.json: dependencies += @repo/design-tokens: workspace:*. Run pnpm install at root. Verify the @import resolves from web."
+        },
+        {
+            "id": "T-153-21",
+            "title": "Refactor apps/web/src/styles/global.css — @import design-tokens, remove inline declarations",
+            "phase": "phase-2",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-20"],
+            "notes": "Replace inline :root { palette/typography/spacing/radius/shadows/motion/z-index/layout/extras declarations } with @import '@repo/design-tokens/tokens.css'. KEEP: any web-only utility classes, the @import of css-var-themes.css (event/post categories), web-only font @font-face if present (Caveat). Result: global.css drops from ~206 lines to ~30-40 lines (just utilities + imports). Satisfies AC-7."
+        },
+        {
+            "id": "T-153-22",
+            "title": "Re-run Playwright capture into actual/ dir post-migration",
+            "phase": "phase-2",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-21"],
+            "notes": "Restart web dev server (fresh build). Run capture script targeting apps/web/tests/visual-snapshots/actual/. Same 72 snapshots, same conditions. Disable any caches between baseline and actual runs."
+        },
+        {
+            "id": "T-153-23",
+            "title": "Pixel-diff baseline vs actual + iterate fixes in design-tokens until pass",
+            "phase": "phase-2",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-153-22"],
+            "notes": "Use pixelmatch or @playwright/test built-in toMatchSnapshot. Threshold: <0.1% pixel diff per snapshot (font rendering noise). Generate diff PNGs in diff/ dir for any failures. If any snapshot fails: investigate (likely whitespace differences in CSS var resolution, missing token, slightly off oklch value). Fix in packages/design-tokens, rebuild, re-capture, re-diff. Loop until all 72 snapshots pass. This is the AC-5/AC-6 gate."
+        },
+        {
+            "id": "T-153-24",
+            "title": "Add @repo/design-tokens to apps/admin workspace deps",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 1,
+            "owner": "agent",
+            "dependsOn": ["T-153-23"],
+            "notes": "apps/admin/package.json: dependencies += @repo/design-tokens: workspace:*. pnpm install at root."
+        },
+        {
+            "id": "T-153-25",
+            "title": "Set data-app='admin' on root <html> element",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-24"],
+            "notes": "TanStack Start root layout is apps/admin/src/routes/__root.tsx (verify path). Add data-app='admin' attribute to <html> via the head/document structure. Verify via DevTools that the attribute is present in rendered HTML. Satisfies AC-8."
+        },
+        {
+            "id": "T-153-26",
+            "title": "Refactor apps/admin/src/styles.css — @import tokens.css + update @theme inline",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-25"],
+            "notes": "At top of styles.css: @import 'tailwindcss'; @import '@repo/design-tokens/tokens.css'; Remove shadcn :root + .dark CSS custom properties blocks (lines 19-93 in current file per lay-of-land report). Update @theme inline {} block (lines 95-132): every --color-* and --radius* should reference the design-tokens vars, e.g. --color-primary: var(--color-primary); --color-background: var(--color-bg-app); --radius-sm: calc(var(--radius) - 4px); etc. Satisfies AC-9."
+        },
+        {
+            "id": "T-153-27",
+            "title": "Migrate admin dark mode .dark class → [data-theme='dark'] attribute",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-26"],
+            "notes": "Tailwind v4 supports custom dark variant via @variant dark (&:is([data-theme='dark']) *). Update admin's @theme inline to declare this. Find any code in admin that toggles dark mode (search for 'dark' classToggle, document.documentElement.classList.add('dark'), useTheme hook etc.) and replace with document.documentElement.setAttribute('data-theme', 'dark'/'light'). Verify dark mode toggle works in DevTools. Satisfies AC-10."
+        },
+        {
+            "id": "T-153-28",
+            "title": "Add Geologica + Roboto font loading to apps/admin",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-26"],
+            "notes": "Same Google Fonts strategy as web (apps/web/src/components/shared/FontsLoader.astro): preload link with media swap pattern for FOUC prevention. Geologica weights 400/500/700, Roboto 400/500/700. NO Caveat (web-only per doc 05 Eje 4). Add to apps/admin/src/routes/__root.tsx <head>. Verify via DevTools Network that fonts load. Satisfies AC-12."
+        },
+        {
+            "id": "T-153-29",
+            "title": "Audit admin source for hardcoded shadcn colors",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 3,
+            "owner": "agent",
+            "dependsOn": ["T-153-26"],
+            "notes": "rg --type tsx --type ts 'slate-(50|100|200|...|900)|gray-(...)|stone-(...)|hex/oklch literals' apps/admin/src/. Output a checklist of files to migrate, grouped by area (layout/sidebar/topbar/main, billing pages, content pages, auth pages, components). Prep for T-153-30."
+        },
+        {
+            "id": "T-153-30",
+            "title": "Migrate admin components to token references",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 4,
+            "owner": "agent",
+            "dependsOn": ["T-153-29"],
+            "notes": "For each hardcoded shadcn color found in T-153-29: replace with Tailwind utility class that resolves through CSS vars (e.g. bg-primary, text-foreground, border-border) OR if a specific semantic role exists, prefer the role-based class. Focus on sidebar/topbar/main-menu surfaces first (AC-13). Test pages in dev (visual + dark mode). Use small batches + commit per area to keep diffs reviewable."
+        },
+        {
+            "id": "T-153-31",
+            "title": "Side-by-side visual review web + admin per AC-14",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-30"],
+            "notes": "Open hospeda.com.ar (or local web :4321) AND admin (:3000) in two windows. Verify visual coherence: primary buttons share river hue family, headings use Geologica, cards share radius 0.75rem. Take a side-by-side screenshot for the SPEC artifacts. Capture observations: anything that still feels visually disconnected goes to a follow-up list for 99-future-enhancements.md (per spec §3 OUT)."
+        },
+        {
+            "id": "T-153-32",
+            "title": "Capture admin baseline snapshots post-migration for future reference",
+            "phase": "phase-3",
+            "status": "pending",
+            "complexity": 2,
+            "owner": "agent",
+            "dependsOn": ["T-153-30"],
+            "notes": "Create apps/admin/tests/visual-snapshots/ with capture-baseline.ts mirroring web's structure. Capture key admin pages (dashboard, billing, content listings, settings) at 4 breakpoints × 2 themes. These serve as reference for SPEC-155 dashboards work and any future admin visual changes. NOT a regression gate — just a starting point."
+        }
+    ]
+}
