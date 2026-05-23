@@ -51,7 +51,11 @@ export default defineConfig({
 
     snapshotPathTemplate: `tests/visual-snapshots/${SNAPSHOT_DIR}/{arg}{ext}`,
 
+    // Tall content pages (accommodation detail, blog post) stream lazy images
+    // during the screenshot stability loop; give the assertion a larger budget
+    // than the 5s default so it can settle instead of timing out.
     expect: {
+        timeout: 20_000,
         toHaveScreenshot: {
             maxDiffPixelRatio: 0.001,
             animations: 'disabled',

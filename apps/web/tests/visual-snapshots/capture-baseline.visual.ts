@@ -103,6 +103,31 @@ async function seedTheme(page: Page, theme: Theme): Promise<void> {
 }
 
 /**
+ * Pre-sets the `cookie-consent` cookie so the consent banner mounts silently
+ * (CookieConsentBanner.client.tsx renders nothing when getConsent() returns a
+ * valid state). The banner is bottom-fixed and localStorage/cookie-dependent;
+ * leaving it visible introduces non-deterministic pixels (it occupies a large
+ * fraction of mobile viewports). Its own surface is covered by /legal/cookies.
+ */
+async function seedCookieConsent(page: Page): Promise<void> {
+    const consent = JSON.stringify({
+        necessary: true,
+        crashReporting: false,
+        analytics: false,
+        marketing: false,
+        version: 2,
+        decidedAt: '2026-01-01T00:00:00.000Z'
+    });
+    await page.addInitScript((value) => {
+        try {
+            document.cookie = `cookie-consent=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+        } catch {
+            // document.cookie may be unavailable in some contexts; ignore.
+        }
+    }, consent);
+}
+
+/**
  * Hides DOM elements that are non-deterministic across runs and would
  * cause pixel-diff false positives (date-dependent banners, animated
  * decorations, etc.). Keep this list minimal — anything hidden here is
@@ -117,6 +142,13 @@ async function hideNonDeterministicElements(page: Page): Promise<void> {
             [data-testid="cookie-banner"],
             #cookie-banner,
             .cookie-banner { display: none !important; }
+
+            /* Feedback FAB: a client:idle floating widget (@repo/feedback)
+               whose mount timing is non-deterministic — it renders at a
+               different idle-load state between runs, polluting the diff
+               (the lone 0.22% outlier on contacto/wide-light). Not part of
+               the design-token surface under test. */
+            [data-testid="feedback-fab"] { display: none !important; }
 
             /* Disable any scroll-reveal animations that may not have
                settled yet. The animations:disabled flag of
@@ -143,6 +175,7 @@ for (const spec of PAGES) {
     for (const theme of THEMES) {
         test(`${spec.key} [${theme}]`, async ({ page }, testInfo) => {
             await seedTheme(page, theme);
+            await seedCookieConsent(page);
 
             if (spec.navigate) {
                 await spec.navigate(page);
