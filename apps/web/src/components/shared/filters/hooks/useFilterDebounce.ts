@@ -59,6 +59,20 @@ export function useFilterDebounce(): UseFilterDebounceReturn {
                 newUrl.search = params.toString();
                 newUrl.searchParams.delete('page');
 
+                // Give the host page a chance to handle this navigation in-
+                // place (e.g. ListingLayout's partial-swap script). Listeners
+                // that own the swap call `event.preventDefault()` to signal
+                // they took over — we then skip our default `navigate()` so
+                // ClientRouter never runs. When nothing listens (or the
+                // listener opts out), we fall through to the standard
+                // `<ClientRouter />` flow.
+                const handoff = new CustomEvent('hospeda:listing-nav', {
+                    detail: { url: newUrl.href },
+                    cancelable: true
+                });
+                window.dispatchEvent(handoff);
+                if (handoff.defaultPrevented) return;
+
                 // Use Astro View Transitions navigate for smooth transition
                 (
                     import('astro:transitions/client') as Promise<{
