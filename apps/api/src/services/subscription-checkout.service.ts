@@ -23,6 +23,8 @@
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { resolveFreeTrialExtensionPromo } from '@repo/billing';
 import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
+import { env } from '../utils/env.js';
+import { apiLogger } from '../utils/logger.js';
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -307,6 +309,62 @@ export async function initiatePaidMonthlySubscription(
             'MISSING_INIT_POINT',
             'Payment provider did not return a checkout URL'
         );
+    }
+
+    // SPEC-143 Finding #17 fallback: enqueue a polling job that will flip
+    // the local subscription to `active` if the `subscription_preapproval.created`
+    // webhook fails to arrive in time. Webhook still wins the race when it
+    // does arrive — the poller treats an already-active subscription as a
+    // no-op. Skipped silently when the feature flag is off, when the storage
+    // adapter does not expose polling, or when the provider returned no
+    // preapproval id (annual flow does not produce one).
+    if (env.HOSPEDA_BILLING_POLLING_ENABLED) {
+        const providerSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
+        const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+        if (pollingStorage && providerSubscriptionId) {
+            try {
+                const job = await pollingStorage.create({
+                    subscriptionId: subscription.id,
+                    providerResourceId: providerSubscriptionId,
+                    provider: 'mercadopago',
+                    metadata: {
+                        source: 'start-paid-monthly',
+                        planSlug
+                    }
+                });
+                if (job) {
+                    apiLogger.debug(
+                        {
+                            jobId: job.id,
+                            subscriptionId: subscription.id,
+                            providerResourceId: providerSubscriptionId,
+                            nextPollAt: job.nextPollAt.toISOString()
+                        },
+                        'Scheduled subscription polling fallback'
+                    );
+                } else {
+                    apiLogger.warn(
+                        {
+                            subscriptionId: subscription.id,
+                            providerResourceId: providerSubscriptionId
+                        },
+                        'Active polling job already exists for subscription — skipping enqueue'
+                    );
+                }
+            } catch (error) {
+                // Non-fatal: subscription was created successfully; failing
+                // to schedule polling means we rely entirely on the webhook
+                // for activation. Log so an operator can investigate.
+                apiLogger.error(
+                    {
+                        subscriptionId: subscription.id,
+                        providerResourceId: providerSubscriptionId,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    'Failed to enqueue subscription polling job — webhook is the only path now'
+                );
+            }
+        }
     }
 
     return {
