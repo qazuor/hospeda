@@ -911,6 +911,22 @@ const livemode = !sandbox;
 
 **Status**: 🟡 Tracked. Polling covers the gap so this is not urgent.
 
+### Finding #21 — Annual checkout flow never activates via webhook (two bugs in cascade)
+
+**Symptom**: Smoke 1.3 on 2026-05-23 16:00 with annual flow. MP authorization succeeded (APRO + test buyer), 4 webhooks arrived from MP — ALL without the `?source_news=webhooks` marker, so the filter from PR #1230 dropped them all as legacy IPN duplicates. Sub stayed `incomplete` forever. Manual `UPDATE billing_subscriptions SET status='active'` was the only way to validate post-transition stack worked.
+
+**Root cause (two bugs)**:
+1. MercadoPago Preferences API (used for annual one-time payments) only delivers via legacy IPN. There is no Webhooks v2 channel for `payment.*` events triggered by a Preference. PR #1230's marker filter is correct for monthly preapproval (where it drops IPN duplicates of v2 events) but inadvertently kills annual entirely because no v2 marker ever arrives.
+2. Even if a webhook DID reach the handler, `qzpay-mercadopago/checkout.adapter.ts` was hard-coding `body.metadata = {qzpay_mode, qzpay_customer_id}` and silently discarding `input.metadata` — so the `annualSubscriptionId` Hospeda embeds in the preference metadata was never propagated to MP and never appeared on the payment webhook. `confirmAnnualSubscription` reads `metadata.annualSubscriptionId` to route the activation, so even with IPN passing through, the handler would have no-op'd. The annual flow has effectively never been validated against real webhooks in either staging or prod.
+
+**Resolution**:
+- **qzpay-mercadopago 2.1.0** fixes the metadata-forwarding bug: `input.metadata` now merges with the qzpay diagnostic keys instead of being overwritten. Released via qzpay PR #38.
+- **qzpay-core 1.10.0 + qzpay-drizzle 1.9.0**: introduce `QZPayPollingResourceType = 'subscription' | 'one_time_payment'`. The polling-jobs schema gets a `resource_type` column. Optional `payment.search()` method on the payment adapter interface.
+- **qzpay-mercadopago 2.1.0** implements `payment.search({externalReference})` using the SDK's typed filter (with passthrough support for the untyped `preference_id` MP REST param).
+- **Hospeda PR #1234** extends the annual flow to schedule a polling job with `resource_type='one_time_payment'` and `providerResourceId` = local checkout-session id (which qzpay-core sets as MP `external_reference`). The `subscription-poll` cron searches MP payments by external_reference once per minute and routes any approved payment through the same idempotent `confirmAnnualSubscription` helper the webhook handler uses. Webhook and polling can race for the same payment without risk — both go through the idempotency guards.
+
+**Status**: 🟢 Resolved on staging (pending smoke 1.3 re-run with new versions deployed). The webhook handler now ALSO works because the metadata-forwarding fix lets `payment.metadata.annualSubscriptionId` reach the dispatcher; polling is defense-in-depth for the IPN-only delivery channel.
+
 ### Smoke 1.2 monthly — final result
 
 **Validated end-to-end**: signup → checkout → MP authorization (APRO + test buyer) → `payment.created` webhook processed → polling cron transitions sub to active within 60 seconds. DB row:

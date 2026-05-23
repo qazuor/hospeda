@@ -47,8 +47,10 @@ vi.mock('../../src/lib/qzpay-logger.js', () => ({
 }));
 
 const mockRetrieve = vi.fn();
-const mockCreateMercadoPagoAdapter = vi.fn(() => ({
-    subscriptions: { retrieve: mockRetrieve }
+const mockSearch = vi.fn();
+const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => ({
+    subscriptions: { retrieve: mockRetrieve },
+    payments: { search: mockSearch }
 }));
 
 vi.mock('@repo/billing', () => ({
@@ -88,6 +90,11 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic.js', () => ({
     processSubscriptionUpdated: (...args: unknown[]) => mockProcessSubscriptionUpdated(...args)
 }));
 
+const mockConfirmAnnualSubscription = vi.fn();
+vi.mock('../../src/routes/webhooks/mercadopago/payment-logic.js', () => ({
+    confirmAnnualSubscription: (...args: unknown[]) => mockConfirmAnnualSubscription(...args)
+}));
+
 // ---------- Imports under test (after mocks) ----------
 
 const { subscriptionPollJob } = await import('../../src/cron/jobs/subscription-poll.job.js');
@@ -103,6 +110,7 @@ function buildJob(
         subscriptionId: '11111111-1111-1111-1111-111111111111',
         provider: 'mercadopago',
         providerResourceId: 'preapproval_test',
+        resourceType: 'subscription',
         status: 'pending',
         attempts: 0,
         maxAttempts: 60,
@@ -364,6 +372,168 @@ describe('subscription-poll cron job', () => {
             expect(result.processed).toBe(0);
             // processSubscriptionUpdated must NOT have been called for this job.
             expect(mockProcessSubscriptionUpdated).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('One-time payment polling (SPEC-143 Finding #21)', () => {
+        // Annual flow polls preference_id → payment search → confirm
+        // via the idempotent payment-logic helper. None of these should
+        // call processSubscriptionUpdated (that's the preapproval path).
+
+        // Helper: when storage.update is called as the optimistic lock, it
+        // must return a "locked" snapshot of the job — including the
+        // resourceType + providerResourceId set on the test fixture. The
+        // outer beforeEach mock uses buildJob() (default values), so each
+        // test in this describe block installs its own mock that preserves
+        // the fixture identity.
+        function lockWithJob(job: QZPaySubscriptionPollingJob): void {
+            mockStorageUpdate.mockImplementation(async (input) => ({ ...job, ...input }));
+        }
+
+        it('transitions a one_time_payment job to succeeded when a payment is approved', async () => {
+            const job = buildJob({
+                id: 'otp-job-1',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_annual_xyz'
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: '999000111',
+                    status: 'succeeded',
+                    amount: 25000, // cents
+                    currency: 'ARS',
+                    metadata: { annualSubscriptionId: job.subscriptionId }
+                }
+            ]);
+            mockConfirmAnnualSubscription.mockResolvedValueOnce({ confirmed: true });
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBe(0);
+            // Searched by externalReference (the local checkout session id).
+            expect(mockSearch).toHaveBeenCalledWith({ externalReference: 'cs_annual_xyz' });
+            // Annual confirm called with major-unit amount + payment metadata.
+            expect(mockConfirmAnnualSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    annualSubscriptionId: job.subscriptionId,
+                    providerPaymentId: '999000111',
+                    amount: 250, // 25000 cents / 100 = 250 ARS
+                    currency: 'ARS',
+                    source: 'polling'
+                })
+            );
+            // Should NOT have called the preapproval path.
+            expect(mockProcessSubscriptionUpdated).not.toHaveBeenCalled();
+            // Terminal succeeded update should be present.
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalUpdate).toBeDefined();
+        });
+
+        it('keeps polling when no payment exists yet (user still on checkout page)', async () => {
+            const job = buildJob({
+                id: 'otp-job-2',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_pending'
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([]);
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.processed).toBe(1);
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+            const terminalUpdates = mockStorageUpdate.mock.calls.filter((call) => {
+                const status = (call[0] as { status?: string }).status;
+                return status === 'succeeded' || status === 'failed' || status === 'cancelled';
+            });
+            expect(terminalUpdates).toHaveLength(0);
+            // Reschedule fired.
+            const reschedule = mockStorageUpdate.mock.calls.find((call) => {
+                return (call[0] as { nextPollAt?: Date }).nextPollAt !== undefined;
+            });
+            expect(reschedule).toBeDefined();
+        });
+
+        it('marks the job failed when the only matching payment was rejected', async () => {
+            const job = buildJob({
+                id: 'otp-job-3',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_rejected'
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                { id: '111', status: 'failed', amount: 1000, currency: 'ARS' }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'failed'
+            );
+            expect(terminalUpdate).toBeDefined();
+        });
+
+        it('picks the succeeded payment when multiple exist (retry-card case)', async () => {
+            const job = buildJob({
+                id: 'otp-job-4',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_retry'
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            // Adapter returns most-recent first; succeeded is the second.
+            mockSearch.mockResolvedValueOnce([
+                { id: '999', status: 'failed', amount: 1000, currency: 'ARS' },
+                {
+                    id: '888',
+                    status: 'succeeded',
+                    amount: 1000,
+                    currency: 'ARS',
+                    metadata: { annualSubscriptionId: job.subscriptionId }
+                }
+            ]);
+            mockConfirmAnnualSubscription.mockResolvedValueOnce({ confirmed: true });
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockConfirmAnnualSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ providerPaymentId: '888' })
+            );
+        });
+
+        it('falls back to job.subscriptionId when payment metadata lacks annualSubscriptionId', async () => {
+            const job = buildJob({
+                id: 'otp-job-5',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_no_meta'
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: '500',
+                    status: 'succeeded',
+                    amount: 1000,
+                    currency: 'ARS',
+                    // metadata omitted entirely on this payment
+                    metadata: undefined
+                }
+            ]);
+            mockConfirmAnnualSubscription.mockResolvedValueOnce({ confirmed: true });
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockConfirmAnnualSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ annualSubscriptionId: job.subscriptionId })
+            );
         });
     });
 });

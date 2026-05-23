@@ -21,6 +21,7 @@ import { createMercadoPagoAdapter } from '@repo/billing';
 import { sql, withTransaction } from '@repo/db';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { confirmAnnualSubscription } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import { env } from '../../utils/env.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -123,9 +124,171 @@ interface ProcessJobResult {
     readonly error: Error | null;
 }
 
+type CronLogger = CronJobDefinition['handler'] extends (ctx: infer Ctx) => unknown
+    ? Ctx extends { logger: infer L }
+        ? L
+        : never
+    : never;
+
 /**
- * Process a single polling job: lock it, query MP, transition the
- * subscription if appropriate, and persist the next state on the job.
+ * Subscription-flavour poll: hit MP `/preapproval/{id}` via the existing
+ * webhook handler so we get audit log + notifications + addon recalc for
+ * free, plus an idempotent transition (the handler bails early when
+ * local status already matches provider).
+ *
+ * Mirrors the original implementation 1:1 — extracted only to slot into
+ * the resourceType branch in {@link processOneJob}.
+ */
+async function runSubscriptionPoll(params: {
+    locked: QZPaySubscriptionPollingJob;
+    billing: NonNullable<ReturnType<typeof getQZPayBilling>>;
+    paymentAdapter: QZPayMercadoPagoAdapter;
+    logger: CronLogger;
+}): Promise<PollOutcome> {
+    const { locked, billing, paymentAdapter, logger } = params;
+
+    const handlerResult = await processSubscriptionUpdated({
+        event: buildSyntheticEvent(locked),
+        billing,
+        paymentAdapter,
+        providerEventId: `polling-${locked.id}`,
+        source: 'polling'
+    });
+
+    let providerStatusRaw: string | null = null;
+    try {
+        const provider = await paymentAdapter.subscriptions.retrieve(locked.providerResourceId);
+        providerStatusRaw = provider.status;
+    } catch (lookupError) {
+        logger.debug('subscription-poll: secondary status read failed', {
+            jobId: locked.id,
+            error: lookupError instanceof Error ? lookupError.message : String(lookupError)
+        });
+    }
+
+    return classifyOutcome({
+        statusChanged: handlerResult.statusChanged,
+        newStatus: handlerResult.newStatus,
+        providerStatusRaw
+    });
+}
+
+/**
+ * One-time-payment poll (SPEC-143 Finding #21): the polling job's
+ * `providerResourceId` is the local checkout session id (also set as
+ * MP `external_reference`), and we resolve the actual MP payment id
+ * by searching the payments collection.
+ *
+ * Decision matrix per attempt:
+ * - No matching payment yet (user still on checkout page) → keep polling.
+ * - Found `succeeded` payment → call {@link confirmAnnualSubscription}
+ *   (idempotent — webhook and polling race for the same payment without
+ *   risk). Returns terminal `succeeded`.
+ * - Found `failed`/`canceled` only → terminal failure; the abandoned-
+ *   pending-subs reaper picks up the local sub via TTL.
+ * - Other intermediate states → keep polling.
+ *
+ * Requires the configured payment adapter to expose `search()`. MP's
+ * adapter implements it natively; if a future provider does not, this
+ * branch logs and treats the job as non-terminal so retries continue
+ * (the adapter capability is checked once up-front in the cron handler
+ * so we don't hammer search-less adapters per attempt).
+ */
+async function runOneTimePaymentPoll(params: {
+    locked: QZPaySubscriptionPollingJob;
+    billing: NonNullable<ReturnType<typeof getQZPayBilling>>;
+    paymentAdapter: QZPayMercadoPagoAdapter;
+    logger: CronLogger;
+}): Promise<PollOutcome> {
+    const { locked, billing, paymentAdapter, logger } = params;
+
+    if (!paymentAdapter.payments.search) {
+        // Configured adapter doesn't support search — bail and keep
+        // polling. The cron's adapter availability is checked once at
+        // startup, so reaching this branch means the adapter contract
+        // shape changed unexpectedly. Log loudly.
+        logger.error(
+            'subscription-poll: paymentAdapter has no search() — cannot resolve one_time_payment job',
+            {
+                jobId: locked.id,
+                subscriptionId: locked.subscriptionId
+            }
+        );
+        return {
+            terminal: false,
+            status: 'pending',
+            providerStatus: null,
+            error: 'adapter_search_unavailable'
+        };
+    }
+
+    const matches = await paymentAdapter.payments.search({
+        externalReference: locked.providerResourceId
+    });
+
+    // Prefer the most recent succeeded attempt — the search adapter
+    // already sorts date_created DESC so the first succeeded entry is
+    // the authoritative one for this checkout session.
+    const succeeded = matches.find((p) => p.status === 'succeeded');
+    if (succeeded) {
+        // amount comes from the adapter in cents (smallest currency unit);
+        // confirmAnnualSubscription expects MAJOR units (it converts back
+        // to cents internally when recording the payment row). Mirror the
+        // webhook handler convention.
+        const amountMajor = succeeded.amount / 100;
+        const annualSubscriptionId =
+            typeof succeeded.metadata?.annualSubscriptionId === 'string'
+                ? succeeded.metadata.annualSubscriptionId
+                : locked.subscriptionId; // fallback: trust the local job
+        try {
+            await confirmAnnualSubscription({
+                annualSubscriptionId,
+                providerPaymentId: succeeded.id,
+                amount: amountMajor,
+                currency: succeeded.currency,
+                billing,
+                source: 'polling'
+            });
+        } catch (err) {
+            // confirmAnnualSubscription swallows its own errors (logged
+            // there). A throw here would mean unexpected runtime failure
+            // — surface as adapter error so the job retries.
+            logger.error('subscription-poll: confirmAnnualSubscription threw', {
+                jobId: locked.id,
+                paymentId: succeeded.id,
+                error: err instanceof Error ? err.message : String(err)
+            });
+            throw err;
+        }
+        return { terminal: true, status: 'succeeded', providerStatus: 'approved', error: null };
+    }
+
+    // No succeeded — check for terminal failure (rejected / cancelled)
+    // among the matches. If the latest attempt is a failure we treat
+    // the job as terminal; the user can retry by starting a new checkout.
+    const failure = matches.find((p) => p.status === 'failed' || p.status === 'canceled');
+    if (failure) {
+        return {
+            terminal: true,
+            status: failure.status === 'canceled' ? 'cancelled' : 'failed',
+            providerStatus: failure.status,
+            error: null
+        };
+    }
+
+    // No matches yet OR only intermediate statuses → keep polling.
+    return {
+        terminal: false,
+        status: 'pending',
+        providerStatus: matches[0]?.status ?? null,
+        error: null
+    };
+}
+
+/**
+ * Process a single polling job: lock it, branch on resourceType to
+ * query the right MP endpoint, transition the subscription if
+ * appropriate, and persist the next state on the job.
  *
  * Each job uses optimistic locking. A worker that loses the version
  * race silently exits — the winner will progress the job.
@@ -134,11 +297,7 @@ async function processOneJob(
     job: QZPaySubscriptionPollingJob,
     billing: NonNullable<ReturnType<typeof getQZPayBilling>>,
     paymentAdapter: QZPayMercadoPagoAdapter,
-    logger: CronJobDefinition['handler'] extends (ctx: infer Ctx) => unknown
-        ? Ctx extends { logger: infer L }
-            ? L
-            : never
-        : never
+    logger: CronLogger
 ): Promise<ProcessJobResult> {
     const storage = billing.getStorage().subscriptionPollingJobs;
     if (!storage) {
@@ -194,41 +353,13 @@ async function processOneJob(
         };
     }
 
-    // 3. Hit the provider via the existing webhook handler so we get
-    //    audit log + notifications + addon recalc for free, plus an
-    //    idempotent transition (the handler bails early if the local
-    //    status already matches the provider's).
-    let providerStatusRaw: string | null = null;
+    // 3. Branch on resourceType. Both branches return a PollOutcome;
+    //    the persist-next-state step below is shared.
     try {
-        const handlerResult = await processSubscriptionUpdated({
-            event: buildSyntheticEvent(locked),
-            billing,
-            paymentAdapter,
-            providerEventId: `polling-${locked.id}`,
-            source: 'polling'
-        });
-
-        // The handler doesn't surface the raw provider status, so fetch
-        // it once more for the polling job's `lastProviderStatus`
-        // diagnostic. Cheap REST call — MP doesn't bill per request and
-        // the cron volume is single-digit per minute.
-        try {
-            const provider = await paymentAdapter.subscriptions.retrieve(locked.providerResourceId);
-            providerStatusRaw = provider.status;
-        } catch (lookupError) {
-            // Non-fatal: we already got the canonical decision from the
-            // handler. Just lose the diagnostic.
-            logger.debug('subscription-poll: secondary status read failed', {
-                jobId: locked.id,
-                error: lookupError instanceof Error ? lookupError.message : String(lookupError)
-            });
-        }
-
-        const outcome = classifyOutcome({
-            statusChanged: handlerResult.statusChanged,
-            newStatus: handlerResult.newStatus,
-            providerStatusRaw
-        });
+        const outcome =
+            locked.resourceType === 'one_time_payment'
+                ? await runOneTimePaymentPoll({ locked, billing, paymentAdapter, logger })
+                : await runSubscriptionPoll({ locked, billing, paymentAdapter, logger });
 
         // 4. Persist the job's next state. Terminal outcomes set
         //    completedAt + status; non-terminal outcomes only bump
@@ -265,6 +396,7 @@ async function processOneJob(
         logger.warn('subscription-poll: provider call failed, scheduled retry', {
             jobId: locked.id,
             providerResourceId: locked.providerResourceId,
+            resourceType: locked.resourceType,
             error: errMessage
         });
         return {

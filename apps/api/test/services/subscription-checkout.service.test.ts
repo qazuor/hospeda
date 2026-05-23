@@ -103,7 +103,12 @@ function createBillingMock(opts: BillingMockOpts = {}) {
         },
         subscriptions: {
             create
-        }
+        },
+        // SPEC-143: schedulePollingForSubscription helper guards on
+        // `getStorage().subscriptionPollingJobs` being present. These
+        // tests do not exercise polling — returning a storage without
+        // the polling slot makes the helper short-circuit cleanly.
+        getStorage: vi.fn(() => ({}))
     };
 }
 
@@ -129,7 +134,6 @@ describe('initiatePaidMonthlySubscription', () => {
         const result = await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS
         });
@@ -150,7 +154,6 @@ describe('initiatePaidMonthlySubscription', () => {
         await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS
         });
@@ -180,7 +183,6 @@ describe('initiatePaidMonthlySubscription', () => {
         const result = await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS
         });
@@ -195,7 +197,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'does-not-exist',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -214,7 +215,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -233,7 +233,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -257,7 +256,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -273,7 +271,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -292,7 +289,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS
             })
@@ -318,7 +314,6 @@ describe('initiatePaidMonthlySubscription', () => {
         await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS,
             promoCode: 'FREEMONTH'
@@ -336,7 +331,6 @@ describe('initiatePaidMonthlySubscription', () => {
         await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS
         });
@@ -353,7 +347,6 @@ describe('initiatePaidMonthlySubscription', () => {
         await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS,
             promoCode: 'freemonth'
@@ -370,7 +363,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS,
                 promoCode: 'NOT_REAL'
@@ -393,7 +385,6 @@ describe('initiatePaidMonthlySubscription', () => {
             initiatePaidMonthlySubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: URLS,
                 promoCode: 'BIENVENIDO30'
@@ -407,7 +398,6 @@ describe('initiatePaidMonthlySubscription', () => {
         await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: URLS,
             promoCode: ''
@@ -477,7 +467,10 @@ function createAnnualBillingMock(
     return {
         plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
-        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) }
+        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) },
+        // SPEC-143 polling enqueue happens inside the annual flow now —
+        // empty storage makes the helper short-circuit cleanly.
+        getStorage: vi.fn(() => ({}))
     };
 }
 
@@ -512,7 +505,6 @@ describe('initiatePaidAnnualSubscription', () => {
         const result = await initiatePaidAnnualSubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: ANNUAL_URLS,
             db: stub
@@ -554,7 +546,6 @@ describe('initiatePaidAnnualSubscription', () => {
         await initiatePaidAnnualSubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: ANNUAL_URLS,
             db: stub
@@ -598,7 +589,6 @@ describe('initiatePaidAnnualSubscription', () => {
         const result = await initiatePaidAnnualSubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: ANNUAL_URLS,
             db: stub
@@ -614,7 +604,6 @@ describe('initiatePaidAnnualSubscription', () => {
         await initiatePaidAnnualSubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: ANNUAL_URLS,
             statementDescriptor: 'HOSPEDA',
@@ -634,7 +623,6 @@ describe('initiatePaidAnnualSubscription', () => {
         await initiatePaidAnnualSubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: ANNUAL_URLS,
             db: stub
@@ -654,7 +642,6 @@ describe('initiatePaidAnnualSubscription', () => {
             initiatePaidAnnualSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'does-not-exist',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: ANNUAL_URLS,
                 db: stub
@@ -678,7 +665,6 @@ describe('initiatePaidAnnualSubscription', () => {
             initiatePaidAnnualSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: ANNUAL_URLS,
                 db: stub
@@ -702,7 +688,6 @@ describe('initiatePaidAnnualSubscription', () => {
             initiatePaidAnnualSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: ANNUAL_URLS,
                 db: stub
@@ -718,7 +703,6 @@ describe('initiatePaidAnnualSubscription', () => {
             initiatePaidAnnualSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: ANNUAL_URLS,
                 db: stub
@@ -736,7 +720,6 @@ describe('initiatePaidAnnualSubscription', () => {
             initiatePaidAnnualSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: ANNUAL_URLS,
                 db: stub
@@ -1001,7 +984,6 @@ describe('initiatePaidPlanUpgrade', () => {
             newPlanId: NEW_PLAN_ID,
             billingInterval: 'month',
             intervalCount: 1,
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: UPGRADE_URLS,
             now: HALFWAY
@@ -1024,7 +1006,6 @@ describe('initiatePaidPlanUpgrade', () => {
             newPlanId: NEW_PLAN_ID,
             billingInterval: 'month',
             intervalCount: 1,
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: UPGRADE_URLS,
             statementDescriptor: 'HOSPEDA',
@@ -1068,7 +1049,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1086,7 +1066,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: PLAN_ID, // same as current
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1111,7 +1090,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1138,7 +1116,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1156,7 +1133,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1174,7 +1150,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1192,7 +1167,6 @@ describe('initiatePaidPlanUpgrade', () => {
                 newPlanId: NEW_PLAN_ID,
                 billingInterval: 'month',
                 intervalCount: 1,
-                // biome-ignore lint/suspicious/noExplicitAny: structural mock
                 billing: billing as any,
                 urls: UPGRADE_URLS,
                 now: HALFWAY
@@ -1214,7 +1188,6 @@ describe('initiatePaidPlanUpgrade', () => {
             newPlanId: NEW_PLAN_ID,
             billingInterval: 'month',
             intervalCount: 1,
-            // biome-ignore lint/suspicious/noExplicitAny: structural mock
             billing: billing as any,
             urls: UPGRADE_URLS,
             now: HALFWAY
