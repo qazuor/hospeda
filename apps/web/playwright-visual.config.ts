@@ -21,6 +21,14 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = process.env.VISUAL_TEST_BASE_URL ?? 'http://localhost:4322';
 
 /**
+ * Where rendered snapshots land. Phase 0 + Phase 2 use distinct dirs so the
+ * pre-migration `baseline/` set can be diffed against a post-migration
+ * `actual/` set by T-153-23. Default stays `baseline` for back-compat with
+ * the Phase 0 capture invocation.
+ */
+const SNAPSHOT_DIR = process.env.VISUAL_TEST_SNAPSHOT_DIR ?? 'baseline';
+
+/**
  * Viewport matrix. Heights chosen to capture full hero + at least one
  * below-fold section on each device class. Snapshots use `fullPage: true`
  * so heights are upper bounds only.
@@ -41,7 +49,7 @@ export default defineConfig({
     workers: 1,
     reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-visual-report' }]],
 
-    snapshotPathTemplate: 'tests/visual-snapshots/baseline/{arg}{ext}',
+    snapshotPathTemplate: `tests/visual-snapshots/${SNAPSHOT_DIR}/{arg}{ext}`,
 
     expect: {
         toHaveScreenshot: {
