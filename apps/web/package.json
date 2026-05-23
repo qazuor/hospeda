@@ -26,6 +26,7 @@
         "@astrojs/sitemap": "^3.7.2",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
+        "@repo/design-tokens": "workspace:*",
         "@repo/feedback": "workspace:*",
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
