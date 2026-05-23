@@ -19,6 +19,13 @@ export interface StarsFilterConfig {
     readonly includeNullLabel?: string;
     /** URL param name for the include-null toggle (e.g. 'includeNoReviews'). */
     readonly includeNullParam?: string;
+    /**
+     * Whether the include-null toggle starts checked. When true, the URL only
+     * carries `<includeNullParam>=false` after the user explicitly unchecks it
+     * (absent param = checked). When false (default), absent = unchecked and
+     * `<includeNullParam>=true` is emitted when toggled on.
+     */
+    readonly defaultIncludeNull?: boolean;
 }
 
 interface StarsFilterProps {

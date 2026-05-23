@@ -58,6 +58,12 @@ export interface DateRangeFilterConfig {
      * (e.g. event history).
      */
     readonly allowPastDates?: boolean;
+    /**
+     * Optional helper text rendered below the trigger(s). Use it to flag
+     * limitations the user should know about (e.g. "no availability data yet,
+     * dates here don't filter the result set").
+     */
+    readonly description?: string;
 }
 
 interface DateRangeFilterProps {
@@ -327,38 +333,44 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
         const fromPlaceholder = config.checkInPlaceholder ?? t('ui.filter.dateRange.from', 'Desde');
         const toPlaceholder = config.checkOutPlaceholder ?? t('ui.filter.dateRange.to', 'Hasta');
         return (
-            <div className={styles.boundsRoot}>
-                <SingleBoundPicker
-                    label={`${config.label} desde`}
-                    placeholder={fromPlaceholder}
-                    selected={fromDate}
-                    onSelect={(date) =>
-                        onChange({
-                            from: date ? toIsoDay(date) : '',
-                            to: value.to
-                        })
-                    }
-                    locale={locale}
-                    disabledMatcher={fromPickerDisabled}
-                    defaultMonth={fromDate ?? toDate ?? today}
-                    clearLabel={t('ui.filter.dateRange.clearFrom', `Limpiar "${fromPlaceholder}"`)}
-                />
-                <SingleBoundPicker
-                    label={`${config.label} hasta`}
-                    placeholder={toPlaceholder}
-                    selected={toDate}
-                    onSelect={(date) =>
-                        onChange({
-                            from: value.from,
-                            to: date ? toIsoDay(date) : ''
-                        })
-                    }
-                    locale={locale}
-                    disabledMatcher={toPickerDisabled}
-                    defaultMonth={toDate ?? fromDate ?? today}
-                    clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`)}
-                />
-            </div>
+            <>
+                <div className={styles.boundsRoot}>
+                    <SingleBoundPicker
+                        label={`${config.label} desde`}
+                        placeholder={fromPlaceholder}
+                        selected={fromDate}
+                        onSelect={(date) =>
+                            onChange({
+                                from: date ? toIsoDay(date) : '',
+                                to: value.to
+                            })
+                        }
+                        locale={locale}
+                        disabledMatcher={fromPickerDisabled}
+                        defaultMonth={fromDate ?? toDate ?? today}
+                        clearLabel={t(
+                            'ui.filter.dateRange.clearFrom',
+                            `Limpiar "${fromPlaceholder}"`
+                        )}
+                    />
+                    <SingleBoundPicker
+                        label={`${config.label} hasta`}
+                        placeholder={toPlaceholder}
+                        selected={toDate}
+                        onSelect={(date) =>
+                            onChange({
+                                from: value.from,
+                                to: date ? toIsoDay(date) : ''
+                            })
+                        }
+                        locale={locale}
+                        disabledMatcher={toPickerDisabled}
+                        defaultMonth={toDate ?? fromDate ?? today}
+                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`)}
+                    />
+                </div>
+                {config.description && <p className={styles.description}>{config.description}</p>}
+            </>
         );
     }
 
@@ -460,6 +472,7 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                     </div>,
                     document.body
                 )}
+            {config.description && <p className={styles.description}>{config.description}</p>}
         </div>
     );
 }

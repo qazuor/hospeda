@@ -59,3 +59,15 @@
     font-size: 0.75rem;
     color: var(--core-muted-foreground);
 }
+
+/* Helper text rendered below the stepper (e.g. "(menores de 5 años)" under
+ * a "Niños" field). Sits centered, muted, small enough not to compete with
+ * the value. */
+.description {
+    margin: 0.125rem 0 0;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    text-align: center;
+}

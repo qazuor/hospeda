@@ -143,14 +143,19 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
         return hasSelections || hasPriorityActive;
     }
     if (group.type === 'stepper') {
+        // `emitWhenAtDefault` controls URL emission only (so context fields
+        // like adults/children survive pagination); a value at its default is
+        // never "active" from the user's POV.
         const def = getStepperDefault(group);
         const stateVal = state.steppers[group.id];
-        if (group.emitWhenAtDefault === true) return stateVal !== undefined;
         return (stateVal ?? def) > def;
     }
     if (group.type === 'stars') {
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
-        return hasIncludeNull || (state.steppers[group.id] ?? 0) > 0;
+        const includeNullDefault = group.defaultIncludeNull === true;
+        const includeNullState = state.toggles[`${group.id}_includeNull`];
+        const includeNullChanged =
+            includeNullState !== undefined && includeNullState !== includeNullDefault;
+        return includeNullChanged || (state.steppers[group.id] ?? 0) > 0;
     }
     if (group.type === 'toggle') return !!state.toggles[group.id];
     if (group.type === 'price-composite') {
@@ -169,9 +174,12 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
     }
     if (group.type === 'dual-range') {
         const range = state.ranges[group.id];
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
+        const includeNullDefault = group.defaultIncludeNull === true;
+        const includeNullState = state.toggles[`${group.id}_includeNull`];
+        const includeNullChanged =
+            includeNullState !== undefined && includeNullState !== includeNullDefault;
         return (
-            hasIncludeNull ||
+            includeNullChanged ||
             !!(
                 (range?.min && range.min !== String(group.min)) ||
                 (range?.max && range.max !== String(group.max))
@@ -295,8 +303,13 @@ export function initStateFromParams({
             const max = params[`max${cap}`] ?? '';
             if (min || max) ranges[group.id] = { min, max };
             const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
+            if (includeNullParam) {
+                if (group.defaultIncludeNull === true) {
+                    // Default checked: ON unless URL explicitly says 'false'.
+                    toggles[`${group.id}_includeNull`] = params[includeNullParam] !== 'false';
+                } else if (params[includeNullParam] === 'true') {
+                    toggles[`${group.id}_includeNull`] = true;
+                }
             }
         }
         if (group.type === 'stepper') {
@@ -307,8 +320,12 @@ export function initStateFromParams({
             const val = params.minRating;
             if (val) steppers[group.id] = Number(val);
             const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
+            if (includeNullParam) {
+                if (group.defaultIncludeNull === true) {
+                    toggles[`${group.id}_includeNull`] = params[includeNullParam] !== 'false';
+                } else if (params[includeNullParam] === 'true') {
+                    toggles[`${group.id}_includeNull`] = true;
+                }
             }
         }
         if (group.type === 'toggle') {
@@ -408,12 +425,14 @@ export function buildParamsFromState({
         if (group.type === 'toggle' && state.toggles[group.id]) {
             params.set(group.id, 'true');
         }
-        if (
-            (group.type === 'dual-range' || group.type === 'stars') &&
-            group.includeNullParam &&
-            state.toggles[`${group.id}_includeNull`]
-        ) {
-            params.set(group.includeNullParam, 'true');
+        if ((group.type === 'dual-range' || group.type === 'stars') && group.includeNullParam) {
+            const isOn = state.toggles[`${group.id}_includeNull`];
+            if (group.defaultIncludeNull === true) {
+                // Default ON: only emit when explicitly OFF, so absent = checked.
+                if (isOn === false) params.set(group.includeNullParam, 'false');
+            } else if (isOn === true) {
+                params.set(group.includeNullParam, 'true');
+            }
         }
         if (group.type === 'date-range') {
             const v = state.dates[group.id];
