@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1"]
@@ -332,7 +332,10 @@
             "id": "T-153-22",
             "title": "Re-run Playwright capture into actual/ dir post-migration",
             "phase": "phase-2",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T14:00:00Z",
+            "completedAt": "2026-05-23T14:30:00Z",
+            "completionNotes": "DONE. 64/64 PNGs captured into apps/web/tests/visual-snapshots/actual/ (8 pages × 4 viewports × 2 themes, matching the baseline scope exactly). apps/web/playwright-visual.config.ts now reads VISUAL_TEST_SNAPSHOT_DIR (defaults to 'baseline' for back-compat) and interpolates it into snapshotPathTemplate, so the same suite can switch between baseline/ and actual/ without code changes. Captured against a fresh dev server on :4322 (worktree-local astro dev) with VISUAL_TEST_BASE_URL=http://localhost:4322 VISUAL_TEST_NO_WEBSERVER=1 VISUAL_TEST_SNAPSHOT_DIR=actual + --update-snapshots. First pass: 62 passed, 2 flaky (home [dark] on desktop + wide, the hero-blob image loaded at slightly different stages between consecutive stability frames, ~1% pixel ratio diff in the top-right corner). Re-ran those 2 with --retries=3, both eventually captured (1 desktop passed clean, 1 wide flaky but green by retry 2). Final state: 64 PNGs verified via find. tests/visual-snapshots/{baseline,actual,diff}/ already gitignored from T-153-01 — no large artifacts will land in version control. Operator error to flag: while stopping the worktree's dev server I killed pid 203940 which turned out to be the other worktree's (hospeda-misc-polish) :4321 server; some supervisor restarted it (now pid 251889 on :4321). Lesson: ALWAYS filter pkill by port/cwd before nuking pids picked from `ss -tlnp`.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-21"],
