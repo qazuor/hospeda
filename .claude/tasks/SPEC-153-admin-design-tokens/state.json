@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -110,7 +110,10 @@
             "id": "T-153-05",
             "title": "Scaffold packages/design-tokens (package.json, tsconfig, README, turbo.json registration)",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T04:50:00Z",
+            "completedAt": "2026-05-23T05:10:00Z",
+            "completionNotes": "DONE. Scaffolded packages/design-tokens following @repo/logger conventions: package.json (@repo/design-tokens, exports './tokens.css' + './seed/web-baseline.json', scripts build/build:ts/build:css/validate/extract:web/typecheck/test/lint/format/check/clean), tsconfig.json (extends ../typescript-config/package-base.json), tsup.config.ts (ESM+CJS+DTS, target es2022), README.md (architecture, theme selectors, build pipeline doc), src/index.ts (placeholder exports PACKAGE_NAME/PACKAGE_VERSION/SPEC_REF). Stub dirs: src/tokens/, src/themes/, src/generators/ (renamed from src/build/ because root .gitignore excludes that glob). .gitignore for dist/+node_modules. pnpm-workspace.yaml NOT touched — packages/* glob auto-discovers new package. turbo.json NOT touched — generic build task (^build dependsOn, dist/** outputs) already covers it. Verified: pnpm install registers package, pnpm --filter @repo/design-tokens typecheck passes (tsc --noEmit clean), lint passes (5 files clean), build:ts produces ESM/CJS/DTS output. Full build (tsup + gen-css + validate) NOT runnable yet — generate-css.ts and validate.ts are T-153-16/T-153-17.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-04"],
