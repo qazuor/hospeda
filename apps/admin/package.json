@@ -45,6 +45,7 @@
         "@repo/auth-ui": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
+        "@repo/design-tokens": "workspace:*",
         "@repo/feedback": "workspace:*",
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
