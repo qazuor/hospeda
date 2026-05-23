@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -149,11 +149,13 @@
             "id": "T-153-08",
             "title": "Implement src/tokens/typography.ts — base scale + web semantic tokens",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T06:20:00Z",
+            "completedAt": "2026-05-23T06:35:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/tokens/typography.ts (~180 lines) with: fontFamily (sans/heading/decorative/mono — Caveat included for web compat even though admin won't use it), fontSize base scale doc 05 §5.2 (xs/sm/base/lg/xl/2xl/3xl/4xl/5xl), fontWeight (normal/medium/semibold/bold), lineHeight (tight/normal/relaxed), and 16 semantic composites anchored to web seed byte-for-byte (hero/display/h2/h3/h4/body/bodySm/bodyXs/bodyLg/meta/caption/tagline/nav/button/lg/xl — most are clamp() expressions for fluid scaling). typography aggregate groups all sub-namespaces. Tests: 80 total (37 added). 37 typography tests cover: fontFamily 4-entry match, fontSize 9-entry match + monotonic progression, fontWeight numeric values, lineHeight ratios, all 16 semantic entries byte-for-byte, aggregate sub-namespace identity. Lint auto-fixed 1 (multi-line array collapse). Types exported: FontFamilyName, FontSizeKey, FontWeightName, LineHeightName, SemanticTypographyName.",
             "complexity": 3,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "Base scale per doc 05 §5.2: fontFamily (sans=Roboto+sysfallback, heading=Geologica, decorative=Caveat web-only, mono=JetBrains Mono web-only). fontSize xs-5xl. fontWeight normal/medium/semibold/bold. lineHeight tight/normal/relaxed. Web semantic from web-baseline.json: --text-hero, --text-display, --text-h2..h4, --text-body*, --text-caption, --text-tagline, --text-nav, --text-button, --text-lg, --text-xl (these are composed shorthands — extract raw values or shorthand strings as-is)."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-09",
