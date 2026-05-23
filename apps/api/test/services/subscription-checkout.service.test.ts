@@ -103,7 +103,12 @@ function createBillingMock(opts: BillingMockOpts = {}) {
         },
         subscriptions: {
             create
-        }
+        },
+        // SPEC-143: schedulePollingForSubscription helper guards on
+        // `getStorage().subscriptionPollingJobs` being present. These
+        // tests do not exercise polling — returning a storage without
+        // the polling slot makes the helper short-circuit cleanly.
+        getStorage: vi.fn(() => ({}))
     };
 }
 
@@ -477,7 +482,10 @@ function createAnnualBillingMock(
     return {
         plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
-        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) }
+        checkout: { create: vi.fn().mockResolvedValue(checkoutResult) },
+        // SPEC-143 polling enqueue happens inside the annual flow now —
+        // empty storage makes the helper short-circuit cleanly.
+        getStorage: vi.fn(() => ({}))
     };
 }
 

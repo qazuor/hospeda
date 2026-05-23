@@ -20,7 +20,11 @@
  * @module services/subscription-checkout.service
  */
 
-import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import type {
+    QZPayBilling,
+    QZPayPollingResourceType,
+    QZPaySubscriptionWithHelpers
+} from '@qazuor/qzpay-core';
 import { resolveFreeTrialExtensionPromo } from '@repo/billing';
 import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
 import { env } from '../utils/env.js';
@@ -33,6 +37,105 @@ import { apiLogger } from '../utils/logger.js';
  * messages or schedules that should agree with the reaper.
  */
 export const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Inputs for {@link schedulePollingForSubscription}.
+ *
+ * Aggregates everything the polling-job storage needs plus a `sourceLabel`
+ * for log diagnostics (so an operator can tell which checkout flow
+ * enqueued the job from log lines alone). Kept internal because it
+ * only makes sense inside this module.
+ */
+interface SchedulePollingInput {
+    readonly billing: QZPayBilling;
+    readonly subscriptionId: string;
+    readonly providerResourceId: string;
+    readonly resourceType: QZPayPollingResourceType;
+    readonly planSlug: string;
+    readonly sourceLabel: string;
+}
+
+/**
+ * Shared helper to enqueue a subscription-polling job after a paid
+ * subscription is initiated. Both monthly (`subscription`) and annual
+ * (`one_time_payment`) flows call this so the env-flag check, error
+ * handling, and log shapes stay in one place.
+ *
+ * Skipped silently when:
+ *   - The {@link env.HOSPEDA_BILLING_POLLING_ENABLED} flag is off (test/legacy environments).
+ *   - The configured storage adapter does not expose `subscriptionPollingJobs`.
+ *   - The provider returned no resource id to poll (defensive guard for
+ *     callers that pass an empty string).
+ *
+ * Non-fatal: a polling-enqueue failure is logged but does not throw —
+ * the underlying subscription was created successfully and the webhook
+ * remains the primary activation path. This mirrors how the prior
+ * inline implementation behaved on the monthly flow.
+ */
+async function schedulePollingForSubscription(input: SchedulePollingInput): Promise<void> {
+    const { billing, subscriptionId, providerResourceId, resourceType, planSlug, sourceLabel } =
+        input;
+
+    if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
+        return;
+    }
+
+    if (!providerResourceId) {
+        apiLogger.warn(
+            { subscriptionId, resourceType, sourceLabel },
+            'Skipping polling enqueue — provider returned no resource id (cannot poll)'
+        );
+        return;
+    }
+
+    const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+    if (!pollingStorage) {
+        return;
+    }
+
+    try {
+        const job = await pollingStorage.create({
+            subscriptionId,
+            providerResourceId,
+            resourceType,
+            provider: 'mercadopago',
+            metadata: {
+                source: sourceLabel,
+                planSlug
+            }
+        });
+        if (job) {
+            apiLogger.debug(
+                {
+                    jobId: job.id,
+                    subscriptionId,
+                    providerResourceId,
+                    resourceType,
+                    nextPollAt: job.nextPollAt.toISOString()
+                },
+                'Scheduled subscription polling fallback'
+            );
+        } else {
+            apiLogger.warn(
+                { subscriptionId, providerResourceId, resourceType },
+                'Active polling job already exists for subscription — skipping enqueue'
+            );
+        }
+    } catch (error) {
+        // Non-fatal: subscription was created successfully; failing to
+        // schedule polling means we rely entirely on the webhook for
+        // activation. Log so an operator can investigate.
+        apiLogger.error(
+            {
+                subscriptionId,
+                providerResourceId,
+                resourceType,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Failed to enqueue subscription polling job — webhook is the only path now'
+        );
+    }
+}
 
 /**
  * Error codes surfaced by {@link initiatePaidMonthlySubscription}. Each
@@ -315,57 +418,16 @@ export async function initiatePaidMonthlySubscription(
     // the local subscription to `active` if the `subscription_preapproval.created`
     // webhook fails to arrive in time. Webhook still wins the race when it
     // does arrive — the poller treats an already-active subscription as a
-    // no-op. Skipped silently when the feature flag is off, when the storage
-    // adapter does not expose polling, or when the provider returned no
-    // preapproval id (annual flow does not produce one).
-    if (env.HOSPEDA_BILLING_POLLING_ENABLED) {
-        const providerSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
-        const pollingStorage = billing.getStorage().subscriptionPollingJobs;
-        if (pollingStorage && providerSubscriptionId) {
-            try {
-                const job = await pollingStorage.create({
-                    subscriptionId: subscription.id,
-                    providerResourceId: providerSubscriptionId,
-                    provider: 'mercadopago',
-                    metadata: {
-                        source: 'start-paid-monthly',
-                        planSlug
-                    }
-                });
-                if (job) {
-                    apiLogger.debug(
-                        {
-                            jobId: job.id,
-                            subscriptionId: subscription.id,
-                            providerResourceId: providerSubscriptionId,
-                            nextPollAt: job.nextPollAt.toISOString()
-                        },
-                        'Scheduled subscription polling fallback'
-                    );
-                } else {
-                    apiLogger.warn(
-                        {
-                            subscriptionId: subscription.id,
-                            providerResourceId: providerSubscriptionId
-                        },
-                        'Active polling job already exists for subscription — skipping enqueue'
-                    );
-                }
-            } catch (error) {
-                // Non-fatal: subscription was created successfully; failing
-                // to schedule polling means we rely entirely on the webhook
-                // for activation. Log so an operator can investigate.
-                apiLogger.error(
-                    {
-                        subscriptionId: subscription.id,
-                        providerResourceId: providerSubscriptionId,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'Failed to enqueue subscription polling job — webhook is the only path now'
-                );
-            }
-        }
-    }
+    // no-op. The helper handles the env-flag check, missing-storage guard,
+    // and error logging.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug,
+        sourceLabel: 'start-paid-monthly'
+    });
 
     return {
         checkoutUrl,
@@ -540,6 +602,26 @@ export async function initiatePaidAnnualSubscription(
             'Payment provider did not return a checkout URL'
         );
     }
+
+    // SPEC-143 Finding #21 fallback: enqueue a polling job that flips
+    // the local subscription to `active` if the `payment.created`/
+    // `payment.updated` webhook for the annual one-time charge fails
+    // to arrive (current production state: MP Preferences only deliver
+    // legacy IPN, which the marker filter drops as duplicate).
+    //
+    // `checkout.id` is the LOCAL checkout-session UUID assigned by the
+    // qzpay-core orchestrator and propagated to MP as `external_reference`
+    // — the cron searches MP payments by that field. The webhook still
+    // wins when it does arrive; both call sites go through the
+    // idempotent `confirmAnnualSubscription`.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: localSubscriptionId,
+        providerResourceId: checkout.id,
+        resourceType: 'one_time_payment',
+        planSlug,
+        sourceLabel: 'start-paid-annual'
+    });
 
     return {
         checkoutUrl,

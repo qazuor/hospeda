@@ -64,8 +64,13 @@ const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
  * subscription already in `active` status and returns without
  * re-recording anything. Errors are swallowed (logged) so a single
  * noisy event cannot block the webhook bucket — MP will retry.
+ *
+ * Exported so the SPEC-143 polling-fallback cron can call the same
+ * activation path when it resolves a payment via search. Both call
+ * sites rely on the function's idempotency: webhook and polling can
+ * race for the same payment and only one wins, the other no-ops.
  */
-async function confirmAnnualSubscription(input: {
+export async function confirmAnnualSubscription(input: {
     readonly annualSubscriptionId: string;
     readonly providerPaymentId: string;
     readonly amount: number;
@@ -181,6 +186,45 @@ async function confirmAnnualSubscription(input: {
     // annual plan and sees their features blocked until the TTL expires.
     // Synchronous, in-process, no I/O — safe to call unconditionally.
     clearEntitlementCache(sub.customerId);
+
+    // SPEC-143 Finding #21 fallback cleanup. Mark any active polling job
+    // for this annual subscription as `succeeded` so the cron stops
+    // searching MP for a sub whose status the webhook just resolved.
+    // Idempotent — even if this fails, the next poll attempt would see
+    // the sub already `active` and would no-op via the confirmAnnualSubscription
+    // idempotency guard. Skipped when source='polling' because in that
+    // case the cron itself is updating the job.
+    if (source !== 'polling') {
+        try {
+            const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+            if (pollingStorage) {
+                const activeJob = await pollingStorage.findActiveBySubscriptionId(sub.id);
+                if (activeJob) {
+                    await pollingStorage.update({
+                        id: activeJob.id,
+                        expectedVersion: activeJob.version,
+                        status: 'succeeded',
+                        completedAt: new Date(),
+                        lastError: 'webhook_arrived_first'
+                    });
+                    apiLogger.debug(
+                        { jobId: activeJob.id, subscriptionId: sub.id, source },
+                        'Marked annual polling job as succeeded after webhook transition'
+                    );
+                }
+            }
+        } catch (cleanupError) {
+            apiLogger.warn(
+                {
+                    error:
+                        cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+                    subscriptionId: sub.id,
+                    source
+                },
+                'Failed to mark annual polling job as succeeded after webhook — cron will complete it on next tick'
+            );
+        }
+    }
 
     apiLogger.info(
         {
