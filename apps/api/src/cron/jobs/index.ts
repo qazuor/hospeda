@@ -34,3 +34,4 @@ export { conversationTokenReminderJob } from './conversation-token-reminder.job.
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';
+export { subscriptionPollJob } from './subscription-poll.job.js';

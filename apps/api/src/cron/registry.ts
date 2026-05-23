@@ -22,6 +22,7 @@ import {
     notificationScheduleJob,
     pageRevalidationJob,
     searchIndexRefreshJob,
+    subscriptionPollJob,
     trialExpiryJob,
     trialPreEndNotifJob,
     webhookRetryJob
@@ -52,7 +53,8 @@ export const cronJobs: CronJobDefinition[] = [
     newsletterCloseCampaignsJob,
     trialPreEndNotifJob,
     abandonedPendingSubsJob,
-    applyScheduledPlanChangesJob
+    applyScheduledPlanChangesJob,
+    subscriptionPollJob
 ];
 
 /**
