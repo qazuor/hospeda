@@ -5,12 +5,12 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.6,
-        "phasesCompleted": ["phase-0", "phase-1"]
+        "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
     },
     "phases": {
         "phase-0": {
@@ -345,7 +345,10 @@
             "id": "T-153-23",
             "title": "Pixel-diff baseline vs actual + iterate fixes in design-tokens until pass",
             "phase": "phase-2",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T18:00:00Z",
+            "completedAt": "2026-05-23T19:15:00Z",
+            "completionNotes": "DONE — AC-5/AC-6 PASS at 0.0000% peak diff across 48 clean-room snapshots. Built apps/web/tests/visual-snapshots/diff-snapshots.cjs: file-vs-file pixel diff (sharp, no new dep) of baseline/ vs actual/, red-overlay diff PNGs to diff/ for any pair over the 0.1% threshold (AC-6). KEY METHODOLOGY DECISION (user-approved): the first raw diff of the STALE Phase-0 baseline vs the T-153-22 actual was NOT clean, but every failure was a test confounder, not a token regression: 24 dimension mismatches (dynamic pages — detail-accommodation +600px, blog-index -58px, home ±10px — captured different DB entities/dynamic sections across the multi-day gap) + 4 mobile over-threshold (cookie banner + web-font reflow). Proof-by-construction already held (validate.ts 199/199 byte-for-byte; bundled CSS identical; dark selector [data-theme=dark]:not([data-app=admin]) cascade-equivalent for web). To get EMPIRICAL proof the user chose a clean-room re-capture: capture before/ (old inline-token global.css via `git show 0dbd2b07f^:...`) and after/ (new @import global.css) back-to-back against the SAME running dev server / same data, with both confounders neutralized — seedCookieConsent() pre-sets the cookie so the consent banner mounts silently, and [data-testid=feedback-fab] is hidden ( @repo/feedback client:idle FAB, the lone 0.22% outlier in the first clean-room pass). Result: 48/48 at 0.0000%. SCOPE: gate covers the 6 deterministically-renderable pages (home, listing-accommodations, publicar, blog-index, contacto, legal-cookies) x 4 viewports x 2 themes. detail-accommodation + blog-post are EXCLUDED via --grep-invert: their embla-carousel autoplay + Leaflet map tiles never settle for a pixel screenshot (flagged flaky since Phase 0 T-153-03); their token transparency rests on validate.ts + cascade-equivalence. Capture-script hardening committed: cookie+FAB hide, expect.timeout 20s. A counterproductive scroll-through/image-wait attempt was reverted (it pushed tall mobile pages past the 30s test timeout, 48->42 captured). Commit: 783543167. Snapshots stay gitignored (baseline/actual/diff). This closes Phase 2 — web migration is pixel-transparent.",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-153-22"],
