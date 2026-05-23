@@ -5,12 +5,12 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.6,
-        "phasesCompleted": ["phase-0"]
+        "phasesCompleted": ["phase-0", "phase-1"]
     },
     "phases": {
         "phase-0": {
@@ -293,7 +293,10 @@
             "id": "T-153-19",
             "title": "Build packages/design-tokens green end-to-end (turbo run build)",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:31:00Z",
+            "completedAt": "2026-05-23T13:34:00Z",
+            "completionNotes": "DONE. Validation-only task — no source changes. Verified end-to-end via `pnpm exec turbo run build --filter=@repo/design-tokens` from the monorepo root: first run cache miss completes in 2.353s (tsup ESM 32.51 KB + CJS 35.31 KB + DTS 48.58 KB × 2 + generate-css writes dist/tokens.css + validate confirms 199 web tokens match seed), second run hits cache and completes in 171ms FULL TURBO. `pnpm exec turbo run typecheck lint test --filter=@repo/design-tokens` also green — 4 tasks (build implicit via test depsOn, typecheck, lint, test) all successful, 322 vitest tests passing. Convention check: `dist/` is gitignored in packages/design-tokens/.gitignore AND root .gitignore — sibling packages (logger, etc.) also do not commit build output, so we follow the same TurboRepo pattern (turbo caches it, consumers rebuild on install). Working tree stays clean post-build. turbo.json generic build task (outputs: dist/**, dependsOn: ^build) covers this package without per-package config — verified by 2nd-run FULL TURBO cache hit, which confirms the output path matches the task's outputs declaration. Satisfies AC-1 (package builds clean), AC-2 (tokens.css emitted to dist/), AC-4 (validator passes 199/199). This closes Phase 1.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-16", "T-153-17", "T-153-18"],
