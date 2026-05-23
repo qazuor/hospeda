@@ -4,8 +4,8 @@
     "slug": "arte-y-artesanias-tradicionales-entrerrianas",
     "category": "ART",
     "title": "Arte y Artesanías Tradicionales Entrerrianas",
-    "summary": "Conoce el trabajo artesanal local: desde la cerámica hasta los tejidos tradicionales.",
-    "content": "El arte entrerriano tiene profundas raíces en las tradiciones locales. Los artesanos trabajan con materiales autóctonos como el junco, la totora y las maderas del delta, creando piezas únicas que reflejan la identidad regional.",
+    "summary": "Un recorrido por las artesanías más representativas de Entre Ríos: junco, totora, madera del delta, cerámica criolla, plata gauchesca y tejidos de las colonias. Dónde verlas, dónde comprarlas y a quién apoyar.",
+    "content": "El trabajo artesanal entrerriano es una de las expresiones culturales más vivas y menos publicitadas de la provincia. Lejos del souvenir industrial, los artesanos del litoral trabajan con materiales que crecen literalmente en sus patios: junco y totora del delta, maderas de los montes ribereños, lana de las colonias y arcilla de las barrancas. Cada pieza guarda una historia y un saber transmitido de generación en generación.\n\n**Una identidad construida con las manos**\n\nLa diversidad cultural de Entre Ríos —pueblos originarios, gauchos, inmigrantes alemanes del Volga, judíos rusos, suizos, italianos y franceses— dejó marcas profundas en la tradición artesanal. Conviven hoy técnicas precolombinas con oficios europeos del siglo XIX, dando lugar a una identidad estética única en el país.\n\n**Materias primas del litoral:**\n\n**Junco y totora**\nDel delta entrerriano salen los mejores juncos del país. Artesanos de Villa Paranacito, Ibicuy y Villa Elisa los usan para confeccionar canastos, esteras, sombreros y muebles de fibra natural. Es un oficio que requiere conocimiento botánico: la cosecha se hace en luna menguante para evitar que las piezas se pudran con la humedad.\n\n**Maderas nativas**\nLas raíces de espinillo, los nudos de algarrobo y las cortezas de ñandubay se transforman en mates, bandejas, esculturas y mobiliario. Los talleres más reconocidos están en Federación, Concordia y la zona del Palmar.\n\n**Lana y telares**\nLas colonias alemanas y suizas de Aldea Brasilera, Aldea San Antonio y Villa Elisa mantienen viva la tradición del telar criollo, con mantas, ponchos y caminos de mesa teñidos con tintes naturales (cebolla, nogal, palo de Brasil).\n\n**Cerámica criolla**\nEn Concepción del Uruguay y Gualeguaychú se trabaja la cerámica desde la época colonial. Las piezas combinan formas precolombinas con esmaltes contemporáneos.\n\n**Plata gauchesca**\nLa platería tradicional vive sus días más fuertes en San José y Colón. Cinturones, rastras, mates y facones siguen el diseño clásico de la platería pampeana, con motivos del litoral.\n\n**Ferias y mercados imperdibles:**\n\n- **Feria Artesanal de Colón:** se monta todos los fines de semana en la costanera, con más de 60 puestos.\n- **Mercado de Artesanías de Concordia:** funciona en la antigua estación de tren reconvertida, con talleres abiertos al público los sábados por la mañana.\n- **Encuentro Anual de Artesanos de Aldea San Antonio:** se realiza cada otoño y combina exposición, venta directa y demostraciones en vivo.\n- **Feria del Mate (Paraná):** además de artesanías, se exhiben mates históricos y piezas de coleccionistas.\n\n**Comprar artesanía responsable**\n\nSi estás de visita, conviene comprar directamente al artesano antes que en tiendas de souvenirs. Vas a pagar menos, vas a saber quién y cómo hizo la pieza, y vas a sostener a familias que dependen de su oficio. La mayoría de los talleres tiene tarjeta o transferencia, pero llevá efectivo por las dudas. Pedí explicación sobre los materiales y los tiempos: el junco bien curado dura décadas, pero pierde valor si no se cosecha en la luna correcta. Y desconfiá de las piezas que se ven idénticas entre sí: la artesanía verdadera nunca es exactamente igual.\n\nLlevarte una pieza artesanal entrerriana es llevarte un pedazo del litoral, hecho a mano, que va a contar su origen cada vez que alguien lo vea en tu casa.",
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=600&fit=crop",
@@ -25,12 +25,21 @@
     "comments": 54,
     "shares": 123,
     "publishedAt": "2024-04-12T15:30:00Z",
-    "readingTimeMinutes": 3,
+    "readingTimeMinutes": 7,
     "isFeatured": false,
     "seo": {
-        "title": "Arte y Artesanías Tradicionales Entrerrianas",
-        "description": "Conoce el trabajo artesanal local: desde la cerámica hasta los tejidos tradicionales.",
-        "keywords": ["art", "entre rios", "turismo"]
+        "title": "Arte y Artesanías Tradicionales de Entre Ríos: guía y ferias",
+        "description": "Artesanías de Entre Ríos: junco del delta, telares de las colonias alemanas, platería gauchesca, cerámica criolla. Dónde comprar y cómo apoyar a los artesanos locales.",
+        "keywords": [
+            "artesanías entre ríos",
+            "junco del delta",
+            "telares aldeas alemanas",
+            "platería gauchesca",
+            "feria artesanal colón",
+            "artesanía argentina",
+            "artesanos locales",
+            "souvenirs entre ríos"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",

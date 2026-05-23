@@ -103,9 +103,9 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     <!-- Featured badge: top-left overlay, only when isFeatured=true.
          Sits outside the <a> link for consistent z-index handling. -->
     {data.isFeatured && (
-        <span class="event-card-h__featured" aria-label="Evento destacado">
+        <span class="event-card-h__featured featured-badge" aria-label="Evento destacado">
             <StarIcon size={12} weight="fill" aria-hidden="true" />
-            <span class="event-card-h__featured-label">Destacado</span>
+            <span>Destacado</span>
         </span>
     )}
     <!-- FavoriteButton island: top-right over photo area, OUTSIDE the <a> link (HTML semantics) -->
@@ -251,29 +251,15 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     /* Featured badge: top-left overlay, only rendered when isFeatured=true.
        Sits above the photo + date-block. In vertical mode (container query)
        the date-block becomes a pill at top-left of the photo — see the
-       container query rule below for the conflict-avoidance offset. */
+       container query rule below for the conflict-avoidance offset. Look
+       (color/font/padding/icon gap) comes from the shared `.featured-badge`
+       rule in components.css; this block only owns position + elevation. */
     .event-card-h__featured {
         position: absolute;
         top: 8px;
         left: 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.2rem 0.5rem;
-        border-radius: var(--radius-pill);
-        background-color: oklch(0.78 0.16 85);
-        color: oklch(0.2 0.05 85);
-        font-family: var(--font-sans);
-        font-size: 0.6875rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
         box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
         z-index: 3;
-    }
-
-    .event-card-h__featured-label {
-        line-height: 1;
     }
 
     .event-card-h:hover {

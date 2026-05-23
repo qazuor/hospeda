@@ -3,8 +3,8 @@
     "id": "010-event-business-feria-emprendedores",
     "slug": "feria-emprendedores",
     "name": "Feria de Emprendedores",
-    "summary": "Mas de 80 emprendedores locales en un solo lugar.",
-    "description": "Descripción detallada del evento Feria de Emprendedores. Este es un evento de categoría BUSINESS que se desarrolla en Entre Ríos.",
+    "summary": "Más de 80 emprendedores locales en un mismo predio: gastronomía, indumentaria, artesanías, productos sustentables, servicios y tecnología. Charlas de capacitación, networking y degustaciones gratuitas durante todo el día.",
+    "description": "Una jornada dedicada a la economía emprendedora del litoral entrerriano. La feria reúne a más de 80 productores y emprendedores locales en un mismo predio, con propuestas que abarcan desde la gastronomía artesanal hasta los servicios profesionales, pasando por indumentaria, productos sustentables y desarrollos tecnológicos.\n\n**Lo que vas a encontrar**\n\n- **Gastronomía artesanal:** dulces de las colonias, panificación, embutidos, vinos, cervezas artesanales, cafés de especialidad.\n- **Indumentaria y accesorios:** ropa diseñada localmente, bijouterie, cuero, calzado artesanal.\n- **Productos sustentables:** cosmética natural, productos de limpieza biodegradables, textiles orgánicos.\n- **Servicios profesionales:** consultores, diseñadores, agencias creativas y de marketing.\n- **Tecnología y desarrollo:** startups locales, productos digitales, soluciones para el sector turístico.\n\n**Programación de charlas**\n\n- 11:00 - 'Cómo armar un emprendimiento sostenible en el interior del país'.\n- 14:00 - 'Financiamiento y créditos disponibles para emprendedores'.\n- 16:00 - 'Marketing digital con presupuesto cero: estrategias prácticas'.\n- 18:00 - 'Networking guiado: presentate, escuchá y conectá'.\n\n**Por qué participar**\n\nMás allá de las compras, la feria es una oportunidad de conocer a los productores que están construyendo la nueva economía del litoral: gente joven que apuesta a quedarse en sus pueblos, profesionales que vuelven del exterior para emprender desde Entre Ríos, familias que rescatan oficios tradicionales y los adaptan a la actualidad.\n\n**Información práctica**\n\n- **Cuándo:** un sábado de marzo, jornada completa de 10 a 20.\n- **Dónde:** predio del Palacio San José.\n- **Entrada:** GRATUITA.\n- **Servicios:** food trucks, baños, estacionamiento gratuito, área de descanso con juegos infantiles.\n- **Llevá:** efectivo (muchos puestos no tienen posnet) y bolsas reutilizables.",
     "category": "OTHER",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Feria de Emprendedores 2026 - Entre Ríos - Hospeda",
-        "description": "Conecta con emprendedores en la Feria de Emprendedores 2026 en Entre Ríos. Networking, charlas y oportunidades de negocio en un evento único.",
-        "keywords": ["business", "entre rios", "evento", "cultura"]
+        "title": "Feria de Emprendedores 2026 en Entre Ríos - Hospeda",
+        "description": "Más de 80 emprendedores del litoral en una jornada: gastronomía, indumentaria, sustentabilidad, tecnología y charlas de capacitación. Entrada gratuita.",
+        "keywords": [
+            "feria emprendedores",
+            "emprendedores entre ríos",
+            "networking",
+            "productores locales",
+            "economía emprendedora",
+            "feria sustentable",
+            "palacio san josé",
+            "feria gratuita"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "locationId": "004-eventLocation-concepcion-del-uruguay-palacio-san-jose",

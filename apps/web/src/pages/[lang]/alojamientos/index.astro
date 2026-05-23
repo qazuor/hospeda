@@ -15,7 +15,6 @@ import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridS
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { ListingContextBar } from '@/components/accommodation/ListingContextBar.client';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
@@ -84,17 +83,24 @@ const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
 const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
 const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
-const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
+// `minGuests` is no longer exposed as its own field — it's derived from
+// `adults + children` further down so a couple looking for "2 adultos +
+// 0 niños" actually filters out 1-person studios. The variable is computed
+// below once `adults` / `childrenCount` are parsed.
 const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const maxBedrooms = url.searchParams.get('maxBedrooms') ? Number(url.searchParams.get('maxBedrooms')) : undefined;
 const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const maxBathrooms = url.searchParams.get('maxBathrooms') ? Number(url.searchParams.get('maxBathrooms')) : undefined;
 const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
-const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
-const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
+// `includeNoPrice` / `includeNoReviews` are default-ON now: the corresponding
+// sidebar checkboxes start checked, so the URL only carries the param when the
+// user explicitly opts OUT. Only forward the explicit-OFF case to the API
+// (passing `true` always would push an unknown param the listing endpoint
+// rejects with INVALID_PAGINATION_PARAMS).
+const includeNoPrice =
+    url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
+const includeNoReviews =
+    url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
 
 // Geo radius (composite filter) — the backend haversine clause needs the
 // full triplet; missing or non-numeric values are silently ignored, matching
@@ -119,16 +125,26 @@ const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KE
 const sortBy = sortResolved.sortBy;
 const sortOrder = sortResolved.sortOrder;
 
-// --- Hero search context (NOT sent to API; used for disclaimer + handoff to detail) ---
-// These params arrive from the home hero search bar. The listing does not
-// filter by them; they are surfaced in the disclaimer banner and forwarded
-// to the detail page so the contact form can pre-fill the message.
+// --- Hero search context ---
+// `checkIn` / `checkOut` arrive from the home hero search bar; the listing
+// surfaces them in the sidebar but doesn't filter by them yet (no real-time
+// availability) — they're forwarded to the detail page so the contact form
+// can pre-fill the message.
+//
+// `adults` / `children` DO filter — their sum is sent to the API as
+// `minGuests` further down so a 3+2 party doesn't see 1-bedroom studios.
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
 const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adults = adultsParam ? Number(adultsParam) : undefined;
 const childrenCount = childrenParam ? Number(childrenParam) : undefined;
+
+// Derived guest-capacity filter: sum of adults + children. Used to filter
+// accommodations that fit the party size. Falls back to defaults (2 + 0)
+// when the URL hasn't been touched.
+const guestCount = (adults ?? 2) + (childrenCount ?? 0);
+const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Build a query suffix to forward search context to each accommodation detail link.
 const contextQueryParams = new URLSearchParams();
@@ -140,7 +156,7 @@ const contextQuery = contextQueryParams.toString() || undefined;
 
 // Fetch destinations for filter dropdown (CITY only — accommodations are
 // browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
@@ -164,11 +180,8 @@ const result = await accommodationsApi.list({
 	sortOrder,
 	isFeatured,
 	minGuests,
-	maxGuests,
 	minBedrooms,
-	maxBedrooms,
 	minBathrooms,
-	maxBathrooms,
 	minRating,
 	amenities: amenitiesParam,
 	features: featuresParam,
@@ -293,22 +306,21 @@ const filterSummary = buildAccommodationListingSummary({
 });
 
 // Filter configuration for sidebar.
-// Sectioned layout: 4 themed groups (Ubicación / Tipo y Características /
-// Capacidad / Precio y Calidad). `section-header` entries divide the panel
-// with small-caps headers; the FilterSidebar switches to declaration-order
-// rendering when any section-header is declared, so inline toggles
-// (`isFeatured`) land under their intended section.
+// Sectioned layout: 5 themed groups (Ubicación / Tipo y Características /
+// Fechas / Capacidad / Precio y Calidad). `section-header` entries divide
+// the panel with small-caps headers; the FilterSidebar switches to
+// declaration-order rendering when any section-header is declared, so inline
+// toggles (`isFeatured`) land under their intended section.
 //
-// `dates` / `adults` / `children` no longer live in this sidebar — they're
-// surfaced by the ListingContextBar above the grid, since they don't
-// actually narrow the result set (no availability system yet).
+// `dates`, `adults`, and `children` live inside the sidebar even though they
+// don't narrow the result set today (no availability system) — they're
+// forwarded to the accommodation detail link so the contact form can
+// pre-fill the message. `emitWhenAtDefault: true` on the steppers keeps the
+// URL carrying the values even at their defaults so the context survives
+// pagination.
 const filterGroups: FilterGroup[] = [
-	{
-		id: 'section-location',
-		type: 'section-header',
-		label: t('accommodations.sidebar.section.location', 'Ubicación'),
-		icon: 'MapIcon',
-	},
+	// Free-text search lives at the very top, OUTSIDE any section, so it reads
+	// as a global filter independent of the themed categories below.
 	{
 		id: 'q',
 		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
@@ -316,10 +328,16 @@ const filterGroups: FilterGroup[] = [
 		placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...'),
 	},
 	{
+		id: 'section-location',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.location', 'Ubicación'),
+		icon: 'MapIcon',
+	},
+	{
 		id: 'destinationIds',
 		label: t('accommodations.sidebar.destination', 'Destino'),
 		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
+		options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
 		maxVisible: 8,
 	},
 	{
@@ -335,9 +353,9 @@ const filterGroups: FilterGroup[] = [
 				const lat = coords ? Number.parseFloat(coords.lat) : Number.NaN;
 				const long = coords ? Number.parseFloat(coords.long) : Number.NaN;
 				if (!Number.isFinite(lat) || !Number.isFinite(long)) return null;
-				return { value: d.id, label: d.name, lat, long };
+				return { value: d.id, label: d.name, lat, long, featured: Boolean(d.isFeatured) };
 			})
-			.filter((opt): opt is { value: string; label: string; lat: number; long: number } => opt !== null),
+			.filter((opt): opt is { value: string; label: string; lat: number; long: number; featured: boolean } => opt !== null),
 		radiusPresets: [5, 10, 25, 50, 100],
 		defaultCollapsed: true,
 		destinationModeLabel: t('accommodations.sidebar.geoRadius.destinationMode', 'Un destino'),
@@ -400,40 +418,51 @@ const filterGroups: FilterGroup[] = [
 		maxVisible: 10,
 	},
 	{
+		id: 'section-dates',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.dates', 'Fechas'),
+		icon: 'CalendarDotsIcon',
+	},
+	{
+		id: 'dates',
+		label: t('accommodations.sidebar.dates', 'Llegada y salida'),
+		type: 'date-range',
+		mode: 'bounds',
+		checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
+		checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
+		description: t(
+			'accommodations.sidebar.dates.helper',
+			'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
+		),
+	},
+	{
 		id: 'section-capacity',
 		type: 'section-header',
 		label: t('accommodations.sidebar.section.capacity', 'Capacidad'),
 		icon: 'UsersIcon',
 	},
 	{
-		id: 'minGuests',
-		label: t('accommodations.sidebar.minCapacity', 'Huéspedes (mínimo)'),
+		id: 'adults',
+		label: t('accommodations.sidebar.adults', 'Adultos'),
 		type: 'stepper',
-		min: 0,
-		max: 20,
-		defaultValue: 0,
-		suffix: t('accommodations.chips.guests', 'huéspedes'),
+		min: 1,
+		max: 10,
+		defaultValue: 2,
+		emitWhenAtDefault: true,
 	},
 	{
-		id: 'maxGuests',
-		label: t('accommodations.sidebar.maxCapacity', 'Huéspedes (máximo)'),
+		id: 'children',
+		label: t('accommodations.sidebar.children', 'Niños'),
 		type: 'stepper',
 		min: 0,
-		max: 20,
+		max: 6,
 		defaultValue: 0,
-		suffix: t('accommodations.chips.guests', 'huéspedes'),
+		emitWhenAtDefault: true,
+		description: t('accommodations.sidebar.children.helper', '(menores de 5 años)'),
 	},
 	{
 		id: 'minBedrooms',
-		label: t('accommodations.sidebar.bedrooms', 'Dormitorios (mínimo)'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
-	{
-		id: 'maxBedrooms',
-		label: t('accommodations.sidebar.maxBedrooms', 'Dormitorios (máximo)'),
+		label: t('accommodations.sidebar.bedrooms', 'Dormitorios'),
 		type: 'stepper',
 		min: 0,
 		max: 10,
@@ -441,15 +470,7 @@ const filterGroups: FilterGroup[] = [
 	},
 	{
 		id: 'minBathrooms',
-		label: t('accommodations.sidebar.bathrooms', 'Baños (mínimo)'),
-		type: 'stepper',
-		min: 0,
-		max: 10,
-		defaultValue: 0,
-	},
-	{
-		id: 'maxBathrooms',
-		label: t('accommodations.sidebar.maxBathrooms', 'Baños (máximo)'),
+		label: t('accommodations.sidebar.bathrooms', 'Baños'),
 		type: 'stepper',
 		min: 0,
 		max: 10,
@@ -471,6 +492,7 @@ const filterGroups: FilterGroup[] = [
 		format: 'currency',
 		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
 		includeNullParam: 'includeNoPrice',
+		defaultIncludeNull: true,
 	},
 	{
 		id: 'minRating',
@@ -478,6 +500,7 @@ const filterGroups: FilterGroup[] = [
 		type: 'stars',
 		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
 		includeNullParam: 'includeNoReviews',
+		defaultIncludeNull: true,
 	},
 ];
 
@@ -548,17 +571,22 @@ if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
 initialParams.sortBy = sortKey;
 if (isFeatured) initialParams.isFeatured = 'true';
-if (minGuests !== undefined) initialParams.minGuests = String(minGuests);
-if (maxGuests !== undefined) initialParams.maxGuests = String(maxGuests);
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
-if (maxBedrooms !== undefined) initialParams.maxBedrooms = String(maxBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
-if (maxBathrooms !== undefined) initialParams.maxBathrooms = String(maxBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
-if (includeNoPrice) initialParams.includeNoPrice = 'true';
-if (includeNoReviews) initialParams.includeNoReviews = 'true';
+// Default-checked include-null toggles only emit `=false` when the user opts
+// out. Anything else (absent, 'true') means checked — see reducer comments.
+if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
+if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
+// Trip-context fields: always seed defaults so the sidebar steppers /
+// date inputs render with their last-known values (or 2 adults / 0 kids /
+// no dates on a fresh visit).
+if (checkIn) initialParams.checkIn = checkIn;
+if (checkOut) initialParams.checkOut = checkOut;
+initialParams.adults = String(adults ?? 2);
+initialParams.children = String(childrenCount ?? 0);
 // Quick-amenity boolean shortcuts (priority chips inside the Comodidades group).
 if (hasWifi) initialParams.hasWifi = 'true';
 if (hasPool) initialParams.hasPool = 'true';
@@ -658,12 +686,8 @@ if (minRating !== undefined) {
 		removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews']),
 	});
 }
-if (minGuests !== undefined && minGuests > 0) {
-	activeFilterChips.push({
-		label: `${minGuests}+ ${t('accommodations.chips.guests', 'huéspedes')}`,
-		removeUrl: urlWithoutKeys(['minGuests']),
-	});
-}
+// `minGuests` is derived from adults + children — no standalone chip; the
+// user adjusts party size from the sidebar steppers instead.
 if (minBedrooms !== undefined && minBedrooms > 0) {
 	activeFilterChips.push({
 		label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
@@ -775,15 +799,6 @@ const emptyStateSuggestions = [
 			suggestions={emptyStateSuggestions}
 		/>
 	)}
-
-	<ListingContextBar
-		client:load
-		locale={locale}
-		initialCheckIn={checkIn ?? ''}
-		initialCheckOut={checkOut ?? ''}
-		initialAdults={adults ?? 2}
-		initialChildren={childrenCount ?? 0}
-	/>
 
 	{!hasError && cards.length > 0 && (
 		<>

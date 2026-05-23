@@ -3,8 +3,8 @@
     "id": "012-event-festival-festival-danza",
     "slug": "festival-danza",
     "name": "Festival de Danza",
-    "summary": "Evento festival - Festival de Danza",
-    "description": "Descripción detallada del evento Festival de Danza. Este es un evento de categoría FESTIVAL que se desarrolla en Entre Ríos.",
+    "summary": "Tres días de danza al aire libre en los jardines del Palacio San José. Folclore, ballet contemporáneo, tango y danzas latinoamericanas con compañías invitadas de Argentina, Brasil y Uruguay. Entrada gratuita.",
+    "description": "El Festival de Danza es uno de los eventos artísticos más esperados del calendario primaveral entrerriano. Durante tres días, compañías de danza invitadas de Argentina y de los países vecinos transforman los jardines históricos del Palacio San José en un escenario al aire libre, con propuestas que abarcan desde el folclore tradicional hasta el ballet contemporáneo.\n\n**Programación tipo**\n\n- **Día 1 - Apertura:** danzas tradicionales argentinas (chamamé, zamba, malambo) interpretadas por ballets folclóricos provinciales.\n- **Día 2 - Tango:** parejas reconocidas de Buenos Aires y Montevideo presentan distintos estilos del 2x4. Sumate a la milonga abierta al cierre.\n- **Día 3 - Danza contemporánea:** compañías independientes con obras experimentales y propuestas que cruzan disciplinas.\n\n**Actividades complementarias**\n\n- Clases magistrales abiertas durante el día (folclore, tango, contemporáneo).\n- Talleres infantiles para acercar la danza a los más chicos.\n- Charlas y proyecciones sobre la historia de la danza en el litoral.\n- Espacio gastronómico con propuestas regionales.\n\n**Por qué verlo**\n\nPocas veces se logra combinar un patrimonio histórico de la magnitud del Palacio San José con una propuesta artística contemporánea de calidad. El Festival de Danza es esa rara excepción: ver bailarines profesionales sobre el césped que pisó Urquiza es una experiencia que mezcla pasado y presente de forma poderosa.\n\n**Información práctica**\n\n- **Cuándo:** tres días entre fines de abril y principios de mayo.\n- **Dónde:** Palacio San José, jardines y patios interiores.\n- **Entrada:** GRATUITA.\n- **Llevá:** silla plegable o manta para sentarte en el césped, abrigo para la noche, repelente.\n- **Servicios:** food trucks, baños, estacionamiento gratuito.",
     "category": "FESTIVAL",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Festival de Danza 2025 - Entre Ríos - Hospeda",
-        "description": "Vive el Festival de Danza 2025 en Entre Ríos. Una semana de espectáculos de danza con artistas locales e internacionales.",
-        "keywords": ["festival", "entre rios", "evento", "cultura"]
+        "title": "Festival de Danza en Palacio San José - Hospeda",
+        "description": "Tres días de danza al aire libre en los jardines del Palacio San José: folclore, tango, ballet contemporáneo y propuestas internacionales. Entrada gratuita.",
+        "keywords": [
+            "festival de danza",
+            "palacio san josé",
+            "tango entre ríos",
+            "folclore argentino",
+            "ballet contemporáneo",
+            "danza al aire libre",
+            "milonga abierta",
+            "festival gratuito"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

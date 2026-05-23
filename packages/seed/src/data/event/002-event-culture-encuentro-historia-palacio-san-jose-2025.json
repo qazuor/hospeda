@@ -3,8 +3,8 @@
     "id": "002-event-culture-encuentro-historia-palacio-san-jose-2025",
     "slug": "encuentro-historia-palacio-san-jose-2025",
     "name": "Encuentro de Historia en Palacio San José 2025",
-    "summary": "Jornadas culturales e historicas en la residencia del general Urquiza con visitas guiadas, charlas tematicas y muestras patrimoniales de la region.",
-    "description": "El Encuentro de Historia en Palacio San José es un evento cultural que se desarrolla en la histórica residencia de Justo José de Urquiza. Durante dos días, historiadores, escritores y artistas presentan conferencias, exposiciones y espectáculos relacionados con la historia argentina y entrerriana. Un evento único en un marco histórico incomparable que atrae a amantes de la historia y la cultura de todo el país.",
+    "summary": "Jornadas culturales e históricas en la residencia del General Urquiza con visitas guiadas, charlas temáticas, conciertos de música decimonónica y muestras patrimoniales de la región. Tres días para sumergirse en el siglo XIX argentino.",
+    "description": "El Encuentro de Historia en Palacio San José es un evento cultural anual que se desarrolla en la histórica residencia de Justo José de Urquiza, primer presidente constitucional de la Confederación Argentina. Durante tres días, historiadores, escritores y artistas presentan conferencias, exposiciones y espectáculos relacionados con la historia argentina y entrerriana del siglo XIX.\n\n**Una experiencia inmersiva en el siglo XIX**\n\nA diferencia de una visita turística convencional, el Encuentro abre espacios del palacio que habitualmente están cerrados al público y suma actividades pensadas para profundizar en la vida cotidiana, política y cultural del período. Es la mejor manera de entender en profundidad uno de los sitios históricos más importantes del país.\n\n**Programación destacada:**\n\n- **Conferencias inaugurales** a cargo de historiadores reconocidos del CONICET y de universidades nacionales.\n- **Visitas guiadas teatralizadas** donde actores recrean escenas de la vida de Urquiza y su familia.\n- **Conciertos de música decimonónica** en el salón principal, con repertorio rescatado de la época.\n- **Talleres de paleografía y documentos históricos** para estudiantes e investigadores.\n- **Recorridos especiales por los jardines** con explicaciones sobre el diseño paisajístico de Pedro Fossati.\n- **Acto solemne en el mausoleo** donde descansan los restos de Urquiza.\n\n**Información práctica**\n\n- **Cuándo:** mayo, durante tres días consecutivos.\n- **Dónde:** Palacio San José, a 35 km de Colón sobre la Ruta Provincial 39.\n- **Entrada:** valor único por la jornada completa, incluye acceso a todas las actividades.\n- **Capacidad limitada:** se recomienda reservar con anticipación a través de los canales oficiales del museo.\n- **Combinar con:** visita al casco histórico de Concepción del Uruguay y al Colegio del Uruguay, segundo colegio universitario más antiguo del país.\n\n**Para quién es este evento**\n\nIdeal para amantes de la historia argentina, estudiantes de carreras humanísticas, docentes, viajeros culturales y familias interesadas en formar a sus chicos en patrimonio. Las visitas teatralizadas funcionan especialmente bien con adolescentes y preadolescentes. La oferta gastronómica del lugar y los servicios cercanos en Concepción del Uruguay hacen que sea un excelente plan de fin de semana largo.",
     "category": "CULTURE",
     "date": {
         "start": "2026-05-15T10:00:00-03:00",
@@ -44,9 +44,18 @@
         ]
     },
     "seo": {
-        "title": "Encuentro Historia Palacio San José 2025 - Hospeda",
-        "description": "Jornadas culturales e históricas en el Palacio San José. Conferencias y exposiciones en un marco histórico único.",
-        "keywords": ["historia", "palacio-san-jose", "cultura", "urquiza", "patrimonio"]
+        "title": "Encuentro de Historia en Palacio San José 2025 - Hospeda",
+        "description": "Tres días de jornadas históricas en la residencia de Urquiza: conferencias, visitas teatralizadas, conciertos decimonónicos y muestras patrimoniales.",
+        "keywords": [
+            "encuentro historia",
+            "palacio san josé",
+            "urquiza",
+            "siglo xix argentino",
+            "patrimonio entre ríos",
+            "concepción del uruguay",
+            "evento cultural",
+            "visitas teatralizadas"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "tagIds": []

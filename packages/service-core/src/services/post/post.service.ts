@@ -722,7 +722,17 @@ export class PostService extends BaseCrudService<
                 : undefined;
         const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
-        return this.model.findAll(
+        // Eager-load the relations declared in getDefaultListRelations() (author,
+        // related entities, sponsorship, postTags) so the public search response
+        // includes the author byline and avatar instead of just `authorId`.
+        // Mirrors the base BaseCrudRead._executeAdminSearch pattern.
+        const relations = this.getDefaultListRelations() as Record<
+            string,
+            boolean | Record<string, unknown>
+        >;
+
+        return this.model.findAllWithRelations(
+            relations,
             mapPostFilterKeysToColumns(filterParams),
             {
                 page: ctx.pagination?.page ?? 1,

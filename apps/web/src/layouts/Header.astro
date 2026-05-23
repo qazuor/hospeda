@@ -20,7 +20,7 @@
  */
 
 import { getImage, Image } from "astro:assets";
-import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
+import { BuildingIcon, HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
 // Side-effect import of the mobile menu's CSS module. The menu lives inside
 // a server:defer island, and ClientRouter occasionally re-renders the island
@@ -81,10 +81,15 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
  */
 const serverUser = Astro.locals.user ?? null;
 
+const serverUserName =
+    typeof serverUser?.name === 'string' && serverUser.name.trim().length > 0
+        ? serverUser.name
+        : '';
+
 const initialUserMenuUser = serverUser
     ? {
           id: serverUser.id ?? '',
-          name: serverUser.name ?? serverUser.email ?? 'Usuario',
+          name: serverUserName,
           email: serverUser.email ?? '',
           avatarUrl:
               'avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string'
@@ -136,18 +141,6 @@ const adminPanelUrl = getAdminUrl();
 
         <!-- RIGHT AREA -->
         <div class="header__right">
-            <!-- Search icon — visible at all widths -->
-            <IconButton
-                as="a"
-                href={buildUrl({ locale, path: "busqueda" })}
-                ariaLabel={t("nav.search", "Buscar")}
-                variant="ghost"
-                size="md"
-                class="header__search"
-            >
-                <SearchIcon size={20} weight="regular" aria-hidden="true" />
-            </IconButton>
-
             <!-- "Publicar" CTA — visible at all widths -->
             <GradientButton
                 href={buildUrl({ locale, path: "/publicar/" })}
@@ -361,10 +354,6 @@ const adminPanelUrl = getAdminUrl();
         align-items: center;
         gap: 8px;
         padding: 10px;
-        flex-shrink: 0;
-    }
-
-    .header__search {
         flex-shrink: 0;
     }
 

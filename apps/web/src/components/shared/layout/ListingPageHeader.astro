@@ -107,7 +107,9 @@ const countLabel = filterSummary
 		font-size: var(--text-body-sm);
 		color: var(--core-muted-foreground);
 		margin: 0;
-		white-space: nowrap;
+		/* Allow the natural-language summary (filters + counts) to wrap on
+		 * narrow viewports — single-line forced overflow on mobile. */
+		text-wrap: pretty;
 	}
 
 	@media (max-width: 640px) {

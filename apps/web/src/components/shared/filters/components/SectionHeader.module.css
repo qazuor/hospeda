@@ -1,15 +1,17 @@
 /* SectionHeader.module.css
- * Small-caps divider header for grouped filter sections.
+ * Prominent divider header for grouped filter sections. The visual weight
+ * (size, color, generous top spacing, accent underline) is intentional —
+ * users need to see the categoría → filtros hierarchy at a glance, not
+ * scan through a flat list of titles all the same weight.
  */
 
 .sectionHeader {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin: 1.25rem 0 0.25rem;
-    padding-bottom: 0.375rem;
-    border-bottom: 1px solid oklch(from var(--border) l c h / 0.35);
-    color: var(--core-muted-foreground);
+    margin: 1.75rem -0.25rem 0.625rem;
+    padding: 0.25rem 0.375rem 0.5rem;
+    border-bottom: 1.5px solid oklch(from var(--brand-primary) l c h / 0.35);
 }
 
 /* First header has no top margin — sits flush with sidebar header */
@@ -26,9 +28,9 @@
 
 .sectionHeaderLabel {
     font-family: var(--font-heading);
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--core-muted-foreground);
+    letter-spacing: 0.1em;
+    color: var(--brand-primary);
 }

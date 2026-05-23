@@ -107,9 +107,8 @@ const isNew = data.createdAt
 
 			<!-- Featured badge -->
 			{data.isFeatured && (
-				<div
-					class="acc-card__featured-badge"
-				>
+				<div class="acc-card__featured-badge featured-badge">
+					<StarIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
 				</div>
 			)}
@@ -306,21 +305,12 @@ const isNew = data.createdAt
 
 	/* Featured badge — right edge matches the actions column above
 	 * (12px from card edge) so favorite, photo-count and featured stack
-	 * along the same vertical guideline. */
+	 * along the same vertical guideline. Look (color/font/padding/icon
+	 * gap) comes from the shared `.featured-badge` rule in components.css. */
 	.acc-card__featured-badge {
 		position: absolute;
 		bottom: 48px;
 		right: 12px;
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 14px;
-		line-height: 22.4px;
-		padding: 4px 10px;
-		border-radius: 9999px;
-		/* Featured badge uses constant accent colors (status='featured').
-		 * Baked in to avoid inline style= per SPEC-046 GAP-046-09a. */
-		background-color: var(--brand-accent);
-		color: var(--primary-foreground);
 	}
 
 	/* Wave separator */

@@ -5,6 +5,17 @@
     width: 100%;
 }
 
+/* Helper text shown below the trigger(s). Used to flag limitations the user
+ * should know about (e.g. "this filter is informational only until we wire up
+ * real availability"). */
+.description {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
 .trigger {
     display: inline-flex;
     align-items: center;

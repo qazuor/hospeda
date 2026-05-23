@@ -59,6 +59,17 @@ export interface ProfileCompletionProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
+ * Converts a dd/mm/yyyy string into ISO YYYY-MM-DD. Returns null when the
+ * input doesn't match the expected shape so the caller can skip the field.
+ */
+function ddmmyyyyToIso(value: string): string | null {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const [, dd, mm, yyyy] = match;
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
  * Profile completion form island.
  *
  * Renders a form that collects baseline profile data for first-time users.
@@ -238,12 +249,17 @@ export function ProfileCompletion({
         setSubmitting(true);
 
         try {
+            // The birthDate input collects dd/mm/yyyy; the API expects ISO
+            // YYYY-MM-DD per the Zod schema. Drop the field when the user
+            // hasn't typed a complete date.
+            const birthDateIso = ddmmyyyyToIso(birthDate);
+
             const body: ProfileCompletionPayload = {
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
                 displayName: derivedDisplayName,
                 acceptedTerms: true,
-                ...(birthDate && { birthDate }),
+                ...(birthDateIso && { birthDate: birthDateIso }),
                 ...(imageUrl && imageUrl !== initialAvatarUrl && { imageUrl }),
                 ...(phone && { phone }),
                 locale: selectedLocale,

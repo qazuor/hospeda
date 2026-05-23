@@ -127,17 +127,17 @@ export function getAccommodationTypeColor({ type }: { readonly type: string }): 
         case 'apartment':
             return scheme({ token: 'primary' });
         case 'country_house':
-            return scheme({ token: 'secondary' });
+            return scheme({ token: 'secondary', textToken: 'foreground' });
         case 'hostel':
-            return scheme({ token: 'hospeda-river', textToken: 'card' });
+            return scheme({ token: 'hospeda-river' });
         case 'resort':
-            return scheme({ token: 'hospeda-sky' });
+            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' });
         case 'house':
             return scheme({ token: 'muted', textToken: 'foreground' });
         case 'motel':
             return scheme({ token: 'warning', textToken: 'warning-foreground' });
         case 'room':
-            return scheme({ token: 'info', textToken: 'info-foreground' });
+            return scheme({ token: 'info' });
         default:
             return scheme({ token: 'accent' });
     }
@@ -246,21 +246,21 @@ export function getEventCategoryColor({
             return scheme({ token: 'primary', bgOpacity });
         case 'cultural':
         case 'culture':
-            return scheme({ token: 'hospeda-sky', bgOpacity });
+            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
         case 'gastronomy':
             return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'festival':
-            return scheme({ token: 'hospeda-sky', bgOpacity });
+            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
         case 'wellness':
-            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
+            return scheme({ token: 'hospeda-river', bgOpacity });
         case 'art':
             return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'family':
-            return scheme({ token: 'info', textToken: 'info-foreground', bgOpacity });
+            return scheme({ token: 'info', bgOpacity });
         case 'nature':
             return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'theater':
-            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
+            return scheme({ token: 'hospeda-river', bgOpacity });
         case 'workshop':
             return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'other':
@@ -280,17 +280,17 @@ const POST_CATEGORY_COLOR: Readonly<Record<string, ColorScheme>> = {
     [PostCategoryEnum.TIPS]: scheme({ token: 'accent' }),
     [PostCategoryEnum.GASTRONOMY]: scheme({ token: 'hospeda-forest' }),
     [PostCategoryEnum.CULTURE]: scheme({ token: 'hospeda-river', textToken: 'foreground' }),
-    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river', textToken: 'card' }),
-    [PostCategoryEnum.EVENTS]: scheme({ token: 'info', textToken: 'info-foreground' }),
-    [PostCategoryEnum.SPORT]: scheme({ token: 'hospeda-sky' }),
+    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river' }),
+    [PostCategoryEnum.EVENTS]: scheme({ token: 'info' }),
+    [PostCategoryEnum.SPORT]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
     [PostCategoryEnum.CARNIVAL]: scheme({ token: 'accent' }),
-    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river', textToken: 'card' }),
+    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river' }),
     [PostCategoryEnum.HISTORY]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
     [PostCategoryEnum.TRADITIONS]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
     [PostCategoryEnum.WELLNESS]: scheme({ token: 'hospeda-forest' }),
-    [PostCategoryEnum.FAMILY]: scheme({ token: 'info', textToken: 'info-foreground' }),
+    [PostCategoryEnum.FAMILY]: scheme({ token: 'info' }),
     [PostCategoryEnum.ART]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
-    [PostCategoryEnum.BEACH]: scheme({ token: 'hospeda-sky' }),
+    [PostCategoryEnum.BEACH]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
     [PostCategoryEnum.RURAL]: scheme({ token: 'hospeda-forest' }),
     [PostCategoryEnum.FESTIVALS]: scheme({ token: 'accent' }),
     [PostCategoryEnum.GENERAL]: scheme({ token: 'primary' })

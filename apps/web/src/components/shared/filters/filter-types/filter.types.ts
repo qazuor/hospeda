@@ -152,6 +152,12 @@ export interface GeoRadiusFilterConfig {
         readonly label: string;
         readonly lat: number;
         readonly long: number;
+        /**
+         * Marks the destination as featured. Native `<select>` options cannot
+         * be styled per-row across browsers, so featured entries are surfaced
+         * by prepending a star glyph to the visible label.
+         */
+        readonly featured?: boolean;
     }[];
     /** Radius presets in km. Defaults to [5, 10, 25, 50, 100]. */
     readonly radiusPresets?: readonly number[];

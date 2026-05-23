@@ -7,12 +7,27 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { FavoriteIcon, HomeIcon } from '@repo/icons';
+import {
+	BuildingsIcon,
+	ChatIcon,
+	EyeIcon,
+	FavoriteIcon,
+	HomeIcon,
+	MapIcon,
+	PhoneIcon,
+	PriceIcon,
+	ReceiptIcon,
+	SettingsIcon,
+	SparkleIcon,
+	StarIcon,
+	StatisticsIcon,
+} from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -26,19 +41,19 @@ const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
 
 const touristBenefits = [
-	{ titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },
-	{ titleKey: 'benefits.tourist.2.title', titleFb: 'Precios transparentes', descKey: 'benefits.tourist.2.desc', descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.' },
-	{ titleKey: 'benefits.tourist.3.title', titleFb: 'Reseñas verificadas', descKey: 'benefits.tourist.3.desc', descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.' },
-	{ titleKey: 'benefits.tourist.4.title', titleFb: 'Información local', descKey: 'benefits.tourist.4.desc', descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.' },
-	{ titleKey: 'benefits.tourist.5.title', titleFb: 'Contacto directo', descKey: 'benefits.tourist.5.desc', descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.' },
+	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },
+	{ Icon: PriceIcon, titleKey: 'benefits.tourist.2.title', titleFb: 'Precios transparentes', descKey: 'benefits.tourist.2.desc', descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.' },
+	{ Icon: StarIcon, titleKey: 'benefits.tourist.3.title', titleFb: 'Reseñas verificadas', descKey: 'benefits.tourist.3.desc', descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.' },
+	{ Icon: MapIcon, titleKey: 'benefits.tourist.4.title', titleFb: 'Información local', descKey: 'benefits.tourist.4.desc', descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.' },
+	{ Icon: ChatIcon, titleKey: 'benefits.tourist.5.title', titleFb: 'Contacto directo', descKey: 'benefits.tourist.5.desc', descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.' },
 ] as const;
 
 const ownerBenefits = [
-	{ titleKey: 'benefits.owner.1.title', titleFb: 'Visibilidad regional', descKey: 'benefits.owner.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.' },
-	{ titleKey: 'benefits.owner.2.title', titleFb: 'Gestión simple', descKey: 'benefits.owner.2.desc', descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.' },
-	{ titleKey: 'benefits.owner.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'benefits.owner.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.' },
-	{ titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
-	{ titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
+	{ Icon: EyeIcon, titleKey: 'benefits.owner.1.title', titleFb: 'Visibilidad regional', descKey: 'benefits.owner.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.' },
+	{ Icon: SettingsIcon, titleKey: 'benefits.owner.2.title', titleFb: 'Gestión simple', descKey: 'benefits.owner.2.desc', descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.' },
+	{ Icon: ReceiptIcon, titleKey: 'benefits.owner.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'benefits.owner.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.' },
+	{ Icon: StatisticsIcon, titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
+	{ Icon: PhoneIcon, titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
 ] as const;
 
 // Split titles to underline the last word with a handwritten accent.
@@ -76,6 +91,21 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		url={canonicalUrl}
 		inLanguage={inLanguageMap[locale]}
 	/>
+
+	<MarketingHero
+		tagline={t('benefits.hero.tagline', 'Por qué Hospeda')}
+		titleMain={t('benefits.hero.titleMain', 'Lo que ofrecemos a nuestra')}
+		titleAccent={t('benefits.hero.titleAccent', 'comunidad')}
+		subtitle={t(
+			'benefits.hero.subtitle',
+			'Descubrí los beneficios de usar Hospeda como viajero o como propietario del Litoral entrerriano.'
+		)}
+	>
+		<Fragment slot="icon-1"><FavoriteIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><HomeIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><SparkleIcon size="md" weight="duotone" /></Fragment>
+	</MarketingHero>
+
 	<!-- Tourist Benefits -->
 	<section class="benefits-section benefits-section--tourist section">
 		<div class="benefits-section__decoratives" aria-hidden="true">
@@ -104,7 +134,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		</div>
 		<div class="benefits-section__container">
 			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.tourist.tagline', 'Para viajeros')}</p>
-			<h1 class="benefits-section__title" data-reveal="up">
+			<h2 class="benefits-section__title" data-reveal="up">
 				{touristHeading.main && <>{touristHeading.main}{' '}</>}
 				<span class="benefits-section__title-accent benefits-section__title-accent--tourist">
 					{touristHeading.accent}
@@ -123,19 +153,20 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 						/>
 					</svg>
 				</span>
-			</h1>
+			</h2>
 			<div class="benefits-section__grid">
-				{touristBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<div class="benefits-card__icon" aria-hidden="true">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
-							</svg>
+				{touristBenefits.map((b, i) => {
+					const Icon = b.Icon;
+					return (
+						<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+							<span class="benefits-card__icon benefits-card__icon--tourist" aria-hidden="true">
+								<Icon size="lg" weight="duotone" />
+							</span>
+							<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
+							<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
 						</div>
-						<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
-						<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
-					</div>
-				))}
+					);
+				})}
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
@@ -196,17 +227,18 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				</span>
 			</h2>
 			<div class="benefits-section__grid">
-				{ownerBenefits.map((b, i) => (
-					<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<div class="benefits-card__icon" aria-hidden="true">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-accent) l c h / 0.1)" />
-							</svg>
+				{ownerBenefits.map((b, i) => {
+					const Icon = b.Icon;
+					return (
+						<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+							<span class="benefits-card__icon benefits-card__icon--owner" aria-hidden="true">
+								<Icon size="lg" weight="duotone" />
+							</span>
+							<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
+							<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
 						</div>
-						<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
-						<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
-					</div>
-				))}
+					);
+				})}
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
@@ -257,8 +289,27 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		box-shadow: var(--shadow-card);
 	}
 
+	/* Icon chip: rounded square with tinted background + duotone icon in the
+	 * matching brand color. Mirrors the visual rhythm used in the publicar
+	 * landing's benefit cards. */
 	.benefits-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
 		margin-bottom: var(--space-4);
+		border-radius: var(--radius-button, 12px);
+	}
+
+	.benefits-card__icon--tourist {
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		color: var(--brand-primary);
+	}
+
+	.benefits-card__icon--owner {
+		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		color: var(--brand-accent);
 	}
 
 	.benefits-card__title {

@@ -51,6 +51,7 @@ const destinations = destinationsResult.ok
           id: String(d.id),
           slug: String(d.slug),
           name: String(d.name),
+          isFeatured: Boolean(d.isFeatured),
       }))
     : [];
 

@@ -3,8 +3,8 @@
     "id": "009-event-music-concierto-jazz",
     "slug": "concierto-jazz",
     "name": "Concierto de Jazz",
-    "summary": "Noche intima de jazz con cuartetos locales y un set sorpresa, en formato acustico bajo las luces del puerto.",
-    "description": "Descripción detallada del evento Concierto de Jazz. Este es un evento de categoría MUSIC que se desarrolla en Entre Ríos.",
+    "summary": "Noche íntima de jazz con cuartetos locales y un set sorpresa, en formato acústico bajo las luces del puerto. Entrada gratuita, ambiente relajado y la mejor música improvisada del litoral.",
+    "description": "Una noche dedicada al jazz en la zona portuaria de Gualeguaychú. La propuesta combina la calidad musical de cuartetos locales con la atmósfera única del puerto al atardecer, en un formato acústico que pone el foco en la música improvisada y el diálogo entre instrumentistas.\n\n**La grilla**\n\n- **Apertura (20.30):** trío de jazz local con repertorio de standards.\n- **Set principal (21.30):** cuarteto invitado con compositores propios y arreglos sobre piezas del jazz argentino contemporáneo.\n- **Set sorpresa (23.00):** colaboración entre todos los músicos, jam session abierta. Los músicos del público con instrumentos pueden sumarse.\n\n**Por qué es especial**\n\nEl jazz en Entre Ríos tiene una escena pequeña pero de calidad creciente. Conciertos como este, con entrada libre y en espacios al aire libre, permiten que el género llegue a públicos que no irían a un club especializado, y le dan a los músicos locales la chance de mostrar su trabajo ante audiencias amplias.\n\n**Información práctica**\n\n- **Cuándo:** octubre, una sola noche.\n- **Dónde:** zona portuaria de Gualeguaychú, espacio al aire libre.\n- **Entrada:** GRATUITA, sin reserva previa.\n- **Llevá:** abrigo (el río refresca por la noche), reposera o silla plegable si querés sentarte cómodo, mate o termo.\n- **Servicios:** food trucks gastronómicos, bar de cerveza artesanal local.\n\nUna oportunidad imperdible para disfrutar buena música en uno de los entornos más lindos de la ciudad.",
     "category": "MUSIC",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Concierto de Jazz 2025 - Entre Ríos - Hospeda",
-        "description": "Disfruta del Concierto de Jazz 2025 en Entre Ríos. Una noche de música en vivo con los mejores artistas de jazz locales y nacionales.",
-        "keywords": ["music", "entre rios", "evento", "cultura"]
+        "title": "Concierto de Jazz en el Puerto de Gualeguaychú - Hospeda",
+        "description": "Noche de jazz al aire libre con cuartetos locales, set sorpresa y jam abierta. Entrada gratuita en la zona portuaria de Gualeguaychú.",
+        "keywords": [
+            "concierto jazz",
+            "jazz entre ríos",
+            "música en vivo",
+            "gualeguaychú jazz",
+            "concierto gratuito",
+            "jam session",
+            "puerto gualeguaychú",
+            "música argentina"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "locationId": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu",

@@ -18,6 +18,7 @@ import {
     CloseIcon,
     LocationIcon,
     SearchIcon,
+    StarIcon,
     UsersIcon
 } from '@repo/icons';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -40,6 +41,8 @@ interface DestinationOption {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
+    /** When true, the option is highlighted as a featured destination. */
+    readonly isFeatured?: boolean;
 }
 
 interface SearchBarProps {
@@ -271,25 +274,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         setActivePanel(null);
     }, []);
 
-    // Type handlers
-    const handleToggleType = useCallback((type: AccommodationType) => {
-        setSelectedTypes((prev) => {
-            const next = new Set(prev);
-            if (next.has(type)) {
-                next.delete(type);
-            } else {
-                next.add(type);
-            }
-            return next;
-        });
-    }, []);
-
-    const handleSelectAllTypes = useCallback(() => {
-        setSelectedTypes(new Set(ACCOMMODATION_TYPES));
-    }, []);
-
-    const handleClearTypes = useCallback(() => {
-        setSelectedTypes(new Set());
+    // Type handlers (single-select: picking a type replaces the selection
+    // and closes the panel, mirroring the destination column UX).
+    const handleSelectType = useCallback((type: AccommodationType | null) => {
+        setSelectedTypes(type ? new Set([type]) : new Set());
+        setActivePanel(null);
     }, []);
 
     // Calendar chunk modulepreload (fires once on first hover/focus of dates column)
@@ -309,17 +298,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         return `${day}/${month}`;
     }, []);
 
-    // Type display value
+    // Type display value (single-select: at most one entry in the set).
     const getTypeDisplayValue = useCallback((): string | null => {
-        if (selectedTypes.size === 0) return null;
-        if (selectedTypes.size === ACCOMMODATION_TYPES.length) {
-            return t('home.searchBar.allTypes', 'Todos los tipos');
-        }
-        const typesArray = Array.from(selectedTypes);
-        const firstName = t(`home.searchBar.types.${typesArray[0]}`, typesArray[0] ?? '');
-        if (typesArray.length === 1) return firstName;
-        const remaining = typesArray.length - 1;
-        return `${firstName} & ${remaining} +`;
+        const [first] = selectedTypes;
+        if (!first) return null;
+        return t(`home.searchBar.types.${first}`, first);
     }, [selectedTypes, t]);
 
     // Guests display value
@@ -633,6 +616,21 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                         />
                                     </span>
                                     <span className="combobox__option-label">{dest.name}</span>
+                                    {dest.isFeatured && (
+                                        <span
+                                            className="featured-indicator"
+                                            aria-label={t(
+                                                'home.searchBar.featuredDestinationLabel',
+                                                'Destino destacado'
+                                            )}
+                                        >
+                                            <StarIcon
+                                                size={13}
+                                                weight="fill"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
@@ -662,9 +660,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         styles.typePanel,
                         openDirection === 'up' && styles.panelUp
                     )}
-                    // biome-ignore lint/a11y/useSemanticElements: custom multi-select dropdown cannot use native <select>
+                    // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
                     role="listbox"
-                    aria-multiselectable="true"
                 >
                     <PanelCloseHeader
                         ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
@@ -684,61 +681,38 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             )}
                         />
                     </div>
-                    <div className={styles.typeActions}>
-                        <button
-                            type="button"
-                            className={styles.typeActionButton}
-                            onClick={handleSelectAllTypes}
-                        >
-                            {t('home.searchBar.allTypes', 'Todos los tipos')}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.typeActionButton}
-                            onClick={handleClearTypes}
-                        >
-                            {t('home.searchBar.clearTypes', 'Limpiar')}
-                        </button>
-                    </div>
                     <div className={cn(styles.typeList, styles.panelOptionList)}>
+                        {/* Clear option */}
+                        {selectedTypes.size > 0 && (
+                            <button
+                                type="button"
+                                className={cn('combobox__option', styles.optionClear)}
+                                onClick={() => handleSelectType(null)}
+                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                role="option"
+                                aria-selected={false}
+                            >
+                                <span className="combobox__option-label">
+                                    {t('home.searchBar.clearTypes', 'Limpiar')}
+                                </span>
+                            </button>
+                        )}
                         {filteredTypes.map((type) => {
                             const IconComponent = getAccommodationTypeIcon({ type });
-                            const isChecked = selectedTypes.has(type);
+                            const isSelected = selectedTypes.has(type);
                             return (
                                 <button
                                     key={type}
                                     type="button"
                                     className={cn(
                                         'combobox__option',
-                                        isChecked && 'combobox__option--selected'
+                                        isSelected && 'combobox__option--selected'
                                     )}
-                                    onClick={() => handleToggleType(type)}
+                                    onClick={() => handleSelectType(type)}
                                     // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
-                                    aria-selected={isChecked}
+                                    aria-selected={isSelected}
                                 >
-                                    <span
-                                        className="combobox__option-check"
-                                        aria-hidden="true"
-                                    >
-                                        {isChecked && (
-                                            <svg
-                                                width="12"
-                                                height="12"
-                                                viewBox="0 0 12 12"
-                                                fill="none"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M2.5 6L5 8.5L9.5 3.5"
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        )}
-                                    </span>
                                     <span
                                         className="combobox__option-icon"
                                         aria-hidden="true"

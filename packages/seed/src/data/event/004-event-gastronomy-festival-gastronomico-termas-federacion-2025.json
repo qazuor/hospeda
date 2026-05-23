@@ -3,8 +3,8 @@
     "id": "004-event-gastronomy-festival-gastronomico-termas-federacion-2025",
     "slug": "festival-gastronomico-termas-federacion-2025",
     "name": "Festival Gastronómico Termas de Federación 2025",
-    "summary": "Una semana dedicada a los productos locales del Litoral, con degustaciones de carnes y pescados de rio, vinos regionales, sesiones de wellness en las aguas termales de Federacion y clases en vivo a cargo de chefs reconocidos. Experiencia gastronomica completa.",
-    "description": "El Festival Gastronómico de las Termas de Federación es un evento único que combina la gastronomía regional con el bienestar termal. Durante dos días, los mejores chefs locales y regionales presentan platos elaborados con productos típicos de Entre Ríos, mientras los visitantes pueden disfrutar de las aguas termales y tratamientos de spa. Una experiencia gastronómica y de relajación incomparable.",
+    "summary": "Dos días dedicados a los productos del litoral, con degustaciones de pescados de río, carnes, citrus y dulces regionales, vinos del litoral, sesiones de wellness en las aguas termales y clases en vivo de chefs reconocidos. La experiencia gastronómica y termal más completa del año.",
+    "description": "El Festival Gastronómico de las Termas de Federación es un evento único que combina la gastronomía regional con el bienestar termal. Durante dos jornadas, los mejores chefs locales y regionales presentan platos elaborados con productos típicos de Entre Ríos, mientras los visitantes pueden disfrutar de las aguas termales y tratamientos de spa entre clase y clase.\n\n**Una propuesta que sólo Federación puede ofrecer**\n\nLa combinación de termas y gastronomía es prácticamente única en Argentina. Federación, capital termal del país, tiene la infraestructura para sostener un evento que mezcla cocina en vivo con bienestar: el predio del complejo termal se transforma durante el festival en un circuito gastronómico al aire libre, con estaciones temáticas, escenarios de show-cooking y áreas de degustación junto a las piscinas.\n\n**Lo que vas a probar**\n\n- **Pescados de río:** pacú a la parrilla, surubí en salsa criolla, dorado al horno, boga frita.\n- **Asados de campo:** cordero a la cruz, lechón al asador, achuras del litoral.\n- **Cocina de las colonias:** chipá, sopa paraguaya, embutidos de Crespo, repostería volga-alemana.\n- **Citricultura:** naranjas, mandarinas, pomelos, limones; en jugos, conservas y postres.\n- **Vinos del litoral:** producciones pequeñas de La Paz, Diamante y Federación.\n- **Cerveza artesanal regional:** tap rooms de productores locales.\n- **Dulces tradicionales:** dulce de mamón, de naranja amarga, de batata con queso.\n\n**Actividades complementarias**\n\n- Clases magistrales con chefs reconocidos a nivel nacional.\n- Cata guiada de vinos del litoral con sommelier.\n- Sesiones de wellness en las termas con musicalización en vivo.\n- Tratamientos de spa con descuento para asistentes.\n- Paseos guiados por el lago de Salto Grande.\n- Concursos de cocina para chefs amateurs.\n- Espectáculos musicales nocturnos.\n\n**Información práctica**\n\n- **Cuándo:** dos días en julio (en pleno invierno, época ideal para disfrutar termas).\n- **Dónde:** Complejo Termal de Federación.\n- **Entrada:** valor que incluye acceso al festival, degustaciones limitadas, ingreso a las piscinas y participación en una clase a elección.\n- **Capacidad limitada:** se recomienda reservar con anticipación a través de los canales del organizador.\n- **Llevar:** traje de baño, toalla, ropa de abrigo para los traslados al aire libre, paladar curioso.\n\n**Para quién es**\n\nIdeal para amantes de la gastronomía, parejas que buscan una experiencia diferente, viajeros que combinan bienestar con cultura culinaria, y profesionales del rubro que buscan inspiración. Apto también para familias, aunque la propuesta gastronómica está pensada principalmente para adultos.",
     "category": "GASTRONOMY",
     "date": {
         "start": "2026-07-18T11:00:00-03:00",
@@ -52,8 +52,17 @@
     },
     "seo": {
         "title": "Festival Gastronómico Termas Federación 2025 - Hospeda",
-        "description": "Festival gastronómico con productos locales y experiencia termal en Federación. Gastronomía y relajación en un mismo lugar.",
-        "keywords": ["gastronomia", "federacion", "termas", "wellness", "productos-locales"]
+        "description": "Festival gastronómico en las Termas de Federación: pescados de río, asados, vinos del litoral, citricultura y dulces, con sesiones de wellness y clases magistrales.",
+        "keywords": [
+            "festival gastronómico",
+            "termas federación",
+            "pescados río",
+            "wellness gastronomía",
+            "vinos litoral",
+            "chefs argentinos",
+            "evento federación",
+            "cocina entre ríos"
+        ]
     },
     "lifecycleState": "ACTIVE"
 }

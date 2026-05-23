@@ -30,9 +30,18 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { toDestinationCardProps } from '@/lib/api/transforms';
+import { getAttractionIcon } from '@/lib/attraction-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { CloseIcon } from '@repo/icons';
+
+/**
+ * How many attraction chips render in the first row before the "Ver más"
+ * disclosure kicks in. Tuned so the row fits in one line on typical desktop
+ * widths and stays calm on mobile.
+ */
+const VISIBLE_ATTRACTION_LIMIT = 12;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -47,17 +56,14 @@ const url = Astro.url;
 // request server-side.
 const PAGE_SIZE_ALL = 100;
 
-// Default order is fixed: name asc. Featured destinations are pinned to the
-// top by a stable client-side sort below, so users always see "featured first,
-// then alphabetical A-Z" out of the box. The previous sort dropdown was
-// removed — the catalog is small and the default ordering is the only one
-// that meaningfully helps discovery.
+// Default order is fixed: "featured first, then alphabetical A-Z". The API
+// applies that ordering when no explicit sortBy is provided (see
+// DestinationModel.findAll override), so this endpoint relies on the API
+// default instead of re-sorting client-side.
 const result = await destinationsApi.list({
     page: 1,
     pageSize: PAGE_SIZE_ALL,
-    destinationType: 'CITY',
-    sortBy: 'name',
-    sortOrder: 'asc'
+    destinationType: 'CITY'
 });
 
 const hasError = !result.ok;
@@ -67,12 +73,9 @@ const rawCards = items.map((item) =>
     toDestinationCardProps({ item: item as unknown as Record<string, unknown> })
 );
 
-// Pin featured destinations to the top while preserving the alphabetical
-// order returned by the API. `Array.prototype.sort` in V8 is stable since
-// 2019, so non-featured cards keep their A-Z order.
-const sortedCards = [...rawCards].sort(
-    (a, b) => Number(b.isFeatured) - Number(a.isFeatured)
-);
+// API already returns featured-first then alphabetical (see
+// DestinationModel.findAll default ordering), so no client-side sort is needed.
+const sortedCards = rawCards;
 
 // --- Attraction filter state ----------------------------------------------
 // Parse the active attraction ids from the query string. Empty/missing means
@@ -91,6 +94,7 @@ const requestedIds = rawAttractionsParam
 type AttractionBadge = {
     readonly id: string;
     readonly name: string;
+    readonly icon?: string;
     readonly displayWeight: number;
 };
 const attractionMap = new Map<string, AttractionBadge>();
@@ -101,6 +105,7 @@ for (const card of rawCards) {
             attractionMap.set(a.id, {
                 id: a.id,
                 name: a.name,
+                icon: a.icon,
                 displayWeight: a.displayWeight ?? 0
             });
         }
@@ -119,31 +124,53 @@ const availableAttractions: ReadonlyArray<AttractionBadge> = [...attractionMap.v
 const activeIds = new Set(requestedIds.filter((id) => attractionMap.has(id)));
 const isFilterActive = activeIds.size > 0;
 
-// AND semantics: a card passes only if it has every active attraction.
-// Implemented as `Array.prototype.every` over the active id set against the
-// card's own attractions, which keeps the comparison branch-free and works
-// with the readonly array shape returned by the transform.
-const filteredCards = isFilterActive
-    ? sortedCards.filter((c) => {
-          const cardAttractionIds = new Set(c.attractions?.map((a) => a.id) ?? []);
-          for (const requiredId of activeIds) {
-              if (!cardAttractionIds.has(requiredId)) return false;
-          }
-          return true;
-      })
-    : sortedCards;
+// The chip list renders ALL attractions in a single flex-wrap <ul>, and a
+// sibling <details> toggles whether the overflow (chips past the first
+// `VISIBLE_ATTRACTION_LIMIT`) are hidden via CSS `:has(details:not([open]))`.
+// Keeping every chip in the same flex container makes the expanded set
+// continue the wrap from wherever the visible row ended, instead of
+// starting a fresh row from the left.
+//
+// When a selected filter lives in the overflow, the disclosure opens by
+// default so the user can see (and unselect) it without hunting for the
+// "Ver más" toggle.
+const hasOverflowAttractions = availableAttractions.length > VISIBLE_ATTRACTION_LIMIT;
+const overflowCount = Math.max(0, availableAttractions.length - VISIBLE_ATTRACTION_LIMIT);
+const anyOverflowActive = availableAttractions
+    .slice(VISIBLE_ATTRACTION_LIMIT)
+    .some((a) => activeIds.has(a.id));
 
-// Anchor appended to every filter href. With Astro's `<ClientRouter />`
-// preserving scroll across navigations, clicking a badge while scrolled
-// down can leave the user staring at whitespace if the filtered grid is
-// shorter than the previous one. The anchor brings them back to the
-// filters + grid region without any JS.
+// AND semantics: a card matches only if it has every active attraction.
+// SSR uses this to decide which cards are hidden on first paint, so users
+// landing on a deep-linked URL (or browsing with JS disabled) see the
+// filtered set immediately without waiting for any script to run. The same
+// predicate is mirrored in the inline script below, which keeps it in sync
+// across client-driven toggles.
+function cardMatchesFilter(card: (typeof sortedCards)[number]): boolean {
+    if (!isFilterActive) return true;
+    const cardAttractionIds = new Set(card.attractions?.map((a) => a.id) ?? []);
+    for (const requiredId of activeIds) {
+        if (!cardAttractionIds.has(requiredId)) return false;
+    }
+    return true;
+}
+
+const visibleCardCount = sortedCards.reduce(
+    (acc, c) => acc + (cardMatchesFilter(c) ? 1 : 0),
+    0
+);
+const showEmptyBanner = isFilterActive && visibleCardCount === 0;
+
+// Anchor appended to every filter href so that no-JS navigations land users
+// back at the filter row + grid instead of the page header.
 const FILTER_ANCHOR = '#dest-filter-top';
 
 // Build the canonical href for a badge. Toggle the badge id in the active set:
 // click an inactive badge → adds it; click an active one → removes it. When
 // the resulting set is empty, drop the `attractions` query param entirely so
-// `/destinos/` stays clean.
+// `/destinos/` stays clean. The inline script below intercepts the click and
+// drives the same transition through the History API; the href is the
+// no-JS fallback (and what `target=_blank` / copy-link / right-click use).
 function buildBadgeHref(badgeId: string): string {
     const next = new Set(activeIds);
     if (next.has(badgeId)) next.delete(badgeId);
@@ -206,6 +233,7 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 						<ul class="dest-attractions-filter__list">
 							{availableAttractions.map((attr) => {
 								const active = activeIds.has(attr.id);
+								const Icon = getAttractionIcon({ icon: attr.icon });
 								return (
 									<li>
 										<a
@@ -216,24 +244,37 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 											]}
 											aria-pressed={active ? 'true' : 'false'}
 											rel="nofollow"
+											data-attraction-id={attr.id}
 										>
-											{attr.name}
+											<span class="dest-attractions-filter__badge-icon" aria-hidden="true">
+												<Icon size={14} weight="regular" />
+											</span>
+											<span>{attr.name}</span>
+											<span class="dest-attractions-filter__badge-remove" aria-hidden="true">
+												<CloseIcon size={11} weight="bold" />
+											</span>
 										</a>
 									</li>
 								);
 							})}
-							{isFilterActive && (
-								<li>
-									<a
-										href={buildClearHref()}
-										class="dest-attractions-filter__clear"
-										rel="nofollow"
-									>
-										{t('destinations.filter.clear', 'Limpiar filtros')}
-									</a>
-								</li>
-							)}
 						</ul>
+
+						{hasOverflowAttractions && (
+							<details class="dest-attractions-filter__more" open={anyOverflowActive}>
+								<summary class="dest-attractions-filter__more-toggle">
+									<span class="dest-attractions-filter__more-label-closed">
+										{t('destinations.filter.showMore', 'Ver más')}
+									</span>
+									<span class="dest-attractions-filter__more-label-open">
+										{t('destinations.filter.showLess', 'Ver menos')}
+									</span>
+									<span class="dest-attractions-filter__more-count">
+										{overflowCount}
+									</span>
+								</summary>
+							</details>
+						)}
+
 					</nav>
 				)}
 
@@ -256,21 +297,35 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 					</div>
 				)}
 
-				{!hasError && filteredCards.length > 0 && (
+				{!hasError && sortedCards.length > 0 && (
 					<div class="dest-grid">
-						{filteredCards.map((card) => (
-							<DestinationCard
-								destination={card}
-								locale={locale}
-								variant="grid"
-								isAuthenticated={isAuthenticated}
-							/>
-						))}
+						{sortedCards.map((card) => {
+							const matches = cardMatchesFilter(card);
+							const attractionIdsAttr = (card.attractions ?? [])
+								.map((a) => a.id)
+								.join(',');
+							return (
+								<div
+									class:list={[
+										'dest-card-wrap',
+										{ 'dest-card-wrap--hidden': !matches }
+									]}
+									data-attraction-ids={attractionIdsAttr}
+								>
+									<DestinationCard
+										destination={card}
+										locale={locale}
+										variant="grid"
+										isAuthenticated={isAuthenticated}
+									/>
+								</div>
+							);
+						})}
 					</div>
 				)}
 
-				{!hasError && sortedCards.length > 0 && filteredCards.length === 0 && (
-					<div class="dest-listing__empty-filter">
+				{!hasError && sortedCards.length > 0 && (
+					<div class="dest-listing__empty-filter" hidden={!showEmptyBanner}>
 						<p class="dest-listing__empty-filter-msg">
 							{t(
 								'destinations.filter.empty',
@@ -314,11 +369,36 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
 
-	/* Attraction filter row.
-	 * Wrapping pill list. Each pill is a plain anchor — no JS — that flips the
-	 * id in the `?attractions=` query param. Active state uses brand-accent for
-	 * affordance; the rest uses surface-warm to stay calm against the grid. */
+	/* Card wrapper that participates in the grid AND carries the
+	 * data-attraction-ids attribute the inline filter script reads. Hidden
+	 * via display:none (rather than visibility) so it stops occupying a grid
+	 * cell — otherwise the grid would leave holes between visible cards. */
+	.dest-card-wrap--hidden {
+		display: none;
+	}
+
+	/* During chip-toggle View Transitions, fold the per-image transition
+	 * names (Astro emits them for list ↔ detail page morphs) back into the
+	 * root snapshot. Otherwise the named images snapshot independently and
+	 * escape their parent's rounded `overflow: hidden` mask while the
+	 * crossfade runs, briefly looking like the photo pops out of the card.
+	 * Astro applies the name via inline style, so we need `!important` to
+	 * win the cascade. Scoped to `:global` so it pierces Astro's scoped
+	 * styling and reaches the cards rendered by DestinationCard.astro. */
+	:global(html.is-attractions-transition .dest-card__img) {
+		view-transition-name: none !important;
+	}
+
+	/* Attraction filter block.
+	 * Vertical stack: head row of chips → "Ver más" toggle. Each chip is an
+	 * <a> with an href that doubles as a no-JS fallback; the inline script
+	 * below intercepts click and drives the toggle through the History API
+	 * so the page never navigates. */
 	.dest-attractions-filter {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
 		margin: 0 0 1.25rem;
 		/* Used as the anchor target after each badge click. Without scroll
 		 * margin the nav lands flush against the (potentially sticky) site
@@ -330,19 +410,32 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 	.dest-attractions-filter__list {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: 0.375rem;
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
 
+	/* When the "Ver más" disclosure is closed, hide every chip past the
+	 * first VISIBLE_ATTRACTION_LIMIT (currently 12 — keep `nth-child(n+13)`
+	 * in sync if you tweak the constant). Keeping all chips in the same
+	 * <ul> lets the expanded set continue the flex-wrap from wherever the
+	 * head row left off, instead of starting a fresh row from the left. */
+	.dest-attractions-filter:has(details:not([open]))
+		.dest-attractions-filter__list
+		> li:nth-child(n + 13) {
+		display: none;
+	}
+
 	.dest-attractions-filter__badge,
-	.dest-attractions-filter__clear {
+	.dest-attractions-filter__more-toggle {
 		display: inline-flex;
 		align-items: center;
+		gap: 0.375rem;
 		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 0.875rem;
+		font-size: 0.75rem;
+		line-height: 1;
+		padding: 0.3125rem 0.625rem;
 		border-radius: var(--radius-pill);
 		text-decoration: none;
 		transition:
@@ -369,15 +462,96 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		font-weight: 500;
 	}
 
-	.dest-attractions-filter__clear {
+	.dest-attractions-filter__badge-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		opacity: 0.85;
+	}
+
+	.dest-attractions-filter__badge--active .dest-attractions-filter__badge-icon {
+		opacity: 1;
+	}
+
+	/* The close (×) glyph is pre-rendered inside every chip so the inline
+	 * filter script can flip it on/off through a single class change instead
+	 * of injecting SVG markup at runtime. Hidden by default; revealed only
+	 * when the chip is active. */
+	.dest-attractions-filter__badge-remove {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		margin-left: 0.125rem;
+		opacity: 0.7;
+	}
+
+	.dest-attractions-filter__badge--active .dest-attractions-filter__badge-remove {
+		display: inline-flex;
+	}
+
+	/* Native <details> disclosure used purely as a stateful toggle — the
+	 * actual chip list lives in the sibling <ul> and is hidden/shown via the
+	 * `:has(details:not([open]))` rule above. align-self keeps the summary
+	 * compact (it would otherwise stretch to the nav's full width). */
+	.dest-attractions-filter__more {
+		align-self: flex-start;
+	}
+
+	.dest-attractions-filter__more-toggle {
 		background-color: transparent;
 		color: var(--core-muted-foreground);
 		border: 1px dashed var(--core-muted-foreground);
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
 	}
 
-	.dest-attractions-filter__clear:hover {
+	.dest-attractions-filter__more-toggle::-webkit-details-marker {
+		display: none;
+	}
+
+	.dest-attractions-filter__more-toggle:hover {
 		color: var(--core-foreground);
 		border-color: var(--core-foreground);
+	}
+
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-toggle {
+		color: var(--core-foreground);
+		border-color: var(--core-foreground);
+	}
+
+	/* Two-state label inside the summary: closed = "Ver más", open =
+	 * "Ver menos". Both strings ship through i18n so translators do not have
+	 * to deal with CSS ::after content swaps. */
+	.dest-attractions-filter__more:not([open]) .dest-attractions-filter__more-label-open {
+		display: none;
+	}
+
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-label-closed {
+		display: none;
+	}
+
+	/* The count is meaningful only while the tail is hidden ("Ver más (45)").
+	 * Once expanded, the chips themselves convey that info and the count
+	 * becomes redundant noise next to "Ver menos". */
+	.dest-attractions-filter__more[open] .dest-attractions-filter__more-count {
+		display: none;
+	}
+
+	.dest-attractions-filter__more-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		height: 1.125rem;
+		padding: 0 0.3125rem;
+		border-radius: var(--radius-pill);
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		color: var(--brand-primary);
+		font-size: 0.6875rem;
+		font-weight: 600;
 	}
 
 	/* View toggle (Lista | Mapa) */
@@ -455,3 +629,201 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 		color: var(--accent-foreground);
 	}
 </style>
+
+<script is:inline>
+	/**
+	 * Client-side attractions filter for /destinos.
+	 *
+	 * The page is SSR-rendered with every card present and the right cards
+	 * pre-hidden based on `?attractions=` in the URL, so no-JS visitors and
+	 * the first paint always reflect the canonical state. This script
+	 * progressively enhances that baseline: chip clicks no longer navigate,
+	 * the URL is updated via History API, and the card grid + empty banner +
+	 * chip styling are reconciled in place. No scroll reset, no view-
+	 * transition flash, no network round-trip.
+	 *
+	 * Init runs on `astro:page-load` so it re-attaches after every
+	 * `<ClientRouter />` soft swap — relying on a one-shot IIFE would leave
+	 * stale closures pointing at detached DOM after the user navigates away
+	 * and back.
+	 */
+	(function () {
+		var FILTER_ROOT_ID = 'dest-filter-top';
+		var BADGE_SEL = '.dest-attractions-filter__badge';
+		var BADGE_ACTIVE_CLASS = 'dest-attractions-filter__badge--active';
+		var CARD_WRAP_SEL = '.dest-card-wrap';
+		var CARD_HIDDEN_CLASS = 'dest-card-wrap--hidden';
+		var BANNER_SEL = '.dest-listing__empty-filter';
+		var CLEAR_LINK_SEL = '.dest-listing__empty-filter-clear';
+		var DETAILS_SEL = '.dest-attractions-filter__more';
+		var VISIBLE_LIMIT = 12;
+
+		function init() {
+			var filterRoot = document.getElementById(FILTER_ROOT_ID);
+			if (!filterRoot) return;
+
+			var cards = Array.prototype.slice.call(document.querySelectorAll(CARD_WRAP_SEL));
+			var badges = Array.prototype.slice.call(filterRoot.querySelectorAll(BADGE_SEL));
+			var banner = document.querySelector(BANNER_SEL);
+			var clearLink = document.querySelector(CLEAR_LINK_SEL);
+			var details = filterRoot.querySelector(DETAILS_SEL);
+
+			// Pre-compute each card's attraction id set once — the dataset
+			// never changes within a session, so re-parsing the string on
+			// every reconcile pass would be wasted work.
+			var cardIds = cards.map(function (card) {
+				var raw = card.getAttribute('data-attraction-ids') || '';
+				return raw.split(',').filter(Boolean);
+			});
+
+			function readActiveFromUrl() {
+				var raw = new URLSearchParams(window.location.search).get('attractions') || '';
+				return new Set(
+					raw
+						.split(',')
+						.map(function (s) { return s.trim(); })
+						.filter(Boolean)
+				);
+			}
+
+			function buildHref(active) {
+				var url = new URL(window.location.href);
+				if (active.size === 0) url.searchParams.delete('attractions');
+				else url.searchParams.set('attractions', Array.from(active).join(','));
+				return url.pathname + url.search + '#' + FILTER_ROOT_ID;
+			}
+
+			function buildHrefToggling(badgeId, active) {
+				var next = new Set(active);
+				if (next.has(badgeId)) next.delete(badgeId);
+				else next.add(badgeId);
+				return buildHref(next);
+			}
+
+			function reconcile(active) {
+				// Cards: AND semantics — a card stays visible only when it
+				// carries every active id. When no filter is active, every
+				// card shows.
+				var visibleCount = 0;
+				for (var i = 0; i < cards.length; i++) {
+					var ids = cardIds[i];
+					var matches = true;
+					active.forEach(function (required) {
+						if (ids.indexOf(required) === -1) matches = false;
+					});
+					cards[i].classList.toggle(CARD_HIDDEN_CLASS, !matches);
+					if (matches) visibleCount++;
+				}
+
+				// Chips: active class + aria-pressed + refreshed href so
+				// modifier-clicks (new tab / copy link) keep producing a URL
+				// that round-trips to the current state.
+				var overflowActive = false;
+				for (var j = 0; j < badges.length; j++) {
+					var badge = badges[j];
+					var id = badge.getAttribute('data-attraction-id');
+					if (!id) continue;
+					var isActive = active.has(id);
+					badge.classList.toggle(BADGE_ACTIVE_CLASS, isActive);
+					badge.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+					badge.setAttribute('href', buildHrefToggling(id, active));
+					if (isActive && j >= VISIBLE_LIMIT) overflowActive = true;
+				}
+
+				// Empty banner: surface only when filters narrow to zero.
+				if (banner) {
+					var show = active.size > 0 && visibleCount === 0;
+					if (show) banner.removeAttribute('hidden');
+					else banner.setAttribute('hidden', '');
+				}
+
+				// "Limpiar filtros" link in the empty banner: target the
+				// cleared URL so the no-JS fallback still works.
+				if (clearLink) clearLink.setAttribute('href', buildHref(new Set()));
+
+				// If a freshly-active filter lives in the collapsed overflow,
+				// open the disclosure so the user can see (and remove) it. We
+				// never auto-close — that's the user's choice once they've
+				// expanded it.
+				if (details && overflowActive && !details.open) details.open = true;
+			}
+
+			// Wrap DOM mutations in the View Transitions API so the browser
+			// crossfades cards as they appear/disappear and morphs the grid
+			// reflow. This is the same animation `<ClientRouter />` gave us
+			// for free when chip clicks still triggered a full navigation.
+			//
+			// `is-attractions-transition` on <html> suppresses the per-card
+			// `view-transition-name` Astro emits for list ↔ detail morphs
+			// (see DestinationCard.astro). Without that suppression the
+			// named images get their own snapshot and escape the parent's
+			// rounded `overflow: hidden` mask while crossfading — they
+			// briefly render with no clip, looking like the image "pops
+			// out" of the card. Stripping the names for the duration of
+			// our transition folds them back into the root snapshot.
+			//
+			// Browsers without VT (Firefox < 129 at time of writing) get
+			// the unanimated reconcile, which still works fine.
+			function applyTransition(update) {
+				if (typeof document.startViewTransition !== 'function') {
+					update();
+					return;
+				}
+				var root = document.documentElement;
+				root.classList.add('is-attractions-transition');
+				var transition = document.startViewTransition(update);
+				transition.finished.finally(function () {
+					root.classList.remove('is-attractions-transition');
+				});
+			}
+
+			function onClick(e) {
+				// Honor modifier-clicks and middle-click so users keep the
+				// "open in new tab" / "copy link address" affordances they
+				// would expect from a normal anchor.
+				if (e.defaultPrevented) return;
+				if (e.button !== undefined && e.button !== 0) return;
+				if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+				var badge = e.target.closest(BADGE_SEL);
+				var clear = e.target.closest(CLEAR_LINK_SEL);
+				var nextActive = null;
+				if (badge && filterRoot.contains(badge)) {
+					var id = badge.getAttribute('data-attraction-id');
+					if (!id) return;
+					var current = readActiveFromUrl();
+					nextActive = new Set(current);
+					if (nextActive.has(id)) nextActive.delete(id);
+					else nextActive.add(id);
+				} else if (clear) {
+					nextActive = new Set();
+				} else {
+					return;
+				}
+
+				e.preventDefault();
+				window.history.pushState({}, '', buildHref(nextActive));
+				applyTransition(function () { reconcile(nextActive); });
+			}
+
+			function onPopState() {
+				// The popstate listener lives on `window` and survives soft
+				// swaps, so guard against firing after the user navigated to
+				// a different page: filterRoot is detached once /destinos is
+				// gone from the DOM.
+				if (!document.contains(filterRoot)) return;
+				var next = readActiveFromUrl();
+				applyTransition(function () { reconcile(next); });
+			}
+
+			// Scope click handling to the page DOM (dies with the swap) and
+			// keep popstate on window (the guard above neutralises stale
+			// instances).
+			filterRoot.addEventListener('click', onClick);
+			if (banner) banner.addEventListener('click', onClick);
+			window.addEventListener('popstate', onPopState);
+		}
+
+		document.addEventListener('astro:page-load', init);
+	})();
+</script>

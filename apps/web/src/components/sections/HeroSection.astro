@@ -41,7 +41,7 @@ interface Props {
 	 */
 	readonly socialProof?: SocialProofData;
 	/** Pre-fetched city destinations for the search bar dropdown. */
-	readonly destinations?: readonly { id: string; slug: string; name: string }[];
+	readonly destinations?: readonly { id: string; slug: string; name: string; isFeatured?: boolean }[];
 }
 
 const { locale, socialProof, destinations } = Astro.props;

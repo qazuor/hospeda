@@ -12,6 +12,7 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { StarIcon } from '@repo/icons';
 import DestinationRating from '@/components/shared/cards/DestinationRating.astro';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
@@ -113,7 +114,8 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 
 			<!-- Featured badge -->
 			{destination.isFeatured && (
-				<div class="dest-card__featured-badge">
+				<div class="dest-card__featured-badge featured-badge">
+					<StarIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{t('destination.card.badge.featured', 'Destacado')}</span>
 				</div>
 			)}
@@ -324,27 +326,15 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		display: block;
 	}
 
-	@media (max-width: 480px) {
-		.dest-card__wave {
-			display: none;
-		}
-	}
-
 	/* =========================================================================
 	   FEATURED BADGE
 	   ========================================================================= */
+	/* Look (color/font/padding/icon gap) comes from the shared
+	 * `.featured-badge` rule in components.css. */
 	.dest-card__featured-badge {
 		position: absolute;
 		bottom: 48px;
 		left: 16px;
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 12px;
-		line-height: 20px;
-		padding: 4px 10px;
-		border-radius: 9999px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.85);
-		color: var(--primary-foreground);
 	}
 
 	/* =========================================================================

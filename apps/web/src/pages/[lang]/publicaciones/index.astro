@@ -102,9 +102,7 @@ const publishedBeforeFilter = url.searchParams.get('publishedBefore') ?? undefin
  */
 const destinationsResult = await destinationsApi.list({
     destinationType: 'CITY',
-    pageSize: 100,
-    sortBy: 'name',
-    sortOrder: 'asc'
+    pageSize: 100
 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
@@ -228,7 +226,7 @@ const filterGroups = [
         id: 'destinationId',
         label: t('blog.filters.location', 'Destino'),
         type: 'select-search' as const,
-        options: destinations.map((d) => ({ value: d.id, label: d.name })),
+        options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
         maxVisible: 8,
         maxSelections: 1
     }

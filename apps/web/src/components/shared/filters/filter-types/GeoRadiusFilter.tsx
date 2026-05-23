@@ -163,7 +163,7 @@ export function GeoRadiusFilter({
                             key={opt.value}
                             value={opt.value}
                         >
-                            {opt.label}
+                            {opt.featured ? `★ ${opt.label}` : opt.label}
                         </option>
                     ))}
                 </select>
