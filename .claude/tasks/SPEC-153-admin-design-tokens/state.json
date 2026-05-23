@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 24,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -358,7 +358,10 @@
             "id": "T-153-24",
             "title": "Add @repo/design-tokens to apps/admin workspace deps",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T19:20:00Z",
+            "completedAt": "2026-05-23T19:25:00Z",
+            "completionNotes": "DONE. Added `@repo/design-tokens: workspace:*` to apps/admin/package.json dependencies alphabetically between @repo/config and @repo/feedback. pnpm install at root linked the workspace dep. Verified `@repo/design-tokens/tokens.css` resolves from the admin context via require.resolve → dist/tokens.css. No admin code consumes the package yet — that's T-153-26 (refactor styles.css @theme inline). Commit: a31fe24f6. NOTE for T-153-26: per apps/admin/CLAUDE.md, admin's vite.config.ts aliases 8 @repo/* packages to src/ but the @import of a built CSS artifact resolves via the exports field (like @repo/feedback/billing/auth-ui/notifications which use dist/). The package is already built (dist/tokens.css exists from Phase 1), so the @import will resolve.",
             "complexity": 1,
             "owner": "agent",
             "dependsOn": ["T-153-23"],
