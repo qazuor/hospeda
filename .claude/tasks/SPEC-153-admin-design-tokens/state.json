@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -123,7 +123,10 @@
             "id": "T-153-06",
             "title": "Implement src/tokens/colors.ts — brand palettes (river/sky/forest/sand/accent) w/ 10 shades each",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T05:20:00Z",
+            "completedAt": "2026-05-23T05:40:00Z",
+            "completionNotes": "DONE. Brand palettes shipped in packages/design-tokens/src/tokens/colors.ts (~165 lines): types (OKLCH, SHADES const, Shade type, Palette type), derivation algorithm per doc 05 §5.1 (deriveShades function — lightness linear 0.99→canonical→0.10, chroma scales to 50% at extremes via CHROMA_FLOOR_RATIO=0.5, hue locked), formatOKLCH helper with 3-decimal rounding and trailing-zero stripping, 5 brand palettes (river/sky/forest/sand/accent) with canonical 500 values matching apps/web/src/styles/global.css byte-for-byte, brandPalettes aggregate + BrandPaletteName type. Returns Object.freeze'd palettes for immutability. 21 vitest tests in src/tokens/colors.test.ts cover: SHADES order, algorithm invariants (canonical preservation, lightness pins, hue lock, chroma 50% at extremes, monotonic progression, frozen output), edge inputs (zero-chroma grey, non-integer hue 27.325), formatOKLCH cases (no trailing zeros, IEEE-754 rounding), 5 brand palette canonical CSS match, aggregate exports. Also added packages/design-tokens/vitest.config.ts (root: import.meta.dirname, include src/**/*.test.ts for colocated tests, v8 coverage with src/generators+index.ts excluded) so root vitest workspace picks up the package. Lint: 4 biome auto-fixes applied (import alphabetic sort, multi-line collapses, Number.POSITIVE_INFINITY over Infinity).",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-153-05"],
