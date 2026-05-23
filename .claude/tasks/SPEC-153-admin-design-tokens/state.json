@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -136,7 +136,10 @@
             "id": "T-153-07",
             "title": "Implement src/tokens/colors.ts (cont.) — semantic palettes + neutrals + web-specific extras",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T05:50:00Z",
+            "completedAt": "2026-05-23T06:10:00Z",
+            "completionNotes": "DONE. Extended colors.ts with: 4 semantic palettes (success/warning/danger/info — canonicals from web seed, NOT doc 05 §5.1 post-V1 targets, to keep Phase 2 pixel-diff at 0), neutral palette (10 shades, hand-tuned ladder per doc 05 §5.1: 0.985/0.95/0.9/0.83/0.7/0.55/0.42/0.3/0.18/0.1, chroma 0, hue 0 — NOT derived because cluster is intentionally non-uniform for UI surface granularity), master palettes aggregate (5 brand + 4 semantic + neutral = 10), and 8 single-OKLCH extras (skyLight, brandSecondary, brandSecondaryForeground, brandTertiary, ratingStar) + structured (avatarGradients with 4 from/to pairs, chartColors array of 5, surfaces object with warm/dark/elevated + foregrounds). All values match web seed byte-for-byte (verified by 22 new tests). Test count: 21 → 43 (22 added). Lint auto-fixed import order. danger is the package's name for what web calls --destructive (preserved as alias in T-153-14 theme mapping).",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-153-06"],
