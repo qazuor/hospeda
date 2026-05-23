@@ -3,10 +3,11 @@
  * @file check-css-tokens.cjs
  * @description Static lint rule that detects usage of undefined CSS custom
  * properties in apps/web/src. The web app's design tokens live in
- * `src/styles/global.css`. Any `var(--token)` reference in source files must
- * resolve to a token defined there (in `:root` or a theme override block
- * such as `[data-theme="dark"]`). Anything else silently breaks dark mode
- * and visual consistency.
+ * `@repo/design-tokens/tokens.css` (built artifact, SPEC-153) and any
+ * web-only overrides live in `src/styles/global.css`. Any `var(--token)`
+ * reference in source files must resolve to a token defined in either of
+ * those, in a theme override block (e.g. `[data-theme="dark"]`), or as a
+ * component-local custom property declared anywhere in the source tree.
  *
  * Exit code:
  *   0 -> no undefined tokens found
@@ -22,7 +23,22 @@ const path = require('node:path');
 
 const APP_ROOT = path.resolve(__dirname, '..');
 const SRC_ROOT = path.join(APP_ROOT, 'src');
-const TOKENS_FILE = path.join(SRC_ROOT, 'styles', 'global.css');
+const GLOBAL_TOKENS_FILE = path.join(SRC_ROOT, 'styles', 'global.css');
+
+/**
+ * Resolve the path to @repo/design-tokens/tokens.css via Node's module
+ * resolution (honors the package's `exports` map). Returns null if the
+ * package or its built artifact isn't present yet — the caller turns that
+ * into a clear error message rather than silently flagging every shared
+ * token as undefined.
+ */
+function resolveDesignTokensCss() {
+    try {
+        return require.resolve('@repo/design-tokens/tokens.css', { paths: [APP_ROOT] });
+    } catch {
+        return null;
+    }
+}
 
 const SOURCE_EXTS = new Set(['.astro', '.css', '.tsx', '.ts']);
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.astro', '.turbo', '.vercel']);
@@ -125,14 +141,26 @@ function findUndefinedTokens(filePath, defined) {
 }
 
 function main() {
-    if (!fs.existsSync(TOKENS_FILE)) {
-        console.error(`[check-css-tokens] cannot find tokens file: ${TOKENS_FILE}`);
+    if (!fs.existsSync(GLOBAL_TOKENS_FILE)) {
+        console.error(`[check-css-tokens] cannot find global styles file: ${GLOBAL_TOKENS_FILE}`);
         process.exit(1);
     }
 
-    const defined = parseDefinedTokens(TOKENS_FILE);
+    const designTokensCss = resolveDesignTokensCss();
+    if (designTokensCss === null) {
+        console.error(
+            '[check-css-tokens] cannot resolve @repo/design-tokens/tokens.css. ' +
+                'Build the package first: `pnpm exec turbo run build --filter=@repo/design-tokens`.'
+        );
+        process.exit(1);
+    }
+
+    const globalDefined = parseDefinedTokens(GLOBAL_TOKENS_FILE);
+    const packageDefined = parseDefinedTokens(designTokensCss);
+    const defined = new Set([...globalDefined, ...packageDefined]);
+
     const files = collectSourceFiles(SRC_ROOT).filter(
-        (f) => path.resolve(f) !== path.resolve(TOKENS_FILE)
+        (f) => path.resolve(f) !== path.resolve(GLOBAL_TOKENS_FILE)
     );
 
     // Component-local CSS custom properties may be defined anywhere in the
@@ -165,7 +193,7 @@ function main() {
 
     if (allFindings.length === 0) {
         console.log(
-            `[check-css-tokens] OK - scanned ${files.length} files, ${defined.size} global tokens + ${componentLocal.size} component-local properties, 0 undefined references.`
+            `[check-css-tokens] OK - scanned ${files.length} files, ${packageDefined.size} package tokens + ${globalDefined.size} global tokens + ${componentLocal.size} component-local properties, 0 undefined references.`
         );
         process.exit(0);
     }
