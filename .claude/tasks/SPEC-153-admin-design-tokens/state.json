@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -265,9 +265,12 @@
         },
         {
             "id": "T-153-17",
-            "title": "Implement src/build/validate.ts — round-trip check vs seed/web-baseline.json",
+            "title": "Implement src/generators/validate.ts — round-trip check vs seed/web-baseline.json",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:16:00Z",
+            "completedAt": "2026-05-23T13:22:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/generators/validate.ts (~210 lines). Public API: validate({ css?, seed? }): ValidationReport + formatReport(report): string + Seed/Drift/ValidationReport types. Defaults read CSS via buildCSS() in-memory (no filesystem dependency — runs cleanly before dist/ exists) and the seed from packages/design-tokens/seed/web-baseline.json. Brace-aware extractBlockBody tracks { } depth to handle the nested @media { :root { ... } } case the naive indexOf('\\n}') wouldn't. Per-scope iteration: light → :root, dark → [data-theme='dark']:not([data-app='admin']), each media query → @media <query> :root. Drift record carries scope, token name, expected, actual (null when missing). CLI: tsx src/generators/validate.ts → exit 0 + 'design-tokens validate: 199 web tokens match seed' OR exit 1 + per-drift report on stderr. Validator only covers web tokens — palettes (--palette-*-NNN) and admin tokens are doc 05 §6 introductions absent from the seed; correctness of those lives in colors.test.ts and admin.test.ts. 11 colocated vitest tests (307 total, up from 296): real-generator-vs-real-seed round-trip (the AC-4 gate, asserts drifts=[] and totalChecked=199), synthetic-input drift detection (tampered light/dark/media), missing token (actual=null), throws-on-missing-selector, formatReport rendering for both pass and fail cases. End-to-end build verified: `pnpm --filter @repo/design-tokens build` runs tsup + generate-css + validate, all green, exit 0. Lint auto-fixed 1 (multi-line arg collapse on getTopLevelBlock call).",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-153-16"],
