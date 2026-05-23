@@ -10,10 +10,17 @@
  * and does not need its own Astro client directive.
  */
 
+import { CalendarIcon } from '@repo/icons';
+import { useEffect, useRef, useState } from 'react';
+import { DayPicker } from 'react-day-picker';
+import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
+import 'react-day-picker/style.css';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
+
+const DAY_PICKER_LOCALES = { es: esLocale, en: enLocale, pt: ptLocale } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +39,8 @@ export interface ProfileCompletionBasicFieldsProps {
      * it, the parent passes the auto-derived value here.
      */
     readonly displayNameValue: string;
-    /** Current birth date string (YYYY-MM-DD or empty). */
+    /** Current birth date string (dd/mm/yyyy or empty). Parent converts to
+     * ISO before sending to the API. */
     readonly birthDate: string;
     /** Current avatar URL (empty if none). */
     readonly imageUrl: string;
@@ -69,6 +77,7 @@ export interface ProfileCompletionBasicFieldsProps {
  * @param props - Component props (see {@link ProfileCompletionBasicFieldsProps})
  */
 export function ProfileCompletionBasicFields({
+    locale,
     apiUrl,
     firstName,
     lastName,
@@ -232,38 +241,178 @@ export function ProfileCompletionBasicFields({
                 </p>
             </div>
 
-            {/* ── Birth date ────────────────────────────────────────────── */}
-            <div className={styles.field}>
-                <label
-                    htmlFor="pc-birthDate"
-                    className={styles.label}
-                >
-                    {t('account.profileCompletion.fields.birthDate', 'Fecha de nacimiento')}
-                </label>
-                <input
-                    id="pc-birthDate"
-                    type="date"
-                    className={styles.input}
-                    value={birthDate}
-                    onChange={(e) => onBirthDateChange(e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    disabled={submitting}
-                    // The native date picker uses the user's OS / browser
-                    // locale to decide the display format. Hinting es-AR
-                    // nudges Chromium-based browsers towards dd/mm/yyyy.
-                    lang="es-AR"
-                    aria-describedby="pc-birthDate-hint"
-                />
-                <p
-                    id="pc-birthDate-hint"
-                    className={styles.hint}
-                >
-                    {t(
-                        'account.profileCompletion.fields.birthDateHint',
-                        'Opcional. Formato: dd/mm/yyyy.'
-                    )}
-                </p>
-            </div>
+            {/* ── Birth date ──────────────────────────────────────────────
+             * Text input with auto-mask paired with a DayPicker popover.
+             * The text input guarantees dd/mm/yyyy display for every user
+             * (the native `type="date"` picker otherwise honors the
+             * browser/OS locale and shows mm/dd/yyyy on US systems). The
+             * calendar button preserves the picker affordance. */}
+            <BirthDateField
+                value={birthDate}
+                onChange={onBirthDateChange}
+                disabled={submitting}
+                locale={locale}
+                t={t}
+            />
         </>
     );
+}
+
+/**
+ * Birth-date field: masked text input + calendar popover.
+ *
+ * Keeps the display format predictable (dd/mm/yyyy) regardless of
+ * browser/OS locale while still offering a calendar to click through.
+ */
+function BirthDateField({
+    value,
+    onChange,
+    disabled,
+    locale,
+    t
+}: {
+    readonly value: string;
+    readonly onChange: (value: string) => void;
+    readonly disabled: boolean;
+    readonly locale: SupportedLocale;
+    readonly t: (key: string, fallback: string) => string;
+}) {
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Close the popover on outside click + Escape.
+    useEffect(() => {
+        if (!pickerOpen) return;
+        function onDown(event: MouseEvent) {
+            if (!wrapperRef.current?.contains(event.target as Node)) {
+                setPickerOpen(false);
+            }
+        }
+        function onKey(event: KeyboardEvent) {
+            if (event.key === 'Escape') setPickerOpen(false);
+        }
+        document.addEventListener('mousedown', onDown);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('mousedown', onDown);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [pickerOpen]);
+
+    const selected = ddmmyyyyToDate(value);
+
+    return (
+        <div className={styles.field}>
+            <label
+                htmlFor="pc-birthDate"
+                className={styles.label}
+            >
+                {t('account.profileCompletion.fields.birthDate', 'Fecha de nacimiento')}
+            </label>
+            <div
+                ref={wrapperRef}
+                className={styles.birthDateWrapper}
+            >
+                <input
+                    id="pc-birthDate"
+                    type="text"
+                    inputMode="numeric"
+                    className={styles.input}
+                    value={value}
+                    onChange={(e) => onChange(maskBirthDate(e.target.value))}
+                    placeholder="dd/mm/yyyy"
+                    maxLength={10}
+                    autoComplete="bday"
+                    disabled={disabled}
+                    aria-describedby="pc-birthDate-hint"
+                />
+                <button
+                    type="button"
+                    className={styles.birthDatePickerButton}
+                    onClick={() => setPickerOpen((open) => !open)}
+                    disabled={disabled}
+                    aria-label={t(
+                        'account.profileCompletion.fields.birthDateOpenPicker',
+                        'Abrir calendario'
+                    )}
+                    aria-expanded={pickerOpen}
+                >
+                    <CalendarIcon
+                        size={18}
+                        weight="regular"
+                        aria-hidden="true"
+                    />
+                </button>
+                {pickerOpen && (
+                    <div
+                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal
+                        role="dialog"
+                        aria-label={t(
+                            'account.profileCompletion.fields.birthDate',
+                            'Fecha de nacimiento'
+                        )}
+                        className={styles.birthDatePopover}
+                    >
+                        <DayPicker
+                            mode="single"
+                            captionLayout="dropdown"
+                            startMonth={new Date(1900, 0)}
+                            endMonth={new Date()}
+                            locale={DAY_PICKER_LOCALES[locale]}
+                            selected={selected ?? undefined}
+                            defaultMonth={selected ?? new Date(2000, 0)}
+                            disabled={{ after: new Date() }}
+                            onSelect={(date) => {
+                                if (date) onChange(dateToDdmmyyyy(date));
+                                setPickerOpen(false);
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+            <p
+                id="pc-birthDate-hint"
+                className={styles.hint}
+            >
+                {t(
+                    'account.profileCompletion.fields.birthDateHint',
+                    'Opcional. Formato: dd/mm/yyyy.'
+                )}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * Formats a partial date string into the dd/mm/yyyy mask as the user types.
+ * Strips non-digits, caps at 8 digits, and inserts slashes after day/month.
+ */
+function maskBirthDate(value: string): string {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+/** Parses a dd/mm/yyyy string into a local-time Date, or null when invalid. */
+function ddmmyyyyToDate(value: string): Date | null {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    // Reject roll-overs like 31/02 → 03/03.
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return null;
+    }
+    return date;
+}
+
+/** Formats a Date into dd/mm/yyyy (local time, zero-padded). */
+function dateToDdmmyyyy(date: Date): string {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(date.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
 }
