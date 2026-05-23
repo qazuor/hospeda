@@ -165,11 +165,25 @@ processing real test buyers.
 
 Gates the `subscription-poll` cron (SPEC-143 polling fallback). When
 enabled, `start-paid` enqueues a job in
-`billing_subscription_polling_jobs` after creating the MP preapproval,
-and the cron flips the local sub to `active` once MP reports
-`authorized`, even if the `subscription_preapproval.created` webhook
-never arrives. Default is `true`; set to `false` only as a kill switch
-if the cron itself misbehaves in production.
+`billing_subscription_polling_jobs` after creating the MP preapproval
+or MP preference (annual flow), and the cron flips the local sub to
+`active` once MP reports `authorized`/`approved`, even if the
+`subscription_preapproval.created` or `payment.created` webhook never
+arrives.
+
+The cron branches on the job's `resource_type` column:
+
+- `subscription` (default): polls MP `/preapproval/{id}` for recurring
+  authorizations. Used by the monthly checkout flow.
+- `one_time_payment`: polls MP payments collection by the local
+  checkout-session id (sent as `external_reference`) and routes any
+  approved payment through the same `confirmAnnualSubscription`
+  handler the webhook uses. Used by the annual checkout flow, which
+  cannot rely on webhooks because MP Preferences only deliver via
+  legacy IPN (filtered out by PR #1230).
+
+Default is `true`; set to `false` only as a kill switch if the cron
+itself misbehaves in production.
 
 ### Webhook URL marker `?source_news=webhooks`
 
