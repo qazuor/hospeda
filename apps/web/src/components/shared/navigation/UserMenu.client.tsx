@@ -504,7 +504,11 @@ export function UserMenu({
     }
 
     // ── Render: authenticated ──────────────────────────────────────────
-    const initials = getInitials({ name: user.name, placeholder: '?' });
+    // Fall back to email when the user has no name/displayName set so the
+    // trigger label and dropdown header never render empty.
+    const displayName = user.name.trim().length > 0 ? user.name : user.email;
+    const initials = getInitials({ name: user.name, email: user.email, placeholder: '?' });
+    const showEmailLine = displayName !== user.email;
 
     return (
         <div className={styles.wrapper}>
@@ -514,7 +518,7 @@ export function UserMenu({
                 onClick={() => setIsOpen((prev) => !prev)}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                aria-label={`${texts.openMenu}: ${user.name}`}
+                aria-label={`${texts.openMenu}: ${displayName}`}
                 className={cn(
                     styles.trigger,
                     variant === 'hero' ? styles.triggerHero : styles.triggerScrolled
@@ -535,7 +539,7 @@ export function UserMenu({
                         {initials}
                     </span>
                 )}
-                <span className={styles.displayName}>{user.name}</span>
+                <span className={styles.displayName}>{displayName}</span>
                 <span
                     aria-hidden="true"
                     className={cn(styles.chevron, isOpen && styles.chevronOpen)}
@@ -553,8 +557,8 @@ export function UserMenu({
                 >
                     {/* Header */}
                     <div className={styles.menuHeader}>
-                        <p className={styles.menuHeaderName}>{user.name}</p>
-                        <p className={styles.menuHeaderEmail}>{user.email}</p>
+                        <p className={styles.menuHeaderName}>{displayName}</p>
+                        {showEmailLine && <p className={styles.menuHeaderEmail}>{user.email}</p>}
                     </div>
 
                     {/* Navigation items */}

@@ -81,10 +81,15 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
  */
 const serverUser = Astro.locals.user ?? null;
 
+const serverUserName =
+    typeof serverUser?.name === 'string' && serverUser.name.trim().length > 0
+        ? serverUser.name
+        : '';
+
 const initialUserMenuUser = serverUser
     ? {
           id: serverUser.id ?? '',
-          name: serverUser.name ?? serverUser.email ?? 'Usuario',
+          name: serverUserName,
           email: serverUser.email ?? '',
           avatarUrl:
               'avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string'
