@@ -94,6 +94,14 @@ describe('isStaticAssetRoute', () => {
         expect(isStaticAssetRoute({ path: '/favicon.ico' })).toBe(true);
     });
 
+    it('should treat file-extension endpoints as static so trailing-slash enforcement skips them', () => {
+        // Regression: /beta/search-index.json was 301-redirected to
+        // /beta/search-index.json/ (which Astro never resolves), so the beta
+        // docs search index returned 404 and the UI hung on "Cargando índice…".
+        expect(isStaticAssetRoute({ path: '/beta/search-index.json' })).toBe(true);
+        expect(isStaticAssetRoute({ path: '/sitemap-dynamic.xml' })).toBe(true);
+    });
+
     it('should detect error pages', () => {
         expect(isStaticAssetRoute({ path: '/404' })).toBe(true);
         expect(isStaticAssetRoute({ path: '/500' })).toBe(true);
