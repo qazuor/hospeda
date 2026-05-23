@@ -206,9 +206,14 @@ export function isStaticAssetRoute({ path }: { path: string }): boolean {
         }
     }
 
-    /** Common static asset extensions served from /public/. */
+    /**
+     * Common static asset extensions served from /public/, plus file-extension
+     * endpoints (e.g. `*.json.ts`). These must skip middleware so the
+     * trailing-slash enforcement below does not 301-redirect them to a
+     * `/path/` form that Astro never resolves for file-extension routes.
+     */
     const staticExtensions =
-        /\.(ico|png|jpg|jpeg|webp|svg|gif|css|js|woff2?|ttf|eot|xml|txt|pdf)$/i;
+        /\.(ico|png|jpg|jpeg|webp|svg|gif|css|js|woff2?|ttf|eot|xml|txt|pdf|json)$/i;
     if (staticExtensions.test(path)) {
         return true;
     }
