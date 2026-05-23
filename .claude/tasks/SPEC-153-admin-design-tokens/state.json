@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -209,11 +209,13 @@
             "id": "T-153-13",
             "title": "Implement src/tokens/z-index.ts + src/tokens/layout.ts",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T07:45:00Z",
+            "completedAt": "2026-05-23T07:55:00Z",
+            "completionNotes": "DONE. Two files: (1) z-index.ts (~50 lines) — 7-layer ladder (content=10/nav=50/dropdown=60/modal=100/toast=200/cookieBanner=9000/mobileMenu=9100) anchored byte-for-byte to web --z-* tokens, values as numbers (not strings) since CSS z-index is unitless, generously spaced for future inserts. (2) layout.ts (~95 lines) with 3 sub-namespaces: layoutChrome (navbarHeight=80px/waveBarCompact=77px/cookieBannerHeight=0px runtime-set-by-JS/bottomSafeInset=var(--cookie-banner-height,0px) semantic alias), layoutContainer (max=1350px/narrow=900px), layoutMediaOverrides (captures the @media (min-width: 1600px) override of container-max to 1500px from the seed manifest — consumed by T-153-16 generator to emit a media block). layout aggregate. Tests: 155 → 176 (14 z-index + 7 layout = 21 added). z-index tests include stacking order invariants (modal > dropdown, mobileMenu > cookieBanner). Lint auto-fixed 2 (import orderings).",
             "complexity": 1,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "z-index 8 layers from manifest: content, nav, dropdown, modal, toast, cookie-banner, mobile-menu (plus base). layout: --navbar-height, --wave-bar-compact, --bottom-safe-inset."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-14",
