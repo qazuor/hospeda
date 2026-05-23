@@ -12,6 +12,8 @@
 
 import * as p from '@clack/prompts';
 import { appRestart } from './commands/app-restart.ts';
+import { billingTestLink } from './commands/billing-test-link.ts';
+import { billingTestReset } from './commands/billing-test-reset.ts';
 import { runContainerExec } from './commands/container-exec.ts';
 import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
@@ -44,7 +46,7 @@ import { resolveTarget } from './lib/target.ts';
  * binary and JSON imports add a bundler-specific code path; hardcoding the
  * string is the simpler contract.
  */
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 interface Command {
     /** kebab-case name; matches the CLI invocation. */
@@ -98,6 +100,18 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'db-counts',
         summary: 'Approximate row counts for every user table in the Postgres DB.',
         run: dbCounts
+    },
+    {
+        name: 'billing-test-link',
+        summary:
+            'Map a Hospeda signup user to a MercadoPago test buyer email so the smoke checkout can proceed (staging only).',
+        run: billingTestLink
+    },
+    {
+        name: 'billing-test-reset',
+        summary:
+            'Wipe billing transactional data for a user so a fresh smoke iteration can start (staging only).',
+        run: billingTestReset
     },
     {
         name: 'db-backup-now',
