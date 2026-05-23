@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -221,7 +221,10 @@
             "id": "T-153-14",
             "title": "Implement src/themes/web-light.ts + src/themes/web-dark.ts",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T11:55:00Z",
+            "completedAt": "2026-05-23T12:15:00Z",
+            "completionNotes": "DONE. 3 files: (1) src/themes/types.ts (~25 lines) with shared ThemeValue = OKLCH | string and Theme = Readonly<Record<string, ThemeValue>>; keys omit leading -- (generator prepends). (2) src/themes/web-light.ts (~250 lines) — all 142 web :root tokens mapped via hybrid strategy: palette refs (river[500], success[500], accent[500] etc.) where canonical matches, structured-token refs (semanticTypography.hero, radiusScale.sm, shadowSemantic.card, webDuration.fast, layoutChrome.navbarHeight etc.) for the composite values, raw OKLCH triples / strings for hand-tuned values not in any palette (core-foreground, border, muted etc.) and relative-color expressions (primary-hover, frost-bg-light, footer-link). Section comments map back to global.css line ranges. (3) src/themes/web-dark.ts (~100 lines) — 56 dark overrides only (radius/spacing/fonts/etc. inherit from light via cascade); hover variants intentionally flip direction (calc(l + 0.07) instead of calc(l - 0.05)). Tests: 176 → 239 (63 added) covering coverage counts (142 light, 56 dark), no leading -- on keys, palette-ref byte-for-byte, hand-tuned OKLCH byte-for-byte, raw-string byte-for-byte, structured-token identity preservation, dark strict subset of light (orphan detection), dark sample values byte-for-byte, hover-direction inversion test. Bug found + fixed mid-task: importing from '../tokens/colors.ts' fails typecheck because allowImportingTsExtensions=false in @repo/typescript-config base; .test.ts files succeeded only because exclude pattern keeps them out of tsc. Fix: use ESM .js extensions per repo convention (notifications, schemas use this pattern). Lint auto-fixed 2 (import orders).",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": [
@@ -233,8 +236,7 @@
                 "T-153-11",
                 "T-153-12",
                 "T-153-13"
-            ],
-            "notes": "Web-light semantic mapping per doc 05 §6.1: --color-primary=palette.river[500], --color-primary-hover=river[400], --color-primary-pressed=river[600], --color-bg-app, --color-bg-elevated, --color-fg-primary/secondary/muted, --color-border, --color-success/warning/danger/info, --font-body, --font-heading, --radius. Web-dark: same structure, dark shades. Extract current web dark theme values from css-var-themes.css or wherever web's dark mode lives."
+            ]
         },
         {
             "id": "T-153-15",
