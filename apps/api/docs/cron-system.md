@@ -873,6 +873,7 @@ await sendMetrics(metrics);
 | `addon-expiry` | `0 5 * * *` | Process expired add-ons and send warnings | 2 min |
 | `exchange-rate-fetch` | `0 6 * * *` | Fetch latest exchange rates from external providers | 2 min |
 | `dunning` | `0 3 * * *` | Process dunning for past-due subscriptions (send reminders, escalate) | 5 min |
+| `subscription-poll` | `* * * * *` | Poll MercadoPago `/preapproval/{id}` for in-flight subscriptions to flip them to `active` when `subscription_preapproval.created` webhook is delayed or lost (SPEC-143 Finding #17 fallback) | 50 s |
 
 ---
 

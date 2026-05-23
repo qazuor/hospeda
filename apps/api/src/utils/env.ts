@@ -358,6 +358,20 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
     /**
+     * Feature flag for the MercadoPago subscription_preapproval polling
+     * fallback (SPEC-143 Finding #17). When `true` (default), start-paid
+     * schedules a polling job that queries MP `/preapproval/{id}` until
+     * the preapproval reports `authorized`, then flips the local
+     * subscription to `active`. Set to `false` as a kill-switch if the
+     * polling layer misbehaves in production — the webhook handler
+     * still works regardless of this flag.
+     */
+    HOSPEDA_BILLING_POLLING_ENABLED: z
+        .string()
+        .optional()
+        .default('true')
+        .transform((v) => v !== 'false'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so

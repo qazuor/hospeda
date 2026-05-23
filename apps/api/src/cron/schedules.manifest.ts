@@ -126,6 +126,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Rebuild the materialized search index used for fuzzy queries.'
     },
     {
+        name: 'subscription-poll',
+        schedule: '* * * * *',
+        description:
+            'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
+    },
+    {
         name: 'trial-expiry',
         schedule: '0 2 * * *',
         description: 'Expire trial subscriptions whose period has ended.'

@@ -490,6 +490,49 @@ export async function processSubscriptionUpdated({
         `Subscription status updated: ${previousStatus} -> ${mappedStatus}`
     );
 
+    // Step 8a: SPEC-143 Finding #17 fallback cleanup.
+    //
+    // Mark any active polling job for this subscription as `succeeded` so
+    // the cron stops querying MP for a sub whose status the webhook just
+    // resolved. This is purely a cleanup — even if it fails, the next poll
+    // would see the local sub is already in a terminal state and complete
+    // the job normally (idempotent path). Skipped when source='polling'
+    // because in that case the cron itself is updating the job.
+    if (source !== 'polling') {
+        try {
+            const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+            if (pollingStorage) {
+                const activeJob = await pollingStorage.findActiveBySubscriptionId(
+                    localSubscription.id
+                );
+                if (activeJob) {
+                    await pollingStorage.update({
+                        id: activeJob.id,
+                        expectedVersion: activeJob.version,
+                        status: 'succeeded',
+                        completedAt: new Date(),
+                        lastError: 'webhook_arrived_first'
+                    });
+                    apiLogger.debug(
+                        {
+                            jobId: activeJob.id,
+                            subscriptionId: localSubscription.id
+                        },
+                        'Marked polling job as succeeded after webhook transition'
+                    );
+                }
+            }
+        } catch (cleanupError) {
+            apiLogger.warn(
+                {
+                    error: cleanupError,
+                    subscriptionId: localSubscription.id
+                },
+                'Failed to mark polling job as succeeded after webhook — cron will complete it on next tick'
+            );
+        }
+    }
+
     // Step 8b: Addon cancellation cleanup (CANCELLED transitions only)
     //
     // Runs AFTER the subscription status is committed to the DB and the

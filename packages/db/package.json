@@ -51,8 +51,8 @@
         "test:integration:watch": "vitest --config vitest.config.integration.ts"
     },
     "dependencies": {
-        "@qazuor/qzpay-core": "^1.8.0",
-        "@qazuor/qzpay-drizzle": "^1.7.6",
+        "@qazuor/qzpay-core": "^1.9.0",
+        "@qazuor/qzpay-drizzle": "^1.8.0",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
