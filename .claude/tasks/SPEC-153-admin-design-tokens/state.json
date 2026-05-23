@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -197,11 +197,13 @@
             "id": "T-153-12",
             "title": "Implement src/tokens/motion.ts — durations + easings + web extras",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T07:30:00Z",
+            "completedAt": "2026-05-23T07:40:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/tokens/motion.ts (~110 lines) with two PARALLEL scales (NOT a base + semantic relationship — doc 05 and web have intentionally different values): (1) motionDuration doc 05 §5.6 fast=150ms/base=200ms/slow=300ms/slower=500ms + motionEasing out/inOut/spring — for admin Tailwind transition utilities, (2) webDuration anchored byte-for-byte to web seed fast=0.2s/normal=0.4s/slow=0.5s/reveal=450ms + webEasing bounce/reveal anchored. The fast/slow keys exist in BOTH scales with DIFFERENT values — a sanity test asserts the divergence to prevent a future 'unify' refactor from breaking Phase 2 pixel-diff. CSS generator (T-153-16) emits doc 05 scale under --motion-duration-* / --motion-easing-* and web scale under --duration-* / --ease-* so no runtime collision. motion aggregate with nested .web sub-namespace. Tests: 136 → 155 (19 added). FIRST module to pass lint check with zero biome auto-fixes.",
             "complexity": 2,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "durations fast/base/slow/slower per doc 05 §5.6. easings out/inOut/spring. Web extras from manifest: --duration-reveal, --ease-bounce, --ease-reveal."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-13",
