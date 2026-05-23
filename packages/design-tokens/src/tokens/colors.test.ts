@@ -10,13 +10,28 @@ import {
     type OKLCH,
     SHADES,
     accent,
+    avatarGradients,
     brandPalettes,
+    brandSecondary,
+    brandSecondaryForeground,
+    brandTertiary,
+    chartColors,
+    danger,
     deriveShades,
     forest,
     formatOKLCH,
+    info,
+    neutral,
+    palettes,
+    ratingStar,
     river,
     sand,
-    sky
+    semanticPalettes,
+    sky,
+    skyLight,
+    success,
+    surfaces,
+    warning
 } from './colors.ts';
 
 describe('SHADES constant', () => {
@@ -131,5 +146,158 @@ describe('brandPalettes aggregate', () => {
         expect(brandPalettes.forest).toBe(forest);
         expect(brandPalettes.sand).toBe(sand);
         expect(brandPalettes.accent).toBe(accent);
+    });
+});
+
+describe('Semantic palettes — canonical values match web baseline', () => {
+    // Each row is `[paletteName, palette, expected canonical CSS string]`.
+    // The CSS strings come from apps/web/src/styles/global.css :root —
+    // semantic palettes anchor to web's current values, NOT doc 05 §5.1's
+    // post-V1 targets (e.g. success here is 0.58 not doc 05's 0.62).
+    const cases: ReadonlyArray<readonly [string, typeof success, string]> = [
+        ['success', success, 'oklch(0.58 0.15 150)'],
+        ['warning', warning, 'oklch(0.75 0.18 85)'],
+        ['danger', danger, 'oklch(0.577 0.245 27.325)'],
+        ['info', info, 'oklch(0.63 0.19 259)']
+    ];
+
+    it.each(cases)('%s shade 500 serializes to %s', (_name, palette, expected) => {
+        expect(formatOKLCH(palette[500])).toBe(expected);
+    });
+
+    it('aggregates all 4 semantic palettes', () => {
+        expect(Object.keys(semanticPalettes).sort()).toEqual(
+            ['danger', 'info', 'success', 'warning'].sort()
+        );
+    });
+});
+
+describe('neutral palette', () => {
+    it('declares all 10 shades with chroma 0 and hue 0', () => {
+        for (const shade of SHADES) {
+            expect(neutral[shade].c).toBe(0);
+            expect(neutral[shade].h).toBe(0);
+        }
+    });
+
+    it('matches doc 05 §5.1 hand-tuned lightness ladder', () => {
+        // Exact stops per doc 05 §5.1 — NOT derived from `deriveShades`
+        // because the cluster is hand-tuned for UI surface granularity.
+        const expected: Record<(typeof SHADES)[number], number> = {
+            50: 0.985,
+            100: 0.95,
+            200: 0.9,
+            300: 0.83,
+            400: 0.7,
+            500: 0.55,
+            600: 0.42,
+            700: 0.3,
+            800: 0.18,
+            900: 0.1
+        };
+        for (const shade of SHADES) {
+            expect(neutral[shade].l).toBe(expected[shade]);
+        }
+    });
+
+    it('progresses lightness monotonically from 50 to 900', () => {
+        const ls = SHADES.map((s) => neutral[s].l);
+        for (let i = 1; i < ls.length; i++) {
+            expect(ls[i]).toBeLessThan(ls[i - 1] ?? Number.POSITIVE_INFINITY);
+        }
+    });
+
+    it('is frozen', () => {
+        expect(Object.isFrozen(neutral)).toBe(true);
+    });
+});
+
+describe('master palettes aggregate', () => {
+    it('contains all 5 brand + 4 semantic + 1 neutral = 10 palettes', () => {
+        expect(Object.keys(palettes).sort()).toEqual(
+            [
+                'accent',
+                'danger',
+                'forest',
+                'info',
+                'neutral',
+                'river',
+                'sand',
+                'sky',
+                'success',
+                'warning'
+            ].sort()
+        );
+    });
+});
+
+describe('Web extras — single primitives match seed manifest', () => {
+    // Each row: `[exportName, value, expected canonical CSS string]`.
+    // Values from apps/web/src/styles/global.css :root, captured in seed.
+    const cases: ReadonlyArray<readonly [string, OKLCH, string]> = [
+        ['skyLight', skyLight, 'oklch(0.88 0.06 259)'],
+        ['brandSecondary', brandSecondary, 'oklch(0.96 0.02 236)'],
+        ['brandSecondaryForeground', brandSecondaryForeground, 'oklch(0.26 0.06 255)'],
+        ['brandTertiary', brandTertiary, 'oklch(0.92 0.03 155)'],
+        ['ratingStar', ratingStar, 'oklch(0.82 0.19 95)']
+    ];
+
+    it.each(cases)('%s serializes to %s', (_name, value, expected) => {
+        expect(formatOKLCH(value)).toBe(expected);
+    });
+});
+
+describe('avatarGradients', () => {
+    it('declares 4 gradients each with from/to OKLCH stops', () => {
+        for (const key of [1, 2, 3, 4] as const) {
+            const grad = avatarGradients[key];
+            expect(grad.from).toMatchObject({ l: expect.any(Number) });
+            expect(grad.to).toMatchObject({ l: expect.any(Number) });
+        }
+    });
+
+    it('matches seed values for gradient 1 (blue)', () => {
+        expect(formatOKLCH(avatarGradients[1].from)).toBe('oklch(0.25 0.08 255)');
+        expect(formatOKLCH(avatarGradients[1].to)).toBe('oklch(0.36 0.12 255)');
+    });
+
+    it('matches seed values for gradient 4 (green)', () => {
+        expect(formatOKLCH(avatarGradients[4].from)).toBe('oklch(0.42 0.12 155)');
+        expect(formatOKLCH(avatarGradients[4].to)).toBe('oklch(0.62 0.16 155)');
+    });
+});
+
+describe('chartColors', () => {
+    it('declares exactly 5 series colors in order chart-1..chart-5', () => {
+        expect(chartColors).toHaveLength(5);
+    });
+
+    it('matches seed values for all 5 series', () => {
+        const expected = [
+            'oklch(0.63 0.19 259)',
+            'oklch(0.6 0.14 155)',
+            'oklch(0.7 0.18 55)',
+            'oklch(0.75 0.1 190)',
+            'oklch(0.5 0.08 240)'
+        ];
+        for (let i = 0; i < 5; i++) {
+            expect(formatOKLCH(chartColors[i] as OKLCH)).toBe(expected[i]);
+        }
+    });
+});
+
+describe('surfaces', () => {
+    it('declares warm/dark/elevated + their foreground variants', () => {
+        expect(Object.keys(surfaces).sort()).toEqual(
+            ['dark', 'darkForeground', 'elevated', 'warm', 'warmForeground'].sort()
+        );
+    });
+
+    it('matches seed values', () => {
+        expect(formatOKLCH(surfaces.warm)).toBe('oklch(0.95 0.03 250)');
+        expect(formatOKLCH(surfaces.warmForeground)).toBe('oklch(0.35 0.03 250)');
+        expect(formatOKLCH(surfaces.dark)).toBe('oklch(0.15 0.02 160)');
+        expect(formatOKLCH(surfaces.darkForeground)).toBe('oklch(0.92 0.01 210)');
+        expect(formatOKLCH(surfaces.elevated)).toBe('oklch(1 0 0)');
     });
 });
