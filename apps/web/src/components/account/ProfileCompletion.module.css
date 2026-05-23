@@ -8,6 +8,9 @@
     max-width: 640px;
     margin-inline: auto;
     padding: var(--space-8, 2rem) var(--space-4, 1rem);
+    /* Extra breathing room above the footer so the card doesn't visually
+     * collide with it on short viewports. */
+    padding-block-end: var(--space-section-sm);
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
