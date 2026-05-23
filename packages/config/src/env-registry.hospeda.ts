@@ -734,6 +734,28 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // MercadoPago subscription polling fallback (SPEC-143)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_POLLING_ENABLED',
+        description:
+            'Feature flag for the MercadoPago subscription_preapproval polling fallback. When enabled, start-paid schedules a polling job that queries MP /preapproval/{id} until the preapproval is authorized, then flips the local subscription to active. Provides resilience against unreliable MP webhook delivery (Finding #17).',
+        descriptionEs:
+            'Feature flag del fallback de polling para subscription_preapproval de MercadoPago. Cuando está activo, start-paid agenda un job que consulta /preapproval/{id} hasta que el preapproval esté authorized y luego flipea la subscripción local a active. Da resiliencia ante entregas no confiables de webhooks de MP (Finding #17).',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave "true" (default) so the polling cron job runs and start-paid enqueues fallback jobs. Set "false" as a kill-switch if the polling layer is misbehaving in prod and you need to disable it without a redeploy. The webhook handler still works either way.',
+        howToObtainEs:
+            'Dejá en "true" (default) para que el cron de polling corra y start-paid encole jobs de fallback. Poné "false" como kill-switch si el polling se rompe en prod y hay que desactivarlo sin redeploy. El webhook handler sigue funcionando igual.'
+    },
+
+    // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
     // -------------------------------------------------------------------------
     {
