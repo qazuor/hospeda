@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -161,11 +161,13 @@
             "id": "T-153-09",
             "title": "Implement src/tokens/spacing.ts — numeric scale + web semantic",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T06:45:00Z",
+            "completedAt": "2026-05-23T06:55:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/tokens/spacing.ts (~115 lines) with: numeric scale (15 stops, union of doc 05 §5.3 [0/1/2/3/4/5/6/8/10/12/16/20/24] and web's [1..10 + 12] — extra stops 7, 9 are web-only; 0/16/20/24 are doc 05 only, primarily for admin Tailwind utilities), 7 semantic composites anchored to web seed byte-for-byte (section/sectionSm/sectionLg = clamp() for fluid section padding, containerX = horizontal gutter, cardGap = card grid spacing, sectionHeaderMb = 50px fixed, cardContent = '27px 30px 26px' shorthand), spacingTokens aggregate (scale + semantic). Tests: 80 → 107 (27 added). Cover: 15 numeric stop values, monotonic key progression, 7 semantic entries byte-for-byte, aggregate identity. Lint auto-fixed 1 (import type ordering).",
             "complexity": 2,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "Numeric 0-24 per doc 05 §5.3. Web semantic from manifest: --space-section, --space-section-sm, --space-section-lg, --space-container-x, --space-card-gap (these will be aliases of numeric scale; check manifest for current rem values)."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-10",
