@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -185,11 +185,13 @@
             "id": "T-153-11",
             "title": "Implement src/tokens/shadows.ts — base scale + web semantic",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T07:15:00Z",
+            "completedAt": "2026-05-23T07:25:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/tokens/shadows.ts (~85 lines) with two layers: (1) shadowScale doc 05 §5.5 conventional elevation ladder (none/sm/base/md/lg/xl) using pure-black alpha layers — for admin Tailwind utilities, (2) shadowSemantic anchored byte-for-byte to web seed (card/cardHover/search/nav) using CSS Color Module Level 5 relative-color syntax oklch(from var(--core-foreground) l c h / α) so shadow tints track the active theme's foreground automatically (no per-theme override needed). shadows aggregate groups both. Tests: 122 → 136 (14 added). Cover: 6 scale values + 4 semantic byte-for-byte + aggregate identity. Lint auto-fixed 1 (single-line import).",
             "complexity": 2,
             "owner": "agent",
-            "dependsOn": ["T-153-05"],
-            "notes": "Base none/sm/base/md/lg/xl per doc 05 §5.5. Web semantic from manifest: --shadow-card, --shadow-card-hover, --shadow-search, --shadow-nav."
+            "dependsOn": ["T-153-05"]
         },
         {
             "id": "T-153-12",
