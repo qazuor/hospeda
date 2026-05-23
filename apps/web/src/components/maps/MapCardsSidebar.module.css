@@ -176,17 +176,12 @@
 /* Featured badge: same look as AccommodationCard.astro mobile (bottom-left
  * above the wave so it doesn't collide with the actions column). Sidebar
  * cards always render at ~mobile widths, so we keep the mobile placement
- * regardless of viewport. */
+ * regardless of viewport. Look (color/font/padding/icon gap) comes from
+ * the shared `.featured-badge` rule in components.css. */
 .cardFeaturedBadge {
     position: absolute;
     bottom: 48px;
     left: 12px;
-    font-family: var(--font-sans);
-    font-weight: 700;
-    font-size: 14px;
-    line-height: 22.4px;
-    padding: 4px 10px;
-    border-radius: var(--radius-pill, 9999px);
     z-index: 2;
 }
 

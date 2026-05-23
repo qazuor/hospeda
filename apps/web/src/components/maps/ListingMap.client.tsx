@@ -16,6 +16,7 @@
  */
 import 'leaflet/dist/leaflet.css';
 
+import { StarIcon } from '@repo/icons';
 import L from 'leaflet';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -650,8 +651,13 @@ function AccommodationPopupContent({
                                 <span className={styles.popupTypeChip}>{item.typeLabel}</span>
                             ) : null}
                             {item.isFeatured && item.featuredLabel ? (
-                                <span className={styles.popupFeaturedBadge}>
-                                    {item.featuredLabel}
+                                <span className={`${styles.popupFeaturedBadge} featured-badge`}>
+                                    <StarIcon
+                                        size={12}
+                                        weight="fill"
+                                        aria-hidden="true"
+                                    />
+                                    <span>{item.featuredLabel}</span>
                                 </span>
                             ) : null}
                         </div>

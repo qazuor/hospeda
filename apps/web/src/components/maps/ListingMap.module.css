@@ -189,21 +189,10 @@
     overflow: hidden;
 }
 
+/* Layout-only override on top of the shared `.featured-badge` rule in
+ * components.css (color/font/padding/icon gap come from there). */
 .popupFeaturedBadge {
     flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    height: 32px;
-    padding: 0 8px;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: var(--brand-accent);
-    color: white;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    line-height: 1;
-    white-space: nowrap;
 }
 
 .popupCity {

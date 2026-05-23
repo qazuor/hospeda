@@ -89,8 +89,6 @@ interface AccommodationsListingMapProps {
     readonly newLabel?: string;
     readonly newBg?: string;
     readonly newText?: string;
-    readonly featuredBg?: string;
-    readonly featuredText?: string;
     readonly priceFromLabel?: string;
     readonly pricePerNightLabel?: string;
     readonly priceConsultLabel?: string;
@@ -132,8 +130,6 @@ export function AccommodationsListingMap({
     newLabel,
     newBg,
     newText,
-    featuredBg,
-    featuredText,
     priceFromLabel,
     pricePerNightLabel,
     priceConsultLabel,
@@ -235,8 +231,6 @@ export function AccommodationsListingMap({
                         summary: card.summary,
                         isFeatured: card.isFeatured,
                         featuredLabel: card.isFeatured ? featuredLabel : undefined,
-                        featuredBg,
-                        featuredText,
                         isNew,
                         newLabel: isNew ? newLabel : undefined,
                         newBg,
@@ -269,8 +263,6 @@ export function AccommodationsListingMap({
             typeLabels,
             detailHrefById,
             featuredLabel,
-            featuredBg,
-            featuredText,
             newLabel,
             newBg,
             newText,

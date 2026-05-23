@@ -139,6 +139,26 @@
     padding: 4px 12px;
 }
 
+/* Canonical "Destacado / Featured" badge — accent fill, white text, star icon.
+ * Shared across cards (accommodation, destination, event, post), detail
+ * headers, and map popups so the platform speaks the same visual language
+ * for featured items. Callers add their own absolute-positioning class
+ * (top/left/right) on top of this one; this rule only owns look + spacing. */
+.featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background-color: var(--brand-accent);
+    color: var(--primary-foreground);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22.4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
 /* =======================================================================
    GRADIENT BUTTON — unified CTA component
    Variants: accent (orange), primary (blue), outline-accent, outline-primary

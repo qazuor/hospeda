@@ -284,7 +284,6 @@ for (const card of cards) {
 // visually. The page resolves all the locale-aware copy + status colors once
 // here so the island can stay i18n-agnostic.
 const newColors = getBadgeStatusColor({ status: 'new' });
-const featuredColors = getBadgeStatusColor({ status: 'featured' });
 ---
 
 <ListingLayout
@@ -370,8 +369,6 @@ const featuredColors = getBadgeStatusColor({ status: 'featured' });
 				newLabel={t('home.accommodations.badge.new', 'Nuevo')}
 				newBg={newColors.bg}
 				newText={newColors.text}
-				featuredBg={featuredColors.bg}
-				featuredText={featuredColors.text}
 				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
 				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
 				priceConsultLabel={t('home.accommodations.price.consult', 'Consultar')}
