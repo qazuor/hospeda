@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1"]
@@ -319,7 +319,10 @@
             "id": "T-153-21",
             "title": "Refactor apps/web/src/styles/global.css — @import design-tokens, remove inline declarations",
             "phase": "phase-2",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:40:00Z",
+            "completedAt": "2026-05-23T13:50:00Z",
+            "completionNotes": "DONE. apps/web/src/styles/global.css shrinks from 406 → 113 lines (~72% reduction). Removed: the inline :root block (142 light tokens), the @media (min-width: 1600px) container-max override, and the [data-theme='dark'] block (56 dark tokens) — all now sourced from `@import \"@repo/design-tokens/tokens.css\"` at the top of the file. Kept: base resets, focus ring, html/body styles, cookie-banner-open classes, .is-reveal-initial, .sr-only, the reduced-motion @media guard, plus the existing imports of components.css and css-var-themes.css. apps/web/scripts/check-css-tokens.cjs updated: now resolves @repo/design-tokens/tokens.css via require.resolve (paths: [APP_ROOT]) and merges those declarations with the (now-empty) global.css tokens + any component-local custom properties. Clear error message if the package dist isn't built. Validation: pnpm exec turbo run typecheck --filter=hospeda-web green (10/10 tasks); pnpm --filter=hospeda-web build completes cleanly; bundled CSS at apps/web/dist/client/_astro/global.*.css contains all 100 palette declarations + 142 web-light at :root + container media block + web-dark scoped to [data-theme=dark]:not([data-app=admin]) + admin scopes (orphaned but harmless in apps/web) + all components.css and css-var-themes.css rules + global.css resets. Vite resolves the bare `@repo/design-tokens/tokens.css` specifier correctly via the package exports map (T-153-18's dual-package form). Browser-side cascade unchanged for web pages: :root applies all light tokens, [data-theme='dark']:not([data-app='admin']) is more specific than the old [data-theme='dark'] but matches the same elements (web never sets data-app='admin'). Pre-existing breakage (NOT introduced here): two source files reference `var(--text-sm, 0.875rem)` with a fallback — `--text-sm` was never defined in the original global.css either (only `--text-body-sm`). Lint flagged this before and after T-153-21 identically. Out of scope for this task; flag for a separate cleanup commit. Satisfies AC-7. Phase 2 progress: 2/4 (50%).",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-153-20"],
