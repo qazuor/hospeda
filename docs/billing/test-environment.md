@@ -23,10 +23,21 @@ in three load-bearing ways:
    TEST mode (Finding #17 — observed missing across all SPEC-143
    smoke runs even with events explicitly subscribed in the MP
    dashboard).
-3. `payment.*` events deliver only via legacy IPN when the buyer is a
-   MP test user; they do **not** arrive on the Webhooks v2 channel,
-   which means the `?source_news=webhooks` IPN filter (PR #1230) drops
-   them. With PROD creds + a real buyer the v2 channel works fine.
+3. `subscription_preapproval.*` events that DO arrive end up dropped on
+   the dispatcher floor because qzpay-mercadopago maps the MP event to
+   the qzpay name `subscription.created`, and Hospeda only registers
+   `subscription_preapproval.updated`. Polling covers this gap (see
+   Finding #20 in the smoke findings doc). Without polling, the local
+   sub would not transition to `active` even when the webhook arrives.
+
+> **Earlier draft of this doc claimed `payment.*` events arrive only via
+> legacy IPN with TEST creds**. That was a misdiagnosis caused by the
+> multi-app webhook URL footgun (see [Single-app rule](#single-app-rule)).
+> Smoke 1.2 on 2026-05-23 confirmed that with a single MP app + the
+> `?source_news=webhooks` marker + the correct event subscriptions, the
+> `payment.*` events arrive on Webhooks v2 normally and are processed
+> by the existing handler. Test buyers are not special-cased — the
+> dichotomy is purely about IPN backwards compatibility, not TEST vs PROD.
 
 To run a smoke against this asymmetric reality, three workarounds are
 combined:

@@ -824,3 +824,112 @@ Update all 3 test files with the corrected template + use a realistic `x-request
 **Tracked as**: billing-bug — same bucket as #11, #13. This is the most critical of the three because it breaks the whole webhook flow.
 
 **Workaround during this session** (temporary, env-level): if `NODE_ENV` on staging is not `production`, vaciar `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` triggers the warn-and-pass branch in the middleware (line 232-247) so signature check is skipped. Smoke can continue. Revert at session close. If `NODE_ENV=production` on staging, this workaround is not available and the definitive fix must ship first.
+
+---
+
+## Session continuation 2026-05-22 to 2026-05-23 — webhook signature + IPN dichotomy + polling fallback
+
+After 24+ hours of debugging the webhook signature mismatch and discovering that MercadoPago's TEST credentials behave differently from PROD credentials across multiple endpoints, this session shipped the definitive fix set across qzpay + Hospeda and validated end-to-end on staging. Smoke 1.2 (monthly checkout) now passes.
+
+### Finding #15 — Webhook signature mismatch traced to qzpay-mercadopago, not Hospeda
+
+**Original symptom**: Every signed MP webhook returned 401 with HMAC mismatch even after applying the Finding #14 fix to Hospeda's `webhook-signature.ts` middleware.
+
+**Root cause**: Hospeda had **two** signature verifiers running:
+1. The custom Hospeda middleware (the one Finding #14 documented and fixed).
+2. The qzpay-mercadopago internal verifier, which was buggy in the SAME way (`request-id:${ts}` instead of `request-id:${xRequestIdHeader}`) at `qzpay-mercadopago/webhook.adapter.ts:152`.
+
+The Hospeda middleware was redundant — the canonical place to verify is inside qzpay so consumers can opt in to a single, audited implementation. The fix was both:
+- Fix the bug inside qzpay-mercadopago (PR qzpay#30) — passing the proper `x-request-id` header through to the manifest, plus making lowercase dataId mandatory for alphanumeric IDs.
+- Remove the duplicate Hospeda middleware (PR hospeda#1226) — wire qzpay's own verifier via `createMercadoPagoAdapter({ logger })`.
+
+**Status**: ✅ Resolved. qzpay-mercadopago 2.0.0 ships the fix. Hospeda 1226 mergeado.
+
+**Lesson**: when a third-party library wraps a security primitive, do not implement the same primitive locally. Either trust the library or fork it — not both.
+
+### Finding #16 — IPN vs Webhooks v2 dichotomy doubles every event delivery
+
+**Symptom**: For every payment MP fires two webhook posts to our URL — one new Webhooks v2 format (with `x-signature` header + `?data.id=…&type=payment` URL), one legacy IPN format (no signature, `?id=…&topic=payment` URL). The IPN posts always fail signature verification because they have no signature header.
+
+**Root cause**: MP keeps backwards compatibility for legacy IPN integrations and fires both channels when an app is configured for both. The standard MP recommendation is to filter via the `?source_news=webhooks` URL marker — MP only adds that marker on Webhooks v2 deliveries.
+
+**Fix**: PR hospeda#1230 added middleware that drops MP posts whose URL does not contain `?source_news=webhooks`. The marker has to be configured on the MP dashboard webhook URL (one-time op per app).
+
+**Status**: ✅ Resolved. PR #1230 mergeado. Operator config done on Test Seller app.
+
+### Finding #17 — `subscription_preapproval.*` webhook delivery is unreliable
+
+**Symptom**: After applying Findings #15 + #16 fixes, `payment.created` events arrived and verified successfully but the local subscription never transitioned to `active` because `subscription_preapproval.created` never arrived. Confirmed across multiple smoke runs with PROD creds + Test Seller creds + correctly subscribed events in the dashboard.
+
+**Root cause analysis**:
+1. We initially suspected an event-subscription misconfiguration in the dashboard. Operator triple-checked — events were subscribed.
+2. We then suspected the multi-app webhook URL footgun (multiple MP apps posting to staging-api with different secrets). Cleanup down to one app didn't make `subscription_preapproval.*` arrive.
+3. We finally observed on 2026-05-23 that with monthly checkout the events DID arrive — but the dispatcher reported "no registered handler" because qzpay-mercadopago maps `subscription_preapproval.created` → qzpay event type `subscription.created`, while Hospeda only registers `subscription_preapproval.updated`. **The webhook arrived; the handler dispatcher had no route for that event type.** See Finding #20 for follow-up.
+
+Regardless of the dispatcher gap, the design assumption that "webhook is the only path" is fragile against future MP delivery changes.
+
+**Fix (resilience)**: PR hospeda#1231 + qzpay#36 ship the polling fallback. After `start-paid` creates the preapproval, a cron job polls `paymentAdapter.subscriptions.retrieve(id)` every minute until MP reports `authorized`, then flips the local sub to `active` via the same `processSubscriptionUpdated` function the webhook would have called. Both paths converge on the same terminal state via status idempotency.
+
+**Validation 2026-05-23 14:33**: Smoke 1.2 monthly with TEST creds, polling fallback enabled. Subscription `e4f5f09a` transitioned from `incomplete` → `active` at 14:33:01 via the cron path, polling job `5cc9b813` succeeded on attempt 1.
+
+**Status**: ✅ Mitigated via polling. The underlying MP delivery question is separate from Hospeda's robustness now.
+
+### Finding #18 — TEST credentials behave asymmetrically (no `/v1/customers`, payer-email-only preapproval)
+
+**Symptom**: With TEST credentials, `POST /v1/customers` returns HTTP 401 error 300 "Unauthorized use of live credentials" regardless of body. MP's error wording is misleading: credentials ARE test, but the endpoint is blocked for test-tier tokens.
+
+**Root cause**: documented MP behavior since the `APP_USR-` prefix unification. The `/v1/customers` endpoint is reserved for live merchant accounts (KYC verified). For test, MP expects callers to pass payer info inline on each operation rather than persisting a MP customer record.
+
+**Effect on qzpay**: when Hospeda's signup flow calls `billing.customers.create()` qzpay tries to sync with MP via `/v1/customers`. The 401 propagates as `Provider sync failed during customer creation`. Under `providerSyncErrorStrategy: 'throw'` this rolls back the local customer; under `'log'` it keeps the local record but `mp_customer_id` stays null.
+
+**Workaround**: set `HOSPEDA_MERCADO_PAGO_SANDBOX=true`. The flag is consumed in `packages/billing/src/adapters/mercadopago.ts:81-82`:
+
+```ts
+const sandbox = env.HOSPEDA_MERCADO_PAGO_SANDBOX;
+const livemode = !sandbox;
+```
+
+`livemode=false` propagates to the storage adapter AND the qzpay-billing instance, telling qzpay to skip the `/v1/customers` sync entirely. Signup completes; subsequent preapproval / payment calls pass payer email inline (already the qzpay-mercadopago default).
+
+**Status**: ✅ Documented as the canonical test-environment recipe in `docs/billing/test-environment.md`. PROD creds are immune (the endpoint works).
+
+### Finding #19 — Customer auto-soft-delete is a side-effect of Finding #18, not a separate bug
+
+**Symptom**: Customers created during signup were being soft-deleted ~470ms after creation. We initially suspected a buggy sync service in the `billing-customer-sync-service` flow.
+
+**Root cause**: When `HOSPEDA_MERCADO_PAGO_SANDBOX=false` and qzpay attempted `/v1/customers` sync, MP returned 401 (Finding #18). qzpay's transaction rollback / soft-delete kicked in to maintain consistency. Once `SANDBOX=true` was set, no MP sync was attempted and customers persisted normally.
+
+**Status**: ✅ Not a separate bug. Closed as duplicate of Finding #18.
+
+### Finding #20 — Dispatcher missing handler for `subscription.created`
+
+**Symptom (new)**: During smoke 1.2 on 2026-05-23, the `subscription_preapproval.created` webhook DID arrive and signature-verified, but the dispatcher logged "Webhook event has no registered handler" because qzpay-mercadopago maps that MP event to qzpay event type `subscription.created`, while Hospeda's dispatcher only registers `subscription_preapproval.updated`.
+
+**Impact**: low. The polling fallback (#17) covers this gap — the cron transitions the sub even when the webhook is dropped on the dispatcher floor. The handler should still be registered for defense-in-depth.
+
+**Fix path**: in the webhook event registry, add `subscription.created` → invoke `processSubscriptionUpdated` (the existing handler logic works for both create and update because it queries the current MP state regardless of the event verb). One commit, no test changes required because the handler is identical.
+
+**Status**: 🟡 Tracked. Polling covers the gap so this is not urgent.
+
+### Smoke 1.2 monthly — final result
+
+**Validated end-to-end**: signup → checkout → MP authorization (APRO + test buyer) → `payment.created` webhook processed → polling cron transitions sub to active within 60 seconds. DB row:
+
+```
+sub_id   e4f5f09a-ad83-45ca-8470-ceaa307324b0
+status   active
+plan     owner-basico (monthly)
+job_status   succeeded (1 attempt, completed in ~50s)
+provider_status   active
+```
+
+### Side observations for follow-up
+
+These are not findings (no behavior bug in the smoke-critical path) but UX / docs gaps worth tracking:
+
+- **`/mi-cuenta` shows `plan_id` UUID instead of plan name**. Frontend reads the raw subscription record without joining/looking up the plan. (task #25)
+- **MP preapproval renders plan slug in lowercase, untranslated**. qzpay builds the `reason` field as `${plan.name} - ${interval}` and passes raw `plan.name` which is the slug `owner-basico`. Should pass a display name. (task #26)
+- **`Ver factura` button errors out**. Hospeda has no real invoice yet (AFIP deferred to v2). Either hide the button or show a generic receipt. (task #27)
+- **`hops db-seed` does not run `pnpm install`**. After git pull on the VPS host, the host's node_modules can be stale relative to the lockfile, so `db:push` reads an old schema. Should add an install step. (task #23)
+- **`docs/billing/test-environment.md` overclaims that `payment.*` events only arrive via IPN with TEST creds**. Smoke 1.2 disproved this — with single-app + marker URL + correct subscriptions, payment.* events arrive on v2 normally. Doc to be corrected. (task #28)
+
