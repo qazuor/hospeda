@@ -39,7 +39,7 @@
 [data-event-category="cultural"],
 [data-event-category="culture"] {
     --event-cat-bg: var(--hospeda-sky);
-    --event-cat-text: var(--hospeda-sky);
+    --event-cat-text: var(--hospeda-river);
 }
 [data-event-category="gastronomy"] {
     --event-cat-bg: var(--hospeda-forest);
@@ -47,11 +47,11 @@
 }
 [data-event-category="festival"] {
     --event-cat-bg: var(--hospeda-sky);
-    --event-cat-text: var(--hospeda-sky);
+    --event-cat-text: var(--hospeda-river);
 }
 [data-event-category="wellness"] {
     --event-cat-bg: var(--hospeda-river);
-    --event-cat-text: var(--core-card);
+    --event-cat-text: var(--hospeda-river);
 }
 [data-event-category="art"] {
     --event-cat-bg: var(--hospeda-sand);
@@ -59,7 +59,7 @@
 }
 [data-event-category="family"] {
     --event-cat-bg: var(--info);
-    --event-cat-text: var(--info-foreground);
+    --event-cat-text: var(--info);
 }
 [data-event-category="nature"] {
     --event-cat-bg: var(--hospeda-forest);
@@ -67,7 +67,7 @@
 }
 [data-event-category="theater"] {
     --event-cat-bg: var(--hospeda-river);
-    --event-cat-text: var(--core-card);
+    --event-cat-text: var(--hospeda-river);
 }
 [data-event-category="workshop"] {
     --event-cat-bg: var(--hospeda-sand);
@@ -100,19 +100,19 @@
     --card-accent: var(--core-foreground);
 }
 [data-post-category="NATURE"] {
-    --card-accent: var(--core-card);
+    --card-accent: var(--hospeda-river);
 }
 [data-post-category="EVENTS"] {
-    --card-accent: var(--info-foreground);
+    --card-accent: var(--info);
 }
 [data-post-category="SPORT"] {
-    --card-accent: var(--hospeda-sky);
+    --card-accent: var(--hospeda-river);
 }
 [data-post-category="CARNIVAL"] {
     --card-accent: var(--brand-accent);
 }
 [data-post-category="NIGHTLIFE"] {
-    --card-accent: var(--core-card);
+    --card-accent: var(--hospeda-river);
 }
 [data-post-category="HISTORY"] {
     --card-accent: var(--core-foreground);
@@ -124,13 +124,13 @@
     --card-accent: var(--hospeda-forest);
 }
 [data-post-category="FAMILY"] {
-    --card-accent: var(--info-foreground);
+    --card-accent: var(--info);
 }
 [data-post-category="ART"] {
     --card-accent: var(--core-foreground);
 }
 [data-post-category="BEACH"] {
-    --card-accent: var(--hospeda-sky);
+    --card-accent: var(--hospeda-river);
 }
 [data-post-category="RURAL"] {
     --card-accent: var(--hospeda-forest);
