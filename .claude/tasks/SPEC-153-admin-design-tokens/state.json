@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -280,7 +280,10 @@
             "id": "T-153-18",
             "title": "Implement src/index.ts — type-safe exports for TS consumers",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:23:00Z",
+            "completedAt": "2026-05-23T13:30:00Z",
+            "completionNotes": "DONE. src/index.ts (~55 lines) wildcards every public symbol from src/tokens/* (colors, layout, motion, radius, shadows, spacing, typography, z-index) + type re-export from src/themes/types + explicit named re-exports for the 4 theme records (webLight, webDark, adminLight, adminDark) + package metadata constants (PACKAGE_NAME, PACKAGE_VERSION, SPEC_REF). No symbol collisions across modules — verified by tsc. Also fixed packages/design-tokens/package.json exports map: flipped from { import, require, types } to dual-package form { import: { types, default }, require: { types, default } } per Node.js spec — tsup no longer warns about condition ordering on every build. CJS gets dist/index.d.cts, ESM gets dist/index.d.ts. src/index.test.ts (15 tests, 322 total) covers: package metadata, color exports (palettes aggregates + extras + SHADES constant + deriveShades/formatOKLCH helpers), typography/spacing/radius/shadows/motion/z-index/layout reachability, all 4 theme records shape (counts: 142/56/17/14 + no `--` prefix on keys) + identity checks, expectTypeOf assertions for every re-exported TS type alias (OKLCH, Shade, Palette, BrandPaletteName, SemanticPaletteName, PaletteName, Theme, ThemeValue, font/spacing/radius/shadow/motion/z-index name unions). Build output: 32.51 KB ESM + 35.31 KB CJS + 48.58 KB d.ts (rich types). Lint clean on first pass. Satisfies AC-3.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-14", "T-153-15"],
