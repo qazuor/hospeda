@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -252,9 +252,12 @@
         },
         {
             "id": "T-153-16",
-            "title": "Implement src/build/generate-css.ts → dist/tokens.css",
+            "title": "Implement src/generators/generate-css.ts → dist/tokens.css",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:05:00Z",
+            "completedAt": "2026-05-23T13:15:00Z",
+            "completionNotes": "DONE. packages/design-tokens/src/generators/generate-css.ts (~170 lines) with pure buildCSS() function + writeCSS() helper + CLI entry. Output layout (in this exact order): banner comment, :root { palettes (100 declarations — 10 palettes × 10 shades, brand → semantic → neutral) + webLight (142 declarations) }, @media (min-width: 1600px) { :root { layoutMediaOverrides — container-max bump to 1500px } }, [data-theme='dark']:not([data-app='admin']) { webDark (56 overrides) }, [data-app='admin'] { adminLight (17 declarations) }, [data-app='admin'][data-theme='dark'] { adminDark (14 overrides) }. Total 359-line output, 229 declarations (excluding the duplicated container-max in the @media block makes 230). Verified manually: river-500 = oklch(0.63 0.19 259), neutral palette emits zero c/h on every shade, relative-color expressions like oklch(from var(--brand-primary) calc(l - 0.05) c h) pass-through verbatim, z-index emits as plain numbers, primary-hover direction flips in webDark (calc(l + 0.07) vs calc(l - 0.05)), admin color-primary uses river[600] in light + river[500] in dark. CLI entry runs only when invoked via tsx directly (process.argv[1] === fileURLToPath(import.meta.url) check); during vitest import.meta.url differs from process.argv[1], so the CSS is never written from the test suite. 26 vitest tests colocated at src/generators/generate-css.test.ts (296 total, up from 270): selector ordering invariants, declaration counts per block, byte-for-byte canonical values via formatOKLCH(river[500]) etc., palette emission order matches Object.keys(palettes) (brand→semantic→neutral), web/admin selector contracts asserted exactly once each, full output snapshot (15K) for regression. Lint auto-fixed 1 (template literal without interpolation → single quotes). build:css script confirmed end-to-end via pnpm --filter @repo/design-tokens build:css.",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-153-14", "T-153-15"],
