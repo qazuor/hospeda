@@ -212,36 +212,6 @@
     padding: 0;
 }
 
-.typeActions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.typeActionButton {
-    font-size: var(--text-meta, 0.8125rem);
-    font-family: var(--font-sans);
-    font-weight: 500;
-    color: var(--brand-primary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: background 0.15s ease;
-}
-
-.typeActionButton:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
-}
-
-.typeActionButton:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
-
 /*
  * Wrapper around the per-type buttons. Only owns layout (`max-height +
  * overflow`); the items themselves use `.combobox__option` from the
