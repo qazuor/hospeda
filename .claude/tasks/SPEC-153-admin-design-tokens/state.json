@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0"]
@@ -242,11 +242,13 @@
             "id": "T-153-15",
             "title": "Implement src/themes/admin-light.ts + src/themes/admin-dark.ts",
             "phase": "phase-1",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T12:20:00Z",
+            "completedAt": "2026-05-23T12:35:00Z",
+            "completionNotes": "DONE. src/themes/admin-light.ts (~110 lines) with 17 entries per doc 05 §6.2 clean color-* naming scheme (NOT web's brand-* / core-*): color-primary/-hover/-pressed (river[600]/[500]/[700]), color-accent (accent[600]), color-bg-app (neutral[100]) + color-bg-elevated (pure white), color-fg-primary/-secondary/-muted (neutral[900]/[700]/[500]), color-border (neutral[200]), color-success/-warning/-danger/-info (all [600] shades for muted density), font-body/-heading (Roboto/Geologica — shared with web), radius (0.75rem — shared). src/themes/admin-dark.ts (~75 lines) with 14 dark overrides only — fonts and radius inherit from light via cascade. Dark shifts every color one shade lighter (river[500] vs admin-light river[600]) for dark-bg contrast; foreground inverts (neutral[100] in dark vs neutral[900] in light); bg-elevated uses neutral[800] which sits ABOVE bg-app at neutral[900] (assertion test). Admin's Tailwind v4 @theme inline {} block in T-153-26 will map shadcn names (--background, --primary etc.) back to these clean color-* tokens. Tests: 239 → 270 (31 added) covering coverage counts (17 light, 14 dark), color-* naming, primary shade picks (hover lighter, pressed darker), all palette refs preserved by identity, bg-elevated pure white, fonts/radius shared with web, dark strict subset of light (orphan detection), fonts/radius NOT overridden in dark, primary shift direction (lighter on dark), bg-elevated > bg-app on dark, river hue 259 shared (brand coherence). Lint auto-fixed 3 (import orders).",
             "complexity": 3,
             "owner": "agent",
-            "dependsOn": ["T-153-06", "T-153-07"],
-            "notes": "Admin-light per doc 05 §6.2: --color-primary=palette.river[600] (derived, more muted), accent=accent[600], bg-app=neutral[100] (slightly grayer than web), semantics use [600] shades. Admin-dark: river[500] as primary (one shade lighter than admin-light primary since dark BG)."
+            "dependsOn": ["T-153-06", "T-153-07"]
         },
         {
             "id": "T-153-16",
