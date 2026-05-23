@@ -15,6 +15,16 @@ export { ICON_MAP, resolveIcon } from './icon-resolver';
 // Export Phosphor icon factory
 export { createPhosphorIcon } from './create-phosphor-icon';
 
+// Export custom brand-mark factory (single-color SVG logos that aren't part
+// of the Phosphor catalog, e.g. payment provider marks).
+export { createBrandIcon } from './create-brand-icon';
+
+// Export payment brand icons
+export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
+export { MasterCardIcon } from './icons/payment/MasterCardIcon';
+export { MercadoPagoIcon } from './icons/payment/MercadoPagoIcon';
+export { VisaIcon } from './icons/payment/VisaIcon';
+
 // Export entity icons
 export { AccommodationIcon } from './icons/entities/AccommodationIcon';
 export { ContentIcon } from './icons/entities/ContentIcon';
