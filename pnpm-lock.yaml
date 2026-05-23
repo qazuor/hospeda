@@ -408,14 +408,14 @@ importers:
         specifier: ^75.0.0
         version: 75.0.0(graphql@16.12.0)
       '@qazuor/qzpay-core':
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
       '@qazuor/qzpay-hono':
-        specifier: ^1.5.0
-        version: 1.5.0(hono@4.12.16)(zod@4.3.6)
+        specifier: ^1.5.1
+        version: 1.5.1(hono@4.12.16)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.0.2
-        version: 2.0.2(mercadopago@2.12.0)
+        specifier: ^2.0.3
+        version: 2.0.3(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^0.0.30
         version: 0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -840,11 +840,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.0.2
-        version: 2.0.2(mercadopago@2.12.0)
+        specifier: ^2.0.3
+        version: 2.0.3(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -908,11 +908,11 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.7.6
-        version: 1.7.6(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
+        specifier: ^1.8.0
+        version: 1.8.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -3481,23 +3481,27 @@ packages:
     resolution: {integrity: sha512-o7DUEmZsA8N55Nc/nvDyBCLjCzueifiFIkF9Sj7od5GV5dLX/xzk0xQ8qzzh2KT1g9iwK4Rw8uM0+dPZketv9g==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-drizzle@1.7.6':
-    resolution: {integrity: sha512-65ZKO2fjSJ8RDcPfpI7NNAG5eumb0CGLNtdXxjpqP6tjlVt694tvUjVB1IQ+A+ZDnYgERyY4C0W/+DT6l07Aaw==}
+  '@qazuor/qzpay-core@1.9.0':
+    resolution: {integrity: sha512-6rqAThiwHSj9D+Jk4rQ2xyCCdfxb74roia4ZdrKtEE7Xjib2qUrK3vJfD3PCYzi896PfoFxavlb0nUtJ/9YWbg==}
+    engines: {node: '>=22'}
+
+  '@qazuor/qzpay-drizzle@1.8.0':
+    resolution: {integrity: sha512-DuSaHEuj0JnV5mQRYKg0QTf6X3NxrmyBSJB8quCoICKOSkwPz+ZiOf9XNXLSwA5C03IZ2UiiyCJSH/k89TgZzA==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-hono@1.5.0':
-    resolution: {integrity: sha512-JDKtgAtt1BA+5yh1o+pGP3bRPhZHTMvtcEvnQssGjiMTmgSNui7aBSWojlitCmDcnhsNmrMd26mBubOEjAPhbA==}
+  '@qazuor/qzpay-hono@1.5.1':
+    resolution: {integrity: sha512-xRZ+D+99le/a0ongB2T33TFpga/2N2hzqFqNYtz4FUKgV7egMpZLe1JWP4IqPH9WrIo0yTiEeg3iVQ7bUo+xwg==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
       zod: '>=3.0.0'
 
-  '@qazuor/qzpay-mercadopago@2.0.2':
-    resolution: {integrity: sha512-ZplgdwzyUnzmn0yqgUkOHKWUjPERBPU3IjrY4VJxFAZYFSDxzx8PxXa+XiE1uC07YNU2wRP4h24hP1CGovxegw==}
+  '@qazuor/qzpay-mercadopago@2.0.3':
+    resolution: {integrity: sha512-h9gcC/l2L8oj2uhQqXlIe+SWOyRqp6QeYxrd9hcUAENthUXwqFrvZ+ZIRptDssa/vT6BqyuYKffZEu4au85gTA==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
@@ -12613,24 +12617,26 @@ snapshots:
 
   '@qazuor/qzpay-core@1.8.0': {}
 
-  '@qazuor/qzpay-drizzle@1.7.6(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
+  '@qazuor/qzpay-core@1.9.0': {}
+
+  '@qazuor/qzpay-drizzle@1.8.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(postgres@3.4.8)(zod@4.4.3)':
     dependencies:
-      '@qazuor/qzpay-core': 1.6.5
+      '@qazuor/qzpay-core': 1.9.0
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8))(zod@4.4.3)
       postgres: 3.4.8
       zod: 4.4.3
 
-  '@qazuor/qzpay-hono@1.5.0(hono@4.12.16)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.5.1(hono@4.12.16)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
-      '@qazuor/qzpay-core': 1.8.0
+      '@qazuor/qzpay-core': 1.9.0
       hono: 4.12.16
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.0.2(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@2.0.3(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 1.8.0
+      '@qazuor/qzpay-core': 1.9.0
       mercadopago: 2.12.0
 
   '@qazuor/qzpay-react@1.1.10(react@19.1.1)':
