@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1"]
@@ -306,7 +306,10 @@
             "id": "T-153-20",
             "title": "Add @repo/design-tokens to apps/web workspace deps",
             "phase": "phase-2",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T13:35:00Z",
+            "completedAt": "2026-05-23T13:39:00Z",
+            "completionNotes": "DONE. Added `@repo/design-tokens: workspace:*` to apps/web/package.json dependencies alphabetically between @repo/config and @repo/feedback. pnpm install at root linked the workspace dep (pnpm ls shows `link:../../packages/design-tokens`). Verified both subpath resolutions from apps/web context via require.resolve: `@repo/design-tokens` → dist/index.cjs, `@repo/design-tokens/tokens.css` → dist/tokens.css. turbo run typecheck --filter=hospeda-web green (10/10 tasks — turbo orchestrated builds of all upstream workspace deps before running web typecheck; standalone `pnpm typecheck` fails in a fresh worktree because @repo/media etc. need to be built first, but the turbo path is the canonical orchestrated form). No code in apps/web is consuming the package yet — that's T-153-21's job (refactor global.css to @import the package).",
             "complexity": 1,
             "owner": "agent",
             "dependsOn": ["T-153-19"],
