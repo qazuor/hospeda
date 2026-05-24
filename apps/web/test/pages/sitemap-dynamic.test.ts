@@ -95,7 +95,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
         const body = await response.text();
         expect(body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
-        expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+        expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
         expect(body).toContain('</urlset>');
     });
 
@@ -337,5 +337,43 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
         const response = await GET({});
         expect(response.status).toBe(503);
+    });
+
+    // SPEC-157 REQ-12: hreflang alternates so Googlebot associates the es/en/pt
+    // versions of each entity. The static sitemap already emits these via its
+    // serialize() hook; the dynamic one must mirror it.
+    describe('hreflang alternates (SPEC-157 REQ-12)', () => {
+        function fetchWithOneAccommodation(slug: string) {
+            const fetchMock = vi.fn();
+            fetchMock.mockImplementationOnce(() => Promise.resolve(makeApiResponse([{ slug }])));
+            fetchMock.mockResolvedValue(makeEmptyApiResponse());
+            vi.stubGlobal('fetch', fetchMock);
+            return GET({});
+        }
+
+        it('declares the xhtml namespace on the <urlset>', async () => {
+            const body = await (await fetchWithOneAccommodation('casa-rio')).text();
+            expect(body).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+        });
+
+        it('emits es/en/pt xhtml:link alternates for each URL', async () => {
+            const body = await (await fetchWithOneAccommodation('casa-rio')).text();
+            expect(body).toContain(
+                '<xhtml:link rel="alternate" hreflang="es" href="https://hospeda.test/es/alojamientos/casa-rio/"'
+            );
+            expect(body).toContain(
+                '<xhtml:link rel="alternate" hreflang="en" href="https://hospeda.test/en/alojamientos/casa-rio/"'
+            );
+            expect(body).toContain(
+                '<xhtml:link rel="alternate" hreflang="pt" href="https://hospeda.test/pt/alojamientos/casa-rio/"'
+            );
+        });
+
+        it('emits an x-default alternate pointing to the Spanish URL', async () => {
+            const body = await (await fetchWithOneAccommodation('casa-rio')).text();
+            expect(body).toContain(
+                '<xhtml:link rel="alternate" hreflang="x-default" href="https://hospeda.test/es/alojamientos/casa-rio/"'
+            );
+        });
     });
 });
