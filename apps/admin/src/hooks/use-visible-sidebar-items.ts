@@ -11,20 +11,22 @@
  * hidden. If some children are disabled, the group is kept (with those
  * children disabled). Separators are always kept.
  *
- * Permission check uses the KEY→VALUE bridge:
+ * Permission check uses the KEY→VALUE bridge, centralised in
+ * {@link isPermissionGateGranted}:
  *   - IA config `item.permissions` = PermissionExpression KEYS (e.g. 'ACCOMMODATION_VIEW_ALL').
  *   - `expandPermissions()` maps those keys to PermissionEnum VALUES (e.g. 'accommodation.viewAll').
  *   - `useUserPermissions()` returns VALUES.
  *   - Access = at least one expanded value is in the user's permissions array.
  *
  * @module use-visible-sidebar-items
- * @see apps/admin/src/config/ia/permission-bundles.ts — expandPermissions
+ * @see apps/admin/src/lib/nav/permission-visibility.ts — isPermissionGateGranted
  * @see apps/admin/src/hooks/use-user-permissions.ts   — useUserPermissions
  * @see SPEC-154 T-022
  */
 
-import { expandPermissions } from '@/config/ia/permission-bundles';
 import type { GroupItem, LinkItem, SeparatorItem, SidebarItem } from '@/config/ia/schema';
+import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
+import type { PermissionEnum } from '@repo/schemas';
 import { useMemo } from 'react';
 import { useUserPermissions } from './use-user-permissions';
 
@@ -79,24 +81,6 @@ export interface UseVisibleSidebarItemsInput {
 // ---------------------------------------------------------------------------
 
 /**
- * Checks whether the user holds at least one of the expanded permissions for
- * the given permission gate expressions.
- *
- * @param expressions  - Raw PermissionExpression array from the item config.
- * @param userPermissions - The current user's PermissionEnum values.
- * @returns `true` if the user has access, `false` otherwise.
- */
-function hasAccess(expressions: readonly string[], userPermissions: readonly string[]): boolean {
-    try {
-        const granted = expandPermissions({ expressions });
-        return granted.some((p) => userPermissions.includes(p));
-    } catch {
-        // Unknown permission key in config — treat as no access (safe default).
-        return false;
-    }
-}
-
-/**
  * Annotates a link item with the `disabled` flag.
  *
  * @param item - The raw LinkItem from the config.
@@ -105,14 +89,10 @@ function hasAccess(expressions: readonly string[], userPermissions: readonly str
  */
 function processLinkItem(
     item: LinkItem,
-    userPermissions: readonly string[]
+    userPermissions: readonly PermissionEnum[]
 ): VisibleLinkItem | null {
-    if (!item.permissions || item.permissions.length === 0) {
-        // No gate — always visible, never disabled.
-        return { ...item, disabled: false };
-    }
-    const access = hasAccess(item.permissions, userPermissions);
-    if (access) {
+    if (isPermissionGateGranted({ gate: item.permissions, userPermissions })) {
+        // No gate or access granted — visible, never disabled.
         return { ...item, disabled: false };
     }
     if (item.onMissing === 'hide') {
@@ -136,18 +116,15 @@ function processLinkItem(
  */
 function processGroupItem(
     item: GroupItem,
-    userPermissions: readonly string[]
+    userPermissions: readonly PermissionEnum[]
 ): VisibleGroupItem | null {
     // Check the group's own permission gate first.
-    if (item.permissions && item.permissions.length > 0) {
-        const access = hasAccess(item.permissions, userPermissions);
-        if (!access) {
-            if (item.onMissing === 'hide') return null;
-            // Disabled group — still recurse children but mark group disabled.
-            const visibleChildren = processGroupChildren(item.items, userPermissions);
-            if (visibleChildren.length === 0) return null;
-            return { ...item, disabled: true, items: visibleChildren };
-        }
+    if (!isPermissionGateGranted({ gate: item.permissions, userPermissions })) {
+        if (item.onMissing === 'hide') return null;
+        // Disabled group — still recurse children but mark group disabled.
+        const visibleChildren = processGroupChildren(item.items, userPermissions);
+        if (visibleChildren.length === 0) return null;
+        return { ...item, disabled: true, items: visibleChildren };
     }
 
     // Group passes its own gate (or has no gate) — recurse children.
@@ -169,7 +146,7 @@ function processGroupItem(
  */
 function processGroupChildren(
     items: GroupItem['items'],
-    userPermissions: readonly string[]
+    userPermissions: readonly PermissionEnum[]
 ): ReadonlyArray<VisibleLinkItem | VisibleSeparatorItem> {
     const result: Array<VisibleLinkItem | VisibleSeparatorItem> = [];
     for (const child of items) {
