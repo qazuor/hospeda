@@ -58,9 +58,15 @@ const ptUrl = generateAlternateUrl('pt');
 
 const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
 
-// Default OG image via dynamic generation endpoint — ensures every page has a social preview
+// Default OG image via dynamic generation endpoint — ensures every page has a social preview.
+// SPEC-157 REQ-8: coerce to an absolute URL. Social scrapers ignore relative
+// paths, so a page passing e.g. "/og-image.png" would emit an invalid og:image.
+// new URL(image, siteBase) resolves relative paths and passes absolute ones through.
 const siteBase = getSiteUrl();
-const ogImageUrl = image ?? `${siteBase}/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`;
+const ogImageUrl = new URL(
+    image ?? `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`,
+    siteBase
+).href;
 ---
 
 <!-- Title and meta description -->
@@ -81,12 +87,16 @@ const ogImageUrl = image ?? `${siteBase}/api/og?title=${encodeURIComponent(title
 <meta property="og:locale" content={ogLocale} />
 <meta property="og:site_name" content="Hospeda" />
 <meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={fullTitle} />
 
 <!-- Twitter Card tags -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImageUrl} />
+<meta name="twitter:image:alt" content={fullTitle} />
 
 <!-- Hreflang tags for i18n -->
 <link rel="alternate" hreflang="es" href={esUrl} />
