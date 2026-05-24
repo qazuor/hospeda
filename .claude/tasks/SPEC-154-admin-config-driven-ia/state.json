@@ -61,10 +61,10 @@
                 "avgComplexity": 2.3
             }
         },
-        "total": 38,
-        "pending": 32,
+        "total": 40,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 15,
         "blocked": 0
     },
     "tasks": [
@@ -75,7 +75,7 @@
             "status": "completed",
             "complexity": 3,
             "blockedBy": [],
-            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006"],
+            "blocks": ["T-002", "T-003", "T-004", "T-005"],
             "subtasks": [],
             "tags": ["backend", "schema", "zod"],
             "phase": "core",
@@ -97,7 +97,7 @@
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
-            "blocks": ["T-007"],
+            "blocks": ["T-007", "T-039"],
             "subtasks": [],
             "tags": ["backend", "schema", "zod"],
             "phase": "core",
@@ -119,7 +119,7 @@
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
-            "blocks": ["T-008"],
+            "blocks": ["T-008", "T-039"],
             "subtasks": [],
             "tags": ["backend", "schema", "zod"],
             "phase": "core",
@@ -185,7 +185,7 @@
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
-            "blocks": ["T-017", "T-018"],
+            "blocks": ["T-011", "T-016", "T-017", "T-018"],
             "subtasks": [],
             "tags": ["backend", "schema", "zod"],
             "phase": "core",
@@ -204,110 +204,110 @@
             "id": "T-007",
             "title": "Create sections.ts — 7 main section definitions",
             "description": "Create apps/admin/src/config/ia/sections.ts with the 7 main sections.\n\nFiles affected:\n- apps/admin/src/config/ia/sections.ts (new file)\n\nSections to define (per IA doc §2, §11.2 BINDING routing decisions):\n1. inicio: { id: 'inicio', route: '/', defaultRoute: '/dashboard', sidebar: 'inicioSidebar', label: {es:'Inicio', en:'Home', pt:'Início'} }\n2. catalogo: { id: 'catalogo', route: '/accommodations', defaultRoute: '/accommodations', sidebar: 'catalogoSidebar', label: {es:'Catálogo', en:'Catalog', pt:'Catálogo'} }\n3. editorial: { id: 'editorial', route: '/posts', defaultRoute: '/posts', sidebar: 'editorialSidebar', label: {es:'Editorial', en:'Editorial', pt:'Editorial'} }\n4. comunidad: { id: 'comunidad', route: '/access/users', defaultRoute: '/access/users', sidebar: 'comunidadSidebar', label: {es:'Comunidad', en:'Community', pt:'Comunidade'} }\n5. comercial: { id: 'comercial', route: '/billing/plans', defaultRoute: '/billing/plans', sidebar: 'comercialSidebar', label: {es:'Comercial', en:'Commercial', pt:'Comercial'} }\n6. plataforma: { id: 'plataforma', route: '/settings', defaultRoute: '/settings', sidebar: 'plataformaSidebar', label: {es:'Plataforma', en:'Platform', pt:'Plataforma'} }\n7. analisis: { id: 'analisis', route: '/analytics', defaultRoute: '/analytics', sidebar: 'analisisSidebar', label: {es:'Análisis', en:'Analytics', pt:'Análise'} }\n\nCRITICAL (spec §11.2): routes point to REAL existing paths (not Spanish IA doc illustrative paths). All 7 routes exist today.\n\nExport: sections record typed as Record<string, Section>\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/sections.test.ts\n- Assert 7 sections exist with correct IDs\n- Assert all routes start with '/'\n- Assert all sidebar refs are non-empty strings (cross-ref validated separately)\n- Assert all labels have es/en/pt",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
-            "blocks": ["T-008"],
+            "blocks": ["T-008", "T-017"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Create sidebars.ts — Inicio and Catálogo sidebar configs",
             "description": "Create apps/admin/src/config/ia/sidebars.ts with sidebar configs for Inicio and Catálogo sections.\n\nFiles affected:\n- apps/admin/src/config/ia/sidebars.ts (new file)\n\nSidebars to implement:\n\n1. inicioSidebar (per IA doc §19 V1 — 2 items only):\n   - link: id='dashboard', label {es:'Dashboard',...}, route='/dashboard', permissions:['ACCESS_PANEL_ADMIN']\n   - link: id='inbox', label {es:'Mi inbox (beta)',...}, route='/notifications', permissions:['ACCESS_PANEL_ADMIN']\n   NOTE: route='/notifications' per spec §11.2 binding decision (NOT '/inicio/inbox')\n\n2. catalogoSidebar (per SUPER_ADMIN tree IA doc §13 §2):\n   - link: id='cat-dashboard', route='/analytics' (placeholder — no /catalogo/dashboard exists)\n   - group 'alojamientos': link list, create, amenidades (route='/content/amenities'), caracteristicas (route='/content/features')\n   - group 'destinos': link destinos (route='/destinations'), crear destino ('/destinations/new'), atracciones ('/content/attractions')\n   - group 'resenas': all reviews, pending (route per existing routes)\n   NOTE: all routes must be REAL existing routes. Use /accommodations, /destinations, etc.\n\nCRITICAL: Every link item route must point to a REAL existing admin route (spec §11.2)\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/sidebars.test.ts (shared file)\n- Test inicioSidebar has exactly 2 items in V1\n- Test Mi inbox route = '/notifications'\n- Test Catálogo groups don't contain nested groups\n- Test every link item route starts with '/'",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-007"],
-            "blocks": ["T-009"],
+            "blocks": ["T-009", "T-017", "T-035"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Create sidebars.ts — Editorial, Comunidad sidebar configs",
             "description": "Add Editorial and Comunidad sidebars to apps/admin/src/config/ia/sidebars.ts.\n\nFiles affected:\n- apps/admin/src/config/ia/sidebars.ts (extend)\n\nSidebars to add:\n\n3. editorialSidebar (per IA doc §13 §3):\n   - link: editorial dashboard\n   - link: calendar editorial\n   - group 'blog': posts (route='/posts'), drafts ('/posts?status=draft'), published ('/posts?status=published'), crear post ('/posts/new'), tags ('/tags/post-tags')\n   - group 'eventos': proximos ('/events?filter=upcoming'), en curso, pasados, crear ('/events/new'), locaciones ('/events/locations'), organizadores ('/events/organizers')\n   - group 'newsletter': campaigns ('/newsletter/campaigns'), crear campaña ('/newsletter/campaigns/new'), suscriptores ('/newsletter/subscribers'), segmentos ('/newsletter/segments')\n\n4. comunidadSidebar (per IA doc §13 §4):\n   - link: comunidad dashboard\n   - group 'usuarios': todos ('/access/users'), hosts, editores, clientes, invitar\n   - group 'conversaciones': inbox ('/conversations'), sin asignar, asignadas, archivadas\n   - group 'moderacion': cola moderacion, reportes, tags propuestos\n   - group 'roles-permisos': roles ('/access/roles'), permisos ('/access/permissions'), cambios recientes\n\nCRITICAL: All routes must be real existing routes. For query-string variants use the base route.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/sidebars.test.ts (extend)\n- Test editorial groups present with correct IDs\n- Test comunidad roles-permisos group items have correct routes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
-            "blocks": ["T-010"],
+            "blocks": ["T-010", "T-017"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Create sidebars.ts — Comercial, Plataforma, Análisis sidebar configs",
             "description": "Add Comercial, Plataforma, and Análisis sidebars to apps/admin/src/config/ia/sidebars.ts.\n\nFiles affected:\n- apps/admin/src/config/ia/sidebars.ts (extend)\n\nSidebars to add:\n\n5. comercialSidebar (per IA doc §13 §5):\n   - link: comercial dashboard\n   - group 'suscripciones': planes ('/billing/plans'), suscripciones ('/billing/subscriptions'), addons ('/billing/addons'), metricas ('/billing/usage')\n   - group 'pagos': transacciones ('/billing/transactions'), facturas ('/billing/invoices'), metodos ('/billing/payment-methods')\n   - group 'promociones': codigos ('/billing/promo-codes'), promos hosts, sponsorships ('/sponsors/sponsorships'), sponsors ('/sponsors')\n   - group 'operaciones-billing': tipos-cambio ('/billing/exchange-rates'), webhooks, cron billing, onMissing:'hide' for billing webhook config\n   - group 'config-billing': settings billing\n\n6. plataformaSidebar (per IA doc §13 §6):\n   - link: plataforma dashboard\n   - group 'config-general': general, seo, localizacion, feature flags\n   - group 'email': proveedor, identidad, dominios, throttling, templates, unsubscribe, logs entregas\n   - group 'cache-deploy': isr, revalidacion manual, historial\n   - group 'ops-sistema': cron jobs, webhooks, logs, metricas\n   - group 'tags-sistema': tags internas, tags sistema\n   - group 'config-critica': mantenimiento, anuncios, danger zone (ALL onMissing:'hide' — SUPER_ADMIN only per IA doc §16)\n   - group 'auditoria': log acciones, log impersonations, cambios permisos (ALL onMissing:'hide')\n\n7. analisisSidebar (per IA doc §13 §7):\n   - link: overview\n   - group 'negocio': kpis, bookings, revenue, funnel\n   - group 'uso-sistema': por-plan, limites, tendencias\n   - group 'contenido': posts, eventos, newsletter\n   - group 'seo': indexacion, lighthouse, busquedas\n   - group 'debug': (onMissing:'hide' — SUPER_ADMIN only)\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/sidebars.test.ts (extend)\n- Test plataforma config-critica group has onMissing:'hide' on all items\n- Test analisis debug group has onMissing:'hide'\n- Test comercialSidebar groups all present",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-009"],
-            "blocks": ["T-011"],
+            "blocks": ["T-017"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Create permission-bundles.ts — expandPermissions() with wildcard support",
             "description": "Create apps/admin/src/config/ia/permission-bundles.ts with the expandPermissions function.\n\nFiles affected:\n- apps/admin/src/config/ia/permission-bundles.ts (new file)\n\nImplementation (per doc 02 §3.2):\n- expandPermissions(expressions: PermissionExpression[]): PermissionEnum[]\n- Handles '*' (expand ALL PermissionEnum values)\n- Handles 'FOO_*' (expand all PermissionEnum starting with 'FOO_')\n- Handles exact PermissionEnum value (validate + add)\n- Throws Error for unknown permission: 'Unknown permission: ${expr}'\n- Uses Set<PermissionEnum> for deduplication\n- Returns [...result] as readonly-safe array\n\nIMPORT: PermissionEnum from @repo/schemas\n\nExport: expandPermissions function\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/permission-bundles.test.ts\n- Test '*' expands to full PermissionEnum list (length > 0)\n- Test 'ACCOMMODATION_*' expands to all ACCOMMODATION_ prefixed perms\n- Test exact 'ACCESS_PANEL_ADMIN' is included once\n- Test 'TYPO_*' prefix with no matches returns empty array\n- Test unknown exact permission throws Error with message\n- Test deduplication (same perm listed twice = only once in output)\n- AC-4 coverage: verify '*' expansion works and non-empty result",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
-            "blockedBy": ["T-006"],
-            "blocks": ["T-012", "T-013", "T-014", "T-016", "T-018"],
+            "blockedBy": ["T-006", "T-040"],
+            "blocks": ["T-012", "T-013", "T-014", "T-017", "T-018", "T-031"],
             "subtasks": [],
             "tags": ["backend", "permissions"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:10:03.000Z",
+                "completed": "2026-05-24T18:36:29.000Z"
             }
         },
         {
@@ -316,8 +316,8 @@
             "description": "Create role configs for SUPER_ADMIN and ADMIN in apps/admin/src/config/ia/roles/.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/super-admin.ts\n- apps/admin/src/config/ia/roles/admin.ts\n\nSUPER_ADMIN config (per IA doc §13):\n- enabled: true\n- defaultPermissions: ['*'] (wildcard — SUPER_ADMIN only, validated by T-018 §13.9)\n- mainMenu: ['inicio', 'catalogo', 'editorial', 'comunidad', 'comercial', 'plataforma', 'analisis']\n- dashboard: 'superAdminDashboard'\n- topbar: { showSearch: true, showQuickCreate: 'all', accountInMenu: false }\n- mobile: { bottomNav: null, fab: null } (hamburger only)\n- labelOverrides: {}\n\nADMIN config (per IA doc §16):\n- enabled: true\n- defaultPermissions: [...all non-super perms with wildcards: 'ACCOMMODATION_*', 'POST_*', etc.]\n- mainMenu: same 7 sections as SUPER_ADMIN\n- dashboard: 'adminDashboard'\n- topbar: { showSearch: true, showQuickCreate: 'all', accountInMenu: false }\n- mobile: { bottomNav: null, fab: null }\n- labelOverrides: {}\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts\n- Test SUPER_ADMIN has exactly 7 mainMenu items\n- Test SUPER_ADMIN defaultPermissions = ['*']\n- Test SUPER_ADMIN mobile.bottomNav = null\n- Test ADMIN mainMenu has same 7 sections\n- Test ADMIN does NOT have '*' in defaultPermissions (uses prefix wildcards)\n- AC-11: SUPER_ADMIN 7 sections, Cmd+K, account in avatar",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-011"],
-            "blocks": ["T-016"],
+            "blockedBy": ["T-011", "T-016", "T-039", "T-040"],
+            "blocks": ["T-017", "T-034"],
             "subtasks": [],
             "tags": ["backend", "config", "roles"],
             "phase": "core",
@@ -338,8 +338,8 @@
             "description": "Create role configs for HOST and EDITOR in apps/admin/src/config/ia/roles/.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/host.ts\n- apps/admin/src/config/ia/roles/editor.ts\n\nHOST config (per IA doc §12):\n- enabled: true\n- defaultPermissions: ['ACCESS_PANEL_ADMIN', 'ACCOMMODATION_VIEW_OWN', 'ACCOMMODATION_EDIT_OWN', 'ACCOMMODATION_CREATE', 'ACCOMMODATION_DELETE_OWN', 'AMENITY_VIEW', 'FEATURE_VIEW', 'REVIEW_VIEW_OWN', 'REVIEW_REPLY_OWN', 'CONVERSATION_VIEW_OWN', 'CONVERSATION_REPLY_OWN', 'BILLING_VIEW_OWN', 'INVOICE_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN', 'PAYMENT_METHOD_MANAGE_OWN', 'NOTIFICATION_VIEW_OWN', 'NOTIFICATION_PREFERENCES_MANAGE_OWN', 'USER_UPDATE_SELF']\n- mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miFacturacion', 'miCuenta']\n- dashboard: 'hostDashboard'\n- topbar: { showSearch: false, showQuickCreate: ['newAccommodation'], accountInMenu: true }\n- mobile: { bottomNav: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'], fab: 'newAccommodation' }\n- labelOverrides: { 'inicioSidebar.dashboard': {es:'Mi negocio', en:'My business', pt:'Meu negócio'} }\n\nEDITOR config (per IA doc §17):\n- enabled: true\n- defaultPermissions: [...editorial perms, content read-only, analytics-content]\n- mainMenu: ['inicio', 'editorial', 'analisis', 'miCuenta']\n- dashboard: 'editorDashboard'\n- topbar: { showSearch: true, showQuickCreate: ['newPost', 'newEvent', 'newCampaign'], accountInMenu: true }\n- mobile: { bottomNav: ['inicio', 'editorial', 'analisis', 'miCuenta'], fab: 'newPost' }\n- labelOverrides: { 'inicioSidebar.dashboard': {es:'Dashboard editorial', ...} }\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts (extend)\n- Test HOST has exactly 5 mainMenu items\n- Test HOST bottomNav has exactly 4 items\n- Test HOST mobile.fab = 'newAccommodation'\n- Test EDITOR has exactly 4 mainMenu items\n- Test EDITOR topbar.showSearch = true\n- AC-10: HOST 5 menu items, miCuenta in menu, no search, newAccommodation FAB, 4 bottom nav\n- AC-13: EDITOR 4 items, newPost FAB",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-011"],
-            "blocks": ["T-016"],
+            "blockedBy": ["T-011", "T-016", "T-039", "T-040"],
+            "blocks": ["T-017", "T-033", "T-034"],
             "subtasks": [],
             "tags": ["backend", "config", "roles"],
             "phase": "core",
@@ -360,8 +360,8 @@
             "description": "Create deferred role stubs for SPONSOR and CLIENT_MANAGER.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/sponsor.ts\n- apps/admin/src/config/ia/roles/client-manager.ts\n\nSPONSOR config (per IA doc §18):\n- enabled: false\n- label: { es: 'Sponsor', en: 'Sponsor', pt: 'Patrocinador' }\n- defaultPermissions: [] (stub — to be filled on activation)\n- mainMenu, dashboard, topbar, mobile: all omitted (allowed when enabled=false per schema superRefine)\n\nCLIENT_MANAGER config (per IA doc §18):\n- enabled: false\n- label: { es: 'Client manager', en: 'Client manager', pt: 'Gestor de clientes' }\n- defaultPermissions: [] (stub)\n- mainMenu, dashboard, topbar, mobile: all omitted\n\nCRITICAL: When enabled=false the schema does NOT require mainMenu/dashboard/topbar/mobile (T-006 superRefine handles this). Future activation = flip enabled to true + fill rest.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts (extend)\n- Test SPONSOR.enabled = false\n- Test SPONSOR passes schema validation without mainMenu\n- Test CLIENT_MANAGER.enabled = false\n- AC-14: SPONSOR + CLIENT_MANAGER defined with enabled:false",
             "status": "pending",
             "complexity": 1,
-            "blockedBy": ["T-011"],
-            "blocks": ["T-016"],
+            "blockedBy": ["T-011", "T-016", "T-040"],
+            "blocks": ["T-017"],
             "subtasks": [],
             "tags": ["backend", "config", "roles"],
             "phase": "core",
@@ -380,44 +380,44 @@
             "id": "T-015",
             "title": "Create tabs.ts — tab configs for 7 entity types",
             "description": "Create apps/admin/src/config/ia/tabs.ts with tab configs for all entity detail pages.\n\nFiles to create:\n- apps/admin/src/config/ia/tabs.ts\n\nTab configs to define (per IA doc §5 — max 9 per entity):\n\n1. accommodation: Overview, Galería, Amenidades, Pricing, Reseñas, SEO, Sponsorship (onMissing:'hide'), Stats, Config\n2. post: Contenido, Media, SEO, Programación, Tags, Sponsorship (onMissing:'hide'), Stats\n3. event: Overview, Tickets, Asistentes, Agenda, Locación, Organizador, SEO, Stats\n4. destination: Overview, Atracciones, Alojamientos vinculados, Eventos vinculados, SEO, Stats\n5. user: Perfil, Permisos, Actividad, Sesiones, Suscripción, Conversaciones, Reportes\n6. subscription: Overview, Plan & Add-ons, Pagos, Uso, Facturas, Notas internas\n7. newsletterCampaign: Editor, Audiencia, Programación, Métricas, Entregas fallidas, Preview\n\nEach tab has: id, label (tri-locale), optional permissions, onMissing default 'disable'\nSponsorship tabs use onMissing: 'hide' (structurally inaccessible for non-admin roles)\n\nExport: tabs record typed as Record<string, TabsConfig>\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/tabs.test.ts\n- Test each entity has ≤9 tabs\n- Test accommodation has exactly 8 tabs\n- Test sponsorship tab has onMissing:'hide'\n- Test all tab labels have es/en/pt",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
-            "blocks": ["T-016"],
+            "blocks": ["T-017"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Create dashboards.ts and create-actions.ts — stubs and action registry",
             "description": "Create dashboard stubs and create-actions registry.\n\nFiles to create:\n- apps/admin/src/config/ia/dashboards.ts\n- apps/admin/src/config/ia/create-actions.ts\n\ndashboards.ts:\n- Dashboard stubs for 4 active roles: hostDashboard, editorDashboard, adminDashboard, superAdminDashboard\n- Each is a minimal DashboardSchema with widgets: [{ id: 'placeholder', type: 'kpi', label: {es:'...', en:'...', pt:'...'} }]\n- Mark with JSDoc comment: 'Stub — real widgets implemented in SPEC-155'\n- Export: dashboards record\n\ncreate-actions.ts:\n- newAccommodation: { id:'newAccommodation', label:{es:'Nuevo alojamiento',...}, route:'/accommodations/new', permissions:['ACCOMMODATION_CREATE'] }\n- newPost: { id:'newPost', label:{es:'Nuevo post',...}, route:'/posts/new', permissions:['POST_CREATE'] }\n- newEvent: { id:'newEvent', label:{es:'Nuevo evento',...}, route:'/events/new', permissions:['EVENT_CREATE'] }\n- newCampaign: { id:'newCampaign', label:{es:'Nueva campaña',...}, route:'/newsletter/campaigns/new', permissions:['NEWSLETTER_CAMPAIGN_WRITE'] }\n- Export: createActions record\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/create-actions.test.ts\n- Test all 4 create actions have valid routes\n- Test create action routes start with '/'\n- apps/admin/src/config/ia/__tests__/dashboards.test.ts\n- Test 4 dashboard stubs exist\n- Test each dashboard has at least 1 widget",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
-            "blockedBy": ["T-005", "T-012", "T-013", "T-014", "T-015"],
-            "blocks": ["T-017"],
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-012", "T-013", "T-014", "T-017"],
             "subtasks": [],
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T15:33:45.000Z",
+                "completed": "2026-05-24T15:49:14.000Z"
             }
         },
         {
@@ -426,7 +426,20 @@
             "description": "Create apps/admin/src/config/ia/index.ts that assembles all data files without running validation (validate.ts does that).\n\nFiles to create:\n- apps/admin/src/config/ia/index.ts\n\nResponsibilities:\n- Import sections from ./sections\n- Import sidebars from ./sidebars\n- Import dashboards from ./dashboards\n- Import tabs from ./tabs\n- Import createActions from ./create-actions\n- Import role configs from ./roles/host, ./roles/editor, ./roles/admin, ./roles/super-admin, ./roles/sponsor, ./roles/client-manager\n- Assemble rawConfig object typed as AdminIAConfig\n- Re-export AdminIAConfig type for consumers\n- Import and trigger validatedConfig from ./validate (so importing index.ts triggers boot validation)\n- Export: validatedConfig as the default-use config (named export 'config'), rawConfig for testing purposes\n\nPer doc 02 §2: importing index.ts triggers validation. Invalid config = app does not start.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/index.test.ts\n- Test rawConfig has all 7 sections\n- Test rawConfig has all 6 roles (4 enabled + 2 disabled)\n- Test rawConfig has 4 dashboards\n- Test rawConfig has 4 create actions\n- Test config (validatedConfig) equals rawConfig when config is valid",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-006", "T-011", "T-016"],
+            "blockedBy": [
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-039"
+            ],
             "blocks": ["T-018"],
             "subtasks": [],
             "tags": ["backend", "config"],
@@ -444,11 +457,11 @@
         },
         {
             "id": "T-018",
-            "title": "Implement cross-reference validations §13.1–§13.9 in AdminIAConfigSchema.superRefine()",
+            "title": "Implement 7 cross-reference validations in AdminIAConfigSchema.superRefine() (was 9; §13.7+§13.9 dropped per spec §11.4)",
             "description": "Add all 9 cross-reference validations to AdminIAConfigSchema.superRefine() in schema.ts.\n\nFiles affected:\n- apps/admin/src/config/ia/schema.ts (extend AdminIAConfigSchema with .superRefine())\n\nValidations to implement (per doc 02 §13, all 9):\n1. §13.1 Sidebar refs: section.sidebar (when not null) must exist in sidebars\n2. §13.2 Role mainMenu: each sectionId must exist in sections\n3. §13.3 Role dashboard refs: dashboard must exist in dashboards\n4. §13.4 Create action refs: topbar.showQuickCreate array items + mobile.fab must exist in createActions\n5. §13.5 mobile.bottomNav refs: each sectionId must be in role's mainMenu\n6. §13.6 labelOverrides paths: key must resolve to a known sidebar item or section (walk sidebar trees)\n7. §13.7 Permission expansion sanity: expandPermissions() on each enabled role's defaultPermissions must be non-empty\n8. §13.8 Unique IDs within sidebars: recursively check no duplicate IDs in each sidebar\n9. §13.9 Universal wildcard '*' restricted to SUPER_ADMIN only\n\nEach validation: ctx.addIssue with exact path array and descriptive message.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/cross-reference-validations.test.ts\n- One test per validation (min 9 tests)\n- Each test constructs a minimal invalid config that triggers that specific validation\n- Test asserts the error message contains the expected path and description\n- AC-3: All 9 cross-reference validations tested",
             "status": "pending",
             "complexity": 4,
-            "blockedBy": ["T-006", "T-011", "T-017"],
+            "blockedBy": ["T-006", "T-011", "T-017", "T-040"],
             "blocks": ["T-019"],
             "subtasks": [],
             "tags": ["backend", "schema", "validation"],
@@ -471,7 +484,7 @@
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-018"],
-            "blocks": ["T-020", "T-021"],
+            "blocks": ["T-020", "T-021", "T-030"],
             "subtasks": [],
             "tags": ["backend", "validation"],
             "phase": "core",
@@ -537,7 +550,7 @@
             "status": "pending",
             "complexity": 4,
             "blockedBy": ["T-021"],
-            "blocks": ["T-023", "T-024", "T-025"],
+            "blocks": ["T-023", "T-024", "T-025", "T-026", "T-032"],
             "subtasks": [],
             "tags": ["frontend", "hooks", "permissions"],
             "phase": "integration",
@@ -708,7 +721,7 @@
         },
         {
             "id": "T-030",
-            "title": "Write boot validation tests — invalid config scenarios crash with correct error messages",
+            "title": "Write boot validation tests — 7 invalid config crash scenarios (was 9 per spec §11.4)",
             "description": "Write comprehensive tests for the boot validation system.\n\nFiles to create:\n- apps/admin/src/config/ia/__tests__/boot-validation.test.ts\n\nTest scenarios (per doc 02 §15 sample crash examples):\n1. Bad sidebar ref typo: sections.catalogo.sidebar = 'catalogoSdiebar' → error contains 'sections.catalogo.sidebar' + 'not found'\n2. Role mainMenu non-existent section: EDITOR.mainMenu = ['inicio', 'analyiss', ...] → error path 'roles.EDITOR.mainMenu.2'\n3. Empty expanded permissions: HOST.defaultPermissions = ['ACCOMODDATION_*'] → error mentions 'Unknown permission'\n4. bottomNav section not in mainMenu: HOST.mobile.bottomNav = ['comercial'] → path 'roles.HOST.mobile.bottomNav.0'\n5. Duplicate IDs in sidebar: inicioSidebar with two items id='dashboard' → error mentions 'Duplicate item IDs'\n6. Wildcard '*' for non-SUPER_ADMIN: ADMIN.defaultPermissions = ['*'] → error mentions 'SUPER_ADMIN role'\n7. Enabled role missing dashboard: HOST without dashboard → superRefine catches 'dashboard ref required'\n8. labelOverrides path to non-existent item → error about path not resolving\n9. Dashboard ref doesn't exist: HOST.dashboard = 'missingDashboard' → error path 'roles.HOST.dashboard'\n\nTest helper: createInvalidConfig(overrides) builder\n\nAC-2, AC-3 coverage",
             "status": "pending",
             "complexity": 4,
@@ -902,6 +915,50 @@
                 "created": "2026-05-24T00:00:00.000Z",
                 "started": null,
                 "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Add role-specific sections + sidebars (miCuenta shared, misAlojamientos, consultas, miFacturacion)",
+            "description": "Per spec §11.5 (decision A). sections.ts: add miCuenta (SHARED, /me/profile), misAlojamientos (/me/accommodations), consultas (/conversations), miFacturacion (best existing billing route HOST can reach — flag if none). sidebars.ts: add miCuentaSidebar (items only real routes: /me/profile,/me/settings,/me/change-password,/me/tags), misAlojamientosSidebar, consultasSidebar, miFacturacionSidebar. Tests extend sections.test.ts + sidebars.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-012", "T-013", "T-017"],
+            "subtasks": [],
+            "tags": ["config", "sections", "sidebars"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-24T18:10:03.000Z",
+                "started": "2026-05-24T18:10:03.000Z",
+                "completed": "2026-05-24T18:36:29.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Remove defaultPermissions from RoleConfigSchema (SSOT owned by ROLE_PERMISSIONS seed)",
+            "description": "Per spec §11.4 (decision D). Remove defaultPermissions field from RoleConfigSchema in schema.ts; superRefine keeps enforcing mainMenu/dashboard/topbar/mobile when enabled=true. Update schema.role.test.ts (drop defaultPermissions assertions). expandPermissions stays for item gates. Knock-on: T-018 cross-ref validations 9->7 (drop §13.7 + §13.9), T-030 boot tests 9->7 scenarios.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012", "T-013", "T-014", "T-018"],
+            "subtasks": [],
+            "tags": ["schema", "zod", "ssot"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-24T18:10:03.000Z",
+                "started": "2026-05-24T18:10:03.000Z",
+                "completed": "2026-05-24T18:36:29.000Z"
             }
         }
     ]

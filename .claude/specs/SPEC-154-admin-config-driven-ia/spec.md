@@ -183,3 +183,25 @@ Captured at activation after mapping the real admin nav. These reconcile the des
 
 - Nav labels follow the locked schema (doc 02 §3.1): inline `{ es, en, pt }` objects validated by `I18nLabelSchema`.
 - **Documented SSOT exception**: admin IA nav labels live in the IA config, not `@repo/i18n`. This diverges from the project Single-Source-of-Truth rule for i18n strings, accepted deliberately to keep the "one line of config = one change" principle and the already-locked contract intact.
+
+### 11.4 `role.defaultPermissions` removed [DECISION]
+
+- The `defaultPermissions` field is **REMOVED** from `RoleConfigSchema`. The IA config models navigation structure only; the role → permission bundle is owned by `ROLE_PERMISSIONS` (`packages/seed/src/required/rolePermissions.seed.ts`), the existing single source of truth.
+- **Rationale**: runtime nav gating uses the user's real session permissions, not this field. Keeping it would duplicate `ROLE_PERMISSIONS` and risk drift, violating the project SSOT rule. The field was only ever used to validate itself (§13.7) and as a test fixture — and `ROLE_PERMISSIONS` is the better fixture.
+- **Consequences**:
+  - Cross-reference validations §13.7 (defaultPermissions non-empty) and §13.9 (`*` restricted to SUPER_ADMIN) are dropped. The "9 cross-reference validations" become **7**.
+  - AC-4's "`*` restricted to SUPER_ADMIN" clause is void. `expandPermissions()` still expands `*` / `FOO_*` / exact and **remains** — sidebar/tab item permission gates may use wildcards and the renderer matches against them.
+  - AC-5 (partial config when `enabled: false`, via `superRefine` on mainMenu/dashboard/topbar/mobile) is unaffected.
+  - Acceptance tests (AC-10..13) import `ROLE_PERMISSIONS` to obtain realistic per-role permission sets.
+- The real permission model (used to ground role configs and item gates) is mapped in engram `spec/SPEC-154/permission-model`. Doc 01's per-role permission lists (§12/§16/§17) are **fictional** and superseded by `ROLE_PERMISSIONS`.
+
+### 11.5 Role-specific sections [DECISION]
+
+The section universe is the 7 platform sections PLUS role-specific sections required by the HOST and EDITOR main menus (doc 01 §12/§17), since HOST's mental model is "my business" (owner-scoped), not the platform-admin framing:
+
+- `miCuenta` (**SHARED** — HOST shows it in `mainMenu`; other roles reach it via the topbar avatar) → route `/me/profile`, sidebar `miCuentaSidebar` (items only for routes that exist: Mi perfil `/me/profile`, Preferencias `/me/settings`, Seguridad `/me/change-password`, Mis tags `/me/tags`).
+- `misAlojamientos` (HOST) → `/me/accommodations`, sidebar `misAlojamientosSidebar`.
+- `consultas` (HOST) → `/conversations`, sidebar `consultasSidebar`.
+- `miFacturacion` (HOST) → the best existing billing route HOST can reach (the usage/limits widget is SPEC-155; V1 points at an existing page or a minimal landing, flagged if no good target exists).
+
+EDITOR also references `miCuenta`, so shared/role-specific sections are unavoidable regardless. These sections are added to `sections.ts` + `sidebars.ts` (extending what batch 2a built).
