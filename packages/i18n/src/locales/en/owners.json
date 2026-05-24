@@ -10,7 +10,8 @@
         },
         "pages": {
             "nueva": {
-                "trialNote": "Your free 14-day trial starts when you publish your first property."
+                "trialCalloutTitle": "14 free days when you publish",
+                "trialNote": "Your free 14-day trial starts when you publish your first property. No credit card, no commitment — you can explore the full panel while you draft your listing."
             }
         }
     }

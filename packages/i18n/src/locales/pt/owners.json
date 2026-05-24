@@ -10,7 +10,8 @@
         },
         "pages": {
             "nueva": {
-                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar."
+                "trialCalloutTitle": "14 dias gratis ao publicar",
+                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar. Sem cartao, sem compromisso — voce pode explorar o painel inteiro enquanto monta o seu rascunho."
             }
         }
     }

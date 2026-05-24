@@ -117,9 +117,12 @@ const faqJsonLd = {
 				</p>
 
 				<!-- Trial callout: surfaces the 14-day free trial promise (SPEC-143 Block 1) -->
-				<p class="publicar-hero__trial-callout">
-					{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad — sin tarjeta, sin compromiso.')}
-				</p>
+				<div class="publicar-hero__trial-callout" role="note">
+					<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
+					<p class="publicar-hero__trial-callout-text">
+						{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad — sin tarjeta, sin compromiso.')}
+					</p>
+				</div>
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
@@ -329,16 +332,31 @@ const faqJsonLd = {
 	}
 
 	.publicar-hero__trial-callout {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--brand-accent);
 		line-height: 1.5;
 		margin: 0 0 var(--space-6);
-		padding: var(--space-2) var(--space-3);
-		background-color: oklch(from var(--brand-accent) l c h / 0.08);
-		border-left: 3px solid var(--brand-accent);
-		border-radius: 0 var(--radius-button) var(--radius-button) 0;
-		max-width: 52ch;
+		padding: var(--space-4) var(--space-5);
+		background-color: oklch(from var(--brand-accent) l c h / 0.14);
+		border: 1px solid oklch(from var(--brand-accent) l c h / 0.35);
+		border-left: 4px solid var(--brand-accent);
+		border-radius: var(--radius-button);
+		max-width: 56ch;
+	}
+
+	.publicar-hero__trial-callout-icon {
+		font-size: 1.5rem;
+		line-height: 1;
+		flex-shrink: 0;
+	}
+
+	.publicar-hero__trial-callout-text {
+		margin: 0;
+		font-size: var(--text-body-md);
+		color: var(--brand-accent);
+		font-weight: 500;
 	}
 
 	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */

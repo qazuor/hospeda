@@ -10,7 +10,8 @@
         },
         "pages": {
             "nueva": {
-                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días."
+                "trialCalloutTitle": "14 días gratis al publicar",
+                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. Sin tarjeta, sin compromiso — podés probar todo el panel mientras armás tu borrador."
             }
         }
     }
