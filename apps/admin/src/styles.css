@@ -23,8 +23,9 @@
 
 body {
     @apply m-0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-        "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    /* Brand body font (Roboto) from @repo/design-tokens; the var carries its
+       own system-font fallback stack. Loaded in __root.tsx (T-153-28). */
+    font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
