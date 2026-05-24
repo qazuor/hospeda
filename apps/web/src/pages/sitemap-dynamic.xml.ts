@@ -18,9 +18,16 @@ import { getApiUrl, getSiteUrl } from '../lib/env';
 
 export const prerender = false;
 
-/** Supported locales and their URL prefix (es has no prefix). */
+/**
+ * Supported locales and their URL prefix.
+ *
+ * SPEC-157 REQ-2: es uses the /es prefix (not empty) so every Spanish sitemap
+ * URL matches the page canonical and returns HTTP 200. The unprefixed form
+ * 302-redirects to /es/, which made crawlers see a sitemap full of redirecting
+ * URLs disagreeing with the declared canonical (crawl-budget + trust problem).
+ */
 const LOCALES = [
-    { code: 'es', prefix: '' },
+    { code: 'es', prefix: '/es' },
     { code: 'en', prefix: '/en' },
     { code: 'pt', prefix: '/pt' }
 ] as const;

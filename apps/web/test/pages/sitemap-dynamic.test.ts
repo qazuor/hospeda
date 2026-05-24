@@ -8,6 +8,8 @@
  *  - Each entity (accommodation, destination, event, post) is represented in the output.
  *  - All 3 locales (es, en, pt) are emitted for each entity.
  *  - Correct URL path prefixes are used (/alojamientos/, /destinos/, /eventos/, /publicaciones/).
+ *  - SPEC-157 REQ-2: the es locale carries the /es prefix so sitemap URLs match
+ *    the page canonical (the unprefixed form 302-redirects, breaking crawl trust).
  *  - Partial success: when one entity fetch fails, the others still appear.
  *  - Empty state: when all fetches fail, valid XML with an empty <urlset> is returned.
  *  - Cache headers: Cache-Control is public, max-age=86400, stale-while-revalidate=86400.
@@ -116,8 +118,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        // es locale — no prefix
-        expect(body).toContain('https://hospeda.test/alojamientos/hotel-solanas/');
+        // es locale — /es prefix (matches the page canonical; SPEC-157 REQ-2)
+        expect(body).toContain('https://hospeda.test/es/alojamientos/hotel-solanas/');
         // en locale
         expect(body).toContain('https://hospeda.test/en/alojamientos/hotel-solanas/');
         // pt locale
@@ -143,7 +145,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('https://hospeda.test/destinos/concordia/');
+        expect(body).toContain('https://hospeda.test/es/destinos/concordia/');
         expect(body).toContain('https://hospeda.test/en/destinos/concordia/');
         expect(body).toContain('https://hospeda.test/pt/destinos/concordia/');
     });
@@ -169,7 +171,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('https://hospeda.test/eventos/festival-litoral-2026/');
+        expect(body).toContain('https://hospeda.test/es/eventos/festival-litoral-2026/');
         expect(body).toContain('https://hospeda.test/en/eventos/festival-litoral-2026/');
         expect(body).toContain('https://hospeda.test/pt/eventos/festival-litoral-2026/');
     });
@@ -193,9 +195,30 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('https://hospeda.test/publicaciones/turismo-litoral/');
+        expect(body).toContain('https://hospeda.test/es/publicaciones/turismo-litoral/');
         expect(body).toContain('https://hospeda.test/en/publicaciones/turismo-litoral/');
         expect(body).toContain('https://hospeda.test/pt/publicaciones/turismo-litoral/');
+    });
+
+    it('emits every es-locale URL with the /es prefix (SPEC-157 REQ-2 regression)', async () => {
+        const fetchMock = vi.fn();
+
+        // accommodations: 1 item on page 1, empty thereafter
+        fetchMock.mockImplementationOnce(() =>
+            Promise.resolve(makeApiResponse([{ slug: 'casa-rio' }]))
+        );
+        fetchMock.mockResolvedValue(makeEmptyApiResponse());
+
+        vi.stubGlobal('fetch', fetchMock);
+
+        const response = await GET({});
+        const body = await response.text();
+
+        // The es URL MUST carry the /es prefix so it matches the page canonical
+        // and returns HTTP 200 — the unprefixed form 302-redirects to /es/.
+        expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/casa-rio/</loc>');
+        // And the unprefixed es form must NOT be emitted as a <loc>.
+        expect(body).not.toContain('<loc>https://hospeda.test/alojamientos/casa-rio/</loc>');
     });
 
     it('includes lastmod when updatedAt is present', async () => {
