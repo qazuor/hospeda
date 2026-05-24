@@ -1,78 +1,25 @@
 /**
- * Section-based navigation system
+ * Surviving exports from the OLD section-based navigation system.
  *
- * This module provides the infrastructure for the 3-level navigation:
- * - Level 1: Header sections
- * - Level 2: Contextual sidebar
- * - Level 3: Page tabs
+ * After SPEC-154 T-029 surgical deletion, only the types consumed by
+ * out-of-scope components remain here:
  *
- * @example
- * ```tsx
- * import { sidebar, createSection, useCurrentSection } from '@/lib/sections';
+ * - `TabConfig`, `PageTabsConfig`   — PageTabs.tsx (L3 migration out of scope)
+ * - `SidebarContextState`, `SidebarConfig` — sidebar-context.tsx
  *
- * // Create a section
- * const dashboardSection = createSection({
- *   id: 'dashboard',
- *   label: 'Dashboard',
- *   routes: ['/dashboard', '/dashboard/*'],
- *   defaultRoute: '/dashboard',
- *   sidebar: {
- *     title: 'Dashboard',
- *     items: [
- *       sidebar.link('overview', 'Overview', '/dashboard'),
- *     ]
- *   }
- * });
+ * All other OLD exports (createSection, filterByPermissions, isGroupActive,
+ * getHeaderNavItems, useCurrentSidebarConfig, useCurrentSectionId,
+ * getSectionForPath, initializeSections, SidebarItem, SidebarItemType, etc.)
+ * have been deleted.
  *
- * // Use in component
- * function MyPage() {
- *   const section = useCurrentSection();
- *   return <div>Current section: {section?.id}</div>;
- * }
- * ```
+ * DO NOT import from this barrel for NEW code — use the IA config system
+ * at `@/config/ia/` and the new hooks at `@/hooks/use-current-section`,
+ * `@/hooks/use-current-sidebar`, `@/hooks/use-visible-sidebar-items`, etc.
  */
 
-// Types
 export type {
-    DynamicSidebarConfig,
-    HeaderNavItem,
     PageTabsConfig,
-    SectionConfig,
     SidebarConfig,
     SidebarContextState,
-    SidebarItem,
-    SidebarItemType,
     TabConfig
 } from './types';
-
-// Sidebar helpers
-export {
-    filterByPermissions,
-    filterSectionsByPermissions,
-    findActiveItem,
-    getAllHrefs,
-    isGroupActive,
-    sidebar
-} from './sidebar-helpers';
-
-// Section registry
-export {
-    clearSections,
-    createSection,
-    getAllSections,
-    getSection,
-    getSectionForPath,
-    getSidebarConfigForPath,
-    isPathInSection,
-    registerSection,
-    registerSections
-} from './section-registry';
-
-// Section hooks
-export {
-    useCurrentSection,
-    useCurrentSectionId,
-    useCurrentSidebarConfig,
-    useIsInSection,
-    useSectionSidebarSync
-} from './use-section';

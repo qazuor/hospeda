@@ -1,100 +1,27 @@
 /**
- * Types for the 3-level navigation system
+ * Surviving types from the OLD section-based navigation system.
  *
- * Level 1: Header sections (Dashboard, Content, Administration, Analytics)
- * Level 2: Sidebar items (contextual based on active section)
- * Level 3: Page tabs (for entity detail pages)
+ * Only the types still consumed by OUT-OF-SCOPE components are kept here
+ * (SPEC-154 T-029 surgical deletion). The rest of the OLD system has been
+ * deleted.
+ *
+ * CONSUMERS:
+ * - `TabConfig`, `PageTabsConfig`  — apps/admin/src/components/layout/PageTabs.tsx
+ * - `SidebarContextState`, `SidebarConfig` — apps/admin/src/contexts/sidebar-context.tsx
+ *
+ * DO NOT add new types here. New navigation types live in
+ * `apps/admin/src/config/ia/schema.ts`.
  */
 
 import type { ReactNode } from 'react';
 
-/**
- * Type of sidebar item
- * - link: Navigates to a route
- * - action: Executes a callback function
- * - separator: Visual divider
- * - group: Collapsible group with child items
- */
-export type SidebarItemType = 'link' | 'action' | 'separator' | 'group';
+// ============================================================================
+// PageTabs types (consumed by PageTabs.tsx — L3 migration is out of scope)
+// ============================================================================
 
 /**
- * Badge configuration for sidebar items showing dynamic counts.
- */
-export interface SidebarItemBadge {
-    /** The count to display. Badge is hidden when 0. */
-    count: number;
-    /** Optional accessible label (e.g. "X unread messages") */
-    label?: string;
-}
-
-/**
- * Single sidebar item configuration
- */
-export interface SidebarItem {
-    /** Type of the sidebar item */
-    type: SidebarItemType;
-    /** Unique identifier for the item */
-    id: string;
-    /** Display label (i18n key or plain text) */
-    label?: string;
-    /** Icon component to display */
-    icon?: ReactNode;
-    /** Route path for link items */
-    href?: string;
-    /** Callback for action items */
-    onClick?: () => void;
-    /** Child items for group type */
-    items?: SidebarItem[];
-    /** Required permissions to display this item */
-    permissions?: string[];
-    /** Whether the group is expanded by default */
-    defaultExpanded?: boolean;
-    /** Optional badge showing a dynamic count (e.g. unread messages) */
-    badge?: SidebarItemBadge;
-}
-
-/**
- * Sidebar configuration for a section
- */
-export interface SidebarConfig {
-    /** Title displayed at the top of the sidebar */
-    title: string;
-    /** i18n key for the title (optional) */
-    titleKey?: string;
-    /** List of sidebar items */
-    items: SidebarItem[];
-}
-
-/**
- * Function that generates dynamic sidebar config based on route params
- */
-export type DynamicSidebarConfig = (params: Record<string, string>) => SidebarConfig;
-
-/**
- * Section configuration
- * Represents a top-level navigation section (Level 1)
- */
-export interface SectionConfig {
-    /** Unique section identifier */
-    id: string;
-    /** Display label for the header nav */
-    label: string;
-    /** i18n key for the label */
-    labelKey?: string;
-    /** Icon for the header nav */
-    icon?: ReactNode;
-    /** Route patterns that belong to this section */
-    routes: string[];
-    /** Default route when section is clicked */
-    defaultRoute: string;
-    /** Sidebar configuration (static or dynamic) */
-    sidebar: SidebarConfig | DynamicSidebarConfig;
-    /** Required permissions to access this section */
-    permissions?: string[];
-}
-
-/**
- * Tab configuration for entity detail pages (Level 3)
+ * Tab configuration for entity detail pages (Level 3 navigation).
+ * Used by `PageTabs.tsx` and its exported `*Tabs` constants.
  */
 export interface TabConfig {
     /** Unique tab identifier */
@@ -103,7 +30,7 @@ export interface TabConfig {
     label: string;
     /** i18n key for the label */
     labelKey?: string;
-    /** Route path */
+    /** Route path (relative to the entity base path) */
     href: string;
     /** Optional icon */
     icon?: ReactNode;
@@ -112,7 +39,8 @@ export interface TabConfig {
 }
 
 /**
- * Page tabs configuration
+ * Page tabs configuration.
+ * Used by legacy entities that pass tabs via PageTabs.tsx.
  */
 export interface PageTabsConfig {
     /** Base path for the entity (e.g., /accommodations/$id) */
@@ -121,34 +49,35 @@ export interface PageTabsConfig {
     tabs: TabConfig[];
 }
 
+// ============================================================================
+// SidebarContext types (consumed by sidebar-context.tsx)
+// ============================================================================
+
 /**
- * Sidebar context state
+ * Minimal sidebar configuration used by the SidebarContext to track
+ * open/close state. The IA config is the actual source of truth for
+ * sidebar content; this is retained only for the context's state shape.
+ */
+export interface SidebarConfig {
+    /** Title displayed at the top of the sidebar */
+    title: string;
+    /** i18n key for the title (optional) */
+    titleKey?: string;
+    /** List of sidebar items (opaque in this context) */
+    items: unknown[];
+}
+
+/**
+ * Sidebar context state shape.
+ * Consumed by `SidebarProvider` / `useSidebarContext` in sidebar-context.tsx.
  */
 export interface SidebarContextState {
     /** Current sidebar configuration */
     config: SidebarConfig | null;
     /** Whether the sidebar is showing contextual content */
     isContextual: boolean;
-    /** Whether the sidebar is collapsed (mobile) */
+    /** Whether the sidebar is collapsed (desktop) */
     isCollapsed: boolean;
     /** Whether the mobile drawer is open */
     isMobileOpen: boolean;
-}
-
-/**
- * Header navigation item (Level 1)
- */
-export interface HeaderNavItem {
-    /** Section ID */
-    id: string;
-    /** Display label */
-    label: string;
-    /** i18n key for label */
-    labelKey?: string;
-    /** Route to navigate to */
-    href: string;
-    /** Icon component */
-    icon?: ReactNode;
-    /** Whether this section is currently active */
-    isActive?: boolean;
 }

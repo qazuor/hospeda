@@ -1,17 +1,18 @@
 /**
  * AppLayout Component
  *
- * Main application layout with 3-level navigation:
- * - Level 1: Header with horizontal section navigation
- * - Level 2: Contextual sidebar that changes based on active section
- * - Level 3: Page tabs (rendered by individual pages)
+ * Main application layout with config-driven IA navigation (SPEC-154):
+ * - Level 1: Header with `MainMenu` (horizontal section nav, config-driven)
+ * - Level 2: Sidebar (contextual per active section, config-driven)
+ * - Level 3: Page tabs (rendered by individual pages, L3 migration is out of scope)
+ * - Mobile: `BottomNav` (fixed bottom bar, hidden on md+)
  *
  * The layout uses URL-based navigation for state persistence across page reloads.
  */
 
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
+import { BottomNav } from '@/components/layout/mobile-nav/BottomNav';
 import { SidebarProvider } from '@/contexts/sidebar-context';
-import { useUserPermissions } from '@/hooks/use-user-permissions';
 import type { ReactNode } from 'react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -24,27 +25,27 @@ export type AppLayoutProps = {
 };
 
 /**
- * Internal layout component that uses sidebar context
+ * Internal layout component that consumes sidebar context.
  */
 function AppLayoutInner({ children }: AppLayoutProps) {
-    // Get real user permissions from AuthContext
-    const userPermissions = useUserPermissions();
-
     return (
         <div className="min-h-screen bg-background text-foreground">
             {/* Impersonation warning banner */}
             <ImpersonationBanner />
 
-            {/* Level 1: Header with section navigation */}
-            <Header userPermissions={userPermissions} />
+            {/* Level 1: Header with config-driven section navigation */}
+            <Header />
 
             <div className="flex min-h-[calc(100vh-3.5rem)]">
-                {/* Level 2: Contextual sidebar with real permissions */}
-                <Sidebar userPermissions={userPermissions} />
+                {/* Level 2: Contextual sidebar */}
+                <Sidebar />
 
                 {/* Main content area */}
                 <main className="min-w-0 flex-1">{children}</main>
             </div>
+
+            {/* Mobile bottom navigation (hidden on md+) */}
+            <BottomNav />
         </div>
     );
 }
@@ -55,8 +56,9 @@ function AppLayoutInner({ children }: AppLayoutProps) {
  * Features:
  * - Responsive design with mobile drawer support
  * - URL-based navigation state (persists on page reload)
- * - Contextual sidebar that changes based on current section
- * - Header with section navigation
+ * - Config-driven sidebar that changes based on the active section (SPEC-154)
+ * - Config-driven main menu (SPEC-154)
+ * - Mobile bottom navigation via BottomNav (SPEC-154)
  */
 export const AppLayout = ({ children }: AppLayoutProps) => {
     return (

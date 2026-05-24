@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
-import { initializeSections } from '@/config/sections';
+import { validatedConfig } from '@/config/ia/validate';
 import { env, validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { initPostHog } from '@/lib/analytics/posthog-client';
@@ -76,13 +76,6 @@ initSentry();
 // Initialize PostHog analytics (only in production with valid VITE_POSTHOG_KEY)
 initPostHog();
 
-// Sections must be initialized lazily on the first render of RootDocument.
-// Top-level invocation breaks the Nitro/Rolldown SSR bundle: the bundler
-// emits the call before the `sections` array is assigned, producing
-// `TypeError: e is not iterable` at runtime. Module-scope guard ensures
-// it runs exactly once per process (idempotent across SSR requests).
-let sectionsInitialized = false;
-
 import appCss from '../styles.css?url';
 
 /**
@@ -131,35 +124,45 @@ function NotFoundComponent() {
 const BASE_TITLE = 'Hospeda Admin';
 
 /**
- * Maps the first path segment of an admin route to a human-readable section
- * label used to compose the document title. Keeps lookup O(1) and avoids
- * coupling the title to the i18n bundle (the admin app currently runs in a
- * single static locale, so this stays in sync with admin-menu.json by value).
+ * Derives a document title from the validated IA config.
+ *
+ * Strategy: find the first section whose `defaultRoute` or `route` is a
+ * prefix of the current pathname, then return `sectionLabel · Hospeda Admin`.
+ * Falls back to `BASE_TITLE` when no section matches (e.g. `/me/profile`).
+ *
+ * Uses the 'es' locale label from the config (Argentina market default).
+ * This avoids coupling the title to the i18n bundle or SECTION_LABELS map,
+ * deriving it from the same authoritative config that drives the navigation.
  */
-const SECTION_LABELS: Record<string, string> = {
-    dashboard: 'Panel de Control',
-    accommodations: 'Alojamientos',
-    destinations: 'Destinos',
-    events: 'Eventos',
-    posts: 'Publicaciones',
-    access: 'Acceso',
-    content: 'Contenido',
-    billing: 'Facturación',
-    sponsors: 'Patrocinadores',
-    settings: 'Configuración',
-    tags: 'Etiquetas',
-    analytics: 'Analíticas',
-    notifications: 'Notificaciones',
-    newsletter: 'Newsletter',
-    conversations: 'Conversaciones',
-    auth: 'Autenticación',
-    dev: 'Dev'
-};
-
+/**
+ * Derives a document title from the validated IA config.
+ *
+ * Strategy: find the section whose `defaultRoute` or `route` is the longest
+ * prefix of the current pathname, then return `sectionLabel · Hospeda Admin`.
+ * Falls back to `BASE_TITLE` when no section matches (e.g. `/me/profile`).
+ *
+ * Uses the 'es' locale label (Argentina market default). This avoids coupling
+ * the title to the old SECTION_LABELS map — the IA config is the single
+ * source of truth for section labels.
+ */
 const titleForPath = (pathname: string): string => {
-    const segment = pathname.split('/').filter(Boolean)[0];
-    const label = segment ? SECTION_LABELS[segment] : undefined;
-    return label ? `${label} · ${BASE_TITLE}` : BASE_TITLE;
+    let bestLabel: string | undefined;
+    let bestScore = -1;
+
+    for (const section of Object.values(validatedConfig.sections)) {
+        for (const candidate of [section.defaultRoute ?? section.route, section.route]) {
+            if (!candidate) continue;
+            if (pathname === candidate || pathname.startsWith(`${candidate}/`)) {
+                const score = candidate.length;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestLabel = section.label.es;
+                }
+            }
+        }
+    }
+
+    return bestLabel ? `${bestLabel} · ${BASE_TITLE}` : BASE_TITLE;
 };
 
 export const Route = createRootRoute({
@@ -194,18 +197,6 @@ function DocumentTitle() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-    // Lazy section registration: ensures the `sections` array is fully
-    // assigned before `registerSections` iterates it. The module-scope
-    // guard avoids re-registering on subsequent SSR requests in the
-    // same Node process. See top-of-file note for the underlying bundle bug.
-    useState(() => {
-        if (!sectionsInitialized) {
-            initializeSections();
-            sectionsInitialized = true;
-        }
-        return null;
-    });
-
     const { data: session } = useSession();
 
     // Use useState with lazy initializer to prevent QueryClient recreation on every render
