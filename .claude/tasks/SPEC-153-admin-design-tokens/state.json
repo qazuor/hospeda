@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 30,
+        "completed": 31,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -449,7 +449,10 @@
             "id": "T-153-31",
             "title": "Side-by-side visual review web + admin per AC-14",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-24T04:05:00Z",
+            "completedAt": "2026-05-24T07:10:00Z",
+            "completionNotes": "DONE (AC-14). Did the REAL authenticated review (user chose 'stand up the backend'). Stood up the full stack in this worktree: built all 13 @repo packages, started API (:3001), started admin (:3000), reset the super-admin password via `--required` seed (HOSPEDA_SEED_SUPER_ADMIN_PASSWORD; superadmin@hospeda.com), logged in via Playwright (browser fetch to /api/auth/sign-in/email → session cookie), completed the forced password change, reached /dashboard. Captured the authenticated dashboard in light + dark (screenshots: spec153-admin-dashboard-light.png / -dark.png / -change-password.png, local review artifacts). VERDICT: brand coherence with web ACHIEVED — admin chrome now renders the river brand (active sidebar nav item river-tinted, topbar icons river, avatar badge river, primary button bg = oklch(0.498 0.166 259) = river-600, same hue-259 family as web's river-500), grayer neutral-100 workspace bg, white elevated cards, shared radius (button radius-md = 10px). data-app=admin confirmed; var(--color-primary)=river, var(--color-bg-app)=neutral-100. THREE FINDINGS for the follow-up list (none block the token foundation; all are component-styling polish): (1) HEADINGS render in Roboto, NOT Geologica — admin components don't apply the `font-heading` utility, so AC-14's 'headings use Geologica' is not yet visually true (the font IS loaded/available, just unused). (2) DARK MODE: main content + cards + tokens flip correctly under data-theme=dark (verified: var(--color-bg-app)→neutral-900, fg→neutral-100), BUT the topbar (bg-background/80) and sidebar (bg-sidebar) chrome stay light — needs investigation (the direct token var flips to 0.1 in dark, yet these utilities render light; likely an opacity-variant or @theme-inline interaction worth a focused look). (3) No theme-application layer — data-theme is only settable via DevTools; the settings-page themeAdmin pref isn't wired to the DOM (already flagged in T-153-27). Screenshots are local-only review artifacts (not committed). Backend left running for T-153-32.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-30"],
