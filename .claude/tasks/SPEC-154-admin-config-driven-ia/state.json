@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 16,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 27,
         "blocked": 0
     },
     "tasks": [
@@ -569,7 +569,7 @@
             "id": "T-023",
             "title": "Create MainMenu.tsx — Level 1 horizontal nav reading from role config",
             "description": "Create the new MainMenu component for Level 1 navigation.\n\nFiles to create:\n- apps/admin/src/components/layout/main-menu/MainMenu.tsx (new)\n- apps/admin/src/components/layout/main-menu/index.ts (new)\n\nMainMenu responsibilities:\n- Reads current user's role from AuthContext (useAuthState)\n- Gets role.mainMenu section IDs from config.roles[role]\n- For each sectionId, gets Section from config.sections[sectionId]\n- Calls useCurrentSection() to determine active section\n- Renders horizontal nav items with active state indicator\n- CRITICAL (AC-17): skips sections with 0 accessible items (check via useVisibleSidebarItems on that section's sidebar)\n- Props: userPermissions, className\n\nStyling: Tailwind CSS utility classes (admin app convention)\n\nExport: { MainMenu } named export\n\nTest requirements:\n- apps/admin/src/components/layout/main-menu/__tests__/MainMenu.test.tsx\n- Mock config and auth\n- Test SUPER_ADMIN sees 7 section items\n- Test HOST sees 5 section items\n- Test EDITOR sees 4 section items\n- Test section with 0 accessible items is not rendered (AC-17)\n- AC-11, AC-13: shape per role",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-021", "T-022"],
             "blocks": ["T-027"],
@@ -577,14 +577,14 @@
             "tags": ["frontend", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T20:24:35.000Z",
+                "completed": "2026-05-24T21:33:40.000Z"
             }
         },
         {
@@ -613,7 +613,7 @@
             "id": "T-025",
             "title": "Create QuickCreate.tsx — topbar quick-create button reading from role config",
             "description": "Create QuickCreate component from scratch (does not exist today).\n\nFiles to create:\n- apps/admin/src/components/layout/quick-create/QuickCreate.tsx (new)\n- apps/admin/src/components/layout/quick-create/index.ts (new)\n\nQuickCreate responsibilities:\n- Reads current user's role from AuthContext\n- Gets role.topbar.showQuickCreate from config\n- If null: render nothing\n- If 'all': render dropdown button with ALL createActions (filtered by user permissions)\n- If string[]: render dropdown with only listed create action IDs\n- Each action: icon + label.es (locale-aware via current locale hook) + navigates to action.route\n- Filters actions by user's expanded permissions (user needs ≥1 of action.permissions)\n- Styling: Tailwind, uses existing Shadcn Button + DropdownMenu from @/components/ui\n\nExport: { QuickCreate } named export\n\nTest requirements:\n- apps/admin/src/components/layout/quick-create/__tests__/QuickCreate.test.tsx\n- Test SUPER_ADMIN renders dropdown with all create actions\n- Test HOST renders only 'newAccommodation'\n- Test EDITOR renders 3 actions (newPost, newEvent, newCampaign)\n- Test action without permission is filtered out\n- Test showQuickCreate: null renders nothing\n- AC-18: topbar renders showQuickCreate per role",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-027"],
@@ -621,21 +621,21 @@
             "tags": ["frontend", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T20:24:35.000Z",
+                "completed": "2026-05-24T21:33:40.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Create BottomNav.tsx — mobile bottom navigation reading from role config",
             "description": "Create BottomNav component from scratch (does not exist today).\n\nFiles to create:\n- apps/admin/src/components/layout/mobile-nav/BottomNav.tsx (new)\n- apps/admin/src/components/layout/mobile-nav/index.ts (new)\n\nBottomNav responsibilities:\n- Reads current user's role from AuthContext\n- Gets role.mobile.bottomNav from config\n- If null: render nothing (hamburger-only roles: SUPER_ADMIN, ADMIN)\n- If string[]: render bottom fixed bar with section icons + labels\n- Each item: section icon + section label.es + navigates to section.defaultRoute\n- Active state: highlight current section\n- CRITICAL (AC-19): only renders on screens <768px (md:hidden)\n- Styling: Tailwind, position fixed bottom-0, full width, z-50\n- Include FAB button from role.mobile.fab if non-null\n\nExport: { BottomNav } named export\n\nTest requirements:\n- apps/admin/src/components/layout/mobile-nav/__tests__/BottomNav.test.tsx\n- Test HOST renders 4 items + FAB button\n- Test EDITOR renders 4 items + FAB\n- Test SUPER_ADMIN renders nothing (bottomNav: null)\n- Test active section item is highlighted\n- AC-19: mobile.bottomNav renders <768px, hamburger otherwise",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-027"],
@@ -643,14 +643,14 @@
             "tags": ["frontend", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T20:24:35.000Z",
+                "completed": "2026-05-24T21:33:40.000Z"
             }
         },
         {

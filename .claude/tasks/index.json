@@ -467,7 +467,7 @@
             "specId": "SPEC-154",
             "title": "Admin Config-Driven Information Architecture",
             "status": "in-progress",
-            "progress": "24/40",
+            "progress": "27/40",
             "path": "SPEC-154-admin-config-driven-ia",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-154-admin-config-driven-ia",
             "branch": "spec/SPEC-154-admin-config-driven-ia",
