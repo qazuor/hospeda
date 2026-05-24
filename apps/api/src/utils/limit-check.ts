@@ -78,7 +78,8 @@ export type UsageThreshold = 'ok' | 'warning' | 'critical' | 'exceeded';
  *
  * @example
  * ```typescript
- * const threshold = calculateThreshold(4, 5); // 'critical' (80%)
+ * const threshold = calculateThreshold(4, 5); // 'warning' (80%)
+ * const threshold = calculateThreshold(9, 10); // 'critical' (90%)
  * const threshold = calculateThreshold(5, 5); // 'exceeded' (100%)
  * ```
  */
