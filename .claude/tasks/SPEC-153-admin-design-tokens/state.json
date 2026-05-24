@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 29,
+        "completed": 30,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -436,7 +436,10 @@
             "id": "T-153-30",
             "title": "Migrate admin components to token references",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-24T03:25:00Z",
+            "completedAt": "2026-05-24T04:00:00Z",
+            "completionNotes": "DONE (AC-13). SCOPE (user-approved via AskUserQuestion): migrate the high-impact SHARED components that render across every admin table + entity form, NOT all 1154 occurrences in 92 files. AC-13's literal priority (sidebar/topbar/main chrome) was ALREADY brand-adopted by T-153-26 — those surfaces had zero hardcoded colors and consume bg-sidebar/bg-background/text-foreground which now resolve to river/design tokens. styles.css: added --color-success/-warning/-info (+ -foreground=palette-neutral-50) to @theme inline so components can use bg-success/text-warning/ring-success etc. with brand tokens (opacity modifiers tint; auto-flip in dark via the token's own [data-theme=dark] scope). Migrated SEMANTIC roles only, KEPT intentional categorization hues (BLUE/RED/GREEN/YELLOW/PURPLE/PINK/INDIGO/CYAN/TEAL/ORANGE in the badge color maps) + already-muted DEFAULT/SECONDARY/GRAY/SLATE: (1) components/table/cells/EntityCell.tsx + BadgeCell.tsx — PRIMARY→primary/10, SUCCESS→success/10, WARNING→warning/10, ERROR→destructive/10 (tinted bg+text+ring). (2) components/table/cells/BooleanCell.tsx — true→bg-success/15 text-success, false→bg-destructive/15 text-destructive. (3) components/entity-form/navigation/SmartNavigation.tsx (was 26 hits → 0) — step complete→text-success, partial→text-warning, error stays destructive, progress-bar fills→bg-success/-destructive/-warning, footer→bg-success/10 or bg-warning/10. (4) SmartBreadcrumbs.tsx (10→0) — complete→success, partial→warning, progress→bg-primary. (5) components/entity-form/fields/EntitySelectField.tsx (12→0) — required asterisk + error text/border/focus-ring→destructive. Dropped explicit dark: variants where the token's dark scope handles the flip. VERIFIED: admin vite build succeeds (exit 0); built CSS (styles-*.css) registers --color-success/-warning/-info and compiles the utilities — .bg-success\\/10 → color-mix(in oklab, var(--color-success) 10%, transparent), .text-success → var(--color-success), .ring-success\\/20 → token. Commit: 60cb74ea5. FOLLOW-UP (out of scope, flagged): the long-tail ~1100 status/decorative color occurrences across ~85 feature-page files (auth gradients, per-page badges, billing-metrics, newsletter, tags, etc.) — a broad cleanup for a separate task; functionally they render fine today.",
             "complexity": 4,
             "owner": "agent",
             "dependsOn": ["T-153-29"],
