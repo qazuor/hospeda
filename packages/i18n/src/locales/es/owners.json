@@ -3,5 +3,15 @@
         "title": "Para Propietarios - Publica tu Alojamiento",
         "description": "Publica tu alojamiento en Hospeda y llega a miles de viajeros en el Litoral argentino. Gestion profesional, estadisticas y soporte dedicado para propietarios.",
         "breadcrumb": "Para Propietarios"
+    },
+    "host": {
+        "landing": {
+            "trialCallout": "Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad — sin tarjeta, sin compromiso."
+        },
+        "pages": {
+            "nueva": {
+                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días."
+            }
+        }
     }
 }

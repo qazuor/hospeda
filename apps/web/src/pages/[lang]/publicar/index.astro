@@ -116,6 +116,11 @@ const faqJsonLd = {
 					{t('host.landing.heroSubheadline', 'Publicá en minutos y empezá a recibir huéspedes')}
 				</p>
 
+				<!-- Trial callout: surfaces the 14-day free trial promise (SPEC-143 Block 1) -->
+				<p class="publicar-hero__trial-callout">
+					{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad — sin tarjeta, sin compromiso.')}
+				</p>
+
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
 					client:only is required (not client:load) because Better Auth's
@@ -320,7 +325,20 @@ const faqJsonLd = {
 		font-size: var(--text-body-lg);
 		color: var(--core-muted-foreground);
 		line-height: 1.6;
+		margin: 0 0 var(--space-3);
+	}
+
+	.publicar-hero__trial-callout {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--brand-accent);
+		line-height: 1.5;
 		margin: 0 0 var(--space-6);
+		padding: var(--space-2) var(--space-3);
+		background-color: oklch(from var(--brand-accent) l c h / 0.08);
+		border-left: 3px solid var(--brand-accent);
+		border-radius: 0 var(--radius-button) var(--radius-button) 0;
+		max-width: 52ch;
 	}
 
 	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */

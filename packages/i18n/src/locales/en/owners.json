@@ -3,5 +3,15 @@
         "title": "For Property Owners - List Your Property",
         "description": "List your property on Hospeda and reach thousands of travelers in the Argentine Litoral. Professional management, statistics and dedicated support for owners.",
         "breadcrumb": "For Property Owners"
+    },
+    "host": {
+        "landing": {
+            "trialCallout": "Try Hospeda free for 14 days. Your trial starts when you publish your first property — no credit card, no commitment."
+        },
+        "pages": {
+            "nueva": {
+                "trialNote": "Your free 14-day trial starts when you publish your first property."
+            }
+        }
     }
 }

@@ -3,5 +3,15 @@
         "title": "Para Proprietarios - Publique seu Alojamento",
         "description": "Publique seu alojamento no Hospeda e alcance milhares de viajantes no Litoral argentino. Gestao profissional, estatisticas e suporte dedicado para proprietarios.",
         "breadcrumb": "Para Proprietarios"
+    },
+    "host": {
+        "landing": {
+            "trialCallout": "Experimente o Hospeda gratis por 14 dias. Seu periodo de avaliacao comeca quando voce publica sua primeira propriedade — sem cartao de credito, sem compromisso."
+        },
+        "pages": {
+            "nueva": {
+                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar."
+            }
+        }
     }
 }

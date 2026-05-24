@@ -3,6 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -269,6 +270,74 @@ describe('entitlementMiddleware', () => {
                     EntitlementKey.CAN_VIEW_RECOMMENDATIONS
                 ].sort()
             );
+        });
+
+        it('should set owner-basico fallback entitlements for HOST actor with no subscription (SPEC-143 Block 1)', async () => {
+            // SPEC-143 Block 1: when a user is promoted to HOST via onboarding
+            // but has not yet published their first property (so no active
+            // billing_subscription exists), the middleware falls back to
+            // owner-basico defaults. This allows the newly-promoted HOST to
+            // access host-tier features (publish, edit, calendar, etc.) during
+            // the draft phase without a paid subscription row.
+            //
+            // Expected entitlements from owner-basico plan:
+            //   PUBLISH_ACCOMMODATIONS, EDIT_ACCOMMODATION_INFO, VIEW_BASIC_STATS,
+            //   RESPOND_REVIEWS, CAN_USE_CALENDAR, CAN_CONTACT_WHATSAPP_DISPLAY
+            //
+            // Expected limits from owner-basico plan:
+            //   max_accommodations: 1, max_photos_per_accommodation: 5
+
+            // Arrange — set billingEnabled + customerId AND inject a HOST actor
+            // so the entitlement middleware can read the role.
+            const hostActor = {
+                id: 'host-user-id',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            };
+
+            const hostCustomerId = 'host-customer-no-sub';
+            clearEntitlementCache(hostCustomerId);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set(
+                    'actor',
+                    hostActor as unknown as import(
+                        '../../src/types'
+                    ).AppBindings['Variables']['actor']
+                );
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — HOST-specific entitlements are present
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+
+            // Assert — tourist-only entitlements are NOT present
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.entitlements).not.toContain(EntitlementKey.WRITE_REVIEWS);
+
+            // Assert — owner-basico limits are set
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
         });
     });
 
