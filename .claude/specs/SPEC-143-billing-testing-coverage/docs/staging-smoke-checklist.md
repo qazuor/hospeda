@@ -12,6 +12,21 @@ is **Workstream C** and runs only at go-live.
 Authored as part of **T-143-20** (Phase 1 sections) and **T-143-36** (Phase 2
 sections). Phase 3 sections land in **T-143-45**.
 
+## Local-first vs staging-required (SPEC-143 Block 1 pivot, 2026-05-24)
+
+Many sections of this checklist exercise logic that has **zero dependency on real MercadoPago** — entitlement gates, limit enforcement, route permission models, UI gates, form persistence, role-based visibility. For those, prefer **local** with the test users seed (`pnpm db:fresh-dev` creates 11 users covering every role × plan combination, see [`packages/seed/CLAUDE.md`](../../../../packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1)).
+
+| Block / Section | Run where | Why |
+|-----------------|-----------|-----|
+| **1.15-A** (limit enforcement: MAX_ACCOMMODATIONS / MAX_PHOTOS / MAX_ACTIVE_PROMOTIONS) | **Local** | Pure entitlement gates, no MP |
+| **1.15-B / 1.15-C / 1.15-E** (positive / negative / cache paths) | **Local** for endpoints with handlers; **document** stubs without handlers | Entitlement logic, no MP for most |
+| **Block 2** (monthly user lifecycle, mostly) | **Local** for non-checkout pieces; **staging** for `/start-paid` and post-checkout state | Login + entitlements local-able; checkout needs MP |
+| **Block 3** (HOST trial lifecycle) | **Local** if the seed is extended with a `status='trialing'` user; **staging** for first-charge transition | Trial gating is state-machine, can be set up directly |
+| **Block 4** (webhooks: signature verification, IPN, preapproval) | **Staging** (required) | Needs real MP credentials + Cloudflare proxy |
+| **Block 5** (admin / advanced) | Mix — most admin ops local-able, MP-touching ops require staging | Case-by-case |
+
+When sections can run local, the "Pre-flight: MP test buyer browser session" pre-condition is replaced by simple signin: `http://localhost:4321/auth/signin/` with `<slug>@local.test` / `Password123!`.
+
 ## How to use this checklist
 
 1. Pick the section relevant to the PR you're about to merge. If the PR
