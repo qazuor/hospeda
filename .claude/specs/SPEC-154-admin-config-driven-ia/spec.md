@@ -157,3 +157,29 @@ Indicative breakdown:
 - `.claude/audit/admin-redesign/phase-1/02-navigation.md` (audit of current admin nav).
 - `.claude/audit/admin-redesign/phase-1/03-roles-permissions.md` (audit of permission model — 791 permissions, 9 roles).
 - `apps/admin/src/components/layout/{sidebar,header}/*` (current admin nav implementation — to be migrated).
+
+## 11. Implementation decisions (2026-05-24)
+
+Captured at activation after mapping the real admin nav. These reconcile the design docs (01/02) with the actual codebase and are binding for the task breakdown.
+
+### 11.1 Current-state corrections (supersede stale spec assumptions)
+
+- Existing section configs live in **`apps/admin/src/config/sections/*.section.tsx`** (5 files: dashboard, content, billing, administration, analytics), NOT `components/layout/sidebar/configs/`. AC-20 path is corrected to this.
+- The section registry is **`apps/admin/src/config/sections/index.tsx`** + `section-registry.ts`, NOT `__root.tsx`. `__root.tsx` only holds a `SECTION_LABELS` hardcoded map (document title) + `initializeSections()` call. AC-21 targets these.
+- The 5 current sections regroup into the 7 new ones: Content → Catálogo + Editorial; Administration → Comunidad + Plataforma.
+- `CommandPalette` (Cmd+K) already exists as a "Coming Soon" placeholder — kept as-is; `topbar.showSearch` only toggles its visibility (real palette is post-V1, per §3 OUT).
+- No quick-create button and no mobile bottom-nav exist today — `QuickCreate` and `BottomNav` are built from scratch.
+
+### 11.2 Routing strategy — regroup-only, NO route renames [DECISION]
+
+- All ~110 existing route files/paths stay as-is (`/accommodations`, `/billing/plans`, `/access/users`, etc.).
+- Config sidebar `link` items point to the **real existing paths** — the Spanish section-prefixed routes in doc 01's trees (`/catalogo/alojamientos`) are **illustrative, not literal**.
+- A section's L1 click navigates to its `defaultRoute` = its first real child route.
+- **Active-section detection** = which section's sidebar contains the current route (sections span scattered prefixes, so single-prefix matching on `Section.route` is insufficient). The renderer resolves current section by sidebar membership.
+- No new route files are created. This honors the V1 scope rule ("reorganize existing code") and AC-22 (no regression in reachable pages).
+- **Mi inbox** reuses the existing `/notifications` route (resolves the §19-sample vs AC-24 inconsistency in favor of AC-24: route is `/notifications`, there is no `/inicio/inbox`).
+
+### 11.3 i18n labels — inline tri-locale [DECISION]
+
+- Nav labels follow the locked schema (doc 02 §3.1): inline `{ es, en, pt }` objects validated by `I18nLabelSchema`.
+- **Documented SSOT exception**: admin IA nav labels live in the IA config, not `@repo/i18n`. This diverges from the project Single-Source-of-Truth rule for i18n strings, accepted deliberately to keep the "one line of config = one change" principle and the already-locked contract intact.
