@@ -60,11 +60,11 @@ const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolea
     // 'disabled' raised from /50 to /70 so the muted text stays readable.
     switch (status) {
         case 'complete':
-            return 'text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200';
+            return 'text-success hover:text-success/80';
         case 'error':
             return 'text-destructive hover:text-destructive/80';
         case 'partial':
-            return 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200';
+            return 'text-warning hover:text-warning/80';
         case 'empty':
             return 'text-muted-foreground hover:text-foreground';
         case 'disabled':
@@ -270,7 +270,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                                 <>
                                     <div className="h-2 w-16 rounded-full bg-muted">
                                         <div
-                                            className="h-2 rounded-full bg-blue-500 transition-all duration-300 dark:bg-blue-400"
+                                            className="h-2 rounded-full bg-primary transition-all duration-300"
                                             style={{ width: `${avgPercentage}%` }}
                                         />
                                     </div>

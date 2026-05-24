@@ -106,16 +106,18 @@ function getEntityColorClasses(color: BadgeColor): string {
     switch (color) {
         case BadgeColor.DEFAULT:
             return 'bg-muted text-foreground ring-border hover:bg-accent';
+        // Semantic roles → brand tokens (auto-flip in dark via the token's
+        // own [data-theme=dark] scope; opacity modifiers give the tint).
         case BadgeColor.PRIMARY:
-            return 'bg-blue-50 text-blue-700 ring-blue-700/20 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-900/30';
+            return 'bg-primary/10 text-primary ring-primary/20 hover:bg-primary/20';
         case BadgeColor.SECONDARY:
             return 'bg-muted text-foreground ring-border hover:bg-accent';
         case BadgeColor.SUCCESS:
-            return 'bg-green-50 text-green-700 ring-green-600/20 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30 dark:hover:bg-green-900/30';
+            return 'bg-success/10 text-success ring-success/20 hover:bg-success/20';
         case BadgeColor.WARNING:
-            return 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:ring-yellow-400/30 dark:hover:bg-yellow-900/30';
+            return 'bg-warning/10 text-warning ring-warning/20 hover:bg-warning/20';
         case BadgeColor.ERROR:
-            return 'bg-red-50 text-red-700 ring-red-600/20 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-400/30 dark:hover:bg-red-900/30';
+            return 'bg-destructive/10 text-destructive ring-destructive/20 hover:bg-destructive/20';
         case BadgeColor.BLUE:
             return 'bg-blue-50 text-blue-700 ring-blue-700/20 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-900/30';
         case BadgeColor.RED:
