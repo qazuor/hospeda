@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 28,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -423,7 +423,10 @@
             "id": "T-153-29",
             "title": "Audit admin source for hardcoded shadcn colors",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-24T03:05:00Z",
+            "completedAt": "2026-05-24T03:20:00Z",
+            "completionNotes": "DONE. Analysis-only (no code changes). Audited apps/admin/src for hardcoded Tailwind palette utilities ((bg|text|border|ring|from|to|via|fill|stroke|outline|divide|placeholder|decoration|accent|caret)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50..950)). FOUND: 1154 occurrences across 92 files. KEY FINDING: the layout chrome (Sidebar.tsx, Header.tsx, SidebarItem.tsx, SidebarGroup.tsx, MobileMenu.tsx, AppLayout.tsx, etc. — the AC-13 priority surfaces) have ZERO hardcoded palette colors; they already consume shadcn semantic utilities (bg-sidebar, bg-background, text-foreground, border-border) which T-153-26's @theme remap now resolves to the design tokens. SO AC-13 (sidebar/topbar/main adopt the brand) IS ALREADY SATISFIED by T-153-26 — admin chrome renders river/Geologica automatically. The 1154 remaining are NOT chrome; they break down as: (1) SEMANTIC STATUS colors — red→danger, green→success, amber/yellow→warning, blue→info — in badges/pills/state indicators across feature pages (the bulk). Hotspots: components/table/cells/EntityCell.tsx (status badges: bg-blue/yellow/red/green-900 + -50/100), features/billing-metrics/components/UsageDisplay.tsx (text-red-600/400), features/accommodations/.../ContactInfoViewField.tsx (text-green-400), components/entity-form/fields/EntitySelectField.tsx (text-red-400). (2) DECORATIVE auth-page gradients — routes/auth/{signin,signup,forbidden}.tsx (from-cyan/via-emerald/to-blue/to-teal gradient backdrops). (3) Scattered neutral grays + the form wizard nav components/entity-form/navigation/SmartNavigation.tsx (26) + SmartBreadcrumbs.tsx (10). MIGRATION CHECKLIST for T-153-30 by area (file-count): routes/_authed/newsletter(7), components/tags(7), components/entity-form(7), routes/_authed/billing(6), routes/auth(5), components/table(5), routes/_authed/events(4), routes/_authed/access(4), components/entity-list(4), + ~40 more single/double-file areas. RECOMMENDATION for T-153-30 scope: AC-13 chrome is done; the remaining work is a broad semantic-status-color cleanup (map status reds/greens/ambers/blues to bg-destructive/--color-success/-warning/-info utilities). Suggest scoping T-153-30 to the highest-impact shared components (EntityCell status badges, entity-form nav/fields, table cells) rather than all 1154 occurrences across 92 files — the long tail of feature-page status colors can be a follow-up. Full per-palette breakdown persisted at /home/qazuor/.claude/projects/-home-qazuor-projects-WEBS-hospeda-spec-153-admin-design-tokens/.../tool-results/b2d6fh252.txt during the session.",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-153-26"],
