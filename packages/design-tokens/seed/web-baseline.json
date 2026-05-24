@@ -1,0 +1,1447 @@
+{
+    "$schema": "spec/SPEC-153/web-baseline.schema.json",
+    "metadata": {
+        "source": "apps/web/src/styles/global.css",
+        "extractor": "scripts/extract-web-tokens.ts",
+        "extractedAt": "2026-05-23T04:30:52.122Z",
+        "specRef": "SPEC-153",
+        "counts": {
+            "light": 142,
+            "dark": 56,
+            "media": 1,
+            "total": 199
+        },
+        "integrityChecks": {
+            "darkTokensWithoutLightDefault": []
+        }
+    },
+    "outOfScope": {
+        "apps/web/src/styles/css-var-themes.css": "Content-type theming (event-categories, post-categories, accommodation-types via [data-event-category] / [data-post-category] attributes). Stays in apps/web — these are marketing-specific colorings, not foundational tokens. Doc 05 §3 Eje 8.",
+        "apps/web/src/lib/colors.ts": "TypeScript color mapper functions (getAccommodationTypeColor, getEventCategoryColor, etc.) that compose tokens at runtime via oklch(from var(--token) ...) syntax. Stays in apps/web. The TOKEN_TO_CSS_VAR map inside this file references the tokens defined in global.css — it is a consumer, not a definer.",
+        "apps/web/src/styles/components.css": "Component-level BEM classes (.section, .card, .btn-gradient, etc.). Pure consumers of the tokens in global.css. Stays in apps/web.",
+        "apps/web/src/styles/feedback-overrides.css": "Feedback FAB visual overrides. Pure consumer. Stays in apps/web."
+    },
+    "tokens": {
+        "light": {
+            "core-background": {
+                "name": "core-background",
+                "value": "oklch(0.985 0.002 210)",
+                "category": "core-palette",
+                "line": 12
+            },
+            "core-foreground": {
+                "name": "core-foreground",
+                "value": "oklch(0.2 0.02 220)",
+                "category": "core-palette",
+                "line": 13
+            },
+            "core-card": {
+                "name": "core-card",
+                "value": "oklch(1 0 0)",
+                "category": "core-palette",
+                "line": 14
+            },
+            "card-foreground": {
+                "name": "card-foreground",
+                "value": "oklch(0.2 0.02 220)",
+                "category": "core-palette",
+                "line": 15
+            },
+            "popover": {
+                "name": "popover",
+                "value": "oklch(1 0 0)",
+                "category": "core-palette",
+                "line": 16
+            },
+            "popover-foreground": {
+                "name": "popover-foreground",
+                "value": "oklch(0.2 0.02 220)",
+                "category": "core-palette",
+                "line": 17
+            },
+            "brand-primary": {
+                "name": "brand-primary",
+                "value": "oklch(0.63 0.19 259)",
+                "category": "core-palette",
+                "line": 18
+            },
+            "primary-foreground": {
+                "name": "primary-foreground",
+                "value": "oklch(0.99 0 0)",
+                "category": "core-palette",
+                "line": 19
+            },
+            "brand-secondary": {
+                "name": "brand-secondary",
+                "value": "oklch(0.96 0.02 236)",
+                "category": "core-palette",
+                "line": 20
+            },
+            "brand-secondary-foreground": {
+                "name": "brand-secondary-foreground",
+                "value": "oklch(0.26 0.06 255)",
+                "category": "core-palette",
+                "line": 21
+            },
+            "brand-tertiary": {
+                "name": "brand-tertiary",
+                "value": "oklch(0.92 0.03 155)",
+                "category": "core-palette",
+                "line": 22
+            },
+            "muted": {
+                "name": "muted",
+                "value": "oklch(0.95 0.01 210)",
+                "category": "core-palette",
+                "line": 23
+            },
+            "core-muted-foreground": {
+                "name": "core-muted-foreground",
+                "value": "oklch(0.45 0.03 261)",
+                "category": "core-palette",
+                "line": 24
+            },
+            "brand-accent": {
+                "name": "brand-accent",
+                "value": "oklch(0.7 0.18 55)",
+                "category": "core-palette",
+                "line": 25
+            },
+            "rating-star": {
+                "name": "rating-star",
+                "value": "oklch(0.82 0.19 95)",
+                "category": "core-palette",
+                "line": 26
+            },
+            "accent-foreground": {
+                "name": "accent-foreground",
+                "value": "oklch(0.99 0 0)",
+                "category": "core-palette",
+                "line": 27
+            },
+            "destructive": {
+                "name": "destructive",
+                "value": "oklch(0.577 0.245 27.325)",
+                "category": "core-palette",
+                "line": 28
+            },
+            "destructive-foreground": {
+                "name": "destructive-foreground",
+                "value": "oklch(0.98 0 0)",
+                "category": "core-palette",
+                "line": 29
+            },
+            "overlay": {
+                "name": "overlay",
+                "value": "oklch(0.2 0.02 220 / 0.5)",
+                "category": "core-palette",
+                "line": 30
+            },
+            "border": {
+                "name": "border",
+                "value": "oklch(0.9 0.02 210)",
+                "category": "core-palette",
+                "line": 31
+            },
+            "input": {
+                "name": "input",
+                "value": "oklch(0.9 0.02 210)",
+                "category": "core-palette",
+                "line": 32
+            },
+            "ring": {
+                "name": "ring",
+                "value": "oklch(0.63 0.19 259)",
+                "category": "core-palette",
+                "line": 33
+            },
+            "chart-1": {
+                "name": "chart-1",
+                "value": "oklch(0.63 0.19 259)",
+                "category": "core-palette",
+                "line": 34
+            },
+            "chart-2": {
+                "name": "chart-2",
+                "value": "oklch(0.6 0.14 155)",
+                "category": "core-palette",
+                "line": 35
+            },
+            "chart-3": {
+                "name": "chart-3",
+                "value": "oklch(0.7 0.18 55)",
+                "category": "core-palette",
+                "line": 36
+            },
+            "chart-4": {
+                "name": "chart-4",
+                "value": "oklch(0.75 0.1 190)",
+                "category": "core-palette",
+                "line": 37
+            },
+            "chart-5": {
+                "name": "chart-5",
+                "value": "oklch(0.5 0.08 240)",
+                "category": "core-palette",
+                "line": 38
+            },
+            "radius": {
+                "name": "radius",
+                "value": "0.75rem",
+                "category": "core-palette",
+                "line": 39
+            },
+            "success": {
+                "name": "success",
+                "value": "oklch(0.58 0.15 150)",
+                "category": "feedback-tokens",
+                "line": 42
+            },
+            "success-foreground": {
+                "name": "success-foreground",
+                "value": "oklch(0.99 0 0)",
+                "category": "feedback-tokens",
+                "line": 43
+            },
+            "warning": {
+                "name": "warning",
+                "value": "oklch(0.75 0.18 85)",
+                "category": "feedback-tokens",
+                "line": 44
+            },
+            "warning-foreground": {
+                "name": "warning-foreground",
+                "value": "oklch(0.2 0.02 85)",
+                "category": "feedback-tokens",
+                "line": 45
+            },
+            "info": {
+                "name": "info",
+                "value": "oklch(0.63 0.19 259)",
+                "category": "feedback-tokens",
+                "line": 46
+            },
+            "info-foreground": {
+                "name": "info-foreground",
+                "value": "oklch(0.99 0 0)",
+                "category": "feedback-tokens",
+                "line": 47
+            },
+            "surface-warm": {
+                "name": "surface-warm",
+                "value": "oklch(0.95 0.03 250)",
+                "category": "surface-tokens",
+                "line": 50
+            },
+            "surface-warm-foreground": {
+                "name": "surface-warm-foreground",
+                "value": "oklch(0.35 0.03 250)",
+                "category": "surface-tokens",
+                "line": 51
+            },
+            "surface-dark": {
+                "name": "surface-dark",
+                "value": "oklch(0.15 0.02 160)",
+                "category": "surface-tokens",
+                "line": 52
+            },
+            "surface-dark-foreground": {
+                "name": "surface-dark-foreground",
+                "value": "oklch(0.92 0.01 210)",
+                "category": "surface-tokens",
+                "line": 53
+            },
+            "surface-elevated": {
+                "name": "surface-elevated",
+                "value": "oklch(1 0 0)",
+                "category": "surface-tokens",
+                "line": 56
+            },
+            "footer-bg": {
+                "name": "footer-bg",
+                "value": "var(--surface-dark)",
+                "category": "footer-surface-tokens",
+                "line": 59
+            },
+            "footer-fg": {
+                "name": "footer-fg",
+                "value": "var(--surface-dark-foreground)",
+                "category": "footer-surface-tokens",
+                "line": 60
+            },
+            "footer-fg-muted": {
+                "name": "footer-fg-muted",
+                "value": "oklch(0.74 0.02 240)",
+                "category": "footer-surface-tokens",
+                "line": 61
+            },
+            "footer-newsletter-bg": {
+                "name": "footer-newsletter-bg",
+                "value": "white",
+                "category": "footer-surface-tokens",
+                "line": 62
+            },
+            "footer-newsletter-fg": {
+                "name": "footer-newsletter-fg",
+                "value": "var(--core-muted-foreground)",
+                "category": "footer-surface-tokens",
+                "line": 63
+            },
+            "footer-newsletter-border": {
+                "name": "footer-newsletter-border",
+                "value": "transparent",
+                "category": "footer-surface-tokens",
+                "line": 64
+            },
+            "footer-link": {
+                "name": "footer-link",
+                "value": "oklch(from var(--surface-dark-foreground) l c h / 0.7)",
+                "category": "footer-surface-tokens",
+                "line": 65
+            },
+            "footer-link-hover": {
+                "name": "footer-link-hover",
+                "value": "var(--surface-dark-foreground)",
+                "category": "footer-surface-tokens",
+                "line": 66
+            },
+            "footer-border": {
+                "name": "footer-border",
+                "value": "oklch(from var(--surface-dark-foreground) l c h / 0.15)",
+                "category": "footer-surface-tokens",
+                "line": 67
+            },
+            "hospeda-sky": {
+                "name": "hospeda-sky",
+                "value": "oklch(0.8 0.08 259)",
+                "category": "hospeda-brand-colors",
+                "line": 70
+            },
+            "hospeda-sky-light": {
+                "name": "hospeda-sky-light",
+                "value": "oklch(0.88 0.06 259)",
+                "category": "hospeda-brand-colors",
+                "line": 71
+            },
+            "hospeda-river": {
+                "name": "hospeda-river",
+                "value": "oklch(0.63 0.19 259)",
+                "category": "hospeda-brand-colors",
+                "line": 72
+            },
+            "hospeda-forest": {
+                "name": "hospeda-forest",
+                "value": "oklch(0.5 0.14 155)",
+                "category": "hospeda-brand-colors",
+                "line": 73
+            },
+            "hospeda-sand": {
+                "name": "hospeda-sand",
+                "value": "oklch(0.7 0.12 75)",
+                "category": "hospeda-brand-colors",
+                "line": 79
+            },
+            "avatar-1-from": {
+                "name": "avatar-1-from",
+                "value": "oklch(0.25 0.08 255)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 82
+            },
+            "avatar-1-to": {
+                "name": "avatar-1-to",
+                "value": "oklch(0.36 0.12 255)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 83
+            },
+            "avatar-2-from": {
+                "name": "avatar-2-from",
+                "value": "oklch(0.65 0.15 75)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 84
+            },
+            "avatar-2-to": {
+                "name": "avatar-2-to",
+                "value": "oklch(0.78 0.17 80)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 85
+            },
+            "avatar-3-from": {
+                "name": "avatar-3-from",
+                "value": "oklch(0.5 0.1 195)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 86
+            },
+            "avatar-3-to": {
+                "name": "avatar-3-to",
+                "value": "oklch(0.65 0.13 195)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 87
+            },
+            "avatar-4-from": {
+                "name": "avatar-4-from",
+                "value": "oklch(0.42 0.12 155)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 88
+            },
+            "avatar-4-to": {
+                "name": "avatar-4-to",
+                "value": "oklch(0.62 0.16 155)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 89
+            },
+            "font-sans": {
+                "name": "font-sans",
+                "value": "\"Roboto\", sans-serif",
+                "category": "font-families",
+                "line": 92
+            },
+            "font-heading": {
+                "name": "font-heading",
+                "value": "\"Geologica\", sans-serif",
+                "category": "font-families",
+                "line": 93
+            },
+            "font-decorative": {
+                "name": "font-decorative",
+                "value": "\"Caveat\", cursive",
+                "category": "font-families",
+                "line": 94
+            },
+            "font-mono": {
+                "name": "font-mono",
+                "value": "ui-monospace, \"Menlo\", \"Monaco\", \"Cascadia Code\", monospace",
+                "category": "font-families",
+                "line": 95
+            },
+            "radius-sm": {
+                "name": "radius-sm",
+                "value": "calc(var(--radius) - 4px)",
+                "category": "radius",
+                "line": 98
+            },
+            "radius-md": {
+                "name": "radius-md",
+                "value": "calc(var(--radius) - 2px)",
+                "category": "radius",
+                "line": 99
+            },
+            "radius-lg": {
+                "name": "radius-lg",
+                "value": "var(--radius)",
+                "category": "radius",
+                "line": 100
+            },
+            "radius-xl": {
+                "name": "radius-xl",
+                "value": "calc(var(--radius) + 4px)",
+                "category": "radius",
+                "line": 101
+            },
+            "radius-organic": {
+                "name": "radius-organic",
+                "value": "0px 100px",
+                "category": "organic-component-radius",
+                "line": 104
+            },
+            "radius-organic-sm": {
+                "name": "radius-organic-sm",
+                "value": "0px 75px",
+                "category": "organic-component-radius",
+                "line": 105
+            },
+            "radius-organic-alt": {
+                "name": "radius-organic-alt",
+                "value": "100px 0px",
+                "category": "organic-component-radius",
+                "line": 106
+            },
+            "radius-card": {
+                "name": "radius-card",
+                "value": "24px",
+                "category": "organic-component-radius",
+                "line": 107
+            },
+            "radius-pill": {
+                "name": "radius-pill",
+                "value": "9999px",
+                "category": "organic-component-radius",
+                "line": 108
+            },
+            "radius-button": {
+                "name": "radius-button",
+                "value": "8px",
+                "category": "organic-component-radius",
+                "line": 109
+            },
+            "space-section": {
+                "name": "space-section",
+                "value": "clamp(3rem, 8vw, 7.5rem)",
+                "category": "spacing",
+                "line": 112
+            },
+            "space-section-sm": {
+                "name": "space-section-sm",
+                "value": "clamp(2.5rem, 5vw, 5rem)",
+                "category": "spacing",
+                "line": 113
+            },
+            "space-section-lg": {
+                "name": "space-section-lg",
+                "value": "clamp(4rem, 10vw, 10rem)",
+                "category": "spacing",
+                "line": 114
+            },
+            "space-container-x": {
+                "name": "space-container-x",
+                "value": "clamp(0.75rem, 3vw, 1.5rem)",
+                "category": "spacing",
+                "line": 115
+            },
+            "space-card-content": {
+                "name": "space-card-content",
+                "value": "27px 30px 26px",
+                "category": "spacing",
+                "line": 116
+            },
+            "space-card-gap": {
+                "name": "space-card-gap",
+                "value": "clamp(1rem, 3vw, 1.875rem)",
+                "category": "spacing",
+                "line": 117
+            },
+            "space-section-header-mb": {
+                "name": "space-section-header-mb",
+                "value": "50px",
+                "category": "spacing",
+                "line": 118
+            },
+            "space-1": {
+                "name": "space-1",
+                "value": "0.25rem",
+                "category": "spacing",
+                "line": 121
+            },
+            "space-2": {
+                "name": "space-2",
+                "value": "0.5rem",
+                "category": "spacing",
+                "line": 122
+            },
+            "space-3": {
+                "name": "space-3",
+                "value": "0.75rem",
+                "category": "spacing",
+                "line": 123
+            },
+            "space-4": {
+                "name": "space-4",
+                "value": "1rem",
+                "category": "spacing",
+                "line": 124
+            },
+            "space-5": {
+                "name": "space-5",
+                "value": "1.25rem",
+                "category": "spacing",
+                "line": 125
+            },
+            "space-6": {
+                "name": "space-6",
+                "value": "1.5rem",
+                "category": "spacing",
+                "line": 126
+            },
+            "space-7": {
+                "name": "space-7",
+                "value": "1.75rem",
+                "category": "spacing",
+                "line": 127
+            },
+            "space-8": {
+                "name": "space-8",
+                "value": "2rem",
+                "category": "spacing",
+                "line": 128
+            },
+            "space-9": {
+                "name": "space-9",
+                "value": "2.25rem",
+                "category": "spacing",
+                "line": 129
+            },
+            "space-10": {
+                "name": "space-10",
+                "value": "2.5rem",
+                "category": "spacing",
+                "line": 130
+            },
+            "space-12": {
+                "name": "space-12",
+                "value": "3rem",
+                "category": "spacing",
+                "line": 131
+            },
+            "text-hero": {
+                "name": "text-hero",
+                "value": "clamp(3rem, 2rem + 5vw, 5.75rem)",
+                "category": "typography-scale",
+                "line": 134
+            },
+            "text-display": {
+                "name": "text-display",
+                "value": "clamp(2rem, 1.5rem + 3vw, 3rem)",
+                "category": "typography-scale",
+                "line": 135
+            },
+            "text-h2": {
+                "name": "text-h2",
+                "value": "clamp(1.75rem, 1.5rem + 1.75vw, 2.75rem)",
+                "category": "typography-scale",
+                "line": 136
+            },
+            "text-h3": {
+                "name": "text-h3",
+                "value": "clamp(1.25rem, 1rem + 0.75vw, 1.625rem)",
+                "category": "typography-scale",
+                "line": 137
+            },
+            "text-h4": {
+                "name": "text-h4",
+                "value": "clamp(0.9375rem, 0.875rem + 0.25vw, 1.125rem)",
+                "category": "typography-scale",
+                "line": 138
+            },
+            "text-body": {
+                "name": "text-body",
+                "value": "1rem",
+                "category": "typography-scale",
+                "line": 139
+            },
+            "text-body-sm": {
+                "name": "text-body-sm",
+                "value": "0.875rem",
+                "category": "typography-scale",
+                "line": 140
+            },
+            "text-body-xs": {
+                "name": "text-body-xs",
+                "value": "0.8125rem",
+                "category": "typography-scale",
+                "line": 141
+            },
+            "text-meta": {
+                "name": "text-meta",
+                "value": "0.8125rem",
+                "category": "typography-scale",
+                "line": 142
+            },
+            "text-caption": {
+                "name": "text-caption",
+                "value": "0.75rem",
+                "category": "typography-scale",
+                "line": 143
+            },
+            "text-tagline": {
+                "name": "text-tagline",
+                "value": "clamp(1.25rem, 1rem + 1vw, 1.75rem)",
+                "category": "typography-scale",
+                "line": 144
+            },
+            "text-nav": {
+                "name": "text-nav",
+                "value": "0.875rem",
+                "category": "typography-scale",
+                "line": 145
+            },
+            "text-button": {
+                "name": "text-button",
+                "value": "1rem",
+                "category": "typography-scale",
+                "line": 146
+            },
+            "text-body-lg": {
+                "name": "text-body-lg",
+                "value": "1.125rem",
+                "category": "typography-scale",
+                "line": 149
+            },
+            "text-lg": {
+                "name": "text-lg",
+                "value": "1.25rem",
+                "category": "typography-scale",
+                "line": 150
+            },
+            "text-xl": {
+                "name": "text-xl",
+                "value": "1.5rem",
+                "category": "typography-scale",
+                "line": 151
+            },
+            "shadow-card": {
+                "name": "shadow-card",
+                "value": "0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08)",
+                "category": "shadows",
+                "line": 154
+            },
+            "shadow-card-hover": {
+                "name": "shadow-card-hover",
+                "value": "0 12px 24px -4px oklch(from var(--core-foreground) l c h / 0.12)",
+                "category": "shadows",
+                "line": 155
+            },
+            "shadow-search": {
+                "name": "shadow-search",
+                "value": "0 4px 60px oklch(from var(--core-foreground) l c h / 0.1)",
+                "category": "shadows",
+                "line": 156
+            },
+            "shadow-nav": {
+                "name": "shadow-nav",
+                "value": "0 2px 4px oklch(from var(--core-foreground) l c h / 0.15)",
+                "category": "shadows",
+                "line": 157
+            },
+            "duration-fast": {
+                "name": "duration-fast",
+                "value": "0.2s",
+                "category": "transitions",
+                "line": 160
+            },
+            "duration-normal": {
+                "name": "duration-normal",
+                "value": "0.4s",
+                "category": "transitions",
+                "line": 161
+            },
+            "duration-slow": {
+                "name": "duration-slow",
+                "value": "0.5s",
+                "category": "transitions",
+                "line": 162
+            },
+            "duration-reveal": {
+                "name": "duration-reveal",
+                "value": "450ms",
+                "category": "transitions",
+                "line": 163
+            },
+            "ease-bounce": {
+                "name": "ease-bounce",
+                "value": "cubic-bezier(0.1, 0, 0.3, 1)",
+                "category": "transitions",
+                "line": 164
+            },
+            "ease-reveal": {
+                "name": "ease-reveal",
+                "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+                "category": "transitions",
+                "line": 165
+            },
+            "z-content": {
+                "name": "z-content",
+                "value": "10",
+                "category": "z-index",
+                "line": 168
+            },
+            "z-nav": {
+                "name": "z-nav",
+                "value": "50",
+                "category": "z-index",
+                "line": 169
+            },
+            "z-dropdown": {
+                "name": "z-dropdown",
+                "value": "60",
+                "category": "z-index",
+                "line": 170
+            },
+            "z-modal": {
+                "name": "z-modal",
+                "value": "100",
+                "category": "z-index",
+                "line": 171
+            },
+            "z-toast": {
+                "name": "z-toast",
+                "value": "200",
+                "category": "z-index",
+                "line": 172
+            },
+            "z-cookie-banner": {
+                "name": "z-cookie-banner",
+                "value": "9000",
+                "category": "z-index",
+                "line": 176
+            },
+            "z-mobile-menu": {
+                "name": "z-mobile-menu",
+                "value": "9100",
+                "category": "z-index",
+                "line": 177
+            },
+            "navbar-height": {
+                "name": "navbar-height",
+                "value": "80px",
+                "category": "layout",
+                "line": 180
+            },
+            "wave-bar-compact": {
+                "name": "wave-bar-compact",
+                "value": "77px",
+                "category": "layout",
+                "line": 184
+            },
+            "cookie-banner-height": {
+                "name": "cookie-banner-height",
+                "value": "0px",
+                "category": "layout",
+                "line": 185
+            },
+            "bottom-safe-inset": {
+                "name": "bottom-safe-inset",
+                "value": "var(--cookie-banner-height, 0px)",
+                "category": "layout",
+                "line": 191
+            },
+            "primary-hover": {
+                "name": "primary-hover",
+                "value": "oklch(from var(--brand-primary) calc(l - 0.05) c h)",
+                "category": "hover-state-variants",
+                "line": 194
+            },
+            "accent-hover": {
+                "name": "accent-hover",
+                "value": "oklch(from var(--brand-accent) calc(l - 0.05) c h)",
+                "category": "hover-state-variants",
+                "line": 195
+            },
+            "brand-primary-dark": {
+                "name": "brand-primary-dark",
+                "value": "oklch(from var(--brand-primary) calc(l - 0.1) c h)",
+                "category": "hover-state-variants",
+                "line": 196
+            },
+            "overlay-bg-strong": {
+                "name": "overlay-bg-strong",
+                "value": "oklch(0 0 0 / 0.7)",
+                "category": "overlays",
+                "line": 203
+            },
+            "overlay-bg-light": {
+                "name": "overlay-bg-light",
+                "value": "oklch(0 0 0 / 0.45)",
+                "category": "overlays",
+                "line": 204
+            },
+            "overlay-blur": {
+                "name": "overlay-blur",
+                "value": "4px",
+                "category": "overlays",
+                "line": 205
+            },
+            "frost-bg-light": {
+                "name": "frost-bg-light",
+                "value": "oklch(from var(--core-card) l c h / 0.72)",
+                "category": "frosted-surfaces",
+                "line": 213
+            },
+            "frost-bg-dark": {
+                "name": "frost-bg-dark",
+                "value": "oklch(from var(--core-foreground) l c h / 0.7)",
+                "category": "frosted-surfaces",
+                "line": 214
+            },
+            "frost-blur": {
+                "name": "frost-blur",
+                "value": "14px",
+                "category": "frosted-surfaces",
+                "line": 215
+            },
+            "frost-border": {
+                "name": "frost-border",
+                "value": "oklch(from var(--core-foreground) l c h / 0.08)",
+                "category": "frosted-surfaces",
+                "line": 216
+            },
+            "container-max": {
+                "name": "container-max",
+                "value": "1350px",
+                "category": "layout",
+                "line": 219
+            },
+            "container-narrow": {
+                "name": "container-narrow",
+                "value": "900px",
+                "category": "layout",
+                "line": 220
+            }
+        },
+        "dark": {
+            "core-background": {
+                "name": "core-background",
+                "value": "oklch(0.14 0.02 220)",
+                "category": "core-palette",
+                "line": 231
+            },
+            "core-foreground": {
+                "name": "core-foreground",
+                "value": "oklch(0.92 0.01 210)",
+                "category": "core-palette",
+                "line": 232
+            },
+            "core-card": {
+                "name": "core-card",
+                "value": "oklch(0.19 0.02 220)",
+                "category": "core-palette",
+                "line": 233
+            },
+            "card-foreground": {
+                "name": "card-foreground",
+                "value": "oklch(0.92 0.01 210)",
+                "category": "core-palette",
+                "line": 234
+            },
+            "popover": {
+                "name": "popover",
+                "value": "oklch(0.19 0.02 220)",
+                "category": "core-palette",
+                "line": 235
+            },
+            "popover-foreground": {
+                "name": "popover-foreground",
+                "value": "oklch(0.92 0.01 210)",
+                "category": "core-palette",
+                "line": 236
+            },
+            "brand-primary": {
+                "name": "brand-primary",
+                "value": "oklch(0.68 0.17 259)",
+                "category": "core-palette",
+                "line": 237
+            },
+            "primary-foreground": {
+                "name": "primary-foreground",
+                "value": "oklch(0.1 0.02 259)",
+                "category": "core-palette",
+                "line": 238
+            },
+            "brand-secondary": {
+                "name": "brand-secondary",
+                "value": "oklch(0.25 0.05 255)",
+                "category": "core-palette",
+                "line": 239
+            },
+            "brand-secondary-foreground": {
+                "name": "brand-secondary-foreground",
+                "value": "oklch(0.8 0.08 255)",
+                "category": "core-palette",
+                "line": 240
+            },
+            "brand-tertiary": {
+                "name": "brand-tertiary",
+                "value": "oklch(0.28 0.05 155)",
+                "category": "core-palette",
+                "line": 241
+            },
+            "muted": {
+                "name": "muted",
+                "value": "oklch(0.22 0.02 220)",
+                "category": "core-palette",
+                "line": 242
+            },
+            "core-muted-foreground": {
+                "name": "core-muted-foreground",
+                "value": "oklch(0.6 0.03 261)",
+                "category": "core-palette",
+                "line": 243
+            },
+            "brand-accent": {
+                "name": "brand-accent",
+                "value": "oklch(0.72 0.19 55)",
+                "category": "core-palette",
+                "line": 244
+            },
+            "rating-star": {
+                "name": "rating-star",
+                "value": "oklch(0.85 0.19 95)",
+                "category": "core-palette",
+                "line": 245
+            },
+            "accent-foreground": {
+                "name": "accent-foreground",
+                "value": "oklch(0.1 0.01 55)",
+                "category": "core-palette",
+                "line": 246
+            },
+            "destructive": {
+                "name": "destructive",
+                "value": "oklch(0.6 0.22 27)",
+                "category": "core-palette",
+                "line": 247
+            },
+            "destructive-foreground": {
+                "name": "destructive-foreground",
+                "value": "oklch(0.98 0 0)",
+                "category": "core-palette",
+                "line": 248
+            },
+            "overlay": {
+                "name": "overlay",
+                "value": "oklch(0.05 0.01 220 / 0.7)",
+                "category": "core-palette",
+                "line": 249
+            },
+            "border": {
+                "name": "border",
+                "value": "oklch(0.28 0.02 220)",
+                "category": "core-palette",
+                "line": 250
+            },
+            "input": {
+                "name": "input",
+                "value": "oklch(0.28 0.02 220)",
+                "category": "core-palette",
+                "line": 251
+            },
+            "ring": {
+                "name": "ring",
+                "value": "oklch(0.68 0.17 259)",
+                "category": "core-palette",
+                "line": 252
+            },
+            "chart-1": {
+                "name": "chart-1",
+                "value": "oklch(0.68 0.17 259)",
+                "category": "core-palette",
+                "line": 253
+            },
+            "chart-2": {
+                "name": "chart-2",
+                "value": "oklch(0.68 0.15 155)",
+                "category": "core-palette",
+                "line": 254
+            },
+            "chart-3": {
+                "name": "chart-3",
+                "value": "oklch(0.72 0.19 55)",
+                "category": "core-palette",
+                "line": 255
+            },
+            "chart-4": {
+                "name": "chart-4",
+                "value": "oklch(0.78 0.11 190)",
+                "category": "core-palette",
+                "line": 256
+            },
+            "chart-5": {
+                "name": "chart-5",
+                "value": "oklch(0.62 0.1 240)",
+                "category": "core-palette",
+                "line": 257
+            },
+            "primary-hover": {
+                "name": "primary-hover",
+                "value": "oklch(from var(--brand-primary) calc(l + 0.07) c h)",
+                "category": "hover-state-variants",
+                "line": 260
+            },
+            "accent-hover": {
+                "name": "accent-hover",
+                "value": "oklch(from var(--brand-accent) calc(l + 0.07) c h)",
+                "category": "hover-state-variants",
+                "line": 261
+            },
+            "brand-primary-dark": {
+                "name": "brand-primary-dark",
+                "value": "oklch(from var(--brand-primary) calc(l - 0.08) c h)",
+                "category": "hover-state-variants",
+                "line": 262
+            },
+            "success": {
+                "name": "success",
+                "value": "oklch(0.65 0.16 150)",
+                "category": "feedback-tokens",
+                "line": 265
+            },
+            "success-foreground": {
+                "name": "success-foreground",
+                "value": "oklch(0.1 0.02 150)",
+                "category": "feedback-tokens",
+                "line": 266
+            },
+            "warning": {
+                "name": "warning",
+                "value": "oklch(0.78 0.18 85)",
+                "category": "feedback-tokens",
+                "line": 267
+            },
+            "warning-foreground": {
+                "name": "warning-foreground",
+                "value": "oklch(0.1 0.02 85)",
+                "category": "feedback-tokens",
+                "line": 268
+            },
+            "info": {
+                "name": "info",
+                "value": "oklch(0.68 0.17 259)",
+                "category": "feedback-tokens",
+                "line": 269
+            },
+            "info-foreground": {
+                "name": "info-foreground",
+                "value": "oklch(0.1 0.02 259)",
+                "category": "feedback-tokens",
+                "line": 270
+            },
+            "surface-warm": {
+                "name": "surface-warm",
+                "value": "oklch(0.2 0.03 50)",
+                "category": "surface-tokens",
+                "line": 273
+            },
+            "surface-dark": {
+                "name": "surface-dark",
+                "value": "oklch(0.1 0.02 160)",
+                "category": "surface-tokens",
+                "line": 274
+            },
+            "surface-elevated": {
+                "name": "surface-elevated",
+                "value": "oklch(0.24 0.025 220)",
+                "category": "surface-tokens",
+                "line": 277
+            },
+            "footer-bg": {
+                "name": "footer-bg",
+                "value": "oklch(0.12 0.02 220)",
+                "category": "footer-surface-tokens",
+                "line": 280
+            },
+            "footer-fg": {
+                "name": "footer-fg",
+                "value": "oklch(0.85 0.01 210)",
+                "category": "footer-surface-tokens",
+                "line": 281
+            },
+            "footer-fg-muted": {
+                "name": "footer-fg-muted",
+                "value": "oklch(0.6 0.02 240)",
+                "category": "footer-surface-tokens",
+                "line": 282
+            },
+            "footer-newsletter-bg": {
+                "name": "footer-newsletter-bg",
+                "value": "oklch(0.18 0.025 220)",
+                "category": "footer-surface-tokens",
+                "line": 283
+            },
+            "footer-newsletter-fg": {
+                "name": "footer-newsletter-fg",
+                "value": "oklch(0.8 0.01 210)",
+                "category": "footer-surface-tokens",
+                "line": 284
+            },
+            "footer-newsletter-border": {
+                "name": "footer-newsletter-border",
+                "value": "oklch(0.3 0.02 220)",
+                "category": "footer-surface-tokens",
+                "line": 285
+            },
+            "footer-link": {
+                "name": "footer-link",
+                "value": "oklch(0.65 0.01 210)",
+                "category": "footer-surface-tokens",
+                "line": 286
+            },
+            "footer-link-hover": {
+                "name": "footer-link-hover",
+                "value": "oklch(0.9 0.01 210)",
+                "category": "footer-surface-tokens",
+                "line": 287
+            },
+            "footer-border": {
+                "name": "footer-border",
+                "value": "oklch(from var(--brand-accent) l c h / 0.2)",
+                "category": "footer-surface-tokens",
+                "line": 288
+            },
+            "avatar-1-from": {
+                "name": "avatar-1-from",
+                "value": "oklch(0.3 0.1 255)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 291
+            },
+            "avatar-1-to": {
+                "name": "avatar-1-to",
+                "value": "oklch(0.42 0.14 255)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 292
+            },
+            "avatar-2-from": {
+                "name": "avatar-2-from",
+                "value": "oklch(0.68 0.16 75)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 293
+            },
+            "avatar-2-to": {
+                "name": "avatar-2-to",
+                "value": "oklch(0.8 0.18 80)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 294
+            },
+            "avatar-3-from": {
+                "name": "avatar-3-from",
+                "value": "oklch(0.52 0.11 195)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 295
+            },
+            "avatar-3-to": {
+                "name": "avatar-3-to",
+                "value": "oklch(0.68 0.14 195)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 296
+            },
+            "avatar-4-from": {
+                "name": "avatar-4-from",
+                "value": "oklch(0.45 0.13 155)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 297
+            },
+            "avatar-4-to": {
+                "name": "avatar-4-to",
+                "value": "oklch(0.65 0.17 155)",
+                "category": "social-proof-avatar-gradient-stops",
+                "line": 298
+            }
+        },
+        "media": {
+            "(min-width: 1600px)": {
+                "condition": "(min-width: 1600px)",
+                "tokens": {
+                    "container-max": {
+                        "name": "container-max",
+                        "value": "1500px",
+                        "category": "layout",
+                        "line": 225
+                    }
+                }
+            }
+        }
+    },
+    "categories": {
+        "light": {
+            "core-palette": [
+                "accent-foreground",
+                "border",
+                "brand-accent",
+                "brand-primary",
+                "brand-secondary",
+                "brand-secondary-foreground",
+                "brand-tertiary",
+                "card-foreground",
+                "chart-1",
+                "chart-2",
+                "chart-3",
+                "chart-4",
+                "chart-5",
+                "core-background",
+                "core-card",
+                "core-foreground",
+                "core-muted-foreground",
+                "destructive",
+                "destructive-foreground",
+                "input",
+                "muted",
+                "overlay",
+                "popover",
+                "popover-foreground",
+                "primary-foreground",
+                "radius",
+                "rating-star",
+                "ring"
+            ],
+            "feedback-tokens": [
+                "info",
+                "info-foreground",
+                "success",
+                "success-foreground",
+                "warning",
+                "warning-foreground"
+            ],
+            "surface-tokens": [
+                "surface-dark",
+                "surface-dark-foreground",
+                "surface-elevated",
+                "surface-warm",
+                "surface-warm-foreground"
+            ],
+            "footer-surface-tokens": [
+                "footer-bg",
+                "footer-border",
+                "footer-fg",
+                "footer-fg-muted",
+                "footer-link",
+                "footer-link-hover",
+                "footer-newsletter-bg",
+                "footer-newsletter-border",
+                "footer-newsletter-fg"
+            ],
+            "hospeda-brand-colors": [
+                "hospeda-forest",
+                "hospeda-river",
+                "hospeda-sand",
+                "hospeda-sky",
+                "hospeda-sky-light"
+            ],
+            "social-proof-avatar-gradient-stops": [
+                "avatar-1-from",
+                "avatar-1-to",
+                "avatar-2-from",
+                "avatar-2-to",
+                "avatar-3-from",
+                "avatar-3-to",
+                "avatar-4-from",
+                "avatar-4-to"
+            ],
+            "font-families": ["font-decorative", "font-heading", "font-mono", "font-sans"],
+            "radius": ["radius-lg", "radius-md", "radius-sm", "radius-xl"],
+            "organic-component-radius": [
+                "radius-button",
+                "radius-card",
+                "radius-organic",
+                "radius-organic-alt",
+                "radius-organic-sm",
+                "radius-pill"
+            ],
+            "spacing": [
+                "space-1",
+                "space-10",
+                "space-12",
+                "space-2",
+                "space-3",
+                "space-4",
+                "space-5",
+                "space-6",
+                "space-7",
+                "space-8",
+                "space-9",
+                "space-card-content",
+                "space-card-gap",
+                "space-container-x",
+                "space-section",
+                "space-section-header-mb",
+                "space-section-lg",
+                "space-section-sm"
+            ],
+            "typography-scale": [
+                "text-body",
+                "text-body-lg",
+                "text-body-sm",
+                "text-body-xs",
+                "text-button",
+                "text-caption",
+                "text-display",
+                "text-h2",
+                "text-h3",
+                "text-h4",
+                "text-hero",
+                "text-lg",
+                "text-meta",
+                "text-nav",
+                "text-tagline",
+                "text-xl"
+            ],
+            "shadows": ["shadow-card", "shadow-card-hover", "shadow-nav", "shadow-search"],
+            "transitions": [
+                "duration-fast",
+                "duration-normal",
+                "duration-reveal",
+                "duration-slow",
+                "ease-bounce",
+                "ease-reveal"
+            ],
+            "z-index": [
+                "z-content",
+                "z-cookie-banner",
+                "z-dropdown",
+                "z-mobile-menu",
+                "z-modal",
+                "z-nav",
+                "z-toast"
+            ],
+            "layout": [
+                "bottom-safe-inset",
+                "container-max",
+                "container-narrow",
+                "cookie-banner-height",
+                "navbar-height",
+                "wave-bar-compact"
+            ],
+            "hover-state-variants": ["accent-hover", "brand-primary-dark", "primary-hover"],
+            "overlays": ["overlay-bg-light", "overlay-bg-strong", "overlay-blur"],
+            "frosted-surfaces": ["frost-bg-dark", "frost-bg-light", "frost-blur", "frost-border"]
+        },
+        "dark": {
+            "core-palette": [
+                "accent-foreground",
+                "border",
+                "brand-accent",
+                "brand-primary",
+                "brand-secondary",
+                "brand-secondary-foreground",
+                "brand-tertiary",
+                "card-foreground",
+                "chart-1",
+                "chart-2",
+                "chart-3",
+                "chart-4",
+                "chart-5",
+                "core-background",
+                "core-card",
+                "core-foreground",
+                "core-muted-foreground",
+                "destructive",
+                "destructive-foreground",
+                "input",
+                "muted",
+                "overlay",
+                "popover",
+                "popover-foreground",
+                "primary-foreground",
+                "rating-star",
+                "ring"
+            ],
+            "hover-state-variants": ["accent-hover", "brand-primary-dark", "primary-hover"],
+            "feedback-tokens": [
+                "info",
+                "info-foreground",
+                "success",
+                "success-foreground",
+                "warning",
+                "warning-foreground"
+            ],
+            "surface-tokens": ["surface-dark", "surface-elevated", "surface-warm"],
+            "footer-surface-tokens": [
+                "footer-bg",
+                "footer-border",
+                "footer-fg",
+                "footer-fg-muted",
+                "footer-link",
+                "footer-link-hover",
+                "footer-newsletter-bg",
+                "footer-newsletter-border",
+                "footer-newsletter-fg"
+            ],
+            "social-proof-avatar-gradient-stops": [
+                "avatar-1-from",
+                "avatar-1-to",
+                "avatar-2-from",
+                "avatar-2-to",
+                "avatar-3-from",
+                "avatar-3-to",
+                "avatar-4-from",
+                "avatar-4-to"
+            ]
+        }
+    }
+}

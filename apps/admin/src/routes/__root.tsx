@@ -263,9 +263,38 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
 
     return (
-        <html lang={env.VITE_DEFAULT_LOCALE}>
+        <html
+            lang={env.VITE_DEFAULT_LOCALE}
+            data-app="admin"
+        >
             <head>
                 <HeadContent />
+                {/*
+                 * Brand fonts (SPEC-153 T-153-28): Geologica (headings) +
+                 * Roboto (body), shared with apps/web. NO Caveat — that
+                 * decorative face is web-only (doc 05 Eje 4). display=swap
+                 * prevents FOIT (fallback shows immediately, swaps on load);
+                 * preconnect + preload warm the fetch. CSP-safe — no inline
+                 * script needed.
+                 */}
+                <link
+                    rel="preconnect"
+                    href="https://fonts.googleapis.com"
+                />
+                <link
+                    rel="preconnect"
+                    href="https://fonts.gstatic.com"
+                    crossOrigin="anonymous"
+                />
+                <link
+                    rel="preload"
+                    as="style"
+                    href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+                />
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+                />
                 <link
                     rel="stylesheet"
                     href={appCss}

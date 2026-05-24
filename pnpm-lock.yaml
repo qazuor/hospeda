@@ -208,6 +208,9 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@repo/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@repo/feedback':
         specifier: workspace:*
         version: link:../../packages/feedback
@@ -341,6 +344,9 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@playwright/test':
+        specifier: ^1.58.2
+        version: 1.58.2
       '@sentry/vite-plugin':
         specifier: '>=5.3.0'
         version: 5.3.0(rollup@4.59.0)
@@ -669,6 +675,9 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@repo/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@repo/feedback':
         specifier: workspace:*
         version: link:../../packages/feedback
@@ -742,6 +751,9 @@ importers:
         specifier: ^0.34.5
         version: 0.34.5
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.58.2
+        version: 1.58.2
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -980,6 +992,30 @@ importers:
       vitest:
         specifier: ^3.1.3
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.4)
+
+  packages/design-tokens:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.17.2
+      '@vitest/coverage-v8':
+        specifier: ^3.1.3
+        version: 3.2.4(vitest@3.2.4)
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.0(jiti@2.6.1)(postcss@8.5.14)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.8.4)
+      tsx:
+        specifier: ^4.20.4
+        version: 4.22.3
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.3)(yaml@2.8.4)
 
   packages/email:
     dependencies:
@@ -14470,7 +14506,7 @@ snapshots:
       prettier: 3.8.3
       recast: 0.23.11
       source-map: 0.7.6
-      tsx: 4.20.4
+      tsx: 4.22.3
       zod: 3.25.76
     transitivePeerDependencies:
       - supports-color
@@ -15200,7 +15236,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 24.12.4
+      '@types/node': 22.17.2
 
   '@types/statuses@2.0.6': {}
 
@@ -20018,7 +20054,6 @@ snapshots:
       esbuild: 0.28.0
     optionalDependencies:
       fsevents: 2.3.3
-    optional: true
 
   turbo-darwin-64@2.5.6:
     optional: true
