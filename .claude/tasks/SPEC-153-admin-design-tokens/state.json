@@ -5,12 +5,12 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.6,
-        "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
+        "phasesCompleted": ["phase-0", "phase-1", "phase-2", "phase-3"]
     },
     "phases": {
         "phase-0": {
@@ -462,7 +462,10 @@
             "id": "T-153-32",
             "title": "Capture admin baseline snapshots post-migration for future reference",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-24T07:15:00Z",
+            "completedAt": "2026-05-24T07:45:00Z",
+            "completionNotes": "DONE. Built the admin visual-snapshot infrastructure mirroring apps/web's, and captured the reference set against the running local stack. Files: apps/admin/playwright-visual.config.ts (4 viewports mobile/tablet/desktop/wide, env-driven VISUAL_TEST_SNAPSHOT_DIR, a `setup` project that logs in + saves storageState, capture projects depend on it; loose maxDiffPixelRatio 0.01 since this is a reference not a gate), apps/admin/tests/visual-snapshots/auth.setup.ts (logs super admin in via API /api/auth/sign-in/email with creds from VISUAL_TEST_ADMIN_EMAIL/PASSWORD env — no secret committed — and persists the Better Auth session to storageState), apps/admin/tests/visual-snapshots/capture-baseline.visual.ts (dashboard + accommodations-list + settings × 4 viewports × 2 themes; dark applied via data-theme attribute post-load since admin has no theme-application layer; FAB hidden). Added @playwright/test devDep + test:visual* scripts to package.json, .gitignore for snapshot/.auth/report dirs. Captured 24 reference snapshots (3 pages × 4 × 2), 29 passed incl. auth setup, against the local API+admin stack (super admin login). Snapshots stay gitignored (local-only, like web). NOT a regression gate — a starting point for SPEC-155 dashboards + future admin visual work. Commit: f5269943e. This closes Phase 3 and SPEC-153 (32/32).",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-30"],
