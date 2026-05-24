@@ -10,70 +10,130 @@
  * `parseCityPathToAddress({ cityName, cityPath })` from
  * `@/lib/seo/address-from-city` and pass the `formatted` address string to
  * the `location.address` prop.
+ *
+ * SPEC-157 REQ-7: extended to accept eventStatus and offers so detail pages
+ * no longer need inline JSON-LD blocks.
  */
 
 import JsonLd from './JsonLd.astro';
 
 /** Event location interface */
 export interface EventLocation {
-  /** Name of the location/venue */
-  readonly name: string;
-  /** Address of the location */
-  readonly address: string;
+	/** Name of the location/venue */
+	readonly name: string;
+	/** Street address of the location */
+	readonly address: string;
+	/** City or locality (used for addressLocality in PostalAddress) */
+	readonly addressLocality?: string;
+}
+
+/** Event offer interface (schema.org Offer) */
+export interface EventOffer {
+	/** schema.org type: 'Offer' or 'AggregateOffer' */
+	readonly type: 'Offer' | 'AggregateOffer';
+	/** Currency code (ISO 4217) */
+	readonly priceCurrency: string;
+	/** Single price (used in Offer) */
+	readonly price?: number;
+	/** Lowest price (used in AggregateOffer) */
+	readonly lowPrice?: number;
+	/** Highest price (used in AggregateOffer) */
+	readonly highPrice?: number;
 }
 
 /** Props interface for EventJsonLd component. */
 interface Props {
-  /** Name of the event */
-  readonly name: string;
-  /** Description of the event */
-  readonly description: string;
-  /** Start date and time in ISO 8601 format */
-  readonly startDate: string;
-  /** End date and time in ISO 8601 format */
-  readonly endDate?: string;
-  /** URL of the event page */
-  readonly url: string;
-  /** Image URL for the event */
-  readonly image?: string;
-  /** Event location information */
-  readonly location: EventLocation;
-  /** Event organizer name */
-  readonly organizer?: string;
+	/** Name of the event */
+	readonly name: string;
+	/** Description of the event */
+	readonly description: string;
+	/** Start date and time in ISO 8601 format */
+	readonly startDate: string;
+	/** End date and time in ISO 8601 format */
+	readonly endDate?: string;
+	/** URL of the event page */
+	readonly url: string;
+	/** Image URL for the event */
+	readonly image?: string;
+	/** Event location information */
+	readonly location: EventLocation;
+	/** Event organizer name */
+	readonly organizer?: string;
+	/**
+	 * schema.org EventStatus URL.
+	 * E.g. 'https://schema.org/EventScheduled', 'https://schema.org/EventCancelled'.
+	 * When provided, emitted as-is as the `eventStatus` field.
+	 */
+	readonly eventStatus?: string;
+	/** Offer or AggregateOffer data for ticketed events */
+	readonly offers?: EventOffer;
 }
 
-const { name, description, startDate, endDate, url, image, location, organizer } = Astro.props;
+const {
+	name,
+	description,
+	startDate,
+	endDate,
+	url,
+	image,
+	location,
+	organizer,
+	eventStatus,
+	offers,
+} = Astro.props;
 
 const structuredData: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'Event',
-  name,
-  description,
-  startDate,
-  url,
-  location: {
-    '@type': 'Place',
-    name: location.name,
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: location.address,
-    },
-  },
+	'@context': 'https://schema.org',
+	'@type': 'Event',
+	name,
+	description,
+	startDate,
+	url,
+	location: {
+		'@type': 'Place',
+		name: location.name,
+		address: {
+			'@type': 'PostalAddress',
+			streetAddress: location.address,
+			...(location.addressLocality && { addressLocality: location.addressLocality }),
+		},
+	},
 };
 
 if (endDate) {
-  structuredData.endDate = endDate;
+	structuredData.endDate = endDate;
 }
 
 if (image) {
-  structuredData.image = image;
+	structuredData.image = image;
 }
 
 if (organizer) {
-  structuredData.organizer = {
-    '@type': 'Organization',
-    name: organizer,
-  };
+	structuredData.organizer = {
+		'@type': 'Organization',
+		name: organizer,
+	};
+}
+
+if (eventStatus) {
+	structuredData.eventStatus = eventStatus;
+}
+
+if (offers) {
+	const offerBlock: Record<string, unknown> = {
+		'@type': offers.type,
+		priceCurrency: offers.priceCurrency,
+	};
+	if (offers.price !== undefined) {
+		offerBlock.price = offers.price;
+	}
+	if (offers.lowPrice !== undefined) {
+		offerBlock.lowPrice = offers.lowPrice;
+	}
+	if (offers.highPrice !== undefined) {
+		offerBlock.highPrice = offers.highPrice;
+	}
+	structuredData.offers = offerBlock;
 }
 ---
 

@@ -8,7 +8,7 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import ArticleJsonLd from '@/components/seo/ArticleJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import PostDetailHeader from '@/components/post/PostDetailHeader.astro';
@@ -245,29 +245,10 @@ const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
 
 // --- JSON-LD ---
 const siteBase = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'BlogPosting',
-	headline: title,
-	description: seoDescription,
-	image: featuredImage,
-	url: `${siteBase}${Astro.url.pathname}`,
-	datePublished: publishedAt,
-	...(updatedAt && updatedAt > publishedAt ? { dateModified: updatedAt } : {}),
-	...(authorForCard?.displayName || authorForCard?.firstName
-		? {
-				author: {
-					'@type': 'Person',
-					name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' '),
-				},
-		  }
-		: {}),
-	publisher: {
-		'@type': 'Organization',
-		name: 'Hospeda',
-		url: 'https://hospeda.com.ar',
-	},
-};
+const articleAuthorName =
+	authorForCard?.displayName ||
+	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
+	'';
 
 const siteOriginClean = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
@@ -284,7 +265,31 @@ const breadcrumbItems = [
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	{articleAuthorName ? (
+		<ArticleJsonLd
+			slot="head-extra"
+			headline={title}
+			description={seoDescription}
+			url={`${siteBase}${Astro.url.pathname}`}
+			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
+			datePublished={publishedAt}
+			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
+			author={{ name: articleAuthorName }}
+			articleType="BlogPosting"
+		/>
+	) : (
+		<ArticleJsonLd
+			slot="head-extra"
+			headline={title}
+			description={seoDescription}
+			url={`${siteBase}${Astro.url.pathname}`}
+			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
+			datePublished={publishedAt}
+			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
+			author={{ name: 'Hospeda' }}
+			articleType="BlogPosting"
+		/>
+	)}
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<ReadingProgressBar client:idle />

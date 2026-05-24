@@ -11,7 +11,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
@@ -295,23 +295,16 @@ const destLat = destCoords?.lat ? Number.parseFloat(destCoords.lat) : null;
 const destLng = destCoords?.long ? Number.parseFloat(destCoords.long) : null;
 const hasDestCoords = Number.isFinite(destLat) && Number.isFinite(destLng);
 
-const jsonLd: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': 'TouristDestination',
-	name,
-	description: summary || description,
-	image: featuredImageObj.url,
-	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
-	...(hasDestCoords
-		? {
-				geo: {
-					'@type': 'GeoCoordinates',
-					latitude: destLat,
-					longitude: destLng
-				}
-		  }
-		: {})
-};
+const placeGeo =
+	hasDestCoords && destLat !== null && destLng !== null
+		? { latitude: destLat, longitude: destLng }
+		: undefined;
+
+const placeUrl = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
+const placeImage =
+	featuredImageObj.url && !featuredImageObj.url.includes('placeholder')
+		? featuredImageObj.url
+		: undefined;
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
 const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -345,7 +338,14 @@ const safeDescriptionHtml = renderContent({
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	<PlaceJsonLd
+		slot="head-extra"
+		name={name}
+		description={summary || description}
+		url={placeUrl}
+		image={placeImage}
+		geo={placeGeo}
+	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />

@@ -6,6 +6,8 @@
  * page-specific structured data (FAQPage, AboutPage, Offer).
  *
  * SPEC-096 / REQ-096-37 (T-068).
+ * SPEC-157 REQ-7: updated to reflect typed-component pattern (no more
+ * inline JSON-LD objects in detail pages — the typed components own the schema).
  */
 
 import { readFileSync } from 'node:fs';
@@ -24,32 +26,33 @@ function readPage(relativePath: string): string {
 const DETAIL_PAGES: ReadonlyArray<{
     name: string;
     file: string;
-    requiredType: string;
+    /** Typed JSON-LD component (SPEC-157 REQ-7 pattern) */
+    typedComponent: string;
     extras?: ReadonlyArray<string>;
 }> = [
     {
         name: 'accommodation detail',
         file: 'alojamientos/[slug].astro',
-        requiredType: 'LodgingBusiness',
+        typedComponent: 'LodgingBusinessJsonLd',
         // FAQPage emitted conditionally when faqs.length > 0
         extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
     },
     {
         name: 'event detail',
         file: 'eventos/[slug].astro',
-        requiredType: 'Event',
+        typedComponent: 'EventJsonLd',
         extras: ['BreadcrumbJsonLd']
     },
     {
         name: 'destination detail',
         file: 'destinos/[...path].astro',
-        requiredType: 'TouristDestination',
+        typedComponent: 'PlaceJsonLd',
         extras: ['BreadcrumbJsonLd']
     },
     {
         name: 'post detail',
         file: 'publicaciones/[slug].astro',
-        requiredType: 'BlogPosting',
+        typedComponent: 'ArticleJsonLd',
         extras: ['BreadcrumbJsonLd']
     }
 ];
@@ -83,17 +86,16 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
                     expect(src).toContain('<Breadcrumbs');
                 });
 
-                it(`emits an inline JSON-LD block of @type ${page.requiredType} (or a subtype thereof)`, () => {
-                    // Detail pages assemble JSON-LD inline through the
-                    // generic <JsonLd data={...} /> wrapper. Either the
-                    // required @type appears literally OR a TYPE_MAP
-                    // mapping for that family is present (accommodation
-                    // maps to Hotel/Hostel/Motel/Resort/Campground).
-                    const directType = src.includes(`'@type': '${page.requiredType}'`);
-                    const subtypeMap =
-                        page.requiredType === 'LodgingBusiness' &&
-                        /TYPE_MAP\s*:\s*Readonly<Record<string,\s*string>>/.test(src);
-                    expect(directType || subtypeMap).toBe(true);
+                it(`imports typed JSON-LD component ${page.typedComponent}`, () => {
+                    // SPEC-157 REQ-7: detail pages MUST use the typed component,
+                    // not the generic JsonLd with an inline schema object.
+                    expect(src).toContain(
+                        `import ${page.typedComponent} from '@/components/seo/${page.typedComponent}.astro'`
+                    );
+                });
+
+                it(`mounts <${page.typedComponent} /> into the head-extra slot`, () => {
+                    expect(src).toMatch(new RegExp(`<${page.typedComponent}\\b`));
                 });
 
                 it('imports BreadcrumbJsonLd', () => {
@@ -161,12 +163,38 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
     });
 
     describe('Schema.org shape sanity', () => {
-        for (const page of DETAIL_PAGES) {
-            it(`${page.name}: emitted JSON-LD references schema.org context`, () => {
-                const src = readPage(page.file);
-                expect(src).toContain("'@context': 'https://schema.org'");
-            });
-        }
+        it('LodgingBusinessJsonLd component references schema.org context', () => {
+            // The context is owned by the typed component, not the page.
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/LodgingBusinessJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
+
+        it('ArticleJsonLd component references schema.org context', () => {
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/ArticleJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
+
+        it('EventJsonLd component references schema.org context', () => {
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/EventJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
+
+        it('PlaceJsonLd component references schema.org context', () => {
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/PlaceJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+        });
 
         it('event detail maps cancelled → EventCancelled', () => {
             // EventStatus mapping lives in toEventDetailProps() in transforms.ts;
@@ -189,15 +217,26 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
             expect(transforms).toContain("'EventScheduled'");
         });
 
-        it('post detail emits a publisher Organization', () => {
-            const src = readPage('publicaciones/[slug].astro');
-            expect(src).toMatch(/publisher:\s*\{/);
-            expect(src).toMatch(/'@type':\s*'Organization'/);
+        it('post detail: ArticleJsonLd component emits a publisher Organization', () => {
+            // After SPEC-157 REQ-7, publisher is owned by ArticleJsonLd — not the page.
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/ArticleJsonLd.astro'),
+                'utf8'
+            );
+            expect(componentSrc).toMatch(/publisher:\s*\{/);
+            expect(componentSrc).toMatch(/'@type':\s*'Organization'/);
         });
 
-        it('destination detail emits geo coordinates conditionally', () => {
-            const src = readPage('destinos/[...path].astro');
-            expect(src).toMatch(/geo:\s*\{[\s\S]*?'@type':\s*'GeoCoordinates'/);
+        it('destination detail: PlaceJsonLd component emits geo coordinates conditionally', () => {
+            // After SPEC-157 REQ-7, geo is owned by PlaceJsonLd — not the page.
+            const componentSrc = readFileSync(
+                resolve(__dirname, '../../src/components/seo/PlaceJsonLd.astro'),
+                'utf8'
+            );
+            // Accept either inline object literal `geo: {` or assignment `structuredData.geo = {`
+            expect(componentSrc).toMatch(
+                /(?:geo:\s*\{|structuredData\.geo\s*=\s*\{)[\s\S]*?'@type':\s*'GeoCoordinates'/
+            );
         });
     });
 });
