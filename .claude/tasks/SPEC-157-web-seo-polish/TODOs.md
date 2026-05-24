@@ -2,7 +2,7 @@
 
 **Spec:** SPEC-157 — Web SEO Polish — Audit Backlog Remediation
 **Created:** 2026-05-24
-**Total tasks:** 31 | **Progress:** 7/31 (23%) | **Avg complexity:** 2.16 | **All tasks complexity <= 4**
+**Total tasks:** 31 | **Progress:** 22/31 (71%) | **Avg complexity:** 2.16 | **All tasks complexity <= 4**
 
 ---
 
@@ -44,21 +44,21 @@ Start after Phase 1 is verified. Most Phase 2 tasks are independent of each othe
 
 | Task | Title | Complexity | Status | Type |
 |------|-------|-----------|--------|------|
-| T-008 | Add preconnect resource hints to BaseLayout.astro | 2 | pending | impl — unblocked |
-| T-009 | Add WebSite JSON-LD structured data to homepage | 3 | pending | impl — unblocked |
-| T-010 | Add Organization JSON-LD structured data to homepage | 2 | pending | impl — unblocked |
-| T-011 | Install @astrojs/rss and create blog RSS feed endpoint | 3 | pending | impl — unblocked |
-| T-012 | Create events RSS feed endpoint and add RSS discovery links | 2 | pending | impl — blocked by T-011 |
-| T-013 | Fix ArticleJsonLd.astro TLD bug (hospeda.com → hospeda.com.ar) | 1 | pending | impl — unblocked |
-| T-014 | Resolve D-1: Wire or delete JSON-LD components on detail pages | 4 | pending | impl — blocked by T-013 + D-1 |
-| T-015 | Write failing regression test for og:image absolute URL (RED) | 2 | pending | test-first — blocked by T-004 |
-| T-016 | Fix SEOHead.astro: absolute URL coercion + dimension/alt meta | 2 | pending | impl — blocked by T-015 |
-| T-017 | Add eager prop to AccommodationCard.astro for above-fold images | 2 | pending | impl — unblocked |
-| T-018 | Remove body opacity:0 font gate from BaseLayout.astro | 2 | pending | impl — unblocked |
-| T-019 | Write failing regression test for duplicate meta description (RED) | 2 | pending | test-first — unblocked |
-| T-020 | Remove duplicate meta description from BaseLayout.astro | 1 | pending | impl — blocked by T-019 |
-| T-021 | Write failing regression test for sitemap hreflang alternates (RED) | 2 | pending | test-first — blocked by T-004 |
-| T-022 | Add hreflang xhtml:link alternates to dynamic sitemap | 3 | pending | impl — blocked by T-021 |
+| T-008 | Add preconnect resource hints to BaseLayout.astro | 2 | completed | impl — unblocked |
+| T-009 | Add WebSite JSON-LD structured data to homepage | 3 | completed | impl — unblocked |
+| T-010 | Add Organization JSON-LD structured data to homepage | 2 | completed | impl — unblocked |
+| T-011 | Install @astrojs/rss and create blog RSS feed endpoint | 3 | completed | impl — unblocked |
+| T-012 | Create events RSS feed endpoint and add RSS discovery links | 2 | completed | impl — blocked by T-011 |
+| T-013 | Fix ArticleJsonLd.astro TLD bug (hospeda.com → hospeda.com.ar) | 1 | completed | impl — unblocked |
+| T-014 | Resolve D-1: Wire or delete JSON-LD components on detail pages | 4 | completed | impl — blocked by T-013 + D-1 |
+| T-015 | Write failing regression test for og:image absolute URL (RED) | 2 | completed | test-first — blocked by T-004 |
+| T-016 | Fix SEOHead.astro: absolute URL coercion + dimension/alt meta | 2 | completed | impl — blocked by T-015 |
+| T-017 | Add eager prop to AccommodationCard.astro for above-fold images | 2 | completed | impl — unblocked |
+| T-018 | Remove body opacity:0 font gate from BaseLayout.astro | 2 | completed | impl — unblocked |
+| T-019 | Write failing regression test for duplicate meta description (RED) | 2 | completed | test-first — unblocked |
+| T-020 | Remove duplicate meta description from BaseLayout.astro | 1 | completed | impl — blocked by T-019 |
+| T-021 | Write failing regression test for sitemap hreflang alternates (RED) | 2 | completed | test-first — blocked by T-004 |
+| T-022 | Add hreflang xhtml:link alternates to dynamic sitemap | 3 | completed | impl — blocked by T-021 |
 
 **Phase 2 parallel tracks (unblocked start):**
 - Track A: T-008 (resource hints)

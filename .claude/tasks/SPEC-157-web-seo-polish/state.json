@@ -199,7 +199,7 @@
             "id": "T-008",
             "title": "Add preconnect resource hints to BaseLayout.astro",
             "description": "Add `<link rel=\"preconnect\">` hints to `BaseLayout.astro` for Cloudinary and the API origin.\n\nAffected file: `apps/web/src/layouts/BaseLayout.astro`\n\nChanges required:\n1. Add `<link rel=\"preconnect\" href=\"https://res.cloudinary.com\">` in `<head>`\n2. Add `<link rel=\"preconnect\" href=\"{API_URL}\">` using the `HOSPEDA_API_URL` env var (already validated in `apps/web/src/utils/env.ts`) — not hardcoded\n3. Optionally add a `lcpImageUrl` prop to `BaseLayout` props so pages that know their LCP image can emit `<link rel=\"preload\" as=\"image\" href=\"{lcpImageUrl}\">` — document this pattern even if not wired to all pages immediately\n\nAcceptance:\n- Any page rendered by BaseLayout has `<link rel=\"preconnect\" href=\"https://res.cloudinary.com\">` in `<head>`\n- Any page rendered by BaseLayout has `<link rel=\"preconnect\">` for the API origin with env-derived value\n- No hardcoded production domain in resource hints",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -213,18 +213,18 @@
             ],
             "tags": ["REQ-4", "phase-2", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add WebSite JSON-LD structured data to homepage",
             "description": "Add WebSite JSON-LD with SearchAction to `apps/web/src/pages/[lang]/index.astro`.\n\nAffected files:\n- `apps/web/src/pages/[lang]/index.astro`\n- Possibly new `apps/web/src/components/seo/WebSiteJsonLd.astro` (if adopting component pattern per D-1)\n\nChanges required:\n1. Create (or inline) WebSite JSON-LD block with: `@type: WebSite`, `name` (i18n-aware), `url` (env-derived), `potentialAction: { @type: SearchAction, target: '{SITE_URL}/{lang}/busqueda/?q={search_term_string}', query-input: 'required name=search_term_string' }`\n2. Emit via `<script type=\"application/ld+json\">` in the page head\n3. Values: `name` from `@repo/i18n`, `url` from env var, search target must use correct locale path\n\nAcceptance:\n- Home page HTML contains one WebSite JSON-LD block\n- `potentialAction.target` resolves to the correct site search page\n- No hardcoded production URLs",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -239,18 +239,18 @@
             ],
             "tags": ["REQ-5", "phase-2", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Add Organization JSON-LD structured data to homepage",
             "description": "Add Organization JSON-LD to `apps/web/src/pages/[lang]/index.astro`.\n\nAffected files:\n- `apps/web/src/pages/[lang]/index.astro`\n- Possibly new `apps/web/src/components/seo/OrganizationJsonLd.astro`\n- Possibly new `apps/web/src/lib/social-config.ts` (shared constant for social URLs)\n\nChanges required:\n1. Create Organization JSON-LD with: `@type: Organization`, `name` (i18n), `url` (env-derived), `logo` (Cloudinary or public asset URL), `sameAs: [array of social profile URLs]`\n2. Define social URLs as a shared constant in `apps/web/src/lib/social-config.ts` (not inline in the component)\n3. Emit via `<script type=\"application/ld+json\">` in the page head\n\nAcceptance:\n- Home page HTML contains one Organization JSON-LD block\n- `logo` URL points to a valid image asset\n- `sameAs` has at least one social URL entry\n- Social URLs defined in a reusable constant (not inline)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -268,18 +268,18 @@
             ],
             "tags": ["REQ-5", "phase-2", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Install @astrojs/rss and create blog RSS feed endpoint",
             "description": "Install `@astrojs/rss` and create the blog RSS feed.\n\nAffected files:\n- `apps/web/package.json` (add `@astrojs/rss` dependency)\n- New: `apps/web/src/pages/[lang]/publicaciones/rss.xml.ts`\n\nChanges required:\n1. Add `@astrojs/rss` to `apps/web/package.json` and run `pnpm install`\n2. Create `rss.xml.ts` under `[lang]/publicaciones/` that fetches blog posts and generates RSS 2.0 feed\n3. Feed must include per-item: `title`, `description` (excerpt), `link` (absolute URL with locale prefix), `pubDate`\n4. Feed title and description must be i18n-aware using `@repo/i18n`\n5. Feed URL must be locale-prefixed: `/es/publicaciones/rss.xml`, `/en/publicaciones/rss.xml`, `/pt/publicaciones/rss.xml`\n\nAcceptance:\n- GET `/es/publicaciones/rss.xml` returns `Content-Type: application/xml` or `application/rss+xml`\n- Response body is valid RSS 2.0\n- Feed contains items with title, link, and pubDate",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-012"],
@@ -295,18 +295,18 @@
             ],
             "tags": ["REQ-6", "phase-2", "seo", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Create events RSS feed endpoint and add RSS discovery links to BaseLayout",
             "description": "Create events RSS feed and wire discovery `<link>` tags in BaseLayout.\n\nAffected files:\n- New: `apps/web/src/pages/[lang]/eventos/rss.xml.ts`\n- `apps/web/src/layouts/BaseLayout.astro` (add feed discovery links)\n\nChanges required:\n1. Create `rss.xml.ts` under `[lang]/eventos/` mirroring the blog feed structure, fetching events instead of posts\n2. Each item: `title`, `description` (event excerpt/location), `link` (absolute, locale-prefixed), `pubDate` (event start date)\n3. Add `<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{feedTitle}\" href=\"/{lang}/publicaciones/rss.xml\">` to `BaseLayout.astro` head (conditionally when on blog section, or always for discoverability)\n4. Same for events feed discovery link\n\nAcceptance:\n- GET `/es/eventos/rss.xml` returns valid RSS 2.0\n- BaseLayout head contains `<link rel=\"alternate\" type=\"application/rss+xml\">` for both feeds",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": [],
@@ -326,18 +326,18 @@
             ],
             "tags": ["REQ-6", "phase-2", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Fix ArticleJsonLd.astro TLD bug (hospeda.com → hospeda.com.ar)",
             "description": "Fix the TLD bug in ArticleJsonLd.astro regardless of the D-1 adopt/delete decision.\n\nAffected file: `apps/web/src/components/seo/ArticleJsonLd.astro` (line 53)\n\nChange required:\n- At line 53, replace the hardcoded `hospeda.com` domain with `hospeda.com.ar`\n- Preferably use the `SITE_URL` env var rather than any hardcoded domain string, so staging and production both resolve correctly\n\nAcceptance:\n- `ArticleJsonLd.astro` renders JSON-LD with `publisher.url` or `@id` containing `hospeda.com.ar` (not `hospeda.com`)\n- No hardcoded production domain if env-derived value is available",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-014"],
@@ -349,18 +349,18 @@
             ],
             "tags": ["REQ-7", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Resolve D-1: Wire or delete JSON-LD components on all detail pages",
             "description": "⚠ PARTIALLY BLOCKED ON USER DECISION D-1 — the TLD fix (T-013) is independent and unblocked.\n\nOnce D-1 is resolved:\n\n**If ADOPT (recommended):**\nAffected files: `apps/web/src/components/seo/LodgingBusinessJsonLd.astro`, `EventJsonLd.astro`, `PlaceJsonLd.astro`, all detail pages emitting inline JSON-LD, `apps/web/CLAUDE.md`\n1. Audit all detail pages that hand-roll JSON-LD inline: accommodation detail (`[lang]/alojamientos/[slug].astro`), blog post detail, event detail, place detail\n2. Replace inline JSON-LD on each page with the canonical component import\n3. Remove duplicate inline JSON-LD blocks\n4. Update `apps/web/CLAUDE.md` to document the component as the canonical path\n\n**If DELETE:**\n1. Remove `LodgingBusinessJsonLd.astro`, `EventJsonLd.astro`, `PlaceJsonLd.astro` (keep `ArticleJsonLd.astro` after TLD fix, or remove it too)\n2. Update `apps/web/CLAUDE.md` to document inline JSON-LD as the pattern\n\nAcceptance (adopt):\n- Each detail page type has exactly one JSON-LD block emitted by the canonical component\n- No inline duplicate JSON-LD blocks remain on any detail page\n\nAcceptance (delete):\n- No orphaned component files in `apps/web/src/components/seo/`\n- CLAUDE.md documents the current pattern",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-013"],
             "blocks": [],
@@ -377,18 +377,18 @@
             ],
             "tags": ["REQ-7", "phase-2", "seo", "decision-blocked"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Write failing regression test for og:image absolute URL and dimension meta (RED)",
             "description": "Write failing Vitest test FIRST (RED), then T-016 makes it GREEN.\n\nCreate test file: `apps/web/src/components/seo/__tests__/SEOHead.test.ts`\n\nTest scenarios (all must fail before T-016):\n1. When SEOHead receives a relative image path `/some-image.png`, the rendered `og:image` must be an absolute URL starting with `https://` (currently emits relative path — RED)\n2. `og:image:width` (1200) and `og:image:height` (630) meta tags must be present when image prop is provided (currently missing — RED)\n3. `og:image:alt` meta tag must be present with non-empty value (currently missing — RED)\n4. `twitter:image:alt` meta tag must be present with non-empty value (currently missing — RED)\n\nAcceptance:\n- All 4 test scenarios fail before T-016\n- Test file: `apps/web/src/components/seo/__tests__/SEOHead.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-016"],
@@ -409,18 +409,18 @@
             ],
             "tags": ["REQ-8", "phase-2", "seo", "test-first"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Fix SEOHead.astro: absolute URL coercion + add og:image dimension and alt meta",
             "description": "Fix `apps/web/src/components/seo/SEOHead.astro` to coerce og:image to absolute URL and add missing meta tags.\n\nAffected file: `apps/web/src/components/seo/SEOHead.astro` (line 63)\n\nChanges required:\n1. At line 63, coerce `image` prop to absolute URL: `const absoluteImage = image ? new URL(image, Astro.site ?? siteBase).href : undefined`\n2. Use `absoluteImage` in the `og:image` meta tag (replace raw `image` prop usage)\n3. Add `<meta property=\"og:image:width\" content=\"1200\" />` when image is present\n4. Add `<meta property=\"og:image:height\" content=\"630\" />` when image is present\n5. Add `<meta property=\"og:image:alt\" content=\"{imageAlt}\" />` — add `imageAlt` prop (default to `title`)\n6. Add `<meta name=\"twitter:image:alt\" content=\"{imageAlt}\" />`\n\nAcceptance:\n- T-015 tests all pass (GREEN)\n- No page with relative og:image path will emit a relative URL\n- All image-bearing pages get og:image:width, og:image:height, og:image:alt, twitter:image:alt",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": [],
@@ -436,18 +436,18 @@
             ],
             "tags": ["REQ-8", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Add eager prop to AccommodationCard.astro for above-fold images",
             "description": "Add an `eager` boolean prop to `AccommodationCard.astro` and wire it to listing pages.\n\nAffected files:\n- `apps/web/src/components/.../AccommodationCard.astro` (line 79)\n- Listing/featured grid pages that render the first row of cards\n\nChanges required:\n1. Add optional `eager: boolean = false` prop to `AccommodationCard.astro`\n2. When `eager` is true: render image with `loading=\"eager\" fetchpriority=\"high\"`\n3. When `eager` is false (default): keep `loading=\"lazy\"`\n4. On the main accommodations listing page (`[lang]/alojamientos/index.astro`) and homepage featured grid: pass `eager={true}` to the first N cards (implementation decision: first 3 or a prop from parent)\n\nAcceptance:\n- AccommodationCard with `eager=true` renders `loading=\"eager\"` and `fetchpriority=\"high\"` on the image\n- AccommodationCard with no `eager` prop (default) retains `loading=\"lazy\"`\n- Above-fold card rows on listing pages use `eager=true`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -471,18 +471,18 @@
             ],
             "tags": ["REQ-9", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Remove body opacity:0 font gate from BaseLayout.astro",
             "description": "Remove the body opacity transition used as a font loading gate from `BaseLayout.astro`.\n\nAffected file: `apps/web/src/layouts/BaseLayout.astro` (lines 103-118)\n\nChanges required:\n1. Remove the CSS rule that sets `body { opacity: 0 }` on initial load\n2. Remove the JavaScript/script tag that manages transitioning body opacity to 1 after font load\n3. Verify `font-display: swap` is declared on web font `@font-face` rules (it should already be — this is the correct SEO-safe font strategy)\n4. Test in dev with network throttled — if a problematic visual flash is found, document it with a comment and propose a scoped fix (do NOT re-add the full-page gate)\n\nAcceptance:\n- BaseLayout.astro has no CSS rule setting body opacity to 0 on initial load\n- BaseLayout.astro has no script tag managing a body opacity transition for font loading\n- Page body is visible immediately on cold load (no JS-managed delay to first paint)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -497,18 +497,18 @@
             ],
             "tags": ["REQ-10", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Write failing regression test for duplicate meta description (RED)",
             "description": "Write failing Vitest/DOM test FIRST (RED), then T-020 makes it GREEN.\n\nCreate test: `apps/web/src/layouts/__tests__/BaseLayout.meta-description.test.ts`\n\nTest must:\n- Render a page that uses BaseLayout with SEOHead (any standard page)\n- Query ALL `<meta name=\"description\">` elements in the rendered HTML `<head>`\n- Assert exactly ONE `<meta name=\"description\">` is present (currently returns 2 — test MUST fail)\n\nAcceptance:\n- Test fails: two description meta tags are found\n- Label: 'BaseLayout + SEOHead: exactly one <meta name=\"description\"> in head'",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-020"],
@@ -522,18 +522,18 @@
             ],
             "tags": ["REQ-11", "phase-2", "seo", "test-first"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Remove duplicate meta description from BaseLayout.astro",
             "description": "Remove the redundant `<meta name=\"description\">` from `BaseLayout.astro`.\n\nAffected file: `apps/web/src/layouts/BaseLayout.astro` (line 86)\n\nChange required:\n- Delete the `<meta name=\"description\" ...>` line at line 86 from BaseLayout.astro\n- The canonical source remains `SEOHead.astro:68` — do NOT touch SEOHead\n\nAcceptance:\n- T-019 test passes (GREEN): exactly one `<meta name=\"description\">` per page\n- Every page using BaseLayout still has a description meta (from SEOHead)\n- `pnpm typecheck` and `pnpm lint` pass",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-019"],
             "blocks": [],
@@ -546,18 +546,18 @@
             ],
             "tags": ["REQ-11", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Write failing regression test for sitemap hreflang alternates (RED)",
             "description": "Write failing Vitest test FIRST (RED), then T-022 makes it GREEN.\n\nExtend or create: `apps/web/src/pages/__tests__/sitemap-dynamic.test.ts` (may extend the test from T-003)\n\nNew test scenarios (all must fail before T-022):\n1. Render dynamic sitemap XML and assert `<urlset>` element has attribute `xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"` (currently absent — RED)\n2. Assert each `<url>` block contains `xhtml:link` entries for `es`, `en`, `pt` (currently absent — RED)\n3. Assert each `<url>` block contains `xhtml:link` with `hreflang=\"x-default\"` (currently absent — RED)\n4. For a specific accommodation URL, assert the `es` alternate starts with `/es/`, `en` with `/en/`, `pt` with `/pt/`\n\nAcceptance:\n- All hreflang test scenarios fail before T-022\n- File: `apps/web/src/pages/__tests__/sitemap-dynamic.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-022"],
@@ -575,18 +575,18 @@
             ],
             "tags": ["REQ-12", "phase-2", "seo", "test-first"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Add hreflang xhtml:link alternates to dynamic sitemap",
             "description": "Add hreflang alternates to `apps/web/src/pages/sitemap-dynamic.xml.ts`.\n\nAffected file: `apps/web/src/pages/sitemap-dynamic.xml.ts` (lines 247-250)\n\nChanges required:\n1. Add `xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"` to the `<urlset>` element declaration\n2. For each entity URL, add `<xhtml:link rel=\"alternate\" hreflang=\"es\" href=\"{es-url}\"/>` — use the same prefix strategy from T-004 (`/es/`)\n3. Add equivalent `<xhtml:link>` for `en` (`/en/`) and `pt` (`/pt/`)\n4. Add `<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{es-url}\"/>` (Spanish is the default locale)\n5. Mirror the pattern from the static sitemap's `serialize()` function for consistency\n\nAcceptance:\n- T-021 tests all pass (GREEN)\n- Dynamic sitemap `<urlset>` has `xmlns:xhtml` namespace\n- Every `<url>` block has 4 `xhtml:link` entries: es, en, pt, x-default\n- All alternate URLs use the correct locale prefix",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": [],
@@ -601,11 +601,11 @@
             ],
             "tags": ["REQ-12", "phase-2", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T17:00:00.000Z",
+                "completed": "2026-05-24T17:00:00.000Z"
             }
         },
         {
@@ -871,10 +871,10 @@
     ],
     "summary": {
         "total": 31,
-        "pending": 24,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 7,
-        "blocked": 2,
+        "completed": 22,
+        "blocked": 1,
         "averageComplexity": 2.16
     }
 }
