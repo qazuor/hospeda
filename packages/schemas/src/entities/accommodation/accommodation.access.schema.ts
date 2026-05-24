@@ -166,6 +166,16 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /**
+     * Description — relaxed on the read side so DRAFT accommodations with
+     * short descriptions (legacy data, or drafts created via the onboarding
+     * "publicar" flow where description is initially placeholder-filled) can
+     * still be fetched without tripping the `min(30)` constraint enforced on
+     * the base/write schemas. See SPEC-143 Finding #9: read schemas must
+     * tolerate what the DB legitimately contains; the write path is where
+     * the min(30) gate is meaningful.
+     */
+    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
     /** Owner data from users table JOIN (protected tier). */
     owner: UserProtectedSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */
@@ -189,6 +199,13 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
  * This is essentially the full schema.
  */
 export const AccommodationAdminSchema = AccommodationSchema.extend({
+    /**
+     * Description — relaxed on the read side so DRAFT accommodations with
+     * short descriptions (legacy data, or drafts created via the onboarding
+     * "publicar" flow) can still be fetched by the admin panel. See
+     * SPEC-143 Finding #9.
+     */
+    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
     /** Owner data from users table JOIN (admin tier). */
     owner: UserAdminSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */

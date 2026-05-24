@@ -128,7 +128,18 @@ export type AccommodationSearchHttp = z.infer<typeof AccommodationSearchHttpSche
  */
 export const AccommodationCreateHttpSchema = z.object({
     name: z.string().min(1, { message: 'zodError.accommodation.name.required' }).max(200),
-    description: z.string().max(5000).optional(),
+    /**
+     * Description — bilateral validation aligned with `AccommodationCreateDraftHttpSchema`
+     * and the base `AccommodationSchema.description.min(30)`. When provided, it must
+     * be at least 30 chars. Stays `.optional()` so callers can omit it on partial
+     * payloads; the service layer either keeps the existing DB value (update) or
+     * seeds a placeholder (draft create). See SPEC-143 Finding #9.
+     */
+    description: z
+        .string()
+        .min(30, { message: 'zodError.accommodation.description.min' })
+        .max(5000, { message: 'zodError.accommodation.description.max' })
+        .optional(),
     type: AccommodationTypeEnumSchema,
     address: z.string().min(1, { message: 'zodError.accommodation.address.required' }).max(500),
     latitude: z.coerce.number().min(-90).max(90),
@@ -333,13 +344,24 @@ export const httpToDomainAccommodationCreate = (
  * passing the result to the service layer. Only the essentials are mapped;
  * the rest is left for the host to complete in the admin panel.
  */
+/**
+ * Placeholder description seeded on draft creation when the host did not
+ * provide one in the onboarding form. Must be ≥ 30 chars to satisfy the
+ * base `AccommodationSchema.description.min(30)` constraint used by the
+ * full create/update paths. The host will overwrite it from the admin panel
+ * before publishing. See SPEC-143 Finding #9 for the bilateral-validation
+ * gap this avoids (read schema 500 vs blank-on-create).
+ */
+const DRAFT_DESCRIPTION_PLACEHOLDER =
+    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
+
 export const httpToDomainAccommodationCreateDraft = (
     httpData: AccommodationCreateDraftHttp,
     ownerId: string
 ): AccommodationCreateInput => ({
     name: httpData.name,
     summary: httpData.summary,
-    description: httpData.description ?? httpData.summary,
+    description: httpData.description ?? DRAFT_DESCRIPTION_PLACEHOLDER,
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId,
