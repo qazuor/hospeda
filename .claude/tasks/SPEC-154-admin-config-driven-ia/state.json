@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 13,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 31,
         "blocked": 0
     },
     "tasks": [
@@ -591,7 +591,7 @@
             "id": "T-024",
             "title": "Migrate Sidebar.tsx — read from IA config via useCurrentSidebar + useVisibleSidebarItems",
             "description": "Migrate the existing Sidebar.tsx to consume the new IA config.\n\nFiles affected:\n- apps/admin/src/components/layout/sidebar/Sidebar.tsx (migrate)\n\nChanges:\n- Remove import of useCurrentSidebarConfig (old hook from @/lib/sections)\n- Remove import of filterByPermissions (old utility)\n- Add imports: useCurrentSidebar, useVisibleSidebarItems\n- Replace config = useCurrentSidebarConfig() with config = useCurrentSidebar()\n- Replace filterByPermissions(config.items, userPermissions) with useVisibleSidebarItems({ items: config.items, userPermissions })\n- Keep all existing collapse/mobile/drawer behavior (SidebarProvider, etc.)\n- Update sidebar title: use config.items[0]?.label or fall back to current section label\n- Disabled items (onMissing:'disable'): render with opacity-50 class + Tooltip with 'Requiere permiso X'\n- Hidden items (onMissing:'hide'): not rendered at all (already handled by useVisibleSidebarItems)\n\nDo NOT remove old SidebarGroup, SidebarItem, SidebarSeparator sub-components — they stay\n\nTest requirements:\n- apps/admin/src/components/layout/sidebar/__tests__/Sidebar.test.tsx\n- Test renders correct items for /accommodations path\n- Test disabled item renders with opacity class\n- Test disabled item has tooltip\n- Test hidden item is not in DOM\n- AC-15, AC-16 coverage",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-027"],
@@ -599,14 +599,14 @@
             "tags": ["frontend", "component", "migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:02:33.000Z",
+                "completed": "2026-05-24T22:39:36.000Z"
             }
         },
         {
@@ -657,7 +657,7 @@
             "id": "T-027",
             "title": "Update Header.tsx — read showSearch, showQuickCreate, accountInMenu from role config",
             "description": "Update the existing Header.tsx to read topbar config from the IA config.\n\nFiles affected:\n- apps/admin/src/components/layout/header/Header.tsx (update)\n\nChanges:\n- Get current user role from AuthContext\n- Get role.topbar from config.roles[role]\n- Replace hardcoded filteredNavItems with MainMenu rendering\n- CommandPalette render conditionally based on topbar.showSearch (when false, do not render)\n- QuickCreate: render <QuickCreate /> in right-side actions (replaces any placeholder)\n- accountInMenu: when true, Mi cuenta is expected in MainMenu as a section item; when false, render avatar dropdown with Mi cuenta options\n- Remove call to getHeaderNavItems from old sections config\n- Keep notifications dropdown, logo link, mobile hamburger\n\nTest requirements:\n- apps/admin/src/components/layout/header/__tests__/Header.test.tsx\n- Test SUPER_ADMIN: CommandPalette visible, QuickCreate visible, accountInMenu=false\n- Test HOST: no CommandPalette, QuickCreate with 1 action, accountInMenu=true\n- Test EDITOR: CommandPalette visible, QuickCreate with 3 actions\n- AC-18: topbar renders per role config",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-023", "T-024", "T-025", "T-026"],
             "blocks": ["T-028"],
@@ -665,21 +665,21 @@
             "tags": ["frontend", "component", "migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:02:33.000Z",
+                "completed": "2026-05-24T22:39:36.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Update AppLayout.tsx — wire new MainMenu, Sidebar, BottomNav into layout",
             "description": "Update AppLayout.tsx to use the new IA-config-driven components.\n\nFiles affected:\n- apps/admin/src/components/layout/AppLayout.tsx (update)\n\nChanges:\n- Import BottomNav from ./mobile-nav\n- Add <BottomNav /> after <main> (BottomNav self-hides when role.mobile.bottomNav is null)\n- The existing Header and Sidebar already updated in T-027 and T-024 respectively\n- Ensure SidebarProvider still wraps everything for collapse/mobile drawer state\n- Keep ImpersonationBanner at top\n- Add mb-16 or pb-16 to main content area to prevent content being hidden under BottomNav on mobile\n\nTest requirements:\n- apps/admin/src/components/layout/__tests__/AppLayout.test.tsx\n- Test BottomNav is rendered in DOM (even if hidden by CSS for SUPER_ADMIN)\n- Test AppLayout structure: ImpersonationBanner > Header > (Sidebar + main) > BottomNav\n- Snapshot test for layout structure stability",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
@@ -687,21 +687,21 @@
             "tags": ["frontend", "component", "migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:02:33.000Z",
+                "completed": "2026-05-24T22:39:36.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Delete old section configs — remove apps/admin/src/config/sections/ directory and section-registry",
             "description": "Remove the old section configuration system after migration is complete.\n\nFiles to delete:\n- apps/admin/src/config/sections/administration.section.tsx\n- apps/admin/src/config/sections/analytics.section.tsx\n- apps/admin/src/config/sections/billing.section.tsx\n- apps/admin/src/config/sections/content.section.tsx\n- apps/admin/src/config/sections/dashboard.section.tsx\n- apps/admin/src/config/sections/index.tsx\n\nFiles to check and update:\n- apps/admin/src/routes/__root.tsx: remove SECTION_LABELS map + initializeSections() call, remove import\n- apps/admin/src/lib/sections/ (lib/sections.ts or equivalent): check if section-registry helpers still needed; remove registerSections, getSectionForPath, useCurrentSidebarConfig, filterByPermissions if no longer consumed\n- Remove any lingering imports of old section helpers across the codebase\n\nCRITICAL: Only delete after T-027 (Header) and T-024 (Sidebar) are verified working.\n\nTest requirements:\n- Verify TypeScript compiles with no errors after deletion (pnpm typecheck)\n- AC-20: old section configs removed\n- AC-21: section registry in __root.tsx removed",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-028"],
             "blocks": ["T-036"],
@@ -709,14 +709,14 @@
             "tags": ["cleanup", "migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:02:33.000Z",
+                "completed": "2026-05-24T22:39:36.000Z"
             }
         },
         {
