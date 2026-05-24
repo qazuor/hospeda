@@ -72,6 +72,26 @@ export const createGalleryConsolidatedSection = (
                 }
             },
             // Galería de imágenes
+            //
+            // SPEC-143 Finding #13: the `limitKey` field config drives the
+            // `LimitGate` wrapper from `@qazuor/qzpay-react` (see
+            // EntityFormSection.tsx:463-487). On owner-basico the gate
+            // erroneously rendered "Límite alcanzado: Has alcanzado el límite
+            // de tu plan actual" with 0 / 5 photos uploaded — a UI pre-block
+            // false-positive that prevented hosts from ever uploading the
+            // FIRST photo. Removed the `limitKey` here so the gate no longer
+            // wraps this field; the server-side `enforcePhotoLimit` check
+            // wired into `POST /api/v1/admin/media/upload` (PR #1239,
+            // Finding #15) is now the single source of truth for the
+            // `MAX_PHOTOS_PER_ACCOMMODATION` plan limit. The user can upload
+            // up to their plan cap; the API returns a structured 403
+            // LIMIT_REACHED at the (cap+1)-th attempt with the right
+            // `limitKey`/`maxAllowed`/`upgradeUrl` for the client to surface.
+            //
+            // If/when the upstream `LimitGate` behavior is fixed (or the API
+            // contract used by `useLimits.checkLimit` is investigated and
+            // aligned), this `limitKey` can be re-added to bring back the
+            // proactive UI warning before the user uploads up to the cap.
             {
                 id: 'images',
                 type: FieldTypeEnum.GALLERY,
@@ -84,7 +104,6 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
-                limitKey: 'max_photos_per_accommodation',
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: ENTITY_GALLERY_CAPS.accommodation,

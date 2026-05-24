@@ -9,8 +9,7 @@ import {
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
     FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType,
-    PermissionEnum
+    type FaqUpdatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -23,14 +22,19 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * PUT /api/v1/admin/accommodations/:id/faqs/:faqId
  * Update FAQ in accommodation - Admin endpoint
+ *
+ * Permission model (SPEC-143 Finding #14 extension): service layer
+ * `accommodationService.updateFaq` calls `_canUpdate(actor, accommodation)`
+ * which enforces UPDATE_ANY or (UPDATE_OWN + ownership). Route only
+ * requires admin-panel access.
  */
 export const adminUpdateFaqRoute = createAdminRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in accommodation (admin)',
-    description: 'Update an existing FAQ in a specific accommodation. Admin only.',
+    description:
+        'Update an existing FAQ in an accommodation. Requires admin-panel access; the service layer enforces UPDATE_ANY or (UPDATE_OWN + ownership).',
     tags: ['Accommodations', 'FAQs'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
     requestParams: {
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema

@@ -3,12 +3,7 @@
  * Remove an existing FAQ from an accommodation - Admin endpoint
  */
 
-import {
-    AccommodationFaqIdSchema,
-    AccommodationIdSchema,
-    DeleteResultSchema,
-    PermissionEnum
-} from '@repo/schemas';
+import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -20,14 +15,19 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * DELETE /api/v1/admin/accommodations/:id/faqs/:faqId
  * Remove FAQ from accommodation - Admin endpoint
+ *
+ * Permission model (SPEC-143 Finding #14 extension): service layer
+ * `accommodationService.removeFaq` calls `_canUpdate(actor, accommodation)`
+ * which enforces UPDATE_ANY or (UPDATE_OWN + ownership). Route only
+ * requires admin-panel access.
  */
 export const adminRemoveFaqRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from accommodation (admin)',
-    description: 'Remove an FAQ from a specific accommodation. Admin only.',
+    description:
+        'Remove a FAQ from an accommodation. Requires admin-panel access; the service layer enforces UPDATE_ANY or (UPDATE_OWN + ownership).',
     tags: ['Accommodations', 'FAQs'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
     requestParams: {
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema
