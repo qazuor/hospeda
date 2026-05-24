@@ -11,8 +11,8 @@
  * decision D). The role-to-permission bundle lives in ROLE_PERMISSIONS seed data, not here.
  */
 
+import { RoleConfigSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { RoleConfigSchema } from '../schema';
 
 // ============================================================================
 // Shared fixtures

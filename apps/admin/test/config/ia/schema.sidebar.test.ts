@@ -9,8 +9,13 @@
  * - SidebarSchema: enforces min 1 item
  */
 
+import {
+    GroupItemSchema,
+    LinkItemSchema,
+    SeparatorItemSchema,
+    SidebarSchema
+} from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { GroupItemSchema, LinkItemSchema, SeparatorItemSchema, SidebarSchema } from '../schema';
 
 // ============================================================================
 // Shared fixtures

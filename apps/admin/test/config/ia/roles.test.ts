@@ -19,14 +19,14 @@
  * @see apps/admin/src/config/ia/roles/client-manager.ts
  */
 
+import { adminRole } from '@/config/ia/roles/admin';
+import { clientManagerRole } from '@/config/ia/roles/client-manager';
+import { editorRole } from '@/config/ia/roles/editor';
+import { hostRole } from '@/config/ia/roles/host';
+import { sponsorRole } from '@/config/ia/roles/sponsor';
+import { superAdminRole } from '@/config/ia/roles/super-admin';
+import { RoleConfigSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { adminRole } from '../roles/admin';
-import { clientManagerRole } from '../roles/client-manager';
-import { editorRole } from '../roles/editor';
-import { hostRole } from '../roles/host';
-import { sponsorRole } from '../roles/sponsor';
-import { superAdminRole } from '../roles/super-admin';
-import { RoleConfigSchema } from '../schema';
 
 // ============================================================================
 // Helpers

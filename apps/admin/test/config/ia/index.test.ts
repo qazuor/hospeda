@@ -6,9 +6,9 @@
  * tested in cross-reference-validations.test.ts).
  */
 
+import { rawConfig } from '@/config/ia/index';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { rawConfig } from '../index';
 
 describe('rawConfig (T-017 composer)', () => {
     describe('top-level keys', () => {

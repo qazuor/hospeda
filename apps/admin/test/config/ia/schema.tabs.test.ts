@@ -8,8 +8,8 @@
  * - Tab without permissions is valid
  */
 
+import { TabSchema, TabsConfigSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { TabSchema, TabsConfigSchema } from '../schema';
 
 // ============================================================================
 // Shared fixtures

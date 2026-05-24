@@ -8,8 +8,13 @@
  * - showQuickCreate as 'all' / as array / as null all valid
  */
 
+import {
+    DashboardSchema,
+    MobileConfigSchema,
+    TopbarConfigSchema,
+    WidgetSchema
+} from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { DashboardSchema, MobileConfigSchema, TopbarConfigSchema, WidgetSchema } from '../schema';
 
 // ============================================================================
 // Shared fixtures

@@ -5,9 +5,9 @@
  * SectionSchema and that canonical IDs and sidebar references are consistent.
  */
 
+import { SectionSchema } from '@/config/ia/schema';
+import { sections } from '@/config/ia/sections';
 import { describe, expect, it } from 'vitest';
-import { SectionSchema } from '../schema';
-import { sections } from '../sections';
 
 // All sidebar IDs referenced in the sections registry
 const ALL_SIDEBAR_IDS = [

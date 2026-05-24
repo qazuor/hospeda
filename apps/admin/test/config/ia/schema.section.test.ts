@@ -8,8 +8,8 @@
  * - defaultRoute optional — omitted is valid, present is valid
  */
 
+import { SectionSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { SectionSchema } from '../schema';
 
 // ============================================================================
 // SectionSchema

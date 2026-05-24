@@ -11,9 +11,9 @@
  * - Empty input returns empty array
  */
 
+import { expandPermissions } from '@/config/ia/permission-bundles';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { expandPermissions } from '../permission-bundles';
 
 // ---------------------------------------------------------------------------
 // Helpers

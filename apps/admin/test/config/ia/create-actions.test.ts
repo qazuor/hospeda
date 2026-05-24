@@ -6,10 +6,10 @@
  * configs are present.
  */
 
+import { createActions } from '@/config/ia/create-actions';
+import { CreateActionSchema } from '@/config/ia/schema';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { createActions } from '../create-actions';
-import { CreateActionSchema } from '../schema';
 
 // The 4 canonical IDs explicitly referenced by role configs (doc §17, §12, §13)
 const REQUIRED_CANONICAL_IDS = ['newAccommodation', 'newPost', 'newEvent', 'newCampaign'] as const;

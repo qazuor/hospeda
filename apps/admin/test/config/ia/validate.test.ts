@@ -9,8 +9,8 @@
  * human-readable with dot-paths per issue.
  */
 
+import { AdminIAConfigSchema } from '@/config/ia/schema';
 import { describe, expect, it } from 'vitest';
-import { AdminIAConfigSchema } from '../schema';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Integration proof — the REAL config must load without throwing
@@ -23,7 +23,7 @@ describe('validatedConfig integration proof (T-019)', () => {
         let caughtError: unknown = null;
         let config: unknown = null;
         try {
-            const mod = await import('../validate');
+            const mod = await import('@/config/ia/validate');
             config = mod.validatedConfig;
         } catch (err) {
             caughtError = err;
@@ -42,7 +42,7 @@ describe('validatedConfig integration proof (T-019)', () => {
     });
 
     it('should expose validatedConfig as an object with the 6 top-level keys', async () => {
-        const { validatedConfig } = await import('../validate');
+        const { validatedConfig } = await import('@/config/ia/validate');
         expect(validatedConfig).toHaveProperty('sections');
         expect(validatedConfig).toHaveProperty('sidebars');
         expect(validatedConfig).toHaveProperty('dashboards');
@@ -143,7 +143,7 @@ describe('validate.ts error formatting', () => {
     });
 
     it('validatedConfig should have Zod defaults applied (e.g. labelOverrides is {})', async () => {
-        const { validatedConfig } = await import('../validate');
+        const { validatedConfig } = await import('@/config/ia/validate');
         // Every enabled role has labelOverrides (possibly empty object from default)
         for (const [_roleId, role] of Object.entries(validatedConfig.roles)) {
             if (role.enabled) {

@@ -7,11 +7,11 @@
  * and that all HOST sidebars use real PermissionEnum keys.
  */
 
+import { type SidebarItemSchema, SidebarSchema } from '@/config/ia/schema';
+import { sidebars } from '@/config/ia/sidebars';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { type SidebarItemSchema, SidebarSchema } from '../schema';
-import { sidebars } from '../sidebars';
 
 /** Input type for sidebar items (fields with .default() are optional). */
 type SidebarItemInput = z.input<typeof SidebarItemSchema>;

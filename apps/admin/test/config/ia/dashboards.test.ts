@@ -5,10 +5,10 @@
  * and satisfy the minimum 1-widget requirement.
  */
 
+import { dashboards } from '@/config/ia/dashboards';
+import { DashboardSchema } from '@/config/ia/schema';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { dashboards } from '../dashboards';
-import { DashboardSchema } from '../schema';
 
 // The 4 canonical dashboard IDs referenced by role configs
 const CANONICAL_DASHBOARD_IDS = [

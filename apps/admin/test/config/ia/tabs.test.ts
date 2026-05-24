@@ -5,11 +5,11 @@
  * respect the 9-tab maximum, and are keyed correctly.
  */
 
+import { TabsConfigSchema } from '@/config/ia/schema';
+import { tabs } from '@/config/ia/tabs';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { TabsConfigSchema } from '../schema';
-import { tabs } from '../tabs';
 
 /** Input type for TabsConfig — onMissing on each Tab is optional (has .default()). */
 type TabsConfigInput = z.input<typeof TabsConfigSchema>;

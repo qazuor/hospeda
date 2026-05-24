@@ -9,10 +9,10 @@
  * Tests use a minimal config factory to keep each case self-contained.
  */
 
+import { AdminIAConfigSchema as Schema } from '@/config/ia/schema';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { AdminIAConfigSchema as Schema } from '../schema';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types

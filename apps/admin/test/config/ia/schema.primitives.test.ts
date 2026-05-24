@@ -9,13 +9,13 @@
  * - OnMissingSchema: acceptance of 'disable' and 'hide', rejection of unknown values
  */
 
-import { describe, expect, it } from 'vitest';
 import {
     I18nLabelSchema,
     OnMissingSchema,
     PermissionExpressionSchema,
     PermissionGateSchema
-} from '../schema';
+} from '@/config/ia/schema';
+import { describe, expect, it } from 'vitest';
 
 // ============================================================================
 // I18nLabelSchema
