@@ -1,61 +1,151 @@
 /**
  * @file og.ts
- * @description Dynamic OG image generation endpoint.
- * Returns a 1200x630 SVG with Hospeda branding for social media previews.
+ * @description Dynamic Open Graph image endpoint.
+ *
+ * SPEC-157 REQ-1: social platforms (Facebook, X, LinkedIn, WhatsApp) reject SVG
+ * for OG image previews, so this endpoint renders a real 1200x630 PNG via
+ * `@vercel/og` (satori + resvg). The element tree is built with plain satori
+ * objects (no JSX) so the file stays a `.ts` Astro endpoint.
+ *
+ * Fonts: satori needs a binary font (it cannot read a CSS @font-face). The
+ * Roboto faces are fetched at runtime from the fontsource CDN and cached in
+ * module scope — the standalone Node server is long-lived, so each face is
+ * downloaded at most once per process.
  *
  * Usage: GET /api/og?title=Page+Title&description=Optional+description
  *
  * @route GET /api/og
  */
 
+import { ImageResponse } from '@vercel/og';
 import type { APIRoute } from 'astro';
 
+export const prerender = false;
+
+/** Direct .ttf URLs (fontsource CDN serves Google fonts as truetype). */
+const FONT_URL_REGULAR =
+    'https://cdn.jsdelivr.net/fontsource/fonts/roboto@latest/latin-400-normal.ttf';
+const FONT_URL_BOLD =
+    'https://cdn.jsdelivr.net/fontsource/fonts/roboto@latest/latin-700-normal.ttf';
+
+interface OgFonts {
+    readonly regular: ArrayBuffer;
+    readonly bold: ArrayBuffer;
+}
+
 /**
- * OG image generation endpoint.
- * Returns a branded 1200x630 PNG with the page title and optional description.
+ * Module-scope font cache. Promises are memoised so concurrent cold requests
+ * share a single in-flight download. On failure the cache is reset so the next
+ * request retries instead of caching a rejected promise forever.
  */
+let fontsCache: Promise<OgFonts> | null = null;
+
+async function fetchFont(url: string): Promise<ArrayBuffer> {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) {
+        throw new Error(`OG font fetch failed (HTTP ${response.status}): ${url}`);
+    }
+    return response.arrayBuffer();
+}
+
+function loadFonts(): Promise<OgFonts> {
+    if (!fontsCache) {
+        fontsCache = Promise.all([fetchFont(FONT_URL_REGULAR), fetchFont(FONT_URL_BOLD)])
+            .then(([regular, bold]) => ({ regular, bold }))
+            .catch((error) => {
+                fontsCache = null;
+                throw error;
+            });
+    }
+    return fontsCache;
+}
+
+/** Truncate a string to `max` chars with an ellipsis. */
+function truncate(value: string, max: number): string {
+    return value.length > max ? `${value.slice(0, max)}...` : value;
+}
+
+/** satori element node (plain-object form of a React element — avoids JSX). */
+type SatoriNode = {
+    readonly type: string;
+    readonly props: Record<string, unknown>;
+};
+
 export const GET: APIRoute = async ({ url }) => {
-    const title = url.searchParams.get('title') || 'Hospeda';
+    const title = truncate(url.searchParams.get('title') || 'Hospeda', 40);
     const description = url.searchParams.get('description') || '';
 
-    const svg = `
-    <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#0284c7;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-        <rect width="1200" height="630" fill="url(#bg)" />
-        <rect x="60" y="60" width="1080" height="510" rx="24" fill="white" fill-opacity="0.1" />
-        <text x="100" y="480" font-family="system-ui, sans-serif" font-size="36" fill="white" fill-opacity="0.8">hospeda.com.ar</text>
-        <text x="100" y="280" font-family="system-ui, sans-serif" font-size="56" font-weight="700" fill="white">
-            ${escapeXml(title.length > 40 ? `${title.slice(0, 40)}...` : title)}
-        </text>
-        ${
-            description
-                ? `<text x="100" y="340" font-family="system-ui, sans-serif" font-size="28" fill="white" fill-opacity="0.85">
-            ${escapeXml(description.length > 80 ? `${description.slice(0, 80)}...` : description)}
-        </text>`
-                : ''
-        }
-        <text x="100" y="160" font-family="system-ui, sans-serif" font-size="72" font-weight="700" fill="white" fill-opacity="0.3">Hospeda</text>
-    </svg>`.trim();
+    let fonts: OgFonts;
+    try {
+        fonts = await loadFonts();
+    } catch {
+        return new Response('OG image unavailable: font could not be loaded', {
+            status: 500,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
 
-    return new Response(svg, {
+    const children: SatoriNode[] = [
+        {
+            type: 'div',
+            props: {
+                style: { fontSize: 72, fontWeight: 700, opacity: 0.3 },
+                children: 'Hospeda'
+            }
+        },
+        {
+            type: 'div',
+            props: {
+                style: { fontSize: 56, fontWeight: 700, marginTop: 40, lineHeight: 1.15 },
+                children: title
+            }
+        }
+    ];
+
+    if (description) {
+        children.push({
+            type: 'div',
+            props: {
+                style: { fontSize: 28, opacity: 0.85, marginTop: 24, lineHeight: 1.3 },
+                children: truncate(description, 80)
+            }
+        });
+    }
+
+    children.push({
+        type: 'div',
+        props: {
+            style: { fontSize: 32, opacity: 0.8, marginTop: 'auto' },
+            children: 'hospeda.com.ar'
+        }
+    });
+
+    const element: SatoriNode = {
+        type: 'div',
+        props: {
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                padding: 100,
+                backgroundImage: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                color: 'white',
+                fontFamily: 'Roboto'
+            },
+            children
+        }
+    };
+
+    return new ImageResponse(element as unknown as ConstructorParameters<typeof ImageResponse>[0], {
+        width: 1200,
+        height: 630,
+        fonts: [
+            { name: 'Roboto', data: fonts.regular, weight: 400, style: 'normal' },
+            { name: 'Roboto', data: fonts.bold, weight: 700, style: 'normal' }
+        ],
         headers: {
-            'Content-Type': 'image/svg+xml',
             'Cache-Control': 'public, max-age=86400, s-maxage=604800'
         }
     });
 };
-
-/** Escape special XML characters to prevent injection in SVG */
-function escapeXml(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}

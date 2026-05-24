@@ -142,9 +142,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // If the locale segment is missing or not a supported locale, redirect to the
     // default locale while preserving the rest of the path.
+    // REQ-19: 301 (permanent) — this is a stable URL strategy decision; Google
+    // passes full link equity through 301s but not through the default 302.
     if (locale === null) {
         const redirectUrl = buildLocaleRedirect({ restOfPath: restOfPath || path });
-        return context.redirect(redirectUrl);
+        return context.redirect(redirectUrl, 301);
     }
 
     // Step 5: Store the validated locale in locals for downstream pages/components.

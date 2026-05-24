@@ -8,13 +8,23 @@
  * targeting the `#main-content` landmark. Must be the first focusable element
  * in the DOM — place it as the very first child of `<body>`.
  */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
 ---
 
 <a
 	href="#main-content"
 	class="skip-to-content"
 >
-	<span class="sr-only-text">Saltar al contenido</span>
+	<span class="sr-only-text">{t('common.skipToContent')}</span>
 </a>
 
 <style>

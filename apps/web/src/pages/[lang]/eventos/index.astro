@@ -395,6 +395,15 @@ paginationParams.delete('page');
 	showFilters={true}
 	filterPosition="left"
 >
+	{/* RSS feed-discovery hints (SPEC-157 REQ-6) */}
+	<link
+		slot="head-extra"
+		rel="alternate"
+		type="application/rss+xml"
+		title={t('events.rss.title', 'Eventos RSS')}
+		href={buildUrl({ locale, path: 'eventos/rss.xml' })}
+	/>
+
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}

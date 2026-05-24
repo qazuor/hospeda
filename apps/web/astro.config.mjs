@@ -7,6 +7,7 @@ import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
+import { SITEMAP_EXCLUDED_PATHS } from './src/lib/seo-config.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -111,16 +112,8 @@ export default defineConfig({
             : []),
         react(),
         sitemap({
-            filter: (page) => {
-                const excludePatterns = [
-                    '/auth/',
-                    '/mi-cuenta/',
-                    '/busqueda/',
-                    '/feedback/',
-                    '/beta/'
-                ];
-                return !excludePatterns.some((pattern) => page.includes(pattern));
-            },
+            filter: (page) =>
+                !SITEMAP_EXCLUDED_PATHS.some((pattern) => page.includes(pattern)),
             // Inject hreflang alternates for each entry so search engines know
             // the three locales (es/en/pt) are translations of the same page.
             // Improves international SEO for the Argentina-Litoral market.

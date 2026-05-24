@@ -1,0 +1,37 @@
+---
+/**
+ * @file OrganizationJsonLd.astro
+ * @description Organization JSON-LD component for the homepage.
+ * Generates schema.org `Organization` structured data with name, url, logo,
+ * and sameAs social profile URLs so search engines surface the knowledge panel.
+ *
+ * SPEC-157 / REQ-5.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Props interface for OrganizationJsonLd component. */
+interface Props {
+	/** Organization name (e.g. "Hospeda"). */
+	readonly name: string;
+	/** Canonical absolute URL of the organization's website root. */
+	readonly url: string;
+	/** Absolute URL to the organization's logo image. */
+	readonly logo: string;
+	/** Array of social profile URLs for the organization (schema.org sameAs). */
+	readonly sameAs: ReadonlyArray<string>;
+}
+
+const { name, url, logo, sameAs } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+	'@context': 'https://schema.org',
+	'@type': 'Organization',
+	name,
+	url,
+	logo,
+	sameAs: [...sameAs],
+};
+---
+
+<JsonLd data={structuredData} />

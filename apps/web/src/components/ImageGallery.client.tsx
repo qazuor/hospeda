@@ -219,6 +219,16 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                     alt={featured.alt}
                     className={styles.featuredImg}
                     loading="eager"
+                    // SPEC-157 REQ-3: this is the LCP candidate on the
+                    // accommodation detail page. The gallery is an island, so
+                    // this markup is server-rendered into the initial HTML —
+                    // fetchPriority + explicit dimensions let the browser
+                    // prioritise the fetch and reserve layout (no CLS). The
+                    // intrinsic ratio mirrors the .mosaic max-height (480px);
+                    // object-fit: cover keeps remote images undistorted.
+                    fetchPriority="high"
+                    width={800}
+                    height={480}
                 />
                 <span
                     className={styles.expandIcon}

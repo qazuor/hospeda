@@ -18,9 +18,16 @@ import { getApiUrl, getSiteUrl } from '../lib/env';
 
 export const prerender = false;
 
-/** Supported locales and their URL prefix (es has no prefix). */
+/**
+ * Supported locales and their URL prefix.
+ *
+ * SPEC-157 REQ-2: es uses the /es prefix (not empty) so every Spanish sitemap
+ * URL matches the page canonical and returns HTTP 200. The unprefixed form
+ * 302-redirects to /es/, which made crawlers see a sitemap full of redirecting
+ * URLs disagreeing with the declared canonical (crawl-budget + trust problem).
+ */
 const LOCALES = [
-    { code: 'es', prefix: '' },
+    { code: 'es', prefix: '/es' },
     { code: 'en', prefix: '/en' },
     { code: 'pt', prefix: '/pt' }
 ] as const;
@@ -114,19 +121,22 @@ function buildUrlEntry({
     loc,
     lastmod,
     changefreq,
-    priority
+    priority,
+    alternates
 }: {
     readonly loc: string;
     readonly lastmod?: string;
     readonly changefreq: string;
     readonly priority: number;
+    /** Pre-rendered <xhtml:link> hreflang alternates block (one line each). */
+    readonly alternates: string;
 }): string {
     const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
     return `  <url>
     <loc>${loc}</loc>${lastmodTag}
     <changefreq>${changefreq}</changefreq>
     <priority>${priority.toFixed(1)}</priority>
-  </url>`;
+${alternates}  </url>`;
 }
 
 /**
@@ -157,11 +167,23 @@ function buildEntriesForEntity({
         if (!item.slug) continue;
 
         const lastmod = item.updatedAt ?? item.updated_at;
+        const path = pathFn(item.slug);
+
+        // SPEC-157 REQ-12: the hreflang alternate set is shared by every locale
+        // variant of this entity. x-default points to the Spanish (default) URL.
+        const alternateLinks = LOCALES.map(
+            ({ code, prefix }) =>
+                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}${path}"/>`
+        );
+        const esPrefix = LOCALES.find((locale) => locale.code === 'es')?.prefix ?? '';
+        alternateLinks.push(
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}${path}"/>`
+        );
+        const alternates = `${alternateLinks.join('\n')}\n`;
 
         for (const { prefix } of LOCALES) {
-            const path = pathFn(item.slug);
             const loc = `${siteUrl}${prefix}${path}`;
-            entries.push(buildUrlEntry({ loc, lastmod, changefreq, priority }));
+            entries.push(buildUrlEntry({ loc, lastmod, changefreq, priority, alternates }));
         }
     }
 
@@ -245,7 +267,7 @@ export const GET: APIRoute = async () => {
     );
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries.join('\n')}
 </urlset>`;
 

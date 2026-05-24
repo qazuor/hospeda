@@ -201,8 +201,10 @@ describe('AccommodationCard.astro', () => {
     });
 
     describe('image', () => {
-        it('should use loading="lazy" on the card image', () => {
-            expect(src).toContain('loading="lazy"');
+        it('should use conditional loading expression (eager prop controls lazy vs eager)', () => {
+            // SPEC-157 REQ-9: loading is no longer hardcoded to "lazy" — it uses
+            // the eager prop so callers can opt-in to eager/high-priority loading.
+            expect(src).toContain("loading={eager ? 'eager' : 'lazy'}");
         });
 
         it('should prefer caption over name as alt text (caption wins when present)', () => {

@@ -9,7 +9,7 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
@@ -325,34 +325,34 @@ const safeDescriptionHtml = renderContent({
 });
 
 // --- JSON-LD (LodgingBusiness) ---
-const TYPE_MAP: Readonly<Record<string, string>> = {
+const ACCOMMODATION_TYPE_MAP: Readonly<Record<string, string>> = {
     HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
 };
-const schemaType = TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
+const lodgingAccommodationType =
+    ACCOMMODATION_TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
 
-const jsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': schemaType,
-    name: accommodation.name,
-    description: accommodation.summary,
-    image: accommodation.featuredImage,
-    url: Astro.url.href,
-    address: {
-        '@type': 'PostalAddress',
-        addressLocality: accommodation.destination.name,
-        addressCountry: 'AR'
-    },
-    ...(accommodation.location.lat != null && accommodation.location.lng != null
-        ? { geo: { '@type': 'GeoCoordinates', latitude: accommodation.location.lat, longitude: accommodation.location.lng } }
-        : {}),
-    ...(accommodation.averageRating > 0
-        ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: accommodation.averageRating, reviewCount: accommodation.reviewsCount, bestRating: 5, worstRating: 1 } }
-        : {}),
-    ...(accommodation.extraInfo?.bedrooms != null ? { numberOfRooms: accommodation.extraInfo.bedrooms } : {}),
-    ...(accommodation.amenities.length > 0
-        ? { amenityFeature: accommodation.amenities.map((a) => ({ '@type': 'LocationFeatureSpecification', name: a.name, value: true })) }
-        : {})
-};
+const lodgingGeo =
+    accommodation.location.lat != null && accommodation.location.lng != null
+        ? { latitude: accommodation.location.lat, longitude: accommodation.location.lng }
+        : undefined;
+
+const lodgingAggregateRating =
+    accommodation.averageRating > 0
+        ? {
+              ratingValue: accommodation.averageRating,
+              reviewCount: accommodation.reviewsCount,
+              bestRating: 5,
+              worstRating: 1,
+          }
+        : undefined;
+
+const lodgingNumberOfRooms =
+    accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
+
+const lodgingAmenities =
+    accommodation.amenities.length > 0
+        ? accommodation.amenities.map((a) => a.name)
+        : undefined;
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -379,7 +379,24 @@ const faqSections = accommodation.faqs.map((faq) => ({
     showBreadcrumbs={true}
     showSidebar={true}
 >
-    <JsonLd slot="head-extra" data={jsonLd} />
+    <LodgingBusinessJsonLd
+        slot="head-extra"
+        name={accommodation.name}
+        description={accommodation.summary}
+        url={Astro.url.href}
+        image={accommodation.featuredImage}
+        address={{
+            streetAddress: '',
+            addressLocality: accommodation.destination.name,
+            addressRegion: '',
+            addressCountry: 'AR',
+        }}
+        accommodationType={lodgingAccommodationType}
+        geo={lodgingGeo}
+        aggregateRating={lodgingAggregateRating}
+        numberOfRooms={lodgingNumberOfRooms}
+        amenities={lodgingAmenities}
+    />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
         <FAQPageJsonLd slot="head-extra" sections={faqSections} />

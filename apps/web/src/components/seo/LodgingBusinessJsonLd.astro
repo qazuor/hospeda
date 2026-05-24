@@ -10,83 +10,153 @@
  * `location.city`/`location.state`/`location.country` fields. Use
  * `parseCityPathToAddress({ cityName, cityPath })` from
  * `@/lib/seo/address-from-city` to build the address shape.
+ *
+ * SPEC-157 REQ-7: extended to accept geo, aggregateRating, numberOfRooms,
+ * and accommodationType so detail pages no longer need inline JSON-LD blocks.
  */
 
 import JsonLd from './JsonLd.astro';
 
 /** Address interface for structured data */
 export interface Address {
-  /** Street address */
-  readonly streetAddress: string;
-  /** City or locality */
-  readonly addressLocality: string;
-  /** State or region */
-  readonly addressRegion: string;
-  /** Postal code */
-  readonly postalCode?: string;
-  /** Country code (ISO 3166-1 alpha-2) */
-  readonly addressCountry: string;
+	/** Street address */
+	readonly streetAddress: string;
+	/** City or locality */
+	readonly addressLocality: string;
+	/** State or region */
+	readonly addressRegion: string;
+	/** Postal code */
+	readonly postalCode?: string;
+	/** Country code (ISO 3166-1 alpha-2) */
+	readonly addressCountry: string;
+}
+
+/** GeoCoordinates interface for structured data */
+export interface GeoCoordinates {
+	/** Latitude as a decimal number */
+	readonly latitude: number;
+	/** Longitude as a decimal number */
+	readonly longitude: number;
+}
+
+/** AggregateRating interface for structured data */
+export interface AggregateRating {
+	/** Numeric rating value */
+	readonly ratingValue: number;
+	/** Total number of reviews */
+	readonly reviewCount: number;
+	/** Maximum possible rating */
+	readonly bestRating?: number;
+	/** Minimum possible rating */
+	readonly worstRating?: number;
 }
 
 /** Props interface for LodgingBusinessJsonLd component. */
 interface Props {
-  /** Name of the lodging business */
-  readonly name: string;
-  /** Description of the lodging business */
-  readonly description: string;
-  /** URL of the lodging business page */
-  readonly url: string;
-  /** Image URL for the lodging business */
-  readonly image?: string;
-  /** Physical address of the lodging business */
-  readonly address: Address;
-  /** Price range indicator (e.g., "$", "$$", "$$$", "$$$$") */
-  readonly priceRange?: string;
-  /** Star rating (1-5) */
-  readonly starRating?: number;
-  /** List of amenities offered */
-  readonly amenities?: readonly string[];
+	/** Name of the lodging business */
+	readonly name: string;
+	/** Description of the lodging business */
+	readonly description: string;
+	/** URL of the lodging business page */
+	readonly url: string;
+	/** Image URL for the lodging business */
+	readonly image?: string;
+	/** Physical address of the lodging business */
+	readonly address: Address;
+	/** Price range indicator (e.g., "$", "$$", "$$$", "$$$$") */
+	readonly priceRange?: string;
+	/** Star rating (1-5) */
+	readonly starRating?: number;
+	/** List of amenities offered */
+	readonly amenities?: readonly string[];
+	/**
+	 * Schema.org subtype for the lodging business.
+	 * Defaults to 'LodgingBusiness'. Use 'Hotel', 'Hostel', 'Motel',
+	 * 'Resort', 'Campground', etc. when the entity matches a more specific type.
+	 */
+	readonly accommodationType?: string;
+	/** GPS coordinates for GeoCoordinates structured data */
+	readonly geo?: GeoCoordinates;
+	/** Aggregate rating data from reviews */
+	readonly aggregateRating?: AggregateRating;
+	/** Number of rooms / bedrooms */
+	readonly numberOfRooms?: number;
 }
 
-const { name, description, url, image, address, priceRange, starRating, amenities } = Astro.props;
+const {
+	name,
+	description,
+	url,
+	image,
+	address,
+	priceRange,
+	starRating,
+	amenities,
+	accommodationType = 'LodgingBusiness',
+	geo,
+	aggregateRating,
+	numberOfRooms,
+} = Astro.props;
 
 const structuredData: Record<string, unknown> = {
-  '@context': 'https://schema.org',
-  '@type': 'LodgingBusiness',
-  name,
-  description,
-  url,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: address.streetAddress,
-    addressLocality: address.addressLocality,
-    addressRegion: address.addressRegion,
-    addressCountry: address.addressCountry,
-    ...(address.postalCode && { postalCode: address.postalCode }),
-  },
+	'@context': 'https://schema.org',
+	'@type': accommodationType,
+	name,
+	description,
+	url,
+	address: {
+		'@type': 'PostalAddress',
+		streetAddress: address.streetAddress,
+		addressLocality: address.addressLocality,
+		addressRegion: address.addressRegion,
+		addressCountry: address.addressCountry,
+		...(address.postalCode && { postalCode: address.postalCode }),
+	},
 };
 
 if (image) {
-  structuredData.image = image;
+	structuredData.image = image;
 }
 
 if (priceRange) {
-  structuredData.priceRange = priceRange;
+	structuredData.priceRange = priceRange;
 }
 
 if (starRating !== undefined) {
-  structuredData.starRating = {
-    '@type': 'Rating',
-    ratingValue: starRating,
-    bestRating: 5,
-  };
+	structuredData.starRating = {
+		'@type': 'Rating',
+		ratingValue: starRating,
+		bestRating: 5,
+	};
 }
 
 if (amenities && amenities.length > 0) {
-  structuredData.amenityFeature = amenities.map((amenity) => ({
-    '@type': 'LocationFeatureSpecification',
-    name: amenity,
-  }));
+	structuredData.amenityFeature = amenities.map((amenity) => ({
+		'@type': 'LocationFeatureSpecification',
+		name: amenity,
+	}));
+}
+
+if (geo) {
+	structuredData.geo = {
+		'@type': 'GeoCoordinates',
+		latitude: geo.latitude,
+		longitude: geo.longitude,
+	};
+}
+
+if (aggregateRating) {
+	structuredData.aggregateRating = {
+		'@type': 'AggregateRating',
+		ratingValue: aggregateRating.ratingValue,
+		reviewCount: aggregateRating.reviewCount,
+		bestRating: aggregateRating.bestRating ?? 5,
+		worstRating: aggregateRating.worstRating ?? 1,
+	};
+}
+
+if (numberOfRooms !== undefined) {
+	structuredData.numberOfRooms = numberOfRooms;
 }
 ---
 
