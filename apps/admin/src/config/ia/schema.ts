@@ -10,7 +10,7 @@
  *   T-002 — SectionSchema + SidebarItem discriminated union (link | group | separator)
  *   T-003 — SidebarConfig, TabItem, TabsConfig
  *   T-004 — DashboardConfig, TopbarConfig, MobileConfig
- *   T-005 — RoleConfig (enabled/disabled variants, mainMenu, defaultPermissions)
+ *   T-005 — RoleConfig (enabled/disabled variants, mainMenu)
  *   T-006 — CreateActionConfig, AdminIAConfig (top-level composer)
  *
  * Usage:
@@ -61,13 +61,12 @@ export type I18nLabel = z.infer<typeof I18nLabelSchema>;
 /**
  * A single permission expression — one of three forms:
  *
- * - **Exact**: an uppercase `PermissionEnum` value like `ACCOMMODATION_VIEW_OWN`.
+ * - **Exact**: an uppercase `PermissionEnum` value like `ACCOMMODATION_VIEW_ALL`.
  *   Pattern: `[A-Z][A-Z0-9_]+` with no trailing `*`.
  * - **Prefix wildcard**: a namespace prefix followed by `_*`, like `ACCOMMODATION_*`.
  *   At runtime `expandPermissions()` resolves this to all matching `PermissionEnum` values.
  * - **Universal wildcard**: the single character `*`.
- *   Reserved exclusively for the SUPER_ADMIN `defaultPermissions` field (enforced
- *   at the role-schema level, not here).
+ *   Resolved by `expandPermissions()` to all known `PermissionEnum` values.
  *
  * **Rejected examples**:
  * - `foo` — lowercase is always invalid.
@@ -76,7 +75,7 @@ export type I18nLabel = z.infer<typeof I18nLabelSchema>;
  *
  * @example
  * ```ts
- * const expr: PermissionExpression = 'ACCOMMODATION_VIEW_OWN'; // exact
+ * const expr: PermissionExpression = 'ACCOMMODATION_VIEW_ALL'; // exact
  * const wild: PermissionExpression = 'ACCOMMODATION_*';         // prefix wildcard
  * const all:  PermissionExpression = '*';                       // universal wildcard
  * ```
@@ -725,13 +724,17 @@ export type MobileConfig = z.infer<typeof MobileConfigSchema>;
  * `.superRefine` check enforces this at boot time so missing fields crash
  * immediately with a precise error path.
  *
+ * The role-to-permission bundle is defined in `ROLE_PERMISSIONS` (seed data),
+ * NOT in this config. `RoleConfigSchema` exclusively covers navigation and
+ * presentation concerns. This separation was established in T-040 (SPEC-154 §11.4
+ * decision D): permissions are a data concern, not a config concern.
+ *
  * @example
  * ```ts
  * // Enabled role
  * const host: RoleConfig = {
  *   enabled: true,
  *   label: { es: 'Anfitrión', en: 'Host', pt: 'Anfitrião' },
- *   defaultPermissions: ['ACCESS_PANEL_ADMIN', 'ACCOMMODATION_VIEW_OWN'],
  *   mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'],
  *   dashboard: 'hostDashboard',
  *   topbar: { showSearch: false, showQuickCreate: ['newAccommodation'], accountInMenu: true },
@@ -750,11 +753,6 @@ export const RoleConfigSchema = z
     .object({
         enabled: z.boolean(),
         label: I18nLabelSchema,
-        /**
-         * Permission expressions expanded at boot via `expandPermissions()`.
-         * Defaults to an empty array (deferred roles may have no permissions).
-         */
-        defaultPermissions: z.array(PermissionExpressionSchema).default([]),
         /**
          * Ordered list of section IDs for the main menu.
          * Required when `enabled` is `true` (at least 1 entry).

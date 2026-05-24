@@ -1,11 +1,14 @@
 /**
- * Tests for RoleConfigSchema (T-006)
+ * Tests for RoleConfigSchema (T-006, updated T-040)
  *
  * Covers:
  * - enabled=false role with no mainMenu is valid (deferred role)
  * - enabled=true missing dashboard caught by superRefine
  * - enabled=true missing topbar caught by superRefine
  * - enabled=true with all required fields is valid
+ *
+ * T-040 note: defaultPermissions was removed from RoleConfigSchema (SPEC-154 §11.4
+ * decision D). The role-to-permission bundle lives in ROLE_PERMISSIONS seed data, not here.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -31,7 +34,6 @@ const validMobile = {
 const fullEnabledRole = {
     enabled: true,
     label: validLabel,
-    defaultPermissions: ['ACCESS_PANEL_ADMIN', 'ACCOMMODATION_VIEW_OWN'],
     mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'],
     dashboard: 'hostDashboard',
     topbar: validTopbar,
@@ -52,18 +54,6 @@ describe('RoleConfigSchema — disabled role', () => {
             expect(RoleConfigSchema.safeParse(input).success).toBe(true);
         });
 
-        it('should default defaultPermissions to [] when omitted', () => {
-            // Arrange
-            const input = { enabled: false, label: validLabel };
-            // Act
-            const result = RoleConfigSchema.safeParse(input);
-            // Assert
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.defaultPermissions).toEqual([]);
-            }
-        });
-
         it('should default labelOverrides to {} when omitted', () => {
             // Arrange
             const input = { enabled: false, label: validLabel };
@@ -73,6 +63,18 @@ describe('RoleConfigSchema — disabled role', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.labelOverrides).toEqual({});
+            }
+        });
+
+        it('should not have a defaultPermissions field (T-040: removed from schema)', () => {
+            // Arrange
+            const input = { enabled: false, label: validLabel };
+            // Act
+            const result = RoleConfigSchema.safeParse(input);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data).not.toHaveProperty('defaultPermissions');
             }
         });
     });
