@@ -805,11 +805,15 @@ const emptyStateSuggestions = [
 			<div class="acc-grid">
 				{cards.map((card, i) => (
 					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+						{/* First row of the listing grid (auto-fill minmax(260px)) fits
+						    3 cards at 1024–1280px viewport with the filter sidebar open.
+						    Marking them eager prioritises LCP image loading above the fold. */}
 						<AccommodationCard
 							data={card}
 							locale={locale}
 							isAuthenticated={isAuthenticated}
 							linkQuery={contextQuery}
+							eager={i < 3}
 						/>
 					</div>
 				))}

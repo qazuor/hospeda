@@ -37,9 +37,16 @@ interface Props {
 	 * pre-fill the message.
 	 */
 	readonly linkQuery?: string;
+	/**
+	 * When true, the card image renders with `loading="eager"` and
+	 * `fetchpriority="high"` so the browser treats it as an LCP candidate.
+	 * Set this on cards in the first visible row of a listing or featured grid.
+	 * Defaults to false (lazy loading).
+	 */
+	readonly eager?: boolean;
 }
 
-const { data, locale, isAuthenticated = false, linkQuery } = Astro.props;
+const { data, locale, isAuthenticated = false, linkQuery, eager = false } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
@@ -75,7 +82,8 @@ const isNew = data.createdAt
 					width={432}
 					height={220}
 					format="webp"
-					loading="lazy"
+					loading={eager ? 'eager' : 'lazy'}
+					fetchpriority={eager ? 'high' : undefined}
 					decoding="async"
 					class="acc-card__img"
 					data-fallback="/assets/images/placeholder-accommodation.svg"
@@ -85,7 +93,8 @@ const isNew = data.createdAt
 				<img
 					src={data.featuredImage.url || '/assets/images/placeholder-accommodation.svg'}
 					alt={data.featuredImage.caption ?? data.name}
-					loading="lazy"
+					loading={eager ? 'eager' : 'lazy'}
+					fetchpriority={eager ? 'high' : undefined}
 					decoding="async"
 					class="acc-card__img"
 					width="432"
