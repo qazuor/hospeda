@@ -22,6 +22,23 @@ export const BRAND_NAME = 'Hospeda';
  */
 export const BRAND_THEME_COLOR = '#3885f9' as const;
 
+/**
+ * Dark-mode brand color as an sRGB hex string, derived from `--brand-primary`
+ * in the dark theme (river tuned for dark surfaces:
+ * `oklch(0.68 0.17 259)` converted to sRGB).
+ *
+ * Emitted as a second `<meta name="theme-color">` gated by
+ * `media="(prefers-color-scheme: dark)"` so the browser UI chrome stays on the
+ * brand blue (instead of a brighter light-mode value) when the OS is in dark
+ * mode. The light value remains {@link BRAND_THEME_COLOR}.
+ *
+ * Single source of truth — do NOT hardcode this hex in layout files.
+ *
+ * @see packages/design-tokens/src/themes/web-dark.ts (brand-primary mapping)
+ * @see SPEC-157 REQ-18 (follow-up: dark-mode theme-color variant)
+ */
+export const BRAND_THEME_COLOR_DARK = '#5396ff' as const;
+
 /** Separator between page title and brand name */
 export const TITLE_SEPARATOR = ' | ';
 
