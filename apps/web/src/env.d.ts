@@ -25,6 +25,19 @@ declare namespace App {
             readonly name: string;
             /** User's email address */
             readonly email: string;
+            /**
+             * User role from the Better Auth session (USER, HOST, ADMIN,
+             * SUPER_ADMIN, CLIENT_MANAGER, EDITOR). Populated by middleware
+             * from the `role` additional field configured in
+             * `apps/api/src/lib/auth.ts`. `null` only when the role was
+             * unexpectedly absent from the session payload — treat that
+             * defensively as the lowest-privilege case (USER).
+             *
+             * Used by AccountLayout to gate "Mis propiedades" in the
+             * sidebar to host-tier roles (SPEC-143 Finding #12 — parity
+             * with the top-right UserMenu predicate).
+             */
+            readonly role: string | null;
         } | null;
 
         /**

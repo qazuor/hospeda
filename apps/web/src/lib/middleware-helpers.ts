@@ -310,6 +310,13 @@ export interface SessionUser {
     readonly id: string;
     readonly name: string;
     readonly email: string;
+    /**
+     * User role from the Better Auth session (USER, HOST, ADMIN, etc.).
+     * Populated from the `role` additional field configured in
+     * `apps/api/src/lib/auth.ts`. `null` only when unexpectedly missing;
+     * consumers should treat that as the lowest-privilege case.
+     */
+    readonly role: string | null;
 }
 
 /**
@@ -391,7 +398,18 @@ export async function parseSessionUser({
                 }
 
                 const data = (await response.json()) as {
-                    user?: { id?: string; name?: string; email?: string };
+                    user?: {
+                        id?: string;
+                        name?: string;
+                        email?: string;
+                        // `role` is an additional field configured in
+                        // apps/api/src/lib/auth.ts (Better Auth
+                        // `user.additionalFields`). It is returned by
+                        // `/api/auth/get-session` whenever the session has a
+                        // user. Used by AccountLayout to gate the sidebar
+                        // "Mis propiedades" link (SPEC-143 Finding #12).
+                        role?: string;
+                    };
                 };
 
                 if (!data?.user?.id || !data?.user?.email) {
@@ -401,7 +419,8 @@ export async function parseSessionUser({
                 return {
                     id: data.user.id,
                     name: data.user.name || '',
-                    email: data.user.email
+                    email: data.user.email,
+                    role: data.user.role ?? null
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });
