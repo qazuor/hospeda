@@ -145,6 +145,14 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 - `.only()` and hard-coded `.skip()` are **forbidden** in committed code — CI will fail
 - Use `it.skipIf(condition)` for legitimate conditional test skipping
 
+### Local testing for billing entitlements (SPEC-143)
+
+For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
+
+`pnpm db:fresh-dev` creates 11 dev-only test users covering every role × plan combination (4 staff + 3 tourist tiers + 3 host tiers + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`.
+
+Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
+
 ### Billing testing — manual smoke checklist required (SPEC-143)
 
 Any PR that touches the billing surface (checkout, webhooks, cron, refund, admin billing ops, entitlements) MUST have the relevant manual staging smoke executed before merging to `staging`, in addition to CI passing. The vitest e2e suite uses an MP stub and cannot catch divergences between the stub and real MercadoPago behavior; the staging smoke against the real MP sandbox is the gate.
