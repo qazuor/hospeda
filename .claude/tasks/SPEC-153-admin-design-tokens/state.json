@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -410,7 +410,10 @@
             "id": "T-153-28",
             "title": "Add Geologica + Roboto font loading to apps/admin",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-24T02:40:00Z",
+            "completedAt": "2026-05-24T03:00:00Z",
+            "completionNotes": "DONE (AC-12). Added brand font loading to apps/admin/src/routes/__root.tsx <head>: preconnect to fonts.googleapis.com + fonts.gstatic.com (crossOrigin), preload as=style, and stylesheet for Geologica(400/500/700)+Roboto(400/500/700) with display=swap. NO Caveat (web-only, doc 05 Eje 4). Diverged from web's media-swap+inline-script FOUC pattern: admin's CSP is report-only AND TanStack Start head injection makes an inline nonce'd script awkward, so used display=swap (handles FOIT — fallback shows immediately, swaps on load) which is CSP-safe and appropriate for an internal tool. Also changed the body font-family in styles.css from the hardcoded -apple-system stack to var(--font-body) so the loaded Roboto actually applies. VERIFIED in-browser via Playwright (signin page, :3010): all 4 font links present in the DOM (TanStack Start renders them through the TSR head manifest — NOT visible in raw curl SSR, which is why browser verification was needed), body computed font-family = 'Roboto, sans-serif', document.fonts.check('16px Roboto') = true (Geologica = false but that's expected lazy behavior — it loads when a heading first uses font-heading, T-153-30), and var(--color-primary) resolves to river-600 oklch(0.498 0.166 259) confirming the full token chain works end-to-end. Commit: bf54ec352.",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-26"],
