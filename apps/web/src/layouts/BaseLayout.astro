@@ -208,7 +208,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	</head>
 	<body>
 		<NavigationProgress />
-		<SkipToContent />
+		<SkipToContent locale={locale} />
 		<Header locale={locale} />
 
 		<main id="main-content">
