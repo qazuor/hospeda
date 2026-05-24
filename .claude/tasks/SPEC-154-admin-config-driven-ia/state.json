@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 25,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 18,
         "blocked": 0
     },
     "tasks": [
@@ -314,7 +314,7 @@
             "id": "T-012",
             "title": "Create roles/super-admin.ts and roles/admin.ts — active role configs",
             "description": "Create role configs for SUPER_ADMIN and ADMIN in apps/admin/src/config/ia/roles/.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/super-admin.ts\n- apps/admin/src/config/ia/roles/admin.ts\n\nSUPER_ADMIN config (per IA doc §13):\n- enabled: true\n- defaultPermissions: ['*'] (wildcard — SUPER_ADMIN only, validated by T-018 §13.9)\n- mainMenu: ['inicio', 'catalogo', 'editorial', 'comunidad', 'comercial', 'plataforma', 'analisis']\n- dashboard: 'superAdminDashboard'\n- topbar: { showSearch: true, showQuickCreate: 'all', accountInMenu: false }\n- mobile: { bottomNav: null, fab: null } (hamburger only)\n- labelOverrides: {}\n\nADMIN config (per IA doc §16):\n- enabled: true\n- defaultPermissions: [...all non-super perms with wildcards: 'ACCOMMODATION_*', 'POST_*', etc.]\n- mainMenu: same 7 sections as SUPER_ADMIN\n- dashboard: 'adminDashboard'\n- topbar: { showSearch: true, showQuickCreate: 'all', accountInMenu: false }\n- mobile: { bottomNav: null, fab: null }\n- labelOverrides: {}\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts\n- Test SUPER_ADMIN has exactly 7 mainMenu items\n- Test SUPER_ADMIN defaultPermissions = ['*']\n- Test SUPER_ADMIN mobile.bottomNav = null\n- Test ADMIN mainMenu has same 7 sections\n- Test ADMIN does NOT have '*' in defaultPermissions (uses prefix wildcards)\n- AC-11: SUPER_ADMIN 7 sections, Cmd+K, account in avatar",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-016", "T-039", "T-040"],
             "blocks": ["T-017", "T-034"],
@@ -322,21 +322,21 @@
             "tags": ["backend", "config", "roles"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:40:22.000Z",
+                "completed": "2026-05-24T18:47:32.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Create roles/host.ts and roles/editor.ts — active role configs",
             "description": "Create role configs for HOST and EDITOR in apps/admin/src/config/ia/roles/.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/host.ts\n- apps/admin/src/config/ia/roles/editor.ts\n\nHOST config (per IA doc §12):\n- enabled: true\n- defaultPermissions: ['ACCESS_PANEL_ADMIN', 'ACCOMMODATION_VIEW_OWN', 'ACCOMMODATION_EDIT_OWN', 'ACCOMMODATION_CREATE', 'ACCOMMODATION_DELETE_OWN', 'AMENITY_VIEW', 'FEATURE_VIEW', 'REVIEW_VIEW_OWN', 'REVIEW_REPLY_OWN', 'CONVERSATION_VIEW_OWN', 'CONVERSATION_REPLY_OWN', 'BILLING_VIEW_OWN', 'INVOICE_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN', 'PAYMENT_METHOD_MANAGE_OWN', 'NOTIFICATION_VIEW_OWN', 'NOTIFICATION_PREFERENCES_MANAGE_OWN', 'USER_UPDATE_SELF']\n- mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miFacturacion', 'miCuenta']\n- dashboard: 'hostDashboard'\n- topbar: { showSearch: false, showQuickCreate: ['newAccommodation'], accountInMenu: true }\n- mobile: { bottomNav: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'], fab: 'newAccommodation' }\n- labelOverrides: { 'inicioSidebar.dashboard': {es:'Mi negocio', en:'My business', pt:'Meu negócio'} }\n\nEDITOR config (per IA doc §17):\n- enabled: true\n- defaultPermissions: [...editorial perms, content read-only, analytics-content]\n- mainMenu: ['inicio', 'editorial', 'analisis', 'miCuenta']\n- dashboard: 'editorDashboard'\n- topbar: { showSearch: true, showQuickCreate: ['newPost', 'newEvent', 'newCampaign'], accountInMenu: true }\n- mobile: { bottomNav: ['inicio', 'editorial', 'analisis', 'miCuenta'], fab: 'newPost' }\n- labelOverrides: { 'inicioSidebar.dashboard': {es:'Dashboard editorial', ...} }\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts (extend)\n- Test HOST has exactly 5 mainMenu items\n- Test HOST bottomNav has exactly 4 items\n- Test HOST mobile.fab = 'newAccommodation'\n- Test EDITOR has exactly 4 mainMenu items\n- Test EDITOR topbar.showSearch = true\n- AC-10: HOST 5 menu items, miCuenta in menu, no search, newAccommodation FAB, 4 bottom nav\n- AC-13: EDITOR 4 items, newPost FAB",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-016", "T-039", "T-040"],
             "blocks": ["T-017", "T-033", "T-034"],
@@ -344,21 +344,21 @@
             "tags": ["backend", "config", "roles"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:40:22.000Z",
+                "completed": "2026-05-24T18:47:32.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Create roles/sponsor.ts and roles/client-manager.ts — deferred role stubs (enabled:false)",
             "description": "Create deferred role stubs for SPONSOR and CLIENT_MANAGER.\n\nFiles to create:\n- apps/admin/src/config/ia/roles/sponsor.ts\n- apps/admin/src/config/ia/roles/client-manager.ts\n\nSPONSOR config (per IA doc §18):\n- enabled: false\n- label: { es: 'Sponsor', en: 'Sponsor', pt: 'Patrocinador' }\n- defaultPermissions: [] (stub — to be filled on activation)\n- mainMenu, dashboard, topbar, mobile: all omitted (allowed when enabled=false per schema superRefine)\n\nCLIENT_MANAGER config (per IA doc §18):\n- enabled: false\n- label: { es: 'Client manager', en: 'Client manager', pt: 'Gestor de clientes' }\n- defaultPermissions: [] (stub)\n- mainMenu, dashboard, topbar, mobile: all omitted\n\nCRITICAL: When enabled=false the schema does NOT require mainMenu/dashboard/topbar/mobile (T-006 superRefine handles this). Future activation = flip enabled to true + fill rest.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/roles.test.ts (extend)\n- Test SPONSOR.enabled = false\n- Test SPONSOR passes schema validation without mainMenu\n- Test CLIENT_MANAGER.enabled = false\n- AC-14: SPONSOR + CLIENT_MANAGER defined with enabled:false",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011", "T-016", "T-040"],
             "blocks": ["T-017"],
@@ -366,14 +366,14 @@
             "tags": ["backend", "config", "roles"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:40:22.000Z",
+                "completed": "2026-05-24T18:47:32.000Z"
             }
         },
         {
