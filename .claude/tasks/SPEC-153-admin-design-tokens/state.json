@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -371,7 +371,10 @@
             "id": "T-153-25",
             "title": "Set data-app='admin' on root <html> element",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T19:26:00Z",
+            "completedAt": "2026-05-23T19:38:00Z",
+            "completionNotes": "DONE. Added data-app=\"admin\" to <html> in apps/admin/src/routes/__root.tsx (line 266, the RootDocument shell, alongside lang={env.VITE_DEFAULT_LOCALE}). Verified empirically: started admin dev on :3010, curl -L of / (307 → /auth/signin, 200) returns SSR HTML containing data-app=\"admin\". This is the attribute the design-tokens CSS scopes admin tokens on ([data-app=\"admin\"] for admin-light, [data-app=\"admin\"][data-theme=\"dark\"] for admin-dark). Satisfies AC-8. Commit: 4c45a3160. NOTE: admin typecheck currently fails in a fresh worktree because routeTree.gen.ts isn't generated until dev/build runs (TanStack Router plugin) — all the 'not assignable to parameter of type undefined' errors cascade from src/router.tsx TS2307 'Cannot find module ./routeTree.gen'. This is pre-existing/environmental, NOT caused by the data-app change (no error references __root.tsx). The route tree IS generated when the dev server runs (confirmed — the signin page rendered).",
             "complexity": 2,
             "owner": "agent",
             "dependsOn": ["T-153-24"],
