@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 22,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 21,
         "blocked": 0
     },
     "tasks": [
@@ -424,7 +424,7 @@
             "id": "T-017",
             "title": "Create index.ts — config composer (assembles all data files into raw AdminIAConfig object)",
             "description": "Create apps/admin/src/config/ia/index.ts that assembles all data files without running validation (validate.ts does that).\n\nFiles to create:\n- apps/admin/src/config/ia/index.ts\n\nResponsibilities:\n- Import sections from ./sections\n- Import sidebars from ./sidebars\n- Import dashboards from ./dashboards\n- Import tabs from ./tabs\n- Import createActions from ./create-actions\n- Import role configs from ./roles/host, ./roles/editor, ./roles/admin, ./roles/super-admin, ./roles/sponsor, ./roles/client-manager\n- Assemble rawConfig object typed as AdminIAConfig\n- Re-export AdminIAConfig type for consumers\n- Import and trigger validatedConfig from ./validate (so importing index.ts triggers boot validation)\n- Export: validatedConfig as the default-use config (named export 'config'), rawConfig for testing purposes\n\nPer doc 02 §2: importing index.ts triggers validation. Invalid config = app does not start.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/index.test.ts\n- Test rawConfig has all 7 sections\n- Test rawConfig has all 6 roles (4 enabled + 2 disabled)\n- Test rawConfig has 4 dashboards\n- Test rawConfig has 4 create actions\n- Test config (validatedConfig) equals rawConfig when config is valid",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-006",
@@ -445,21 +445,21 @@
             "tags": ["backend", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:00:13.000Z",
+                "completed": "2026-05-24T19:22:47.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Implement 7 cross-reference validations in AdminIAConfigSchema.superRefine() (was 9; §13.7+§13.9 dropped per spec §11.4)",
             "description": "Add all 9 cross-reference validations to AdminIAConfigSchema.superRefine() in schema.ts.\n\nFiles affected:\n- apps/admin/src/config/ia/schema.ts (extend AdminIAConfigSchema with .superRefine())\n\nValidations to implement (per doc 02 §13, all 9):\n1. §13.1 Sidebar refs: section.sidebar (when not null) must exist in sidebars\n2. §13.2 Role mainMenu: each sectionId must exist in sections\n3. §13.3 Role dashboard refs: dashboard must exist in dashboards\n4. §13.4 Create action refs: topbar.showQuickCreate array items + mobile.fab must exist in createActions\n5. §13.5 mobile.bottomNav refs: each sectionId must be in role's mainMenu\n6. §13.6 labelOverrides paths: key must resolve to a known sidebar item or section (walk sidebar trees)\n7. §13.7 Permission expansion sanity: expandPermissions() on each enabled role's defaultPermissions must be non-empty\n8. §13.8 Unique IDs within sidebars: recursively check no duplicate IDs in each sidebar\n9. §13.9 Universal wildcard '*' restricted to SUPER_ADMIN only\n\nEach validation: ctx.addIssue with exact path array and descriptive message.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/cross-reference-validations.test.ts\n- One test per validation (min 9 tests)\n- Each test constructs a minimal invalid config that triggers that specific validation\n- Test asserts the error message contains the expected path and description\n- AC-3: All 9 cross-reference validations tested",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006", "T-011", "T-017", "T-040"],
             "blocks": ["T-019"],
@@ -467,21 +467,21 @@
             "tags": ["backend", "schema", "validation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:00:13.000Z",
+                "completed": "2026-05-24T19:22:47.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Create validate.ts — boot validation entry point with formatted error output",
             "description": "Create apps/admin/src/config/ia/validate.ts — the boot-time validation entry.\n\nFiles to create:\n- apps/admin/src/config/ia/validate.ts\n\nImplementation (per doc 02 §14):\n- Import AdminIAConfigSchema from ./schema\n- Import rawConfig from ./index (raw unvalidated config)\n- IIFE that calls AdminIAConfigSchema.safeParse(rawConfig)\n- On failure: format each issue as '  {path.join('.')}: {message}' joined by newline\n- Throw new Error with format: '[admin-ia.config] Validation failed:\\n{formatted}\\n\\nFix the config in apps/admin/src/config/ia/ and restart.'\n- On success: export validatedConfig = result.data\n\nCRITICAL: Runs at module load — importing validate.ts from index.ts means any consumer triggers validation at startup.\n\nTest requirements:\n- apps/admin/src/config/ia/__tests__/validate.test.ts\n- Test with valid config: exports validatedConfig without throwing\n- Test with bad sidebar ref: error message contains 'sections.catalogo.sidebar' and 'not found'\n- Test with wildcard used by non-SUPER_ADMIN: error message contains expected path\n- Test error message starts with '[admin-ia.config] Validation failed:'\n- AC-2: Boot validation crashes app with clear multi-line error pointing to offending key",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018"],
             "blocks": ["T-020", "T-021", "T-030"],
@@ -489,14 +489,14 @@
             "tags": ["backend", "validation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:00:13.000Z",
+                "completed": "2026-05-24T19:22:47.000Z"
             }
         },
         {
