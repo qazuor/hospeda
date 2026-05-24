@@ -31,7 +31,9 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
     [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503,
     [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
-    [ServiceErrorCode.QUOTA_EXCEEDED]: 429
+    [ServiceErrorCode.QUOTA_EXCEEDED]: 429,
+    [ServiceErrorCode.LIMIT_REACHED]: 403,
+    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403
 };
 
 /**
