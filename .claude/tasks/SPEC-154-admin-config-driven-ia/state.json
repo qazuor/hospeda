@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 19,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 24,
         "blocked": 0
     },
     "tasks": [
@@ -503,7 +503,7 @@
             "id": "T-020",
             "title": "Create CI route-coverage script — assert every sidebar link points to a real route",
             "description": "Create a script that validates every sidebar link item references a real TanStack Router route.\n\nFiles to create:\n- apps/admin/scripts/validate-sidebar-routes.ts (new)\n- apps/admin/package.json (add script 'validate:sidebar-routes')\n\nScript logic:\n1. Import rawConfig from src/config/ia/index.ts\n2. Collect all REAL TanStack routes by listing apps/admin/src/routes/_authed/**/*.tsx files and parsing their route path from file name (e.g., accommodations/index.tsx -> /accommodations, $id.tsx -> /accommodations/$id)\n3. For each sidebar in rawConfig.sidebars, for each link item (recursively in groups), extract item.route\n4. Strip any query strings (e.g., /posts?status=draft -> /posts)\n5. Assert the base path exists as a real route (or is a parent prefix of a real route)\n6. On failure: print all bad links, exit with code 1\n7. On success: print summary, exit 0\n\nAdd to package.json scripts: '\"validate:sidebar-routes\": \"tsx apps/admin/scripts/validate-sidebar-routes.ts\"'\n\nTest requirements:\n- No automated test file for the script itself, but running 'pnpm validate:sidebar-routes' from CI must exit 0 with the real config\n- AC-22 support: this is the regression gate for reachable pages (spec §7 risk mitigation)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-036"],
@@ -511,21 +511,21 @@
             "tags": ["tooling", "ci"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:32:24.000Z",
+                "completed": "2026-05-24T19:42:24.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Create useCurrentSection and useCurrentSidebar hooks reading from IA config",
             "description": "Create two custom React hooks that read from the IA config to determine the active section and sidebar.\n\nFiles to create:\n- apps/admin/src/hooks/use-current-section.ts (new)\n- apps/admin/src/hooks/use-current-sidebar.ts (new)\n\nuseCurrentSection():\n- Uses useLocation() from TanStack Router\n- Iterates config.sidebars to find which section's sidebar contains a link matching the current pathname\n- Returns the matching Section object or null\n- Memoize result per pathname\n- CRITICAL: Uses sidebar membership for active-section detection (not route prefix), per spec §11.2\n\nuseCurrentSidebar():\n- Calls useCurrentSection() to get active section\n- Returns config.sidebars[section.sidebar] or null if no sidebar\n\nBoth hooks import from apps/admin/src/config/ia/index.ts (the validated config).\n\nExport: { useCurrentSection }, { useCurrentSidebar } as named exports\n\nTest requirements:\n- apps/admin/src/hooks/__tests__/use-current-section.test.ts\n- Mock useLocation to return various pathnames\n- Test '/accommodations' resolves to 'catalogo' section\n- Test '/posts' resolves to 'editorial' section\n- Test '/billing/plans' resolves to 'comercial' section\n- Test '/dashboard' resolves to 'inicio' section\n- Test unknown path resolves to null\n- AC-15 coverage: sidebar reads from useCurrentSection + useCurrentSidebar",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-022", "T-023"],
@@ -533,21 +533,21 @@
             "tags": ["frontend", "hooks"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:42:24.000Z",
+                "completed": "2026-05-24T20:18:36.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Create useVisibleSidebarItems hook — applies onMissing filter with user permissions",
             "description": "Create the hook that applies permission cherry-pick logic to sidebar items.\n\nFiles to create:\n- apps/admin/src/hooks/use-visible-sidebar-items.ts (new)\n\nuseVisibleSidebarItems({ items, userPermissions, expandedPermissions }):\n- Input: SidebarItem[] + user's expanded permissions array\n- For each item: check if user has ANY of item.permissions (OR logic per PermissionGateSchema)\n- If user lacks permissions AND onMissing='hide': exclude item from output\n- If user lacks permissions AND onMissing='disable': include item with disabled:true marker\n- For groups: if ALL children resolve to 'hide' -> hide the group; if some 'disable' -> render group with those items greyed\n- Returns: ProcessedSidebarItem[] (SidebarItem extended with optional disabled:boolean)\n- Memoize result\n\nCRITICAL: OR logic for permissions (user passes if they have ≥1 of the listed permissions)\n\nExport: useVisibleSidebarItems, ProcessedSidebarItem type\n\nTest requirements:\n- apps/admin/src/hooks/__tests__/use-visible-sidebar-items.test.ts\n- Test item with onMissing:'hide' and no permission = excluded\n- Test item with onMissing:'disable' and no permission = included with disabled:true\n- Test item with required permission and user has it = included with disabled:false\n- Test group where ALL children hide = group hidden\n- Test group where SOME children disable = group present\n- Test OR logic: user has 1 of 2 required permissions = item visible\n- AC-16, AC-17 coverage",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-021"],
             "blocks": ["T-023", "T-024", "T-025", "T-026", "T-032"],
@@ -555,14 +555,14 @@
             "tags": ["frontend", "hooks", "permissions"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T19:42:24.000Z",
+                "completed": "2026-05-24T20:18:36.000Z"
             }
         },
         {
