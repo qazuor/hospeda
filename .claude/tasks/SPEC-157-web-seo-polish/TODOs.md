@@ -2,7 +2,7 @@
 
 **Spec:** SPEC-157 — Web SEO Polish — Audit Backlog Remediation
 **Created:** 2026-05-24
-**Total tasks:** 31 | **Progress:** 22/31 (71%) | **Avg complexity:** 2.16 | **All tasks complexity <= 4**
+**Total tasks:** 31 | **Progress:** 31/31 (100%) | **Avg complexity:** 2.16 | **All tasks complexity <= 4**
 
 ---
 
@@ -81,15 +81,15 @@ Start after Phase 2 is verified. Resolve D-1 and D-2 before starting T-014 and T
 
 | Task | Title | Complexity | Status | Type |
 |------|-------|-----------|--------|------|
-| T-023 | Fix heading hierarchy in RelatedCarousel.astro (h3 → h2) | 1 | pending | impl — unblocked |
-| T-024 | Fix empty alt text on event card images | 1 | pending | impl — unblocked |
-| T-025 | Internationalize skip-link text in SkipToContent.astro | 2 | pending | impl — unblocked |
-| T-026 | Write failing regression test for robots.txt Sitemap URL env (RED) | 2 | pending | test-first — unblocked |
-| T-027 | Derive robots.txt Sitemap URL from SITE_URL env var | 1 | pending | impl — blocked by T-026 |
-| T-028 | Align robots.txt Disallow rules with sitemap exclusions | 3 | pending | impl — unblocked |
-| T-029 | Add meta theme-color and manifest link to layouts (BLOCKED D-2) | 2 | pending | impl — blocked by D-2 |
-| T-030 | Write failing regression test for locale redirect 301 (RED) | 2 | pending | test-first — unblocked |
-| T-031 | Change locale redirect from 302 to 301 in middleware | 1 | pending | impl — blocked by T-030 |
+| T-023 | Fix heading hierarchy in RelatedCarousel.astro (h3 → h2) | 1 | completed | impl — unblocked |
+| T-024 | Fix empty alt text on event card images | 1 | completed | impl — unblocked |
+| T-025 | Internationalize skip-link text in SkipToContent.astro | 2 | completed | impl — unblocked |
+| T-026 | Write failing regression test for robots.txt Sitemap URL env (RED) | 2 | completed | test-first — unblocked |
+| T-027 | Derive robots.txt Sitemap URL from SITE_URL env var | 1 | completed | impl — blocked by T-026 |
+| T-028 | Align robots.txt Disallow rules with sitemap exclusions | 3 | completed | impl — unblocked |
+| T-029 | Add meta theme-color and manifest link to layouts (BLOCKED D-2) | 2 | completed | impl — blocked by D-2 |
+| T-030 | Write failing regression test for locale redirect 301 (RED) | 2 | completed | test-first — unblocked |
+| T-031 | Change locale redirect from 302 to 301 in middleware | 1 | completed | impl — blocked by T-030 |
 
 **Phase 3 parallel tracks (unblocked start):**
 - Track A: T-023 (heading fix)

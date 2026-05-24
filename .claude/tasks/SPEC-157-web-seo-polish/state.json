@@ -612,7 +612,7 @@
             "id": "T-023",
             "title": "Fix heading hierarchy in RelatedCarousel.astro (h3 → h2)",
             "description": "Fix the carousel section heading from `<h3>` to `<h2>` in `RelatedCarousel.astro`.\n\nAffected file: `apps/web/src/components/accommodation/RelatedCarousel.astro` (line 32)\n\nChange required:\n- At line 32, change `<h3>` to `<h2>` for the carousel section heading\n- Audit other related-content components for the same issue and fix in the same pass\n- Verify no CSS rule specifically targets `h3` for this component's heading (adjust styles if needed)\n\nAcceptance:\n- Accommodation detail page heading hierarchy: main content `<h1>` → section headings `<h2>` → sub-sections `<h3>`, with carousel heading now `<h2>`\n- No heading level skipped between main content sections and carousel sections",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -626,18 +626,18 @@
             ],
             "tags": ["REQ-13", "phase-3", "seo", "a11y"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Fix empty alt text on EventCardFeatured and EventCardHorizontal images",
             "description": "Replace empty `alt=\"\"` with descriptive alt text on event card images.\n\nAffected files:\n- `apps/web/src/components/event/EventCardFeatured.astro` (line 141)\n- `apps/web/src/components/event/EventCardHorizontal.astro` (line 150)\n\nChange required:\n- At `EventCardFeatured.astro:141`: change `alt=\"\"` to `alt={title}` (use event title as alt text)\n- At `EventCardHorizontal.astro:150`: change `alt=\"\"` to `alt={title}`\n- If a more descriptive i18n string is available (e.g. `t('events.featuredImageAlt', { title })`), use that instead\n\nAcceptance:\n- Featured and horizontal event card images have non-empty, meaningful alt text (at minimum: the event title)\n- WCAG 1.1.1 satisfied for these image elements",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -650,18 +650,18 @@
             ],
             "tags": ["REQ-14", "phase-3", "seo", "a11y"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Internationalize skip-link text in SkipToContent.astro",
             "description": "Replace hardcoded Spanish skip-link text with i18n key in `SkipToContent.astro`.\n\nAffected files:\n- `apps/web/src/components/shared/navigation/SkipToContent.astro` (line 17)\n- `packages/i18n/src/locales/es.json` (add `a11y.skipToContent` key)\n- `packages/i18n/src/locales/en.json` (add `a11y.skipToContent` key)\n- `packages/i18n/src/locales/pt.json` (add `a11y.skipToContent` key)\n\nChanges required:\n1. Add translation key `a11y.skipToContent` to all three locale files:\n   - `es.json`: `\"Ir al contenido principal\"`\n   - `en.json`: `\"Skip to main content\"`\n   - `pt.json`: `\"Ir para o conteúdo principal\"`\n2. In `SkipToContent.astro:17`, replace the hardcoded Spanish string with `t('a11y.skipToContent')`\n\nAcceptance:\n- English pages show English skip-link text\n- Spanish pages show Spanish skip-link text\n- Portuguese pages show Portuguese skip-link text\n- `@repo/i18n` type-checks pass (if `@repo/i18n` generates types from locale files)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -676,18 +676,18 @@
             ],
             "tags": ["REQ-15", "phase-3", "seo", "a11y", "i18n"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Write failing regression test for robots.txt Sitemap URL env derivation (RED)",
             "description": "Write failing Vitest test FIRST (RED), then T-027 makes it GREEN.\n\nCreate test file: `apps/web/src/pages/__tests__/robots-txt.test.ts`\n\nTest must:\n- Call the `robots.txt.ts` handler with a mocked `SITE_URL` env value (e.g. `https://staging.hospeda.com.ar`)\n- Parse the response text to find the `Sitemap:` directive\n- Assert the Sitemap URL uses the injected staging domain (NOT `hospeda.com.ar`)\n- Currently the value is hardcoded so test MUST fail with staging URL mocked\n\nAcceptance:\n- Test fails: Sitemap URL returns `hospeda.com.ar` regardless of injected env\n- Label: 'robots.txt Sitemap URL reflects injected SITE_URL'",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-027"],
@@ -701,18 +701,18 @@
             ],
             "tags": ["REQ-16", "phase-3", "seo", "test-first"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Derive robots.txt Sitemap URL from SITE_URL env var",
             "description": "Replace hardcoded production domain in `robots.txt.ts` Sitemap directive with env-derived value.\n\nAffected file: `apps/web/src/pages/robots.txt.ts` (line 33)\n\nChange required:\n- At line 33, replace the hardcoded `https://hospeda.com.ar/sitemap-index.xml` with a dynamic value using the `SITE_URL` env var: `const sitemapUrl = \\`${env.SITE_URL}/sitemap-index.xml\\``\n- Ensure `env.SITE_URL` (or equivalent from the validated env schema in `apps/web/src/utils/env.ts`) is imported and used\n\nAcceptance:\n- T-026 test passes (GREEN): Sitemap URL reflects injected SITE_URL value\n- Staging `robots.txt` has correct staging domain in Sitemap line\n- Production `robots.txt` still has `https://hospeda.com.ar/sitemap-index.xml` (from prod env var)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-026"],
             "blocks": [],
@@ -729,18 +729,18 @@
             ],
             "tags": ["REQ-16", "phase-3", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Align robots.txt Disallow rules with sitemap exclusions via shared constant",
             "description": "Extract sitemap-excluded paths to a shared constant and sync robots.txt Disallow rules.\n\nAffected files:\n- New: `apps/web/src/lib/seo-config.ts`\n- `apps/web/src/pages/robots.txt.ts` (lines 24-34)\n- `apps/web/astro.config.mjs` (lines ~114-123)\n\nChanges required:\n1. Create `apps/web/src/lib/seo-config.ts` with a shared `SEO_EXCLUDED_PATHS` constant listing all paths excluded from the sitemap (e.g. `/busqueda/`, `/feedback/`, auth paths, account paths)\n2. Update `astro.config.mjs` sitemap filter config to use `SEO_EXCLUDED_PATHS` instead of inline values\n3. Update `robots.txt.ts` to generate `Disallow:` entries from `SEO_EXCLUDED_PATHS`\n\nAcceptance:\n- Every path excluded from the sitemap has a corresponding Disallow rule in robots.txt\n- Single source of truth: `SEO_EXCLUDED_PATHS` in `seo-config.ts`\n- Adding a new excluded path only requires updating `seo-config.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -764,18 +764,18 @@
             ],
             "tags": ["REQ-17", "phase-3", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Add meta theme-color and manifest link to all layouts (BLOCKED on D-2)",
             "description": "⚠ BLOCKED ON USER DECISION D-2 — do not start until D-2 (theme_color brand value) is resolved.\n\nOnce D-2 is resolved (confirm: keep green `#10B981`, align to river blue from @repo/design-tokens, or use neutral):\n\nAffected files:\n- `apps/web/src/layouts/BaseLayout.astro`\n- `apps/web/src/layouts/AuthLayout.astro`\n- `apps/web/src/layouts/ErrorLayout.astro` (if it exists)\n- `apps/web/public/manifest.json`\n\nChanges required:\n1. Add `<meta name=\"theme-color\" content=\"{D-2-confirmed-value}\">` to the `<head>` in BaseLayout.astro, AuthLayout.astro, and ErrorLayout.astro\n2. Update `manifest.json` `theme_color` to the same confirmed value\n3. Add `<link rel=\"manifest\" href=\"/manifest.json\">` to AuthLayout.astro and ErrorLayout.astro (if currently missing)\n\nAcceptance:\n- All three layouts emit `<meta name=\"theme-color\">` with a non-empty value\n- manifest.json `theme_color` matches the meta tag value\n- Auth pages have `<link rel=\"manifest\">` in their head",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -807,18 +807,18 @@
             ],
             "tags": ["REQ-18", "phase-3", "seo", "decision-blocked"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Write failing regression test for locale redirect 301 status (RED)",
             "description": "Write failing Vitest/integration test FIRST (RED), then T-031 makes it GREEN.\n\nCreate test file: `apps/web/src/middleware/__tests__/locale-redirect.test.ts`\n\nTest must:\n- Simulate a GET request to an unprefixed path (e.g. `/alojamientos/`) through the middleware\n- Assert the response status code is 301 (currently returns 302 — test MUST fail)\n- Second scenario: simulate a GET to `/` (root path) and assert the locale redirect returns 301\n\nAcceptance:\n- Both test scenarios fail before T-031 (response is 302, not 301)\n- Label: 'locale redirect returns 301 (permanent) not 302 (temporary)'",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-031"],
@@ -833,18 +833,18 @@
             ],
             "tags": ["REQ-19", "phase-3", "seo", "test-first"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Change locale redirect from 302 to 301 in middleware",
             "description": "Change the locale redirect status code from 302 (temporary) to 301 (permanent) in both middleware files.\n\nAffected files:\n- `apps/web/src/middleware.ts` (line 147)\n- `apps/web/src/lib/middleware-helpers.ts` (line 301)\n\nChanges required:\n1. At `middleware.ts:147`, change the redirect status from `302` to `301`\n2. At `middleware-helpers.ts:301`, change the redirect status from `302` to `301`\n3. Verify no other redirect calls in these files use 302 for the locale redirect pattern\n\n⚠ This change is irreversible in practice (browsers cache 301s). Confirm URL strategy is stable before shipping.\n\nAcceptance:\n- T-030 tests pass (GREEN): locale redirect returns 301\n- GET `/alojamientos/` → 301 to `/es/alojamientos/`\n- GET `/` → 301 to `/es/` (or default locale prefix)\n- No other locale redirect in the codebase still uses 302",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-030"],
             "blocks": [],
@@ -861,20 +861,20 @@
             ],
             "tags": ["REQ-19", "phase-3", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T18:00:00.000Z",
+                "completed": "2026-05-24T18:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 31,
-        "pending": 9,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 22,
-        "blocked": 1,
+        "completed": 31,
+        "blocked": 0,
         "averageComplexity": 2.16
     }
 }
