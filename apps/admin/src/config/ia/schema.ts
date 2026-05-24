@@ -21,7 +21,6 @@
  * @see .claude/audit/admin-redesign/proposals/02-config-schema.md
  */
 
-import { RoleEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 // ============================================================================
@@ -883,16 +882,236 @@ export type CreateAction = z.infer<typeof CreateActionSchema>;
  * };
  * ```
  */
-export const AdminIAConfigSchema = z.object({
-    sections: z.record(z.string(), SectionSchema),
-    sidebars: z.record(z.string(), SidebarSchema),
-    dashboards: z.record(z.string(), DashboardSchema),
-    /** Keyed by entity name (e.g. `'accommodation'`, `'post'`, `'event'`). */
-    tabs: z.record(z.string(), TabsConfigSchema),
-    createActions: z.record(z.string(), CreateActionSchema),
-    roles: z.record(z.nativeEnum(RoleEnum), RoleConfigSchema)
-});
-// TODO T-018: add .superRefine() cross-reference validations per doc 02 §13
+// ============================================================================
+// T-018 helpers — used inside AdminIAConfigSchema.superRefine()
+// ============================================================================
+
+/**
+ * Recursively collects all item IDs from a sidebar item tree.
+ * Traverses into `group` children to collect nested IDs.
+ *
+ * @param items - Array of sidebar items (top-level or group children).
+ * @param out   - Accumulator set that receives collected IDs.
+ */
+function collectSidebarIds(items: z.input<typeof SidebarItemSchema>[], out: Set<string>): void {
+    for (const item of items) {
+        out.add(item.id);
+        if (item.type === 'group') {
+            collectSidebarIds(item.items as z.input<typeof SidebarItemSchema>[], out);
+        }
+    }
+}
+
+/**
+ * Resolves a `labelOverrides` path key against the live config.
+ *
+ * Two valid formats:
+ * - `'sidebarId.itemId'` — the sidebar exists AND has an item (any depth) with
+ *   that id.
+ * - `'sectionId'`        — the section exists in `config.sections`.
+ *
+ * @param config - The top-level IA config (input shape).
+ * @param path   - The override key to resolve.
+ * @returns `true` if the path resolves, `false` otherwise.
+ */
+function resolveLabelPath(config: z.input<typeof AdminIAConfigSchema>, path: string): boolean {
+    const dotIdx = path.indexOf('.');
+    if (dotIdx === -1) {
+        // Format: 'sectionId'
+        return Boolean(config.sections[path]);
+    }
+    // Format: 'sidebarId.itemId'
+    const sidebarId = path.slice(0, dotIdx);
+    const itemId = path.slice(dotIdx + 1);
+    const sidebar = config.sidebars[sidebarId];
+    if (!sidebar) return false;
+    const ids = new Set<string>();
+    collectSidebarIds(sidebar.items as z.input<typeof SidebarItemSchema>[], ids);
+    return ids.has(itemId);
+}
+
+/**
+ * Top-level Admin IA configuration object — the single value that gets
+ * validated at boot. All maps use string keys for sections, sidebars,
+ * dashboards, tabs and createActions; roles are keyed by `RoleEnum` values.
+ *
+ * Cross-reference validations run in `.superRefine()` (T-018). Any failure
+ * causes the app to refuse to start with a precise error path and message.
+ * Implemented validations (per doc 02 §13, §13.7 and §13.9 are DROPPED):
+ *   §13.1 — sidebar refs
+ *   §13.2 — role mainMenu section refs
+ *   §13.3 — role dashboard refs
+ *   §13.4 — create-action refs (topbar + mobile FAB)
+ *   §13.5 — mobile.bottomNav refs (must be in mainMenu)
+ *   §13.6 — labelOverrides path resolution
+ *   §13.8 — unique item IDs within each sidebar
+ *
+ * @example
+ * ```ts
+ * const config: AdminIAConfig = {
+ *   sections: { inicio: { ... } },
+ *   sidebars: { inicioSidebar: { ... } },
+ *   dashboards: { hostDashboard: { ... } },
+ *   tabs: { accommodation: { ... } },
+ *   createActions: { newAccommodation: { ... } },
+ *   roles: { [RoleEnum.HOST]: { ... } },
+ * };
+ * ```
+ */
+export const AdminIAConfigSchema = z
+    .object({
+        sections: z.record(z.string(), SectionSchema),
+        sidebars: z.record(z.string(), SidebarSchema),
+        dashboards: z.record(z.string(), DashboardSchema),
+        /** Keyed by entity name (e.g. `'accommodation'`, `'post'`, `'event'`). */
+        tabs: z.record(z.string(), TabsConfigSchema),
+        createActions: z.record(z.string(), CreateActionSchema),
+        /**
+         * Role configs keyed by RoleEnum value string.
+         *
+         * Uses `z.string()` (not `z.nativeEnum(RoleEnum)` nor `z.partialRecord`)
+         * deliberately:
+         * - `z.record(z.nativeEnum(RoleEnum), …)` in Zod v4 requires ALL enum keys
+         *   present, but USER/GUEST/SYSTEM are platform roles with no admin IA config.
+         * - `z.partialRecord(z.nativeEnum(RoleEnum), …)` keeps key typing but makes
+         *   every value `RoleConfig | undefined`, which forces undefined-guards through
+         *   the entire superRefine and tests for no real safety gain.
+         * Key typos are already caught at compile time because the composer
+         * (`index.ts`) builds this object with `RoleEnum.X` keys. The cross-reference
+         * validations below validate the provided keys' contents.
+         */
+        roles: z.record(z.string(), RoleConfigSchema)
+    })
+    .superRefine((config, ctx) => {
+        // ── §13.1 Sidebar refs ────────────────────────────────────────────
+        // Every section.sidebar (when not null) must exist in config.sidebars.
+        for (const [sectionId, section] of Object.entries(config.sections)) {
+            if (section.sidebar !== null && !config.sidebars[section.sidebar]) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['sections', sectionId, 'sidebar'],
+                    message: `Sidebar '${section.sidebar}' not found in sidebars`
+                });
+            }
+        }
+
+        // ── §13.2 Role mainMenu section refs ──────────────────────────────
+        // Every entry in an enabled role's mainMenu must be a known section ID.
+        for (const [roleId, role] of Object.entries(config.roles)) {
+            if (!role.enabled || !role.mainMenu) continue;
+            for (const [idx, sectionId] of role.mainMenu.entries()) {
+                if (!config.sections[sectionId]) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['roles', roleId, 'mainMenu', idx],
+                        message: `Section '${sectionId}' not found in sections`
+                    });
+                }
+            }
+        }
+
+        // ── §13.3 Role dashboard refs ──────────────────────────────────────
+        // Every enabled role's dashboard must reference a known dashboard.
+        for (const [roleId, role] of Object.entries(config.roles)) {
+            if (!role.enabled || !role.dashboard) continue;
+            if (!config.dashboards[role.dashboard]) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['roles', roleId, 'dashboard'],
+                    message: `Dashboard '${role.dashboard}' not found in dashboards`
+                });
+            }
+        }
+
+        // ── §13.4 Create-action refs ───────────────────────────────────────
+        // topbar.showQuickCreate (array) entries and mobile.fab must exist in
+        // config.createActions.
+        for (const [roleId, role] of Object.entries(config.roles)) {
+            if (!role.enabled) continue;
+
+            const qc = role.topbar?.showQuickCreate;
+            if (Array.isArray(qc)) {
+                for (const [idx, actionId] of qc.entries()) {
+                    if (!config.createActions[actionId]) {
+                        ctx.addIssue({
+                            code: 'custom',
+                            path: ['roles', roleId, 'topbar', 'showQuickCreate', idx],
+                            message: `Create action '${actionId}' not found in createActions`
+                        });
+                    }
+                }
+            }
+
+            const fab = role.mobile?.fab;
+            if (fab && !config.createActions[fab]) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['roles', roleId, 'mobile', 'fab'],
+                    message: `Create action '${fab}' not found in createActions`
+                });
+            }
+        }
+
+        // ── §13.5 mobile.bottomNav refs ────────────────────────────────────
+        // Every entry in mobile.bottomNav must be a section ID present in the
+        // role's own mainMenu.
+        for (const [roleId, role] of Object.entries(config.roles)) {
+            if (!role.enabled || !role.mobile?.bottomNav) continue;
+            for (const [idx, sectionId] of role.mobile.bottomNav.entries()) {
+                if (!role.mainMenu?.includes(sectionId)) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['roles', roleId, 'mobile', 'bottomNav', idx],
+                        message: `bottomNav section '${sectionId}' must be in the role's mainMenu`
+                    });
+                }
+            }
+        }
+
+        // ── §13.6 labelOverrides path resolution ───────────────────────────
+        // Every labelOverrides key must resolve to a known item or section.
+        // Format: 'sidebarId.itemId' or 'sectionId'.
+        for (const [roleId, role] of Object.entries(config.roles)) {
+            if (!role.enabled) continue;
+            const overrides = role.labelOverrides ?? {};
+            for (const key of Object.keys(overrides)) {
+                if (!resolveLabelPath(config, key)) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['roles', roleId, 'labelOverrides', key],
+                        message: `Label override path '${key}' does not resolve to any known sidebar item or section`
+                    });
+                }
+            }
+        }
+
+        // ── §13.8 Unique IDs within each sidebar ───────────────────────────
+        // Within a sidebar, all item IDs (recursively flattened) must be unique.
+        for (const [sidebarId, sidebar] of Object.entries(config.sidebars)) {
+            const ids = new Set<string>();
+            const duplicates: string[] = [];
+            const visit = (items: z.input<typeof SidebarItemSchema>[]): void => {
+                for (const item of items) {
+                    if (ids.has(item.id)) {
+                        duplicates.push(item.id);
+                    } else {
+                        ids.add(item.id);
+                    }
+                    if (item.type === 'group') {
+                        visit(item.items as z.input<typeof SidebarItemSchema>[]);
+                    }
+                }
+            };
+            visit(sidebar.items as z.input<typeof SidebarItemSchema>[]);
+            if (duplicates.length > 0) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['sidebars', sidebarId],
+                    message: `Duplicate item IDs in sidebar: ${duplicates.join(', ')}`
+                });
+            }
+        }
+    });
 
 /**
  * Inferred TypeScript type for {@link AdminIAConfigSchema}.
