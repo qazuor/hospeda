@@ -13,7 +13,13 @@
 
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * Dark mode is driven by the [data-theme="dark"] attribute (set on <html>,
+ * matching the web app + the [data-app="admin"][data-theme="dark"] scope in
+ * @repo/design-tokens), NOT the legacy `.dark` class. Tailwind `dark:`
+ * utilities resolve against an ancestor carrying the attribute.
+ */
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 body {
     @apply m-0;
