@@ -6,6 +6,8 @@
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
 import CategoryTiles from "@/components/CategoryTiles.astro";
+import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd.astro";
+import WebSiteJsonLd from "@/components/seo/WebSiteJsonLd.astro";
 import countryHousesImg from "@/assets/images/categories/country-houses.jpg";
 import hotelsImg from "@/assets/images/categories/hotels.jpg";
 import apartmentsImg from "@/assets/images/categories/apartments.jpg";
@@ -26,6 +28,8 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { BRAND_NAME, SOCIAL_PROFILE_URLS } from "@/lib/constants";
+import { getSiteUrl } from "@/lib/env";
 import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
@@ -40,6 +44,12 @@ export const getStaticPaths = (() => {
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// Site-level structured data (SPEC-157 REQ-5)
+// Logo: android-chrome-512x512.png is a 512×512 square PNG — the recommended
+// format for schema.org Organization logo (Google requires min 112×112, 1:1).
+const siteUrl = getSiteUrl().replace(/\/$/, '');
+const logoUrl = `${siteUrl}/android-chrome-512x512.png`;
 
 // Fetch city destinations for the search bar (SSG — fetched at build time)
 const destinationsResult = await destinationsApi.list({
@@ -151,6 +161,10 @@ const categoryTiles = [
     description={t("home.description")}
     canonicalPath={`/${locale}/`}
 >
+    <!-- Site-level structured data (SPEC-157 REQ-5) -->
+    <WebSiteJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} locale={locale} />
+    <OrganizationJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} logo={logoUrl} sameAs={SOCIAL_PROFILE_URLS} />
+
     <!-- 1. Hero -->
     <HeroSection locale={locale} socialProof={socialProof} destinations={destinations} />
 
