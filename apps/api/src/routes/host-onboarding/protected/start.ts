@@ -25,7 +25,9 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
+import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -86,6 +88,51 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
                 accommodationSlug: null
             };
         }
+
+        // SPEC-143 Block 1: ensure a billing_customer row exists for the newly
+        // promoted host. This is idempotent — if the customer already exists
+        // (e.g. resumed path), the call is a no-op. We call it AFTER the
+        // transaction so we never block the host-promotion on a billing error.
+        // Failures are logged but do NOT fail the request; the entitlement
+        // middleware falls back to owner-basico defaults based on role alone
+        // when no billing customer is found, so the UX is unaffected.
+        //
+        // `actor.email` is populated by actorMiddleware from `user.email`
+        // (Better Auth session) for all authenticated users. If for any reason
+        // it is absent, we skip the sync rather than crash.
+        if (actor.email) {
+            try {
+                const billing = getQZPayBilling();
+                const syncService = new BillingCustomerSyncService(billing ?? null, {
+                    throwOnError: false
+                });
+                const customerId = await syncService.ensureCustomerExists({
+                    userId: actor.id,
+                    email: actor.email,
+                    name: actor.name
+                });
+                if (customerId) {
+                    apiLogger.info(
+                        { userId: actor.id, customerId },
+                        'host-onboarding/start: billing customer ensured'
+                    );
+                }
+            } catch (billingError) {
+                // Should never reach here (throwOnError: false), but guard anyway.
+                const msg =
+                    billingError instanceof Error ? billingError.message : String(billingError);
+                apiLogger.warn(
+                    { userId: actor.id, error: msg },
+                    'host-onboarding/start: billing customer sync failed (non-fatal)'
+                );
+            }
+        } else {
+            apiLogger.warn(
+                { userId: actor.id },
+                'host-onboarding/start: actor has no email — skipping billing customer sync'
+            );
+        }
+
         return {
             status: data.status,
             accommodationId: data.accommodation.id,
