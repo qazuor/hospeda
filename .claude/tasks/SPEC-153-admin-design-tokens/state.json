@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 26,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -397,7 +397,10 @@
             "id": "T-153-27",
             "title": "Migrate admin dark mode .dark class → [data-theme='dark'] attribute",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T21:35:00Z",
+            "completedAt": "2026-05-23T21:55:00Z",
+            "completionNotes": "DONE (AC-10). Changed apps/admin/src/styles.css @custom-variant from `dark (&:is(.dark *))` to `dark (&:is([data-theme=\"dark\"] *))` — matches the web convention + the package's [data-app=admin][data-theme=dark] scope. DISCOVERY: admin has NO DOM theme-application code — grep found zero `documentElement.classList.add('dark')` / setAttribute / applyTheme / matchMedia-theme logic. The .dark class was never actually set; the settings page (src/routes/_authed/me/settings.tsx) stores a themeAdmin preference (light/dark/system) but never applies it to the DOM. So there was no classList toggle to migrate — the task reduced to the variant swap. VERIFIED: 474 `dark:` utility usages exist in admin source; the production build compiles them to `[data-theme=dark] *)` selectors (sample: `[data-theme=dark] *){border-color:var(--color-amber-700)}`) with ZERO leftover `.dark` selectors. Setting data-theme=\"dark\" on <html> now flips both the design tokens (dark scope) and all dark: utilities — the color-mix surfaces auto-invert because they base on the theme-aware fg-primary. AC-10 'verify in DevTools' = manual attribute toggle works. Commit: 28880a640. FOLLOW-UP (out of SPEC-153 scope, flag for a separate task): wire a theme-application layer (read themeAdmin pref → set data-theme on <html> + FOUC init script + persistence) so the existing settings-page toggle actually activates dark mode for users. Today dark is only reachable via manual DevTools attribute-setting.",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-153-26"],
