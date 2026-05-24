@@ -263,7 +263,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
 
     return (
-        <html lang={env.VITE_DEFAULT_LOCALE}>
+        <html
+            lang={env.VITE_DEFAULT_LOCALE}
+            data-app="admin"
+        >
             <head>
                 <HeadContent />
                 <link
