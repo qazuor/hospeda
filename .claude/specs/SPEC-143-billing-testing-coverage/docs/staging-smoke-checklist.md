@@ -365,6 +365,109 @@ Workstream A reference: `entitlement-load.test.ts`
 
 **Run log**: (template)
 
+### 1.15 — Entitlements & limits FACTUALLY APPLIED end-to-end
+
+**Why this exists**: Sections 1.13/1.14 confirm entitlements are *loaded into cache* after activation. This section confirms they are *enforced* on real API endpoints — i.e., a user without entitlement X actually gets blocked on the endpoint protected by X, and a user without remaining limit Y gets blocked when trying to create the (Y+1)-th resource.
+
+**Why it matters**: A previous code grep (2026-05-23) suggested possible gap: `enforce*Limit` middlewares ARE wired to 4 routes (`accommodations create`, `accommodations createDraft`, `user-bookmarks create`, `owner-promotions create`), but `gate*` entitlement middlewares (`gateRichDescription`, `gateVideoEmbed`, `gateCalendarAccess`, `gateExternalCalendarSync`, `gateWhatsAppDisplay`, `gateWhatsAppDirect`, `gateReviewResponse`, `gateFavorites`) appear NOT to be wired to any route. This section validates whether enforcement actually happens or relies on UI gating only. See engram `billing/entitlement-enforcement-gap-hypothesis`.
+
+**Pre-conditions**: Persisted test user with **active sub on a non-free plan**. Recommended: owner-basico (clear baseline of which entitlements are in/out).
+
+**Reference matrix for owner-basico plan** (used for the baseline tests below):
+
+| Entitlement | In owner-basico? | Smoke endpoint(s) to call |
+|-------------|------------------|---------------------------|
+| `PUBLISH_ACCOMMODATIONS` | ✅ | `POST /api/v1/protected/accommodations` |
+| `EDIT_ACCOMMODATION_INFO` | ✅ | `PATCH /api/v1/protected/accommodations/:id` |
+| `VIEW_BASIC_STATS` | ✅ | `GET /api/v1/protected/accommodations/:id/stats` |
+| `RESPOND_REVIEWS` | ✅ | `POST /api/v1/protected/accommodation-reviews/:id/response` |
+| `CAN_USE_CALENDAR` | ✅ | `GET /api/v1/protected/accommodations/:id/calendar` |
+| `CAN_CONTACT_WHATSAPP_DISPLAY` | ✅ | (display in UI; check that owner field accepts whatsapp number) |
+| `VIEW_ADVANCED_STATS` | ❌ | `GET /api/v1/protected/accommodations/:id/advanced-stats` (if exists) |
+| `PRIORITY_SUPPORT` | ❌ | (UI flag — N/A endpoint) |
+| `FEATURED_LISTING` | ❌ | `POST /api/v1/protected/accommodations/:id/feature` (if exists) |
+| `CREATE_PROMOTIONS` | ❌ | `POST /api/v1/protected/owner-promotions` (limit=0 also blocks) |
+| `CAN_USE_RICH_DESCRIPTION` | ❌ | `PATCH /api/v1/protected/accommodations/:id` with markdown body |
+| `CAN_EMBED_VIDEO` | ❌ | `PATCH /api/v1/protected/accommodations/:id` with video field |
+| `CAN_SYNC_EXTERNAL_CALENDAR` | ❌ | `POST /api/v1/protected/accommodations/:id/calendar/sync` |
+| `CAN_CONTACT_WHATSAPP_DIRECT` | ❌ | (UI — check direct contact action blocked) |
+| `CUSTOM_BRANDING` | ❌ | (Settings page check) |
+| `API_ACCESS` | ❌ | (API token issuance endpoint, if exists) |
+
+| Limit | owner-basico value | Smoke trigger |
+|-------|--------------------|---------------|
+| `MAX_ACCOMMODATIONS` | 1 | Create 1st → ok; create 2nd → 403 limit_reached |
+| `MAX_PHOTOS_PER_ACCOMMODATION` | 5 | Upload 1-5 → ok; upload 6th → 403 limit_reached |
+| `MAX_ACTIVE_PROMOTIONS` | 0 | Create any promotion → 403 limit_reached (limit is 0) |
+
+**Steps**:
+
+#### A) Limits enforcement (the known-wired ones)
+
+1. **MAX_ACCOMMODATIONS (limit=1)**:
+   - Confirm user has zero accommodations (`SELECT count(*) FROM accommodations WHERE owner_id = '<user>'`).
+   - Create 1st via `POST /api/v1/protected/accommodations` (or via UI on `/mi-cuenta/alojamientos/nuevo`). **Expected**: 201.
+   - Create 2nd. **Expected**: 403 with error body `{ success: false, error: { code: 'LIMIT_REACHED', message: <localized>, details: { limitKey: 'MAX_ACCOMMODATIONS', currentCount: 1, maxAllowed: 1, upgradeUrl: '/billing/plans', usagePercent: 100 } } }`. Note: `X-Usage-Warning` header is NOT emitted at the limit boundary itself (only at 80-99% pre-warning); for `limit=1` plans, no integer count lands in that band, so the header is unreachable on this section — see Block 2 for header validation against `limit ≥ 5`.
+
+2. **MAX_PHOTOS_PER_ACCOMMODATION (limit=5)**:
+   - On the accommodation created above, upload 4 photos. **Expected**: each returns 201. The 4th upload (count=4, 80%) MAY include the `X-Usage-Warning` header advising the user they are near limit.
+   - Upload 5th. **Expected**: 201. The response MAY include `X-Usage-Warning` with `threshold=critical` (100% is reached only at the 5th — actually no: 5/5 is exceeded; 4/5 is critical/80%).
+   - Upload 6th. **Expected**: 403 LIMIT_REACHED with `details.limitKey: 'MAX_PHOTOS_PER_ACCOMMODATION'`, `maxAllowed: 5`, `currentCount: 5`. `X-Usage-Warning` is NOT set on the 403 itself (by design — the 403 body already conveys "exceeded"; the header is only for pre-block warnings).
+
+3. **MAX_ACTIVE_PROMOTIONS (limit=0)**:
+   - Try to create any promotion via `POST /api/v1/protected/owner-promotions`. **Expected**: 403 LIMIT_REACHED with `details.limitKey: 'MAX_ACTIVE_PROMOTIONS'`, `maxAllowed: 0`. Same `X-Usage-Warning` caveat as MAX_ACCOMMODATIONS (limit=0 → no warning band; the feature is simply disabled for this plan).
+
+#### B) Entitlements POSITIVE (allowed for plan)
+
+Each call should return 2xx as if no entitlement check existed (or with explicit "entitlement granted" success path).
+
+4. **PUBLISH_ACCOMMODATIONS** + **EDIT_ACCOMMODATION_INFO**: implicit in section A.1; the create + patch flow already exercised them.
+5. **VIEW_BASIC_STATS**: `GET /api/v1/protected/accommodations/:id/stats` returns 200 with stats payload.
+6. **RESPOND_REVIEWS**: create a review on the accommodation (likely needs a 2nd user or a seeded review), then `POST /api/v1/protected/accommodation-reviews/:reviewId/response` returns 201.
+7. **CAN_USE_CALENDAR**: `GET /api/v1/protected/accommodations/:id/calendar` returns 200 (NOT a 403 from `gateCalendarAccess`).
+8. **CAN_CONTACT_WHATSAPP_DISPLAY**: in UI, navigate to the accommodation's contact section as another user — confirm WhatsApp link is visible.
+
+#### C) Entitlements NEGATIVE (should be BLOCKED for owner-basico)
+
+These calls test whether the entitlement enforcement actually fires. Each should ideally return 403 with `code: ENTITLEMENT_REQUIRED` and `details.requiredEntitlement: <KEY>` and `details.upgradeUrl: '/billing/plans'`. **If the call returns 2xx, that confirms the enforcement gap** — file a follow-up.
+
+9. **CAN_USE_RICH_DESCRIPTION**: `PATCH /api/v1/protected/accommodations/:id` with `description` containing markdown (`# Heading\n**bold**`). Expected (correct): 403 ENTITLEMENT_REQUIRED. Expected (gap): 200 with markdown stripped OR 200 with markdown stored — both indicate gap (one silent strip per middleware, the other no enforcement at all).
+10. **CAN_EMBED_VIDEO**: `PATCH /api/v1/protected/accommodations/:id` with `videoEmbedUrl: 'https://youtube.com/...'`. Same expectation as above.
+11. **CAN_SYNC_EXTERNAL_CALENDAR**: `POST /api/v1/protected/accommodations/:id/calendar/sync` with any external ICS URL. Expected: 403.
+12. **CAN_CONTACT_WHATSAPP_DIRECT**: as user, attempt the direct-chat action (endpoint TBD — find via UI inspect). Expected: 403.
+13. **FEATURED_LISTING**: if a feature endpoint exists, call it. Expected: 403.
+14. **VIEW_ADVANCED_STATS**: if an advanced-stats endpoint exists, call it. Expected: 403.
+15. **PRIORITY_SUPPORT** / **CUSTOM_BRANDING** / **API_ACCESS** / **DEDICATED_MANAGER**: probably UI-only flags or no endpoints; document as "N/A in this smoke" if no endpoint exists.
+
+#### D) Plan change reflection
+
+16. Schedule a plan upgrade (owner-basico → owner-pro) via `/mi-cuenta` plan change UI. Pay any delta if required.
+17. Wait for the activation (webhook OR polling).
+18. **Repeat steps 4-15** with the new plan as baseline. The negative tests for owner-basico (steps 9-15) should now return 2xx because owner-pro includes most of those entitlements. The limit tests should reflect owner-pro's higher caps (3 accommodations, 15 photos, 3 promotions).
+19. Validate via API logs: `Entitlement cache cleared for customer <id>` MUST appear after the plan change; the next `/auth/me` call MUST log `Loaded and cached entitlements: <new count>, Limits: <new count>`.
+
+#### E) Cache behavior
+
+20. `GET /api/v1/public/auth/me` twice in a row. First call: log shows `Loaded and cached entitlements`. Second call (within 5 min TTL): no DB query, no "Loaded" log — only the cache hit fast path.
+21. Force a cache miss: invalidate via admin endpoint or wait 5 min TTL. Next call should re-log "Loaded and cached".
+
+**Expected outcome**:
+- Limits (A): all 3 enforced correctly with proper error shape + headers.
+- Positive entitlements (B): all allowed, no false blocks.
+- Negative entitlements (C): the actual enforcement coverage discovered. Any 2xx where 403 was expected = enforcement gap finding (file separately).
+- Plan change reflection (D): entitlements + limits update dynamically; cache invalidates on plan change.
+- Cache (E): TTL and invalidation behave as designed.
+
+**Findings expected here**:
+- Either confirms all enforcement is in place (best case), or
+- Surfaces the entitlement-enforcement gap (the hypothesized one) with a precise endpoint-by-endpoint table of which work and which don't.
+
+**Run log**:
+
+| Date | Executor | PR | Test user | Plan | Section | Result | Notes |
+|------|----------|----|-----------|------|---------|--------|-------|
+| 2026-05-23 | qazuor | TBD | qazuor+billtest-annual2 | owner-basico annual | A.1 (MAX_ACCOMMODATIONS=1) | PASS w/ caveats | 1st create went via `/host-onboarding/start` (not limit-enforced, finding #8); 2nd create via `POST /api/v1/protected/accommodations` returned 403 with correct details (`limitKey: max_accommodations`, `currentCount: 1`, `maxAllowed: 1`, `upgradeUrl: /billing/plans`). New findings: #10 (LIMIT_REACHED envelope is stringified inside `error.message`), #11 (X-Usage-Warning unreachable on limit=1), #9 extended (description validation gap bilateral on create+read). |
+
 ---
 
 ## Phase 2 sections
