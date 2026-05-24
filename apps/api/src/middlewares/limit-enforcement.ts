@@ -19,10 +19,11 @@
  */
 
 import { LimitKey } from '@repo/billing';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     OwnerPromotionService,
+    ServiceError,
     UserBookmarkService
 } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
@@ -109,29 +110,24 @@ export function enforceAccommodationLimit(): AppMiddleware {
                     `Accommodation limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_ACCOMMODATIONS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Accommodation limit reached',
+                    {
+                        limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -241,29 +237,24 @@ export function enforcePhotoLimit(): AppMiddleware {
                     `Photo limit reached for accommodation ${accommodationId}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Photo limit reached',
+                    {
+                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -355,29 +346,24 @@ export function enforcePromotionLimit(): AppMiddleware {
                     `Promotion limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Promotion limit reached',
+                    {
+                        limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -473,29 +459,24 @@ export function enforceFavoritesLimit(): AppMiddleware {
                     `Favorites limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_FAVORITES,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Favorites limit reached',
+                    {
+                        limitKey: LimitKey.MAX_FAVORITES,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -593,29 +574,24 @@ export function enforcePropertiesLimit(): AppMiddleware {
                     `Properties limit reached for complex ${complexId}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_PROPERTIES,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Properties limit reached',
+                    {
+                        limitKey: LimitKey.MAX_PROPERTIES,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -705,29 +681,24 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                     `Staff accounts limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_STAFF_ACCOUNTS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Staff accounts limit reached',
+                    {
+                        limitKey: LimitKey.MAX_STAFF_ACCOUNTS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 

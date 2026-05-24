@@ -210,6 +210,72 @@ describe('Response Middleware', () => {
             expect(data.error.message).toBe('Not implemented');
         });
 
+        it('should format LIMIT_REACHED ServiceError with details preserved (regression: SPEC-143 Finding #10)', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/at-limit', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    'Has alcanzado el límite de 1 alojamientos. Actualiza tu plan para obtener más.',
+                    {
+                        limitKey: 'max_accommodations',
+                        currentCount: 1,
+                        maxAllowed: 1,
+                        usagePercent: 100,
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
+            });
+
+            const res = await app.request('/at-limit');
+
+            expect(res.status).toBe(403);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            // Code MUST be the structured LIMIT_REACHED, not a generic FORBIDDEN
+            expect(data.error.code).toBe('LIMIT_REACHED');
+            expect(data.error.message).toBe(
+                'Has alcanzado el límite de 1 alojamientos. Actualiza tu plan para obtener más.'
+            );
+            // details MUST be a structured object at the top of the error envelope,
+            // NOT a JSON-stringified payload nested inside `error.message`
+            expect(data.error.details).toMatchObject({
+                limitKey: 'max_accommodations',
+                currentCount: 1,
+                maxAllowed: 1,
+                usagePercent: 100,
+                upgradeUrl: '/billing/plans'
+            });
+        });
+
+        it('should format ENTITLEMENT_REQUIRED ServiceError with details preserved', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/no-entitlement', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                    'Tu plan no incluye esta funcionalidad.',
+                    {
+                        entitlement: 'can_use_rich_description',
+                        upgradeUrl: '/billing/plans'
+                    }
+                );
+            });
+
+            const res = await app.request('/no-entitlement');
+
+            expect(res.status).toBe(403);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.details).toMatchObject({
+                entitlement: 'can_use_rich_description',
+                upgradeUrl: '/billing/plans'
+            });
+        });
+
         it('should format generic errors as internal server error', async () => {
             app.get('/generic-error', () => {
                 throw new Error('Something went wrong');

@@ -6,8 +6,13 @@
  */
 
 import { LimitKey } from '@repo/billing';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
-import { AccommodationService, type Actor, OwnerPromotionService } from '@repo/service-core';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationService,
+    type Actor,
+    OwnerPromotionService,
+    ServiceError
+} from '@repo/service-core';
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -24,10 +29,59 @@ vi.mock('../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
 }));
 
-vi.mock('@repo/service-core', () => ({
-    AccommodationService: vi.fn(),
-    OwnerPromotionService: vi.fn()
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AccommodationService: vi.fn(),
+        OwnerPromotionService: vi.fn()
+        // ServiceError stays as the real class from `actual` so `instanceof` checks
+        // in the production middleware work as expected.
+    };
+});
+
+/**
+ * Minimal app.onError handler used by the integration tests below to mirror
+ * the production behavior of `createErrorHandler()` from
+ * `apps/api/src/middlewares/response.ts`. It converts a thrown `ServiceError`
+ * into the standard `{ success: false, error: { code, message, details } }`
+ * envelope with the right HTTP status, so tests can assert against the same
+ * shape clients see in production.
+ */
+const SERVICE_ERROR_HTTP_STATUS: Partial<Record<ServiceErrorCode, number>> = {
+    [ServiceErrorCode.LIMIT_REACHED]: 403,
+    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403,
+    [ServiceErrorCode.FORBIDDEN]: 403,
+    [ServiceErrorCode.UNAUTHORIZED]: 401,
+    [ServiceErrorCode.VALIDATION_ERROR]: 400,
+    [ServiceErrorCode.NOT_FOUND]: 404
+};
+
+const attachTestErrorHandler = (app: Hono<AppBindings>): void => {
+    app.onError((error, c) => {
+        if (error instanceof ServiceError) {
+            const status = SERVICE_ERROR_HTTP_STATUS[error.code] ?? 500;
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: error.code,
+                        message: error.message,
+                        ...(error.details ? { details: error.details } : {})
+                    }
+                },
+                status as 400 | 401 | 403 | 404 | 500
+            );
+        }
+        if (error instanceof HTTPException) {
+            return error.getResponse();
+        }
+        return c.json(
+            { success: false, error: { code: 'INTERNAL_ERROR', message: error.message } },
+            500
+        );
+    });
+};
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
@@ -118,7 +172,7 @@ describe('Limit Enforcement Middleware', () => {
 
             const middleware = enforceAccommodationLimit();
 
-            await expect(middleware(mockContext, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
 
             expect(mockNext).not.toHaveBeenCalled();
         });
@@ -259,7 +313,7 @@ describe('Limit Enforcement Middleware', () => {
 
             const middleware = enforcePhotoLimit();
 
-            await expect(middleware(mockContext, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
         });
 
         it('should continue when no accommodation ID in params', async () => {
@@ -352,7 +406,7 @@ describe('Limit Enforcement Middleware', () => {
 
             const middleware = enforcePromotionLimit();
 
-            await expect(middleware(mockContext, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
         });
 
         it('should continue when count fails', async () => {
@@ -411,6 +465,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should allow request when under accommodation limit', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -456,6 +511,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should return 403 with proper error structure when limit reached', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -516,6 +572,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should continue on service error to avoid blocking users', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -555,6 +612,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should handle limit of zero (feature disabled)', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -658,6 +716,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should allow promotion creation when under limit', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -703,6 +762,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should return 403 when promotion limit reached', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -762,6 +822,7 @@ describe('Limit Enforcement Middleware', () => {
             it('should work correctly with multiple middlewares in sequence', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
+                attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
                     role: RoleEnum.HOST,
@@ -857,23 +918,20 @@ describe('Limit Enforcement Middleware', () => {
             // Act & Assert
             try {
                 await middleware(mockContext, mockNext);
-                expect.fail('Should have thrown HTTPException');
+                expect.fail('Should have thrown ServiceError');
             } catch (error) {
-                expect(error).toBeInstanceOf(HTTPException);
-                const httpError = error as HTTPException;
+                expect(error).toBeInstanceOf(ServiceError);
+                const serviceError = error as ServiceError;
 
-                expect(httpError.status).toBe(403);
+                expect(serviceError.code).toBe(ServiceErrorCode.LIMIT_REACHED);
+                expect(serviceError.message).toEqual(expect.any(String));
 
-                const errorMessage = JSON.parse(httpError.message);
-                expect(errorMessage).toHaveProperty('success', false);
-                expect(errorMessage).toHaveProperty('error');
-                expect(errorMessage.error).toHaveProperty('code', 'LIMIT_REACHED');
-                expect(errorMessage.error).toHaveProperty('message');
-                expect(errorMessage.error).toHaveProperty('details');
-                expect(errorMessage.error.details).toHaveProperty('limitKey');
-                expect(errorMessage.error.details).toHaveProperty('currentCount');
-                expect(errorMessage.error.details).toHaveProperty('maxAllowed');
-                expect(errorMessage.error.details).toHaveProperty('upgradeUrl');
+                expect(serviceError.details).toMatchObject({
+                    limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                    currentCount: expect.any(Number),
+                    maxAllowed: expect.any(Number),
+                    upgradeUrl: '/billing/plans'
+                });
             }
         });
     });

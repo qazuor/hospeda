@@ -925,7 +925,9 @@ const livemode = !sandbox;
 - **qzpay-mercadopago 2.1.0** implements `payment.search({externalReference})` using the SDK's typed filter (with passthrough support for the untyped `preference_id` MP REST param).
 - **Hospeda PR #1234** extends the annual flow to schedule a polling job with `resource_type='one_time_payment'` and `providerResourceId` = local checkout-session id (which qzpay-core sets as MP `external_reference`). The `subscription-poll` cron searches MP payments by external_reference once per minute and routes any approved payment through the same idempotent `confirmAnnualSubscription` helper the webhook handler uses. Webhook and polling can race for the same payment without risk — both go through the idempotency guards.
 
-**Status**: 🟢 Resolved on staging (pending smoke 1.3 re-run with new versions deployed). The webhook handler now ALSO works because the metadata-forwarding fix lets `payment.metadata.annualSubscriptionId` reach the dispatcher; polling is defense-in-depth for the IPN-only delivery channel.
+**Status**: 🟢 Resolved on staging — smoke 1.3 validated end-to-end on 2026-05-23 21:29-21:30. Sub `6579b293-9df4-4a11-ad90-9dffa78484e9` (annual, 1500 ARS) transitioned `incomplete → active` via polling cron in 1 attempt (~45 seconds from signup). All 4 MP webhooks (2× merchant_order, 2× payment 159947088809) were dropped by the `?source_news=webhooks` filter as expected; the cron's `payments.search({externalReference: <checkout-session-id>})` found the approved payment and routed it through `confirmAnnualSubscription` with `source: 'polling'`. Logged: `Annual subscription activated by MP payment confirmation` + `Entitlements: 6, Limits: 3` on the next /mi-cuenta reload.
+
+The webhook handler now ALSO works because the metadata-forwarding fix lets `payment.metadata.annualSubscriptionId` reach the dispatcher; polling is defense-in-depth for the IPN-only delivery channel.
 
 ### Smoke 1.2 monthly — final result
 

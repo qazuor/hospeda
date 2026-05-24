@@ -25,6 +25,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -90,5 +91,18 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
             accommodationId: data.accommodation.id,
             accommodationSlug: data.accommodation.slug
         };
+    },
+    options: {
+        // SPEC-143 Finding #8: previously this route bypassed `enforceAccommodationLimit`,
+        // letting a user with MAX_ACCOMMODATIONS at cap create one extra DRAFT via the
+        // publicar/onboarding entry point. The service-layer short-circuits
+        // (`already_host`, `resumed`) are now preceded by the middleware: callers at
+        // limit get 403 LIMIT_REACHED before the create attempt. Privileged users
+        // (HOST/ADMIN/etc) at limit also receive 403 here — this is acceptable: they
+        // would have received `already_host` from the service anyway, indicating they
+        // should go to the admin panel; the 403 conveys the same "you cannot create
+        // more accommodations from this entry point" semantic with the right HTTP
+        // code for limit-reached.
+        middlewares: [enforceAccommodationLimit()]
     }
 });
