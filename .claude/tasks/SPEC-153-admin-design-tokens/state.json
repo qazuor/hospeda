@@ -5,9 +5,9 @@
     "created": "2026-05-22T21:30:00Z",
     "summary": {
         "total": 32,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.6,
         "phasesCompleted": ["phase-0", "phase-1", "phase-2"]
@@ -384,7 +384,10 @@
             "id": "T-153-26",
             "title": "Refactor apps/admin/src/styles.css — @import tokens.css + update @theme inline",
             "phase": "phase-3",
-            "status": "pending",
+            "status": "completed",
+            "startedAt": "2026-05-23T19:40:00Z",
+            "completedAt": "2026-05-23T21:30:00Z",
+            "completionNotes": "DONE (AC-9). apps/admin/src/styles.css: added @import '@repo/design-tokens/tokens.css' after @import 'tailwindcss'; removed the hand-authored shadcn :root + .dark token blocks (~75 lines); rewrote @theme inline to remap every shadcn semantic slot onto the shared tokens. Mappings: background→bg-app, foreground→fg-primary, card/popover→bg-elevated, primary→color-primary (RIVER — the intentional re-brand), primary-foreground→palette-neutral-50, destructive→color-danger, destructive-foreground→palette-neutral-50, border/input→color-border, ring→color-primary (river focus ring), muted-foreground→fg-muted, charts→river/forest/accent/sky/sand palette-500, radius scale off shared --radius, sidebar→bg-elevated+color-primary+derived hover (AC-13), fonts→font-body/font-heading. ARCHITECTURAL DECISION (user-approved via AskUserQuestion): shadcn's subtle neutral surfaces (secondary/muted/accent/sidebar-accent + foregrounds) have no 1:1 token in the deliberately-narrow 17-token admin palette, so they are DERIVED via color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) N%) — bases on theme-aware tokens so they auto-flip in dark without expanding the package API. Chosen over (b) adding ~8 surface tokens to the package or (c) palette-primitive + manual dark override. KEY MECHANIC: @theme inline does NOT emit --color-* custom properties — it inlines the RHS value into generated utilities, so --color-primary: var(--color-primary) compiles bg-primary to var(--color-primary) which resolves to the [data-app=admin] token (no self-reference). The brand accent (orange) stays available as var(--color-accent); shadcn's accent utility is intentionally the neutral hover surface. VERIFIED: admin `vite build` succeeds (exit 0); built CSS imports palette + [data-app=admin] + [data-app=admin][data-theme=dark] scopes (--color-primary compiled to #1d5ebf = river-600 blue), color-mix derivations compile, sample utility resolves (.text-foreground{color:var(--color-fg-primary)}), no leftover shadcn :root --primary. Commit: cfef6ae02. Dark-mode trigger (.dark → [data-theme=dark]) is T-153-27 — dark is transiently inert between these two commits (package dark tokens live under [data-theme=dark] but admin still toggles .dark until T-153-27 rewires it).",
             "complexity": 3,
             "owner": "agent",
             "dependsOn": ["T-153-25"],
