@@ -35,6 +35,7 @@ vi.mock('@dnd-kit/core', async () => {
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { GalleryField, type GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -58,7 +59,8 @@ const buildImage = (id: string, order: number): GalleryImage => ({
     id,
     url: `https://example.com/${id}.jpg`,
     alt: `Alt ${id}`,
-    order
+    order,
+    moderationState: ModerationStatusEnum.APPROVED
 });
 
 // ---------------------------------------------------------------------------
