@@ -297,6 +297,17 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 );
                 skipped++;
 
+                // Heal role drift: a downstream flow (e.g. host-onboarding) may have
+                // promoted a USER to HOST after the initial seed. Re-running the seed
+                // must restore the matrix to its declared shape so smoke runs against
+                // a predictable baseline.
+                if (existing.role !== spec.role) {
+                    await userModel.update({ id: userId }, { role: spec.role });
+                    logger.info(
+                        `${STATUS_ICONS.Info}    Healed role drift for ${spec.email} (${existing.role} → ${spec.role})`
+                    );
+                }
+
                 // Even if the user row exists, fill in missing account/billing rows below.
             } else {
                 // ── Insert users row ─────────────────────────────────────────
