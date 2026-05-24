@@ -6,6 +6,22 @@
 /** Brand name used in titles, meta tags, and UI */
 export const BRAND_NAME = 'Hospeda';
 
+/**
+ * Brand primary color as an sRGB hex string, derived from `--brand-primary`
+ * (river[500] = oklch(0.63 0.19 259) converted to sRGB).
+ *
+ * Used in:
+ *  - `<meta name="theme-color">` across all layout shells
+ *  - `theme_color` in public/site.webmanifest
+ *
+ * Single source of truth — do NOT hardcode this hex in layout files.
+ *
+ * @see packages/design-tokens/src/tokens/colors.ts (river canonical value)
+ * @see packages/design-tokens/src/themes/web-light.ts (brand-primary mapping)
+ * @see SPEC-157 REQ-18
+ */
+export const BRAND_THEME_COLOR = '#3885f9' as const;
+
 /** Separator between page title and brand name */
 export const TITLE_SEPARATOR = ' | ';
 

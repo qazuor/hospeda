@@ -17,6 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl, getDeployVersion, isFeedbackEnabled } from '@/lib/env';
+import { BRAND_THEME_COLOR } from '@/lib/constants';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
@@ -85,6 +86,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. Single value
+		     matches site.webmanifest theme_color (no dark-mode variant — manifest is
+		     single-valued; a media-query variant can be considered as a follow-up). -->
+		<meta name="theme-color" content={BRAND_THEME_COLOR} />
 
 		<!-- SPEC-157 REQ-4: open the image-CDN and API connections early. Most
 		     LCP images are served from Cloudinary; preconnecting shaves the TLS
