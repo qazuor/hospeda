@@ -6,12 +6,12 @@
     },
     "host": {
         "landing": {
-            "trialCallout": "Experimente o Hospeda gratis por 14 dias. Seu periodo de avaliacao comeca quando voce publica sua primeira propriedade — sem cartao de credito, sem compromisso."
+            "trialCallout": "Experimente o Hospeda gratis por 14 dias. Seu periodo de avaliacao comeca quando voce publica sua primeira propriedade. Sem cartao de credito, sem compromisso."
         },
         "pages": {
             "nueva": {
                 "trialCalloutTitle": "14 dias gratis ao publicar",
-                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar. Sem cartao, sem compromisso — voce pode explorar o painel inteiro enquanto monta o seu rascunho."
+                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar. Sem cartao, sem compromisso. Voce pode explorar o painel inteiro enquanto monta o seu rascunho."
             }
         }
     }
