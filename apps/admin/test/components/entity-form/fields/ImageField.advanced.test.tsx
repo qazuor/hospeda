@@ -21,6 +21,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,6 +42,7 @@ const buildConfig = (overrides: Partial<FieldConfig> = {}): FieldConfig => ({
 const buildImage = (over: Partial<ImageValue> = {}): ImageValue => ({
     url: 'https://example.com/cover.jpg',
     alt: 'Existing cover',
+    moderationState: ModerationStatusEnum.APPROVED,
     ...over
 });
 
@@ -273,7 +275,11 @@ describe('ImageField — HEIC / AVIF preview fallback', () => {
         render(
             <ImageField
                 config={buildConfig()}
-                value={{ url: 'https://example.com/photo.heic?v=1', alt: '' }}
+                value={{
+                    url: 'https://example.com/photo.heic?v=1',
+                    alt: '',
+                    moderationState: ModerationStatusEnum.APPROVED
+                }}
                 onChange={vi.fn()}
             />
         );
@@ -289,7 +295,11 @@ describe('ImageField — HEIC / AVIF preview fallback', () => {
                 config={buildConfig()}
                 // Alt text ends in `.avif` (with no trailing space) so the
                 // regex `\.(avif)(\?|#|$)` matches end-of-string.
-                value={{ url: 'https://example.com/photo', alt: 'photo.avif' }}
+                value={{
+                    url: 'https://example.com/photo',
+                    alt: 'photo.avif',
+                    moderationState: ModerationStatusEnum.APPROVED
+                }}
                 onChange={vi.fn()}
             />
         );

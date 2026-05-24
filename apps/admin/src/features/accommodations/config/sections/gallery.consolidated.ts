@@ -49,8 +49,21 @@ export const createGalleryConsolidatedSection = (
         },
         fields: [
             // Imagen principal
+            //
+            // SPEC-143 Block 1: the field id MUST be the dot-notation path
+            // into the entity (`media.featuredImage`), not a flat key like
+            // `mainImage`. EntityPageBase's `prepareFormValues` /
+            // `unflattenValues` use the id as a JSON pointer to (a) hydrate
+            // the form from `accommodation.media.featuredImage` on load and
+            // (b) emit `{ media: { featuredImage: ... } }` in the PATCH body
+            // on save. Using a flat `mainImage` key here means the form never
+            // sees the existing photo and the PATCH body never carries the
+            // new upload; the API's Zod schema then strips `mainImage` as an
+            // unknown root key. Verified locally via Chrome devtools: GET
+            // returns `media.featuredImage`, form shows empty, PATCH body has
+            // neither `media` nor `mainImage`.
             {
-                id: 'mainImage',
+                id: 'media.featuredImage',
                 type: FieldTypeEnum.IMAGE,
                 required: true,
                 modes: ['view', 'edit', 'create'],
@@ -92,8 +105,14 @@ export const createGalleryConsolidatedSection = (
             // contract used by `useLimits.checkLimit` is investigated and
             // aligned), this `limitKey` can be re-added to bring back the
             // proactive UI warning before the user uploads up to the cap.
+            //
+            // SPEC-143 Block 1: field id MUST be `media.gallery` (dot-notation
+            // path), not `images`. Same root cause as `media.featuredImage`
+            // above — see that field's comment for the full explanation. The
+            // `galleryFieldHandlers` map key in `$id_.edit.tsx` and `new.tsx`
+            // must match this id so the upload handler is wired correctly.
             {
-                id: 'images',
+                id: 'media.gallery',
                 type: FieldTypeEnum.GALLERY,
                 required: false,
                 modes: ['view', 'edit', 'create'],

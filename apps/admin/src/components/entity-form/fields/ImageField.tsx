@@ -12,16 +12,21 @@ import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
 import { CloseIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
+import { ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 
 /**
- * Image value type
+ * Image value type — mirrors `ImageSchema` from `@repo/schemas` so the
+ * PATCH body parses cleanly. `moderationState` is required by ImageSchema
+ * and must always be present (new uploads default to PENDING; items loaded
+ * from the API preserve whatever the server sent).
  */
 export interface ImageValue {
     url: string;
     caption?: string;
     description?: string;
     alt?: string;
+    moderationState: ModerationStatusEnum;
 }
 
 /**
@@ -175,10 +180,13 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     imageUrl = URL.createObjectURL(file);
                 }
 
-                // Create image value
+                // Create image value. moderationState defaults to PENDING so
+                // the moderation pipeline can review new uploads (admin can
+                // promote to APPROVED via the moderation UI).
                 const imageValue: ImageValue = {
                     url: imageUrl,
-                    alt: file.name
+                    alt: file.name,
+                    moderationState: ModerationStatusEnum.PENDING
                 };
 
                 onChange?.(imageValue);
