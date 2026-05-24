@@ -66,6 +66,8 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 
 const feedbackEnabled = isFeedbackEnabled();
 const apiUrl = getApiUrl();
+// SPEC-157 REQ-4: API origin for the <head> preconnect hint (env-derived).
+const apiOrigin = new URL(apiUrl).origin;
 const deployVersion = getDeployVersion();
 
 /**
@@ -83,7 +85,13 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="description" content={description} />
+
+		<!-- SPEC-157 REQ-4: open the image-CDN and API connections early. Most
+		     LCP images are served from Cloudinary; preconnecting shaves the TLS
+		     handshake off the critical path. REQ-11: the meta description lives
+		     in SEOHead only (was duplicated here, two tags per page). -->
+		<link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+		<link rel="preconnect" href={apiOrigin} />
 
 		<!-- Favicon -->
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -97,25 +105,11 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<ThemeFoucScript cspNonce={cspNonce} />
 
-		<!-- FOUC prevention: hide text until fonts load.
-			 Guard with fonts.status check so client-side View Transition
-			 navigations (where fonts are already cached) never hide the body. -->
-		<script is:inline nonce={cspNonce}>
-			if (document.fonts.status !== 'loaded') {
-				document.documentElement.classList.add('fonts-loading');
-			}
-			document.fonts.ready.then(function() {
-				document.documentElement.classList.remove('fonts-loading');
-			});
-		</script>
-		<style is:inline nonce={cspNonce}>
-			.fonts-loading body {
-				opacity: 0;
-			}
-			body {
-				transition: opacity 0.2s ease;
-			}
-		</style>
+		<!-- SPEC-157 REQ-10: the full-page opacity:0 font gate was removed.
+		     Fonts load with font-display: swap (see FontsLoader), which prevents
+		     FOIT without hiding the whole body — the gate only delayed FCP on
+		     cold loads. -->
+
 
 		<ClientRouter />
 
