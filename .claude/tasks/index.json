@@ -466,14 +466,16 @@
         {
             "specId": "SPEC-154",
             "title": "Admin Config-Driven Information Architecture",
-            "status": "reserved",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "39/40",
             "path": "SPEC-154-admin-config-driven-ia",
-            "worktree": null,
-            "branch": null,
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-154-admin-config-driven-ia",
+            "branch": "spec/SPEC-154-admin-config-driven-ia",
             "dependsOn": [],
             "reservedAt": "2026-05-22T00:00:00Z",
-            "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 32-35 tasks across schema, configs, renderer components, migration)."
+            "activatedAt": "2026-05-24T00:00:00Z",
+            "tasksAtomizedAt": "2026-05-24T00:00:00Z",
+            "note": "38 atomic tasks generated (all complexity <=4, avg 2.7). Phase breakdown: core 20 (avg 2.7), integration 9 (avg 3.1), testing 6 (avg 2.3), cleanup 3 (avg 2.3). Critical path ~14 tasks deep. Binding decisions in spec.md §11."
         },
         {
             "specId": "SPEC-155",

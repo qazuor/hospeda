@@ -71,6 +71,11 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Biome lint
         run: pnpm lint
+      - name: Validate admin sidebar routes (SPEC-154)
+        # Asserts every config-driven sidebar link resolves to a real
+        # TanStack route (AC-22 regression gate). Type-only imports + a
+        # routes-dir scan — no build required.
+        run: pnpm --filter admin run validate:sidebar-routes
 
   # ------------------------------------------------------------------
   # Security checks: dependency audit + SAST. ~3 min.

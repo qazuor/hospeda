@@ -157,3 +157,60 @@ Indicative breakdown:
 - `.claude/audit/admin-redesign/phase-1/02-navigation.md` (audit of current admin nav).
 - `.claude/audit/admin-redesign/phase-1/03-roles-permissions.md` (audit of permission model — 791 permissions, 9 roles).
 - `apps/admin/src/components/layout/{sidebar,header}/*` (current admin nav implementation — to be migrated).
+
+## 11. Implementation decisions (2026-05-24)
+
+Captured at activation after mapping the real admin nav. These reconcile the design docs (01/02) with the actual codebase and are binding for the task breakdown.
+
+### 11.1 Current-state corrections (supersede stale spec assumptions)
+
+- Existing section configs live in **`apps/admin/src/config/sections/*.section.tsx`** (5 files: dashboard, content, billing, administration, analytics), NOT `components/layout/sidebar/configs/`. AC-20 path is corrected to this.
+- The section registry is **`apps/admin/src/config/sections/index.tsx`** + `section-registry.ts`, NOT `__root.tsx`. `__root.tsx` only holds a `SECTION_LABELS` hardcoded map (document title) + `initializeSections()` call. AC-21 targets these.
+- The 5 current sections regroup into the 7 new ones: Content → Catálogo + Editorial; Administration → Comunidad + Plataforma.
+- `CommandPalette` (Cmd+K) already exists as a "Coming Soon" placeholder — kept as-is; `topbar.showSearch` only toggles its visibility (real palette is post-V1, per §3 OUT).
+- No quick-create button and no mobile bottom-nav exist today — `QuickCreate` and `BottomNav` are built from scratch.
+
+### 11.2 Routing strategy — regroup-only, NO route renames [DECISION]
+
+- All ~110 existing route files/paths stay as-is (`/accommodations`, `/billing/plans`, `/access/users`, etc.).
+- Config sidebar `link` items point to the **real existing paths** — the Spanish section-prefixed routes in doc 01's trees (`/catalogo/alojamientos`) are **illustrative, not literal**.
+- A section's L1 click navigates to its `defaultRoute` = its first real child route.
+- **Active-section detection** = which section's sidebar contains the current route (sections span scattered prefixes, so single-prefix matching on `Section.route` is insufficient). The renderer resolves current section by sidebar membership.
+- No new route files are created. This honors the V1 scope rule ("reorganize existing code") and AC-22 (no regression in reachable pages).
+- **Mi inbox** reuses the existing `/notifications` route (resolves the §19-sample vs AC-24 inconsistency in favor of AC-24: route is `/notifications`, there is no `/inicio/inbox`).
+
+### 11.3 i18n labels — inline tri-locale [DECISION]
+
+- Nav labels follow the locked schema (doc 02 §3.1): inline `{ es, en, pt }` objects validated by `I18nLabelSchema`.
+- **Documented SSOT exception**: admin IA nav labels live in the IA config, not `@repo/i18n`. This diverges from the project Single-Source-of-Truth rule for i18n strings, accepted deliberately to keep the "one line of config = one change" principle and the already-locked contract intact.
+
+### 11.4 `role.defaultPermissions` removed [DECISION]
+
+- The `defaultPermissions` field is **REMOVED** from `RoleConfigSchema`. The IA config models navigation structure only; the role → permission bundle is owned by `ROLE_PERMISSIONS` (`packages/seed/src/required/rolePermissions.seed.ts`), the existing single source of truth.
+- **Rationale**: runtime nav gating uses the user's real session permissions, not this field. Keeping it would duplicate `ROLE_PERMISSIONS` and risk drift, violating the project SSOT rule. The field was only ever used to validate itself (§13.7) and as a test fixture — and `ROLE_PERMISSIONS` is the better fixture.
+- **Consequences**:
+  - Cross-reference validations §13.7 (defaultPermissions non-empty) and §13.9 (`*` restricted to SUPER_ADMIN) are dropped. The "9 cross-reference validations" become **7**.
+  - AC-4's "`*` restricted to SUPER_ADMIN" clause is void. `expandPermissions()` still expands `*` / `FOO_*` / exact and **remains** — sidebar/tab item permission gates may use wildcards and the renderer matches against them.
+  - AC-5 (partial config when `enabled: false`, via `superRefine` on mainMenu/dashboard/topbar/mobile) is unaffected.
+  - Acceptance tests (AC-10..13) import `ROLE_PERMISSIONS` to obtain realistic per-role permission sets.
+- The real permission model (used to ground role configs and item gates) is mapped in engram `spec/SPEC-154/permission-model`. Doc 01's per-role permission lists (§12/§16/§17) are **fictional** and superseded by `ROLE_PERMISSIONS`.
+
+### 11.5 Role-specific sections [DECISION]
+
+The section universe is the 7 platform sections PLUS role-specific sections required by the HOST and EDITOR main menus (doc 01 §12/§17), since HOST's mental model is "my business" (owner-scoped), not the platform-admin framing:
+
+- `miCuenta` (**SHARED** — HOST shows it in `mainMenu`; other roles reach it via the topbar avatar) → route `/me/profile`, sidebar `miCuentaSidebar` (items only for routes that exist: Mi perfil `/me/profile`, Preferencias `/me/settings`, Seguridad `/me/change-password`, Mis tags `/me/tags`).
+- `misAlojamientos` (HOST) → `/me/accommodations`, sidebar `misAlojamientosSidebar`.
+- `consultas` (HOST) → `/conversations`, sidebar `consultasSidebar`.
+- `miFacturacion` (HOST) → the best existing billing route HOST can reach (the usage/limits widget is SPEC-155; V1 points at an existing page or a minimal landing, flagged if no good target exists).
+
+EDITOR also references `miCuenta`, so shared/role-specific sections are unavoidable regardless. These sections are added to `sections.ts` + `sidebars.ts` (extending what batch 2a built).
+
+### 11.6 AC-12 reconciliation [DECISION 2026-05-25]
+
+Surfaced by the per-role acceptance tests (T-034) against the real `ROLE_PERMISSIONS`:
+
+- **critical-settings** (Plataforma → Configuración crítica): was gated on `ACCESS_PANEL_ADMIN` — held by ALL admin roles, so `onMissing: 'hide'` never hid it (a config bug). Re-gated on `SYSTEM_MAINTENANCE_MODE` (SUPER_ADMIN-exclusive in `ROLE_PERMISSIONS`) → hidden for ADMIN. Satisfies AC-12.
+- **audit-log** (Plataforma → Auditoría): gated on `AUDIT_LOG_VIEW`, which ADMIN genuinely holds in `ROLE_PERMISSIONS`. Per the access-by-real-permissions principle (§11.4), ADMIN legitimately sees the audit log; doc 01 §16's "hide audit from ADMIN" is aspirational and **superseded by the real permission model**. AC-12's audit-exclusion clause is relaxed accordingly.
+- **debug** (Análisis → Debug): gated on `DEBUG_TOOLS_ACCESS` (SUPER-only) → correctly hidden for ADMIN.
+- **Follow-up**: `ROLE_PERMISSIONS` is inlined in the acceptance tests (the const is not exported / importable from the admin app). Export it from `@repo/schemas` to remove this duplication.
