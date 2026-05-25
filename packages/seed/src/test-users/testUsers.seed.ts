@@ -44,6 +44,19 @@ interface TestUserSpec {
      * When undefined the user has no active subscription (free tier).
      */
     readonly planSlug?: string;
+    /**
+     * Initial subscription status. Defaults to 'active' when omitted (matches
+     * the original Block 1 user matrix). Set to 'trialing' to seed a user
+     * with `trial_start = now()` and `trial_end = now() + trialDays`. Use
+     * for Block 3 trial-lifecycle smoke (2.1.a / 2.1.b / 2.1.c).
+     */
+    readonly subStatus?: 'active' | 'trialing';
+    /**
+     * Trial window in days when `subStatus === 'trialing'`. Defaults to 14
+     * (the HOST trial window per `packages/billing/src/config/plans.config.ts`
+     * `OWNER_TRIAL_DAYS`). Ignored when status is anything else.
+     */
+    readonly trialDays?: number;
 }
 
 /**
@@ -90,6 +103,16 @@ const TEST_USERS: readonly TestUserSpec[] = [
         displayName: 'Host Premium',
         role: RoleEnum.HOST,
         planSlug: 'owner-premium'
+    },
+    // Trial-state host (SPEC-143 Block 3 — trial lifecycle smoke). status='trialing',
+    // 14-day window starting at seed time. owner-basico is the canonical trial-eligible plan.
+    {
+        email: 'host-trial@local.test',
+        displayName: 'Host Trial',
+        role: RoleEnum.HOST,
+        planSlug: 'owner-basico',
+        subStatus: 'trialing',
+        trialDays: 14
     },
     // Complex / CLIENT_MANAGER tier
     {
@@ -200,13 +223,25 @@ async function ensureBillingCustomer(
 }
 
 /**
- * Ensures an active `billing_subscriptions` row exists for the given customer + plan.
- * Skips silently if a subscription already exists for this customer.
+ * Ensures a `billing_subscriptions` row exists for the given customer + plan
+ * with the requested status.
+ *
+ * Idempotent on customer_id. When `subStatus === 'trialing'`, also stamps
+ * `trial_start = now()` and `trial_end = now() + trialDays` so the trial
+ * cron logic (apply-scheduled-plan-changes / trial expiry) has real dates
+ * to act on.
+ *
+ * Skips silently if a subscription already exists for this customer — the
+ * one-time seeded shape is treated as authoritative; tests that want to
+ * exercise a transition (active → canceled, trialing → expired) should
+ * UPDATE the existing row instead of relying on the seed to swap status.
  */
 async function ensureSubscription(
     customerId: string,
     planId: string,
-    db: DrizzleClient
+    db: DrizzleClient,
+    subStatus: 'active' | 'trialing' = 'active',
+    trialDays = 14
 ): Promise<void> {
     const existing = await db
         .select({ id: billingSubscriptions.id })
@@ -223,19 +258,30 @@ async function ensureSubscription(
     // Use 30-day window — local testing only, period accuracy doesn't matter.
     periodEnd.setDate(periodEnd.getDate() + 30);
 
+    const isTrialing = subStatus === 'trialing';
+    const trialStart = isTrialing ? now : null;
+    const trialEnd = isTrialing
+        ? (() => {
+              const end = new Date(now);
+              end.setDate(end.getDate() + trialDays);
+              return end;
+          })()
+        : null;
+
     await db.insert(billingSubscriptions).values({
         customerId,
         // billing_subscriptions.plan_id is varchar (not UUID) — store the UUID
         // string directly. See CLAUDE.md gotcha: "billing_plans.id is UUID but
         // billing_subscriptions.plan_id is varchar".
         planId,
-        status: 'active',
+        status: subStatus,
         // Use monthly interval for all test subscriptions. For local entitlement
-        // testing the billing cycle doesn't matter — only status='active' does.
+        // testing the billing cycle doesn't matter — only status drives behavior.
         billingInterval: 'month',
         livemode: false,
         currentPeriodStart: now,
-        currentPeriodEnd: periodEnd
+        currentPeriodEnd: periodEnd,
+        ...(isTrialing ? { trialStart, trialEnd } : {})
     });
 }
 
@@ -358,7 +404,13 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
             if (spec.planSlug) {
                 const planId = await resolvePlanId(spec.planSlug, db);
                 const customerId = await ensureBillingCustomer(userId, spec.email, db);
-                await ensureSubscription(customerId, planId, db);
+                await ensureSubscription(
+                    customerId,
+                    planId,
+                    db,
+                    spec.subStatus ?? 'active',
+                    spec.trialDays ?? 14
+                );
 
                 logger.info(
                     `${STATUS_ICONS.Info}    Billing rows ensured for ${spec.email} (plan: ${spec.planSlug})`
