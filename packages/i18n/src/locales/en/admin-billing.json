@@ -109,6 +109,7 @@
         "searchError": "Error searching customers",
         "noCustomers": "No customers found",
         "searchHint": "Enter at least 2 characters to search",
+        "searchDisabled": "Customer search and individual usage detail are temporarily disabled: backend endpoints are pending. Until then, use the system usage cards and the approaching-limit customers table shown above.",
         "loadingUsage": "Loading usage analytics...",
         "errorUsage": "Error loading analytics",
         "emptyTitle": "Search for a customer to view their usage analytics",
