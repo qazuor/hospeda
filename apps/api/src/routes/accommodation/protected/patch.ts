@@ -10,6 +10,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { gateRichDescription } from '../../../middlewares/accommodation-entitlements';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
@@ -59,5 +60,13 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // Reference wiring of the negative-entitlement gate pattern for
+        // SPEC-143 finding #25. `gateRichDescription` returns 403
+        // ENTITLEMENT_REQUIRED when the body's `description` contains
+        // markdown syntax AND the actor lacks CAN_USE_RICH_DESCRIPTION.
+        // Plain-text descriptions pass through regardless of plan.
+        middlewares: [gateRichDescription()]
     }
 });

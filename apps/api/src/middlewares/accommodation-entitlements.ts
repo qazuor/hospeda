@@ -12,74 +12,108 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
 
 /**
- * Gates rich description feature (markdown formatting)
+ * Detect markdown syntax in a description string.
  *
- * Checks if user has CAN_USE_RICH_DESCRIPTION entitlement.
- * If not, strips markdown from description field in request body.
+ * Returns true if the string contains any of the markdown patterns we care
+ * about gating (headings, bold, italic, links, list items, inline code).
+ * Used by `gateRichDescription` to decide whether the request actually
+ * exercises the rich-description capability or just contains plain text.
+ *
+ * Conservative on purpose: returns false for plain prose so a user without
+ * the entitlement can still update their description with text-only content.
+ */
+const RICH_DESCRIPTION_PATTERNS: readonly RegExp[] = [
+    /\*\*[^*]+\*\*/, // Bold (**text**)
+    /(?:^|[^*])\*[^*\s][^*]*\*/, // Italic (*text*) — avoid matching bold's **
+    /\[[^\]]+\]\([^)]+\)/, // Markdown links
+    /^#{1,6}\s/m, // ATX headings
+    /^[-*+]\s+\S/m, // Unordered list items
+    /`[^`\n]+`/ // Inline code
+];
+
+function hasMarkdownSyntax(value: string): boolean {
+    return RICH_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+/**
+ * Gates rich description feature (markdown formatting).
+ *
+ * Checks if the request body's `description` contains markdown syntax and
+ * the user lacks `CAN_USE_RICH_DESCRIPTION`. When both conditions hold,
+ * returns 403 ENTITLEMENT_REQUIRED so the client can prompt the user to
+ * upgrade. Plain-text descriptions pass through regardless of plan — the
+ * gate only fires when the user is actually exercising the gated capability.
+ *
+ * Design note: SPEC-143 Block 1 smoke C.9 documented two failure modes for
+ * this gate — "silent strip" or "no enforcement". Both indicate a gap.
+ * This implementation chooses the third option (return 403) because:
+ *   1. The smoke checklist's "correct" expectation is 403 ENTITLEMENT_REQUIRED.
+ *   2. Silent-strip is user-hostile (a typed paragraph quietly loses
+ *      formatting on save with no UI feedback).
+ *   3. The 403 envelope (`code: ENTITLEMENT_REQUIRED, requiredEntitlement,
+ *      upgradeUrl`) is the same shape the LIMIT_REACHED gate uses, so the
+ *      frontend already has handling.
+ *
+ * Body reading: the middleware uses `ctx.req.raw.clone().json()` so the
+ * downstream zValidator can re-read the body. We do NOT mutate the body
+ * (no silent strip).
+ *
+ * Wired by SPEC-143 Block 4 follow-up on `PATCH /api/v1/protected/accommodations/:id`
+ * as the reference implementation of the negative-entitlement gating pattern
+ * for finding #25. Remaining 7 gate middlewares (gateVideoEmbed,
+ * gateCalendarAccess, gateExternalCalendarSync, gateWhatsAppDisplay,
+ * gateWhatsAppDirect, gateReviewResponse, gateFavorites) need analogous
+ * wiring on their respective write paths — separate PR per gate.
  *
  * @returns Middleware handler
- *
- * @example
- * ```typescript
- * import { gateRichDescription } from '../middlewares/accommodation-entitlements';
- *
- * app.post(
- *   '/accommodations',
- *   entitlementMiddleware(),
- *   gateRichDescription(),
- *   async (c) => {
- *     // Description will be plain text if user doesn't have Pro+ plan
- *   }
- * );
- * ```
  */
 export function gateRichDescription(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check if user has rich description entitlement
-            const canUseRichDescription = hasEntitlement(
-                c,
-                EntitlementKey.CAN_USE_RICH_DESCRIPTION
-            );
+        const canUseRichDescription = hasEntitlement(c, EntitlementKey.CAN_USE_RICH_DESCRIPTION);
 
-            if (!canUseRichDescription) {
-                // Get request body
-                const body = await c.req.json();
-
-                // Strip markdown from description if present
-                if (body.description && typeof body.description === 'string') {
-                    // Simple markdown stripping - remove common markdown syntax
-                    body.description = body.description
-                        .replace(/\*\*(.+?)\*\*/g, '$1') // Bold
-                        .replace(/\*(.+?)\*/g, '$1') // Italic
-                        .replace(/\[(.+?)\]\(.+?\)/g, '$1') // Links
-                        .replace(/^#+\s+/gm, '') // Headers
-                        .replace(/^[-*+]\s+/gm, '') // Lists
-                        .replace(/`(.+?)`/g, '$1') // Code
-                        .trim();
-
-                    apiLogger.debug(
-                        `Stripped markdown from description - user lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
-                    );
-
-                    // Replace request with modified body
-                    c.req.raw.json = async () => body;
-                }
-            }
-
+        if (canUseRichDescription) {
             await next();
-        } catch (error) {
-            apiLogger.error(
-                `Error in rich description gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            await next();
+            return;
         }
+
+        // Read body without consuming the stream — clone so downstream
+        // zValidator / handler can re-read.
+        let body: { description?: unknown };
+        try {
+            body = (await c.req.raw.clone().json()) as { description?: unknown };
+        } catch {
+            // Non-JSON body or empty body: nothing to gate, let the handler
+            // (or its validator) handle the shape mismatch.
+            await next();
+            return;
+        }
+
+        const description = body?.description;
+        if (typeof description !== 'string' || !hasMarkdownSyntax(description)) {
+            await next();
+            return;
+        }
+
+        apiLogger.warn(
+            `gateRichDescription: blocked update — user lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Tu plan actual no incluye el uso de Markdown en la descripción. Actualizá tu plan para acceder a esta funcionalidad.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
