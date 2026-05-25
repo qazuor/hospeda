@@ -8,7 +8,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { BRAND_THEME_COLOR } from '@/lib/constants';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import Logo from '@/components/shared/navigation/Logo.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
@@ -50,8 +50,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. -->
+		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue, with a
+		     dark-mode variant gated by prefers-color-scheme. -->
 		<meta name="theme-color" content={BRAND_THEME_COLOR} />
+		<meta
+			name="theme-color"
+			content={BRAND_THEME_COLOR_DARK}
+			media="(prefers-color-scheme: dark)"
+		/>
 
 		<!-- Favicon -->
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />

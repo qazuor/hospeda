@@ -40,7 +40,7 @@ interface EntityItem {
 }
 
 interface PaginatedResponse {
-    readonly data: readonly EntityItem[];
+    readonly items: readonly EntityItem[];
 }
 
 interface ApiResponse {
@@ -85,12 +85,14 @@ async function fetchAllEntities(
 
             let items: readonly EntityItem[] = [];
 
+            // The public list endpoints return { success, data: { items, pagination } }.
+            // Read `data.items`; keep the bare-array fallback for resilience.
             if (
                 json.data &&
-                'data' in json.data &&
-                Array.isArray((json.data as PaginatedResponse).data)
+                'items' in json.data &&
+                Array.isArray((json.data as PaginatedResponse).items)
             ) {
-                items = (json.data as PaginatedResponse).data;
+                items = (json.data as PaginatedResponse).items;
             } else if (Array.isArray(json.data)) {
                 items = json.data as EntityItem[];
             }
@@ -207,11 +209,15 @@ export const GET: APIRoute = async () => {
     const base = '/api/v1/public';
 
     // Fetch all entity types in parallel. Individual failures degrade gracefully.
+    // No `status` filter: the public list endpoints already return only public
+    // (published) content, and they reject an unknown `status` query param with
+    // HTTP 400 — which previously made every entity fetch fail and the sitemap
+    // come back empty.
     const [accommodations, destinations, events, posts] = await Promise.allSettled([
-        fetchAllEntities(apiUrl, `${base}/accommodations`, { status: 'published' }),
+        fetchAllEntities(apiUrl, `${base}/accommodations`),
         fetchAllEntities(apiUrl, `${base}/destinations`),
-        fetchAllEntities(apiUrl, `${base}/events`, { status: 'published' }),
-        fetchAllEntities(apiUrl, `${base}/posts`, { status: 'published' })
+        fetchAllEntities(apiUrl, `${base}/events`),
+        fetchAllEntities(apiUrl, `${base}/posts`)
     ]);
 
     const resolvedAccommodations =

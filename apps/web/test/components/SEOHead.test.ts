@@ -35,3 +35,27 @@ describe('SEOHead.astro (SPEC-157 REQ-8)', () => {
         expect(src).toContain('twitter:image:alt');
     });
 });
+
+describe('SEOHead.astro — og:locale:alternate + twitter:site', () => {
+    it('emits og:locale:alternate for the non-current locales', () => {
+        // hreflang covers Google; og:locale:alternate tells OG consumers
+        // (Facebook etc.) the page has translations.
+        expect(src).toContain('og:locale:alternate');
+    });
+
+    it('emits twitter:site referencing the brand handle constant', () => {
+        expect(src).toContain('twitter:site');
+        expect(src).toMatch(/import\s*\{[^}]*\bTWITTER_SITE_HANDLE\b[^}]*\}/);
+        expect(src).toContain('{TWITTER_SITE_HANDLE}');
+    });
+});
+
+describe('SEOHead.astro — robots directive', () => {
+    it('emits noindex,follow (not nofollow) so crawlers still follow links on noindexed pages', () => {
+        // noindex,follow is the modern standard: the page itself stays out of
+        // the index but link equity flows through to linked detail pages
+        // (e.g. faceted listing pages link to indexable detail pages).
+        expect(src).toContain('content="noindex,follow"');
+        expect(src).not.toContain('content="noindex,nofollow"');
+    });
+});

@@ -35,6 +35,7 @@ import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.a
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import TagChips from '@/components/TagChips.astro';
 import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
 import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
@@ -338,6 +339,13 @@ const sortOptions = [
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
 
+// Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
+// at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
+// `?page=n`; the rewrite drops the `/page/n/` segment from Astro.url.pathname,
+// so we rebuild the crawlable URL from the page number to keep each paginated
+// page self-canonical and indexable (instead of canonicalizing to page 1).
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).
 const isAuthenticated = Astro.locals.user ? true : false;
@@ -386,12 +394,20 @@ sidebarInitialParams['sortBy'] = sortKey;
  */
 const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
+
+// ItemList JSON-LD entries — the visible page of event cards, routed through
+// the reusable ItemListJsonLd component (SPEC-157 D-1 canonical JSON-LD path).
+const itemListEntries = cards.map((card) => ({
+	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `eventos/${card.slug}` })}`,
+	name: card.name,
+}));
 ---
 
 <ListingLayout
 	locale={locale}
 	title={t('events.title', 'Eventos')}
 	description={t('events.description', 'Descubrí eventos culturales, deportivos y gastronómicos del Litoral.')}
+	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
 >
@@ -402,6 +418,14 @@ paginationParams.delete('page');
 		type="application/rss+xml"
 		title={t('events.rss.title', 'Eventos RSS')}
 		href={buildUrl({ locale, path: 'eventos/rss.xml' })}
+	/>
+
+	<ItemListJsonLd
+		slot="head-extra"
+		name={t('events.title', 'Eventos')}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
 	/>
 
 	<Breadcrumbs
