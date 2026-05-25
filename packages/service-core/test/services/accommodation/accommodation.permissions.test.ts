@@ -245,6 +245,43 @@ describe('Accommodation Permissions', () => {
         );
     });
 
+    it('checkCanView hides a service-suspended owner accommodation as NOT_FOUND for the public', () => {
+        const suspended = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        try {
+            checkCanView(createActor([], 'someone-else'), suspended);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('checkCanView lets the owner view their own service-suspended accommodation', () => {
+        const suspended = {
+            ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        expect(() => checkCanView(createActor([], mockUserId), suspended)).not.toThrow();
+    });
+
+    it('checkCanView lets ACCOMMODATION_VIEW_ALL view a service-suspended accommodation', () => {
+        const suspended = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        expect(() =>
+            checkCanView(
+                createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id'),
+                suspended
+            )
+        ).not.toThrow();
+    });
+
     it('checkCanList always allows', () => {
         expect(() => checkCanList(createActor([]))).not.toThrow();
     });

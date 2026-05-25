@@ -374,7 +374,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     }
 
     public async countByFilters(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+        },
         tx?: DrizzleClient
     ): Promise<{ count: number }> {
         const db = this.getClient(tx);
@@ -398,6 +401,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -500,7 +506,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     }
 
     public async search(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+        },
         tx?: DrizzleClient
     ): Promise<{ items: Accommodation[]; total: number }> {
         const db = this.getClient(tx);
@@ -524,6 +533,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -652,7 +664,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      * Search accommodations with destination and owner relations
      */
     public async searchWithRelations(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+        },
         tx?: DrizzleClient
     ): Promise<{
         items: Array<
@@ -684,6 +699,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -876,6 +894,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             type?: string;
             onlyFeatured?: boolean;
             excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<Accommodation[]> {
@@ -885,7 +904,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             destinationId,
             type,
             onlyFeatured = false,
-            excludeRestricted = false
+            excludeRestricted = false,
+            excludeOwnerSuspended = false
         } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
@@ -897,6 +917,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
+                if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
                 return and(...clauses);
             },
             with: {

@@ -113,6 +113,19 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, entity: Accommodation): void {
+    // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
+    // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
+    // so existence is not leaked). The owner themselves and staff holding
+    // ACCOMMODATION_VIEW_ALL are exempt so they can still see the listing while
+    // the subscription is paused.
+    if (
+        entity.ownerSuspended &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
     if (
         entity.visibility === 'PUBLIC' ||
         (entity.visibility === 'PRIVATE' &&
