@@ -13,6 +13,7 @@ import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { enforceFavoritesLimit } from '../../../middlewares/limit-enforcement';
+import { gateFavorites } from '../../../middlewares/tourist-entitlements';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -77,6 +78,16 @@ export const createUserBookmarkRoute = createProtectedRoute({
         return { toggled: true, bookmark: result.data };
     },
     options: {
-        middlewares: [enforceFavoritesLimit()]
+        // Cascade two SPEC-143 #25 gates:
+        //   1. gateFavorites — entitlement check (SAVE_FAVORITES). Tourist
+        //      plans (free/plus/vip) all include it; HOST / CLIENT_MANAGER
+        //      do NOT. Throws 403 ENTITLEMENT_REQUIRED if missing.
+        //   2. enforceFavoritesLimit — count + plan limit check
+        //      (MAX_FAVORITES: free=3, plus=20, vip=-1 unlimited). Throws
+        //      403 LIMIT_REACHED at cap.
+        // The entitlement gate runs first so a HOST user attempting to
+        // bookmark gets a clean "your plan doesn't support favorites" 403
+        // instead of a confusing LIMIT_REACHED at 0/0.
+        middlewares: [gateFavorites(), enforceFavoritesLimit()]
     }
 });

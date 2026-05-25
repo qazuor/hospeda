@@ -57,6 +57,31 @@ const MAX_ROWS_PER_TICK = 100;
  * Minimal row shape the cron needs from the subscription. Drops the
  * fields the apply step doesn't use to keep the SELECT cheap and the
  * type narrow.
+ *
+ * The `scheduledPlanChange` column (`billing_subscriptions.scheduled_plan_change`,
+ * JSONB, defined in qzpay-drizzle, typed as `QZPayScheduledPlanChange` in
+ * qzpay-core) carries the canonical shape this cron and the plan-change
+ * route share. Documented here because the column lives in an external
+ * package and the smoke checklist / seed paths discovered the wrong field
+ * names twice (`effectiveAt` vs `applyAt`, `targetPlanId` vs `newPlanId`)
+ * during SPEC-143 Block 2 smoke 1.6:
+ *
+ *   {
+ *     status: 'pending' | 'applied' | 'failed',
+ *     newPlanId: string,                 // target plan UUID
+ *     applyAt: ISO timestamp string,     // when the change becomes due
+ *     requestedAt: ISO timestamp string, // when the plan change was queued
+ *     changeType: 'downgrade' | 'upgrade',
+ *     attemptCount: number,              // bumped on each apply retry
+ *     resolvedAt?: ISO timestamp string, // set when status → applied | failed
+ *     lastAttemptAt?: ISO timestamp string,
+ *     lastError?: string                 // populated on failed attempts
+ *   }
+ *
+ * Seeding a scheduled change in tests / smokes MUST use these exact field
+ * names — the cron filter scans on `scheduledPlanChange.applyAt` and
+ * `scheduledPlanChange.status === 'pending'` (`idx_subscriptions_pending_plan_change`
+ * partial index), so anything else is silently invisible to this job.
  */
 interface PendingPlanChangeRow {
     readonly subscriptionId: string;
