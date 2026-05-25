@@ -674,7 +674,10 @@ const plataformaSidebar: SidebarInput = {
                     },
                     icon: 'ShieldAlertIcon',
                     route: '/settings/critical',
-                    permissions: ['ACCESS_PANEL_ADMIN'],
+                    // SUPER_ADMIN-only: gate on a permission ADMIN does NOT hold
+                    // (ADMIN has ACCESS_PANEL_ADMIN, so that gate would never hide it).
+                    // SYSTEM_MAINTENANCE_MODE is SUPER-exclusive in ROLE_PERMISSIONS.
+                    permissions: ['SYSTEM_MAINTENANCE_MODE'],
                     onMissing: 'hide'
                 }
             ]
