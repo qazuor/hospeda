@@ -205,3 +205,12 @@ The section universe is the 7 platform sections PLUS role-specific sections requ
 - `miFacturacion` (HOST) → the best existing billing route HOST can reach (the usage/limits widget is SPEC-155; V1 points at an existing page or a minimal landing, flagged if no good target exists).
 
 EDITOR also references `miCuenta`, so shared/role-specific sections are unavoidable regardless. These sections are added to `sections.ts` + `sidebars.ts` (extending what batch 2a built).
+
+### 11.6 AC-12 reconciliation [DECISION 2026-05-25]
+
+Surfaced by the per-role acceptance tests (T-034) against the real `ROLE_PERMISSIONS`:
+
+- **critical-settings** (Plataforma → Configuración crítica): was gated on `ACCESS_PANEL_ADMIN` — held by ALL admin roles, so `onMissing: 'hide'` never hid it (a config bug). Re-gated on `SYSTEM_MAINTENANCE_MODE` (SUPER_ADMIN-exclusive in `ROLE_PERMISSIONS`) → hidden for ADMIN. Satisfies AC-12.
+- **audit-log** (Plataforma → Auditoría): gated on `AUDIT_LOG_VIEW`, which ADMIN genuinely holds in `ROLE_PERMISSIONS`. Per the access-by-real-permissions principle (§11.4), ADMIN legitimately sees the audit log; doc 01 §16's "hide audit from ADMIN" is aspirational and **superseded by the real permission model**. AC-12's audit-exclusion clause is relaxed accordingly.
+- **debug** (Análisis → Debug): gated on `DEBUG_TOOLS_ACCESS` (SUPER-only) → correctly hidden for ADMIN.
+- **Follow-up**: `ROLE_PERMISSIONS` is inlined in the acceptance tests (the const is not exported / importable from the admin app). Export it from `@repo/schemas` to remove this duplication.

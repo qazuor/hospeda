@@ -62,9 +62,9 @@
             }
         },
         "total": 40,
-        "pending": 9,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 37,
         "blocked": 0
     },
     "tasks": [
@@ -723,7 +723,7 @@
             "id": "T-030",
             "title": "Write boot validation tests — 7 invalid config crash scenarios (was 9 per spec §11.4)",
             "description": "Write comprehensive tests for the boot validation system.\n\nFiles to create:\n- apps/admin/src/config/ia/__tests__/boot-validation.test.ts\n\nTest scenarios (per doc 02 §15 sample crash examples):\n1. Bad sidebar ref typo: sections.catalogo.sidebar = 'catalogoSdiebar' → error contains 'sections.catalogo.sidebar' + 'not found'\n2. Role mainMenu non-existent section: EDITOR.mainMenu = ['inicio', 'analyiss', ...] → error path 'roles.EDITOR.mainMenu.2'\n3. Empty expanded permissions: HOST.defaultPermissions = ['ACCOMODDATION_*'] → error mentions 'Unknown permission'\n4. bottomNav section not in mainMenu: HOST.mobile.bottomNav = ['comercial'] → path 'roles.HOST.mobile.bottomNav.0'\n5. Duplicate IDs in sidebar: inicioSidebar with two items id='dashboard' → error mentions 'Duplicate item IDs'\n6. Wildcard '*' for non-SUPER_ADMIN: ADMIN.defaultPermissions = ['*'] → error mentions 'SUPER_ADMIN role'\n7. Enabled role missing dashboard: HOST without dashboard → superRefine catches 'dashboard ref required'\n8. labelOverrides path to non-existent item → error about path not resolving\n9. Dashboard ref doesn't exist: HOST.dashboard = 'missingDashboard' → error path 'roles.HOST.dashboard'\n\nTest helper: createInvalidConfig(overrides) builder\n\nAC-2, AC-3 coverage",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-019"],
             "blocks": ["T-036"],
@@ -731,21 +731,22 @@
             "tags": ["testing", "validation"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": "2026-05-24T22:52:39.000Z"
+            },
+            "note": "Covered by test/config/ia/cross-reference-validations.test.ts (22) + validate.test.ts (6)."
         },
         {
             "id": "T-031",
             "title": "Write expandPermissions unit tests — wildcards, exact, edge cases",
             "description": "Write dedicated expanded unit tests for the expandPermissions function.\n\nFiles affected:\n- apps/admin/src/config/ia/__tests__/permission-bundles.test.ts (extend from T-011)\n\nAdditional test cases for full AC-4 coverage:\n- '*' expands to every PermissionEnum value (assert count matches Object.values(PermissionEnum).length)\n- 'ACCOMMODATION_*' expands to all ACCOMMODATION_ prefixed permissions only\n- 'POST_*' expands to all POST_ prefixed permissions only\n- Empty array input = empty output (no crash)\n- Combo: ['ACCOMMODATION_*', 'POST_CREATE'] = ACCOMMODATION_* set ∪ {POST_CREATE} no duplicates\n- Unknown exact permission 'NONEXISTENT_PERM' throws Error\n- Prefix wildcard 'NONEXISTENT_*' expands to empty array (empty expansion)\n- '*' cannot appear multiple times (idempotent via Set)\n- AC-4 explicit test: verify '*' is ONLY valid via wildcard rule (not validated by expandPermissions itself, which is a runtime function — schema §13.9 validates the restriction)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": [],
@@ -753,21 +754,22 @@
             "tags": ["testing", "permissions"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": "2026-05-24T22:52:39.000Z"
+            },
+            "note": "Covered by test/config/ia/permission-bundles.test.ts (16)."
         },
         {
             "id": "T-032",
             "title": "Write permission cherry-pick visibility tests — disable/hide logic at L1/L2/L3",
             "description": "Write integration-level tests for the permission cherry-pick logic across navigation levels.\n\nFiles to create:\n- apps/admin/src/hooks/__tests__/visibility-cherry-pick.test.ts\n\nTest cases:\n- L2 item onMissing:'disable' + user lacks permission → disabled:true in output\n- L2 item onMissing:'hide' + user lacks permission → absent from output\n- L2 item onMissing:'disable' + user has permission → enabled in output\n- Group where ALL children are hidden → group itself absent\n- Group where SOME children disabled → group present with those items disabled\n- L1 (via MainMenu logic): section with 0 visible sidebar items → section not in mainMenu output\n- Separator: always included if any sibling is visible\n- Multiple permissions (OR logic): user has 1 of 2 required → item visible\n- AC-16, AC-17 end-to-end coverage",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": [],
@@ -775,21 +777,22 @@
             "tags": ["testing", "permissions"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": "2026-05-24T22:52:39.000Z"
+            },
+            "note": "L1 (MainMenu) + L2 (use-visible-sidebar-items, 57) covered; L3 tabs N/A in V1 (PageTabs renderer not migrated)."
         },
         {
             "id": "T-033",
             "title": "Write per-role acceptance tests — HOST menu shape (AC-10)",
             "description": "Write acceptance tests verifying HOST role's exact menu shape per spec AC-10.\n\nFiles to create:\n- apps/admin/src/config/ia/__tests__/role-acceptance.host.test.ts\n\nTests for AC-10:\n- HOST mainMenu has exactly 5 items: ['inicio', 'misAlojamientos', 'consultas', 'miFacturacion', 'miCuenta']\n- HOST topbar.showSearch = false (no Cmd+K)\n- HOST topbar.showQuickCreate = ['newAccommodation'] (exactly 1 action)\n- HOST topbar.accountInMenu = true (Mi cuenta in menu)\n- HOST mobile.bottomNav has exactly 4 items\n- HOST mobile.fab = 'newAccommodation'\n- HOST labelOverrides has 'inicioSidebar.dashboard' override to 'Mi negocio' in es\n- HOST defaultPermissions does NOT include '*'\n- HOST is enabled\n\nUse rawConfig (non-parsed) directly for fast, no-runtime-error assertions",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
@@ -797,21 +800,21 @@
             "tags": ["testing", "roles"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:52:39.000Z",
+                "completed": "2026-05-25T07:11:05.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Write per-role acceptance tests — SUPER_ADMIN, ADMIN, EDITOR shapes (AC-11, AC-12, AC-13)",
             "description": "Write acceptance tests for SUPER_ADMIN, ADMIN, EDITOR role configs.\n\nFiles to create:\n- apps/admin/src/config/ia/__tests__/role-acceptance.admin-super.test.ts\n- apps/admin/src/config/ia/__tests__/role-acceptance.editor.test.ts\n\nAC-11 (SUPER_ADMIN):\n- mainMenu has exactly 7 items\n- topbar.showSearch = true\n- topbar.showQuickCreate = 'all'\n- topbar.accountInMenu = false\n- mobile.bottomNav = null\n- defaultPermissions = ['*']\n\nAC-12 (ADMIN):\n- mainMenu has exactly 7 items (same as SUPER_ADMIN)\n- topbar.showSearch = true\n- topbar.showQuickCreate = 'all'\n- topbar.accountInMenu = false\n- mobile.bottomNav = null\n- defaultPermissions does NOT include '*'\n- ADMIN defaultPermissions does NOT include 'MAINTENANCE_MODE_*' or 'AUDIT_LOG_VIEW'\n\nAC-13 (EDITOR):\n- mainMenu has exactly 4 items: ['inicio', 'editorial', 'analisis', 'miCuenta']\n- topbar.showSearch = true\n- topbar.showQuickCreate = ['newPost', 'newEvent', 'newCampaign']\n- mobile.bottomNav has 4 items\n- mobile.fab = 'newPost'",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012", "T-013"],
             "blocks": [],
@@ -819,21 +822,21 @@
             "tags": ["testing", "roles"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:52:39.000Z",
+                "completed": "2026-05-25T07:11:05.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Write Inicio sidebar acceptance test — 2 items, Mi inbox uses /notifications (AC-23, AC-24)",
             "description": "Write acceptance tests for the Inicio sidebar V1 spec.\n\nFiles to create:\n- apps/admin/src/config/ia/__tests__/inicio-sidebar.test.ts\n\nTests:\n- inicioSidebar has exactly 2 items in V1\n- First item: id='dashboard', route='/dashboard', label.es='Dashboard'\n- Second item: id='inbox', route='/notifications' (NOT '/inicio/inbox' or any other path)\n- Second item label.es contains 'inbox' and '(beta)'\n- Both items have permissions: ['ACCESS_PANEL_ADMIN']\n- Sidebar is present in rawConfig.sidebars.inicioSidebar\n\nAlso test section cross-reference:\n- sections.inicio.sidebar = 'inicioSidebar'\n- AC-23: Inicio section has own sidebar with 2 items\n- AC-24: Mi inbox reuses /notifications route",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": [],
@@ -841,14 +844,14 @@
             "tags": ["testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-24T22:52:39.000Z",
+                "completed": "2026-05-25T07:11:05.000Z"
             }
         },
         {
