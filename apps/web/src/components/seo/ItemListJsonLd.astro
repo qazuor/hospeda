@@ -1,0 +1,57 @@
+---
+/**
+ * @file ItemListJsonLd.astro
+ * @description Reusable ItemList schema.org JSON-LD block for listing pages.
+ * Renders an `ItemList` of `ListItem` entries through the canonical JsonLd
+ * wrapper (which escapes `<`, `>`, `&` to prevent script injection — SPEC-157
+ * decision D-1, single canonical JSON-LD path).
+ *
+ * Used by the accommodations, events, destinations, and posts listings to
+ * expose the visible page of results as structured data for search engines.
+ */
+
+import JsonLd from '@/components/seo/JsonLd.astro';
+
+/** A single list entry: its absolute URL and display name. */
+export interface ItemListEntry {
+    /** Absolute URL of the listed item's detail page. */
+    readonly url: string;
+    /** Human-readable name of the listed item. */
+    readonly name: string;
+}
+
+interface Props {
+    /** Name of the list (e.g. the listing page title). */
+    readonly name: string;
+    /** Ordered entries to render as `ListItem` nodes. */
+    readonly items: ReadonlyArray<ItemListEntry>;
+    /**
+     * Total number of items the list represents across all pages.
+     * Defaults to the number of `items` rendered on this page.
+     */
+    readonly numberOfItems?: number;
+    /**
+     * 1-based position of the first entry. Used to offset positions on
+     * paginated pages (e.g. page 2 of pageSize 20 starts at 21).
+     * Defaults to 1.
+     */
+    readonly startPosition?: number;
+}
+
+const { name, items, numberOfItems = items.length, startPosition = 1 } = Astro.props;
+
+const data = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    numberOfItems,
+    itemListElement: items.map((item, i) => ({
+        '@type': 'ListItem',
+        position: startPosition + i,
+        url: item.url,
+        name: item.name
+    }))
+};
+---
+
+<JsonLd data={data} />

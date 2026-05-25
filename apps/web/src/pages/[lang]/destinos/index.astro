@@ -26,6 +26,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -189,6 +190,15 @@ function buildClearHref(): string {
 }
 
 const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
+
+// ItemList JSON-LD entries — the full (single-page) destinations catalog,
+// routed through the reusable ItemListJsonLd component (SPEC-157 D-1 canonical
+// JSON-LD path). Destinos has no pagination, so startPosition stays at the
+// default 1 and numberOfItems mirrors the rendered set.
+const itemListEntries = sortedCards.map((card) => ({
+	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `destinos/${card.slug}` })}`,
+	name: card.name,
+}));
 ---
 
 <DefaultLayout
@@ -196,6 +206,13 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 	title={t('destinations.title', 'Destinos')}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
 >
+	<ItemListJsonLd
+		slot="head-extra"
+		name={t('destinations.title', 'Destinos')}
+		items={itemListEntries}
+		numberOfItems={total}
+	/>
+
 	<div class="dest-listing">
 		<div class="dest-listing__header section section--warm">
 			<div class="dest-listing__header-container">
