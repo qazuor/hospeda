@@ -17,6 +17,7 @@ pnpm seed --reset              # Reset DB first, then seed
 pnpm seed --required           # Only required data
 pnpm seed --example            # Only example data
 pnpm seed --reset --required --example  # Full reset with all data
+pnpm seed:test-users           # Re-seed only the SPEC-143 test users matrix
 
 # Testing
 pnpm test              # Run all tests
@@ -27,6 +28,42 @@ pnpm typecheck         # TypeScript validation
 pnpm lint              # Biome linting
 pnpm format            # Format code
 ```
+
+## Test Users for Billing (SPEC-143 Block 1)
+
+A separate `--test-users` seed group creates 11 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+
+The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
+
+| Email | Role | Plan | Limits highlight |
+|-------|------|------|------------------|
+| `editor@local.test` | EDITOR | — | content moderator |
+| `sponsor@local.test` | SPONSOR | — | sponsorship flows |
+| `tourist-free@local.test` | USER | (free tier) | default entitlements |
+| `tourist-plus@local.test` | USER | `tourist-plus` | mid tourist tier |
+| `tourist-vip@local.test` | USER | `tourist-vip` | top tourist tier |
+| `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=5 |
+| `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=15 |
+| `host-premium@local.test` | HOST | `owner-premium` | unlimited |
+| `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
+| `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
+| `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
+
+All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
+
+**Workflow:**
+
+```bash
+pnpm db:fresh-dev              # Full reset + main seed + test users
+pnpm db:seed:test-users        # Re-create only the test users (requires --required to have run before)
+pnpm seed --test-users         # Same as above, direct CLI invocation
+```
+
+The seed inserts directly into `users` + `account` + `billing_customers` + `billing_subscriptions` (bcrypt password hash with `SALT_ROUNDS=12` matching `apps/api/src/lib/auth.ts`). It does NOT go through Better Auth's `signUpEmail` API (cross-package boundary) and does NOT call MercadoPago (we never need a real checkout for entitlement testing).
+
+When `loadEntitlements()` runs on login, the active subscription drives `userLimits` and `userEntitlements`, so limit-enforcement endpoints behave exactly as they would for a real paying user.
+
+Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
 
 ## Package Structure
 

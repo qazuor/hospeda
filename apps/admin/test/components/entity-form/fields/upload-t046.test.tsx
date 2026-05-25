@@ -20,6 +20,7 @@ import { GalleryField } from '@/components/entity-form/fields/GalleryField';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import { useGalleryUploads } from '@/components/entity-form/fields/use-gallery-uploads';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -187,7 +188,8 @@ describe('T-046 / GAP-078-152 — HEIC/HEIF/AVIF MIME allowlist', () => {
     it('renders a preview placeholder for HEIC image values in ImageField', () => {
         const heicImage: ImageValue = {
             url: 'https://cdn.example.com/photo.heic',
-            alt: 'photo.heic'
+            alt: 'photo.heic',
+            moderationState: ModerationStatusEnum.APPROVED
         };
         render(
             <ImageField
@@ -206,7 +208,8 @@ describe('T-046 / GAP-078-152 — HEIC/HEIF/AVIF MIME allowlist', () => {
     it('renders a preview placeholder for AVIF image values in ImageField', () => {
         const avifImage: ImageValue = {
             url: 'blob:https://admin/123',
-            alt: 'shot.avif'
+            alt: 'shot.avif',
+            moderationState: ModerationStatusEnum.APPROVED
         };
         render(
             <ImageField
@@ -221,7 +224,8 @@ describe('T-046 / GAP-078-152 — HEIC/HEIF/AVIF MIME allowlist', () => {
     it('renders the native <img> for previewable formats (JPEG)', () => {
         const jpegImage: ImageValue = {
             url: 'https://cdn.example.com/photo.jpg',
-            alt: 'photo.jpg'
+            alt: 'photo.jpg',
+            moderationState: ModerationStatusEnum.APPROVED
         };
         render(
             <ImageField

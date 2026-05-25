@@ -15,7 +15,13 @@
  * @module middlewares/entitlement
  */
 
-import { type EntitlementKey, type LimitKey, getDefaultEntitlements } from '@repo/billing';
+import {
+    type EntitlementKey,
+    type LimitKey,
+    getDefaultEntitlements,
+    getPlanBySlug
+} from '@repo/billing';
+import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -154,6 +160,44 @@ function buildDefaultEntitlementsResult(): LoadEntitlementsResult {
 }
 
 /**
+ * Build the host-draft default entitlement result (SPEC-143 Block 1).
+ *
+ * When a user is promoted to the HOST role via the onboarding flow, they may
+ * not yet have an active paid subscription (the real `billing_subscription` row
+ * + 14-day trial countdown starts at first-publish, not at role promotion). To
+ * avoid locking the host out of core features between promotion and first
+ * publish, we fall back to the `owner-basico` plan entitlements/limits instead
+ * of the tourist-free defaults used for regular users.
+ *
+ * This result is `shouldCache: true` because it derives exclusively from
+ * static in-memory plan config, same as {@link buildDefaultEntitlementsResult}.
+ *
+ * If `owner-basico` is somehow absent from the plan registry (mis-configuration,
+ * should never happen in production), this function falls back to
+ * {@link buildDefaultEntitlementsResult} instead of crashing the request.
+ *
+ * @returns A LoadEntitlementsResult populated from the `owner-basico` plan.
+ */
+function buildHostDraftDefaultsResult(): LoadEntitlementsResult {
+    const plan = getPlanBySlug('owner-basico');
+
+    if (!plan) {
+        // Defensive: plan registry mis-configuration. Log and fall back to
+        // tourist-free rather than crashing.
+        apiLogger.warn(
+            'owner-basico plan not found in registry — falling back to tourist-free defaults for HOST actor'
+        );
+        return buildDefaultEntitlementsResult();
+    }
+
+    return {
+        entitlements: new Set<EntitlementKey>(plan.entitlements as EntitlementKey[]),
+        limits: new Map<LimitKey, number>(plan.limits.map((l) => [l.key as LimitKey, l.value])),
+        shouldCache: true
+    };
+}
+
+/**
  * Load entitlements and limits for a billing customer.
  *
  * Three paths:
@@ -171,9 +215,16 @@ function buildDefaultEntitlementsResult(): LoadEntitlementsResult {
  * results are never stored in cache.
  *
  * @param customerId - The QZPay customer ID
+ * @param actorRole - The role of the authenticated actor. Used to select the
+ *   correct fallback when no active subscription is found. HOST actors fall back
+ *   to `owner-basico` defaults (SPEC-143 Block 1); all other roles fall back to
+ *   tourist-free defaults.
  * @returns Entitlements, limits, and cache flag, or null if billing unavailable
  */
-async function loadEntitlements(customerId: string): Promise<LoadEntitlementsResult | null> {
+async function loadEntitlements(
+    customerId: string,
+    actorRole?: RoleEnum
+): Promise<LoadEntitlementsResult | null> {
     try {
         const billing = getQZPayBilling();
 
@@ -185,9 +236,14 @@ async function loadEntitlements(customerId: string): Promise<LoadEntitlementsRes
         const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
         if (!subscriptions || subscriptions.length === 0) {
-            // No subscription at all — fall back to the default free-tier
-            // entitlements (SPEC-143 T-143-58). Tourist-free is the documented
-            // default for any authenticated user without a paid subscription.
+            // No subscription at all — fall back to role-appropriate defaults.
+            // HOST actors who were just promoted (before first publish) receive
+            // owner-basico defaults so they can access host features during the
+            // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
+            // defaults (SPEC-143 T-143-58).
+            if (actorRole === RoleEnum.HOST) {
+                return buildHostDraftDefaultsResult();
+            }
             return buildDefaultEntitlementsResult();
         }
 
@@ -198,9 +254,11 @@ async function loadEntitlements(customerId: string): Promise<LoadEntitlementsRes
 
         if (!activeSubscription) {
             // Only cancelled / past_due / paused subscriptions — fall back to
-            // the default free-tier entitlements. Same rationale as the
-            // no-subscriptions branch above: the user is authenticated and
-            // entitled to the free baseline.
+            // role-appropriate defaults. Same rationale as the no-subscriptions
+            // branch above (SPEC-143 Block 1 / T-143-58).
+            if (actorRole === RoleEnum.HOST) {
+                return buildHostDraftDefaultsResult();
+            }
             return buildDefaultEntitlementsResult();
         }
 
@@ -340,8 +398,12 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                 // Cache hit - billing was previously healthy
                 c.set('billingLoadFailed', false);
             } else {
-                // Cache miss - load from QZPay
-                const result = await loadEntitlements(billingCustomerId);
+                // Cache miss - load from QZPay. Pass the actor role so the
+                // fallback path can select the correct default plan when the
+                // customer has no active subscription (SPEC-143 Block 1).
+                const actor = c.get('actor');
+                const actorRole = actor?.role as RoleEnum | undefined;
+                const result = await loadEntitlements(billingCustomerId, actorRole);
 
                 if (result) {
                     cached = {

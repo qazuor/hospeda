@@ -21,6 +21,7 @@
         "seed": "tsx ./src/cli.ts",
         "seed:required": "tsx ./src/seeds/required.seed.ts",
         "seed:example": "tsx ./src/seeds/example.seed.ts",
+        "seed:test-users": "tsx ./src/cli.ts --test-users",
         "typecheck": "tsc --noEmit",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",

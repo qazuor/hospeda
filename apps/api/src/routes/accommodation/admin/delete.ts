@@ -2,7 +2,7 @@
  * Admin delete (soft) accommodation endpoint
  * Allows admins to soft delete any accommodation
  */
-import { AccommodationIdSchema, DeleteResultSchema, PermissionEnum } from '@repo/schemas';
+import { AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -14,14 +14,20 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * DELETE /api/v1/admin/accommodations/:id
  * Soft delete accommodation - Admin endpoint
+ *
+ * Permission model (SPEC-143 Finding #14 extension): entity-specific
+ * permission is enforced at the service layer (`checkCanSoftDelete`)
+ * which accepts `ACCOMMODATION_DELETE_ANY` OR (`ACCOMMODATION_DELETE_OWN`
+ * + ownership). Route only requires admin-panel access so HOSTs editing
+ * their own accommodations from the admin UI can delete them.
  */
 export const adminDeleteAccommodationRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Soft delete accommodation (admin)',
-    description: 'Soft deletes an accommodation. Admin only.',
+    description:
+        'Soft deletes an accommodation. Requires admin-panel access; the service layer enforces DELETE_ANY or (DELETE_OWN + ownership).',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_DELETE_ANY],
     requestParams: {
         id: AccommodationIdSchema
     },

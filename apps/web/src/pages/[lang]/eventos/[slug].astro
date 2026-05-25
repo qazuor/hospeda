@@ -8,7 +8,8 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import EventJsonLd from '@/components/seo/EventJsonLd.astro';
+import type { EventOffer } from '@/components/seo/EventJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { ImageGallery } from '@/components/ImageGallery.client';
@@ -106,45 +107,23 @@ const safeDescriptionHtml = renderContent({
 
 // --- JSON-LD (Event schema.org) ---
 // Build offers block from pricing data.
-const offersBlock = !pricing.isFree && pricing.price != null
-	? {
-			'@type': 'Offer',
-			price: pricing.price,
-			priceCurrency: pricing.currency ?? 'ARS',
-			...(pricing.priceFrom != null ? { lowPrice: pricing.priceFrom } : {}),
-			...(pricing.priceTo != null ? { highPrice: pricing.priceTo } : {}),
-	  }
-	: pricing.priceFrom != null && pricing.priceTo != null
-	  ? {
-				'@type': 'AggregateOffer',
+const eventOffersBlock: EventOffer | undefined =
+	!pricing.isFree && pricing.price != null
+		? {
+				type: 'Offer',
 				priceCurrency: pricing.currency ?? 'ARS',
-				lowPrice: pricing.priceFrom,
-				highPrice: pricing.priceTo,
-	    }
-	  : undefined;
-
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'Event',
-	name,
-	description: seo.description || summary,
-	startDate,
-	...(endDate ? { endDate } : {}),
-	eventStatus: `https://schema.org/${eventStatus}`,
-	image: featuredImage.url,
-	url: canonical,
-	location: {
-		'@type': 'Place',
-		name: location.name || location.city || '',
-		address: {
-			'@type': 'PostalAddress',
-			addressLocality: location.city || '',
-			streetAddress: location.fullAddress || undefined,
-		},
-	},
-	...(organizer ? { organizer: { '@type': 'Organization', name: organizer.name } } : {}),
-	...(offersBlock ? { offers: offersBlock } : {}),
-};
+				price: pricing.price,
+				...(pricing.priceFrom != null ? { lowPrice: pricing.priceFrom } : {}),
+				...(pricing.priceTo != null ? { highPrice: pricing.priceTo } : {}),
+		  }
+		: pricing.priceFrom != null && pricing.priceTo != null
+		  ? {
+					type: 'AggregateOffer',
+					priceCurrency: pricing.currency ?? 'ARS',
+					lowPrice: pricing.priceFrom,
+					highPrice: pricing.priceTo,
+		    }
+		  : undefined;
 
 // --- Breadcrumb JSON-LD ---
 const breadcrumbItems = [
@@ -168,7 +147,23 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	<EventJsonLd
+		slot="head-extra"
+		name={name}
+		description={seo.description || summary}
+		startDate={startDate}
+		endDate={endDate}
+		url={canonical}
+		image={!featuredIsPlaceholder ? featuredImage.url : undefined}
+		location={{
+			name: location.name || location.city || '',
+			address: location.fullAddress || '',
+			addressLocality: location.city || undefined,
+		}}
+		organizer={organizer?.name}
+		eventStatus={`https://schema.org/${eventStatus}`}
+		offers={eventOffersBlock}
+	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<Breadcrumbs

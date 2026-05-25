@@ -729,7 +729,11 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SPONSORSHIP_RESTORE_OWN,
         PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_OWN,
 
-        // OWNER_PROMOTION: Own promotions only (_OWN variants)
+        // OWNER_PROMOTION: create + own promotions (_OWN variants). CREATE is
+        // gated downstream by `enforcePromotionLimit()` middleware against the
+        // plan's MAX_ACTIVE_PROMOTIONS limit (owner-basico=0 blocks, owner-pro=3,
+        // owner-premium=-1). Without CREATE the limit middleware is unreachable.
+        PermissionEnum.OWNER_PROMOTION_CREATE,
         PermissionEnum.OWNER_PROMOTION_VIEW_OWN,
         PermissionEnum.OWNER_PROMOTION_UPDATE_OWN,
         PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN,

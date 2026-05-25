@@ -20,6 +20,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { GalleryField, type GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,7 +44,8 @@ const buildImage = (id: string, order: number, url?: string): GalleryImage => ({
     id,
     url: url ?? `https://example.com/${id}.jpg`,
     alt: `Alt ${id}`,
-    order
+    order,
+    moderationState: ModerationStatusEnum.APPROVED
 });
 
 const makeFile = (args: { name: string; type: string; sizeBytes?: number }): File => {

@@ -49,6 +49,15 @@ describe('HeroImageRotator.client.tsx', () => {
         });
     });
 
+    // SPEC-157 REQ-3: the home hero LCP image must be server-rendered with a
+    // high fetch-priority hint so the browser prioritises it. The rotator is an
+    // island, so this markup ships in the initial SSR HTML.
+    describe('LCP priority (SPEC-157 REQ-3)', () => {
+        it("should mark the first hero image fetchPriority='high'", () => {
+            expect(src).toContain("fetchPriority={index === 0 ? 'high' : 'auto'}");
+        });
+    });
+
     describe('behavior', () => {
         it('should track active image index in state', () => {
             expect(src).toContain('activeIndex');

@@ -538,6 +538,28 @@ export function CreatePropertyMiniForm({
                     'Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.'
                 )}
             </p>
+            <aside
+                className="form-trial-callout"
+                role="note"
+            >
+                <span
+                    className="form-trial-callout__icon"
+                    aria-hidden="true"
+                >
+                    🎁
+                </span>
+                <div className="form-trial-callout__body">
+                    <p className="form-trial-callout__title">
+                        {t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
+                    </p>
+                    <p className="form-trial-callout__text">
+                        {t(
+                            'host.pages.nueva.trialNote',
+                            'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. Sin tarjeta, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                        )}
+                    </p>
+                </div>
+            </aside>
         </form>
     );
 }

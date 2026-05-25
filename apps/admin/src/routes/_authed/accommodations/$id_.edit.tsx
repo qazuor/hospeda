@@ -42,7 +42,9 @@ function AccommodationEditPage() {
      */
     const galleryFieldHandlers = useMemo(
         () => ({
-            images: {
+            // Key must match the field id in gallery.consolidated.ts
+            // (SPEC-143 Block 1: dot-notation `media.gallery`, not flat `images`).
+            'media.gallery': {
                 onUpload: createUploadHandler({
                     entityType: 'accommodation',
                     entityId: id,

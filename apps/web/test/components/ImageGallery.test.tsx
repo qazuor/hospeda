@@ -111,6 +111,39 @@ describe('ImageGallery', () => {
             expect(imgs.length).toBeGreaterThanOrEqual(4);
         });
 
+        it('renders the featured image as an eager LCP candidate with explicit dimensions and high fetch priority (SPEC-157 REQ-3)', () => {
+            render(
+                <ImageGallery
+                    images={IMAGES}
+                    locale="es"
+                    variant="detail"
+                />
+            );
+            const featured = screen.getAllByRole('img')[0];
+            // The featured image is the LCP candidate on the accommodation detail
+            // page: it must be eagerly fetched at high priority and carry explicit
+            // dimensions so the browser reserves layout (no CLS) and prioritises it.
+            expect(featured).toHaveAttribute('fetchpriority', 'high');
+            expect(featured).toHaveAttribute('loading', 'eager');
+            expect(Number(featured?.getAttribute('width'))).toBeGreaterThan(0);
+            expect(Number(featured?.getAttribute('height'))).toBeGreaterThan(0);
+        });
+
+        it('keeps thumbnails lazily loaded (only the featured image is eager)', () => {
+            render(
+                <ImageGallery
+                    images={IMAGES}
+                    locale="es"
+                    variant="detail"
+                />
+            );
+            const imgs = screen.getAllByRole('img');
+            // imgs[0] is the featured image; the rest are thumbnails.
+            for (const thumb of imgs.slice(1)) {
+                expect(thumb).toHaveAttribute('loading', 'lazy');
+            }
+        });
+
         it('renders the fullscreen icon on the featured image button', () => {
             render(
                 <ImageGallery

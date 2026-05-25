@@ -2,7 +2,7 @@
  * Admin restore accommodation endpoint
  * Restores a soft-deleted accommodation
  */
-import { AccommodationAdminSchema, AccommodationIdSchema, PermissionEnum } from '@repo/schemas';
+import { AccommodationAdminSchema, AccommodationIdSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -14,15 +14,19 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * POST /api/v1/admin/accommodations/:id/restore
  * Restore accommodation - Admin endpoint
+ *
+ * Permission model (SPEC-143 Finding #14 extension): service layer
+ * (`checkCanRestore`) enforces `ACCOMMODATION_RESTORE_ANY` OR
+ * (`ACCOMMODATION_RESTORE_OWN` + ownership). Route only requires
+ * admin-panel access.
  */
 export const adminRestoreAccommodationRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/restore',
     summary: 'Restore accommodation',
     description:
-        'Restores a soft-deleted accommodation. Requires ACCOMMODATION_RESTORE permission.',
+        'Restores a soft-deleted accommodation. Requires admin-panel access; the service layer enforces RESTORE_ANY or (RESTORE_OWN + ownership).',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_RESTORE_ANY],
     requestParams: {
         id: AccommodationIdSchema
     },

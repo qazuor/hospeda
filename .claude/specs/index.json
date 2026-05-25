@@ -1564,6 +1564,35 @@
                 "platform-settings",
                 "refactor"
             ]
+        },
+        {
+            "specId": "SPEC-157",
+            "title": "Web SEO Polish — Audit Backlog Remediation",
+            "type": "fix",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-157-web-seo-polish",
+            "created": "2026-05-24T00:00:00Z",
+            "discoveredDuring": "Exhaustive SEO audit of apps/web conducted 2026-05-24. 19 findings across 3 risk tiers: 3 critical (OG SVG, sitemap es-prefix, LCP gated behind JS hydration), 9 important (resource hints, JSON-LD, OG meta, RSS, heading hierarchy, duplicate description, hreflang, font gate, eager loading), 7 minor (alt text, skip-link i18n, robots.txt, theme-color, 302→301 redirects).",
+            "firstAllocatedViaEngramProtocol": true,
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-157-web-seo-polish",
+            "branch": "spec/SPEC-157-web-seo-polish",
+            "base": "staging",
+            "openDecisions": ["D-1: JSON-LD adopt vs delete", "D-2: theme_color brand value"],
+            "tags": [
+                "web",
+                "seo",
+                "og",
+                "sitemap",
+                "lcp",
+                "structured-data",
+                "json-ld",
+                "rss",
+                "hreflang",
+                "a11y",
+                "robots",
+                "polish"
+            ]
         }
     ]
 }

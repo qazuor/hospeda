@@ -15,6 +15,7 @@ import {
   XIcon,
   YoutubeIcon,
 } from '@repo/icons';
+import { SOCIAL_PROFILES, type SocialPlatform } from '@/lib/constants';
 
 interface Props {
   /** Controls icon color: 'light' renders white icons, 'dark' inherits foreground. */
@@ -23,33 +24,24 @@ interface Props {
 
 const { variant = 'dark' } = Astro.props;
 
-const links = [
-  {
-    href: 'https://www.facebook.com/hospeda.com.ar',
-    label: 'Seguinos en Facebook',
-    Icon: FacebookIcon,
-  },
-  {
-    href: 'https://www.instagram.com/hospeda.com.ar',
-    label: 'Seguinos en Instagram',
-    Icon: InstagramIcon,
-  },
-  {
-    href: 'https://x.com/hospeda.com.ar',
-    label: 'Seguinos en X',
-    Icon: XIcon,
-  },
-  {
-    href: 'https://www.youtube.com/@hospeda.com.ar',
-    label: 'Seguinos en YouTube',
-    Icon: YoutubeIcon,
-  },
-  {
-    href: 'https://wa.me/543442453797',
-    label: 'Contactanos por WhatsApp',
-    Icon: WhatsappIcon,
-  },
-] as const;
+// Presentation metadata per platform. URLs live in SOCIAL_PROFILES (constants)
+// as the single source of truth shared with OrganizationJsonLd's sameAs; the
+// icon component and accessible label stay here (presentation concerns).
+const PLATFORM_META: Record<
+  SocialPlatform,
+  { readonly label: string; readonly Icon: typeof FacebookIcon }
+> = {
+  facebook: { label: 'Seguinos en Facebook', Icon: FacebookIcon },
+  instagram: { label: 'Seguinos en Instagram', Icon: InstagramIcon },
+  x: { label: 'Seguinos en X', Icon: XIcon },
+  youtube: { label: 'Seguinos en YouTube', Icon: YoutubeIcon },
+  whatsapp: { label: 'Contactanos por WhatsApp', Icon: WhatsappIcon },
+};
+
+const links = SOCIAL_PROFILES.map((profile) => ({
+  href: profile.url,
+  ...PLATFORM_META[profile.platform],
+}));
 ---
 
 <div class:list={['social-links', `social-links--${variant}`]}>

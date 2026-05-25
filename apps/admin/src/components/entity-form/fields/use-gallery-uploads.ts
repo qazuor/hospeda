@@ -1,5 +1,6 @@
 import { adminLogger } from '@/utils/logger';
 import { extractPublicId } from '@repo/media';
+import { ModerationStatusEnum } from '@repo/schemas';
 import pLimit from 'p-limit';
 import * as React from 'react';
 import type { GalleryImage } from './gallery-types';
@@ -194,7 +195,11 @@ export const useGalleryUploads = ({
                     id: generateId(),
                     url: outcome.url,
                     alt: outcome.file.name,
-                    order: value.length + index
+                    order: value.length + index,
+                    // ImageSchema.moderationState is required. New uploads default
+                    // to PENDING so the moderation pipeline can review them; the
+                    // admin can flip the value via the moderation UI if needed.
+                    moderationState: ModerationStatusEnum.PENDING
                 }));
                 onChange?.([...value, ...newImages]);
             }

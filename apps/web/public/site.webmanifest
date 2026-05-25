@@ -4,7 +4,7 @@
     "description": "Descubrí los mejores alojamientos turísticos en Concepción del Uruguay y el Litoral argentino",
     "start_url": "/es/",
     "display": "standalone",
-    "theme_color": "#10B981",
+    "theme_color": "#3885f9",
     "background_color": "#ffffff",
     "icons": [
         {

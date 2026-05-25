@@ -282,6 +282,15 @@ const postCategoryChips = [
     showFilters={true}
     filterPosition="left"
 >
+    {/* RSS feed-discovery hints — one per supported locale (SPEC-157 REQ-6) */}
+    <link
+        slot="head-extra"
+        rel="alternate"
+        type="application/rss+xml"
+        title={t('blog.rss.title', 'Publicaciones RSS')}
+        href={buildUrl({ locale, path: 'publicaciones/rss.xml' })}
+    />
+
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}

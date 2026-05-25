@@ -5,8 +5,7 @@
 import {
     AccommodationAdminSchema,
     AccommodationIdSchema,
-    AccommodationPatchInputSchema,
-    PermissionEnum
+    AccommodationPatchInputSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -28,14 +27,19 @@ const accommodationService = new AccommodationService(
 /**
  * PATCH /api/v1/admin/accommodations/:id
  * Partial update accommodation - Admin endpoint
+ *
+ * See `adminUpdateAccommodationRoute` for the permission model rationale
+ * (SPEC-143 Finding #14). Route only enforces admin-panel access; the
+ * service-layer `checkCanUpdate` enforces ACCOMMODATION_UPDATE_ANY or
+ * (ACCOMMODATION_UPDATE_OWN + ownership).
  */
 export const adminPatchAccommodationRoute = createAdminRoute({
     method: 'patch',
     path: '/{id}',
     summary: 'Partial update accommodation (admin)',
-    description: 'Updates specific fields of any accommodation. Admin only.',
+    description:
+        'Updates specific fields of an accommodation. Requires admin-panel access; the service layer enforces UPDATE_ANY or (UPDATE_OWN + ownership).',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
     requestParams: { id: AccommodationIdSchema },
     requestBody: AccommodationPatchInputSchema,
     responseSchema: AccommodationAdminSchema,

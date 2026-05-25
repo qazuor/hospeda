@@ -17,6 +17,7 @@ import { configureLogger } from '@repo/logger';
 import { CloudinaryProvider, resolveEnvironment } from '@repo/media/server';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
+import { runTestUserSeeds } from './test-users/index.js';
 import { DEFAULT_CACHE_PATH, flushCache, readCache } from './utils/cloudinary-cache.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
@@ -36,6 +37,12 @@ type SeedOptions = {
     required?: boolean;
     /** Whether to run example seeds (sample data) */
     example?: boolean;
+    /**
+     * Whether to run the SPEC-143 test-users seed group (local dev only).
+     * Intentionally separate from `example` so staging/prod seed runs never
+     * include these accounts.
+     */
+    testUsers?: boolean;
     /** Whether to reset the database before seeding */
     reset?: boolean;
     /** Whether to rollback on error (incompatible with continueOnError) */
@@ -82,6 +89,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     const {
         required,
         example,
+        testUsers,
         reset,
         exclude = [],
         continueOnError = false,
@@ -158,7 +166,8 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             }
         }
 
-        // Validate all manifests once at the beginning
+        // Validate all manifests once at the beginning.
+        // testUsers does NOT use the manifest system, so it's excluded here.
         if ((required || example) && seedContext.validateManifests) {
             try {
                 await validateAllManifests(continueOnError);
@@ -187,7 +196,8 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             }
         }
 
-        // Load super admin if necessary (for example seeds or if it doesn't exist)
+        // Load super admin if necessary (for example/required seeds or if it doesn't exist).
+        // testUsers does NOT require a super-admin actor — it inserts via UserModel directly.
         if (example || required) {
             try {
                 const superAdminActor = await loadSuperAdminAndGetActor();
@@ -231,6 +241,14 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         if (example) {
             seedContext.seedSource = 'example';
             await runExampleSeeds(seedContext);
+        }
+
+        if (testUsers) {
+            // Local-dev-only group for SPEC-143 Block 1. Requires `--required`
+            // to have been run previously (billingPlans.seed.ts must have
+            // seeded the plan slugs the test users subscribe to).
+            seedContext.seedSource = 'example';
+            await runTestUserSeeds(seedContext);
         }
 
         logger.success({ msg: `${STATUS_ICONS.Complete} Seed process complete.` });

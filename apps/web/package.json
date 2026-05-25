@@ -23,6 +23,7 @@
     "dependencies": {
         "@astrojs/node": "^10.1.1",
         "@astrojs/react": "^5.0.5",
+        "@astrojs/rss": "^4.0.18",
         "@astrojs/sitemap": "^3.7.2",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
@@ -35,6 +36,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "@sentry/astro": "^10.53.1",
+        "@vercel/og": "^0.11.1",
         "astro": "^6.3.3",
         "better-auth": "^1.4.18",
         "clsx": "^2.1.1",
