@@ -264,7 +264,11 @@ Workstream A reference: `plan-downgrade-cron.test.ts`
 3. Confirm the sub's `planId` flipped and `scheduledPlanChange.status='applied'`.
 4. Confirm entitlements now reflect the cheaper plan.
 
-**Run log**: (template)
+**Run log**:
+
+| Date | Executor | PR | Test user | Result | Notes |
+|------|----------|----|-----------|--------|-------|
+| 2026-05-25 | qazuor | local | host-pro@local.test → owner-basico | **PASS** | First trigger returned `applied=0, due=0` because the seeded `scheduled_plan_change` JSONB used `effectiveAt`/`targetPlanId` (smoke-spec convention) instead of the canonical `applyAt`/`newPlanId` the cron actually reads. After fixing the field names (per `apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts`), the cron applied 1 schedule in 23ms: `plan_id` flipped from `c4d279ee...` (owner-pro) to `34ddfd49...` (owner-basico), `scheduled_plan_change.status` flipped `pending → applied`, `resolvedAt + lastAttemptAt + attemptCount=1` stamped. **New finding #31 (minor)**: the `scheduled_plan_change` JSONB shape (`{status, applyAt, newPlanId, changeType, requestedAt, attemptCount, resolvedAt?, lastAttemptAt?}`) isn't documented at the schema level — the cron source is the only reference. Worth a JSDoc comment on the column or a TS type export so seed/admin/test paths don't have to read the cron source. |
 
 ### 1.7 — Addon purchase
 
@@ -355,7 +359,11 @@ Workstream A reference: `api-idempotency.test.ts`
 2. Confirm either the same response is returned or the request is
    rejected with a clear error. Document the actual behavior.
 
-**Run log**: (template)
+**Run log**:
+
+| Date | Executor | PR | Endpoint | Result | Notes |
+|------|----------|----|----------|--------|-------|
+| 2026-05-25 | qazuor | local | `POST /api/v1/protected/billing/addons/:slug/purchase` | **PASS (partial)** | Idempotency middleware is implemented at `apps/api/src/middlewares/idempotency-key.ts` and wired on `addons/:slug/purchase`, `addons/:id/cancel`, and `start-paid` (contradicts the smoke-spec preamble that says start-paid has no idempotency — update needed). Validated rules: (1) **PASS** request without `X-Idempotency-Key` returns `400 IDEMPOTENCY_KEY_REQUIRED` with descriptive error. (5) **PASS** non-2xx responses are not cached — three consecutive 400 VALIDATION_ERROR calls (same key, same body) all hit the handler fresh and emit the same validation error per request. Rules (2) same-key+same-body → cached 2xx, (3) same-key+different-body → 409 CONFLICT, and (4) expired-key → fresh execution all require a valid 2xx call to seed the cache; deferred until addons are seeded (none currently in `billing_addons` — empty list returns from `GET /api/v1/protected/billing/addons`). Suggests adding an addon to the seed if local Block 1.7 / 2.5 / 1.12 full coverage is desired. |
 
 ### 1.13 — Subscription activation (annual)
 
@@ -594,7 +602,12 @@ Workstream A reference: `dunning-cron.test.ts`
    Confirm each retry attempt is recorded; final retry exhaustion flips
    sub to `cancelled` if MP keeps rejecting.
 
-**Run log**: (template — one row per retry attempt)
+**Run log**:
+
+| Date | Executor | PR | Test user | Mode | Result | Notes |
+|------|----------|----|-----------|------|--------|-------|
+| 2026-05-25 | qazuor | local | host-pro@local.test (status=past_due seeded manually) | dry-run | **PASS (filter)** | `POST /api/v1/admin/cron/dunning?dryRun=true` returned `Dry run - Would process 1 past-due subscriptions`, with details `pastDueCount=1, retryIntervals=[1,3,5,7], gracePeriodDays=3`. Filter correctly identifies past_due subs. |
+| 2026-05-25 | qazuor | local | host-pro@local.test | production | BLOCKED — no payment method | Live cron returned `Retries: 0/0 succeeded. Cancellations: 0 processed` because `lifecycle.processRetries()` skips subs without a default `paymentMethod`. host-pro in local has never been through MP checkout, so no payment method is stored. Full retry-schedule walk ([1,3,5,7] intervals + grace-period cancellation) requires a payment method record, which only the real MP checkout flow seeds — defer the production-mode smoke to **staging** with a real MP sandbox card. The local cron is fully wired and triggerable; it just has nothing to act on. |
 
 ### 2.5 — Addon expiry / cancel
 
@@ -617,7 +630,12 @@ Workstream A reference: `addon-expiration-cron.test.ts` +
 3. Confirm the addon row removed (or marked cancelled, depending on impl)
    and entitlements drop the override.
 
-**Run log**: (template)
+**Run log**:
+
+| Date | Executor | PR | Sub-flow | Result | Notes |
+|------|----------|----|----------|--------|-------|
+| 2026-05-25 | qazuor | local | 2.5.a Expiry via cron | PASS w/ caveat — no addons seeded | `POST /api/v1/admin/cron/addon-expiry` (both dry-run and production) returned `Processed 0 expired add-ons, sent 0 warnings, retried 0 revocations, reconciled 0 split-state subs, reconciled 0 entitlements (0 errors)`. Cron is wired, triggerable, returns expected empty-result envelope. End-to-end exercise requires `billing_addon_purchases` seeded with `expires_at < now()`; current local seed (`--test-users`) seeds 0 addons. Recommended: extend seed with an active addon for host-pro (or a dedicated test user) before re-running 1.7 / 2.5 / 1.12 full-coverage smokes. |
+| 2026-05-25 | qazuor | local | 2.5.b Cancel by admin | DEFERRED — same blocker | Requires a seeded addon to exercise the admin-cancel path. Same recommendation as above. |
 
 ### 2.6 — Authorized payment webhook
 
