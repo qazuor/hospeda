@@ -17,7 +17,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
-import { billingSubscriptionEvents, getDb } from '@repo/db';
+import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
@@ -430,6 +430,23 @@ export class TrialService {
 
                         // Update subscription to cancel (QZPay doesn't support 'expired' status)
                         await this.billing.subscriptions.cancel(subscription.id);
+
+                        // ── SPEC-143 Block 3 / Finding #30: stamp trial_converted_at ─
+                        // The schema carries `trial_converted` (boolean, default false)
+                        // and `trial_converted_at` (timestamp, nullable) as first-class
+                        // columns. For a trial that expired WITHOUT conversion, the
+                        // canonical record is `trial_converted=false` (already the
+                        // default) and `trial_converted_at=<expiry timestamp>` so
+                        // analytics and the admin dashboard can distinguish
+                        // "trial expired without converting" from a manual cancel.
+                        // The qzpay-hono SDK cancel() doesn't write these columns,
+                        // so we do it here directly. Trial cancel is the only path
+                        // that should ever set trial_converted_at; conversion-to-paid
+                        // flips trial_converted=true via a different path.
+                        await db
+                            .update(billingSubscriptions)
+                            .set({ trialConvertedAt: new Date() })
+                            .where(eq(billingSubscriptions.id, subscription.id));
 
                         // ── T-041: Insert TRIAL_BLOCKED dedup event after successful cancel ─
                         // This must be written after the QZPay cancel call so we only mark
