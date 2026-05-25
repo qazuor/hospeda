@@ -50,7 +50,7 @@ import { getAdminCustomerUsageSummaryRoute } from './usage';
  * Auth middleware applied to every qzpay-hono admin route. Enforces a base
  * `BILLING_READ_ALL` permission for any request, plus stricter permissions
  * on write paths:
- *  - subscriptions {cancel,change-plan,extend-trial,force-cancel}: MANAGE_SUBSCRIPTIONS
+ *  - subscriptions {cancel,force-cancel,pause,resume,change-plan,extend-trial}: MANAGE_SUBSCRIPTIONS
  *  - payments/invoices write paths + entitlements/limits manage: BILLING_MANAGE
  *
  * Authentication itself is established upstream by the global auth chain;
@@ -78,6 +78,8 @@ const adminBillingAuthMiddleware: MiddlewareHandler = async (c, next) => {
             path.includes('/subscriptions/') &&
             (path.endsWith('/cancel') ||
                 path.endsWith('/force-cancel') ||
+                path.endsWith('/pause') ||
+                path.endsWith('/resume') ||
                 path.endsWith('/change-plan') ||
                 path.endsWith('/extend-trial'));
 

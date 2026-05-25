@@ -48,6 +48,12 @@ export const accommodations = pgTable(
         location: jsonb('location').$type<AccommodationLocationType>(),
         media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
+        // Denormalized flag (SPEC-143 #29): true when the owner's subscription is
+        // paused WITH service suspension. Public reads filter it out and the
+        // accommodation write path rejects edits while true. Canonical source is
+        // users.service_suspended; this column is the hot-path denormalization so
+        // public queries do not join users. Flipped in bulk on pause/resume.
+        ownerSuspended: boolean('owner_suspended').notNull().default(false),
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
@@ -79,6 +85,9 @@ export const accommodations = pgTable(
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
+        accommodations_ownerSuspended_idx: index('accommodations_ownerSuspended_idx').on(
+            table.ownerSuspended
+        ),
         accommodations_visibility_idx: index('accommodations_visibility_idx').on(table.visibility),
         accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
             table.lifecycleState

@@ -1,0 +1,87 @@
+/**
+ * Subscription pause service (SPEC-143 #29).
+ *
+ * Shared helpers for the SERVICE-SUSPENSION dimension of a subscription pause.
+ * The BILLING dimension (MP preapproval + local subscription status) is owned
+ * by qzpay (`billing.subscriptions.pause/resume`). This service only handles
+ * the Hospeda-specific side effect: hiding the owner's accommodations from
+ * public reads and locking them from edits while the pause is "full".
+ *
+ * Used by both surfaces so the logic lives in exactly one place:
+ *  - the admin qzpay-hono hooks (`qzpay-admin-hooks.ts`)
+ *  - the host self-serve protected route
+ *
+ * Source of truth: `users.service_suspended`. Denormalized to
+ * `accommodations.owner_suspended` for the public hot path + the edit-lock.
+ *
+ * @module services/subscription-pause
+ */
+
+import { type DrizzleClient, accommodations, billingCustomers, eq, getDb, users } from '@repo/db';
+import { apiLogger } from '../utils/logger';
+
+/**
+ * Resolves the Hospeda owner `users.id` from a billing customer id.
+ *
+ * `billing_customers.external_id` stores the Hospeda user id (see the
+ * local-test-users seed and the checkout flow). Returns null when the customer
+ * has no linked external id (should not happen for owner subscriptions).
+ *
+ * @param input - The billing customer id and an optional db/tx client.
+ * @returns The owner user id, or null when it cannot be resolved.
+ */
+export async function resolveOwnerUserId(input: {
+    customerId: string;
+    db?: DrizzleClient;
+}): Promise<string | null> {
+    const db = input.db ?? getDb();
+    const rows = await db
+        .select({ externalId: billingCustomers.externalId })
+        .from(billingCustomers)
+        .where(eq(billingCustomers.id, input.customerId))
+        .limit(1);
+
+    return rows[0]?.externalId ?? null;
+}
+
+/**
+ * Applies (or clears) the service-suspension flags for an owner.
+ *
+ * Flips `users.service_suspended` (canonical) and bulk-updates
+ * `accommodations.owner_suspended` (denormalized) for every accommodation owned
+ * by the user. Idempotent: setting the same value again is a harmless no-op, so
+ * resume can always clear without first checking whether the pause was "full".
+ *
+ * @param input - The owner user id, the target suspended state, and an
+ *   optional db/tx client.
+ * @returns The number of accommodations whose flag was updated.
+ */
+export async function setOwnerServiceSuspension(input: {
+    userId: string;
+    suspended: boolean;
+    db?: DrizzleClient;
+}): Promise<{ accommodationsUpdated: number }> {
+    const db = input.db ?? getDb();
+
+    await db
+        .update(users)
+        .set({ serviceSuspended: input.suspended, updatedAt: new Date() })
+        .where(eq(users.id, input.userId));
+
+    const updated = await db
+        .update(accommodations)
+        .set({ ownerSuspended: input.suspended, updatedAt: new Date() })
+        .where(eq(accommodations.ownerId, input.userId))
+        .returning({ id: accommodations.id });
+
+    apiLogger.info(
+        {
+            userId: input.userId,
+            suspended: input.suspended,
+            accommodationsUpdated: updated.length
+        },
+        'Applied owner service-suspension flags'
+    );
+
+    return { accommodationsUpdated: updated.length };
+}
