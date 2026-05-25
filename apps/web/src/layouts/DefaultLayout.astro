@@ -19,6 +19,8 @@ interface Props {
 	readonly description?: string;
 	readonly canonicalPath?: string;
 	readonly noindex?: boolean;
+	/** Caveat tagline for the generated OG BRAND card. */
+	readonly ogTagline?: string;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
 	description,
 	canonicalPath = Astro.url.pathname,
 	noindex = false,
+	ogTagline,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -44,6 +47,7 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		locale={locale}
 		canonical={canonicalUrl}
 		noindex={noindex}
+		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
 

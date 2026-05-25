@@ -50,6 +50,39 @@ describe('SEOHead.astro — og:locale:alternate + twitter:site', () => {
     });
 });
 
+describe('SEOHead.astro — OG card props (redesign)', () => {
+    it('accepts the new OG-card props (ogType/ogImage/ogSubtitle/ogRating/ogTagline)', () => {
+        for (const prop of ['ogType', 'ogImage', 'ogSubtitle', 'ogRating', 'ogTagline']) {
+            expect(src).toContain(`${prop}?:`);
+            expect(src).toContain(prop);
+        }
+    });
+
+    it('assembles the generated OG URL via the shared buildOgImagePath helper', () => {
+        expect(src).toMatch(
+            /import\s*\{[^}]*\bbuildOgImagePath\b[^}]*\}\s*from\s*'@\/lib\/og-template'/
+        );
+        expect(src).toContain('buildOgImagePath({');
+    });
+
+    it('keeps the explicit `image` prop as the precedence override (backward compat)', () => {
+        // An explicit final image URL still wins over the generated card URL.
+        expect(src).toMatch(/new URL\(\s*image\s*\?\?\s*generatedOgPath/);
+    });
+
+    it('forwards the OG-card props into buildOgImagePath', () => {
+        for (const field of [
+            'type: ogType',
+            'image: ogImage',
+            'subtitle: ogSubtitle',
+            'rating: ogRating',
+            'tagline: ogTagline'
+        ]) {
+            expect(src).toContain(field);
+        }
+    });
+});
+
 describe('SEOHead.astro — robots directive', () => {
     it('emits noindex,follow (not nofollow) so crawlers still follow links on noindexed pages', () => {
         // noindex,follow is the modern standard: the page itself stays out of

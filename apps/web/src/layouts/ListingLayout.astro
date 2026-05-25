@@ -27,6 +27,8 @@ interface Props {
 	 * Defaults to false. Mirrors DefaultLayout.
 	 */
 	readonly noindex?: boolean;
+	/** Caveat tagline for the generated OG BRAND card. */
+	readonly ogTagline?: string;
 }
 
 const {
@@ -37,6 +39,7 @@ const {
 	showFilters = false,
 	filterPosition = 'left',
 	noindex = false,
+	ogTagline,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -57,6 +60,7 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		locale={locale}
 		canonical={canonicalUrl}
 		noindex={noindex}
+		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
 

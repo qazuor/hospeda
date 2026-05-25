@@ -8,6 +8,7 @@
 import { getSiteUrl } from '@/lib/env';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
 import { BRAND_NAME, TITLE_SEPARATOR, TWITTER_SITE_HANDLE } from '@/lib/constants';
+import { buildOgImagePath } from '@/lib/og-template';
 
 export interface Props {
     /** Page title (will be suffixed with " | Hospeda" unless it already IS the brand name) */
@@ -24,6 +25,24 @@ export interface Props {
     locale?: SupportedLocale;
     /** Open Graph type */
     type?: 'website' | 'article';
+    /**
+     * OG card type badge (PHOTO mode). When set, the auto-generated `/api/og`
+     * URL renders the photo card with this label (e.g. Alojamiento/Destino/
+     * Evento/Guía). Ignored when an explicit `image` is provided.
+     */
+    ogType?: string;
+    /**
+     * Featured image URL for the OG PHOTO card. Passed to `/api/og?image=...`.
+     * Switches the generated card to photo mode. Ignored when an explicit
+     * `image` (final OG image URL) is provided.
+     */
+    ogImage?: string;
+    /** Subtitle line for the OG PHOTO card (e.g. locality/region). */
+    ogSubtitle?: string;
+    /** Rating value for the OG PHOTO card (e.g. "4.8"). */
+    ogRating?: string;
+    /** Caveat tagline for the OG BRAND card. */
+    ogTagline?: string;
 }
 
 const {
@@ -34,6 +53,11 @@ const {
     noindex = false,
     locale = 'es',
     type = 'website',
+    ogType,
+    ogImage,
+    ogSubtitle,
+    ogRating,
+    ogTagline,
 } = Astro.props;
 
 const fullTitle = title === BRAND_NAME ? BRAND_NAME : `${title}${TITLE_SEPARATOR}${BRAND_NAME}`;
@@ -68,11 +92,23 @@ const ogLocaleAlternates = (Object.keys(OG_LOCALE_MAP) as SupportedLocale[])
 // SPEC-157 REQ-8: coerce to an absolute URL. Social scrapers ignore relative
 // paths, so a page passing e.g. "/og-image.png" would emit an invalid og:image.
 // new URL(image, siteBase) resolves relative paths and passes absolute ones through.
+//
+// Precedence: an explicit `image` (a final OG image URL) wins. Otherwise we
+// assemble the `/api/og?...` URL from the OG-card props. `ogImage`+`ogType`
+// produce a PHOTO card (entity detail pages); `ogTagline` alone produces a
+// BRAND card (home/listings). Passing nothing still yields a valid brand card,
+// keeping every page backward-compatible.
 const siteBase = getSiteUrl();
-const ogImageUrl = new URL(
-    image ?? `/api/og?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`,
-    siteBase
-).href;
+const generatedOgPath = buildOgImagePath({
+    title,
+    description,
+    type: ogType,
+    image: ogImage,
+    subtitle: ogSubtitle,
+    rating: ogRating,
+    tagline: ogTagline,
+});
+const ogImageUrl = new URL(image ?? generatedOgPath, siteBase).href;
 ---
 
 <!-- Title and meta description -->

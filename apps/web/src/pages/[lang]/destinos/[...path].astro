@@ -335,6 +335,10 @@ const safeDescriptionHtml = renderContent({
 	locale={locale}
 	title={name}
 	description={summary || description}
+	ogImage={placeImage}
+	ogType="Destino"
+	ogSubtitle={t('destinations.region', 'Entre Ríos, Argentina')}
+	ogRating={stats.averageRating > 0 ? stats.averageRating.toFixed(1) : undefined}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
