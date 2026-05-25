@@ -45,7 +45,7 @@ const catLabel = t(`blog.categories.${catSlug}`, catSlug ?? '');
 const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlug}` });
 ---
 
-<ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false}>
+<ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false} noindex={true}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: catLabel }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byCategory.tagline', 'Categoría')} title={catLabel} totalCount={total} />
 

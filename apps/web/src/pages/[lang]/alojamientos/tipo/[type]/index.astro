@@ -64,6 +64,7 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 	title={`${typeLabel} - ${t('accommodations.title', 'Alojamientos')}`}
 	description={t('accommodations.byType.description', `Alojamientos de tipo ${typeLabel} en el Litoral Entrerriano.`)}
 	showFilters={false}
+	noindex={true}
 >
 	<Breadcrumbs
 		slot="breadcrumbs"

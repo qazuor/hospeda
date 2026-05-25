@@ -43,7 +43,7 @@ const catLabel = t(`events.categories.${catSlug}`, catSlug ?? '');
 const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
 ---
 
-<ListingLayout locale={locale} title={`${catLabel} - ${t('events.title', 'Eventos')}`} description={`Eventos de ${catLabel}`} showFilters={false}>
+<ListingLayout locale={locale} title={`${catLabel} - ${t('events.title', 'Eventos')}`} description={`Eventos de ${catLabel}`} showFilters={false} noindex={true}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('events.title', 'Eventos'), path: 'eventos' }, { label: catLabel }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byCategory.tagline', 'Categoría')} title={catLabel} totalCount={total} />
 
