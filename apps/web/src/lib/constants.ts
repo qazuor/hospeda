@@ -43,6 +43,16 @@ export const BRAND_THEME_COLOR_DARK = '#5396ff' as const;
 export const TITLE_SEPARATOR = ' | ';
 
 /**
+ * Brand handle on X (Twitter), including the leading `@`. Emitted as
+ * `<meta name="twitter:site">` so Twitter attributes shared cards to the brand.
+ *
+ * NOTE: this currently differs from the `x` entry in {@link SOCIAL_PROFILES}
+ * (`x.com/hospeda.com.ar`). The handle below is the canonical account; the
+ * SOCIAL_PROFILES URL may need reconciling separately.
+ */
+export const TWITTER_SITE_HANDLE = '@HospedaLitoral' as const;
+
+/**
  * Official social profiles for the Hospeda brand. Single source of truth for
  * both `SocialLinks.astro` (rendered footer links) and `OrganizationJsonLd.astro`
  * (schema.org Organization `sameAs`).

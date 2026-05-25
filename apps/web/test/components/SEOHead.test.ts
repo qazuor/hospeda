@@ -35,3 +35,17 @@ describe('SEOHead.astro (SPEC-157 REQ-8)', () => {
         expect(src).toContain('twitter:image:alt');
     });
 });
+
+describe('SEOHead.astro — og:locale:alternate + twitter:site', () => {
+    it('emits og:locale:alternate for the non-current locales', () => {
+        // hreflang covers Google; og:locale:alternate tells OG consumers
+        // (Facebook etc.) the page has translations.
+        expect(src).toContain('og:locale:alternate');
+    });
+
+    it('emits twitter:site referencing the brand handle constant', () => {
+        expect(src).toContain('twitter:site');
+        expect(src).toMatch(/import\s*\{[^}]*\bTWITTER_SITE_HANDLE\b[^}]*\}/);
+        expect(src).toContain('{TWITTER_SITE_HANDLE}');
+    });
+});

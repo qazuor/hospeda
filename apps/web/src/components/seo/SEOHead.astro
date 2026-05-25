@@ -7,7 +7,7 @@
 
 import { getSiteUrl } from '@/lib/env';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
-import { BRAND_NAME, TITLE_SEPARATOR } from '@/lib/constants';
+import { BRAND_NAME, TITLE_SEPARATOR, TWITTER_SITE_HANDLE } from '@/lib/constants';
 
 export interface Props {
     /** Page title (will be suffixed with " | Hospeda" unless it already IS the brand name) */
@@ -56,7 +56,13 @@ const esUrl = generateAlternateUrl('es');
 const enUrl = generateAlternateUrl('en');
 const ptUrl = generateAlternateUrl('pt');
 
-const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
+const OG_LOCALE_MAP = { es: 'es_AR', en: 'en_US', pt: 'pt_BR' } as const;
+const ogLocale = OG_LOCALE_MAP[locale];
+// og:locale:alternate for the other two locales so OG consumers (Facebook etc.)
+// know the page has translations. hreflang already covers this for Google.
+const ogLocaleAlternates = (Object.keys(OG_LOCALE_MAP) as SupportedLocale[])
+    .filter((l) => l !== locale)
+    .map((l) => OG_LOCALE_MAP[l]);
 
 // Default OG image via dynamic generation endpoint — ensures every page has a social preview.
 // SPEC-157 REQ-8: coerce to an absolute URL. Social scrapers ignore relative
@@ -85,6 +91,9 @@ const ogImageUrl = new URL(
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:locale" content={ogLocale} />
+{ogLocaleAlternates.map((altLocale) => (
+    <meta property="og:locale:alternate" content={altLocale} />
+))}
 <meta property="og:site_name" content="Hospeda" />
 <meta property="og:image" content={ogImageUrl} />
 <meta property="og:image:width" content="1200" />
@@ -93,6 +102,7 @@ const ogImageUrl = new URL(
 
 <!-- Twitter Card tags -->
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content={TWITTER_SITE_HANDLE} />
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImageUrl} />
