@@ -49,3 +49,13 @@ describe('SEOHead.astro — og:locale:alternate + twitter:site', () => {
         expect(src).toContain('{TWITTER_SITE_HANDLE}');
     });
 });
+
+describe('SEOHead.astro — robots directive', () => {
+    it('emits noindex,follow (not nofollow) so crawlers still follow links on noindexed pages', () => {
+        // noindex,follow is the modern standard: the page itself stays out of
+        // the index but link equity flows through to linked detail pages
+        // (e.g. faceted listing pages link to indexable detail pages).
+        expect(src).toContain('content="noindex,follow"');
+        expect(src).not.toContain('content="noindex,nofollow"');
+    });
+});

@@ -83,7 +83,7 @@ const ogImageUrl = new URL(
 <link rel="canonical" href={canonical} />
 
 <!-- Robots meta tag (only when noindex is true) -->
-{noindex && <meta name="robots" content="noindex,nofollow" />}
+{noindex && <meta name="robots" content="noindex,follow" />}
 
 <!-- Open Graph tags -->
 <meta property="og:type" content={type} />
