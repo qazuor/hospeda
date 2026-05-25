@@ -260,8 +260,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
 
-        // BILLING: All billing admin permissions
+        // BILLING: All billing admin permissions. MANAGE_SUBSCRIPTIONS and
+        // BILLING_MANAGE gate write ops on the qzpay-hono admin tier (cancel,
+        // change-plan, extend-trial, force-cancel, refund, mark-paid, void,
+        // entitlements/limits manage). Without them ADMIN can only READ; today
+        // only SUPER_ADMIN can write (via the actor.ts catch-all bypass that
+        // grants every PermissionEnum value regardless of role_permission).
+        // Surfaced during SPEC-143 Block 2 smoke 2.2 (admin subscription cancel).
         PermissionEnum.BILLING_READ_ALL,
+        PermissionEnum.BILLING_MANAGE,
+        PermissionEnum.MANAGE_SUBSCRIPTIONS,
         PermissionEnum.BILLING_PROMO_CODE_READ,
         PermissionEnum.BILLING_PROMO_CODE_MANAGE,
         PermissionEnum.BILLING_METRICS_READ,
@@ -511,8 +519,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
 
-        // BILLING: All billing admin permissions
+        // BILLING: All billing admin permissions. MANAGE_SUBSCRIPTIONS and
+        // BILLING_MANAGE gate write ops on the qzpay-hono admin tier (cancel,
+        // change-plan, extend-trial, force-cancel, refund, mark-paid, void,
+        // entitlements/limits manage). Without them ADMIN can only READ; today
+        // only SUPER_ADMIN can write (via the actor.ts catch-all bypass that
+        // grants every PermissionEnum value regardless of role_permission).
+        // Surfaced during SPEC-143 Block 2 smoke 2.2 (admin subscription cancel).
         PermissionEnum.BILLING_READ_ALL,
+        PermissionEnum.BILLING_MANAGE,
+        PermissionEnum.MANAGE_SUBSCRIPTIONS,
         PermissionEnum.BILLING_PROMO_CODE_READ,
         PermissionEnum.BILLING_PROMO_CODE_MANAGE,
         PermissionEnum.BILLING_METRICS_READ,
