@@ -31,7 +31,7 @@ pnpm format            # Format code
 
 ## Test Users for Billing (SPEC-143 Block 1)
 
-A separate `--test-users` seed group creates 12 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+A separate `--test-users` seed group creates 13 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
 
@@ -45,6 +45,7 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=5 |
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=15 |
 | `host-premium@local.test` | HOST | `owner-premium` | unlimited |
+| `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=35 (15 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 14d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
