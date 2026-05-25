@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SOCIAL_PROFILES, SOCIAL_PROFILE_URLS } from '../../src/lib/constants';
+import { SOCIAL_PROFILES, SOCIAL_PROFILE_URLS, TWITTER_SITE_HANDLE } from '../../src/lib/constants';
 
 const src = readFileSync(
     resolve(__dirname, '../../src/components/shared/SocialLinks.astro'),
@@ -38,5 +38,11 @@ describe('SOCIAL_PROFILES (constants)', () => {
     it('excludes WhatsApp from the sameAs URL list (messaging, not a profile)', () => {
         expect(SOCIAL_PROFILE_URLS.some((url) => url.includes('wa.me'))).toBe(false);
         expect(SOCIAL_PROFILE_URLS).toHaveLength(4);
+    });
+
+    it('the X profile URL matches TWITTER_SITE_HANDLE (footer ↔ twitter:site coherence)', () => {
+        const xProfile = SOCIAL_PROFILES.find((profile) => profile.platform === 'x');
+        const handle = TWITTER_SITE_HANDLE.replace(/^@/, '');
+        expect(xProfile?.url).toBe(`https://x.com/${handle}`);
     });
 });

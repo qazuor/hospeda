@@ -46,9 +46,8 @@ export const TITLE_SEPARATOR = ' | ';
  * Brand handle on X (Twitter), including the leading `@`. Emitted as
  * `<meta name="twitter:site">` so Twitter attributes shared cards to the brand.
  *
- * NOTE: this currently differs from the `x` entry in {@link SOCIAL_PROFILES}
- * (`x.com/hospeda.com.ar`). The handle below is the canonical account; the
- * SOCIAL_PROFILES URL may need reconciling separately.
+ * Kept in sync with the `x` entry in {@link SOCIAL_PROFILES}
+ * (`x.com/HospedaLitoral`); a test asserts the two stay coherent.
  */
 export const TWITTER_SITE_HANDLE = '@HospedaLitoral' as const;
 
@@ -63,7 +62,7 @@ export const TWITTER_SITE_HANDLE = '@HospedaLitoral' as const;
 export const SOCIAL_PROFILES = [
     { platform: 'facebook', url: 'https://www.facebook.com/hospeda.com.ar' },
     { platform: 'instagram', url: 'https://www.instagram.com/hospeda.com.ar' },
-    { platform: 'x', url: 'https://x.com/hospeda.com.ar' },
+    { platform: 'x', url: 'https://x.com/HospedaLitoral' },
     { platform: 'youtube', url: 'https://www.youtube.com/@hospeda.com.ar' },
     { platform: 'whatsapp', url: 'https://wa.me/543442453797' }
 ] as const;
