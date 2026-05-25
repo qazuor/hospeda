@@ -37,6 +37,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { renderContent } from '@/lib/render-content';
+import { getDestinationSameAs } from '@/lib/destination-sameas';
 import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -306,6 +307,10 @@ const placeImage =
 		? featuredImageObj.url
 		: undefined;
 
+// Entity disambiguation (schema.org sameAs): interim curated slug→Wikipedia
+// map. Resolves only for the main Entre Ríos destinations; undefined otherwise.
+const placeSameAs = getDestinationSameAs({ slug });
+
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
 const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbJsonLdItems = [
@@ -345,6 +350,7 @@ const safeDescriptionHtml = renderContent({
 		url={placeUrl}
 		image={placeImage}
 		geo={placeGeo}
+		sameAs={placeSameAs}
 	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 

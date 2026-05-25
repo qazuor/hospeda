@@ -42,6 +42,13 @@ interface Props {
 	 * when the entity matches a more specific type.
 	 */
 	readonly articleType?: string;
+	/**
+	 * CSS selectors of the page elements that are most relevant for
+	 * text-to-speech / voice assistants (AEO). When present and non-empty,
+	 * a schema.org SpeakableSpecification block is emitted. Typically the
+	 * article headline and lead/summary selectors.
+	 */
+	readonly speakableCssSelectors?: ReadonlyArray<string>;
 }
 
 const {
@@ -53,6 +60,7 @@ const {
 	dateModified,
 	author,
 	articleType = 'Article',
+	speakableCssSelectors,
 } = Astro.props;
 
 const siteUrl = getSiteUrl().replace(/\/$/, '');
@@ -82,6 +90,13 @@ if (image) {
 
 if (dateModified) {
 	structuredData.dateModified = dateModified;
+}
+
+if (speakableCssSelectors && speakableCssSelectors.length > 0) {
+	structuredData.speakable = {
+		'@type': 'SpeakableSpecification',
+		cssSelector: [...speakableCssSelectors],
+	};
 }
 ---
 
