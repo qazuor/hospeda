@@ -52,3 +52,40 @@ export type SocialPlatform = (typeof SOCIAL_PROFILES)[number]['platform'];
 export const SOCIAL_PROFILE_URLS: readonly string[] = SOCIAL_PROFILES.filter(
     (profile) => profile.platform !== 'whatsapp'
 ).map((profile) => profile.url);
+
+/**
+ * Canonical organization facts for the Hospeda brand. Single source of truth
+ * for the schema.org `Organization` structured data emitted on the homepage
+ * (`OrganizationJsonLd.astro`). Enriching the Organization node with contact,
+ * address, and area-served data helps search engines and AI assistants answer
+ * "what is Hospeda / how do I reach them / where do they operate" questions.
+ *
+ * `address` maps to schema.org `PostalAddress`; `areaServed` maps to a
+ * schema.org `State` contained in a `Country`.
+ *
+ * @see SPEC-157 REQ-5 (Organization JSON-LD)
+ */
+export const ORGANIZATION_INFO = {
+    /** One-paragraph description of the platform. */
+    description:
+        'Hospeda es la plataforma para descubrir y reservar alojamientos turísticos en el Litoral de Entre Ríos, Argentina: desde cabañas y casas de campo hasta hoteles, con información turística de la región.',
+    /** Public contact phone in E.164-ish format (matches the confirmed number). */
+    telephone: '+543442453797',
+    /** Public contact email. */
+    email: 'info@hospeda.com.ar',
+    /** Postal address fields (schema.org PostalAddress). */
+    address: {
+        streetAddress: 'Ruta Provincial 39, km 142, lote 19',
+        addressLocality: 'Concepción del Uruguay',
+        addressRegion: 'Entre Ríos',
+        postalCode: '3260',
+        addressCountry: 'AR'
+    },
+    /** Geographic area the platform serves (schema.org State → Country). */
+    areaServed: {
+        name: 'Entre Ríos',
+        containedInPlace: { name: 'Argentina' }
+    },
+    /** Year the organization was founded (ISO 8601 year). */
+    foundingDate: '2026'
+} as const;
