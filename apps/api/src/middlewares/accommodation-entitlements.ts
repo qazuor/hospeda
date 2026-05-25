@@ -68,10 +68,12 @@ function hasMarkdownSyntax(value: string): boolean {
  *
  * Wired by SPEC-143 Block 4 follow-up on `PATCH /api/v1/protected/accommodations/:id`
  * as the reference implementation of the negative-entitlement gating pattern
- * for finding #25. Remaining 7 gate middlewares (gateVideoEmbed,
- * gateCalendarAccess, gateExternalCalendarSync, gateWhatsAppDisplay,
- * gateWhatsAppDirect, gateReviewResponse, gateFavorites) need analogous
- * wiring on their respective write paths — separate PR per gate.
+ * for finding #25. `gateVideoEmbed` and `gateFavorites` followed the same
+ * pattern in PR #1252 (accommodation PATCH and user-bookmark create
+ * respectively). The remaining 5 gates (gateCalendarAccess,
+ * gateExternalCalendarSync, gateWhatsAppDisplay, gateWhatsAppDirect,
+ * gateReviewResponse) target write surfaces that do not exist today.
+ * See SPEC-143 #33 and the per-gate TODOs in this file.
  *
  * @returns Middleware handler
  */
@@ -200,6 +202,14 @@ export function gateVideoEmbed(): AppMiddleware {
  * Checks if user has CAN_USE_CALENDAR entitlement.
  * Returns 403 if user tries to access calendar features without entitlement.
  *
+ * TODO (SPEC-143 #33): Not wired today. No route exists at
+ * `GET /accommodations/:id/calendar`. Smoke B.7 returned 404 confirming
+ * the missing surface. Wire this middleware once the calendar route ships.
+ * When wiring, also refactor from `HTTPException(403, JSON.stringify(...))`
+ * to `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match
+ * the pattern shipped for `gateRichDescription` / `gateVideoEmbed` /
+ * `gateFavorites` in SPEC-143 PR #1250 + #1252.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -250,6 +260,13 @@ export function gateCalendarAccess(): AppMiddleware {
  *
  * Checks if user has CAN_SYNC_EXTERNAL_CALENDAR entitlement.
  * Returns 403 if user tries to sync external calendars without entitlement.
+ *
+ * TODO (SPEC-143 #33): Not wired today. No route exists at
+ * `POST /accommodations/:id/calendar/sync`. Depends on the calendar feature
+ * surface (same blocker as `gateCalendarAccess`). Wire once the route ships,
+ * and refactor from `HTTPException(403, JSON.stringify(...))` to
+ * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
+ * SPEC-143 #25 pattern.
  *
  * @returns Middleware handler
  *
@@ -304,6 +321,15 @@ export function gateExternalCalendarSync(): AppMiddleware {
  *
  * Checks if user has CAN_CONTACT_WHATSAPP_DISPLAY entitlement.
  * Returns 403 if user tries to add WhatsApp number without entitlement.
+ *
+ * TODO (SPEC-143 #33): Not wired today. The accommodation schema has no
+ * `whatsappNumber` or `contactWhatsApp` fields. WhatsApp display is a UI-only
+ * feature derived from `contactInfo.mobilePhone`. Wire this middleware only
+ * after the schema gains explicit WhatsApp fields (product decision needed:
+ * is it a separate field or just a flag on mobilePhone?). When wiring, also
+ * refactor from `HTTPException(403, JSON.stringify(...))` to
+ * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
+ * SPEC-143 #25 pattern.
  *
  * @returns Middleware handler
  *
@@ -378,6 +404,14 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  * Checks if user has CAN_CONTACT_WHATSAPP_DIRECT entitlement.
  * Returns 403 if user tries to enable direct WhatsApp link without entitlement.
  *
+ * TODO (SPEC-143 #33): Not wired today. The accommodation schema has no
+ * `whatsappDirectLink` or `enableWhatsAppDirect` fields. Same blocker as
+ * `gateWhatsAppDisplay`: the WhatsApp feature surface is UI-only. Wire only
+ * after the schema gains explicit fields. When wiring, also refactor from
+ * `HTTPException(403, JSON.stringify(...))` to
+ * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
+ * SPEC-143 #25 pattern.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -449,6 +483,14 @@ export function gateWhatsAppDirect(): AppMiddleware {
  *
  * Checks if user has RESPOND_REVIEWS entitlement.
  * Returns 403 if user tries to respond to reviews without entitlement.
+ *
+ * TODO (SPEC-143 #33): Not wired today. No respond-to-review endpoint
+ * exists. Smoke B.6 confirmed only `POST /reviews` (create) is implemented;
+ * there is no `POST /accommodations/:id/reviews/:reviewId/response`. Wire
+ * this middleware once the response endpoint ships, and refactor from
+ * `HTTPException(403, JSON.stringify(...))` to
+ * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
+ * SPEC-143 #25 pattern.
  *
  * @returns Middleware handler
  *
