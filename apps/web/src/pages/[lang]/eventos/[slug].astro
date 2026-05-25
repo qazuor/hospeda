@@ -144,6 +144,8 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 	title={seo.title || name}
 	description={seo.description || summary}
 	ogImage={featuredIsPlaceholder ? undefined : featuredImage.url}
+	ogType="Evento"
+	ogSubtitle={location.city || location.name || undefined}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >

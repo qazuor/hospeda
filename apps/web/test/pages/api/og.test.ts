@@ -89,4 +89,33 @@ describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
         const bytes = new Uint8Array(await response.arrayBuffer());
         expect(Array.from(bytes.slice(0, 8))).toEqual(PNG_SIGNATURE);
     });
+
+    it.skipIf(!hasNetwork)('renders a BRAND card (no image) as a 1200x630 PNG', async () => {
+        const response = await GET(
+            buildContext(
+                '?title=Tu+escapada+empieza+ac%C3%A1&description=Los+mejores+alojamientos&tagline=Descubr%C3%AD+el+Litoral'
+            )
+        );
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        expect(Array.from(bytes.slice(0, 8))).toEqual(PNG_SIGNATURE);
+        expect(view.getUint32(16)).toBe(1200);
+        expect(view.getUint32(20)).toBe(630);
+    });
+
+    it.skipIf(!hasNetwork)('renders a PHOTO card (with image) as a 1200x630 PNG', async () => {
+        const image = encodeURIComponent(
+            'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&w=1200'
+        );
+        const response = await GET(
+            buildContext(
+                `?title=Para%C3%ADso+Natural+Hotel&type=Alojamiento&image=${image}&subtitle=Ubajay&rating=4.8`
+            )
+        );
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        expect(Array.from(bytes.slice(0, 8))).toEqual(PNG_SIGNATURE);
+        expect(view.getUint32(16)).toBe(1200);
+        expect(view.getUint32(20)).toBe(630);
+    });
 });
