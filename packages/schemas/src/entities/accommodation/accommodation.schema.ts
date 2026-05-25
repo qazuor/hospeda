@@ -67,6 +67,17 @@ export const AccommodationSchema = z.object({
     destinationId: DestinationIdSchema,
     ownerId: UserIdSchema,
 
+    /**
+     * Service-suspension flag (SPEC-143 #29). Denormalized from
+     * `users.service_suspended` (the canonical source) for the public-read hot
+     * path and the accommodation edit-lock. Flipped in bulk across an owner's
+     * accommodations when their subscription is paused with service suspension
+     * (host self-pause or admin "full" pause), and cleared on resume.
+     * Server-managed: never set through create/update input (it is omitted from
+     * those schemas); only the pause/resume flow mutates it.
+     */
+    ownerSuspended: z.boolean().default(false),
+
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),
     faqs: z.array(BaseFaqSchema).optional(),
