@@ -118,78 +118,79 @@ export function gateRichDescription(): AppMiddleware {
 }
 
 /**
- * Gates video embed feature
+ * Detect video embed URLs in a description string.
  *
- * Checks if user has CAN_EMBED_VIDEO entitlement.
- * If not, strips video URLs from description and media fields.
+ * Pattern set covers the major embed providers (YouTube, Vimeo, Dailymotion).
+ * Conservative on purpose: a plain mention of "youtube" in prose without a
+ * URL does NOT trigger the gate.
+ *
+ * The accommodation schema does not have a dedicated `videoUrl` or
+ * `media[type=video]` field today, so the only realistic gating surface
+ * for `CAN_EMBED_VIDEO` is video URLs pasted into the description. If
+ * those fields are added later, extend the detection to inspect them too.
+ */
+const VIDEO_EMBED_PATTERNS: readonly RegExp[] = [
+    /\bhttps?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/[\w-]+/i,
+    /\bhttps?:\/\/(?:www\.)?vimeo\.com\/\d+/i,
+    /\bhttps?:\/\/(?:www\.)?dailymotion\.com\/video\/[\w-]+/i
+];
+
+function hasVideoEmbed(value: string): boolean {
+    return VIDEO_EMBED_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+/**
+ * Gates video embed feature.
+ *
+ * Returns 403 ENTITLEMENT_REQUIRED when the request body's `description`
+ * field contains a video URL (YouTube / Vimeo / Dailymotion) AND the actor
+ * lacks `CAN_EMBED_VIDEO`. Plain prose passes through regardless of plan —
+ * the gate only fires when the user is actually exercising the gated
+ * capability.
+ *
+ * Refactored from the previous "silent strip" implementation as part of
+ * SPEC-143 #25, mirroring the `gateRichDescription` pattern shipped in
+ * PR #1250. Same body-clone strategy so downstream zValidator works,
+ * same ServiceError(ENTITLEMENT_REQUIRED) envelope so the frontend has
+ * consistent handling across all entitlement-gated routes.
  *
  * @returns Middleware handler
- *
- * @example
- * ```typescript
- * import { gateVideoEmbed } from '../middlewares/accommodation-entitlements';
- *
- * app.post(
- *   '/accommodations',
- *   entitlementMiddleware(),
- *   gateVideoEmbed(),
- *   async (c) => {
- *     // Video URLs will be stripped if user doesn't have Premium plan
- *   }
- * );
- * ```
  */
 export function gateVideoEmbed(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check if user has video embed entitlement
-            const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
+        const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
 
-            if (!canEmbedVideo) {
-                // Get request body
-                const body = await c.req.json();
-
-                // Video URL patterns (YouTube, Vimeo, etc.)
-                const videoUrlPatterns = [
-                    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/[\w-]+/gi,
-                    /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/[\d]+/gi,
-                    /(?:https?:\/\/)?(?:www\.)?dailymotion\.com\/video\/[\w-]+/gi
-                ];
-
-                // Strip video URLs from description
-                if (body.description && typeof body.description === 'string') {
-                    for (const pattern of videoUrlPatterns) {
-                        body.description = body.description.replace(pattern, '');
-                    }
-                }
-
-                // Strip video URLs from videoUrl field if present
-                if (body.videoUrl) {
-                    body.videoUrl = undefined;
-                }
-
-                // Strip from media array if present
-                if (Array.isArray(body.media)) {
-                    body.media = body.media.filter(
-                        (item: { type?: string }) => item.type !== 'video'
-                    );
-                }
-
-                apiLogger.debug(
-                    `Stripped video content - user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
-                );
-
-                // Replace request with modified body
-                c.req.raw.json = async () => body;
-            }
-
+        if (canEmbedVideo) {
             await next();
-        } catch (error) {
-            apiLogger.error(
-                `Error in video embed gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            await next();
+            return;
         }
+
+        let body: { description?: unknown };
+        try {
+            body = (await c.req.raw.clone().json()) as { description?: unknown };
+        } catch {
+            await next();
+            return;
+        }
+
+        const description = body?.description;
+        if (typeof description !== 'string' || !hasVideoEmbed(description)) {
+            await next();
+            return;
+        }
+
+        apiLogger.warn(
+            `gateVideoEmbed: blocked update — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Tu plan actual no incluye incrustar videos en la descripción. Actualizá tu plan para acceder a esta funcionalidad.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_EMBED_VIDEO,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 

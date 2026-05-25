@@ -21,7 +21,9 @@
  * @module middlewares/tourist-entitlements
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
+import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings, AppMiddleware } from '../types';
@@ -30,97 +32,47 @@ import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
 
 /**
- * Gate favorites feature
+ * Gates the favorites/bookmarks feature on the entitlement axis.
  *
- * Checks if user has SAVE_FAVORITES entitlement and hasn't exceeded
- * max_favorites limit before adding a new favorite.
+ * Returns 403 ENTITLEMENT_REQUIRED when the actor lacks SAVE_FAVORITES.
+ * This is the entitlement layer ONLY — count + limit enforcement lives in
+ * `enforceFavoritesLimit` (apps/api/src/middlewares/limit-enforcement.ts)
+ * which counts the user's bookmarks via the service layer. Use both in
+ * cascade on routes that need the full gate (entitlement check first so
+ * users without the feature get a clean ENTITLEMENT_REQUIRED instead of
+ * a confusing LIMIT_REACHED at 0/0).
  *
- * Note: This middleware expects current favorites count to be passed
- * via context at 'currentFavoritesCount' key (set by route handler).
+ * Plans that include `SAVE_FAVORITES` (per `plans.config.ts`):
+ *   - tourist-free, tourist-plus, tourist-vip
+ *   - (HOST / CLIENT_MANAGER roles do NOT include this entitlement,
+ *     so bookmarking from those roles will 403 here — by design)
+ *
+ * Refactored as part of SPEC-143 #25, mirroring the pattern shipped on
+ * gateRichDescription (PR #1250) and gateVideoEmbed: throw
+ * ServiceError(ENTITLEMENT_REQUIRED, ...) so the route-level error mapper
+ * (PR #1246 fix) produces the standard 403 envelope the frontend already
+ * handles. No body-stream consumption, no custom HTTPException JSON
+ * stringification.
  *
  * @returns Middleware handler
- *
- * @example
- * ```typescript
- * import { gateFavorites } from '../middlewares/tourist-entitlements';
- *
- * app.post(
- *   '/favorites',
- *   entitlementMiddleware(),
- *   gateFavorites(),
- *   async (c) => {
- *     // User can add favorite - proceed
- *   }
- * );
- * ```
  */
 export function gateFavorites(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.SAVE_FAVORITES)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'Tu plan no incluye guardar favoritos. Actualiza tu plan para acceder a esta funcionalidad.',
-                            details: {
-                                entitlement: EntitlementKey.SAVE_FAVORITES,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Get current favorites count from context (set by route handler)
-            const currentCountValue = c.get('currentFavoritesCount' as never);
-            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
-
-            // Check limit
-            const limitCheck = checkLimit({
-                context: c as Context<AppBindings>,
-                limitKey: LimitKey.MAX_FAVORITES,
-                currentCount
-            });
-
-            if (!limitCheck.allowed) {
-                apiLogger.warn(
-                    `Favorites limit reached: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
-                );
-
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_FAVORITES,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                remaining: limitCheck.remaining,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement and limit OK - proceed
+        if (hasEntitlement(c, EntitlementKey.SAVE_FAVORITES)) {
             await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in favorites gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
+            return;
         }
+
+        apiLogger.warn(`gateFavorites: blocked — user lacks ${EntitlementKey.SAVE_FAVORITES}`);
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Tu plan no incluye guardar favoritos. Actualizá tu plan para acceder a esta funcionalidad.',
+            {
+                requiredEntitlement: EntitlementKey.SAVE_FAVORITES,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
