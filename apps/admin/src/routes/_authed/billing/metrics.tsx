@@ -117,10 +117,7 @@ function BillingMetricsPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground text-sm">
-                            {t(
-                                'admin-billing.metrics.searchDisabled',
-                                'La búsqueda de clientes y el detalle de uso individual están deshabilitados temporalmente: los endpoints del backend están pendientes. Hasta entonces, usá las tarjetas de uso del sistema y la tabla de clientes acercándose al límite que aparecen arriba.'
-                            )}
+                            {t('admin-billing.metrics.searchDisabled')}
                         </p>
                     </CardContent>
                 </Card>

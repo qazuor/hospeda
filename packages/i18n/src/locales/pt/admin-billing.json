@@ -109,6 +109,7 @@
         "searchError": "Erro ao buscar clientes",
         "noCustomers": "Nenhum cliente encontrado",
         "searchHint": "Insira pelo menos 2 caracteres para buscar",
+        "searchDisabled": "A busca de clientes e o detalhe de uso individual estão temporariamente desabilitados: os endpoints do backend estão pendentes. Até lá, use os cartões de uso do sistema e a tabela de clientes próximos do limite mostrada acima.",
         "loadingUsage": "Carregando análises de uso...",
         "errorUsage": "Erro ao carregar análises",
         "emptyTitle": "Busque um cliente para ver suas análises de uso",

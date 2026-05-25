@@ -1,14 +1,19 @@
+import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import {
     UserModel,
     accounts,
+    and,
+    billingAddonPurchases,
     billingCustomers,
     billingPlans,
     billingSubscriptions,
     eq,
-    getDb
+    getDb,
+    sql
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
@@ -57,10 +62,21 @@ interface TestUserSpec {
      * `OWNER_TRIAL_DAYS`). Ignored when status is anything else.
      */
     readonly trialDays?: number;
+    /**
+     * Optional addon slug to apply to the user's active subscription. When
+     * present the seed inserts both a `billing_addon_purchases` row
+     * (status='active', limit/entitlement adjustments populated) and a
+     * `billing_customer_limits` row reflecting the aggregated post-addon
+     * limit (base plan limit + addon increase). Mirrors the production
+     * `applyAddonEntitlements` flow without going through QZPay so smokes
+     * 1.7, 1.12 and 2.5 can exercise an addon-extended limit without the
+     * SQL-direct cache-bust workaround. Requires `planSlug`.
+     */
+    readonly addonSlug?: string;
 }
 
 /**
- * The 11 new test users created by this seed.
+ * The 13 test users created by this seed.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
  * excluded — the required seed already creates superadmin@hospeda.com
@@ -103,6 +119,16 @@ const TEST_USERS: readonly TestUserSpec[] = [
         displayName: 'Host Premium',
         role: RoleEnum.HOST,
         planSlug: 'owner-premium'
+    },
+    // Host with addon applied (SPEC-143 #32). owner-pro base = 15 photos, plus
+    // extra-photos-20 addon = 35 photos total. Exercises the addon-aggregated
+    // limit path in billing_customer_limits without bypassing applyAddonEntitlements.
+    {
+        email: 'host-pro-plus-addon@local.test',
+        displayName: 'Host Pro Plus Addon',
+        role: RoleEnum.HOST,
+        planSlug: 'owner-pro',
+        addonSlug: 'extra-photos-20'
     },
     // Trial-state host (SPEC-143 Block 3 — trial lifecycle smoke). status='trialing',
     // 14-day window starting at seed time. owner-basico is the canonical trial-eligible plan.
@@ -242,15 +268,16 @@ async function ensureSubscription(
     db: DrizzleClient,
     subStatus: 'active' | 'trialing' = 'active',
     trialDays = 14
-): Promise<void> {
+): Promise<string> {
     const existing = await db
         .select({ id: billingSubscriptions.id })
         .from(billingSubscriptions)
         .where(eq(billingSubscriptions.customerId, customerId))
         .limit(1);
 
-    if (existing.length > 0) {
-        return;
+    const existingRow = existing[0];
+    if (existingRow) {
+        return existingRow.id;
     }
 
     const now = new Date();
@@ -268,25 +295,173 @@ async function ensureSubscription(
           })()
         : null;
 
-    await db.insert(billingSubscriptions).values({
+    const inserted = await db
+        .insert(billingSubscriptions)
+        .values({
+            customerId,
+            // billing_subscriptions.plan_id is varchar (not UUID), so we store
+            // the UUID string directly. See CLAUDE.md gotcha: "billing_plans.id
+            // is UUID but billing_subscriptions.plan_id is varchar".
+            planId,
+            status: subStatus,
+            // Use monthly interval for all test subscriptions. For local entitlement
+            // testing the billing cycle does not matter; only status drives behavior.
+            billingInterval: 'month',
+            livemode: false,
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            ...(isTrialing ? { trialStart, trialEnd } : {})
+        })
+        .returning({ id: billingSubscriptions.id });
+
+    const insertedRow = inserted[0];
+    if (!insertedRow) {
+        throw new Error(
+            `Insert into billing_subscriptions returned no row for customerId=${customerId}`
+        );
+    }
+    return insertedRow.id;
+}
+
+/**
+ * Applies an addon purchase to a customer's active subscription, mirroring
+ * what `AddonEntitlementService.applyAddonEntitlements` does in production
+ * without invoking QZPay. Two tables are touched:
+ *
+ * 1. `billing_addon_purchases`: one row with `status='active'` and the
+ *    populated `limitAdjustments` / `entitlementAdjustments` JSONB so cron
+ *    jobs (addon-expiry, addon-reconciliation) and admin/customer-facing
+ *    listings observe the purchase exactly as a real one.
+ * 2. `billing_customer_limits`: for limit-type addons only. Inserts the
+ *    aggregated post-addon limit (`basePlanLimit + addon.limitIncrease`)
+ *    under `source='addon'` + `source_id=ADDON_RECALC_SOURCE_ID`, matching
+ *    the well-known sentinel used by the addon-limit-recalculation flow.
+ *    This is what `loadEntitlements()` reads at request time.
+ *
+ * For entitlement-type addons (`addon.grantsEntitlement` set), the seed
+ * skips the limits step. The entitlement itself is recorded in the
+ * purchase row's `entitlementAdjustments` array and resolved by the runtime
+ * via the same path it uses for QZPay-granted entitlements.
+ *
+ * Idempotent on `(customerId, addonSlug, status='active')` thanks to the
+ * `idx_addon_purchases_active_unique` partial unique index.
+ *
+ * @throws {Error} When the addon slug is unknown or the base plan limit
+ *   cannot be resolved from `ALL_PLANS`.
+ */
+async function ensureAddonPurchase(
+    customerId: string,
+    subscriptionId: string,
+    addonSlug: string,
+    planSlug: string,
+    db: DrizzleClient
+): Promise<void> {
+    const addon = getAddonBySlug(addonSlug);
+    if (!addon) {
+        throw new Error(`Addon "${addonSlug}" not found in addon catalog`);
+    }
+
+    // Idempotency: if there is already an active purchase for this
+    // customer+addon, do nothing. The partial unique index would reject the
+    // duplicate insert anyway, but a pre-check produces a clearer log.
+    const existing = await db
+        .select({ id: billingAddonPurchases.id })
+        .from(billingAddonPurchases)
+        .where(
+            and(
+                eq(billingAddonPurchases.customerId, customerId),
+                eq(billingAddonPurchases.addonSlug, addonSlug),
+                eq(billingAddonPurchases.status, 'active')
+            )
+        )
+        .limit(1);
+
+    if (existing.length > 0) {
+        return;
+    }
+
+    // Resolve base plan limit from canonical config so the aggregated limit
+    // matches what applyAddonEntitlements would compute.
+    const canonicalPlan = ALL_PLANS.find((plan) => plan.slug === planSlug);
+    if (!canonicalPlan) {
+        throw new Error(`Plan "${planSlug}" not found in ALL_PLANS catalog`);
+    }
+
+    const isLimitAddon = addon.affectsLimitKey !== null && addon.limitIncrease !== null;
+    const isEntitlementAddon = addon.grantsEntitlement !== null;
+
+    let limitAdjustments: Array<{
+        limitKey: string;
+        increase: number;
+        previousValue: number;
+        newValue: number;
+    }> = [];
+    let entitlementAdjustments: Array<{ entitlementKey: string; granted: boolean }> = [];
+
+    if (isLimitAddon && addon.affectsLimitKey && addon.limitIncrease !== null) {
+        const baseLimitDef = canonicalPlan.limits.find((lim) => lim.key === addon.affectsLimitKey);
+        const basePlanLimit = baseLimitDef?.value ?? 0;
+
+        // Skip the limits row for unlimited base plans (matches production behavior).
+        if (basePlanLimit === -1) {
+            limitAdjustments = [
+                {
+                    limitKey: addon.affectsLimitKey,
+                    increase: addon.limitIncrease,
+                    previousValue: -1,
+                    newValue: -1
+                }
+            ];
+        } else {
+            const newMaxValue = basePlanLimit + addon.limitIncrease;
+            limitAdjustments = [
+                {
+                    limitKey: addon.affectsLimitKey,
+                    increase: addon.limitIncrease,
+                    previousValue: basePlanLimit,
+                    newValue: newMaxValue
+                }
+            ];
+
+            // Insert the aggregated limit. Idempotent via the active-purchase
+            // pre-check above plus the natural fact that the aggregated row is
+            // keyed by (customer_id, limit_key, source, source_id) implicitly.
+            await db.execute(sql`
+                INSERT INTO billing_customer_limits (
+                    customer_id, limit_key, max_value, current_value,
+                    source, source_id, livemode
+                ) VALUES (
+                    ${customerId}, ${addon.affectsLimitKey}, ${newMaxValue}, 0,
+                    'addon', ${ADDON_RECALC_SOURCE_ID}, false
+                )
+                ON CONFLICT DO NOTHING
+            `);
+        }
+    }
+
+    if (isEntitlementAddon && addon.grantsEntitlement) {
+        entitlementAdjustments = [
+            {
+                entitlementKey: addon.grantsEntitlement,
+                granted: true
+            }
+        ];
+    }
+
+    await db.insert(billingAddonPurchases).values({
         customerId,
-        // billing_subscriptions.plan_id is varchar (not UUID) — store the UUID
-        // string directly. See CLAUDE.md gotcha: "billing_plans.id is UUID but
-        // billing_subscriptions.plan_id is varchar".
-        planId,
-        status: subStatus,
-        // Use monthly interval for all test subscriptions. For local entitlement
-        // testing the billing cycle doesn't matter — only status drives behavior.
-        billingInterval: 'month',
-        livemode: false,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        ...(isTrialing ? { trialStart, trialEnd } : {})
+        subscriptionId,
+        addonSlug,
+        status: 'active',
+        purchasedAt: new Date(),
+        limitAdjustments,
+        entitlementAdjustments,
+        metadata: { source: 'local-test-users-seed' }
     });
 }
 
 /**
- * Seeds 11 test users for SPEC-143 Block 1 local entitlement testing.
+ * Seeds 13 test users for SPEC-143 Block 1 local entitlement testing.
  *
  * Each user receives:
  * - A `users` row with the correct role and lifecycle/visibility defaults.
@@ -295,12 +470,17 @@ async function ensureSubscription(
  * - (For users with a planSlug) A `billing_customers` row + an active
  *   `billing_subscriptions` row, so `loadEntitlements()` returns the correct
  *   plan gates without needing a real MercadoPago checkout.
+ * - (For users with an addonSlug) A `billing_addon_purchases` row plus, for
+ *   limit-type addons, a `billing_customer_limits` row with the aggregated
+ *   post-addon limit applied. Mirrors what production
+ *   `applyAddonEntitlements()` does without going through QZPay.
  *
  * Idempotent: users that already exist (matched by email) are skipped entirely.
  * If a user exists but is missing their account row or billing rows, those gaps
  * are filled in.
  *
- * Tables touched: users, account, billing_customers, billing_subscriptions.
+ * Tables touched: users, account, billing_customers, billing_subscriptions,
+ * billing_addon_purchases, billing_customer_limits.
  *
  * @param _context - Seed context (unused; kept for the runExampleSeeds contract)
  *
@@ -404,7 +584,7 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
             if (spec.planSlug) {
                 const planId = await resolvePlanId(spec.planSlug, db);
                 const customerId = await ensureBillingCustomer(userId, spec.email, db);
-                await ensureSubscription(
+                const subscriptionId = await ensureSubscription(
                     customerId,
                     planId,
                     db,
@@ -415,6 +595,20 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 logger.info(
                     `${STATUS_ICONS.Info}    Billing rows ensured for ${spec.email} (plan: ${spec.planSlug})`
                 );
+
+                // Apply addon (if declared) on top of the subscription.
+                if (spec.addonSlug) {
+                    await ensureAddonPurchase(
+                        customerId,
+                        subscriptionId,
+                        spec.addonSlug,
+                        spec.planSlug,
+                        db
+                    );
+                    logger.info(
+                        `${STATUS_ICONS.Info}    Addon ensured for ${spec.email} (addon: ${spec.addonSlug})`
+                    );
+                }
             }
 
             summaryTracker.trackSuccess(ENTITY_NAME);
