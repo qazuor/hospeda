@@ -115,7 +115,11 @@ describe('pickHeroKey — deterministic hero hashing', () => {
 describe('buildOgImagePath — SEOHead URL assembly', () => {
     it('builds a brand-mode URL from title + description only (backward compat)', () => {
         const path = buildOgImagePath({ title: 'Inicio', description: 'Bienvenido' });
-        expect(path.startsWith('/api/og?')).toBe(true);
+        // Trailing slash before the query: the site runs trailingSlash: 'always',
+        // so `/api/og?` 301-redirects to `/api/og/?`. Emit the slashed form so
+        // social scrapers that don't follow redirects still resolve the image.
+        expect(path.startsWith('/api/og/?')).toBe(true);
+        expect(path.startsWith('/api/og?')).toBe(false);
         const sp = new URL(`http://x${path}`).searchParams;
         expect(sp.get('title')).toBe('Inicio');
         expect(sp.get('description')).toBe('Bienvenido');
