@@ -151,7 +151,7 @@ type KpiCardProps = {
 const KpiCard = ({ title, value, icon, href, loading }: KpiCardProps) => (
     <Link
         to={href}
-        className="group rounded-lg border p-4 transition-colors hover:bg-accent/50"
+        className="group rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50"
     >
         <div className="mb-3 flex items-center gap-2">
             <div className="rounded-md bg-primary/10 p-1.5 text-primary">{icon}</div>

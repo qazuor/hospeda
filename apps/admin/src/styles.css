@@ -14,6 +14,18 @@
 @import "tw-animate-css";
 
 /*
+ * Surface elevation (admin UI polish): in LIGHT mode, lift content surfaces
+ * (anything on `bg-card` / `bg-popover` — cards, blocks, table wrappers,
+ * popovers) to a warm off-white that is slightly lighter and warmer than the
+ * river-tinted page background (`--color-bg-app`). This makes each surface
+ * read as a distinct panel against the page. Dark mode keeps the package's
+ * elevated token untouched (the `:not([data-theme="dark"])` guard).
+ */
+[data-app="admin"]:not([data-theme="dark"]) {
+    --color-bg-elevated: oklch(0.99 0.008 80);
+}
+
+/*
  * Dark mode is driven by the [data-theme="dark"] attribute (set on <html>,
  * matching the web app + the [data-app="admin"][data-theme="dark"] scope in
  * @repo/design-tokens), NOT the legacy `.dark` class. Tailwind `dark:`

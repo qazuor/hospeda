@@ -82,7 +82,7 @@ export function InboxList({
     return (
         <div className="flex flex-col gap-4">
             {/* Table */}
-            <div className="overflow-hidden rounded-lg border">
+            <div className="overflow-hidden rounded-lg border bg-card">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                         {table.getHeaderGroups().map((headerGroup) => (

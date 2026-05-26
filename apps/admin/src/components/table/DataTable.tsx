@@ -357,7 +357,7 @@ export const DataTable = <TData,>({
                 table forces its natural max-content width below `lg` so all
                 columns remain visible by scrolling instead of being
                 silently truncated (SPEC-135 F-021). */}
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded-md border bg-card">
                 <table className="w-full min-w-max table-auto text-left text-sm lg:min-w-0">
                     <thead className="bg-muted text-foreground">
                         {table.getHeaderGroups().map((hg) => (

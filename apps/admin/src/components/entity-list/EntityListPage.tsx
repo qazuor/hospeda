@@ -3,6 +3,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { DataTableToolbar } from '@/components/table/DataTableToolbar';
+import { TableSearchInput } from '@/components/table/TableSearchInput';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
@@ -414,6 +415,18 @@ export const createEntityListPage = <TData extends { id: string }>(
             );
         }, [config.layoutConfig, config.entityKey, config.name, t, navigate]);
 
+        const searchInput = searchConfig.enabled ? (
+            <TableSearchInput
+                key={`search-config-${searchConfig.minChars}`}
+                query={localQuery}
+                onQueryChange={handleQueryChange}
+                isSearching={isSearching}
+                onClearSearch={handleClearSearch}
+                searchMinChars={searchConfig.minChars}
+                searchPlaceholder={translatedSearchPlaceholder}
+            />
+        ) : null;
+
         return (
             <SidebarPageLayout
                 title={translatedTitle}
@@ -421,21 +434,14 @@ export const createEntityListPage = <TData extends { id: string }>(
             >
                 <div className="space-y-4">
                     <DataTableToolbar
-                        key={`search-config-${searchConfig.minChars}`}
                         view={search.view}
                         onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
-                        query={localQuery}
-                        onQueryChange={searchConfig.enabled ? handleQueryChange : () => {}}
-                        isSearching={isSearching}
-                        onClearSearch={handleClearSearch}
-                        searchMinChars={searchConfig.minChars}
-                        searchPlaceholder={translatedSearchPlaceholder}
                         columnVisibility={currentViewVisibility}
                         onColumnVisibilityChange={handleColsChange}
                         availableColumns={availableColumns}
                     />
 
-                    {config.filterBarConfig && (
+                    {config.filterBarConfig ? (
                         <FilterBar
                             config={config.filterBarConfig}
                             activeFilters={filterState.activeFilters}
@@ -445,7 +451,12 @@ export const createEntityListPage = <TData extends { id: string }>(
                             hasActiveFilters={filterState.hasActiveFilters}
                             hasNonDefaultFilters={filterState.hasNonDefaultFilters}
                             chips={filterState.chips}
+                            searchSlot={searchInput}
                         />
+                    ) : (
+                        searchInput && (
+                            <div className="flex flex-wrap items-center gap-2">{searchInput}</div>
+                        )
                     )}
 
                     {search.view === 'table' ? (
