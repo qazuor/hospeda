@@ -90,7 +90,7 @@ router.get('/', async (c) => {
         // render "Hotel X" + a working link without a second round trip.
         // The service intentionally returns raw rows so admin tooling stays
         // cheap; the inbox view is where the human-friendly fields belong.
-        const itemsRaw = (result.data.items ?? []) as Array<{
+        const itemsRaw = (result.data.items ?? []) as unknown as Array<{
             accommodationId: string;
             [k: string]: unknown;
         }>;
