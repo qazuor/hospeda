@@ -1,5 +1,6 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { GridIcon, ListIcon } from '@repo/icons';
 import type { ChangeEvent } from 'react';
 import { useCallback } from 'react';
 
@@ -32,27 +33,41 @@ export const DataTableToolbar = ({
     const { t } = useTranslations();
     return (
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="inline-flex overflow-hidden rounded-md border">
                 <button
                     type="button"
                     aria-label={t('ui.accessibility.tableView')}
+                    aria-pressed={view === 'table'}
                     className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
+                        view === 'table'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-accent/40'
                     )}
                     onClick={() => onViewChange('table')}
                 >
+                    <ListIcon
+                        weight={view === 'table' ? 'fill' : 'regular'}
+                        className="h-4 w-4"
+                    />
                     {t('ui.table.tableView')}
                 </button>
                 <button
                     type="button"
                     aria-label={t('ui.accessibility.gridView')}
+                    aria-pressed={view === 'grid'}
                     className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
+                        'inline-flex items-center gap-1.5 border-l px-3 py-1.5 text-sm',
+                        view === 'grid'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-accent/40'
                     )}
                     onClick={() => onViewChange('grid')}
                 >
+                    <GridIcon
+                        weight={view === 'grid' ? 'fill' : 'regular'}
+                        className="h-4 w-4"
+                    />
                     {t('ui.table.gridView')}
                 </button>
             </div>
