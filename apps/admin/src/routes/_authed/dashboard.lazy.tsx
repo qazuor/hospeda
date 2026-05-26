@@ -93,41 +93,45 @@ function Dashboard() {
                 </button>
             }
         >
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {kpiConfig.map((kpi) => {
-                    const entity = entities.find((e) => e.name === kpi.key);
-                    return (
-                        <KpiCard
-                            key={kpi.key}
-                            title={t(kpi.titleKey)}
-                            value={entity?.isLoading ? '...' : String(entity?.count ?? 0)}
-                            icon={kpi.icon}
-                            href={kpi.href}
-                            loading={entity?.isLoading ?? isLoading}
-                        />
-                    );
-                })}
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Traffic chart - Coming Soon */}
-                <div className="lg:col-span-2">
-                    <ComingSoon
-                        title={t('admin-dashboard.charts.traffic')}
-                        description={t('admin-dashboard.comingSoon.analytics' as TranslationKey)}
-                        icon={<BarChartIcon className="h-8 w-8" />}
-                        className="h-full min-h-[200px]"
-                    />
+            <div className="space-y-6">
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {kpiConfig.map((kpi) => {
+                        const entity = entities.find((e) => e.name === kpi.key);
+                        return (
+                            <KpiCard
+                                key={kpi.key}
+                                title={t(kpi.titleKey)}
+                                value={entity?.isLoading ? '...' : String(entity?.count ?? 0)}
+                                icon={kpi.icon}
+                                href={kpi.href}
+                                loading={entity?.isLoading ?? isLoading}
+                            />
+                        );
+                    })}
                 </div>
 
-                {/* Recent activity - Coming Soon */}
-                <ComingSoon
-                    title={t('admin-dashboard.activity.title')}
-                    description={t('admin-dashboard.comingSoon.auditLog' as TranslationKey)}
-                    icon={<ActivityIcon className="h-8 w-8" />}
-                    className="min-h-[200px]"
-                />
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    {/* Traffic chart - Coming Soon */}
+                    <div className="lg:col-span-2">
+                        <ComingSoon
+                            title={t('admin-dashboard.charts.traffic')}
+                            description={t(
+                                'admin-dashboard.comingSoon.analytics' as TranslationKey
+                            )}
+                            icon={<BarChartIcon className="h-8 w-8" />}
+                            className="h-full min-h-[200px]"
+                        />
+                    </div>
+
+                    {/* Recent activity - Coming Soon */}
+                    <ComingSoon
+                        title={t('admin-dashboard.activity.title')}
+                        description={t('admin-dashboard.comingSoon.auditLog' as TranslationKey)}
+                        icon={<ActivityIcon className="h-8 w-8" />}
+                        className="min-h-[200px]"
+                    />
+                </div>
             </div>
         </SidebarPageLayout>
     );
