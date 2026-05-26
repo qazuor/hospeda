@@ -48,8 +48,8 @@ vi.mock('@/hooks/use-localized-label', () => ({
 // Mock icons
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/icons', () => ({
-    resolveIcon: ({ iconName }: { iconName: string }) => {
+vi.mock('@/lib/nav-icon-map', () => ({
+    resolveNavIcon: ({ iconName }: { iconName: string }) => {
         const MockIcon = (p: Record<string, unknown>) => (
             <span
                 data-testid={`icon-${iconName}`}

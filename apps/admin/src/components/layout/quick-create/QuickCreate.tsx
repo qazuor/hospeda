@@ -37,8 +37,8 @@ import { validatedConfig } from '@/config/ia/validate';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
-import { resolveIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -77,7 +77,7 @@ interface QuickCreateItemProps {
 function QuickCreateItem({ action }: QuickCreateItemProps) {
     const label = useLocalizedLabel(action.label);
     const navigate = useNavigate();
-    const IconComponent = action.icon ? resolveIcon({ iconName: action.icon }) : undefined;
+    const IconComponent = action.icon ? resolveNavIcon({ iconName: action.icon }) : undefined;
 
     return (
         <DropdownMenuItem

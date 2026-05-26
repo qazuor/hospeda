@@ -30,7 +30,9 @@ import type { RoleConfigSchema } from '../schema';
  * - Account link is surfaced in the main nav (not hidden to the avatar dropdown)
  *   so HOST can navigate to `miCuenta` directly.
  * - Bottom nav surfaces the 4 most-used sections for mobile access.
- * - FAB is the single most common action: create a new accommodation.
+ * - No mobile FAB (`fab: null`): creating an accommodation is already reachable from
+ *   the topbar quick-create ("+"), so a bottom-nav FAB would duplicate it and crowd
+ *   the content area on mobile.
  * - `labelOverrides`: the `inicioSidebar.dashboard` item label is changed to
  *   "Mi negocio" to reflect the host's business context rather than a generic
  *   "Dashboard" label.
@@ -38,7 +40,7 @@ import type { RoleConfigSchema } from '../schema';
  * @example
  * ```ts
  * import { hostRole } from '@/config/ia/roles/host';
- * hostRole.mobile.fab; // 'newAccommodation'
+ * hostRole.mobile.fab; // null
  * hostRole.labelOverrides['inicioSidebar.dashboard'].es; // 'Mi negocio'
  * ```
  */
@@ -54,7 +56,7 @@ export const hostRole: z.input<typeof RoleConfigSchema> = {
     },
     mobile: {
         bottomNav: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'],
-        fab: 'newAccommodation'
+        fab: null
     },
     labelOverrides: {
         'inicioSidebar.dashboard': {

@@ -2,9 +2,9 @@
  * Admin IA — SUPER_ADMIN role configuration (T-012)
  *
  * The SUPER_ADMIN has access to all 7 top-level sections, a dedicated
- * platform dashboard, full quick-create access, and no bottom nav (desktop
- * admin console only). No label overrides are needed — all labels are the
- * canonical defaults defined in the section and sidebar registries.
+ * platform dashboard, full quick-create access, and a compact icon-only bottom
+ * nav on mobile exposing all 7 sections. No label overrides are needed — all
+ * labels are the canonical defaults defined in the section and sidebar registries.
  *
  * Design source of truth:
  *   `.claude/audit/admin-redesign/proposals/01-information-architecture.md` §12.
@@ -24,7 +24,7 @@ import type { RoleConfigSchema } from '../schema';
  * - The `superAdminDashboard` shows platform-wide KPIs, MRR, and system health.
  * - Quick-create shows all registered create actions (filtered at render time by
  *   the user's actual permissions, which for SUPER_ADMIN is the full set).
- * - No bottom-nav or FAB — SUPER_ADMIN operates exclusively from desktop.
+ * - Bottom nav exposes all 7 sections on mobile (icon-only compact mode); no FAB.
  * - No label overrides — canonical labels apply throughout.
  *
  * @example
@@ -52,7 +52,15 @@ export const superAdminRole: z.input<typeof RoleConfigSchema> = {
         accountInMenu: false
     },
     mobile: {
-        bottomNav: null,
+        bottomNav: [
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ],
         fab: null
     }
 };

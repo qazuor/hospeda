@@ -5,7 +5,7 @@
  *
  * Breaking changes from the OLD system:
  * - Label is now an I18nLabel resolved via `useLocalizedLabel` (not a plain string).
- * - Icon is now a string icon-name resolved via `resolveIcon` (not a ReactNode).
+ * - Icon is now a string icon-name resolved via `resolveNavIcon` (not a ReactNode).
  * - Navigation uses `route` (not `href`).
  * - Items may be `disabled` (greyed-out with tooltip) when the user lacks
  *   permissions and `onMissing === 'disable'`.
@@ -14,8 +14,8 @@
 
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import type { VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import { resolveIcon } from '@repo/icons';
 import { Link, useLocation } from '@tanstack/react-router';
 
 export interface SidebarItemProps {
@@ -44,7 +44,7 @@ export interface SidebarItemProps {
 export function SidebarItem({ item, unreadCount = 0, onClick, className }: SidebarItemProps) {
     const location = useLocation();
     const label = useLocalizedLabel(item.label);
-    const IconComponent = item.icon ? resolveIcon({ iconName: item.icon }) : undefined;
+    const IconComponent = item.icon ? resolveNavIcon({ iconName: item.icon }) : undefined;
 
     const isActive = item.exact
         ? location.pathname === item.route

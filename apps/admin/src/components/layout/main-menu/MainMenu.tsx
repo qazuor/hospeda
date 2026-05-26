@@ -26,9 +26,9 @@ import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useCurrentSection } from '@/hooks/use-current-section';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 import { cn } from '@/lib/utils';
-import { resolveIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -81,7 +81,7 @@ interface MainMenuItemProps {
  */
 function MainMenuItem({ section, isActive }: MainMenuItemProps) {
     const label = useLocalizedLabel(section.label);
-    const IconComponent = section.icon ? resolveIcon({ iconName: section.icon }) : undefined;
+    const IconComponent = section.icon ? resolveNavIcon({ iconName: section.icon }) : undefined;
     const href = section.defaultRoute ?? section.route;
 
     return (
