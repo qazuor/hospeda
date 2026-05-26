@@ -483,7 +483,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
 
         // ACT: POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ mpSubscriptionId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -540,7 +540,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         const { body, headers } = buildSignedWebhookRequest({
             mpSubscriptionId: mismatchedMpId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -587,9 +587,17 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         // ARRANGE: pending monthly sub
         const { localSubscriptionId, mpSubscriptionId } = await createPendingMonthlySubscription();
 
-        // ACT: build a body but use wrong-hmac headers — Hospeda's
-        // webhookSignatureMiddleware (HMAC over the body with the test
-        // secret) rejects BEFORE qzpay-hono and the handler run.
+        // ARRANGE: configure the stub so qzpay-hono's verifySignature call
+        // returns false (= signature rejected). The custom hospeda signature
+        // middleware was removed (PR #1221); qzpay-hono's own middleware is
+        // now the sole verification layer. When verifySignature returns false,
+        // qzpay-hono short-circuits with 401 before constructEvent / any
+        // handler runs.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        // ACT: build a body but use wrong-hmac headers — qzpay-hono's
+        // verifySignature (via the stub returning false) rejects BEFORE the
+        // handler runs.
         const body = JSON.stringify({
             id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
             type: 'subscription_preapproval',
@@ -600,7 +608,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         });
         const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
 
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -613,7 +621,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(response.status).toBe(401);
 
         // ASSERT: subscription untouched. Same `'incomplete'` invariant as
-        // the mismatched-id test above — the signature middleware rejects
+        // the mismatched-id test above — the signature verifier rejects
         // BEFORE the handler runs, so the row never sees the update path.
         const subs = await testDb
             .getDb()
@@ -623,8 +631,10 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(subs).toHaveLength(1);
         expect(subs[0]?.status).toBe('incomplete');
 
-        // ASSERT: stub never reached (hospeda's middleware short-circuited).
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // ASSERT: verifySignature was called once (qzpay-hono runs it before
+        // constructEvent or any handler). constructEvent and subscriptions.retrieve
+        // must NOT be called — they are downstream of the signature gate.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('subscriptions.retrieve')).toHaveLength(0);
     });
@@ -743,7 +753,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             })
         );
         const { body, headers } = buildSignedWebhookRequest({ mpSubscriptionId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

@@ -179,12 +179,22 @@ describe('SPEC-143 T-143-16 — webhook signature validation', () => {
      * calls, no billing_webhook_events row. Each invalid-signature test
      * differs only in HOW the headers were broken, not in WHAT the
      * downstream effect must be.
+     *
+     * NOTE: the custom hospeda signature middleware was removed (PR #1221);
+     * qzpay-hono's own verifySignature adapter call is now the sole
+     * verification layer. We stub verifySignature to return false so
+     * qzpay-hono short-circuits with 401 — exactly one verifySignature
+     * call, zero constructEvent / payments.retrieve calls.
      */
     async function expectRejection(opts: {
         readonly body: string;
         readonly headers: Record<string, string>;
     }): Promise<void> {
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        // Configure the stub: verifySignature returns false → qzpay-hono
+        // emits 401 before any handler or constructEvent runs.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -194,8 +204,8 @@ describe('SPEC-143 T-143-16 — webhook signature validation', () => {
             body: opts.body
         });
 
-        // 401 is the contract: webhook-signature.ts:199 throws
-        // HTTPException(401) for every rejection branch.
+        // 401 is the contract: qzpay-hono's webhook middleware throws
+        // HTTPException(401) when verifySignature returns false.
         expect(response.status).toBe(401);
 
         // Sub stays pending_provider — the dispatch pipeline never ran.
@@ -208,16 +218,14 @@ describe('SPEC-143 T-143-16 — webhook signature validation', () => {
         expect(subs[0]?.status).toBe('pending_provider');
 
         // No row in billing_webhook_events — the request never reached
-        // event-handler.ts's optimistic INSERT because the signature
-        // middleware short-circuited above it.
+        // event-handler.ts's optimistic INSERT because the signature gate
+        // short-circuited above it.
         const events = await testDb.getDb().select().from(billingWebhookEvents);
         expect(events).toHaveLength(0);
 
-        // MP stub legs never fired — qzpay-hono's middleware sits below
-        // hospeda's signature middleware, so neither verifySignature nor
-        // constructEvent runs. payments.retrieve is downstream of both,
-        // so it also stays at 0.
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // verifySignature was called once (that is the rejection gate).
+        // constructEvent and payments.retrieve are downstream — must stay 0.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     }

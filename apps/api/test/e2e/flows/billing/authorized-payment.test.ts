@@ -291,7 +291,7 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
 
         // ACT — POST the signed webhook.
         const { body, headers } = buildSignedAuthorizedPaymentWebhook({ authorizedPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -391,15 +391,18 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
             authorizedPaymentId,
             action: 'created'
         });
-        const firstResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...first.headers
-            },
-            body: first.body
-        });
+        const firstResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...first.headers
+                },
+                body: first.body
+            }
+        );
         expect(firstResponse.status).toBe(200);
 
         const afterFirst = await testDb.getDb().select().from(billingPayments);
@@ -415,15 +418,18 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
             authorizedPaymentId,
             action: 'updated'
         });
-        const secondResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...second.headers
-            },
-            body: second.body
-        });
+        const secondResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...second.headers
+                },
+                body: second.body
+            }
+        );
         expect(secondResponse.status).toBe(200);
 
         // ASSERT (BUG PIN) — TWO rows in billing_payments for the same MP
@@ -462,7 +468,7 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
 
         // ACT
         const { body, headers } = buildSignedAuthorizedPaymentWebhook({ authorizedPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -518,7 +524,7 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
 
         // ACT
         const { body, headers } = buildSignedAuthorizedPaymentWebhook({ authorizedPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
