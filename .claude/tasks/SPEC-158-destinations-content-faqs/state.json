@@ -109,35 +109,35 @@
             "id": "T-004",
             "title": "Schema unit tests + historic compat fixture",
             "description": "Add tests in packages/schemas: DestinationFaqSchema valid/invalid (question<10 rejected, answer 2000 boundary); description 8000 boundary valid, 8001 rejected. Add a historic destination fixture (pre-faqs) under test/fixtures/historic/ and a .compat.test.ts asserting it still safeParses. Acceptance: all tests pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "DestinationFaqSchema valid/invalid tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "description boundary tests (8000/8001)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Historic fixture + compat test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "phase-setup", "testing", "REQ-8"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 39,
+        "pending": 38,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.6
     }

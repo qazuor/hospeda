@@ -15,6 +15,24 @@ import {
     createTooShortString
 } from './common.fixtures.js';
 
+/**
+ * Builds a valid FAQ item matching `BaseFaqSchema` (audit + lifecycle +
+ * question/answer/category). Used both inside `createValidDestination` and by
+ * the destination FAQ schema tests (SPEC-158).
+ */
+export const createValidBaseFaq = () => ({
+    ...createBaseAuditFields(),
+    ...createBaseLifecycleFields(),
+    question: faker.lorem.sentence({ min: 5, max: 12 }).slice(0, 300),
+    answer: faker.lorem.paragraph({ min: 1, max: 3 }).padEnd(10, '.').slice(0, 2000),
+    category: faker.helpers.arrayElement([
+        'Cómo llegar',
+        'Qué hacer',
+        'Cuándo visitar',
+        'Servicios'
+    ])
+});
+
 export const createValidDestination = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
@@ -51,8 +69,9 @@ export const createValidDestination = () => ({
     ...createBaseMediaFields(),
     ...createBaseTagsFields(),
     ...createBaseAdminFields(),
-    // Note: Destinations don't have FAQs in the current schema
-    // If needed in the future, create DestinationFaqSchema similar to AccommodationFaqSchema
+    // FAQs (SPEC-158): optional 1-to-N child entity exposed on the parent schema
+    // as an array of BaseFaqSchema items (no id/destinationId at the parent level).
+    faqs: [createValidBaseFaq()],
 
     // Destination-specific fields
     name: faker.location.city(),
