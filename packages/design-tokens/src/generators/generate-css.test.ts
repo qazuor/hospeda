@@ -97,10 +97,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 100 palettes + 142 webLight = 242', () => {
+    it('total :root declarations = 100 palettes + 145 webLight = 245', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(100 + Object.keys(webLight).length);
-        expect(total).toBe(242);
+        expect(total).toBe(245);
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {

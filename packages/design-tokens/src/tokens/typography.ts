@@ -142,7 +142,14 @@ export const semanticTypography = {
     /** Inline large emphasis 20px. Web token `--text-lg`. */
     lg: '1.25rem',
     /** Inline extra-large emphasis 24px. Web token `--text-xl`. */
-    xl: '1.5rem'
+    xl: '1.5rem',
+
+    /** Small UI text 14px (same size as bodySm). Web token `--text-sm`. */
+    sm: '0.875rem',
+    /** Smallest heading 18px. Web token `--text-h6`. */
+    h6: '1.125rem',
+    /** Medium body text 15px. Web token `--text-body-md`. */
+    bodyMd: '0.9375rem'
 } as const satisfies Record<string, string>;
 
 export type SemanticTypographyName = keyof typeof semanticTypography;

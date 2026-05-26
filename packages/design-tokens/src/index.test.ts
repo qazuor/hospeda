@@ -165,7 +165,7 @@ describe('spacing / radius / shadows / motion / z-index / layout exports', () =>
 
 describe('theme exports', () => {
     it('all four theme records are imported and shaped correctly', () => {
-        expect(Object.keys(webLight)).toHaveLength(142);
+        expect(Object.keys(webLight)).toHaveLength(145);
         expect(Object.keys(webDark)).toHaveLength(56);
         expect(Object.keys(adminLight)).toHaveLength(17);
         expect(Object.keys(adminDark)).toHaveLength(14);

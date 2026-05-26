@@ -4,7 +4,7 @@
  * are NOT generator round-trip tests (T-153-17 does that against the
  * full seed manifest). They cover:
  *
- *   - the right NUMBER of keys per theme (142 light + 56 dark),
+ *   - the right NUMBER of keys per theme (145 light + 56 dark),
  *   - a sample of values are correctly referenced from the underlying
  *     token modules (palette refs, semantic refs, raw strings),
  *   - the dark theme is a strict subset of light (no orphan overrides
@@ -31,10 +31,12 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 142 web :root tokens', () => {
-        // 142 matches the Phase 0 extractor count for tokens.light in the
-        // seed manifest. Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(142);
+    it('declares all 145 web :root tokens', () => {
+        // 142 was the Phase 0 extractor count for tokens.light in the seed
+        // manifest; +3 for the --text-sm / --text-h6 / --text-body-md tokens
+        // that web usages referenced but were never defined. Adding or
+        // removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(145);
     });
 
     it('keys do not include leading `--` (generator prepends it)', () => {

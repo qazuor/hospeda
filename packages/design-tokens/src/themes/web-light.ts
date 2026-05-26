@@ -229,6 +229,9 @@ export const webLight: Theme = {
     'text-body-lg': semanticTypography.bodyLg,
     'text-lg': semanticTypography.lg,
     'text-xl': semanticTypography.xl,
+    'text-sm': semanticTypography.sm,
+    'text-h6': semanticTypography.h6,
+    'text-body-md': semanticTypography.bodyMd,
 
     // ========================================================================
     // Shadows — global.css lines 154–157

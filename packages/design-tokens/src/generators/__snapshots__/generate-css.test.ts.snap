@@ -220,6 +220,9 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --text-body-lg: 1.125rem;
     --text-lg: 1.25rem;
     --text-xl: 1.5rem;
+    --text-sm: 0.875rem;
+    --text-h6: 1.125rem;
+    --text-body-md: 0.9375rem;
     --shadow-card: 0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08);
     --shadow-card-hover: 0 12px 24px -4px oklch(from var(--core-foreground) l c h / 0.12);
     --shadow-search: 0 4px 60px oklch(from var(--core-foreground) l c h / 0.1);
