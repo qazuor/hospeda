@@ -88,6 +88,26 @@ describe('AccommodationModel', () => {
         );
     });
 
+    // SPEC-158 regression: findWithRelations must support the 'faqs' relation.
+    // Previously it only handled `relations.destination` and fell back to
+    // findOne (no relations) for everything else, so getFaqs() returned no FAQs.
+    it('findWithRelations loads the faqs relation (SPEC-158 regression)', async () => {
+        const faqs = [{ id: 'faq-1', accommodationId: '1', question: 'Q?', answer: 'A' }];
+        const findFirst = vi.fn().mockResolvedValue({ id: '1', faqs });
+        const db = { query: { accommodations: { findFirst } } };
+        getDb.mockReturnValue(db);
+
+        const where = { id: '1' };
+        const relations = { faqs: true };
+        const result = await model.findWithRelations(where, relations);
+
+        // The faqs relation must reach Drizzle's `with` clause.
+        expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ with: { faqs: true } }));
+        // It must NOT fall back to findOne, which drops relations entirely.
+        expect(mockFindOne).not.toHaveBeenCalled();
+        expect(result).toEqual({ id: '1', faqs });
+    });
+
     describe('getTableName', () => {
         it('should return correct table name', () => {
             // Access the protected method via type assertion for testing

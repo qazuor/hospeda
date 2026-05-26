@@ -965,14 +965,21 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     ): Promise<Accommodation | null> {
         warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
-            if (relations.destination) {
+            // Build the `with` object from the requested relations. 'faqs' was
+            // previously unsupported here (only `destination` was handled), so
+            // getFaqs() silently fell back to findOne and returned no FAQs (SPEC-158).
+            const withObj: Record<string, boolean> = {};
+            for (const key of ['destination', 'faqs']) {
+                if (relations[key]) withObj[key] = true;
+            }
+            if (Object.keys(withObj).length > 0) {
                 const db = this.getClient(tx);
                 const result = await db.query.accommodations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
-                    with: { destination: true }
+                    with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                // DRIZZLE-LIMITATION: findFirst with `with: { destination: true }` returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.
+                // DRIZZLE-LIMITATION: findFirst with relations returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.
                 return result as unknown as Accommodation | null;
             }
             const result = await this.findOne(where, tx);
