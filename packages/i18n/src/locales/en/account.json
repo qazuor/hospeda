@@ -379,6 +379,21 @@
             "cancelButton": "Cancel subscription",
             "viewPlans": "View plans",
             "upgradeLink": "Upgrade plan",
+            "pauseButton": "Pause subscription",
+            "pauseAriaLabel": "Pause subscription",
+            "resumeButton": "Resume subscription",
+            "pauseSuccess": "Subscription paused.",
+            "pauseError": "Could not pause the subscription.",
+            "resumeSuccess": "Subscription resumed.",
+            "resumeError": "Could not resume the subscription.",
+            "status": {
+                "paused": "Paused"
+            },
+            "pauseModal": {
+                "title": "Pause subscription",
+                "body": "While paused, you stop being charged and your listings are hidden from the site and cannot be edited until you resume. All your settings are preserved and return unchanged when you resume.",
+                "confirm": "Pause"
+            },
             "cancelModal": {
                 "title": "Cancel subscription?",
                 "confirm": "Yes, cancel subscription"
