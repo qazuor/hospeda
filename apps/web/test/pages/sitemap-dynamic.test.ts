@@ -149,6 +149,22 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         }
     });
 
+    it('requests pageSize <= 100 (regression: pageSize=200 -> HTTP 400 -> empty sitemap)', async () => {
+        // The public list endpoints cap pageSize at 100; a larger value returns
+        // HTTP 400, breaking the fetch loop on the first page so the sitemap came
+        // back empty. The request must never exceed the API maximum.
+        const fetchMock = vi.fn().mockResolvedValue(makeEmptyApiResponse());
+        vi.stubGlobal('fetch', fetchMock);
+
+        await GET({});
+
+        expect(fetchMock).toHaveBeenCalled();
+        for (const call of fetchMock.mock.calls) {
+            const pageSize = Number(new URL(String(call[0])).searchParams.get('pageSize'));
+            expect(pageSize).toBeLessThanOrEqual(100);
+        }
+    });
+
     it('emits destination entries with /destinos/ path for all 3 locales', async () => {
         const fetchMock = vi.fn();
 
