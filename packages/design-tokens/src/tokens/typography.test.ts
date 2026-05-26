@@ -113,15 +113,18 @@ describe('semanticTypography — anchored to web seed byte-for-byte', () => {
         ['nav', '0.875rem'],
         ['button', '1rem'],
         ['lg', '1.25rem'],
-        ['xl', '1.5rem']
+        ['xl', '1.5rem'],
+        ['sm', '0.875rem'],
+        ['h6', '1.125rem'],
+        ['bodyMd', '0.9375rem']
     ];
 
     it.each(cases)('%s = %s', (key, expected) => {
         expect(semanticTypography[key as keyof typeof semanticTypography]).toBe(expected);
     });
 
-    it('declares all 16 semantic entries', () => {
-        expect(Object.keys(semanticTypography)).toHaveLength(16);
+    it('declares all 19 semantic entries', () => {
+        expect(Object.keys(semanticTypography)).toHaveLength(19);
     });
 });
 
