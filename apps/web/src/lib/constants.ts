@@ -64,7 +64,7 @@ export const SOCIAL_PROFILES = [
     { platform: 'instagram', url: 'https://www.instagram.com/hospeda.com.ar' },
     { platform: 'x', url: 'https://x.com/HospedaLitoral' },
     { platform: 'youtube', url: 'https://www.youtube.com/@hospeda.com.ar' },
-    { platform: 'whatsapp', url: 'https://wa.me/543442453797' }
+    { platform: 'whatsapp', url: 'https://wa.me/5493442453797' }
 ] as const;
 
 /** A social platform key (e.g. for mapping to an icon component). */
@@ -95,8 +95,9 @@ export const ORGANIZATION_INFO = {
     /** One-paragraph description of the platform. */
     description:
         'Hospeda es la plataforma para descubrir y reservar alojamientos turísticos en el Litoral de Entre Ríos, Argentina: desde cabañas y casas de campo hasta hoteles, con información turística de la región.',
-    /** Public contact phone in E.164-ish format (matches the confirmed number). */
-    telephone: '+543442453797',
+    /** Public contact phone in E.164 format. AR mobile numbers carry the `9`
+     * after the country code (matches the WhatsApp contact line). */
+    telephone: '+5493442453797',
     /** Public contact email. */
     email: 'info@hospeda.com.ar',
     /** Postal address fields (schema.org PostalAddress). */
