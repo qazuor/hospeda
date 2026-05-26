@@ -169,7 +169,7 @@ describe('Header', () => {
             render(<Header />);
 
             const logoLink = screen.getByRole('link', {
-                name: /admin-nav\.topbar\.admin/i
+                name: /hospeda admin/i
             });
             expect(logoLink).toHaveAttribute('href', '/dashboard');
         });
