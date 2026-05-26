@@ -144,104 +144,104 @@
             "id": "T-005",
             "title": "Create destination_faq.dbschema.ts table + child relation",
             "description": "Create packages/db/src/schemas/destination/destination_faq.dbschema.ts: table destination_faqs mirroring accommodation_faqs (id uuid PK, destination_id uuid NOT NULL FK -> destinations.id ON DELETE CASCADE, question/answer text NOT NULL, category text NULL, lifecycle_state enum default ACTIVE, admin_info jsonb $type<AdminInfoType>, audit cols, deleted_at). Indexes: destinationFaqs_destinationId_idx, destinationFaqs_category_idx. destinationFaqsRelations one(destinations). Acceptance: typechecks.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Define destination_faqs pgTable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add FK cascade + two indexes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add one(destinations) relation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add faqs: many() to destination relations + schemas index export",
             "description": "In packages/db/src/schemas/destination/destination.dbschema.ts add `faqs: many(destinationFaqs)` to the destinations relations. Export the new dbschema from the schemas index. Acceptance: typechecks, relation resolvable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-008"],
             "subtasks": [
                 {
                     "title": "Add many(destinationFaqs) to relations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from schemas index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Create destinationFaq.model.ts",
             "description": "Create packages/db/src/models/destination/destinationFaq.model.ts extending BaseModel for destination_faqs, mirroring accommodationFaq.model.ts. Export from models index. Acceptance: typechecks, model instantiable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Create model extending BaseModel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from models index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Push schema locally + verify set_updated_at trigger covers destination_faqs",
-            "description": "Run pnpm db:push then pnpm db:apply-extras against the LOCAL dev DB only (never staging/prod). Verify the set_updated_at trigger applies to destination_faqs; if manual/0019 enumerates tables explicitly, add destination_faqs and re-apply. Acceptance: table exists locally, updated_at auto-updates on row update.",
-            "status": "pending",
+            "description": "Run pnpm db:push then pnpm db:apply-extras against the LOCAL dev DB only (never staging/prod). Verify the set_updated_at trigger applies to destination_faqs; if manual/0019 enumerates tables explicitly, add destination_faqs and re-apply. Acceptance: table exists locally, updated_at auto-updates on row update. [PROGRESS: trigger analysis DONE — manual/0005_set_updated_at_trigger.sql is DYNAMIC (iterates information_schema.columns for updated_at), so destination_faqs is covered automatically by apply-extras; NO migration edit needed. RUNTIME push deferred: cannot verify DB target (security hook blocks dotenv read). User to run pnpm db:push then pnpm db:apply-extras (or pnpm db:fresh-dev) against the LOCAL DB.]",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-017"],
@@ -256,7 +256,7 @@
                 },
                 {
                     "title": "Verify/extend set_updated_at coverage (manual/0019)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "phase-core", "REQ-6", "local-only"],
@@ -268,7 +268,7 @@
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-26T00:00:00.000Z",
                 "completed": null
             }
         },
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 38,
-        "inProgress": 0,
-        "completed": 4,
+        "pending": 35,
+        "inProgress": 1,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.6
     }
