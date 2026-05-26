@@ -4,8 +4,14 @@
  * Host-facing endpoints that pause or resume the authenticated user's own
  * subscription:
  *
- * - POST /api/v1/protected/billing/subscriptions/me/pause
- * - POST /api/v1/protected/billing/subscriptions/me/resume
+ * - POST /api/v1/protected/billing/me/subscription-pause
+ * - POST /api/v1/protected/billing/me/subscription-resume
+ *
+ * These deliberately live OUTSIDE the `/subscriptions` namespace. qzpay-hono
+ * ships its own `POST /subscriptions/:id/pause` + `/resume`; a path like
+ * `/subscriptions/me/pause` collides with it (Hono matches `:id='me'`) and also
+ * trips the `/subscriptions`-scoped billing admin-guard + ownership middlewares.
+ * The `/me/subscription-*` shape sidesteps all three.
  *
  * A host self-pause is ALWAYS "full": it stops billing (qzpay pauses the
  * MercadoPago preapproval and flips the local status) AND suspends service
@@ -161,11 +167,11 @@ export const handleSelfServeResume = async (c: Parameters<SimpleRouteInterface['
 };
 
 /**
- * POST /api/v1/protected/billing/subscriptions/me/pause
+ * POST /api/v1/protected/billing/me/subscription-pause
  */
 export const selfServePauseRoute = createSimpleRoute({
     method: 'post',
-    path: '/me/pause',
+    path: '/me/subscription-pause',
     summary: 'Pause your own subscription',
     description:
         "Pauses the authenticated user's active subscription. Always a full pause: stops billing and hides/edit-locks the owner's accommodations until resume.",
@@ -175,11 +181,11 @@ export const selfServePauseRoute = createSimpleRoute({
 });
 
 /**
- * POST /api/v1/protected/billing/subscriptions/me/resume
+ * POST /api/v1/protected/billing/me/subscription-resume
  */
 export const selfServeResumeRoute = createSimpleRoute({
     method: 'post',
-    path: '/me/resume',
+    path: '/me/subscription-resume',
     summary: 'Resume your own subscription',
     description:
         "Resumes the authenticated user's paused subscription, restarting billing and restoring the owner's accommodations.",

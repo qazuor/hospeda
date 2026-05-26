@@ -583,16 +583,40 @@ Workstream A reference: `subscription-cancel.test.ts`
 
 Workstream A reference: `subscription-pause-resume.test.ts`
 
-**Pre-conditions**: persisted test user with active sub.
+SPEC-143 #29 pause/resume has TWO orthogonal dimensions:
 
-**Steps**:
+- **Service suspension** — hides the owner's listings from public reads and
+  edit-locks create/update. Pure app logic, zero MercadoPago dependency →
+  validated LOCALLY (see run log).
+- **Billing** — flips subscription status to `paused` and MercadoPago stops
+  charging (qzpay propagates); resume restarts billing. Needs the real MP
+  sandbox → STAGING ONLY.
 
-1. Admin pauses the sub. Confirm status flips to `paused`.
-2. Verify entitlements still surface during pause (per current policy —
-   see T-143-28 notes for the MP-side pause gap).
-3. Admin resumes the sub. Confirm status flips back to `active`.
+**Pre-conditions**: persisted test user with an active sub. For the billing
+dimension the sub must have a real MP preapproval from an actual checkout —
+local seeded subs do not, which is exactly why that half can't be smoked
+locally.
 
-**Run log**: (template)
+**Staging steps (the billing dimension + self-serve happy path NOT covered locally):**
+
+1. Admin pauses the sub (full). Confirm status flips to `paused` AND MP stops
+   charging at the next cycle (no invoice generated).
+2. Self-serve: host pauses own sub from the account dashboard
+   (`POST /api/v1/protected/billing/me/subscription-pause`). Confirm status
+   `paused` + listings hidden + MP stops charging.
+3. Admin resume + self-serve resume
+   (`POST /api/v1/protected/billing/me/subscription-resume`): confirm status
+   back to `active`, MP resumes charging, listings restored.
+4. Admin pause with `suspendService: false` (billing-only): confirm billing
+   pauses but the owner's listings STAY visible.
+5. Verify entitlements behavior during pause (per current policy — see
+   T-143-28 notes for the MP-side pause gap).
+
+**Run log**:
+
+| Date | Executor | PR | Test user | Mode | Result | Notes |
+|------|----------|----|-----------|------|--------|-------|
+| 2026-05-26 | qazuor | #1256 | host-basico@local.test | local | **PASS (service-suspension dimension only)** | Validated end-to-end on the local API: public-read filter (getBySlug/getById → 404 when owner suspended, 200 when resumed; public list excludes the listing, total drops by exactly the owner's count), edit-lock (PATCH → 403 "Cannot edit this accommodation while the owner subscription is paused" when suspended, 200 when resumed), middleware gates (billing admin-guard + ownership, 68/68 unit), and the self-serve route is reachable at the new `/me/subscription-pause` path (404 "No active subscription to pause" for a canceled sub — handler IS reached, no qzpay route collision). The route was moved off `/subscriptions` to dodge qzpay's built-in `POST /subscriptions/:id/pause`. **The BILLING dimension (MP stops/resumes charging) + the self-serve happy path on an active MP-backed sub are NOT covered locally and MUST be run here.** Detail: engram `spec-143/29-self-serve-admin-guard-bug`. |
 
 ### 2.4 — Dunning cron retries
 
