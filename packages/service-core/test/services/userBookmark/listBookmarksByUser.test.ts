@@ -1,6 +1,6 @@
 import { UserBookmarkModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';
 import { createUserBookmark } from '../../factories/userBookmarkFactory';
@@ -12,6 +12,17 @@ import {
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
+
+// listBookmarksByUser enriches results via enrichBookmarksWithEntityInfo, which
+// falls back to getDb() when no tx is provided. Stub it as a pass-through so the
+// list test does not require an initialized database.
+vi.mock('../../../src/services/userBookmark/userBookmark.enrichment', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        enrichBookmarksWithEntityInfo: vi.fn((items: unknown[]) => Promise.resolve(items))
+    };
+});
 
 describe('UserBookmarkService.listBookmarksByUser', () => {
     let service: UserBookmarkService;

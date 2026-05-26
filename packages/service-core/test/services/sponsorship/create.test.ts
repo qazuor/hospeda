@@ -1,4 +1,4 @@
-import type { SponsorshipModel } from '@repo/db';
+import type { SponsorshipLevelModel, SponsorshipModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SponsorshipService } from '../../../src/services/sponsorship/sponsorship.service';
@@ -21,7 +21,15 @@ describe('SponsorshipService.create', () => {
         loggerMock = createLoggerMock();
         service = new SponsorshipService({
             logger: loggerMock,
-            model: modelMock as unknown as SponsorshipModel
+            model: modelMock as unknown as SponsorshipModel,
+            // _beforeCreate validates the level exists AND that its targetType
+            // matches the sponsorship's. The mock input targets 'event', so the
+            // stubbed level must too — otherwise the create-lock rejects it.
+            levelModel: {
+                findById: vi
+                    .fn()
+                    .mockResolvedValue({ id: 'level-1', name: 'Test Level', targetType: 'event' })
+            } as unknown as SponsorshipLevelModel
         });
         // Create uses a flat SPONSORSHIP_CREATE permission (no _ANY/_OWN split)
         actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_CREATE] });
