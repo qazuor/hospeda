@@ -474,7 +474,7 @@ Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec
 3. **Path**: `../hospeda-spec-<NNN>-<slug>` (al lado del repo, no dentro).
 4. **Branch**: `spec/SPEC-<NNN>-<slug>` (sigue convención de specs del proyecto).
 5. **Antes de crear**: correr `git worktree list` y revisar. Si ya existe una worktree para esa spec (matching nombre o branch), USAR esa en lugar de crear nueva. Avisar al usuario "ya existe la worktree X en path Y, sigo ahí".
-6. **Después de crear**: copiar manualmente los archivos de `.worktreeinclude` (`git worktree add` no lo hace solo), avisar al usuario el path absoluto, y sugerir abrir nueva terminal o `cd` ahí.
+6. **Después de crear (OBLIGATORIO copiar env)**: ejecutar SIEMPRE, desde la raíz del repo, `./scripts/copy-env-to-worktree.sh <ruta-ABSOLUTA-del-worktree>`. El script lee `.worktreeinclude` y copia los `.env.local` / `docker/.env` gitignored que `git worktree add` NO copia solo. Sin esto la worktree no arranca. **Usar ruta ABSOLUTA siempre** (tanto en `git worktree add` como acá): `git worktree add ../foo` resuelve el `..` contra el cwd del shell, NO contra la raíz del repo, y si el cwd es un subdir crea el worktree anidado en el lugar equivocado. Después avisar al usuario el path absoluto y sugerir abrir nueva terminal o `cd` ahí.
 7. **Guardar nota** en engram con `topic_key: spec/SPEC-<NNN>-<slug>/worktree` con path + branch + estado, para que futuras sesiones la encuentren.
 
 ### Excepciones (NO crear worktree, trabajar en directorio actual)
