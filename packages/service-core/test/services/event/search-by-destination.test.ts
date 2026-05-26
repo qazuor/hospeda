@@ -47,7 +47,7 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createTypedModelMock(EventModel, ['findAll', 'count']);
+        modelMock = createTypedModelMock(EventModel, ['findAll', 'findAllWithRelations', 'count']);
         loggerMock = createLoggerMock();
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
@@ -69,7 +69,10 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
                 createMockEvent({ locationId: LOCATION_UUID_A }),
                 createMockEvent({ locationId: LOCATION_UUID_B })
             ];
-            (modelMock.findAll as Mock).mockResolvedValue({ items: mockEvents, total: 2 });
+            (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+                items: mockEvents,
+                total: 2
+            });
 
             // Act
             const result = await service.search(actor, {
@@ -81,10 +84,11 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
             // Assert
             expectSuccess(result);
             expect(result.data?.items).toHaveLength(2);
-            // model.findAll must have been called — destinationId is NOT in the filterParams
-            expect(modelMock.findAll).toHaveBeenCalledTimes(1);
-            const findAllCall = (modelMock.findAll as Mock).mock.calls[0] ?? [];
-            const filterParams = findAllCall[0] as Record<string, unknown>;
+            // findAllWithRelations must have been called — destinationId is NOT in the
+            // filterParams. Signature: (relations, where, pagination, ...) → where is arg 1.
+            expect(modelMock.findAllWithRelations).toHaveBeenCalledTimes(1);
+            const findAllCall = (modelMock.findAllWithRelations as Mock).mock.calls[0] ?? [];
+            const filterParams = findAllCall[1] as Record<string, unknown>;
             // destinationId must NOT appear in the filter object forwarded to the model
             expect(filterParams).not.toHaveProperty('destinationId');
         });
@@ -111,7 +115,10 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
         it('should behave identically to normal search when no destinationId is provided', async () => {
             // Arrange: getDb must NOT be called when destinationId is absent
             const allEvents = [createMockEvent(), createMockEvent()];
-            (modelMock.findAll as Mock).mockResolvedValue({ items: allEvents, total: 2 });
+            (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+                items: allEvents,
+                total: 2
+            });
 
             // Act
             const result = await service.search(actor, { page: 1, pageSize: 10 });
@@ -128,7 +135,7 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
             // would attempt to match against a non-existent column on the events table.
             const { selectMock } = buildSelectMock([{ id: LOCATION_UUID_A }]);
             (dbModule.getDb as Mock).mockReturnValue({ select: selectMock });
-            (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+            (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: [], total: 0 });
 
             await service.search(actor, {
                 destinationId: DESTINATION_UUID,
@@ -136,9 +143,9 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
                 pageSize: 10
             });
 
-            expect(modelMock.findAll).toHaveBeenCalledTimes(1);
-            const findAllCallReg = (modelMock.findAll as Mock).mock.calls[0] ?? [];
-            const filterParamsReg = findAllCallReg[0] as Record<string, unknown>;
+            expect(modelMock.findAllWithRelations).toHaveBeenCalledTimes(1);
+            const findAllCallReg = (modelMock.findAllWithRelations as Mock).mock.calls[0] ?? [];
+            const filterParamsReg = findAllCallReg[1] as Record<string, unknown>;
             expect(filterParamsReg).not.toHaveProperty('destinationId');
         });
     });
