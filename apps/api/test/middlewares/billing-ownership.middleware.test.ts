@@ -223,6 +223,64 @@ describe('billingOwnershipMiddleware', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Custom action sub-paths: not resource IDs, ownership enforced by handler
+    // -----------------------------------------------------------------------
+
+    describe('custom action sub-paths under /subscriptions', () => {
+        it('should pass through for /subscriptions/start-paid', async () => {
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/subscriptions/start-paid'
+            });
+            const middleware = billingOwnershipMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should pass through for /subscriptions/change-plan', async () => {
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/subscriptions/change-plan'
+            });
+            const middleware = billingOwnershipMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        // SPEC-143 #29: self-serve pause/resume live OUTSIDE /subscriptions (at
+        // /me/subscription-pause), so extractResourceFromPath finds no billing
+        // resource segment and ownership is skipped (the handler self-scopes via
+        // c.get('billingCustomerId')).
+        it('should pass through for /me/subscription-pause', async () => {
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/me/subscription-pause'
+            });
+            const middleware = billingOwnershipMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should pass through for /me/subscription-resume', async () => {
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/me/subscription-resume'
+            });
+            const middleware = billingOwnershipMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // Customer resource: direct ID comparison
     // -----------------------------------------------------------------------
 

@@ -205,10 +205,13 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
 
-    // Mount self-serve pause/resume routes (SPEC-143 #29). Same `/subscriptions`
-    // prefix; Hono routes by exact path so /me/pause + /me/resume do not collide
-    // with plan-change, status, or start-paid.
-    router.route('/subscriptions', subscriptionPauseRouter);
+    // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
+    // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and
+    // `/me/subscription-resume`; keeping them off the `/subscriptions` namespace
+    // avoids colliding with qzpay's built-in `POST /subscriptions/:id/pause`
+    // (which would match `:id='me'`) and the `/subscriptions`-scoped admin-guard
+    // + ownership middlewares.
+    router.route('/', subscriptionPauseRouter);
 
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);

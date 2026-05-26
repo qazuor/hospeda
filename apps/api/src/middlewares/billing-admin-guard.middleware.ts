@@ -55,7 +55,9 @@ const ADMIN_ONLY_RULES: ReadonlyArray<{
     // Subscription creation/modification are admin operations
     // (Users manage their own subscriptions via the custom endpoints listed in
     //  allowedSubPaths — start-paid is the entry point for paid subscriptions,
-    //  change-plan upgrades/downgrades an existing subscription.)
+    //  change-plan upgrades/downgrades an existing subscription. Self-serve
+    //  pause/resume live OUTSIDE /subscriptions, at /me/subscription-pause, so
+    //  they never reach this rule.)
     {
         segment: 'subscriptions',
         methods: new Set(['POST', 'PUT', 'DELETE']),

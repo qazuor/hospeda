@@ -4,8 +4,8 @@
  * Schemas for the host self-serve endpoints that pause or resume the
  * authenticated user's own subscription:
  *
- * - `POST /api/v1/protected/billing/subscriptions/me/pause`
- * - `POST /api/v1/protected/billing/subscriptions/me/resume`
+ * - `POST /api/v1/protected/billing/me/subscription-pause`
+ * - `POST /api/v1/protected/billing/me/subscription-resume`
  *
  * A host self-pause is always "full": it stops billing (MercadoPago preapproval
  * paused) AND suspends service (hides the owner's accommodations from public
