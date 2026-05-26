@@ -16,6 +16,7 @@ import type {
     ArticleCardData,
     CardAmenityFeature,
     DestinationCardData,
+    DetailFaq,
     EventCardData,
     EventDetailData,
     ReviewCardData
@@ -43,6 +44,24 @@ export type {
     EventLocation,
     ReviewCardData
 } from '@/data/types';
+
+/**
+ * Normalizes a raw destination `faqs` array (from the public detail API) into
+ * the clean `DetailFaq[]` shape consumed by `DestinationFaqAccordion` and the
+ * `FAQPageJsonLd` builder. Tolerates a missing/non-array input (returns []).
+ *
+ * @param raw - The `faqs` field from a destination detail API response.
+ * @returns Array of normalized FAQ items (empty when absent).
+ */
+export function toDestinationFaqs(raw: unknown): DetailFaq[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as ReadonlyArray<Record<string, unknown>>).map((faq) => ({
+        id: String(faq.id || ''),
+        question: String(faq.question || ''),
+        answer: String(faq.answer || ''),
+        category: faq.category ? String(faq.category) : null
+    }));
+}
 
 // --- Accommodation Card Data (Detailed) --- unique to transforms
 

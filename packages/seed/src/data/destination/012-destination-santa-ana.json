@@ -4,7 +4,7 @@
     "slug": "santa-ana",
     "name": "Santa Ana",
     "summary": "Pequeña localidad rural del departamento Federación sobre el perilago de Salto Grande, con playas, pesca y turismo de estancias.",
-    "description": "Santa Ana es una localidad del departamento Federación, en el norte de Entre Ríos, emplazada sobre el perilago de la represa hidroeléctrica de Salto Grande. Su jurisdicción fue profundamente modificada por la formación del lago artificial, lo que dio origen a extensas costas que hoy son escenario de algunas de las mejores playas del perilago. La pesca deportiva es uno de sus atractivos principales, practicada desde la costa o embarcado con guías locales, con especies como dorado, surubí, boga y patí. La oferta turística combina campings, playas tranquilas, turismo rural y de estancias, recorridos por campos productivos y el contacto directo con la vida campestre entrerriana, en un entorno apacible alejado de los grandes centros urbanos.",
+    "description": "## Santa Ana, playas y pesca en el perilago\n\nSanta Ana es una pequeña localidad rural del departamento Federación, en el norte de Entre Ríos, emplazada sobre el perilago de la represa de Salto Grande. Se encuentra a unos 23 km de Chajarí, con la que está estrechamente vinculada, y se llega por la Ruta Nacional 14 y caminos vecinales. Es un destino de escala chica y entorno apacible, lejos del bullicio de los grandes centros, ideal para quienes buscan tranquilidad junto al agua.\n\n## Playas y vida lacustre\n\nLa formación del lago artificial de Salto Grande modificó por completo la geografía de la zona y dio origen a extensas costas que hoy son escenario de algunas de las mejores playas del perilago. El verano es la temporada estrella: el espejo de agua permite disfrutar de las playas, el baño y todas las actividades náuticas en un marco natural sereno.\n\n## Pesca deportiva todo el año\n\nLa **pesca deportiva** es uno de los grandes atractivos de Santa Ana y se practica durante todo el año, tanto desde la costa como embarcado, con bajadas de lanchas habilitadas y guías locales. Entre las especies más buscadas están el surubí, el patí, el dorado, la boga, el bagre, el sábalo y la tararira, lo que la convierte en un punto de interés para los aficionados a la pesca.\n\n## Turismo rural y descanso\n\nLa oferta se completa con campings, turismo rural y de estancias, recorridos por campos productivos y el contacto directo con la vida campestre entrerriana. Santa Ana es una buena base para combinar pesca, playa y descanso, y para explorar la cercana zona termal y citrícola del nordeste de la provincia.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -336,6 +336,33 @@
         "037-attraction-estancia_turistica",
         "072-attraction-plaza_principal",
         "053-attraction-muelle_pesquero"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Santa Ana, Entre Ríos?",
+            "answer": "Santa Ana está en el departamento Federación, sobre el perilago de Salto Grande, a unos 23 km de Chajarí. Se accede por la Ruta Nacional 14 hasta Chajarí y luego por caminos vecinales en sentido sureste hasta la localidad. Desde Buenos Aires el trayecto ronda los 500 km por la RN 14, cruzando el complejo Zárate–Brazo Largo.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Santa Ana?",
+            "answer": "Las dos grandes propuestas son las playas del perilago de Salto Grande y la pesca deportiva, que se practica todo el año desde la costa o embarcado. También podés disfrutar del turismo rural y de estancias, recorridos por campos productivos, caminatas y actividades náuticas en un entorno tranquilo junto al lago.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Santa Ana?",
+            "answer": "El verano es la mejor época para aprovechar las playas y las actividades náuticas en el perilago. La pesca deportiva, en cambio, se practica durante todo el año, por lo que cualquier temporada es buena para los aficionados. Al ser un destino tranquilo y de escala chica, es ideal para escapadas de descanso fuera de los meses de mayor afluencia.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios encuentro en Santa Ana?",
+            "answer": "Por su tamaño pequeño, Santa Ana ofrece servicios acotados: campings, alojamientos rurales y de estancia, bajadas de lanchas y guías de pesca locales. Para una mayor variedad de comercios, gastronomía, bancos y servicios, la cercana Chajarí, a unos 23 km, funciona como centro de apoyo de la zona.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué especies de peces se pueden capturar?",
+            "answer": "El lago de Salto Grande frente a Santa Ana tiene una gran diversidad ictícola. Entre las especies más buscadas están el surubí, el patí, el dorado, la boga, el bagre amarillo, el sábalo y la tararira. La pesca se practica desde la costa o embarcado y hay guías locales que ofrecen excursiones.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

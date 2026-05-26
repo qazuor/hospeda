@@ -13,13 +13,14 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
 import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
-import DestinationFaqPlaceholder from '@/components/destination/DestinationFaqPlaceholder.astro';
+import DestinationFaqAccordion from '@/components/destination/DestinationFaqAccordion.astro';
 import DestinationClimatePlaceholder from '@/components/destination/DestinationClimatePlaceholder.astro';
 import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
 import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
@@ -32,7 +33,11 @@ import {
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
+import {
+	toAccommodationCardProps,
+	toDestinationFaqs,
+	toEventCardProps
+} from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -89,6 +94,10 @@ const attractions = (dest.attractions as ReadonlyArray<{
 }>) ?? [];
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
+
+// --- FAQs (SPEC-158): normalize + build FAQPage JSON-LD sections -----------
+const faqs = toDestinationFaqs(dest.faqs);
+const faqSections = faqs.map((faq) => ({ heading: faq.question, body: faq.answer }));
 
 // --- Previews (accommodations, events, posts) and counts --------------------
 let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
@@ -357,6 +366,9 @@ const safeDescriptionHtml = renderContent({
 		sameAs={placeSameAs}
 	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+	{faqSections.length > 0 && (
+		<FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={locale} />
+	)}
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 
@@ -428,10 +440,12 @@ const safeDescriptionHtml = renderContent({
 			/>
 		</div>
 
-		<!-- FAQ placeholder (real FAQ data is not yet in the destination schema) -->
-		<div class="dest-detail__section">
-			<DestinationFaqPlaceholder locale={locale} />
-		</div>
+		<!-- FAQs (SPEC-158): rendered only when the destination has FAQs -->
+		{faqs.length > 0 && (
+			<div class="dest-detail__section">
+				<DestinationFaqAccordion faqs={faqs} lang={locale} />
+			</div>
+		)}
 
 		<!-- Accommodation preview -->
 		<section class="dest-detail__section">

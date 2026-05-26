@@ -1,4 +1,9 @@
-import { AccommodationModel, DestinationModel, buildSearchCondition } from '@repo/db';
+import {
+    AccommodationModel,
+    DestinationFaqModel,
+    DestinationModel,
+    buildSearchCondition
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -7,6 +12,12 @@ import type {
     BreadcrumbItem,
     Destination,
     DestinationCreateInput,
+    DestinationFaq,
+    DestinationFaqAddInput,
+    DestinationFaqListInput,
+    DestinationFaqListOutput,
+    DestinationFaqSingleOutput,
+    DestinationIdType,
     DestinationRatingInput,
     DestinationSearchForListOutput,
     DestinationSearchInput,
@@ -25,6 +36,8 @@ import type {
 import {
     DestinationAdminSearchSchema,
     DestinationCreateInputSchema,
+    DestinationFaqAddInputSchema,
+    DestinationFaqListInputSchema,
     DestinationSearchSchema,
     DestinationUpdateInputSchema,
     GetDestinationAccommodationsInputSchema,
@@ -1335,5 +1348,75 @@ export class DestinationService extends BaseCrudService<
         const map = await this.model.getAttractionsMap([destination.id], ctx?.tx);
         const attractions = map.get(destination.id) ?? [];
         return { ...destination, attractions } as Destination;
+    }
+
+    /**
+     * Adds a FAQ to a destination.
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId and faq
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The created FAQ
+     */
+    public async addFaq(
+        actor: Actor,
+        data: DestinationFaqAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqAddInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                const faqToCreate = {
+                    ...validated.faq,
+                    destinationId: validated.destinationId as DestinationIdType
+                };
+                const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
+                return { faq: createdFaq };
+            }
+        });
+    }
+
+    /**
+     * Gets all FAQs for a destination.
+     * Optimized to use a single query with relations.
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The list of FAQs
+     */
+    public async getFaqs(
+        actor: Actor,
+        data: DestinationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqListInputSchema,
+            execute: async (validated, actorFromRun) => {
+                // Single query to load destination with FAQs
+                const destination = await this.model.findWithRelations(
+                    { id: validated.destinationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canView(actorFromRun, destination);
+                // FAQs are already loaded via the relation.
+                // TYPE-WORKAROUND: Drizzle relation result widens the entity type to include
+                // the joined `faqs` array which is not part of the base Destination type.
+                const faqs = (destination as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as DestinationFaq[] };
+            }
+        });
     }
 }

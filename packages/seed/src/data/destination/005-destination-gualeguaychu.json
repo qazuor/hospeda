@@ -4,7 +4,7 @@
     "slug": "gualeguaychu",
     "name": "Gualeguaychú",
     "summary": "Capital Nacional del Carnaval, con corsódromo, termas, costanera sobre el río y playas fluviales en el sureste de Entre Ríos.",
-    "description": "Gualeguaychú es una ciudad del sureste de Entre Ríos, a orillas del río homónimo y cerca del río Uruguay, reconocida como Capital Nacional del Carnaval. Cada sábado entre enero y marzo, su Corsódromo, inaugurado en 1997 sobre el ex Parque de la Estación, reúne a decenas de miles de espectadores para los desfiles de comparsas. Fuera de la temporada de carnaval, la ciudad ofrece el Complejo Termal de Gualeguaychú sobre Ruta 42, una extensa costanera con paseos y balnearios, playas fluviales como Ñandubaysal sobre el río Uruguay, el Museo del Carnaval, talleres de carnaval donde se confeccionan trajes y carrozas, y un casco histórico con la Catedral San José y el Parque Unzué. La cercanía con Buenos Aires y Rosario la convierte en uno de los destinos más visitados de la provincia, combinando carnaval, termalismo, playa y cultura litoraleña.",
+    "description": "## Gualeguaychú, la Capital Nacional del Carnaval\n\nGualeguaychú es una de las ciudades más visitadas del sureste de Entre Ríos, ubicada a orillas del río homónimo y muy cerca del río Uruguay. Es mundialmente conocida por el **Carnaval del País**, el mayor espectáculo de su tipo en Argentina, que cada sábado de enero, febrero y parte de marzo despliega comparsas, carrozas, batucadas y pasistas en el **Corsódromo**. Este predio, inaugurado el 18 de enero de 1997 sobre el antiguo Parque de la Estación, ocupa unas 7,5 hectáreas y tiene capacidad para decenas de miles de espectadores en tribunas, palcos y sector VIP.\n\nMás allá del carnaval, la ciudad ofrece un completo abanico de propuestas durante todo el año. El **Complejo Termal de Gualeguaychú**, sobre la Ruta 42, permite disfrutar de aguas termales con fines recreativos y de relax. La extensa **costanera** invita a recorrer paseos, plazas y muelles junto al río, mientras que en verano se habilitan playas y balnearios fluviales.\n\n## Playas, naturaleza y río\n\nEl balneario **Ñandubaysal**, sobre el río Uruguay y a unos 15 km del centro, es el más famoso del sur entrerriano: cuenta con extensas playas de arena, servicios y aguas tranquilas. En la zona se practican remo, kayak y paseos en lancha, y se accede al área natural protegida del entorno. La oferta se completa con balnearios y bajadas sobre el propio río Gualeguaychú.\n\n## Patrimonio y cultura\n\nEl casco histórico conserva la **Catedral San José**, la Plaza San Martín y diversos museos. El **Museo del Carnaval** y los **talleres de comparsas** permiten conocer de cerca cómo se confeccionan los trajes y las carrozas que luego brillan en el Corsódromo. El **Parque Unzué**, un gran pulmón verde junto al río, es ideal para caminar, hacer pícnic o pasear en bicicleta.\n\nLa cercanía con Buenos Aires (alrededor de 230 km por Ruta Nacional 14 y la autopista) y su conexión con el resto del Litoral convierten a Gualeguaychú en un destino que combina **carnaval, termalismo, playa y cultura litoraleña** durante las cuatro estaciones.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -177,6 +177,38 @@
         "031-attraction-costanera",
         "069-attraction-playa_fluvial",
         "018-attraction-centro_historico"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Gualeguaychú desde Buenos Aires?",
+            "answer": "Desde Buenos Aires se llega por la Ruta Nacional 14, tras cruzar el Complejo Ferrovial Zárate-Brazo Largo sobre el delta del Paraná. El trayecto ronda los 230 km y unas 3 horas de viaje en auto. También hay servicios regulares de ómnibus de larga distancia que conectan la terminal de Gualeguaychú con Buenos Aires, Rosario y otras ciudades de Entre Ríos.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué actividades se pueden hacer en Gualeguaychú?",
+            "answer": "La actividad estrella es el Carnaval del País, que desfila en el Corsódromo los sábados de verano. Además se puede disfrutar del Complejo Termal sobre la Ruta 42, recorrer la costanera y el Parque Unzué, visitar el Museo del Carnaval y los talleres de comparsas, y pasar el día en las playas del balneario Ñandubaysal sobre el río Uruguay.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo es la mejor época para visitar Gualeguaychú?",
+            "answer": "Para vivir el Carnaval del País conviene ir entre enero y marzo, cuando se realizan los desfiles los sábados por la noche. El verano también es ideal para las playas y los balnearios fluviales. Las termas, los museos y los paseos por la costanera se disfrutan durante todo el año, por lo que es un destino con propuestas en las cuatro estaciones.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece la ciudad?",
+            "answer": "Gualeguaychú cuenta con una amplia oferta de hoteles, cabañas, complejos termales y campings, además de restaurantes, bares y comercios. Tiene terminal de ómnibus, oficinas de información turística, estaciones de servicio y centros de salud, por lo que está bien preparada para recibir grandes flujos de visitantes, especialmente durante la temporada de carnaval.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Dónde se realiza el Carnaval del País y cuántas personas entran?",
+            "answer": "El Carnaval del País se desarrolla en el Corsódromo, un predio de unas 7,5 hectáreas inaugurado en 1997 sobre el antiguo Parque de la Estación. Cuenta con tribunas, palcos y un sector VIP con capacidad para decenas de miles de espectadores sentados. Las entradas se venden por noche de desfile durante la temporada de verano.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cómo se diferencia Gualeguaychú de Gualeguay?",
+            "answer": "Son dos ciudades distintas del sur de Entre Ríos con nombres parecidos. Gualeguaychú está sobre el río Gualeguaychú, cerca del río Uruguay, y es la Capital Nacional del Carnaval con su Corsódromo y el balneario Ñandubaysal. Gualeguay, en cambio, se encuentra unos 60 km al oeste, sobre el río Gualeguay, y es una de las ciudades más antiguas de la provincia.",
+            "category": "Cómo llegar"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

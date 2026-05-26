@@ -4,7 +4,7 @@
     "slug": "caseros",
     "name": "Caseros",
     "summary": "Pueblo ferroviario del departamento Uruguay, puerta de entrada al Palacio San José, residencia histórica del general Justo José de Urquiza.",
-    "description": "Caseros es una pequeña localidad del departamento Uruguay, en Entre Ríos, ubicada sobre la Ruta Provincial 39 a 23 km de Concepción del Uruguay y a solo 6 km del Palacio San José, Museo y Monumento Histórico Nacional que fuera residencia del primer presidente constitucional argentino, Justo José de Urquiza. Su origen está ligado a la estación del Ferrocarril Central Entrerriano y al inmigrante italiano Nicolás Mugherli, quien instaló el almacén de ramos generales y el molino harinero San Nicolás que dio impulso a la colonia. Hoy el pueblo conserva su impronta ferroviaria y rural, con el predio del ferrocarril reconvertido en museo y centro cultural, la Parroquia San Miguel Arcángel, plazas arboladas, grutas y templetes religiosos, y un entorno de campo entrerriano ideal para una escapada tranquila.",
+    "description": "## Caseros, puerta de entrada al Palacio San José\n\nCaseros es una pequeña localidad del departamento Uruguay, en Entre Ríos, ubicada sobre la **Ruta Provincial 39**, a pocos kilómetros de Concepción del Uruguay y muy próxima al **Palacio San José**, Museo y Monumento Histórico Nacional que fuera residencia del general **Justo José de Urquiza**, primer presidente constitucional argentino. Esa cercanía hace de Caseros la puerta de entrada natural a uno de los sitios históricos más relevantes del país.\n\n## El Palacio San José\n\nEl **Palacio San José** fue la residencia de Urquiza y su esposa Dolores Costa, en una estancia que originalmente abarcaba miles de hectáreas, con parques, jardines y una gran huerta frutal. Hoy es un museo de entrada libre que ofrece visitas guiadas y conserva sus patios, habitaciones y el entorno de campo entrerriano. Es una visita imprescindible para comprender la historia de la organización nacional argentina.\n\n## Impronta ferroviaria y rural\n\nEl origen de Caseros está ligado a la estación del ferrocarril y al impulso de inmigrantes que instalaron almacenes de ramos generales y un molino harinero. El pueblo conserva esa impronta ferroviaria y rural, con su antiguo predio del ferrocarril, la parroquia, plazas arboladas y un entorno de campo dedicado a la actividad agrícola. Es un destino tranquilo, ideal para una escapada que combina historia y vida de pueblo en el corazón agrícola del departamento Uruguay.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -155,6 +155,38 @@
         "072-attraction-plaza_principal",
         "045-attraction-iglesia_colonial",
         "013-attraction-centro_agropecuario"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo llego a Caseros y al Palacio San José?",
+            "answer": "Caseros se ubica sobre la Ruta Provincial 39, en el departamento Uruguay, a pocos kilómetros de Concepción del Uruguay. Desde Buenos Aires se accede por la Ruta Nacional 14 hasta Concepción del Uruguay y luego por la Ruta Provincial 39. El Palacio San José está señalizado en las cercanías del pueblo; actualmente se recomienda ingresar por Caseros y continuar por la Ruta Provincial 23 hasta el acceso al sitio.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Caseros?",
+            "answer": "La visita principal es el Palacio San José, residencia histórica del general Urquiza, con sus patios, jardines y salas museo. En el pueblo se puede recorrer el antiguo predio del ferrocarril, la parroquia, las plazas arboladas y disfrutar del entorno rural. Es una escapada tranquila que combina historia, naturaleza y vida de pueblo entrerriano.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Caseros?",
+            "answer": "La primavera y el otoño son ideales para recorrer el Palacio San José y los alrededores con un clima templado y agradable. El verano puede ser caluroso, propio del campo entrerriano, aunque sigue siendo posible visitar el sitio. Conviene tener en cuenta que el museo cierra los lunes, por lo que es mejor planificar la visita de martes a domingo.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios para el turista hay en Caseros?",
+            "answer": "Al ser una localidad pequeña, Caseros ofrece servicios acotados de alojamiento y gastronomía. La cercana Concepción del Uruguay aporta una infraestructura turística más amplia con hoteles, restaurantes y comercios, por lo que muchos visitantes se alojan allí y se acercan a Caseros y al Palacio San José en el día.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Cuáles son los horarios y el costo del Palacio San José?",
+            "answer": "El Palacio San José funciona como museo con entrada libre y gratuita. Abre de martes a viernes y los fines de semana y feriados en horario diurno, permaneciendo cerrado los lunes. Ofrece visitas guiadas sin necesidad de inscripción previa. Conviene verificar los horarios vigentes antes de viajar, ya que pueden ajustarse según la temporada.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Quién fue Justo José de Urquiza?",
+            "answer": "Fue gobernador de Entre Ríos y el primer presidente constitucional de la Argentina, figura central de la organización nacional tras la batalla de Caseros de 1852. El Palacio San José fue su residencia y refleja su poder e influencia: una estancia con parques, jardines y miles de hectáreas que hoy se conserva como Museo y Monumento Histórico Nacional.",
+            "category": "Historia"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

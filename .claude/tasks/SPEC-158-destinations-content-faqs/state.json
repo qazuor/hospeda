@@ -1,0 +1,1590 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-158",
+    "title": "Destinations Rich Content + Structured FAQs",
+    "created": "2026-05-26T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add DestinationFaqIdSchema to common/id.schema.ts",
+            "description": "In packages/schemas/src/common/id.schema.ts add DestinationFaqIdSchema mirroring AccommodationFaqIdSchema. Acceptance: schema exported, typechecks, follows the same UUID-branded pattern.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Locate AccommodationFaqIdSchema definition",
+                    "completed": true
+                },
+                {
+                    "title": "Add DestinationFaqIdSchema with same pattern",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "phase-setup", "REQ-8"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create destination.faq.schema.ts subtype",
+            "description": "Create packages/schemas/src/entities/destination/subtypes/destination.faq.schema.ts mirroring accommodation.faq.schema.ts: DestinationFaqSchema = BaseFaqSchema.extend({ id: DestinationFaqIdSchema, destinationId: DestinationIdSchema }); Add/Update/Remove/List input schemas; single/list output schemas. Update/Remove defined for Phase 2 reuse but not wired now. Acceptance: file typechecks, all schemas exported.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Extend BaseFaqSchema with id + destinationId",
+                    "completed": true
+                },
+                {
+                    "title": "Add Add/Update/Remove/List input schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Add single/list output schemas",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "phase-setup", "REQ-8"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Raise description max to 8000 + add faqs array to DestinationSchema + re-exports",
+            "description": "In packages/schemas/src/entities/destination/destination.schema.ts: change description .max(2000) to .max(8000) (line 58); add `faqs: z.array(BaseFaqSchema).optional()` after rating (line 82). Re-export new subtype from entities/destination/index.ts. Both changes are additive/relaxing (safe per schema-compat policy). Acceptance: typechecks, faqs optional on Destination type.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-005", "T-014"],
+            "subtasks": [
+                {
+                    "title": "description .max(2000) -> .max(8000)",
+                    "completed": true
+                },
+                {
+                    "title": "Add faqs: z.array(BaseFaqSchema).optional()",
+                    "completed": true
+                },
+                {
+                    "title": "Re-export subtype from index.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "phase-setup", "REQ-1", "REQ-8"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Schema unit tests + historic compat fixture",
+            "description": "Add tests in packages/schemas: DestinationFaqSchema valid/invalid (question<10 rejected, answer 2000 boundary); description 8000 boundary valid, 8001 rejected. Add a historic destination fixture (pre-faqs) under test/fixtures/historic/ and a .compat.test.ts asserting it still safeParses. Acceptance: all tests pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "DestinationFaqSchema valid/invalid tests",
+                    "completed": true
+                },
+                {
+                    "title": "description boundary tests (8000/8001)",
+                    "completed": true
+                },
+                {
+                    "title": "Historic fixture + compat test",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "phase-setup", "testing", "REQ-8"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create destination_faq.dbschema.ts table + child relation",
+            "description": "Create packages/db/src/schemas/destination/destination_faq.dbschema.ts: table destination_faqs mirroring accommodation_faqs (id uuid PK, destination_id uuid NOT NULL FK -> destinations.id ON DELETE CASCADE, question/answer text NOT NULL, category text NULL, lifecycle_state enum default ACTIVE, admin_info jsonb $type<AdminInfoType>, audit cols, deleted_at). Indexes: destinationFaqs_destinationId_idx, destinationFaqs_category_idx. destinationFaqsRelations one(destinations). Acceptance: typechecks.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Define destination_faqs pgTable",
+                    "completed": true
+                },
+                {
+                    "title": "Add FK cascade + two indexes",
+                    "completed": true
+                },
+                {
+                    "title": "Add one(destinations) relation",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "phase-core", "REQ-6"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add faqs: many() to destination relations + schemas index export",
+            "description": "In packages/db/src/schemas/destination/destination.dbschema.ts add `faqs: many(destinationFaqs)` to the destinations relations. Export the new dbschema from the schemas index. Acceptance: typechecks, relation resolvable.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Add many(destinationFaqs) to relations",
+                    "completed": true
+                },
+                {
+                    "title": "Export from schemas index",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "phase-core", "REQ-6"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create destinationFaq.model.ts",
+            "description": "Create packages/db/src/models/destination/destinationFaq.model.ts extending BaseModel for destination_faqs, mirroring accommodationFaq.model.ts. Export from models index. Acceptance: typechecks, model instantiable.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Create model extending BaseModel",
+                    "completed": true
+                },
+                {
+                    "title": "Export from models index",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "phase-core", "REQ-6"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Push schema locally + verify set_updated_at trigger covers destination_faqs",
+            "description": "Run pnpm db:push then pnpm db:apply-extras against the LOCAL dev DB only (never staging/prod). Verify the set_updated_at trigger applies to destination_faqs; if manual/0019 enumerates tables explicitly, add destination_faqs and re-apply. Acceptance: table exists locally, updated_at auto-updates on row update. [PROGRESS: trigger analysis DONE — manual/0005_set_updated_at_trigger.sql is DYNAMIC (iterates information_schema.columns for updated_at), so destination_faqs is covered automatically by apply-extras; NO migration edit needed. RUNTIME push deferred: cannot verify DB target (security hook blocks dotenv read). User to run pnpm db:push then pnpm db:apply-extras (or pnpm db:fresh-dev) against the LOCAL DB.]",
+            "status": "in_progress",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "pnpm db:push (local only)",
+                    "completed": false
+                },
+                {
+                    "title": "pnpm db:apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "Verify/extend set_updated_at coverage (manual/0019)",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "phase-core", "REQ-6", "local-only"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement DestinationService.addFaq",
+            "description": "Add addFaq(actor, { destinationId, faq }) to DestinationService in @repo/service-core, mirroring AccommodationService.addFaq. Insert via destinationFaq model. Permission check via PermissionEnum only. Return Result<T>. Acceptance: typechecks, returns created faq.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010", "T-011", "T-012", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Wire destinationFaq model into service",
+                    "completed": true
+                },
+                {
+                    "title": "Implement addFaq with PermissionEnum check",
+                    "completed": true
+                },
+                {
+                    "title": "Return Result<T>",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "phase-core", "REQ-9"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement DestinationService.getFaqs",
+            "description": "Add getFaqs(actor, { destinationId }) to DestinationService returning the list of FAQs for a destination (ordered deterministically; empty array when none). Acceptance: typechecks, returns ordered list.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011", "T-012", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Implement getFaqs list query",
+                    "completed": true
+                },
+                {
+                    "title": "Deterministic ordering + empty handling",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "phase-core", "REQ-9"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Unit tests for addFaq/getFaqs",
+            "description": "Add service-core unit tests: addFaq success, not-found destination, permission denied; getFaqs returns ordered list and empty array. Mirror accommodation faq service tests. Acceptance: all pass, >=90% coverage on new service code.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "addFaq success + not-found + permission tests",
+                    "completed": true
+                },
+                {
+                    "title": "getFaqs list + empty tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "phase-core", "testing", "REQ-9"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Include faqs in public destination detail routes",
+            "description": "In apps/api/src/routes/destination/public/ (getByPath + getBySlug) fetch faqs in parallel via service.getFaqs and attach to the detail response, mirroring accommodation/public/getBySlug.ts. faqs: [] when none. Acceptance: typechecks, response includes faqs.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-013", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Parallel getFaqs in getByPath",
+                    "completed": true
+                },
+                {
+                    "title": "Parallel getFaqs in getBySlug",
+                    "completed": true
+                },
+                {
+                    "title": "Attach faqs to detail response",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "phase-integration", "REQ-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "API integration tests for destination faqs",
+            "description": "Add apps/api integration tests for public destination detail: success includes faqs, destination without faqs returns faqs: [], nonexistent destination returns 404. Mirror accommodation get-faq test patterns (GET public only in Phase 1). Acceptance: all pass. [PROGRESS: test file written (detail-includes-faqs.test.ts), typechecks + lints clean. EXECUTION DEFERRED to T-041: apps/api integration suite (vitest.config.e2e.ts) requires a fully-built workspace; several deps lack dist in this fresh worktree (@repo/email missing, @repo/feedback build has a pre-existing DTS error). Same deferral bucket as T-008 runtime push. Not a SPEC-158 defect.]",
+            "status": "in_progress",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Success-with-faqs test",
+                    "completed": false
+                },
+                {
+                    "title": "No-faqs empty array test",
+                    "completed": false
+                },
+                {
+                    "title": "404 nonexistent test",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "phase-integration", "testing", "REQ-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create DestinationFaqAccordion.astro",
+            "description": "Create apps/web/src/components/destination/DestinationFaqAccordion.astro mirroring accommodation/FaqAccordion.astro: native details/summary, zero JS, grouped by category. Renders nothing when no FAQs. Acceptance: component renders grouped FAQs.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Mirror FaqAccordion markup (details/summary)",
+                    "completed": true
+                },
+                {
+                    "title": "Group by category + empty guard",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "phase-integration", "REQ-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Map faqs in web transforms",
+            "description": "In apps/web/src/lib/api/transforms.ts map the faqs array on the destination detail transform, mirroring the accommodation transform (~lines 563 + 683-688). Acceptance: transformed destination carries faqs.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add faqs mapping to destination transform",
+                    "completed": true
+                },
+                {
+                    "title": "Type the transformed faqs",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "phase-integration", "REQ-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Wire accordion + FAQPageJsonLd + replace placeholder",
+            "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro: render DestinationFaqAccordion when FAQs exist, wire the generic FAQPageJsonLd.astro (sections {heading, body} from FAQs), and replace DestinationFaqPlaceholder.astro. No JSON-LD when zero FAQs. Acceptance: page renders accordion + emits valid FAQPage JSON-LD with N questions.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Render DestinationFaqAccordion conditionally",
+                    "completed": true
+                },
+                {
+                    "title": "Wire FAQPageJsonLd",
+                    "completed": true
+                },
+                {
+                    "title": "Remove DestinationFaqPlaceholder usage",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "phase-integration", "REQ-2", "REQ-3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add faqs loop (with category) to destination seed factory",
+            "description": "In the destination seed factory (packages/seed/src/example/destinations.seed.ts or equivalent) add a faqs loop calling service.addFaq, mirroring accommodations.seed.ts lines 214-259 BUT passing category through (accommodation omits it). JSON shape: faqs:[{question,answer,category}]. Idempotent (handle ALREADY_EXISTS). Acceptance: seeding a destination with faqs inserts them with categories.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": [
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040"
+            ],
+            "subtasks": [
+                {
+                    "title": "Add faqs loop calling service.addFaq",
+                    "completed": true
+                },
+                {
+                    "title": "Pass category through (improvement over accommodation)",
+                    "completed": true
+                },
+                {
+                    "title": "Idempotent ALREADY_EXISTS handling",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "phase-core", "REQ-5"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create seed-content validation test harness for 22 destinations",
+            "description": "Add a packages/seed test asserting each of the 22 CITY destination JSON files: parses against DestinationSchema; description length 2000-3500 (allow shorter for genuinely small towns, never >8000); faqs count 5-7; baseline categories present (Cómo llegar, Qué hacer, Cuándo visitar, Servicios); FAQ question/answer within schema bounds. The harness is RED until content lands; each content task turns its city green. Acceptance: harness runs, lists per-city pass/fail.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Parse each JSON against DestinationSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Assert description length + faqs count 5-7",
+                    "completed": true
+                },
+                {
+                    "title": "Assert baseline categories present",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "testing", "phase-testing", "REQ-5"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Content: Chajarí (001) — rich description + FAQs",
+            "description": "Web-research REAL data for Chajarí (termas, citricultura, lago Salto Grande, salame, herencia friulana, Fiesta Nacional de la Citricultura). Rewrite description (~2000-3500 chars markdown, 3-5 paragraphs, attractions narrative) + 5-7 FAQs with baseline categories. Validate against T-018 harness. NO invented data; cite sources in task notes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-001"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Content: Colón (002) — rich description + FAQs",
+            "description": "Web-research REAL data for Colón (termas de Colón, playas del río Uruguay, Parque Nacional El Palmar cercano, Fiesta Nacional de la Artesanía, costanera). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-002"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Content: Concordia (003) — rich description + FAQs",
+            "description": "Web-research REAL data for Concordia (termas, lago de Salto Grande, Parque San Carlos / Castillo San Carlos, citricultura, Represa Salto Grande). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-003"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Content: Federación (004) — rich description + FAQs",
+            "description": "Web-research REAL data for Federación (Parque Termal de Federación, ciudad nueva relocalizada por la represa de Salto Grande, lago, playas, Parque Acuático Termal). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-004"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Content: Gualeguaychú (005) — rich description + FAQs",
+            "description": "Web-research REAL data for Gualeguaychú (Carnaval del País, Corsódromo, playas del río, termas, balnearios, Costanera). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-005"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Content: Ibicuy (006) — rich description + FAQs",
+            "description": "Web-research REAL data for Ibicuy (Islas del Ibicuy, Delta entrerriano, pesca, turismo de naturaleza, humedales). Small town — 5 FAQs minimum acceptable; shorter description allowed if real material is thin (never pad). Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-006", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Content: Liebig (007) — rich description + FAQs",
+            "description": "Web-research REAL data for Pueblo Liebig (ex frigorífico Liebig patrimonio industrial, casas históricas, río Uruguay, cercanía a Colón/San José). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-007", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Content: Paranacito (008) — rich description + FAQs",
+            "description": "Web-research REAL data for Villa Paranacito (Delta, ríos y arroyos, pesca, cabañas, turismo náutico, Islas del Ibicuy). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-008", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Content: San José (009) — rich description + FAQs",
+            "description": "Web-research REAL data for San José (Colonia San José, Museo Regional, cercanía a Colón y Parque Nacional El Palmar, inmigración suiza/saboyana, balnearios). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-009"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Content: Ubajay (010) — rich description + FAQs",
+            "description": "Web-research REAL data for Ubajay (puerta de acceso al Parque Nacional El Palmar, monte nativo, río Uruguay). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-010", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Content: Concepción del Uruguay (011) — rich description + FAQs",
+            "description": "Web-research REAL data for Concepción del Uruguay (Palacio San José, Basílica Inmaculada Concepción, Banco Pelay playa, histórica capital, Colegio del Uruguay, río Uruguay). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-011"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Content: Santa Ana (012) — rich description + FAQs",
+            "description": "Web-research REAL data for Santa Ana (Entre Ríos, cercanía a Federación/Chajarí, zona termal y citrícola). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-012", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Content: San Salvador (013) — rich description + FAQs",
+            "description": "Web-research REAL data for San Salvador (Capital Nacional del Arroz, Fiesta Nacional del Arroz, zona agrícola). Small/medium town — 5-6 FAQs. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-013"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Content: Villaguay (014) — rich description + FAQs",
+            "description": "Web-research REAL data for Villaguay (centro geográfico de Entre Ríos, termas de Villaguay, Fiesta de la Tradición / colectividades). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-014"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Content: Villa Elisa (015) — rich description + FAQs",
+            "description": "Web-research REAL data for Villa Elisa (Termas de Villa Elisa, Molino Forclaz, cercanía a Colón y El Palmar, colonización). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-015"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Content: Rosario del Tala (016) — rich description + FAQs",
+            "description": "Web-research REAL data for Rosario del Tala (río Gualeguay, balneario, pesca, zona rural). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-016", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Content: San Justo (017) — rich description + FAQs",
+            "description": "Web-research REAL data for San Justo (Entre Ríos, zona rural/agrícola, río). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data. Note: disambiguate from San Justo (Santa Fe / Buenos Aires).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources, disambiguate)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-017", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Content: Caseros (018) — rich description + FAQs",
+            "description": "Web-research REAL data for Caseros (Entre Ríos, cercanía al Palacio San José, zona agrícola, Colonia). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-018", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Content: Urdinarrain (019) — rich description + FAQs",
+            "description": "Web-research REAL data for Urdinarrain (Entre Ríos, colonización alemana del Volga, fiestas, zona agrícola). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-019", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Content: Larroque (020) — rich description + FAQs",
+            "description": "Web-research REAL data for Larroque (Entre Ríos, zona rural, Reserva/fauna local, cercanía a Gualeguaychú). Small town — 5 FAQs minimum acceptable. Note: seed has a REJECTED gallery image (moderation test fixture) — do NOT touch media, only description + faqs. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness (do not touch media)",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-020", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Content: Gualeguay (021) — rich description + FAQs",
+            "description": "Web-research REAL data for Gualeguay (una de las ciudades más antiguas de Entre Ríos, río Gualeguay, carnaval, Carlos Mastronardi/Juan L. Ortiz, balnearios). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data. Disambiguate from Gualeguaychú.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources, disambiguate)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-021"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Content: Ceibas (022) — rich description + FAQs",
+            "description": "Web-research REAL data for Ceibas (Entre Ríos, cruce de rutas 12/14, paraje/portal de acceso, parador, humedales/Delta cercano). Very small — 5 FAQs minimum acceptable; shorter description allowed if real material is thin (never pad). Note: seed has a REJECTED gallery image fixture — do NOT touch media. Validate against harness. NO invented data.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Web research (real sources)",
+                    "completed": true
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": true
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": true
+                },
+                {
+                    "title": "Validate against harness (do not touch media)",
+                    "completed": true
+                }
+            ],
+            "tags": ["content", "phase-content", "REQ-1", "city-022", "small-town"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Full seed run + 22-destination validation + coverage",
+            "description": "Run the T-018 harness green for all 22 cities; run pnpm db:fresh-dev locally to confirm FAQs seed end-to-end with categories; run typecheck + lint + test across affected packages; verify >=90% coverage on new code. Acceptance: all green, all 22 cities pass the harness. [PROGRESS: 22-city harness GREEN incl. completeness gate (46 tests: every CITY has 5-7 FAQs with baseline categories, description bounds). DEFERRED with T-008: pnpm db:fresh-dev end-to-end seed (needs local DB push) + coverage run.]",
+            "status": "in_progress",
+            "complexity": 2,
+            "blockedBy": [
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040"
+            ],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Harness green for all 22",
+                    "completed": true
+                },
+                {
+                    "title": "Local db:fresh-dev end-to-end seed",
+                    "completed": false
+                },
+                {
+                    "title": "typecheck + lint + test + coverage",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "phase-testing", "REQ-5"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Docs update + cleanup",
+            "description": "Update packages/seed and apps/web docs to document the destination FAQ feature (mirror accommodation FAQ docs); confirm DestinationFaqPlaceholder.astro is fully removed (dead code). Acceptance: docs reflect destination FAQs, no dead placeholder reference remains.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-041"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update seed + web docs",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm placeholder removed",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "phase-docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 42,
+        "pending": 2,
+        "inProgress": 3,
+        "completed": 38,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}

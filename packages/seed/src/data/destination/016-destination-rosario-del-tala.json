@@ -4,7 +4,7 @@
     "slug": "rosario-del-tala",
     "name": "Rosario del Tala",
     "summary": "Ciudad cabecera del Departamento Tala, a orillas del río Gualeguay, con tradición rural, balneario y vida ribereña.",
-    "description": "Rosario del Tala es la ciudad cabecera del Departamento Tala, en el centro-este de Entre Ríos, asentada sobre la margen oeste del río Gualeguay. Fundada el 7 de noviembre de 1799, conserva un casco histórico con la Parroquia Nuestra Señora del Rosario y la Plaza Libertad como ejes urbanos. Su principal atractivo natural es el Balneario Delio Panizza, con playas de arena blanca, barrancas y servicios para acampar, navegar en kayak, hacer stand-up paddle y practicar pesca deportiva. La ciudad ofrece además paseos por su costanera, propuestas de turismo rural en estancias del departamento, fiestas populares como la Fiesta del Pescador y el Festival Nacional de Folclore, y una gastronomía regional ligada al río y al campo entrerriano.",
+    "description": "## Rosario del Tala, a orillas del Gualeguay\n\n**Rosario del Tala** es la ciudad cabecera del Departamento Tala, en el centro de Entre Ríos, asentada junto al **río Gualeguay**. El entorno combina paisajes naturales agrestes, bancos de arena sobre el río y abundante fauna silvestre, en una zona de fuerte impronta rural. Su casco urbano se organiza en torno a la **Plaza Libertad** y la **Parroquia Nuestra Señora del Rosario**, ligada a los orígenes de la ciudad.\n\n## El balneario y el río\n\nEl gran atractivo es el **Balneario Delio Panizza**, la vidriera turística de la ciudad: ubicado sobre la Ruta 39 a unos cinco kilómetros del centro, ocupa alrededor de 20 hectáreas y reúne tres playas diferenciadas —**Playa Grande**, **Pozo de los Cuatro** y **Rincón Hondo**—. Cuenta con proveeduría, cantina y camping, y es ideal para la práctica de deportes náuticos como kayak y stand-up paddle.\n\n## Pesca y aire libre\n\nLa **pesca deportiva** es uno de los grandes convocantes: el Gualeguay ofrece sábalos, tarariras, patíes, moncholos y surubíes. A ello se suman propuestas de cabalgatas, senderismo, observación de aves, cicloturismo y paseos en canoa por el monte de espinillos, que hacen de Rosario del Tala un destino tranquilo para el contacto con la naturaleza.\n\n## Patrimonio local\n\nEl recorrido urbano suma atractivos históricos y culturales como el **Museo Municipal**, la histórica **Casa de Martiniano Leguizamón** y la **Vieja Calera** con su chimenea, testimonios del pasado de esta localidad del interior entrerriano que se disfruta a paso lento, entre el río y el campo.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -210,6 +210,38 @@
         "072-attraction-plaza_principal",
         "045-attraction-iglesia_colonial",
         "037-attraction-estancia_turistica"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Rosario del Tala desde Paraná?",
+            "answer": "Rosario del Tala está a unos 173 km de Paraná, un viaje en auto de alrededor de 2 horas y media. Una ruta habitual es tomar la Ruta Nacional 12 y luego la Ruta Provincial 39 hacia la ciudad; otra alternativa es la Ruta Provincial 6 vía Gualeguay. Desde el Túnel Subfluvial también se empalma con la RN 12.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Rosario del Tala?",
+            "answer": "El plan principal gira en torno al río Gualeguay: disfrutar del Balneario Delio Panizza con sus playas, hacer kayak y stand-up paddle, y practicar pesca deportiva. La ciudad ofrece además cabalgatas, senderismo, observación de aves y cicloturismo, junto a un recorrido por su patrimonio histórico urbano.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cómo es el Balneario Delio Panizza?",
+            "answer": "Es el principal atractivo natural de la ciudad, ubicado sobre la Ruta 39 a unos 5 km del centro, con cerca de 20 hectáreas. Tiene tres playas diferenciadas —Playa Grande, Pozo de los Cuatro y Rincón Hondo—, además de proveeduría, cantina, camping y espacio para deportes náuticos sobre el río Gualeguay.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Rosario del Tala?",
+            "answer": "El verano (diciembre a marzo) es la temporada alta para el balneario y los deportes náuticos, con buen clima para disfrutar del río. La pesca deportiva y las actividades al aire libre, como cabalgatas y avistaje de aves, se pueden practicar también en primavera y otoño, cuando las temperaturas son más templadas.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios voy a encontrar en la ciudad?",
+            "answer": "Como cabecera departamental, Rosario del Tala dispone de alojamientos, gastronomía, comercios, bancos, estaciones de servicio y atención médica. El balneario suma servicios específicos como camping, proveeduría y cantina para quienes pasan el día o acampan a orillas del Gualeguay.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué especies se pescan en el río Gualeguay?",
+            "answer": "El río Gualeguay es muy valorado por la pesca deportiva. Entre las especies más buscadas se encuentran sábalos, tarariras, patíes, moncholos y surubíes, que atraen tanto a pescadores locales como a visitantes durante buena parte del año.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

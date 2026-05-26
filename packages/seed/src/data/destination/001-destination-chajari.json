@@ -4,7 +4,7 @@
     "slug": "chajari",
     "name": "Chajarí",
     "summary": "Ciudad termal y citrícola del nordeste entrerriano, con playas del lago Salto Grande y herencia friulana.",
-    "description": "Chajarí es una ciudad del departamento Federación, en el nordeste de Entre Ríos, fundada en 1872 y reconocida como Capital Provincial de la Citricultura. Su economía y cultura giran en torno a la producción de naranjas y mandarinas, la elaboración artesanal del célebre salame de Chajarí y la herencia de los inmigrantes friulanos que la poblaron. A pocos kilómetros del centro se encuentra el moderno Complejo Termal de Chajarí, con aguas surgentes a 39 °C y piscinas de distintas temperaturas. Sobre el lago Salto Grande despliega playas, camping y una costanera ideales para deportes náuticos y descanso. Cada año celebra la Fiesta Nacional de la Citricultura, que combina música, tradición y producción regional.",
+    "description": "## Chajarí, capital de la citricultura entrerriana\n\nChajarí es una ciudad del departamento Federación, en el nordeste de Entre Ríos, sobre la Ruta Nacional 14. Fundada en 1872 como colonia agrícola con el nombre de Villa Libertad, su nombre actual es de origen guaraní y alude al \"agua o arroyo del chajá\", el ave típica de los humedales litoraleños. Es uno de los grandes polos citrícolas del país: naranjas y mandarinas dominan el paisaje rural, en la mayoría de los casos en manos de pequeños productores familiares de fuerte raíz inmigrante italiana. A esa identidad se suma el célebre **salame de Chajarí**, embutido artesanal que es orgullo local y excusa perfecta para una picada regional.\n\n## Termas en un parque de 40 hectáreas\n\nA pocos kilómetros del centro, sobre la RN 14, está el **Complejo Termal de Chajarí**, inaugurado a comienzos de los años 2000 tras una perforación que reveló agua surgente a unos 39 °C. El predio se extiende sobre unas 40 hectáreas parquizadas e incluye alrededor de doce piscinas de distintas temperaturas, pensadas para todas las edades. Dentro del mismo complejo funciona una reserva natural con senderos, miradores y puntos de avistaje de aves, ideal para combinar relax y naturaleza en una misma jornada.\n\n## Playas del lago, costanera y vida al aire libre\n\nEl lago de Salto Grande regala a Chajarí playas, camping y una costanera donde se practican deportes náuticos, pesca y descanso frente al agua. Es un entorno familiar y tranquilo, perfecto para sumar a la experiencia termal jornadas de río y aire libre.\n\n## Fiestas y cultura\n\nCada año la ciudad celebra la **Fiesta Nacional de la Citricultura**, que combina espectáculos musicales, elección de reina, muestras productivas y el sabor de la gastronomía regional. Recorrer sus plantaciones, conocer un centro de interpretación citrícola y degustar dulces, jugos y salames artesanales completan una visita que mezcla campo, termas y tradición friulana en un mismo destino.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -230,6 +230,38 @@
         "069-attraction-playa_fluvial",
         "070-attraction-plaza_festivales",
         "031-attraction-costanera"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Chajarí desde Buenos Aires?",
+            "answer": "Chajarí está sobre la Ruta Nacional 14, en el nordeste de Entre Ríos. Desde Buenos Aires se accede cruzando el complejo Zárate–Brazo Largo y tomando la RN 12 y luego la RN 14 hacia el norte; el viaje ronda los 500 km. También hay servicios regulares de micros de larga distancia que conectan la ciudad con Buenos Aires, Paraná y otras localidades del Litoral.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Chajarí?",
+            "answer": "Lo más visitado es el Complejo Termal de Chajarí, con unas doce piscinas de distintas temperaturas en un parque de cerca de 40 hectáreas que incluye una reserva natural con senderos. Además podés disfrutar de las playas y la costanera del lago Salto Grande, recorrer plantaciones cítricas y un centro de interpretación de la citricultura, y degustar el salame artesanal y los dulces regionales.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Chajarí?",
+            "answer": "Las termas funcionan todo el año y son especialmente buscadas en otoño e invierno, cuando el contraste con el aire frío hace más placentero el baño. El verano es ideal para las playas y los deportes náuticos del lago Salto Grande. La Fiesta Nacional de la Citricultura es otro momento destacado del calendario para coordinar la visita.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece la ciudad?",
+            "answer": "Chajarí cuenta con hoteles, cabañas, hospedajes y campings, además de restaurantes, comercios, estaciones de servicio, bancos y cajeros en el área urbana. El complejo termal dispone de proveeduría y servicios para pasar el día. La ciudad funciona como base cómoda para recorrer la zona termal y citrícola del nordeste entrerriano.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es la Fiesta Nacional de la Citricultura?",
+            "answer": "Es la celebración más importante de Chajarí, que rinde homenaje a la actividad cítrica que define a la ciudad. Combina espectáculos musicales, elección de reina, muestras de la producción regional y propuestas gastronómicas. Es una buena ocasión para conocer la identidad productiva y cultural del lugar.",
+            "category": "Cultura"
+        },
+        {
+            "question": "¿Qué productos típicos puedo probar y llevar de Chajarí?",
+            "answer": "El producto estrella es el salame artesanal de Chajarí, de fuerte tradición local. A eso se suman los cítricos frescos (naranjas y mandarinas), jugos, dulces y mermeladas regionales. Es habitual visitar fábricas y comercios locales para degustar y comprar estos productos como recuerdo de la visita.",
+            "category": "Gastronomía"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

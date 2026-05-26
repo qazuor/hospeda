@@ -1,6 +1,8 @@
 import { AttractionService, DestinationService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
 import { createSeedFactory, createServiceRelationBuilder } from '../utils/index.js';
+import { logger } from '../utils/logger.js';
+import type { SeedContext } from '../utils/seedContext.js';
 
 /**
  * Seeds destinations with their associated attractions.
@@ -52,6 +54,8 @@ export const seedDestinations = createSeedFactory({
             attractionIds,
             averageRating,
             accommodationsCount,
+            // FAQs are a 1-to-N child relation, not a column — seeded via postProcess (SPEC-158)
+            faqs,
             ...cleanData
         } = data as {
             $schema?: string;
@@ -60,10 +64,62 @@ export const seedDestinations = createSeedFactory({
             attractionIds?: string[];
             averageRating?: number;
             accommodationsCount?: number;
+            faqs?: Array<{ question: string; answer: string; category?: string }>;
             [key: string]: unknown;
         };
 
         return cleanData;
+    },
+
+    // Seed FAQs (SPEC-158): runs after the destination is created. Unlike the
+    // accommodation factory, the destination FAQ loop forwards `category`.
+    postProcess: async (result: unknown, item: unknown, context: SeedContext) => {
+        const destinationId = (result as { data?: { id?: string } })?.data?.id;
+        if (!destinationId) return;
+
+        const data = item as {
+            name?: string;
+            faqs?: Array<{ question: string; answer: string; category?: string }>;
+        };
+        const faqs = data.faqs;
+        if (!faqs || faqs.length === 0) return;
+
+        const service = new DestinationService({});
+        const info = data.name ?? destinationId;
+        logger.info(`Creating ${faqs.length} FAQs for "${info}"`);
+
+        for (let i = 0; i < faqs.length; i++) {
+            const faq = faqs[i];
+            if (!faq) continue;
+            try {
+                if (!context.actor) {
+                    throw new Error('Actor not available in context');
+                }
+                await service.addFaq(context.actor, {
+                    destinationId,
+                    faq: {
+                        question: faq.question,
+                        answer: faq.answer,
+                        category: faq.category ?? null
+                    }
+                });
+                logger.success({
+                    msg: `[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`
+                });
+            } catch (error) {
+                const err = error as { code?: string; message?: string };
+                if (err.code === 'ALREADY_EXISTS') {
+                    logger.info(
+                        `[${i + 1} of ${faqs.length}] - FAQ already exists: "${faq.question}"`
+                    );
+                } else {
+                    logger.error(`Error creating FAQ: ${err.message}`);
+                    if (!context.continueOnError) {
+                        throw error;
+                    }
+                }
+            }
+        }
     },
 
     // Custom entity info for better logging

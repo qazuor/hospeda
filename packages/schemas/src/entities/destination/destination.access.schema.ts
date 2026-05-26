@@ -49,7 +49,8 @@ export const DestinationPublicSchema = DestinationSchema.pick({
 
     // Nested public data
     attractions: true,
-    rating: true
+    rating: true,
+    faqs: true
 });
 
 export type DestinationPublic = z.infer<typeof DestinationPublicSchema>;
@@ -80,6 +81,7 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
     tags: true,
     attractions: true,
     rating: true,
+    faqs: true,
 
     // Full hierarchy (authenticated users)
     parentDestinationId: true,

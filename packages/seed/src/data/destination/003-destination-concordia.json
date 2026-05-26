@@ -4,7 +4,7 @@
     "slug": "concordia",
     "name": "Concordia",
     "summary": "Capital nacional de la citricultura, con termas, el Lago Salto Grande, el Castillo San Carlos y una activa vida cultural sobre el río Uruguay.",
-    "description": "Concordia es la segunda ciudad de Entre Ríos y un destino turístico clave del Litoral argentino, ubicada a orillas del río Uruguay frente a la ciudad uruguaya de Salto. Reconocida como capital nacional de la citricultura, combina paisajes naturales únicos como el Lago Salto Grande, el lago artificial más grande del país, con un patrimonio histórico singular representado por las ruinas del Castillo San Carlos en el Parque San Carlos. Tres complejos termales (Vertientes de la Concordia, Termas del Ayuí y Punta Viracho) ofrecen aguas mineralizadas entre 36 y 45 grados para el bienestar y la relajación. La ciudad cuenta además con una extensa costanera, la Catedral San Antonio de Padua, museos, un activo carnaval y una rica oferta gastronómica regional.",
+    "description": "## Concordia, termas y naturaleza sobre el río Uruguay\n\nConcordia es la segunda ciudad de Entre Ríos y uno de los destinos más completos del Litoral argentino. Se ubica a orillas del río Uruguay, justo frente a la ciudad uruguaya de Salto, con la que está conectada por la represa binacional de Salto Grande. Reconocida desde 1963 como **Capital Nacional de la Citricultura**, combina bienestar termal, historia, playas y una activa vida cultural.\n\n## Tres complejos termales\n\nLa ciudad cuenta con tres complejos termales: **Vertientes de la Concordia**, **Termas del Ayuí** y **Termas de Punta Viracho**, con aguas mineromedicinales que naturalmente alcanzan temperaturas de entre 36 °C y 45 °C. Son aguas de baja mineralización, bicarbonatadas y sódicas, valoradas por sus propiedades para el descanso y la relajación, en entornos parquizados pensados para pasar el día en familia.\n\n## El Castillo San Carlos y El Principito\n\nEn el **Parque San Carlos** se encuentran las ruinas del **Castillo San Carlos**, mansión francesa terminada en 1888 que perteneció a Edouard Demachy. En 1929 el aviador y escritor Antoine de Saint-Exupéry realizó un aterrizaje de emergencia cerca de Concordia y fue recibido por dos jóvenes que vivían en el castillo: muchos investigadores sostienen que esa visita y aquel paisaje dejaron ecos en *El Principito*. Hoy el parque suma el Jardín Botánico, senderos para caminatas y un monumento al Principito que recuerda esa historia.\n\n## Lago Salto Grande, playas y costanera\n\nA unos 15 km del centro está la **represa de Salto Grande** y su enorme embalse, uno de los más importantes de la región, donde se hacen paseos en catamarán, pesca deportiva, kayak y avistaje de aves. Sobre el río Uruguay, el lago y arroyos cercanos hay varias playas —como Los Sauces, Nébel y La Tortuga Alegre— y una extensa costanera para disfrutar del verano.\n\n## Vida urbana y cultura\n\nEn torno a la Plaza 25 de Mayo se concentran la Catedral San Antonio de Padua, museos y el corazón comercial de la ciudad. Concordia tiene además un carnaval reconocido y una sólida oferta gastronómica regional que completa la experiencia.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -195,6 +195,38 @@
         "012-attraction-catedral_principal",
         "062-attraction-parque_municipal",
         "080-attraction-sede_carnaval"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Concordia desde Buenos Aires?",
+            "answer": "Concordia está sobre el río Uruguay, en el este de Entre Ríos, y se accede por la Ruta Nacional 14: desde Buenos Aires se cruza el complejo Zárate–Brazo Largo, se toma la RN 12 y luego la RN 14 hacia el norte, un trayecto de poco más de 400 km. La ciudad tiene terminal de ómnibus con servicios de larga distancia y un aeropuerto, además del paso internacional hacia Salto (Uruguay) por la represa de Salto Grande.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Concordia?",
+            "answer": "Los imperdibles son los tres complejos termales (Vertientes de la Concordia, Termas del Ayuí y Punta Viracho), el Parque San Carlos con las ruinas del Castillo San Carlos y el monumento al Principito, y el Lago de Salto Grande, donde se hacen paseos en catamarán, pesca, kayak y avistaje de aves. Sumá las playas del río Uruguay, la costanera y el centro histórico en torno a la Plaza 25 de Mayo.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Concordia?",
+            "answer": "Las termas funcionan todo el año y son especialmente buscadas en otoño e invierno. El verano es ideal para las playas del río Uruguay y del lago Salto Grande y para los deportes náuticos. Si te interesa el carnaval, hay que coordinar la visita con la temporada de corsos, que suele concentrarse en el verano.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos hay en la ciudad?",
+            "answer": "Por ser la segunda ciudad de Entre Ríos, Concordia ofrece amplia infraestructura: hoteles, cabañas, departamentos y campings, restaurantes, comercios, bancos, cajeros, estaciones de servicio, terminal de ómnibus y servicios de salud. Los complejos termales cuentan con sus propias instalaciones para pasar el día.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué tienen que ver el Castillo San Carlos y El Principito?",
+            "answer": "El Castillo San Carlos, terminado en 1888 dentro del Parque San Carlos, fue escenario de la visita de Antoine de Saint-Exupéry en 1929, cuando aterrizó de emergencia cerca de Concordia y fue recibido por dos jóvenes que vivían allí. Esa experiencia y el paisaje entrerriano son considerados por muchos investigadores como fuente de inspiración para El Principito. Hoy el parque tiene un monumento dedicado a la obra.",
+            "category": "Cultura"
+        },
+        {
+            "question": "¿Se puede visitar la represa de Salto Grande?",
+            "answer": "Sí. La represa binacional de Salto Grande está a unos 15 km de Concordia y une Argentina con la ciudad uruguaya de Salto. Su gran embalse, el Lago de Salto Grande, es uno de los espejos de agua más importantes de la región y permite paseos en catamarán, pesca deportiva, kayak y observación de aves.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

@@ -4,7 +4,7 @@
     "slug": "villa-elisa",
     "name": "Villa Elisa",
     "summary": "Ciudad termal y agroturística del Departamento Colón, Entre Ríos, fundada en 1890 por inmigrantes suizos del Valais y saboyanos.",
-    "description": "Villa Elisa es una ciudad del Departamento Colón, en el este de Entre Ríos, fundada en 1890 por Héctor de Elía con familias de inmigrantes provenientes del Cantón de Valais (Suiza), Saboya (Francia) y Piamonte (Italia) que se habían asentado previamente en la Colonia San José. Su principal atractivo son las Termas de Villa Elisa, complejo de 41 hectáreas con diez piscinas de aguas mineromedicinales surgentes desde 1997 a unos 40 °C, spa, lago artificial y amplias áreas verdes. La economía local combina una fuerte tradición agropecuaria con cooperativas avícolas, lácteas y citrícolas, lo que dio lugar a una red de estancias y chacras dedicadas al agroturismo: cabalgatas, trekking, visitas a tambos, queserías y producciones rurales. El patrimonio histórico se preserva en el Museo Regional El Porvenir, antigua residencia del fundador. Reconocida por la OMT como uno de los Best Tourism Villages, Villa Elisa ofrece bienestar termal, cultura inmigrante y vida rural a pocos kilómetros del río Uruguay.",
+    "description": "## Villa Elisa, bienestar termal y vida rural\n\nVilla Elisa es una ciudad del Departamento Colón, en el este de Entre Ríos, fundada en 1890 con familias de inmigrantes suizos del Valais, saboyanos y piamonteses que se habían asentado previamente en la Colonia San José. Hoy se distingue por su concepto de bienestar, su historia inmigrante y su entorno natural, y fue reconocida en 2025 entre los **Best Tourism Villages** por ONU Turismo, distinción que la ubica entre los mejores pueblos turísticos del mundo.\n\n## Termas de Villa Elisa\n\nSu principal atractivo son las **Termas de Villa Elisa**, un complejo de más de 40 hectáreas con diez piscinas de distintos usos y temperaturas, spa, alojamiento, gastronomía, espacios recreativos, deportes y un lago artificial rodeado de amplias áreas verdes. Es considerado uno de los complejos termales de mayor calidad del país y funciona durante todo el año, con aguas mineromedicinales templadas.\n\n## Historia, molino y agroturismo\n\nA pocos kilómetros se encuentra el **Molino Forclaz**, Monumento Histórico Nacional desde 1985, emplazado en un predio con la antigua vivienda de la familia Forclaz y su molino de viento, testimonio del esfuerzo de los colonos. La identidad rural se vive también a través del **Camino de los Colonos**, un circuito de unos 20 kilómetros vinculado a la producción regional, la gastronomía tradicional y la cultura inmigrante, que incluye estancias, queserías, granjas y emprendimientos como la producción de miel y de nuez pecán.\n\n## Cerca del río y del Palmar\n\nVilla Elisa está a unos 30 kilómetros de Colón y a corta distancia del **río Uruguay** y del **Parque Nacional El Palmar**, lo que permite combinar el descanso termal y el turismo rural con playas y naturaleza. Su tranquilidad, sus paisajes de campo y su raíz colona la convierten en un destino ideal para quienes buscan relax y autenticidad en el litoral entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -348,6 +348,38 @@
         "076-attraction-queseria_artesanal",
         "043-attraction-granja_educativa",
         "056-attraction-museo_regional"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo llego a Villa Elisa en Entre Ríos?",
+            "answer": "Villa Elisa se encuentra en el Departamento Colón, próxima a la Ruta Nacional 14 y a la Ruta Provincial 130. Desde Buenos Aires se accede por la Ruta Nacional 14 cruzando el complejo Zárate–Brazo Largo; desde Rosario, por el puente Rosario–Victoria y luego rutas provinciales hasta empalmar con la Ruta 14. Está a unos 30 kilómetros de la ciudad de Colón.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Villa Elisa?",
+            "answer": "El gran atractivo son las Termas de Villa Elisa, con sus piscinas, spa y áreas verdes. Además se puede visitar el Molino Forclaz (Monumento Histórico Nacional), recorrer el Camino de los Colonos con sus estancias, queserías y granjas, conocer el Museo de la Colonización y disfrutar del agroturismo y la gastronomía de raíz inmigrante.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Villa Elisa?",
+            "answer": "Las termas se disfrutan durante todo el año porque sus aguas son templadas. El verano suma el atractivo del sector de playa y las actividades al aire libre, mientras que la primavera y el otoño son ideales para el turismo rural y los circuitos por el campo, con clima agradable y menos afluencia de visitantes.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios ofrece Villa Elisa al turista?",
+            "answer": "Villa Elisa cuenta con alojamiento dentro y fuera del complejo termal, hoteles, cabañas y propuestas de turismo rural, además de gastronomía regional, spa y comercios. El complejo termal ofrece servicios de hotelería, restaurantes y recreación, y la ciudad dispone de oficina de informes turísticos para organizar las visitas a los atractivos de la zona.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es el Molino Forclaz?",
+            "answer": "Es un molino de viento construido por el inmigrante Juan Bautista Forclaz para producir harina, hoy Monumento Histórico Nacional. Se encuentra en un predio que conserva la vivienda familiar y el sistema de molienda, y funciona como museo. Es uno de los principales testimonios del esfuerzo de los colonos suizos y franceses que poblaron la región.",
+            "category": "Historia"
+        },
+        {
+            "question": "¿Está cerca del Parque Nacional El Palmar?",
+            "answer": "Sí. Villa Elisa está a corta distancia del Parque Nacional El Palmar, sobre la Ruta Nacional 14, que protege uno de los palmares de yatay más importantes del país. Muchos visitantes combinan el descanso termal en Villa Elisa con una excursión de día completo al parque y con las playas del río Uruguay en Colón.",
+            "category": "Excursiones"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
