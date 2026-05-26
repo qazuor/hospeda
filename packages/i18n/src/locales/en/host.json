@@ -146,5 +146,23 @@
     },
     "fromAdminBanner": {
         "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
+    },
+    "miniForm": {
+        "fields": {
+            "type": "Accommodation type",
+            "typePlaceholder": "Choose an option"
+        },
+        "types": {
+            "APARTMENT": "Apartment",
+            "HOUSE": "House",
+            "COUNTRY_HOUSE": "Country house",
+            "CABIN": "Cabin",
+            "HOTEL": "Hotel",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Room",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }
