@@ -78,7 +78,7 @@ export function FilterBar({
     );
 
     return (
-        <div className="mb-3 border-b pb-3">
+        <div>
             <div className="flex flex-wrap items-center gap-2">
                 {searchSlot}
                 {sortedFilters.map((filterConfig) => {

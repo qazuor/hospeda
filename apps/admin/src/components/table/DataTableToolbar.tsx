@@ -1,6 +1,14 @@
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import type { ChangeEvent } from 'react';
+import { ChevronDownIcon, GridIcon, ListIcon } from '@repo/icons';
 import { useCallback } from 'react';
 
 export type DataTableToolbarProps = {
@@ -22,9 +30,9 @@ export const DataTableToolbar = ({
     onColumnVisibilityChange,
     availableColumns
 }: DataTableToolbarProps) => {
-    const handleCheckbox = useCallback(
-        (id: string) => (e: ChangeEvent<HTMLInputElement>) => {
-            onColumnVisibilityChange({ ...columnVisibility, [id]: e.target.checked });
+    const handleColumnToggle = useCallback(
+        (id: string, checked: boolean) => {
+            onColumnVisibilityChange({ ...columnVisibility, [id]: checked });
         },
         [columnVisibility, onColumnVisibilityChange]
     );
@@ -32,56 +40,78 @@ export const DataTableToolbar = ({
     const { t } = useTranslations();
     return (
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="inline-flex overflow-hidden rounded-md border">
                 <button
                     type="button"
                     aria-label={t('ui.accessibility.tableView')}
+                    aria-pressed={view === 'table'}
                     className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
+                        view === 'table'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-accent/40'
                     )}
                     onClick={() => onViewChange('table')}
                 >
+                    <ListIcon
+                        weight={view === 'table' ? 'fill' : 'regular'}
+                        className="h-4 w-4"
+                    />
                     {t('ui.table.tableView')}
                 </button>
                 <button
                     type="button"
                     aria-label={t('ui.accessibility.gridView')}
+                    aria-pressed={view === 'grid'}
                     className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
+                        'inline-flex items-center gap-1.5 border-l px-3 py-1.5 text-sm',
+                        view === 'grid'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-accent/40'
                     )}
                     onClick={() => onViewChange('grid')}
                 >
+                    <GridIcon
+                        weight={view === 'grid' ? 'fill' : 'regular'}
+                        className="h-4 w-4"
+                    />
                     {t('ui.table.gridView')}
                 </button>
             </div>
 
-            <div className="relative">
-                <details>
-                    <summary className="cursor-pointer select-none rounded-md border px-3 py-1.5 text-sm hover:bg-accent/40">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent/40"
+                    >
                         {t('ui.table.columns')}
-                    </summary>
-                    <div className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-background p-2 shadow-md">
-                        <div className="space-y-1 text-sm">
-                            {availableColumns.map((c) => (
-                                <label
-                                    key={c.id}
-                                    className="flex items-center justify-between gap-3"
-                                >
-                                    <span>{c.label}</span>
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4"
-                                        checked={columnVisibility[c.id] ?? true}
-                                        onChange={handleCheckbox(c.id)}
-                                    />
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                </details>
-            </div>
+                        <ChevronDownIcon
+                            weight="regular"
+                            className="h-4 w-4 opacity-60"
+                        />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    className="w-56"
+                >
+                    <DropdownMenuLabel>{t('ui.table.columns')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {availableColumns.map((c) => (
+                        <DropdownMenuCheckboxItem
+                            key={c.id}
+                            checked={columnVisibility[c.id] ?? true}
+                            onCheckedChange={(checked) =>
+                                handleColumnToggle(c.id, checked === true)
+                            }
+                            onSelect={(e) => e.preventDefault()}
+                        >
+                            {c.label}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     );
 };

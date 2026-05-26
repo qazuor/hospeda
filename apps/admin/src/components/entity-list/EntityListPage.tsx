@@ -433,31 +433,35 @@ export const createEntityListPage = <TData extends { id: string }>(
                 actions={createButtonAction}
             >
                 <div className="space-y-4">
-                    <DataTableToolbar
-                        view={search.view}
-                        onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
-                        columnVisibility={currentViewVisibility}
-                        onColumnVisibilityChange={handleColsChange}
-                        availableColumns={availableColumns}
-                    />
-
-                    {config.filterBarConfig ? (
-                        <FilterBar
-                            config={config.filterBarConfig}
-                            activeFilters={filterState.activeFilters}
-                            onFilterChange={filterState.handleFilterChange}
-                            onClearAll={filterState.handleClearAll}
-                            onResetDefaults={filterState.handleResetDefaults}
-                            hasActiveFilters={filterState.hasActiveFilters}
-                            hasNonDefaultFilters={filterState.hasNonDefaultFilters}
-                            chips={filterState.chips}
-                            searchSlot={searchInput}
+                    <div className="space-y-3 rounded-md border bg-card p-4">
+                        <DataTableToolbar
+                            view={search.view}
+                            onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
+                            columnVisibility={currentViewVisibility}
+                            onColumnVisibilityChange={handleColsChange}
+                            availableColumns={availableColumns}
                         />
-                    ) : (
-                        searchInput && (
-                            <div className="flex flex-wrap items-center gap-2">{searchInput}</div>
-                        )
-                    )}
+
+                        {config.filterBarConfig ? (
+                            <FilterBar
+                                config={config.filterBarConfig}
+                                activeFilters={filterState.activeFilters}
+                                onFilterChange={filterState.handleFilterChange}
+                                onClearAll={filterState.handleClearAll}
+                                onResetDefaults={filterState.handleResetDefaults}
+                                hasActiveFilters={filterState.hasActiveFilters}
+                                hasNonDefaultFilters={filterState.hasNonDefaultFilters}
+                                chips={filterState.chips}
+                                searchSlot={searchInput}
+                            />
+                        ) : (
+                            searchInput && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {searchInput}
+                                </div>
+                            )
+                        )}
+                    </div>
 
                     {search.view === 'table' ? (
                         <DataTable<Row>
