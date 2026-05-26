@@ -274,6 +274,9 @@ const breadcrumbItems = [
 	description={seoDescription}
 	ogImage={hasRealFeatured ? featuredImage : undefined}
 	ogType="Guía"
+	ogMetaType="article"
+	articlePublishedTime={publishedAt || undefined}
+	articleModifiedTime={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >

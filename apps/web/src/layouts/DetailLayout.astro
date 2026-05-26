@@ -32,6 +32,15 @@ interface Props {
 	readonly ogSubtitle?: string;
 	/** OG photo-card rating value (e.g. "4.8"). */
 	readonly ogRating?: string;
+	/**
+	 * Open Graph object type. Article detail pages (blog posts) pass 'article';
+	 * everything else falls back to the SEOHead default ('website').
+	 */
+	readonly ogMetaType?: 'website' | 'article';
+	/** ISO published date — forwarded as article:published_time for articles. */
+	readonly articlePublishedTime?: string;
+	/** ISO modified date — forwarded as article:modified_time for articles. */
+	readonly articleModifiedTime?: string;
 }
 
 const {
@@ -45,6 +54,9 @@ const {
 	ogType,
 	ogSubtitle,
 	ogRating,
+	ogMetaType,
+	articlePublishedTime,
+	articleModifiedTime,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -65,6 +77,9 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		ogType={ogType}
 		ogSubtitle={ogSubtitle}
 		ogRating={ogRating}
+		type={ogMetaType}
+		articlePublishedTime={articlePublishedTime}
+		articleModifiedTime={articleModifiedTime}
 	/>
 	<slot name="head-extra" slot="head" />
 
