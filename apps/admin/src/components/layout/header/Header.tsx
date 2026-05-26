@@ -65,122 +65,146 @@ export function Header() {
     }, [showNotifications]);
 
     return (
-        <header className="sticky top-0 z-40 border-primary/30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center gap-3 px-3 md:px-4">
-                {/* Mobile menu button — opens sidebar drawer */}
-                <button
-                    type="button"
-                    aria-label={t('admin-common.aria.toggleMenu' as TranslationKey)}
-                    className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
-                    onClick={isMobileOpen ? closeMobile : openMobile}
-                >
-                    <MenuIcon className="h-5 w-5" />
-                </button>
+        <header className="sticky top-0 z-40">
+            <div className="bg-[var(--palette-river-100)]">
+                <div className="flex h-14 items-center gap-3 px-3 md:px-4">
+                    {/* Mobile menu button — opens sidebar drawer */}
+                    <button
+                        type="button"
+                        aria-label={t('admin-common.aria.toggleMenu' as TranslationKey)}
+                        className="inline-flex items-center justify-center rounded-md p-2 hover:bg-white/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                        onClick={isMobileOpen ? closeMobile : openMobile}
+                    >
+                        <MenuIcon className="icon-river-header h-5 w-5" />
+                    </button>
 
-                {/* Logo/Brand */}
-                <Link
-                    to="/dashboard"
-                    aria-label="Hospeda Admin"
-                    className="flex items-center gap-2 font-semibold text-sm"
-                >
-                    <img
-                        src="/logo.webp"
-                        alt=""
-                        aria-hidden="true"
-                        width={28}
-                        height={28}
-                        className="h-7 w-7 shrink-0"
-                    />
-                    <span className="hidden font-heading text-base sm:inline">
-                        {t('admin-nav.topbar.admin' as TranslationKey)}
-                    </span>
-                </Link>
+                    {/* Logo/Brand */}
+                    <Link
+                        to="/dashboard"
+                        aria-label="Hospeda Admin"
+                        className="flex items-center gap-2 font-semibold text-sm"
+                    >
+                        <img
+                            src="/logo.webp"
+                            alt=""
+                            aria-hidden="true"
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 shrink-0"
+                        />
+                        <span className="hidden font-heading text-base sm:inline">
+                            {t('admin-nav.topbar.admin' as TranslationKey)}
+                        </span>
+                    </Link>
 
-                {/* Brand / nav divider — desktop only (mobile nav lives in BottomNav) */}
-                <div
-                    aria-hidden="true"
-                    className="hidden h-6 w-px bg-primary/20 md:block"
-                />
-
-                {/* Desktop Navigation — config-driven via MainMenu */}
-                <MainMenu />
-
-                {/* Right side actions */}
-                <div className={cn('ml-auto flex items-center gap-2')}>
-                    {/* Quick-create "+" button — config-driven via QuickCreate */}
-                    <QuickCreate />
-
-                    {/* Command Palette search — shown when topbar.showSearch is true */}
-                    {showSearch && <CommandPalette />}
-
-                    {/* Notifications */}
+                    {/* Brand / nav divider — desktop only (mobile nav lives in BottomNav) */}
                     <div
-                        ref={notifRef}
-                        className="relative"
-                        onBlur={(e) => {
-                            const next = e.relatedTarget as Node | null;
-                            if (notifRef.current && next && notifRef.current.contains(next)) return;
-                            setShowNotifications(false);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') setShowNotifications(false);
-                        }}
-                    >
-                        <button
-                            type="button"
-                            aria-label={t('admin-common.aria.notifications' as TranslationKey)}
-                            title={t('admin-nav.topbar.notifications' as TranslationKey)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
-                            onClick={() => setShowNotifications((v) => !v)}
+                        aria-hidden="true"
+                        className="hidden h-6 w-px bg-primary/20 md:block"
+                    />
+
+                    {/* Desktop Navigation — config-driven via MainMenu */}
+                    <MainMenu />
+
+                    {/* Right side actions */}
+                    <div className={cn('ml-auto flex items-center gap-2')}>
+                        {/* Quick-create "+" button — config-driven via QuickCreate */}
+                        <QuickCreate />
+
+                        {/* Command Palette search — shown when topbar.showSearch is true */}
+                        {showSearch && <CommandPalette />}
+
+                        {/* Notifications */}
+                        <div
+                            ref={notifRef}
+                            className="relative"
+                            onBlur={(e) => {
+                                const next = e.relatedTarget as Node | null;
+                                if (notifRef.current && next && notifRef.current.contains(next))
+                                    return;
+                                setShowNotifications(false);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') setShowNotifications(false);
+                            }}
                         >
-                            <NotificationIcon className="h-5 w-5" />
-                        </button>
-                        {showNotifications && (
-                            <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover p-2 text-sm shadow">
-                                <div className="mb-2 font-semibold">
-                                    {t('admin-nav.topbar.notifications' as TranslationKey)}
+                            <button
+                                type="button"
+                                aria-label={t('admin-common.aria.notifications' as TranslationKey)}
+                                title={t('admin-nav.topbar.notifications' as TranslationKey)}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary"
+                                onClick={() => setShowNotifications((v) => !v)}
+                            >
+                                <NotificationIcon className="icon-river-header h-5 w-5" />
+                            </button>
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover p-2 text-sm shadow">
+                                    <div className="mb-2 font-semibold">
+                                        {t('admin-nav.topbar.notifications' as TranslationKey)}
+                                    </div>
+                                    <ul className="space-y-1">
+                                        <li className="rounded-md px-2 py-1 hover:bg-accent/50">
+                                            {t(
+                                                'admin-common.notifications.noNew' as TranslationKey
+                                            )}
+                                        </li>
+                                    </ul>
+                                    <div className="mt-2 border-t pt-2 text-right">
+                                        <Link
+                                            to="/notifications"
+                                            className="underline"
+                                            onClick={() => setShowNotifications(false)}
+                                        >
+                                            {t('admin-common.actions.seeAll' as TranslationKey)}
+                                        </Link>
+                                    </div>
                                 </div>
-                                <ul className="space-y-1">
-                                    <li className="rounded-md px-2 py-1 hover:bg-accent/50">
-                                        {t('admin-common.notifications.noNew' as TranslationKey)}
-                                    </li>
-                                </ul>
-                                <div className="mt-2 border-t pt-2 text-right">
-                                    <Link
-                                        to="/notifications"
-                                        className="underline"
-                                        onClick={() => setShowNotifications(false)}
-                                    >
-                                        {t('admin-common.actions.seeAll' as TranslationKey)}
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
+
+                        {/* Profile */}
+                        <Link
+                            to="/me/profile"
+                            aria-label={t('admin-common.aria.profile' as TranslationKey)}
+                            title={t('admin-nav.topbar.profile' as TranslationKey)}
+                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"
+                        >
+                            <UserIcon className="icon-river-header h-5 w-5" />
+                        </Link>
+
+                        {/* Settings */}
+                        <Link
+                            to="/me/settings"
+                            aria-label={t('admin-common.aria.settings' as TranslationKey)}
+                            title={t('admin-nav.topbar.settings' as TranslationKey)}
+                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"
+                        >
+                            <SettingsIcon className="icon-river-header h-5 w-5" />
+                        </Link>
+
+                        {/* Auth user menu */}
+                        <AuthHeader />
                     </div>
-
-                    {/* Profile */}
-                    <Link
-                        to="/me/profile"
-                        aria-label={t('admin-common.aria.profile' as TranslationKey)}
-                        title={t('admin-nav.topbar.profile' as TranslationKey)}
-                        className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
-                    >
-                        <UserIcon className="h-5 w-5" />
-                    </Link>
-
-                    {/* Settings */}
-                    <Link
-                        to="/me/settings"
-                        aria-label={t('admin-common.aria.settings' as TranslationKey)}
-                        title={t('admin-nav.topbar.settings' as TranslationKey)}
-                        className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
-                    >
-                        <SettingsIcon className="h-5 w-5" />
-                    </Link>
-
-                    {/* Auth user menu */}
-                    <AuthHeader />
                 </div>
+            </div>
+
+            {/* River wave bottom edge — the header band ends in a filled wavy
+                edge (same river fill as the band), mirroring apps/web's footer wave. */}
+            <div
+                aria-hidden="true"
+                className="-mt-px pointer-events-none text-[var(--palette-river-100)]"
+            >
+                <svg
+                    viewBox="0 0 1440 40"
+                    preserveAspectRatio="none"
+                    className="block h-3 w-full"
+                    role="presentation"
+                >
+                    <path
+                        d="M0,0 L1440,0 L1440,18 C1200,34 960,2 720,18 C480,34 240,2 0,18 Z"
+                        fill="currentColor"
+                    />
+                </svg>
             </div>
         </header>
     );
