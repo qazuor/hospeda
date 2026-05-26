@@ -102,8 +102,10 @@ export type Actor = {
      * uploaded avatar, guests, and system actors don't have one. Exposed in
      * `/auth/me` so the web navbar avatar stays in sync without a separate
      * fetch (SPEC-113 follow-up; same rationale as {@link Actor.name}).
+     * Nullable to match the `users.image` column (typed `string | null` via the
+     * schema's `.nullish()`), so a full `User` row is assignable to an `Actor`.
      */
-    image?: string;
+    image?: string | null;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
 };
