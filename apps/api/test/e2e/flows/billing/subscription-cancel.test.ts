@@ -1,10 +1,13 @@
 /**
  * Subscription cancellation (SPEC-143 T-143-27).
  *
- * Hybrid coverage. Three tests target the admin cancel handler at
- * `apps/api/src/routes/billing/admin/subscription-cancel.ts` (real
- * production code, two-phase pattern), plus one contract test against
- * qzpay-core's soft-cancel branch documenting it for future use.
+ * Hybrid coverage. Three tests target the admin cancel flow served by the
+ * qzpay-hono admin tier plus Hospeda's lifecycle hooks in
+ * `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts` (the former
+ * `subscription-cancel.ts` route handler was deleted; its side effects —
+ * addon revocation, audit event, double-cancel guard — now live in those
+ * hooks), plus one contract test against qzpay-core's soft-cancel branch
+ * documenting it for future use.
  *
  * Discovery context. The spec note for T-143-27 described a user-facing
  * soft cancel ("Active → cancel → access continues until current_period_end").
@@ -40,8 +43,10 @@
  *      `SubscriptionStatusEnum.CANCELLED` for its OWN audit insert; qzpay
  *      overwrites the live status to 'canceled' US afterwards).
  *   3. Idempotency guard. Calling cancel on an already-cancelled
- *      subscription returns 400 `SUBSCRIPTION_ALREADY_CANCELLED` and does
- *      not write a second audit event.
+ *      subscription returns 422 (qzpay-hono before-hook abort status) and
+ *      does not write a second audit event. The guard lives in
+ *      `onBeforeSubscriptionCancel` (qzpay-admin-hooks.ts) which queries
+ *      the live DB row and returns { ok: false } for status 'canceled'/'cancelled'.
  *   4. Soft-cancel contract (documentation). Calling
  *      `billing.subscriptions.cancel(id, { cancelAtPeriodEnd: true })`
  *      directly leaves status='active', stamps `canceledAt`, and the
@@ -83,6 +88,7 @@ import {
     clearEntitlementCache,
     entitlementMiddleware
 } from '../../../../src/middlewares/entitlement.js';
+import { mountQZPayAdminTier } from '../../../../src/routes/billing/admin/index.js';
 import { createMockAdminActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
 import {
@@ -115,6 +121,14 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
     beforeAll(async () => {
         await testDb.setup();
         resetBillingInstance();
+        // Mount the qzpay admin tier (subscriptions/cancel, force-cancel,
+        // change-plan, payments/refund, invoices) BEFORE initApp(), exactly
+        // like production (index.ts mounts it, then builds the app). Hono
+        // snapshots a sub-router's routes at `app.route()` time, so the mount
+        // must happen before initApp() routes adminBillingRoutes — otherwise
+        // the qzpay routes are invisible and every call 404s. The DB is ready
+        // here, so getQZPayBilling() inside the mount resolves lazily.
+        mountQZPayAdminTier();
         app = initApp();
     });
 
@@ -210,45 +224,47 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
     }
 
     it('admin cancel happy path — flips status to canceled, stamps canceledAt, drops entitlements', async () => {
-        // ACT: admin POST. No body (reason optional).
+        // ACT: admin POST with { immediate: true } so qzpay-hono calls
+        // billing.subscriptions.cancel(id, { cancelAtPeriodEnd: false }).
+        // Without `immediate: true`, cancelAtPeriodEnd defaults to true and
+        // qzpay-core does NOT flip the status — it only stamps canceledAt
+        // (soft-cancel path, tested separately below).
         const response = await adminClient.post(
             `/api/v1/admin/billing/subscriptions/${subscriptionId}/cancel`,
-            {}
+            { immediate: true }
         );
 
-        // ASSERT: response envelope. The handler returns a plain object
-        // that the createAdminRoute factory wraps as
-        // { success: true, data: { ... } } via ResponseFactory. The
-        // factory's `createCRUDRoute` defaults POST status to 201
-        // (route-factory.ts:392) — applied to all admin POST routes
-        // unless overridden via `successStatusCode: 200`. Cancel is
-        // arguably more of an update than a create, but 201 is the
-        // current contract.
-        expect(response.status).toBe(201);
+        // ASSERT: cancel is served by the qzpay-hono admin tier
+        // (createAdminRoutes), NOT hospeda's createAdminRoute factory, so it
+        // returns 200 OK for the cancel action — not the factory's POST-default
+        // 201. Cancel is an action on an existing subscription, so 200 is the
+        // correct contract.
+        expect(response.status).toBe(200);
         const body = (await response.json()) as {
             readonly success: boolean;
+            // qzpay-hono cancel route returns { success: true, data: QZPaySubscriptionWithHelpers }
+            // which is the raw subscription object returned by billing.subscriptions.cancel().
+            // QZPaySubscriptionWithHelpers extends QZPaySubscription whose identity field is
+            // `id` (not `subscriptionId`). Gap 4 fix: original test asserted `data.subscriptionId`
+            // which does not exist on the qzpay response — corrected to `data.id`.
+            // There is no `canceledAddons` field; addon revocation is a before-hook side effect
+            // and qzpay-hono does not surface it in the response.
             readonly data: {
-                readonly subscriptionId: string;
-                readonly canceledAddons: ReadonlyArray<{
-                    readonly purchaseId: string;
-                    readonly addonSlug: string;
-                }>;
+                readonly id: string;
+                readonly status: string;
+                readonly customerId: string;
             };
         };
         expect(body.success).toBe(true);
-        expect(body.data.subscriptionId).toBe(subscriptionId);
-        // No active addon purchases were seeded, so the revocation
-        // summary is empty. Phase 1 of the admin handler skips cleanly.
-        expect(body.data.canceledAddons).toEqual([]);
+        expect(body.data.id).toBe(subscriptionId);
 
-        // ASSERT: DB row. Two writes happen in sequence:
-        //   1. Phase 2 transaction sets status to 'cancelled' (UK)
-        //      via SubscriptionStatusEnum.CANCELLED (admin handler:413).
-        //   2. AFTER the transaction commits, billing.subscriptions.cancel
-        //      is invoked with cancelAtPeriodEnd:false, which causes
-        //      qzpay-core to overwrite the status to 'canceled' (US,
-        //      qzpay-core/billing.ts:1380) and stamp canceledAt.
-        // Net DB observable: status='canceled' (US), canceledAt set.
+        // ASSERT: DB row. The qzpay-hono cancel route calls
+        // billing.subscriptions.cancel(id, { cancelAtPeriodEnd: false })
+        // which causes qzpay-core to set status='canceled' (US spelling,
+        // qzpay-core/billing.ts:1382) and stamp canceledAt. The
+        // onAfterSubscriptionCancel hook then writes the audit event with
+        // newStatus='cancelled' (UK, SubscriptionStatusEnum.CANCELLED).
+        // Net DB observable on billing_subscriptions: status='canceled' (US), canceledAt set.
         const rows = await testDb
             .getDb()
             .select()
@@ -260,9 +276,10 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
         const canceledAtMs = (row?.canceledAt as Date).getTime();
         expect(Math.abs(canceledAtMs - Date.now())).toBeLessThan(TWO_SECONDS_MS);
 
-        // ASSERT: entitlement cache was cleared (admin handler:505) and
-        // the next entitlement load drops the now-canceled sub, falling
-        // back to the tourist-free baseline (SPEC-143 T-143-58).
+        // ASSERT: entitlement cache was cleared by onAfterSubscriptionCancel
+        // (qzpay-admin-hooks.ts) and the next entitlement load drops the
+        // now-canceled sub, falling back to the tourist-free baseline
+        // (SPEC-143 T-143-58).
         clearEntitlementCache(customerId);
         const probeRes = await buildProbeApp().request('/probe');
         const probeBody = (await probeRes.json()) as {
@@ -285,7 +302,7 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
             `/api/v1/admin/billing/subscriptions/${subscriptionId}/cancel`,
             { reason }
         );
-        expect(response.status).toBe(201);
+        expect(response.status).toBe(200);
 
         // ASSERT: audit event written inside the Phase 2 transaction
         // (admin handler:424-433). previousStatus comes from the
@@ -314,12 +331,15 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
     });
 
     it('admin cancel on an already-cancelled subscription returns 400 and writes no second audit event', async () => {
-        // ARRANGE: cancel once.
+        // ARRANGE: cancel once with { immediate: true } so qzpay-core flips the
+        // live DB status to 'canceled' (US). Without immediate:true, the status
+        // stays 'active' (soft-cancel path) and the double-cancel guard would
+        // not trigger on the second call.
         const firstRes = await adminClient.post(
             `/api/v1/admin/billing/subscriptions/${subscriptionId}/cancel`,
-            {}
+            { immediate: true }
         );
-        expect(firstRes.status).toBe(201);
+        expect(firstRes.status).toBe(200);
 
         const eventCountAfterFirst = (
             await testDb
@@ -334,38 +354,22 @@ describe('SPEC-143 T-143-27 — subscription cancel', () => {
         // row still lands). Snapshot the count for the delta check.
         expect(eventCountAfterFirst).toBeGreaterThanOrEqual(1);
 
-        // ACT: second cancel attempt. The handler's guard 2
-        // (admin handler:149-162) checks if status === CANCELLED before
-        // running the phases.
-        //
-        // The first cancel landed the DB row in status='canceled' (US,
-        // qzpay-core final write). The guard compares against
-        // SubscriptionStatusEnum.CANCELLED which is 'cancelled' (UK).
-        // The strings differ, so the guard does NOT short-circuit, and
-        // the handler proceeds — but the FOR UPDATE race-condition
-        // guard (admin handler:374) reads the same 'canceled' value
-        // and also does not match the UK enum, so we proceed into
-        // Phase 2 again. The second cancel writes a second audit row,
-        // qzpay-core's cancel is idempotent (re-sets canceledAt), and
-        // we get 200.
-        //
-        // This documents a cross-layer spelling bug: the admin handler
-        // assumes the live status is 'cancelled' (UK) after its own
-        // transaction commits, but qzpay-core overwrites to 'canceled'
-        // (US). The guard therefore never fires post-first-cancel.
-        // Tracked under SPEC-147 / engram gotcha_qzpay_canceled_spelling.
+        // ACT: second cancel attempt. The onBeforeSubscriptionCancel hook
+        // (Gap 3 fix) now queries the live DB row BEFORE any side effects and
+        // returns { ok: false, reason: 'Subscription is already cancelled.' }
+        // when the status is 'canceled' or 'cancelled'. qzpay-hono translates
+        // an { ok: false } before-hook result into HTTP 422 with body
+        // { success: false, error: { message: reason } } and never calls
+        // billing.subscriptions.cancel() — so no second audit event is written.
         const secondRes = await adminClient.post(
             `/api/v1/admin/billing/subscriptions/${subscriptionId}/cancel`,
             {}
         );
 
-        // ASSERT: with the spelling bug, the second call also returns
-        // 200 (the guard does not short-circuit). When SPEC-147 fixes
-        // the spelling normalization, this assertion flips to 400 +
-        // SUBSCRIPTION_ALREADY_CANCELLED. Documenting the CURRENT
-        // behaviour here so the next session sees the regression
-        // signal once the fix lands.
-        expect([201, 400]).toContain(secondRes.status);
+        // ASSERT: the before-hook aborts with 422 (the qzpay-hono abort status
+        // for a { ok: false } before-hook result, as documented in the hooks
+        // file header and admin.routes.ts:497).
+        expect(secondRes.status).toBe(422);
 
         // Regardless of the guard outcome, the sub stays canceled.
         const row = (

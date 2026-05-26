@@ -24,7 +24,12 @@
  */
 
 import type { QZPayAdminLifecycleHooks } from '@qazuor/qzpay-hono';
-import { billingAddonPurchases, billingSubscriptionEvents, getDb } from '@repo/db';
+import {
+    billingAddonPurchases,
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    getDb
+} from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -80,16 +85,30 @@ interface AddonRevocationSummary {
 // ---------------------------------------------------------------------------
 
 /**
- * Before-cancel hook: revoke linked Hospeda addon entitlements/limits and
- * record a compensating event before qzpay-hono cancels the subscription in
- * the DB + payment provider.
+ * Context key for stashing the subscription's pre-cancel status between the
+ * before- and after-cancel hooks (Gap 1: audit previousStatus) and the cancel
+ * reason supplied by the admin (Gap 2: audit metadata.reason). The Hono
+ * Context is the only channel shared across both hook invocations for the same
+ * request. We use a loose cast to write/read an untyped key rather than
+ * extending QZPayHonoEnv.Variables, keeping the footprint minimal.
+ */
+const CTX_CANCEL_PREVIOUS_STATUS = '__hospeda_cancel_previousStatus__';
+const CTX_CANCEL_REASON = '__hospeda_cancel_reason__';
+
+/**
+ * Before-cancel hook: guard against double-cancel, capture the pre-cancel
+ * subscription status + admin reason into ctx for the after-hook, revoke
+ * linked Hospeda addon entitlements/limits, and record a compensating event
+ * before qzpay-hono cancels the subscription in the DB + payment provider.
  *
- * Aborts with `{ ok: false, reason }` when any addon revocation fails so the
- * cancel itself never commits.
+ * Aborts with `{ ok: false, reason }` (HTTP 422) when:
+ *   - The subscription is already cancelled (Gap 3: idempotency guard).
+ *   - The billing service is unavailable.
+ *   - Any addon revocation fails.
  */
 const onBeforeSubscriptionCancel: NonNullable<
     QZPayAdminLifecycleHooks['onBeforeSubscriptionCancel']
-> = async ({ subscriptionId, ctx }) => {
+> = async ({ subscriptionId, reason, ctx }) => {
     const actor = getActorFromContext(ctx);
     const adminUserId = actor.id;
 
@@ -100,6 +119,39 @@ const onBeforeSubscriptionCancel: NonNullable<
     }
 
     const db = getDb();
+
+    // Gap 3: idempotency guard — reject double-cancel before any side effects.
+    // qzpay-core's cancel is idempotent (returns 200 again), but we must reject
+    // the second attempt ourselves so we don't write a second audit event or
+    // re-run addon revocation on an already-cancelled subscription.
+    // We query the live DB row rather than using billing.subscriptions.get() so
+    // the check is authoritative and avoids any in-memory cache.
+    // NOTE: qzpay-core final-writes status as 'canceled' (US spelling), not
+    // 'cancelled' (UK) — match against both spellings defensively.
+    const existingRows = await db
+        .select({ status: billingSubscriptions.status })
+        .from(billingSubscriptions)
+        .where(eq(billingSubscriptions.id, subscriptionId));
+    const currentStatus = existingRows[0]?.status ?? null;
+
+    if (currentStatus === 'canceled' || currentStatus === 'cancelled') {
+        apiLogger.warn(
+            { subscriptionId, currentStatus },
+            'Admin cancel hook: subscription already cancelled — aborting'
+        );
+        return { ok: false, reason: 'Subscription is already cancelled.' };
+    }
+
+    // Gap 1: stash the pre-cancel status so the after-hook can record it as
+    // previousStatus in the audit event. currentStatus may be null if the row
+    // was not found (unlikely — qzpay will error next), but store it anyway.
+    (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_PREVIOUS_STATUS] = currentStatus;
+
+    // Gap 2: stash the admin-supplied reason so the after-hook can include it
+    // in the audit metadata. The reason is passed by qzpay-hono from the
+    // request body string, so it may be undefined when omitted.
+    (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_REASON] =
+        typeof reason === 'string' ? reason : undefined;
 
     // Resolve customer + active purchases for the subscription.
     const purchases: ActiveAddonPurchase[] = await db
@@ -247,15 +299,23 @@ const onAfterSubscriptionCancel: NonNullable<
             )
         );
 
+    // Gap 1: recover the pre-cancel status stashed by onBeforeSubscriptionCancel.
+    const previousStatus = (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_PREVIOUS_STATUS];
+
+    // Gap 2: recover the admin-supplied reason stashed by onBeforeSubscriptionCancel.
+    const cancelReason = (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_REASON];
+
     // Audit log entry — keeps the lifecycle event trail in sync with the
     // admin actor that triggered the cancellation.
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        previousStatus: typeof previousStatus === 'string' ? previousStatus : null,
         newStatus: SubscriptionStatusEnum.CANCELLED,
         triggerSource: 'admin-cancel',
         metadata: {
             adminUserId,
-            immediate
+            immediate,
+            ...(typeof cancelReason === 'string' ? { reason: cancelReason } : {})
         }
     });
 
