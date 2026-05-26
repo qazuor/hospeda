@@ -126,7 +126,7 @@ export function InvoiceDetailDialog({
 
                 <div className="grid gap-6">
                     {/* Header Section */}
-                    <div className="grid gap-4 rounded-md border p-4 md:grid-cols-2">
+                    <div className="grid gap-4 rounded-md border bg-card p-4 md:grid-cols-2">
                         <div>
                             <p className="mb-2 font-semibold text-sm">
                                 {t('admin-billing.invoices.dialog.client')}
@@ -158,7 +158,7 @@ export function InvoiceDetailDialog({
                         <h3 className="mb-3 font-semibold text-sm">
                             {t('admin-billing.invoices.dialog.lineItemsTitle')}
                         </h3>
-                        <div className="overflow-x-auto rounded-md border">
+                        <div className="overflow-x-auto rounded-md border bg-card">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted">
                                     <tr>

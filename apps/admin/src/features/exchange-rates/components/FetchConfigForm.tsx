@@ -119,7 +119,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
 
     if (!config) {
         return (
-            <div className="rounded-lg border p-6 text-center">
+            <div className="rounded-lg border bg-card p-6 text-center">
                 <p className="text-muted-foreground">
                     {t('admin-billing.exchangeRates.fetchConfig.loading')}
                 </p>
@@ -139,7 +139,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
             className="space-y-8"
         >
             {/* Default Rate Type */}
-            <div className="rounded-lg border p-6">
+            <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                     {t('admin-billing.exchangeRates.fetchConfig.sections.defaultRateType')}
                 </h3>
@@ -192,7 +192,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
             </div>
 
             {/* Fetch Intervals */}
-            <div className="rounded-lg border p-6">
+            <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                     {t('admin-billing.exchangeRates.fetchConfig.sections.fetchIntervals')}
                 </h3>
@@ -252,7 +252,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
             </div>
 
             {/* Disclaimer Settings */}
-            <div className="rounded-lg border p-6">
+            <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                     {t('admin-billing.exchangeRates.fetchConfig.sections.disclaimer')}
                 </h3>
@@ -313,7 +313,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
             </div>
 
             {/* Auto Fetch Setting */}
-            <div className="rounded-lg border p-6">
+            <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                     {t('admin-billing.exchangeRates.fetchConfig.sections.autoFetch')}
                 </h3>

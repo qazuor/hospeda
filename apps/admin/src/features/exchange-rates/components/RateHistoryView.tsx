@@ -99,7 +99,7 @@ export function RateHistoryView() {
     return (
         <div className="space-y-6">
             {/* Filters */}
-            <div className="rounded-lg border p-6">
+            <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                     {t('admin-billing.exchangeRates.historyView.filtersTitle')}
                 </h3>
@@ -249,7 +249,7 @@ export function RateHistoryView() {
             </div>
 
             {/* History Table */}
-            <div className="rounded-lg border">
+            <div className="rounded-lg border bg-card">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="border-b bg-muted/50">

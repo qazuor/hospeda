@@ -163,7 +163,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                             )}
 
                             {/* ignoreSoftCap toggle */}
-                            <div className="flex items-center justify-between rounded-md border border-border p-3">
+                            <div className="flex items-center justify-between rounded-md border border-border bg-card p-3">
                                 <div>
                                     <p className="font-medium text-sm">
                                         {t('admin-newsletter.campaigns.ignoreSoftCap')}

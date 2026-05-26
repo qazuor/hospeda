@@ -7,4 +7,4 @@
  * Padding is intentionally left out so each component sets its own.
  */
 export const EMPTY_SURFACE_CLASS =
-    'flex flex-col items-center justify-center rounded-lg border border-primary/25 border-dashed text-center';
+    'flex flex-col items-center justify-center rounded-lg border border-primary/25 border-dashed bg-card text-center';
