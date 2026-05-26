@@ -206,7 +206,7 @@ export function SubscriptionDetailsDialog({
                                                     'admin-billing.subscriptions.detailsDialog.discountLabel'
                                                 )}
                                             </span>
-                                            <span className="text-green-600 text-sm dark:text-green-400">
+                                            <span className="text-sm text-success">
                                                 {subscription.discountPercent}%
                                             </span>
                                         </div>

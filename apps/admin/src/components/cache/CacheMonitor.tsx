@@ -107,9 +107,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
     );
 
     const getHealthColor = (score: number) => {
-        if (score >= 80) return 'text-green-600 dark:text-green-400';
-        if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
-        return 'text-red-600 dark:text-red-400';
+        if (score >= 80) return 'text-success';
+        if (score >= 60) return 'text-warning';
+        return 'text-destructive';
     };
 
     // Removed unused formatBytes function
@@ -184,7 +184,7 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                                 <p className="font-medium text-muted-foreground text-sm">
                                     {t('admin-pages.cacheMonitor.cacheSize')}
                                 </p>
-                                <p className="font-bold text-2xl text-blue-600 dark:text-blue-400">
+                                <p className="font-bold text-2xl text-info">
                                     {cacheStats.estimatedSizeMB.toFixed(1)}MB
                                 </p>
                             </div>
@@ -213,10 +213,10 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                                     className={cn(
                                         'font-bold text-2xl',
                                         cacheStats.memoryPressure > 0.8
-                                            ? 'text-red-600 dark:text-red-400'
+                                            ? 'text-destructive'
                                             : cacheStats.memoryPressure > 0.6
-                                              ? 'text-yellow-600 dark:text-yellow-400'
-                                              : 'text-green-600 dark:text-green-400'
+                                              ? 'text-warning'
+                                              : 'text-success'
                                     )}
                                 >
                                     {(cacheStats.memoryPressure * 100).toFixed(0)}%
@@ -227,10 +227,10 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                                     className={cn(
                                         'h-full rounded-full transition-all',
                                         cacheStats.memoryPressure > 0.8
-                                            ? 'bg-red-500 dark:bg-red-400'
+                                            ? 'bg-destructive'
                                             : cacheStats.memoryPressure > 0.6
-                                              ? 'bg-yellow-500 dark:bg-yellow-400'
-                                              : 'bg-green-500 dark:bg-green-400'
+                                              ? 'bg-warning'
+                                              : 'bg-success'
                                     )}
                                     style={{
                                         width: `${Math.min(100, cacheStats.memoryPressure * 100)}%`

@@ -86,19 +86,19 @@ function AccommodationCreatePage() {
                                 <Card>
                                     <CardContent className="py-8">
                                         <div className="mx-auto max-w-md space-y-4 text-center">
-                                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+                                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
                                                 <Icon
                                                     name="alertTriangle"
-                                                    className="h-8 w-8 text-amber-600 dark:text-amber-400"
+                                                    className="h-8 w-8 text-warning"
                                                 />
                                             </div>
                                             <div>
-                                                <h3 className="font-semibold text-amber-900 text-lg dark:text-amber-100">
+                                                <h3 className="font-semibold text-foreground text-lg">
                                                     {t(
                                                         'admin-entities.limits.accommodationLimitReached'
                                                     )}
                                                 </h3>
-                                                <p className="mt-2 text-amber-800 text-sm dark:text-amber-200">
+                                                <p className="mt-2 text-muted-foreground text-sm">
                                                     {t(
                                                         'admin-entities.limits.accommodationLimitDesc'
                                                     )}

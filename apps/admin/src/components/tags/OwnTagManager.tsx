@@ -119,7 +119,7 @@ export function OwnTagManager() {
                             isAtQuota
                                 ? 'bg-destructive'
                                 : quotaPercent >= 80
-                                  ? 'bg-amber-500'
+                                  ? 'bg-warning'
                                   : 'bg-primary'
                         }`}
                         style={{ width: `${quotaPercent}%` }}

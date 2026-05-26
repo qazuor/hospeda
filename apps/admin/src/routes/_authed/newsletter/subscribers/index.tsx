@@ -33,11 +33,11 @@ export const Route = createFileRoute('/_authed/newsletter/subscribers/')({
 });
 
 const STATUS_BADGE: Readonly<Record<NewsletterSubscriberStatusEnum, string>> = {
-    [NewsletterSubscriberStatusEnum.ACTIVE]: 'bg-green-100 text-green-800',
-    [NewsletterSubscriberStatusEnum.PENDING_VERIFICATION]: 'bg-yellow-100 text-yellow-800',
+    [NewsletterSubscriberStatusEnum.ACTIVE]: 'bg-success/15 text-success',
+    [NewsletterSubscriberStatusEnum.PENDING_VERIFICATION]: 'bg-warning/15 text-warning',
     [NewsletterSubscriberStatusEnum.UNSUBSCRIBED]: 'bg-gray-100 text-gray-700',
-    [NewsletterSubscriberStatusEnum.BOUNCED]: 'bg-red-100 text-red-800',
-    [NewsletterSubscriberStatusEnum.COMPLAINED]: 'bg-red-100 text-red-800'
+    [NewsletterSubscriberStatusEnum.BOUNCED]: 'bg-destructive/15 text-destructive',
+    [NewsletterSubscriberStatusEnum.COMPLAINED]: 'bg-destructive/15 text-destructive'
 };
 
 const STATUS_LABEL: Readonly<Record<NewsletterSubscriberStatusEnum, string>> = {

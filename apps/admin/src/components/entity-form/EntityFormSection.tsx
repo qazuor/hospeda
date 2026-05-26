@@ -439,13 +439,13 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             entitlementKey={field.entitlementKey}
                             fallback={
                                 <div className="space-y-2">
-                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
-                                        <p className="font-medium text-amber-900 text-sm dark:text-amber-100">
+                                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
+                                        <p className="font-medium text-foreground text-sm">
                                             {t('admin-entities.entitlementGate.fieldPremium', {
                                                 field: field.label || field.id
                                             })}
                                         </p>
-                                        <p className="text-amber-800 text-xs dark:text-amber-200">
+                                        <p className="text-muted-foreground text-xs">
                                             {t(
                                                 'admin-entities.entitlementGate.fieldPremiumDescription'
                                             )}
@@ -467,13 +467,13 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             limitKey={field.limitKey}
                             fallback={
                                 <div className="space-y-2">
-                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
-                                        <p className="font-medium text-amber-900 text-sm dark:text-amber-100">
+                                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
+                                        <p className="font-medium text-foreground text-sm">
                                             {t('admin-entities.limitGate.fieldLimitReached', {
                                                 field: field.label || field.id
                                             })}
                                         </p>
-                                        <p className="text-amber-800 text-xs dark:text-amber-200">
+                                        <p className="text-muted-foreground text-xs">
                                             {t('admin-entities.limitGate.description')}
                                         </p>
                                     </div>

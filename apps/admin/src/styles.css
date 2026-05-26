@@ -26,6 +26,26 @@
 }
 
 /*
+ * Gauge / usage-level scale — a dedicated 4-step ramp (low → medium → high →
+ * critical) for meters and progress bars, intentionally NOT the semantic
+ * feedback tokens (success/warning/destructive). `low`/`high`/`critical`
+ * mirror success/warning/danger hues; `medium` is the yellow step that the
+ * 3-token feedback set lacks. Theme-aware (light base + dark override).
+ */
+[data-app="admin"] {
+    --gauge-low: oklch(0.46 0.131 150);
+    --gauge-medium: oklch(0.62 0.15 100);
+    --gauge-high: oklch(0.588 0.158 85);
+    --gauge-critical: oklch(0.458 0.214 27.325);
+}
+[data-app="admin"][data-theme="dark"] {
+    --gauge-low: oklch(0.58 0.15 150);
+    --gauge-medium: oklch(0.78 0.16 100);
+    --gauge-high: oklch(0.75 0.18 85);
+    --gauge-critical: oklch(0.577 0.245 27.325);
+}
+
+/*
  * Dark mode is driven by the [data-theme="dark"] attribute (set on <html>,
  * matching the web app + the [data-app="admin"][data-theme="dark"] scope in
  * @repo/design-tokens), NOT the legacy `.dark` class. Tailwind `dark:`
@@ -100,6 +120,15 @@ code {
     --color-warning-foreground: var(--palette-neutral-50);
     --color-info: var(--color-info);
     --color-info-foreground: var(--palette-neutral-50);
+
+    /* Gauge / usage-level scale (meters, progress bars) — a DEDICATED 4-step
+       scale, separate from the semantic feedback tokens, so a mid reading is
+       not forced to share a color with "high". Backed by the theme-aware
+       --gauge-* vars defined near the top of this file. */
+    --color-gauge-low: var(--gauge-low);
+    --color-gauge-medium: var(--gauge-medium);
+    --color-gauge-high: var(--gauge-high);
+    --color-gauge-critical: var(--gauge-critical);
 
     /* Lines + focus ring (river-tinted) */
     --color-border: var(--color-border);

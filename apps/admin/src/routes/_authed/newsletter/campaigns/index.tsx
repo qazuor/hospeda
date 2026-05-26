@@ -32,9 +32,9 @@ export const Route = createFileRoute('/_authed/newsletter/campaigns/')({
 
 /** Tailwind colour classes per lifecycle status. */
 const STATUS_BADGE: Readonly<Record<NewsletterCampaignStatusEnum, string>> = {
-    [NewsletterCampaignStatusEnum.DRAFT]: 'bg-yellow-100 text-yellow-800',
-    [NewsletterCampaignStatusEnum.SENDING]: 'bg-blue-100 text-blue-800',
-    [NewsletterCampaignStatusEnum.SENT]: 'bg-green-100 text-green-800',
+    [NewsletterCampaignStatusEnum.DRAFT]: 'bg-warning/15 text-warning',
+    [NewsletterCampaignStatusEnum.SENDING]: 'bg-info/15 text-info',
+    [NewsletterCampaignStatusEnum.SENT]: 'bg-success/15 text-success',
     [NewsletterCampaignStatusEnum.CANCELLED]: 'bg-gray-100 text-gray-600'
 };
 

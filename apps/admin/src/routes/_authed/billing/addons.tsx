@@ -371,8 +371,8 @@ function BillingAddonsPage() {
                             onClick={handleConfirmAction}
                             className={
                                 confirmAction?.type === 'expire'
-                                    ? 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600'
-                                    : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                                    ? 'bg-warning hover:bg-warning/90'
+                                    : 'bg-success hover:bg-success/90'
                             }
                         >
                             {confirmAction?.type === 'expire'

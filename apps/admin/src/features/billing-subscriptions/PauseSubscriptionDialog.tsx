@@ -80,7 +80,7 @@ export function PauseSubscriptionDialog({
                     </div>
 
                     {suspendService && (
-                        <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+                        <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
                             <p className="text-sm">
                                 {t('admin-billing.subscriptions.pauseDialog.fullWarning')}
                             </p>

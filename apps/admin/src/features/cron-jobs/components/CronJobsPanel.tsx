@@ -74,11 +74,11 @@ export function CronJobsPanel() {
                                 <p className="text-muted-foreground text-sm">
                                     {t('admin-billing.cron.stats.activeJobs')}
                                 </p>
-                                <p className="mt-1 font-bold text-2xl text-green-600 dark:text-green-400">
+                                <p className="mt-1 font-bold text-2xl text-success">
                                     {data.enabledJobs}
                                 </p>
                             </div>
-                            <ActivityIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+                            <ActivityIcon className="h-8 w-8 text-success" />
                         </div>
                     </CardContent>
                 </Card>
@@ -90,11 +90,11 @@ export function CronJobsPanel() {
                                 <p className="text-muted-foreground text-sm">
                                     {t('admin-billing.cron.stats.disabledJobs')}
                                 </p>
-                                <p className="mt-1 font-bold text-2xl text-orange-600 dark:text-orange-400">
+                                <p className="mt-1 font-bold text-2xl text-warning">
                                     {data.totalJobs - data.enabledJobs}
                                 </p>
                             </div>
-                            <AlertCircleIcon className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                            <AlertCircleIcon className="h-8 w-8 text-warning" />
                         </div>
                     </CardContent>
                 </Card>
