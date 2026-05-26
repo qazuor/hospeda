@@ -20,8 +20,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
- * Updated 2026-05-18 to 197: net +2 vs the previous 195 (SPEC-140 PostHog).
- * Both new vars come from the Sentry staging-vs-prod environment separation:
+ * Updated 2026-05-26 to 198: net +1 vs the previous 197. The new var is a
+ * SPEC-143 billing kill-switch (`HOSPEDA_ADDON_LIFECYCLE_ENABLED` /
+ * `HOSPEDA_BILLING_POLLING_ENABLED`), bumping the billing category from 8 to 9.
+ * Previous 197 (2026-05-18) was net +2 vs 195 (SPEC-140 PostHog), from the
+ * Sentry staging-vs-prod environment separation:
  *  - `PUBLIC_SENTRY_ENVIRONMENT` in CLIENT_WEB_ENV_VARS
  *  - `VITE_SENTRY_ENVIRONMENT` in CLIENT_ADMIN_ENV_VARS
  * Previous value 195 (2026-05-17) covered SPEC-140 (PostHog Cloud), which also
@@ -29,7 +32,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * (2026-05-15) covered SPEC-109. When adding or removing variables, bump this
  * constant in the same commit and regenerate the snapshot below (`vitest -u`).
  */
-const EXPECTED_VAR_COUNT = 197;
+const EXPECTED_VAR_COUNT = 198;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
