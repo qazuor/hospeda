@@ -64,7 +64,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
-import { billingSubscriptions, eq } from '@repo/db';
+import { billingSubscriptionEvents, billingSubscriptions, eq, users } from '@repo/db';
 import { Hono } from 'hono';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -73,6 +73,10 @@ import {
     clearEntitlementCache,
     entitlementMiddleware
 } from '../../../../src/middlewares/entitlement.js';
+import {
+    handleSelfServePause,
+    handleSelfServeResume
+} from '../../../../src/routes/billing/subscription-pause.js';
 import {
     createTestBillingCustomer,
     createTestSubscription
@@ -92,6 +96,7 @@ describe('SPEC-143 trial pause/resume e2e', () => {
     let customerId: string;
     let cheapPlanId: string;
     let subscriptionId: string;
+    let ownerUserId: string;
 
     beforeAll(async () => {
         await testDb.setup();
@@ -112,6 +117,7 @@ describe('SPEC-143 trial pause/resume e2e', () => {
         const user = await createTestUser({
             email: `subscription-pause-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
         });
+        ownerUserId = user.id;
         const customer = await createTestBillingCustomer({
             externalId: user.id,
             email: user.email
@@ -350,6 +356,97 @@ describe('SPEC-143 trial pause/resume e2e', () => {
             expect(postBody.entitlements).toContain('public:read');
             expect(postBody.limits.ads_per_month).toBe(5);
             expect(postBody.billingLoadFailed).toBe(false);
+        });
+    });
+    describe('SPEC-143 #29 — self-serve route handlers', () => {
+        /**
+         * Minimal Hono context stub carrying the three values the self-serve
+         * handlers read: billingEnabled, billingCustomerId, and the actor
+         * (getActorFromContext reads `c.get('actor')`). No HTTP layer needed —
+         * the handlers are plain async functions.
+         */
+        function makeSelfServeCtx() {
+            const store: Record<string, unknown> = {
+                billingEnabled: true,
+                billingCustomerId: customerId,
+                actor: { id: ownerUserId }
+            };
+            return {
+                get: (key: string) => store[key],
+                req: { json: async () => ({}) }
+            } as unknown as Parameters<typeof handleSelfServePause>[0];
+        }
+
+        it('self-serve pause flips status to paused, suspends the owner, and audits host-pause', async () => {
+            const result = await handleSelfServePause(makeSelfServeCtx());
+
+            expect(result).toMatchObject({
+                success: true,
+                subscriptionId,
+                status: 'paused'
+            });
+
+            const subRow = (
+                await testDb
+                    .getDb()
+                    .select({ status: billingSubscriptions.status })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, subscriptionId))
+            )[0];
+            expect(subRow?.status).toBe('paused');
+
+            const userRow = (
+                await testDb
+                    .getDb()
+                    .select({ serviceSuspended: users.serviceSuspended })
+                    .from(users)
+                    .where(eq(users.id, ownerUserId))
+            )[0];
+            expect(userRow?.serviceSuspended).toBe(true);
+
+            const events = await testDb
+                .getDb()
+                .select({ triggerSource: billingSubscriptionEvents.triggerSource })
+                .from(billingSubscriptionEvents)
+                .where(eq(billingSubscriptionEvents.subscriptionId, subscriptionId));
+            expect(events.some((e) => e.triggerSource === 'host-pause')).toBe(true);
+        });
+
+        it('self-serve resume flips status to active and clears the owner suspension', async () => {
+            await handleSelfServePause(makeSelfServeCtx());
+
+            const result = await handleSelfServeResume(makeSelfServeCtx());
+
+            expect(result).toMatchObject({
+                success: true,
+                subscriptionId,
+                status: 'active'
+            });
+
+            const subRow = (
+                await testDb
+                    .getDb()
+                    .select({ status: billingSubscriptions.status })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, subscriptionId))
+            )[0];
+            expect(subRow?.status).toBe('active');
+
+            const userRow = (
+                await testDb
+                    .getDb()
+                    .select({ serviceSuspended: users.serviceSuspended })
+                    .from(users)
+                    .where(eq(users.id, ownerUserId))
+            )[0];
+            expect(userRow?.serviceSuspended).toBe(false);
+
+            const events = await testDb
+                .getDb()
+                .select({ triggerSource: billingSubscriptionEvents.triggerSource })
+                .from(billingSubscriptionEvents)
+                .where(eq(billingSubscriptionEvents.subscriptionId, subscriptionId));
+            expect(events.some((e) => e.triggerSource === 'host-resume')).toBe(true);
         });
     });
 }); // close parent describe('SPEC-143 trial pause/resume e2e')

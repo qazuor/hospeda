@@ -38,6 +38,7 @@ import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
+import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
@@ -203,6 +204,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
 
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
+
+    // Mount self-serve pause/resume routes (SPEC-143 #29). Same `/subscriptions`
+    // prefix; Hono routes by exact path so /me/pause + /me/resume do not collide
+    // with plan-change, status, or start-paid.
+    router.route('/subscriptions', subscriptionPauseRouter);
 
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
