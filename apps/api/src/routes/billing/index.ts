@@ -32,6 +32,7 @@ import { billingOwnershipMiddleware } from '../../middlewares/billing-ownership.
 import { pastDueGraceMiddleware } from '../../middlewares/past-due-grace.middleware';
 import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
+import { isGuestActor } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
@@ -57,7 +58,12 @@ const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
     const user = c.get('user');
     const actor = c.get('actor');
 
-    if (!user?.id && !actor?.id) {
+    // A real session sets `user`; the actor abstraction sets `actor`. A GUEST
+    // actor still carries a (sentinel) id, so checking `actor?.id` alone lets
+    // unauthenticated requests through — guard against the guest explicitly.
+    const authenticated = Boolean(user?.id) || (Boolean(actor?.id) && !isGuestActor(actor));
+
+    if (!authenticated) {
         throw new HTTPException(401, {
             message: 'Authentication required for billing operations'
         });
