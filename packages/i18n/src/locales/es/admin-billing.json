@@ -994,7 +994,9 @@
             "entitlementsMore": "más...",
             "changePlanButton": "Cambiar plan",
             "extendTrialButton": "Extender prueba",
-            "cancelSubscriptionButton": "Cancelar suscripción"
+            "cancelSubscriptionButton": "Cancelar suscripción",
+            "pauseButton": "Pausar",
+            "resumeButton": "Reanudar"
         },
         "paymentHistory": {
             "title": "Historial de pagos",
@@ -1053,6 +1055,22 @@
             "newEnd": "Nuevo fin:",
             "confirmButton": "Extender prueba"
         },
+        "pauseDialog": {
+            "title": "Pausar suscripción",
+            "description": "Confirma la pausa de la suscripción de",
+            "scopeLabel": "Alcance de la pausa",
+            "scopeFull": "Pausa completa (facturación + ocultar publicaciones)",
+            "scopeBillingOnly": "Solo facturación (las publicaciones siguen visibles)",
+            "fullWarning": "La pausa completa oculta las publicaciones del propietario del sitio público y bloquea su edición hasta reanudar.",
+            "backButton": "Volver",
+            "confirmButton": "Confirmar pausa"
+        },
+        "resumeDialog": {
+            "title": "Reanudar suscripción",
+            "description": "Confirma la reanudación de la suscripción de",
+            "backButton": "Volver",
+            "confirmButton": "Confirmar reanudación"
+        },
         "toasts": {
             "cancelledImmediate": "Suscripción cancelada inmediatamente",
             "cancelledScheduled": "Suscripción programada para cancelación",
@@ -1061,7 +1079,11 @@
             "planChangeError": "Error al cambiar plan:",
             "trialExtended": "Periodo de prueba extendido por",
             "trialExtendedDays": "dia(s)",
-            "trialExtendError": "Error al extender prueba:"
+            "trialExtendError": "Error al extender prueba:",
+            "paused": "Suscripción pausada",
+            "resumed": "Suscripción reanudada",
+            "pauseError": "Error al pausar suscripción:",
+            "resumeError": "Error al reanudar suscripción:"
         }
     },
     "exchangeRates": {

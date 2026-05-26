@@ -994,7 +994,9 @@
             "entitlementsMore": "mais...",
             "changePlanButton": "Mudar plano",
             "extendTrialButton": "Estender teste",
-            "cancelSubscriptionButton": "Cancelar assinatura"
+            "cancelSubscriptionButton": "Cancelar assinatura",
+            "pauseButton": "Pausar",
+            "resumeButton": "Retomar"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1053,6 +1055,22 @@
             "newEnd": "Novo fim:",
             "confirmButton": "Estender teste"
         },
+        "pauseDialog": {
+            "title": "Pausar assinatura",
+            "description": "Confirme a pausa da assinatura de",
+            "scopeLabel": "Escopo da pausa",
+            "scopeFull": "Pausa completa (faturamento + ocultar anúncios)",
+            "scopeBillingOnly": "Apenas faturamento (os anúncios continuam visíveis)",
+            "fullWarning": "A pausa completa oculta os anúncios do proprietário do site público e bloqueia a edição até retomar.",
+            "backButton": "Voltar",
+            "confirmButton": "Confirmar pausa"
+        },
+        "resumeDialog": {
+            "title": "Retomar assinatura",
+            "description": "Confirme a retomada da assinatura de",
+            "backButton": "Voltar",
+            "confirmButton": "Confirmar retomada"
+        },
         "toasts": {
             "cancelledImmediate": "Assinatura cancelada imediatamente",
             "cancelledScheduled": "Assinatura agendada para cancelamento",
@@ -1061,7 +1079,11 @@
             "planChangeError": "Erro ao mudar plano:",
             "trialExtended": "Período de teste estendido por",
             "trialExtendedDays": "dia(s)",
-            "trialExtendError": "Erro ao estender teste:"
+            "trialExtendError": "Erro ao estender teste:",
+            "paused": "Assinatura pausada",
+            "resumed": "Assinatura retomada",
+            "pauseError": "Erro ao pausar assinatura:",
+            "resumeError": "Erro ao retomar assinatura:"
         }
     },
     "exchangeRates": {

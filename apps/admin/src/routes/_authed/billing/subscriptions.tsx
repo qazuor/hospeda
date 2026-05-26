@@ -4,6 +4,8 @@ import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
+import { PauseSubscriptionDialog } from '@/features/billing-subscriptions/PauseSubscriptionDialog';
+import { ResumeSubscriptionDialog } from '@/features/billing-subscriptions/ResumeSubscriptionDialog';
 import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/SubscriptionDetailsDialog';
 import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
 import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
@@ -11,6 +13,8 @@ import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
     useExtendTrialMutation,
+    usePauseSubscriptionMutation,
+    useResumeSubscriptionMutation,
     useSubscriptionsQuery
 } from '@/features/billing-subscriptions/hooks';
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
@@ -43,6 +47,8 @@ function BillingSubscriptionsPage() {
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
     const [extendTrialDialogOpen, setExtendTrialDialogOpen] = useState(false);
+    const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+    const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
 
     // Data fetching
     const {
@@ -77,6 +83,8 @@ function BillingSubscriptionsPage() {
     const cancelMutation = useCancelSubscriptionMutation();
     const changePlanMutation = useChangePlanMutation();
     const extendTrialMutation = useExtendTrialMutation();
+    const pauseMutation = usePauseSubscriptionMutation();
+    const resumeMutation = useResumeSubscriptionMutation();
 
     // Handlers: navigation between dialogs
     const handleViewDetails = (subscription: Subscription) => {
@@ -99,6 +107,18 @@ function BillingSubscriptionsPage() {
     const handleExtendTrialClick = (subscription: Subscription) => {
         setSelectedSubscription(subscription);
         setExtendTrialDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
+
+    const handlePauseClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setPauseDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
+
+    const handleResumeClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setResumeDialogOpen(true);
         setDetailsDialogOpen(false);
     };
 
@@ -193,6 +213,54 @@ function BillingSubscriptionsPage() {
         );
     };
 
+    const handleConfirmPause = (suspendService: boolean) => {
+        if (!selectedSubscription) return;
+
+        pauseMutation.mutate(
+            { id: selectedSubscription.id, suspendService },
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: t('admin-billing.subscriptions.toasts.paused'),
+                        variant: 'success'
+                    });
+                    setPauseDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.pauseError')} ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
+    };
+
+    const handleConfirmResume = () => {
+        if (!selectedSubscription) return;
+
+        resumeMutation.mutate(
+            { id: selectedSubscription.id },
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: t('admin-billing.subscriptions.toasts.resumed'),
+                        variant: 'success'
+                    });
+                    setResumeDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.resumeError')} ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
+    };
+
     return (
         <SidebarPageLayout>
             <div className="space-y-6">
@@ -231,6 +299,8 @@ function BillingSubscriptionsPage() {
                 onCancel={handleCancelClick}
                 onChangePlan={handleChangePlanClick}
                 onExtendTrial={handleExtendTrialClick}
+                onPause={handlePauseClick}
+                onResume={handleResumeClick}
             />
 
             {selectedSubscription && (
@@ -255,6 +325,20 @@ function BillingSubscriptionsPage() {
                         onClose={() => setExtendTrialDialogOpen(false)}
                         onConfirm={handleConfirmExtendTrial}
                         isPending={extendTrialMutation.isPending}
+                    />
+
+                    <PauseSubscriptionDialog
+                        subscription={selectedSubscription}
+                        isOpen={pauseDialogOpen}
+                        onClose={() => setPauseDialogOpen(false)}
+                        onConfirm={handleConfirmPause}
+                    />
+
+                    <ResumeSubscriptionDialog
+                        subscription={selectedSubscription}
+                        isOpen={resumeDialogOpen}
+                        onClose={() => setResumeDialogOpen(false)}
+                        onConfirm={handleConfirmResume}
                     />
                 </>
             )}

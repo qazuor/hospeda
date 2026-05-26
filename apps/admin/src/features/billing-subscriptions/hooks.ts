@@ -148,6 +148,68 @@ export const useCancelSubscriptionMutation = () => {
 };
 
 /**
+ * Pause a subscription via the admin tier endpoint (SPEC-143 #29).
+ *
+ * `suspendService: true` (the default on the backend) is a "full" pause: it
+ * stops billing AND hides/edit-locks the owner's accommodations. `false` is a
+ * billing-only hold that leaves the listings live and editable.
+ */
+async function pauseSubscription(payload: { id: string; suspendService?: boolean }) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/billing/subscriptions/${payload.id}/pause`,
+        method: 'POST',
+        body: { suspendService: payload.suspendService ?? true }
+    });
+    return result.data.data;
+}
+
+/**
+ * Resume a paused subscription via the admin tier endpoint (SPEC-143 #29).
+ * Always clears any service suspension applied by the pause.
+ */
+async function resumeSubscription(payload: { id: string }) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/billing/subscriptions/${payload.id}/resume`,
+        method: 'POST'
+    });
+    return result.data.data;
+}
+
+/**
+ * Hook to pause a subscription. Pass `suspendService: false` for a billing-only
+ * hold; the default is a full pause (billing + service suspension).
+ */
+export const usePauseSubscriptionMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: { id: string; suspendService?: boolean }) =>
+            pauseSubscription(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: subscriptionQueryKeys.subscriptions.lists()
+            });
+        }
+    });
+};
+
+/**
+ * Hook to resume a paused subscription.
+ */
+export const useResumeSubscriptionMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: { id: string }) => resumeSubscription(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: subscriptionQueryKeys.subscriptions.lists()
+            });
+        }
+    });
+};
+
+/**
  * Hook to change subscription plan
  */
 export const useChangePlanMutation = () => {
