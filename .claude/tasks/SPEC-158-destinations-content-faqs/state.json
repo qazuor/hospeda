@@ -276,97 +276,97 @@
             "id": "T-009",
             "title": "Implement DestinationService.addFaq",
             "description": "Add addFaq(actor, { destinationId, faq }) to DestinationService in @repo/service-core, mirroring AccommodationService.addFaq. Insert via destinationFaq model. Permission check via PermissionEnum only. Return Result<T>. Acceptance: typechecks, returns created faq.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-010", "T-011", "T-012", "T-017"],
             "subtasks": [
                 {
                     "title": "Wire destinationFaq model into service",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement addFaq with PermissionEnum check",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Return Result<T>",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "phase-core", "REQ-9"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Implement DestinationService.getFaqs",
             "description": "Add getFaqs(actor, { destinationId }) to DestinationService returning the list of FAQs for a destination (ordered deterministically; empty array when none). Acceptance: typechecks, returns ordered list.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012", "T-017"],
             "subtasks": [
                 {
                     "title": "Implement getFaqs list query",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Deterministic ordering + empty handling",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "phase-core", "REQ-9"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Unit tests for addFaq/getFaqs",
             "description": "Add service-core unit tests: addFaq success, not-found destination, permission denied; getFaqs returns ordered list and empty array. Mirror accommodation faq service tests. Acceptance: all pass, >=90% coverage on new service code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "addFaq success + not-found + permission tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getFaqs list + empty tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "phase-core", "testing", "REQ-9"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 35,
+        "pending": 32,
         "inProgress": 1,
-        "completed": 7,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.6
     }
