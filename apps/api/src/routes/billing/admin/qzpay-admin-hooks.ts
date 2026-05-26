@@ -33,7 +33,30 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import {
+    resolveOwnerUserId,
+    setOwnerServiceSuspension
+} from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
+
+/**
+ * Reads the `suspendService` flag from the admin pause request body.
+ *
+ * Admin pause supports two modes (SPEC-143 #29): `suspendService: true` hides
+ * the owner's listings and locks edits (same as a host self-pause), while
+ * `false` is a billing-only hold that leaves the listings live. Defaults to
+ * `true` (the safer, more common case) when the body omits the flag.
+ */
+async function readSuspendServiceFlag(ctx: {
+    req: { json: () => Promise<unknown> };
+}): Promise<boolean> {
+    try {
+        const body = (await ctx.req.json()) as { suspendService?: unknown };
+        return body?.suspendService !== false;
+    } catch {
+        return true;
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -366,6 +389,152 @@ const onAfterInvoiceVoid: NonNullable<QZPayAdminLifecycleHooks['onAfterInvoiceVo
     );
 };
 
+/**
+ * Before-pause hook: validate the subscription can be paused.
+ *
+ * MercadoPago only accepts pausing an active preapproval. We guard here so a
+ * pause on a non-active subscription is rejected with 422 BEFORE qzpay flips
+ * the local status (otherwise, under providerSyncErrorStrategy=log, the local
+ * row could diverge from MP).
+ */
+const onBeforeSubscriptionPause: NonNullable<
+    QZPayAdminLifecycleHooks['onBeforeSubscriptionPause']
+> = async ({ subscriptionId }) => {
+    const billing = getQZPayBilling();
+    if (!billing) {
+        return { ok: false, reason: 'Billing service is not configured.' };
+    }
+
+    const subscription = await billing.subscriptions.get(subscriptionId);
+    if (!subscription) {
+        return { ok: false, reason: 'Subscription not found.' };
+    }
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+        return {
+            ok: false,
+            reason: `Only an active subscription can be paused (current status: ${subscription.status}).`
+        };
+    }
+    return { ok: true };
+};
+
+/**
+ * After-pause hook: apply the service-suspension side effect when the admin
+ * requested it (`suspendService: true`, the default). Hides the owner's
+ * accommodations from public reads and locks them from edits. Billing-only
+ * pauses (`suspendService: false`) leave the listings untouched.
+ */
+const onAfterSubscriptionPause: NonNullable<
+    QZPayAdminLifecycleHooks['onAfterSubscriptionPause']
+> = async ({ subscription, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const suspendService = await readSuspendServiceFlag(ctx);
+    const db = getDb();
+
+    let accommodationsUpdated = 0;
+    if (suspendService) {
+        const userId = await resolveOwnerUserId({ customerId: subscription.customerId });
+        if (userId) {
+            const result = await setOwnerServiceSuspension({ userId, suspended: true, db });
+            accommodationsUpdated = result.accommodationsUpdated;
+        } else {
+            apiLogger.warn(
+                { subscriptionId: subscription.id, customerId: subscription.customerId },
+                'Admin pause hook: could not resolve owner user id, service suspension skipped'
+            );
+        }
+    }
+
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: subscription.id,
+        newStatus: SubscriptionStatusEnum.PAUSED,
+        triggerSource: 'admin-pause',
+        metadata: {
+            adminUserId: actor.id,
+            suspendService,
+            accommodationsUpdated
+        }
+    });
+
+    clearEntitlementCache(subscription.customerId);
+
+    apiLogger.info(
+        {
+            subscriptionId: subscription.id,
+            customerId: subscription.customerId,
+            adminUserId: actor.id,
+            suspendService,
+            accommodationsUpdated
+        },
+        'Admin pause hook: post-pause side effects applied'
+    );
+};
+
+/**
+ * Before-resume hook: validate the subscription is currently paused.
+ */
+const onBeforeSubscriptionResume: NonNullable<
+    QZPayAdminLifecycleHooks['onBeforeSubscriptionResume']
+> = async ({ subscriptionId }) => {
+    const billing = getQZPayBilling();
+    if (!billing) {
+        return { ok: false, reason: 'Billing service is not configured.' };
+    }
+
+    const subscription = await billing.subscriptions.get(subscriptionId);
+    if (!subscription) {
+        return { ok: false, reason: 'Subscription not found.' };
+    }
+    if (subscription.status !== 'paused') {
+        return {
+            ok: false,
+            reason: `Only a paused subscription can be resumed (current status: ${subscription.status}).`
+        };
+    }
+    return { ok: true };
+};
+
+/**
+ * After-resume hook: always clear the service-suspension flags (no-op when the
+ * pause was billing-only) so the owner's listings come back exactly as they
+ * were, and audit-log the resume.
+ */
+const onAfterSubscriptionResume: NonNullable<
+    QZPayAdminLifecycleHooks['onAfterSubscriptionResume']
+> = async ({ subscription, ctx }) => {
+    const actor = getActorFromContext(ctx);
+    const db = getDb();
+
+    let accommodationsUpdated = 0;
+    const userId = await resolveOwnerUserId({ customerId: subscription.customerId });
+    if (userId) {
+        const result = await setOwnerServiceSuspension({ userId, suspended: false, db });
+        accommodationsUpdated = result.accommodationsUpdated;
+    }
+
+    await db.insert(billingSubscriptionEvents).values({
+        subscriptionId: subscription.id,
+        newStatus: SubscriptionStatusEnum.ACTIVE,
+        triggerSource: 'admin-resume',
+        metadata: {
+            adminUserId: actor.id,
+            accommodationsUpdated
+        }
+    });
+
+    clearEntitlementCache(subscription.customerId);
+
+    apiLogger.info(
+        {
+            subscriptionId: subscription.id,
+            customerId: subscription.customerId,
+            adminUserId: actor.id,
+            accommodationsUpdated
+        },
+        'Admin resume hook: post-resume side effects applied'
+    );
+};
+
 // ---------------------------------------------------------------------------
 // Public hooks bundle
 // ---------------------------------------------------------------------------
@@ -378,6 +547,10 @@ const onAfterInvoiceVoid: NonNullable<QZPayAdminLifecycleHooks['onAfterInvoiceVo
 export const adminBillingHooks: QZPayAdminLifecycleHooks = {
     onBeforeSubscriptionCancel,
     onAfterSubscriptionCancel,
+    onBeforeSubscriptionPause,
+    onAfterSubscriptionPause,
+    onBeforeSubscriptionResume,
+    onAfterSubscriptionResume,
     onAfterSubscriptionChangePlan,
     onAfterSubscriptionTrialExtended,
     onAfterPaymentRefund,

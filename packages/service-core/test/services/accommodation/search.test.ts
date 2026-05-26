@@ -87,7 +87,8 @@ describe('AccommodationService.search', () => {
             pageSize: 2,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false
+            excludeRestricted: false,
+            excludeOwnerSuspended: false
         });
     });
 
@@ -175,7 +176,8 @@ describe('AccommodationService.search', () => {
             pageSize: 10,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false
+            excludeRestricted: false,
+            excludeOwnerSuspended: false
         });
     });
 });

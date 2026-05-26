@@ -130,6 +130,23 @@ describe('Accommodation Permissions', () => {
             'Permission denied to update accommodation'
         );
     });
+    it('checkCanUpdate blocks the owner editing a service-suspended accommodation', () => {
+        const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+        expectForbidden(
+            () =>
+                checkCanUpdate(
+                    createActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], mockUserId),
+                    suspended
+                ),
+            'while the owner subscription is paused'
+        );
+    });
+    it('checkCanUpdate lets UPDATE_ANY staff edit a service-suspended accommodation', () => {
+        const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+        expect(() =>
+            checkCanUpdate(createActor([PermissionEnum.ACCOMMODATION_UPDATE_ANY]), suspended)
+        ).not.toThrow();
+    });
 
     it('checkCanSoftDelete allows with ANY permission', () => {
         expect(() =>
@@ -243,6 +260,43 @@ describe('Accommodation Permissions', () => {
             () => checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.PRIVATE)),
             'Permission denied to view accommodation'
         );
+    });
+
+    it('checkCanView hides a service-suspended owner accommodation as NOT_FOUND for the public', () => {
+        const suspended = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        try {
+            checkCanView(createActor([], 'someone-else'), suspended);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('checkCanView lets the owner view their own service-suspended accommodation', () => {
+        const suspended = {
+            ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        expect(() => checkCanView(createActor([], mockUserId), suspended)).not.toThrow();
+    });
+
+    it('checkCanView lets ACCOMMODATION_VIEW_ALL view a service-suspended accommodation', () => {
+        const suspended = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            ownerSuspended: true
+        };
+        expect(() =>
+            checkCanView(
+                createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id'),
+                suspended
+            )
+        ).not.toThrow();
     });
 
     it('checkCanList always allows', () => {

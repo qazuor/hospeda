@@ -15,7 +15,14 @@ import {
 } from '@/features/billing-subscriptions/hooks';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
-import { CalendarIcon, CreditCardIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
+import {
+    CalendarIcon,
+    CreditCardIcon,
+    LoaderIcon,
+    PlayIcon,
+    PowerOffIcon,
+    XCircleIcon
+} from '@repo/icons';
 import { useState } from 'react';
 import type { PaymentHistory, Subscription, SubscriptionStatus } from './types';
 import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
@@ -30,6 +37,8 @@ export interface SubscriptionDetailsDialogProps {
     readonly onCancel: (sub: Subscription) => void;
     readonly onChangePlan: (sub: Subscription) => void;
     readonly onExtendTrial: (sub: Subscription) => void;
+    readonly onPause: (sub: Subscription) => void;
+    readonly onResume: (sub: Subscription) => void;
 }
 
 /**
@@ -43,7 +52,9 @@ export function SubscriptionDetailsDialog({
     onClose,
     onCancel,
     onChangePlan,
-    onExtendTrial
+    onExtendTrial,
+    onPause,
+    onResume
 }: SubscriptionDetailsDialogProps) {
     const { t, locale } = useTranslations();
     const [activeTab, setActiveTab] = useState('detalles');
@@ -355,6 +366,29 @@ export function SubscriptionDetailsDialog({
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {t(
                                             'admin-billing.subscriptions.detailsDialog.extendTrialButton'
+                                        )}
+                                    </Button>
+                                )}
+                                {(subscription.status === 'active' ||
+                                    subscription.status === 'trialing') && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onPause(subscription)}
+                                    >
+                                        <PowerOffIcon className="mr-2 h-4 w-4" />
+                                        {t('admin-billing.subscriptions.detailsDialog.pauseButton')}
+                                    </Button>
+                                )}
+                                {subscription.status === 'paused' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onResume(subscription)}
+                                    >
+                                        <PlayIcon className="mr-2 h-4 w-4" />
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.resumeButton'
                                         )}
                                     </Button>
                                 )}

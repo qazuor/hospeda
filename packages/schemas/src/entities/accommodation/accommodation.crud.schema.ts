@@ -29,7 +29,9 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
+    ownerSuspended: true
 }).extend({
     slug: z
         .string()
@@ -65,7 +67,9 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
+    ownerSuspended: true
 }).partial();
 
 // Type: Update Input

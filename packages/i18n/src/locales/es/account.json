@@ -379,6 +379,21 @@
             "cancelButton": "Cancelar suscripción",
             "viewPlans": "Ver planes",
             "upgradeLink": "Mejorar plan",
+            "pauseButton": "Pausar suscripción",
+            "pauseAriaLabel": "Pausar suscripción",
+            "resumeButton": "Reanudar suscripción",
+            "pauseSuccess": "Suscripción pausada.",
+            "pauseError": "No se pudo pausar la suscripción.",
+            "resumeSuccess": "Suscripción reanudada.",
+            "resumeError": "No se pudo reanudar la suscripción.",
+            "status": {
+                "paused": "Pausada"
+            },
+            "pauseModal": {
+                "title": "Pausar suscripción",
+                "body": "Al pausar, dejás de pagar y tus alojamientos se ocultan del sitio y no podrás editarlos hasta reanudar. Toda tu configuración se conserva y vuelve igual al reanudar.",
+                "confirm": "Pausar"
+            },
             "cancelModal": {
                 "title": "¿Cancelar suscripción?",
                 "confirm": "Sí, cancelar suscripción"

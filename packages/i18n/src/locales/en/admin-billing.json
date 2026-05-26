@@ -995,7 +995,9 @@
             "entitlementsMore": "more...",
             "changePlanButton": "Change plan",
             "extendTrialButton": "Extend trial",
-            "cancelSubscriptionButton": "Cancel subscription"
+            "cancelSubscriptionButton": "Cancel subscription",
+            "pauseButton": "Pause",
+            "resumeButton": "Resume"
         },
         "paymentHistory": {
             "title": "Payment History",
@@ -1054,6 +1056,22 @@
             "newEnd": "New end:",
             "confirmButton": "Extend trial"
         },
+        "pauseDialog": {
+            "title": "Pause subscription",
+            "description": "Confirm pausing the subscription for",
+            "scopeLabel": "Pause scope",
+            "scopeFull": "Full pause (billing + hide listings)",
+            "scopeBillingOnly": "Billing only (listings stay live)",
+            "fullWarning": "A full pause hides the owner's listings from the public site and locks them from editing until resumed.",
+            "backButton": "Back",
+            "confirmButton": "Confirm pause"
+        },
+        "resumeDialog": {
+            "title": "Resume subscription",
+            "description": "Confirm resuming the subscription for",
+            "backButton": "Back",
+            "confirmButton": "Confirm resume"
+        },
         "toasts": {
             "cancelledImmediate": "Subscription cancelled immediately",
             "cancelledScheduled": "Subscription scheduled for cancellation",
@@ -1062,7 +1080,11 @@
             "planChangeError": "Error changing plan:",
             "trialExtended": "Trial period extended by",
             "trialExtendedDays": "day(s)",
-            "trialExtendError": "Error extending trial:"
+            "trialExtendError": "Error extending trial:",
+            "paused": "Subscription paused",
+            "resumed": "Subscription resumed",
+            "pauseError": "Error pausing subscription:",
+            "resumeError": "Error resuming subscription:"
         }
     },
     "exchangeRates": {

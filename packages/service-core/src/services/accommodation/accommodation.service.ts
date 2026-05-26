@@ -516,8 +516,21 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeCreate(
         data: AccommodationCreateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<Accommodation>> {
+        // SPEC-143 #29: a service-suspended owner is "not selling", so they
+        // cannot create new accommodations while the subscription is paused.
+        // No exemption — this guards the owner target itself, not the caller.
+        if (data.ownerId) {
+            const owner = await this._userModel.findById(data.ownerId, ctx?.tx);
+            if (owner?.serviceSuspended) {
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Cannot create an accommodation while the owner subscription is paused'
+                );
+            }
+        }
+
         await this._assertDestinationIsCity(data.destinationId);
 
         // Only generate a slug if one is not already provided
@@ -1321,13 +1334,19 @@ export class AccommodationService extends BaseCrudService<
         // before reaching this hook (SPEC-088) and re-publishes them via
         // ctx.pagination. Forward them explicitly so the model uses the
         // caller-provided pageSize instead of falling back to its default of 10.
+        // An owner listing their OWN accommodations (ownerId === self) still
+        // sees their service-suspended listings; for everyone else (non-VIP)
+        // suspended listings are hidden. Admins / VIP see all. (SPEC-143 #29)
+        const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
+
         return this.model.searchWithRelations({
             ...params,
             page: ctx.pagination?.page ?? 1,
             pageSize: ctx.pagination?.pageSize ?? 10,
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
-            excludeRestricted: !hasVipAccess
+            excludeRestricted: !hasVipAccess,
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1347,9 +1366,13 @@ export class AccommodationService extends BaseCrudService<
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
+        // Mirror _executeSearch so count and search agree on what is visible.
+        const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
+
         return this.model.countByFilters({
             ...params,
-            excludeRestricted: !hasVipAccess
+            excludeRestricted: !hasVipAccess,
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1402,11 +1425,15 @@ export class AccommodationService extends BaseCrudService<
                 // (anyAmenityGroups, capacity/bedroom/bathroom ranges, minRating,
                 // sorts) — spreading processedParams guarantees new optional
                 // filters added to the schema reach the model automatically.
+                const isOwnScope =
+                    !!processedParams.ownerId && processedParams.ownerId === validatedActor.id;
+
                 const modelParams = {
                     ...processedParams,
                     page,
                     pageSize,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1464,7 +1491,8 @@ export class AccommodationService extends BaseCrudService<
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    excludeOwnerSuspended: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -1654,7 +1682,8 @@ export class AccommodationService extends BaseCrudService<
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    excludeOwnerSuspended: !hasVipAccess
                 });
 
                 const accommodations =

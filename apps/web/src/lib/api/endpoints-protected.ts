@@ -448,6 +448,45 @@ export const billingApi = {
     },
 
     /**
+     * Pause the authenticated user's own subscription (SPEC-143 #29).
+     *
+     * A host self-pause is always "full": it stops billing AND hides/edit-locks
+     * the owner's accommodations until resume. No body — it targets the caller's
+     * own active subscription.
+     */
+    pauseSubscription(): Promise<
+        ApiResult<{
+            readonly success: boolean;
+            readonly subscriptionId: string;
+            readonly status: string;
+            readonly accommodationsUpdated: number;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/me/pause`,
+            body: {}
+        });
+    },
+
+    /**
+     * Resume the authenticated user's own paused subscription (SPEC-143 #29).
+     * Restarts billing and restores the owner's accommodations.
+     */
+    resumeSubscription(): Promise<
+        ApiResult<{
+            readonly success: boolean;
+            readonly subscriptionId: string;
+            readonly status: string;
+            readonly accommodationsUpdated: number;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/me/resume`,
+            body: {}
+        });
+    },
+
+    /**
      * Reactivate a cancelled or expired subscription.
      *
      * @param params - Plan ID to reactivate with

@@ -16,7 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { ArrowRightIcon, CancelIcon, DownloadIcon } from '@repo/icons';
+import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './SubscriptionDashboard.module.css';
 
@@ -35,7 +35,14 @@ const ADMIN_ROLES = new Set([
 ]);
 
 /** Subscription status label map keys */
-type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
+type SubscriptionStatus =
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'expired'
+    | 'past_due'
+    | 'pending'
+    | 'paused';
 
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
@@ -75,6 +82,8 @@ function getBadgeClass(status: SubscriptionStatus): string {
             return styles.badgePastDue ?? '';
         case 'pending':
             return styles.badgePending ?? '';
+        case 'paused':
+            return styles.badgePaused ?? '';
         default:
             return styles.badgePending ?? '';
     }
@@ -276,6 +285,93 @@ function CancelConfirmModal({
     );
 }
 
+/**
+ * Pause confirmation modal (SPEC-143 #29).
+ *
+ * A host self-pause is always "full": billing stops AND the owner's
+ * accommodations are hidden from the public site + locked from editing until
+ * resume. The modal spells that out before calling the self-serve pause.
+ */
+function PauseConfirmModal({
+    locale,
+    isPausing,
+    onConfirm,
+    onDismiss
+}: {
+    readonly locale: SupportedLocale;
+    readonly isPausing: boolean;
+    readonly onConfirm: () => void;
+    readonly onDismiss: () => void;
+}) {
+    const { t } = createTranslations(locale);
+
+    function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+        if (e.target === e.currentTarget) {
+            onDismiss();
+        }
+    }
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') {
+                onDismiss();
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onDismiss]);
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
+        <div
+            className={styles.modalBackdrop}
+            onClick={handleBackdropClick}
+        >
+            <dialog
+                className={styles.modal}
+                open
+                aria-labelledby="pause-modal-title"
+            >
+                <h2
+                    id="pause-modal-title"
+                    className={styles.modalTitle}
+                >
+                    {t('account.pages.subscription.pauseModal.title', 'Pausar suscripción')}
+                </h2>
+                <p className={styles.modalBody}>
+                    {t(
+                        'account.pages.subscription.pauseModal.body',
+                        'Al pausar, dejás de pagar y tus alojamientos se ocultan del sitio y no podrás editarlos hasta reanudar. Toda tu configuración se conserva y vuelve igual al reanudar.'
+                    )}
+                </p>
+                <div className={styles.modalActions}>
+                    <button
+                        type="button"
+                        className={styles.btnSecondary}
+                        onClick={onDismiss}
+                        disabled={isPausing}
+                    >
+                        {t('common.cancel', 'Cancelar')}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.btnDanger}
+                        onClick={onConfirm}
+                        disabled={isPausing}
+                        aria-busy={isPausing}
+                    >
+                        {isPausing
+                            ? t('common.loading', 'Cargando...')
+                            : t('account.pages.subscription.pauseModal.confirm', 'Pausar')}
+                    </button>
+                </div>
+            </dialog>
+        </div>
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -302,6 +398,8 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showPauseModal, setShowPauseModal] = useState(false);
+    const [isPausing, setIsPausing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const isAdminRole = ADMIN_ROLES.has(user.role);
@@ -385,6 +483,55 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
         }
     }
 
+    async function handlePause() {
+        setIsPausing(true);
+        try {
+            const result = await billingApi.pauseSubscription();
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.pauseError',
+                        'No se pudo pausar la suscripción.'
+                    )
+                });
+                return;
+            }
+            setShowPauseModal(false);
+            addToast({
+                type: 'success',
+                message: t('account.pages.subscription.pauseSuccess', 'Suscripción pausada.')
+            });
+            await fetchData();
+        } finally {
+            setIsPausing(false);
+        }
+    }
+
+    async function handleResume() {
+        setIsPausing(true);
+        try {
+            const result = await billingApi.resumeSubscription();
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.resumeError',
+                        'No se pudo reanudar la suscripción.'
+                    )
+                });
+                return;
+            }
+            addToast({
+                type: 'success',
+                message: t('account.pages.subscription.resumeSuccess', 'Suscripción reanudada.')
+            });
+            await fetchData();
+        } finally {
+            setIsPausing(false);
+        }
+    }
+
     // ── Render guards ──────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -435,6 +582,8 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     }
 
     const canCancel = status === 'active' || status === 'trial';
+    const canPause = status === 'active' || status === 'trial';
+    const canResume = status === 'paused';
 
     // ── JSX ────────────────────────────────────────────────────────────────
 
@@ -524,6 +673,51 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                               )}
                     </button>
 
+                    {/* Pause subscription (active/trial) */}
+                    {canPause && (
+                        <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            onClick={() => {
+                                setShowPauseModal(true);
+                            }}
+                            aria-label={t(
+                                'account.pages.subscription.pauseAriaLabel',
+                                'Pausar suscripción'
+                            )}
+                        >
+                            <PowerOffIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.pauseButton', 'Pausar suscripción')}
+                        </button>
+                    )}
+
+                    {/* Resume subscription (paused) */}
+                    {canResume && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleResume()}
+                            disabled={isPausing}
+                            aria-busy={isPausing}
+                        >
+                            <PlayIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isPausing
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.resumeButton',
+                                      'Reanudar suscripción'
+                                  )}
+                        </button>
+                    )}
+
                     {/* Cancel subscription (only when cancellable) */}
                     {canCancel && (
                         <button
@@ -569,6 +763,18 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                     locale={locale}
                     onDismiss={() => {
                         setShowCancelModal(false);
+                    }}
+                />
+            )}
+
+            {/* ── Pause confirmation modal (SPEC-143 #29) ── */}
+            {showPauseModal && (
+                <PauseConfirmModal
+                    locale={locale}
+                    isPausing={isPausing}
+                    onConfirm={() => void handlePause()}
+                    onDismiss={() => {
+                        if (!isPausing) setShowPauseModal(false);
                     }}
                 />
             )}

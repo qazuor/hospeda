@@ -48,6 +48,16 @@ export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
         isOwner(actor, entity),
         'Permission denied to update accommodation'
     );
+
+    // SPEC-143 #29: while the owner is service-suspended (full pause) their
+    // accommodations are edit-locked. Staff holding ACCOMMODATION_UPDATE_ANY are
+    // exempt (admin management); the owner editing via UPDATE_OWN is blocked.
+    if (entity.ownerSuspended && !hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Cannot edit this accommodation while the owner subscription is paused'
+        );
+    }
 }
 
 /**
@@ -113,6 +123,19 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, entity: Accommodation): void {
+    // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
+    // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
+    // so existence is not leaked). The owner themselves and staff holding
+    // ACCOMMODATION_VIEW_ALL are exempt so they can still see the listing while
+    // the subscription is paused.
+    if (
+        entity.ownerSuspended &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
     if (
         entity.visibility === 'PUBLIC' ||
         (entity.visibility === 'PRIVATE' &&

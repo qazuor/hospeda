@@ -122,6 +122,8 @@ interface SeedAccommodationOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly accommodationId?: string;
+    readonly visibility?: string;
+    readonly ownerSuspended?: boolean;
 }
 
 /**
@@ -195,7 +197,9 @@ export async function seedAccommodation(
                 url: 'https://example.com/seed-accommodation.jpg'
             }
         },
-        lifecycleState: 'ACTIVE'
+        lifecycleState: 'ACTIVE',
+        visibility: overrides.visibility ?? 'PUBLIC',
+        ownerSuspended: overrides.ownerSuspended ?? false
     } as typeof accommodations.$inferInsert);
 
     return { userId, destinationId, accommodationId };
