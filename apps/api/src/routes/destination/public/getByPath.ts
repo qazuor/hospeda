@@ -45,7 +45,13 @@ export const publicGetDestinationByPathRoute = createPublicRoute({
             path: (query?.path ?? '') as string
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data;
+        const destination = result.data;
+        if (!destination) return null;
+        // Enrich the detail response with the destination's FAQs (SPEC-158).
+        const faqsResult = await destinationService.getFaqs(actor, {
+            destinationId: destination.id
+        });
+        return { ...destination, faqs: faqsResult.data?.faqs ?? [] };
     },
     options: {
         cacheTTL: 300,

@@ -373,42 +373,42 @@
             "id": "T-012",
             "title": "Include faqs in public destination detail routes",
             "description": "In apps/api/src/routes/destination/public/ (getByPath + getBySlug) fetch faqs in parallel via service.getFaqs and attach to the detail response, mirroring accommodation/public/getBySlug.ts. faqs: [] when none. Acceptance: typechecks, response includes faqs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-013", "T-015"],
             "subtasks": [
                 {
                     "title": "Parallel getFaqs in getByPath",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Parallel getFaqs in getBySlug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Attach faqs to detail response",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "phase-integration", "REQ-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "API integration tests for destination faqs",
-            "description": "Add apps/api integration tests for public destination detail: success includes faqs, destination without faqs returns faqs: [], nonexistent destination returns 404. Mirror accommodation get-faq test patterns (GET public only in Phase 1). Acceptance: all pass.",
-            "status": "pending",
+            "description": "Add apps/api integration tests for public destination detail: success includes faqs, destination without faqs returns faqs: [], nonexistent destination returns 404. Mirror accommodation get-faq test patterns (GET public only in Phase 1). Acceptance: all pass. [PROGRESS: test file written (detail-includes-faqs.test.ts), typechecks + lints clean. EXECUTION DEFERRED to T-041: apps/api integration suite (vitest.config.e2e.ts) requires a fully-built workspace; several deps lack dist in this fresh worktree (@repo/email missing, @repo/feedback build has a pre-existing DTS error). Same deferral bucket as T-008 runtime push. Not a SPEC-158 defect.]",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": [],
@@ -429,13 +429,13 @@
             "tags": ["api", "phase-integration", "testing", "REQ-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-26T00:00:00.000Z",
                 "completed": null
             }
         },
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 32,
-        "inProgress": 1,
-        "completed": 10,
+        "pending": 31,
+        "inProgress": 2,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.6
     }
