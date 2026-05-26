@@ -212,7 +212,10 @@ export function buildOgImagePath(input: OgImageUrlInput): string {
             params.set(key, value);
         }
     }
-    return `/api/og?${params.toString()}`;
+    // Trailing slash: the site runs `trailingSlash: 'always'`, so `/api/og`
+    // 301-redirects to `/api/og/`. Emit the slashed form directly so social
+    // scrapers that don't follow redirects still resolve the image.
+    return `/api/og/?${params.toString()}`;
 }
 
 function node(type: string, style: Record<string, unknown>, children?: unknown): SatoriNode {

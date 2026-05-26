@@ -83,6 +83,23 @@ describe('SEOHead.astro — OG card props (redesign)', () => {
     });
 });
 
+describe('SEOHead.astro — og:type article metadata', () => {
+    it('declares the article:published_time/modified_time props', () => {
+        expect(src).toContain('articlePublishedTime?:');
+        expect(src).toContain('articleModifiedTime?:');
+    });
+
+    it('emits article:published_time guarded by type === article', () => {
+        // The temporal meta is only valid on article pages; a website must not
+        // emit it. The guard keeps the tags off non-article pages.
+        expect(src).toMatch(/type === 'article'[\s\S]*?article:published_time/);
+    });
+
+    it('emits article:modified_time guarded by type === article', () => {
+        expect(src).toMatch(/type === 'article'[\s\S]*?article:modified_time/);
+    });
+});
+
 describe('SEOHead.astro — robots directive', () => {
     it('emits noindex,follow (not nofollow) so crawlers still follow links on noindexed pages', () => {
         // noindex,follow is the modern standard: the page itself stays out of

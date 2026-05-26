@@ -61,7 +61,10 @@ async function fetchAllEntities(
     path: string,
     params: Record<string, string> = {}
 ): Promise<readonly EntityItem[]> {
-    const pageSize = 200;
+    // The public list endpoints cap pageSize at 100 (Zod validation); a larger
+    // value returns HTTP 400, which breaks the fetch loop and yields an empty
+    // sitemap. Keep this <= the API max.
+    const pageSize = 100;
     const allItems: EntityItem[] = [];
     let page = 1;
     let hasMore = true;
