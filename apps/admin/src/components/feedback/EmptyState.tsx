@@ -8,8 +8,11 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
+import { ListIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
+import { EMPTY_SURFACE_CLASS } from './empty-surface';
 
 export interface EmptyStateProps {
     /** i18n key for the message */
@@ -35,11 +38,16 @@ export function EmptyState({ messageKey, message, icon, action, className }: Emp
         : (message ?? t('admin-common.emptyState.noData' as TranslationKey));
 
     return (
-        <div
-            className={`flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center ${className ?? ''}`}
-        >
-            {icon && <div className="mb-3 text-muted-foreground">{icon}</div>}
-            <p className="mb-4 text-muted-foreground text-sm">{displayMessage}</p>
+        <div className={cn(EMPTY_SURFACE_CLASS, 'p-12', className)}>
+            <div className="mb-3 text-primary">
+                {icon ?? (
+                    <ListIcon
+                        className="h-8 w-8"
+                        aria-hidden="true"
+                    />
+                )}
+            </div>
+            <p className="mb-4 font-heading text-base text-foreground">{displayMessage}</p>
             {action && <div>{action}</div>}
         </div>
     );
