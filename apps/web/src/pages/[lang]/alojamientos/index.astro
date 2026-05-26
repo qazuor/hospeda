@@ -533,7 +533,7 @@ const sortOptions = [
 // reusable ItemListJsonLd component (which wraps JsonLd) so escaping stays on
 // the single canonical JSON-LD path (SPEC-157 D-1).
 const itemListEntries = cards.map((card) => ({
-	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
+	url: new URL(buildUrl({ locale, path: `alojamientos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
 	name: card.name,
 }));
 

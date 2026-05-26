@@ -275,7 +275,7 @@ paginationParams.delete('page');
 // exposes `title` (not `name`); route through the reusable ItemListJsonLd
 // component (SPEC-157 D-1 canonical JSON-LD path).
 const itemListEntries = cards.map((card) => ({
-    url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `publicaciones/${card.slug}` })}`,
+    url: new URL(buildUrl({ locale, path: `publicaciones/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
     name: card.title,
 }));
 

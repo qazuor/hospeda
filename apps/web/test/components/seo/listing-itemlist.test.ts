@@ -43,5 +43,13 @@ describe('listings render ItemList JSON-LD via ItemListJsonLd (SPEC-157 follow-u
             // <script type="application/ld+json"> in the page would bypass it.
             expect(src).not.toContain('application/ld+json');
         });
+
+        it(`${page} builds ItemList URLs via new URL() (regression: no host//es double slash)`, () => {
+            // `${Astro.site}` carries a trailing slash and buildUrl() a leading
+            // one, so string concatenation produced `host//es/...`. new URL(path,
+            // base) normalizes the join.
+            expect(src).toMatch(/url:\s*new URL\(\s*buildUrl\(/);
+            expect(src).not.toMatch(/url:\s*`\$\{Astro\.site/);
+        });
     }
 });

@@ -196,7 +196,7 @@ const mapHref = buildUrl({ locale, path: 'destinos/mapa' });
 // JSON-LD path). Destinos has no pagination, so startPosition stays at the
 // default 1 and numberOfItems mirrors the rendered set.
 const itemListEntries = sortedCards.map((card) => ({
-	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `destinos/${card.slug}` })}`,
+	url: new URL(buildUrl({ locale, path: `destinos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
 	name: card.name,
 }));
 ---

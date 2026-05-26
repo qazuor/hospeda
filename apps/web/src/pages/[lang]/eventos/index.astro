@@ -398,7 +398,7 @@ paginationParams.delete('page');
 // ItemList JSON-LD entries — the visible page of event cards, routed through
 // the reusable ItemListJsonLd component (SPEC-157 D-1 canonical JSON-LD path).
 const itemListEntries = cards.map((card) => ({
-	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `eventos/${card.slug}` })}`,
+	url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
 	name: card.name,
 }));
 ---
