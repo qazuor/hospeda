@@ -443,97 +443,97 @@
             "id": "T-014",
             "title": "Create DestinationFaqAccordion.astro",
             "description": "Create apps/web/src/components/destination/DestinationFaqAccordion.astro mirroring accommodation/FaqAccordion.astro: native details/summary, zero JS, grouped by category. Renders nothing when no FAQs. Acceptance: component renders grouped FAQs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Mirror FaqAccordion markup (details/summary)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Group by category + empty guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "phase-integration", "REQ-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Map faqs in web transforms",
             "description": "In apps/web/src/lib/api/transforms.ts map the faqs array on the destination detail transform, mirroring the accommodation transform (~lines 563 + 683-688). Acceptance: transformed destination carries faqs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Add faqs mapping to destination transform",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Type the transformed faqs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "phase-integration", "REQ-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Wire accordion + FAQPageJsonLd + replace placeholder",
             "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro: render DestinationFaqAccordion when FAQs exist, wire the generic FAQPageJsonLd.astro (sections {heading, body} from FAQs), and replace DestinationFaqPlaceholder.astro. No JSON-LD when zero FAQs. Acceptance: page renders accordion + emits valid FAQPage JSON-LD with N questions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-015"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Render DestinationFaqAccordion conditionally",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire FAQPageJsonLd",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove DestinationFaqPlaceholder usage",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "phase-integration", "REQ-2", "REQ-3"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 31,
+        "pending": 28,
         "inProgress": 2,
-        "completed": 11,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.6
     }
