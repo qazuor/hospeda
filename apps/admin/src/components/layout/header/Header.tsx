@@ -80,9 +80,18 @@ export function Header() {
                 {/* Logo/Brand */}
                 <Link
                     to="/dashboard"
+                    aria-label="Hospeda Admin"
                     className="flex items-center gap-2 font-semibold text-sm"
                 >
-                    <span className="hidden sm:inline">
+                    <img
+                        src="/logo.webp"
+                        alt=""
+                        aria-hidden="true"
+                        width={28}
+                        height={28}
+                        className="h-7 w-7 shrink-0"
+                    />
+                    <span className="hidden font-heading text-base sm:inline">
                         {t('admin-nav.topbar.admin' as TranslationKey)}
                     </span>
                 </Link>
