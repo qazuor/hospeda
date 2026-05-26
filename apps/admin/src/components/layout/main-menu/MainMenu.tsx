@@ -155,7 +155,7 @@ export function MainMenu() {
 
     return (
         <nav
-            className="ml-6 hidden items-center gap-1 md:flex"
+            className="hidden items-center gap-1 md:flex"
             aria-label="Main navigation"
         >
             {visibleSections.map((section) => (

@@ -65,7 +65,7 @@ export function Header() {
     }, [showNotifications]);
 
     return (
-        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-40 border-primary/30 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center gap-3 px-3 md:px-4">
                 {/* Mobile menu button — opens sidebar drawer */}
                 <button
@@ -95,6 +95,12 @@ export function Header() {
                         {t('admin-nav.topbar.admin' as TranslationKey)}
                     </span>
                 </Link>
+
+                {/* Brand / nav divider — desktop only (mobile nav lives in BottomNav) */}
+                <div
+                    aria-hidden="true"
+                    className="hidden h-6 w-px bg-primary/20 md:block"
+                />
 
                 {/* Desktop Navigation — config-driven via MainMenu */}
                 <MainMenu />
