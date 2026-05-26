@@ -102,6 +102,9 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
         allowedPageSizes: [10, 20, 30, 50]
     },
 
+    // Default sort: newest first. Sent to the API and shown on the createdAt header.
+    defaultSort: { id: 'createdAt', desc: true },
+
     // Layout configuration
     layoutConfig: {
         showBreadcrumbs: true,

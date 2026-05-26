@@ -238,7 +238,7 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Parse sort from URL ("field:direction" format)
         const parsedSort: DataTableSort = useMemo(() => {
-            if (!search.sort) return [];
+            if (!search.sort) return config.defaultSort ? [config.defaultSort] : [];
             try {
                 const parts = search.sort.split(':');
                 if (parts.length === 2 && parts[0]) {
@@ -248,7 +248,7 @@ export const createEntityListPage = <TData extends { id: string }>(
             } catch {
                 return [];
             }
-        }, [search.sort]);
+        }, [search.sort, config.defaultSort]);
 
         // updateSearch must be defined before useFilterState (which stores it in callbacks)
         const updateSearch = useCallback(

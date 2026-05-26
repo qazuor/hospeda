@@ -213,6 +213,12 @@ export type EntityConfig<TData = unknown> = {
     readonly viewConfig?: ViewConfig;
     readonly paginationConfig?: PaginationConfig;
     readonly layoutConfig: LayoutConfig;
+    /**
+     * Default sort applied when the URL carries no explicit sort.
+     * It is sent to the API (so data and header agree) and rendered as the
+     * active sort indicator on the matching column header.
+     */
+    readonly defaultSort?: SortConfig;
 
     // Columns
     readonly createColumns: (t: ColumnTFunction) => readonly ColumnConfig<TData>[];
