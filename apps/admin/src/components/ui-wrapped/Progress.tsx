@@ -46,10 +46,10 @@ export const Progress: React.FC<ProgressProps> = ({
     };
 
     const variantClasses = {
-        default: 'bg-blue-500 dark:bg-blue-400',
-        success: 'bg-green-500 dark:bg-green-400',
-        warning: 'bg-amber-500 dark:bg-amber-400',
-        error: 'bg-red-500 dark:bg-red-400'
+        default: 'bg-info',
+        success: 'bg-success',
+        warning: 'bg-warning',
+        error: 'bg-destructive'
     };
 
     return (

@@ -277,8 +277,8 @@ function PermissionsPage() {
                 </div>
 
                 {/* Info note */}
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                    <p className="text-blue-900 text-sm dark:text-blue-100">
+                <div className="rounded-lg border border-info/30 bg-info/10 p-4">
+                    <p className="text-foreground text-sm">
                         <strong>{t('admin-pages.access.permissions.infoNote')}:</strong>{' '}
                         {t('admin-pages.access.permissions.infoNoteDesc')}
                     </p>

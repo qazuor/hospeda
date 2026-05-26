@@ -93,16 +93,16 @@ function EventAttendeesPage() {
                         </div>
 
                         {/* Info Card */}
-                        <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                        <div className="flex gap-3 rounded-md border border-info/30 bg-info/10 p-4">
+                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-info" />
                             <div>
-                                <p className="font-medium text-blue-900 text-sm dark:text-blue-200">
+                                <p className="font-medium text-foreground text-sm">
                                     {t('admin-pages.events.attendees.comingSoon')}
                                 </p>
-                                <p className="mt-1 text-blue-800 text-sm dark:text-blue-300">
+                                <p className="mt-1 text-muted-foreground text-sm">
                                     {t('admin-pages.events.attendees.comingSoonDesc')}
                                 </p>
-                                <ul className="mt-2 list-disc space-y-1 pl-5 text-blue-800 text-sm dark:text-blue-300">
+                                <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
                                     <li>{t('admin-pages.events.attendees.featureViewManage')}</li>
                                     <li>{t('admin-pages.events.attendees.featureCheckin')}</li>
                                     <li>{t('admin-pages.events.attendees.featureExport')}</li>

@@ -294,16 +294,14 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
 
             {/* Success message */}
             {submissionState.submitSuccess && successMessage && (
-                <div className="rounded-md border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+                <div className="rounded-md border border-success/30 bg-success/10 p-4">
                     <div className="flex">
                         <CheckIcon
-                            className="h-5 w-5 text-green-400 dark:text-green-300"
+                            className="h-5 w-5 text-success"
                             aria-label="Success"
                         />
                         <div className="ml-3">
-                            <p className="text-green-700 text-sm dark:text-green-300">
-                                {successMessage}
-                            </p>
+                            <p className="text-foreground text-sm">{successMessage}</p>
                         </div>
                     </div>
                 </div>
@@ -360,7 +358,7 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                     {validationState.hasValidated && (
                         <div className="text-muted-foreground text-sm">
                             {isValid ? (
-                                <span className="text-green-600 dark:text-green-400">
+                                <span className="text-success">
                                     ✓ {t('admin-common.validatedForm.formIsValid')}
                                 </span>
                             ) : (

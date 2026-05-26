@@ -244,9 +244,7 @@ function BillingOwnerPromotionsPage() {
                             <p className="text-muted-foreground">
                                 {t('admin-billing.ownerPromotions.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm dark:text-red-400">
-                                {error.message}
-                            </p>
+                            <p className="mt-2 text-destructive text-sm">{error.message}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -334,8 +332,8 @@ function BillingOwnerPromotionsPage() {
                     <EntitlementGate
                         entitlementKey="create-promotions"
                         fallback={
-                            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-                                <p className="font-medium text-amber-900">
+                            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                                <p className="font-medium text-foreground">
                                     {t('admin-billing.ownerPromotions.entitlementGate')}
                                 </p>
                             </div>
@@ -344,11 +342,11 @@ function BillingOwnerPromotionsPage() {
                         <LimitGate
                             limitKey="max_active_promotions"
                             fallback={
-                                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-                                    <p className="font-medium text-amber-900">
+                                <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                                    <p className="font-medium text-foreground">
                                         {t('admin-billing.ownerPromotions.limitGateTitle')}
                                     </p>
-                                    <p className="mt-1 text-amber-800 text-xs">
+                                    <p className="mt-1 text-muted-foreground text-xs">
                                         {t('admin-billing.ownerPromotions.limitGateDescription')}
                                     </p>
                                 </div>

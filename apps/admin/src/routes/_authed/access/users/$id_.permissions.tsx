@@ -154,8 +154,8 @@ function UserPermissionsPage() {
                                     {t('admin-pages.access.users.permissions.inheritedNote')}
                                 </p>
 
-                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                                    <p className="text-blue-900 text-sm dark:text-blue-100">
+                                <div className="rounded-lg border border-info/30 bg-info/10 p-4">
+                                    <p className="text-foreground text-sm">
                                         <strong>
                                             {t(
                                                 'admin-pages.access.users.permissions.viewRoleDetails'
@@ -167,7 +167,7 @@ function UserPermissionsPage() {
                                         {roleInfo.label},{' '}
                                         <a
                                             href="/access/roles"
-                                            className="underline hover:text-blue-700 dark:hover:text-blue-200"
+                                            className="underline hover:text-info"
                                         >
                                             {t(
                                                 'admin-pages.access.users.permissions.rolesPageLink'
@@ -215,8 +215,8 @@ function UserPermissionsPage() {
                     </Card>
 
                     {/* Feature note */}
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-                        <p className="text-amber-900 text-sm dark:text-amber-100">
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                        <p className="text-foreground text-sm">
                             <strong>
                                 {t('admin-pages.access.users.permissions.futureFeature')}
                             </strong>{' '}

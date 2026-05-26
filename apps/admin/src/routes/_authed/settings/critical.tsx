@@ -144,7 +144,7 @@ function CriticalSettingsPage() {
                                     : t('admin-pages.systemSettings.critical.clearCache')}
                             </Button>
                             {resetCacheMutation.isSuccess && (
-                                <p className="text-green-600 text-sm dark:text-green-400">
+                                <p className="text-sm text-success">
                                     {t('admin-pages.systemSettings.critical.cacheCleared')}
                                 </p>
                             )}

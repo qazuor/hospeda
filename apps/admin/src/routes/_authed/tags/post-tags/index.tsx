@@ -18,9 +18,9 @@ export const Route = createFileRoute('/_authed/tags/post-tags/')({
 
 /** Lifecycle state badge colors. */
 const STATE_BADGE: Readonly<Record<string, string>> = {
-    ACTIVE: 'bg-green-100 text-green-800',
+    ACTIVE: 'bg-success/15 text-success',
     INACTIVE: 'bg-gray-100 text-gray-600',
-    ARCHIVED: 'bg-orange-100 text-orange-700'
+    ARCHIVED: 'bg-warning/15 text-warning'
 } as const;
 
 const STATE_LABEL: Readonly<Record<string, string>> = {

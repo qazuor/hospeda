@@ -115,9 +115,9 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(
                     // Color variants
                     variant === 'default' && 'text-current',
                     variant === 'muted' && 'text-muted-foreground',
-                    variant === 'success' && 'text-green-600',
-                    variant === 'warning' && 'text-yellow-600',
-                    variant === 'error' && 'text-red-600',
+                    variant === 'success' && 'text-success',
+                    variant === 'warning' && 'text-warning',
+                    variant === 'error' && 'text-destructive',
                     variant === 'primary' && 'text-primary',
                     className
                 )}

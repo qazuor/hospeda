@@ -52,7 +52,7 @@ export function ImpersonationBanner() {
     return (
         <div
             role="alert"
-            className="sticky top-0 z-50 flex items-center justify-between gap-3 border-amber-300 border-b bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+            className="sticky top-0 z-50 flex items-center justify-between gap-3 border-warning/30 border-b bg-warning/10 px-4 py-2 text-foreground"
         >
             <div className="flex items-center gap-2">
                 <AlertTriangleIcon
@@ -67,7 +67,7 @@ export function ImpersonationBanner() {
                 type="button"
                 onClick={handleStopImpersonating}
                 disabled={isLoading}
-                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-100 px-3 py-1 font-medium text-amber-900 text-xs transition-colors hover:bg-amber-200 disabled:opacity-50 dark:border-amber-700 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800"
+                className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/15 px-3 py-1 font-medium text-warning text-xs transition-colors hover:bg-warning/25 disabled:opacity-50"
             >
                 <CloseIcon size={12} />
                 {t('admin-common.impersonation.stop' as TranslationKey)}

@@ -163,14 +163,14 @@ function MyProfilePage() {
                                     {emailVerified ? (
                                         <Badge
                                             variant="outline"
-                                            className="gap-1 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
+                                            className="gap-1 border-success/40 text-success"
                                         >
                                             {t('admin-pages.profile.emailVerified')}
                                         </Badge>
                                     ) : (
                                         <Badge
                                             variant="outline"
-                                            className="gap-1 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+                                            className="gap-1 border-warning/40 text-warning"
                                         >
                                             {t('admin-pages.profile.emailNotVerified')}
                                         </Badge>

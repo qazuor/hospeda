@@ -82,12 +82,10 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
                     <CardTitle className="font-medium text-sm">
                         {t('admin-billing.metrics.systemStats.approachingLimits')}
                     </CardTitle>
-                    <AlertTriangleIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    <AlertTriangleIcon className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
-                    <div className="font-bold text-2xl text-orange-600 dark:text-orange-400">
-                        {approachingLimitsCount}
-                    </div>
+                    <div className="font-bold text-2xl text-warning">{approachingLimitsCount}</div>
                     <p className="mt-2 text-muted-foreground text-xs">
                         {t('admin-billing.metrics.systemStats.approachingLimitsHint')}
                     </p>

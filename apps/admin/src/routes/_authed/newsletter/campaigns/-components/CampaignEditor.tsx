@@ -410,7 +410,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
             {/* Sending banner */}
             {campaign?.status === 'sending' && (
-                <output className="block rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                <output className="block rounded-md border border-info/30 bg-info/10 px-4 py-3 text-foreground text-sm">
                     Esta campaña se está enviando actualmente. Los campos no son editables.
                 </output>
             )}

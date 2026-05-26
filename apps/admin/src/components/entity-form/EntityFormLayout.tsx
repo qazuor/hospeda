@@ -112,7 +112,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
 
                             {/* Unsaved Changes Indicator */}
                             {hasUnsavedChanges() && !isSaving && (
-                                <div className="rounded-full bg-orange-100 px-2 py-1 text-orange-800 text-xs dark:bg-orange-900 dark:text-orange-200">
+                                <div className="rounded-full bg-warning/15 px-2 py-1 text-warning text-xs">
                                     Unsaved changes
                                 </div>
                             )}

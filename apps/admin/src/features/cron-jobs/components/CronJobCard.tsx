@@ -59,7 +59,7 @@ export function CronJobCard({ job }: CronJobCardProps) {
                             {job.enabled ? (
                                 <Badge
                                     variant="default"
-                                    className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                    className="border-success/30 bg-success/15 text-success"
                                 >
                                     {t('admin-billing.cron.card.statusActive')}
                                 </Badge>
@@ -135,35 +135,23 @@ export function CronJobCard({ job }: CronJobCardProps) {
                     <div
                         className={`rounded-lg border p-3 ${
                             lastResult.success
-                                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
-                                : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'
+                                ? 'border-success/30 bg-success/10'
+                                : 'border-destructive/30 bg-destructive/10'
                         }`}
                     >
                         <div className="flex items-start gap-2">
                             {lastResult.success ? (
-                                <CheckCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-400" />
+                                <CheckCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
                             ) : (
-                                <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+                                <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
                             )}
                             <div className="flex-1 space-y-1">
-                                <p
-                                    className={`font-medium text-sm ${
-                                        lastResult.success
-                                            ? 'text-green-900 dark:text-green-100'
-                                            : 'text-red-900 dark:text-red-100'
-                                    }`}
-                                >
+                                <p className="font-medium text-foreground text-sm">
                                     {lastResult.success
                                         ? t('admin-billing.cron.card.successTitle')
                                         : t('admin-billing.cron.card.errorTitle')}
                                 </p>
-                                <p
-                                    className={`text-xs ${
-                                        lastResult.success
-                                            ? 'text-green-700 dark:text-green-300'
-                                            : 'text-red-700 dark:text-red-300'
-                                    }`}
-                                >
+                                <p className="text-muted-foreground text-xs">
                                     {lastResult.message}
                                 </p>
                                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -205,16 +193,14 @@ export function CronJobCard({ job }: CronJobCardProps) {
 
                 {/* Error state */}
                 {isError && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
                         <div className="flex items-start gap-2">
-                            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+                            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
                             <div>
-                                <p className="font-medium text-red-900 text-sm dark:text-red-100">
+                                <p className="font-medium text-foreground text-sm">
                                     {t('admin-billing.cron.card.runErrorTitle')}
                                 </p>
-                                <p className="text-red-700 text-xs dark:text-red-300">
-                                    {error?.message}
-                                </p>
+                                <p className="text-muted-foreground text-xs">{error?.message}</p>
                             </div>
                         </div>
                     </div>

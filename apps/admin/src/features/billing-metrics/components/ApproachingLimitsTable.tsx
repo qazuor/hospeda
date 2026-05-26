@@ -22,8 +22,8 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
         return (
             <Card className="border-dashed">
                 <CardContent className="py-8 text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-                        <AlertTriangleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
+                        <AlertTriangleIcon className="h-6 w-6 text-success" />
                     </div>
                     <p className="text-muted-foreground">
                         {t('admin-billing.metrics.approachingLimits.noClientsTitle')}
@@ -42,7 +42,7 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <AlertTriangleIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <AlertTriangleIcon className="h-5 w-5 text-warning" />
                     {t('admin-billing.metrics.approachingLimits.cardTitle')}
                 </CardTitle>
                 <CardDescription>
@@ -110,8 +110,8 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
                                     aria-label={customer.limitName}
                                     className={
                                         customer.percentage >= 95
-                                            ? '[&>div]:bg-destructive'
-                                            : '[&>div]:bg-orange-500 dark:[&>div]:bg-orange-400'
+                                            ? '[&>div]:bg-gauge-critical'
+                                            : '[&>div]:bg-gauge-high'
                                     }
                                 />
                             </div>

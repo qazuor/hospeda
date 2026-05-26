@@ -27,12 +27,12 @@ export function SubscriberStatsBar() {
         {
             key: 'account.newsletter.statusActive',
             value: data?.totalActive ?? 0,
-            badgeClass: 'bg-green-100 text-green-800'
+            badgeClass: 'bg-success/15 text-success'
         },
         {
             key: 'account.newsletter.statusPending',
             value: data?.totalPending ?? 0,
-            badgeClass: 'bg-yellow-100 text-yellow-800'
+            badgeClass: 'bg-warning/15 text-warning'
         },
         {
             key: 'account.newsletter.statusUnsubscribed',
@@ -42,12 +42,12 @@ export function SubscriberStatsBar() {
         {
             key: 'account.newsletter.statusBounced',
             value: data?.totalBounced ?? 0,
-            badgeClass: 'bg-red-100 text-red-800'
+            badgeClass: 'bg-destructive/15 text-destructive'
         },
         {
             key: 'account.newsletter.statusComplained',
             value: data?.totalComplained ?? 0,
-            badgeClass: 'bg-red-100 text-red-800'
+            badgeClass: 'bg-destructive/15 text-destructive'
         }
     ];
 

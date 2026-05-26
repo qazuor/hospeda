@@ -63,7 +63,7 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                     type="button"
                     onClick={handleImpersonate}
                     disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 font-medium text-amber-900 text-sm transition-colors hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900"
+                    className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 font-medium text-sm text-warning transition-colors hover:bg-warning/20 disabled:opacity-50"
                 >
                     <UserSwitchIcon size={16} />
                     {t('admin-common.impersonation.start' as TranslationKey)}
@@ -74,7 +74,7 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                     onClick={handleImpersonate}
                     disabled={isLoading}
                     title={t('admin-common.impersonation.start' as TranslationKey)}
-                    className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50 dark:hover:bg-amber-950 dark:hover:text-amber-200"
+                    className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-warning/20 hover:text-warning disabled:opacity-50"
                 >
                     <UserSwitchIcon size={16} />
                 </button>

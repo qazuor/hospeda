@@ -179,7 +179,7 @@ function AnalyticsDebugPage() {
                                     : t('admin-pages.analytics.debug.clearCache')}
                             </Button>
                             {resetMutation.isSuccess && (
-                                <p className="text-green-600 text-sm dark:text-green-400">
+                                <p className="text-sm text-success">
                                     {t('admin-pages.analytics.debug.cacheCleared')}
                                 </p>
                             )}

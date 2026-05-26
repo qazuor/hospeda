@@ -88,7 +88,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
                 {/* Read receipt for owner messages */}
                 {isOwner && message.readAtByGuest && (
-                    <span className="text-green-600">{t('conversations.thread.readByGuest')}</span>
+                    <span className="text-success">{t('conversations.thread.readByGuest')}</span>
                 )}
             </div>
         </div>

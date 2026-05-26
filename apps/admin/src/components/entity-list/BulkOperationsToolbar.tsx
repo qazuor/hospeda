@@ -88,7 +88,7 @@ export const BulkOperationsToolbar = ({
                                 size="sm"
                                 onClick={onBulkDelete}
                                 disabled={isOperationPending}
-                                className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                                className="border-destructive/30 text-destructive hover:bg-destructive/10"
                             >
                                 <DeleteIcon className="mr-2 h-4 w-4" />
                                 {t('admin-common.bulkToolbar.deleteSelected')}
