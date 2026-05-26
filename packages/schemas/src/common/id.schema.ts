@@ -52,6 +52,9 @@ export type AttractionIdType = z.infer<typeof AttractionIdSchema>;
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
 
+export const DestinationFaqIdSchema = BaseIdSchema;
+export type DestinationFaqIdType = z.infer<typeof DestinationFaqIdSchema>;
+
 export const DestinationReviewIdSchema = BaseIdSchema;
 export type DestinationReviewIdType = z.infer<typeof DestinationReviewIdSchema>;
 

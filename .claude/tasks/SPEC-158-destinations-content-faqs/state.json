@@ -8,54 +8,102 @@
             "id": "T-001",
             "title": "Add DestinationFaqIdSchema to common/id.schema.ts",
             "description": "In packages/schemas/src/common/id.schema.ts add DestinationFaqIdSchema mirroring AccommodationFaqIdSchema. Acceptance: schema exported, typechecks, follows the same UUID-branded pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "Locate AccommodationFaqIdSchema definition", "completed": false },
-                { "title": "Add DestinationFaqIdSchema with same pattern", "completed": false }
+                {
+                    "title": "Locate AccommodationFaqIdSchema definition",
+                    "completed": true
+                },
+                {
+                    "title": "Add DestinationFaqIdSchema with same pattern",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-setup", "REQ-8"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Create destination.faq.schema.ts subtype",
             "description": "Create packages/schemas/src/entities/destination/subtypes/destination.faq.schema.ts mirroring accommodation.faq.schema.ts: DestinationFaqSchema = BaseFaqSchema.extend({ id: DestinationFaqIdSchema, destinationId: DestinationIdSchema }); Add/Update/Remove/List input schemas; single/list output schemas. Update/Remove defined for Phase 2 reuse but not wired now. Acceptance: file typechecks, all schemas exported.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Extend BaseFaqSchema with id + destinationId", "completed": false },
-                { "title": "Add Add/Update/Remove/List input schemas", "completed": false },
-                { "title": "Add single/list output schemas", "completed": false }
+                {
+                    "title": "Extend BaseFaqSchema with id + destinationId",
+                    "completed": true
+                },
+                {
+                    "title": "Add Add/Update/Remove/List input schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Add single/list output schemas",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-setup", "REQ-8"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
         },
         {
             "id": "T-003",
             "title": "Raise description max to 8000 + add faqs array to DestinationSchema + re-exports",
             "description": "In packages/schemas/src/entities/destination/destination.schema.ts: change description .max(2000) to .max(8000) (line 58); add `faqs: z.array(BaseFaqSchema).optional()` after rating (line 82). Re-export new subtype from entities/destination/index.ts. Both changes are additive/relaxing (safe per schema-compat policy). Acceptance: typechecks, faqs optional on Destination type.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-005", "T-014"],
             "subtasks": [
-                { "title": "description .max(2000) -> .max(8000)", "completed": false },
-                { "title": "Add faqs: z.array(BaseFaqSchema).optional()", "completed": false },
-                { "title": "Re-export subtype from index.ts", "completed": false }
+                {
+                    "title": "description .max(2000) -> .max(8000)",
+                    "completed": true
+                },
+                {
+                    "title": "Add faqs: z.array(BaseFaqSchema).optional()",
+                    "completed": true
+                },
+                {
+                    "title": "Re-export subtype from index.ts",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "phase-setup", "REQ-1", "REQ-8"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
+            }
         },
         {
             "id": "T-004",
@@ -66,14 +114,31 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "DestinationFaqSchema valid/invalid tests", "completed": false },
-                { "title": "description boundary tests (8000/8001)", "completed": false },
-                { "title": "Historic fixture + compat test", "completed": false }
+                {
+                    "title": "DestinationFaqSchema valid/invalid tests",
+                    "completed": false
+                },
+                {
+                    "title": "description boundary tests (8000/8001)",
+                    "completed": false
+                },
+                {
+                    "title": "Historic fixture + compat test",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "phase-setup", "testing", "REQ-8"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -84,14 +149,31 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
-                { "title": "Define destination_faqs pgTable", "completed": false },
-                { "title": "Add FK cascade + two indexes", "completed": false },
-                { "title": "Add one(destinations) relation", "completed": false }
+                {
+                    "title": "Define destination_faqs pgTable",
+                    "completed": false
+                },
+                {
+                    "title": "Add FK cascade + two indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Add one(destinations) relation",
+                    "completed": false
+                }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -102,13 +184,27 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Add many(destinationFaqs) to relations", "completed": false },
-                { "title": "Export from schemas index", "completed": false }
+                {
+                    "title": "Add many(destinationFaqs) to relations",
+                    "completed": false
+                },
+                {
+                    "title": "Export from schemas index",
+                    "completed": false
+                }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -119,13 +215,27 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "Create model extending BaseModel", "completed": false },
-                { "title": "Export from models index", "completed": false }
+                {
+                    "title": "Create model extending BaseModel",
+                    "completed": false
+                },
+                {
+                    "title": "Export from models index",
+                    "completed": false
+                }
             ],
             "tags": ["db", "phase-core", "REQ-6"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -136,14 +246,31 @@
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "pnpm db:push (local only)", "completed": false },
-                { "title": "pnpm db:apply-extras", "completed": false },
-                { "title": "Verify/extend set_updated_at coverage (manual/0019)", "completed": false }
+                {
+                    "title": "pnpm db:push (local only)",
+                    "completed": false
+                },
+                {
+                    "title": "pnpm db:apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "Verify/extend set_updated_at coverage (manual/0019)",
+                    "completed": false
+                }
             ],
             "tags": ["db", "phase-core", "REQ-6", "local-only"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -154,14 +281,31 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-010", "T-011", "T-012", "T-017"],
             "subtasks": [
-                { "title": "Wire destinationFaq model into service", "completed": false },
-                { "title": "Implement addFaq with PermissionEnum check", "completed": false },
-                { "title": "Return Result<T>", "completed": false }
+                {
+                    "title": "Wire destinationFaq model into service",
+                    "completed": false
+                },
+                {
+                    "title": "Implement addFaq with PermissionEnum check",
+                    "completed": false
+                },
+                {
+                    "title": "Return Result<T>",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "phase-core", "REQ-9"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -172,13 +316,27 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012", "T-017"],
             "subtasks": [
-                { "title": "Implement getFaqs list query", "completed": false },
-                { "title": "Deterministic ordering + empty handling", "completed": false }
+                {
+                    "title": "Implement getFaqs list query",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic ordering + empty handling",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "phase-core", "REQ-9"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -189,13 +347,27 @@
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
-                { "title": "addFaq success + not-found + permission tests", "completed": false },
-                { "title": "getFaqs list + empty tests", "completed": false }
+                {
+                    "title": "addFaq success + not-found + permission tests",
+                    "completed": false
+                },
+                {
+                    "title": "getFaqs list + empty tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "phase-core", "testing", "REQ-9"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -206,14 +378,31 @@
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-013", "T-015"],
             "subtasks": [
-                { "title": "Parallel getFaqs in getByPath", "completed": false },
-                { "title": "Parallel getFaqs in getBySlug", "completed": false },
-                { "title": "Attach faqs to detail response", "completed": false }
+                {
+                    "title": "Parallel getFaqs in getByPath",
+                    "completed": false
+                },
+                {
+                    "title": "Parallel getFaqs in getBySlug",
+                    "completed": false
+                },
+                {
+                    "title": "Attach faqs to detail response",
+                    "completed": false
+                }
             ],
             "tags": ["api", "phase-integration", "REQ-4"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -224,14 +413,31 @@
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Success-with-faqs test", "completed": false },
-                { "title": "No-faqs empty array test", "completed": false },
-                { "title": "404 nonexistent test", "completed": false }
+                {
+                    "title": "Success-with-faqs test",
+                    "completed": false
+                },
+                {
+                    "title": "No-faqs empty array test",
+                    "completed": false
+                },
+                {
+                    "title": "404 nonexistent test",
+                    "completed": false
+                }
             ],
             "tags": ["api", "phase-integration", "testing", "REQ-4"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -242,13 +448,27 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Mirror FaqAccordion markup (details/summary)", "completed": false },
-                { "title": "Group by category + empty guard", "completed": false }
+                {
+                    "title": "Mirror FaqAccordion markup (details/summary)",
+                    "completed": false
+                },
+                {
+                    "title": "Group by category + empty guard",
+                    "completed": false
+                }
             ],
             "tags": ["web", "phase-integration", "REQ-2"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -259,13 +479,27 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Add faqs mapping to destination transform", "completed": false },
-                { "title": "Type the transformed faqs", "completed": false }
+                {
+                    "title": "Add faqs mapping to destination transform",
+                    "completed": false
+                },
+                {
+                    "title": "Type the transformed faqs",
+                    "completed": false
+                }
             ],
             "tags": ["web", "phase-integration", "REQ-4"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -276,14 +510,31 @@
             "blockedBy": ["T-014", "T-015"],
             "blocks": [],
             "subtasks": [
-                { "title": "Render DestinationFaqAccordion conditionally", "completed": false },
-                { "title": "Wire FAQPageJsonLd", "completed": false },
-                { "title": "Remove DestinationFaqPlaceholder usage", "completed": false }
+                {
+                    "title": "Render DestinationFaqAccordion conditionally",
+                    "completed": false
+                },
+                {
+                    "title": "Wire FAQPageJsonLd",
+                    "completed": false
+                },
+                {
+                    "title": "Remove DestinationFaqPlaceholder usage",
+                    "completed": false
+                }
             ],
             "tags": ["web", "phase-integration", "REQ-2", "REQ-3"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -292,16 +543,57 @@
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009", "T-010"],
-            "blocks": ["T-018", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030", "T-031", "T-032", "T-033", "T-034", "T-035", "T-036", "T-037", "T-038", "T-039", "T-040"],
+            "blocks": [
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040"
+            ],
             "subtasks": [
-                { "title": "Add faqs loop calling service.addFaq", "completed": false },
-                { "title": "Pass category through (improvement over accommodation)", "completed": false },
-                { "title": "Idempotent ALREADY_EXISTS handling", "completed": false }
+                {
+                    "title": "Add faqs loop calling service.addFaq",
+                    "completed": false
+                },
+                {
+                    "title": "Pass category through (improvement over accommodation)",
+                    "completed": false
+                },
+                {
+                    "title": "Idempotent ALREADY_EXISTS handling",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "phase-core", "REQ-5"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -312,14 +604,31 @@
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Parse each JSON against DestinationSchema", "completed": false },
-                { "title": "Assert description length + faqs count 5-7", "completed": false },
-                { "title": "Assert baseline categories present", "completed": false }
+                {
+                    "title": "Parse each JSON against DestinationSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Assert description length + faqs count 5-7",
+                    "completed": false
+                },
+                {
+                    "title": "Assert baseline categories present",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "testing", "phase-testing", "REQ-5"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -330,15 +639,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-001"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -349,15 +678,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-002"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -368,15 +717,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-003"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -387,15 +756,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-004"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -406,15 +795,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-005"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -425,15 +834,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-006", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -444,15 +873,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-007", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -463,15 +912,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-008", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -482,15 +951,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-009"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-028",
@@ -501,15 +990,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-010", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-029",
@@ -520,15 +1029,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-011"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-030",
@@ -539,15 +1068,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-012", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-031",
@@ -558,15 +1107,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-013"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-032",
@@ -577,15 +1146,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-014"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-033",
@@ -596,15 +1185,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-015"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-034",
@@ -615,15 +1224,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-016", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-035",
@@ -634,15 +1263,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources, disambiguate)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources, disambiguate)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-017", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-036",
@@ -653,15 +1302,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-018", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-037",
@@ -672,15 +1341,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-019", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-038",
@@ -691,15 +1380,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness (do not touch media)", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness (do not touch media)",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-020", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-039",
@@ -710,15 +1419,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources, disambiguate)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness", "completed": false }
+                {
+                    "title": "Web research (real sources, disambiguate)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-021"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-040",
@@ -729,15 +1458,35 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Web research (real sources)", "completed": false },
-                { "title": "Write markdown description", "completed": false },
-                { "title": "Write 5-7 FAQs with categories", "completed": false },
-                { "title": "Validate against harness (do not touch media)", "completed": false }
+                {
+                    "title": "Web research (real sources)",
+                    "completed": false
+                },
+                {
+                    "title": "Write markdown description",
+                    "completed": false
+                },
+                {
+                    "title": "Write 5-7 FAQs with categories",
+                    "completed": false
+                },
+                {
+                    "title": "Validate against harness (do not touch media)",
+                    "completed": false
+                }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-022", "small-town"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-041",
@@ -745,17 +1494,58 @@
             "description": "Run the T-018 harness green for all 22 cities; run pnpm db:fresh-dev locally to confirm FAQs seed end-to-end with categories; run typecheck + lint + test across affected packages; verify >=90% coverage on new code. Acceptance: all green, all 22 cities pass the harness.",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-018", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030", "T-031", "T-032", "T-033", "T-034", "T-035", "T-036", "T-037", "T-038", "T-039", "T-040"],
+            "blockedBy": [
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040"
+            ],
             "blocks": ["T-042"],
             "subtasks": [
-                { "title": "Harness green for all 22", "completed": false },
-                { "title": "Local db:fresh-dev end-to-end seed", "completed": false },
-                { "title": "typecheck + lint + test + coverage", "completed": false }
+                {
+                    "title": "Harness green for all 22",
+                    "completed": false
+                },
+                {
+                    "title": "Local db:fresh-dev end-to-end seed",
+                    "completed": false
+                },
+                {
+                    "title": "typecheck + lint + test + coverage",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "phase-testing", "REQ-5"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-042",
@@ -766,20 +1556,34 @@
             "blockedBy": ["T-041"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update seed + web docs", "completed": false },
-                { "title": "Confirm placeholder removed", "completed": false }
+                {
+                    "title": "Update seed + web docs",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm placeholder removed",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "phase-docs", "cleanup"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-26T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 42,
-        "pending": 42,
+        "pending": 39,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.6
     }
