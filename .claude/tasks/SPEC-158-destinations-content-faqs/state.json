@@ -634,26 +634,26 @@
             "id": "T-019",
             "title": "Content: Chajarí (001) — rich description + FAQs",
             "description": "Web-research REAL data for Chajarí (termas, citricultura, lago Salto Grande, salame, herencia friulana, Fiesta Nacional de la Citricultura). Rewrite description (~2000-3500 chars markdown, 3-5 paragraphs, attractions narrative) + 5-7 FAQs with baseline categories. Validate against T-018 harness. NO invented data; cite sources in task notes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-001"],
@@ -661,38 +661,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Content: Colón (002) — rich description + FAQs",
             "description": "Web-research REAL data for Colón (termas de Colón, playas del río Uruguay, Parque Nacional El Palmar cercano, Fiesta Nacional de la Artesanía, costanera). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-002"],
@@ -700,38 +700,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Content: Concordia (003) — rich description + FAQs",
             "description": "Web-research REAL data for Concordia (termas, lago de Salto Grande, Parque San Carlos / Castillo San Carlos, citricultura, Represa Salto Grande). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-003"],
@@ -739,38 +739,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Content: Federación (004) — rich description + FAQs",
             "description": "Web-research REAL data for Federación (Parque Termal de Federación, ciudad nueva relocalizada por la represa de Salto Grande, lago, playas, Parque Acuático Termal). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-004"],
@@ -778,38 +778,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Content: Gualeguaychú (005) — rich description + FAQs",
             "description": "Web-research REAL data for Gualeguaychú (Carnaval del País, Corsódromo, playas del río, termas, balnearios, Costanera). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-005"],
@@ -817,38 +817,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Content: Ibicuy (006) — rich description + FAQs",
             "description": "Web-research REAL data for Ibicuy (Islas del Ibicuy, Delta entrerriano, pesca, turismo de naturaleza, humedales). Small town — 5 FAQs minimum acceptable; shorter description allowed if real material is thin (never pad). Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-006", "small-town"],
@@ -856,38 +856,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Content: Liebig (007) — rich description + FAQs",
             "description": "Web-research REAL data for Pueblo Liebig (ex frigorífico Liebig patrimonio industrial, casas históricas, río Uruguay, cercanía a Colón/San José). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-007", "small-town"],
@@ -895,38 +895,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Content: Paranacito (008) — rich description + FAQs",
             "description": "Web-research REAL data for Villa Paranacito (Delta, ríos y arroyos, pesca, cabañas, turismo náutico, Islas del Ibicuy). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-008", "small-town"],
@@ -934,38 +934,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Content: San José (009) — rich description + FAQs",
             "description": "Web-research REAL data for San José (Colonia San José, Museo Regional, cercanía a Colón y Parque Nacional El Palmar, inmigración suiza/saboyana, balnearios). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-009"],
@@ -973,38 +973,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Content: Ubajay (010) — rich description + FAQs",
             "description": "Web-research REAL data for Ubajay (puerta de acceso al Parque Nacional El Palmar, monte nativo, río Uruguay). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-010", "small-town"],
@@ -1012,38 +1012,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Content: Concepción del Uruguay (011) — rich description + FAQs",
             "description": "Web-research REAL data for Concepción del Uruguay (Palacio San José, Basílica Inmaculada Concepción, Banco Pelay playa, histórica capital, Colegio del Uruguay, río Uruguay). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-011"],
@@ -1051,38 +1051,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Content: Santa Ana (012) — rich description + FAQs",
             "description": "Web-research REAL data for Santa Ana (Entre Ríos, cercanía a Federación/Chajarí, zona termal y citrícola). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-012", "small-town"],
@@ -1090,38 +1090,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Content: San Salvador (013) — rich description + FAQs",
             "description": "Web-research REAL data for San Salvador (Capital Nacional del Arroz, Fiesta Nacional del Arroz, zona agrícola). Small/medium town — 5-6 FAQs. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-013"],
@@ -1129,38 +1129,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Content: Villaguay (014) — rich description + FAQs",
             "description": "Web-research REAL data for Villaguay (centro geográfico de Entre Ríos, termas de Villaguay, Fiesta de la Tradición / colectividades). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-014"],
@@ -1168,38 +1168,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Content: Villa Elisa (015) — rich description + FAQs",
             "description": "Web-research REAL data for Villa Elisa (Termas de Villa Elisa, Molino Forclaz, cercanía a Colón y El Palmar, colonización). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-015"],
@@ -1207,38 +1207,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Content: Rosario del Tala (016) — rich description + FAQs",
             "description": "Web-research REAL data for Rosario del Tala (río Gualeguay, balneario, pesca, zona rural). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-016", "small-town"],
@@ -1246,38 +1246,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Content: San Justo (017) — rich description + FAQs",
             "description": "Web-research REAL data for San Justo (Entre Ríos, zona rural/agrícola, río). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data. Note: disambiguate from San Justo (Santa Fe / Buenos Aires).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources, disambiguate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-017", "small-town"],
@@ -1285,38 +1285,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-036",
             "title": "Content: Caseros (018) — rich description + FAQs",
             "description": "Web-research REAL data for Caseros (Entre Ríos, cercanía al Palacio San José, zona agrícola, Colonia). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-018", "small-town"],
@@ -1324,38 +1324,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Content: Urdinarrain (019) — rich description + FAQs",
             "description": "Web-research REAL data for Urdinarrain (Entre Ríos, colonización alemana del Volga, fiestas, zona agrícola). Small town — 5 FAQs minimum acceptable. Baseline categories. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-019", "small-town"],
@@ -1363,38 +1363,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Content: Larroque (020) — rich description + FAQs",
             "description": "Web-research REAL data for Larroque (Entre Ríos, zona rural, Reserva/fauna local, cercanía a Gualeguaychú). Small town — 5 FAQs minimum acceptable. Note: seed has a REJECTED gallery image (moderation test fixture) — do NOT touch media, only description + faqs. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness (do not touch media)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-020", "small-town"],
@@ -1402,38 +1402,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-039",
             "title": "Content: Gualeguay (021) — rich description + FAQs",
             "description": "Web-research REAL data for Gualeguay (una de las ciudades más antiguas de Entre Ríos, río Gualeguay, carnaval, Carlos Mastronardi/Juan L. Ortiz, balnearios). Rewrite description (~2000-3500 chars markdown) + 5-7 FAQs with baseline categories. Validate against harness. NO invented data. Disambiguate from Gualeguaychú.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources, disambiguate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-021"],
@@ -1441,38 +1441,38 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-040",
             "title": "Content: Ceibas (022) — rich description + FAQs",
             "description": "Web-research REAL data for Ceibas (Entre Ríos, cruce de rutas 12/14, paraje/portal de acceso, parador, humedales/Delta cercano). Very small — 5 FAQs minimum acceptable; shorter description allowed if real material is thin (never pad). Note: seed has a REJECTED gallery image fixture — do NOT touch media. Validate against harness. NO invented data.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Web research (real sources)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write markdown description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5-7 FAQs with categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate against harness (do not touch media)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["content", "phase-content", "REQ-1", "city-022", "small-town"],
@@ -1480,12 +1480,12 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 24,
+        "pending": 2,
         "inProgress": 2,
-        "completed": 16,
+        "completed": 38,
         "blocked": 0,
         "averageComplexity": 2.6
     }

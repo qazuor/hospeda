@@ -4,7 +4,7 @@
     "slug": "ubajay",
     "name": "Ubajay",
     "summary": "Pueblo rural sobre la RN14 en el departamento Colón, vecino al Parque Nacional El Palmar y de tradición agropecuaria y forestal.",
-    "description": "Ubajay es una pequeña localidad rural del departamento Colón, en el centro-este de Entre Ríos, ubicada sobre la Ruta Nacional 14 a aproximadamente 5 km del acceso al Parque Nacional El Palmar y a unos 54 km de la ciudad de Colón. Fundada en 1915 con la llegada del Ferrocarril Nordeste Argentino y vinculada a las colonias judías impulsadas por la Jewish Colonization Association del barón Hirsch, conserva una fuerte impronta agropecuaria: su economía gira en torno a la explotación maderera y la forestación, complementadas por la agricultura (principalmente soja) y la ganadería, con varios aserraderos activos en la zona. Su perfil tranquilo, los paisajes de palmares de yatay y la cercanía a uno de los parques nacionales más visitados de la Mesopotamia la convierten en una base ideal para quienes buscan naturaleza, turismo rural y descanso lejos del bullicio.",
+    "description": "## Ubajay, la puerta de acceso a El Palmar\n\nUbajay es una pequeña localidad rural del departamento Colón, en el centro-este de Entre Ríos, ubicada sobre la **Ruta Nacional 14** (cerca del kilómetro 205). Su mayor valor turístico es la cercanía: está a apenas unos 5 km del acceso al **Parque Nacional El Palmar** y a unas decenas de kilómetros de la ciudad de Colón. Fundada en 1915 con la llegada del Ferrocarril Nordeste Argentino y vinculada a las colonias agrícolas de la región, conserva una fuerte impronta agropecuaria, con la explotación maderera, la forestación, la agricultura y la ganadería como base de su economía, y varios aserraderos activos en la zona.\n\n## El Parque Nacional El Palmar\n\nEl Parque Nacional El Palmar, creado en 1966, protege más de 8.000 hectáreas sobre la costa del río Uruguay y resguarda una de las muestras más importantes de **palmares de yatay**, una palmera escasa fuera de los límites del área protegida. Sus senderos y miradores —hacia los arroyos Los Loros y El Palmar, entre otros— permiten caminar entre palmeras centenarias, pastizales y selva ribereña. La fauna es muy rica: carpinchos, vizcachas, corzuelas, ositos lavadores, lobitos de río y una gran variedad de aves, con la mañana temprano y el atardecer como mejores momentos para observarla.\n\n## Naturaleza, monte y descanso\n\nMás allá del parque, Ubajay ofrece paisajes de monte nativo, palmares y campo abierto, en un perfil tranquilo y rural. Es una base cómoda para quienes buscan naturaleza, observación de aves y turismo rural lejos del bullicio, combinando la visita a El Palmar con el descanso en un pueblo de ritmo pausado a orillas de la RN 14.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -283,6 +283,33 @@
         "077-attraction-reserva_natural",
         "081-attraction-sendero_ecologico",
         "058-attraction-observacion_aves"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Ubajay y al Parque Nacional El Palmar?",
+            "answer": "Ubajay está sobre la Ruta Nacional 14, en el departamento Colón, a unos 5 km del acceso al Parque Nacional El Palmar. Desde Buenos Aires se llega tomando la RN 9 hasta el complejo Zárate–Brazo Largo, luego la RN 12 y finalmente la RN 14 hacia el norte. Quienes viajan en micro pueden bajar en Ubajay y contratar un taxi o remís para cubrir los pocos kilómetros que separan al pueblo del ingreso al parque.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Ubajay y alrededores?",
+            "answer": "El gran atractivo es el Parque Nacional El Palmar, con senderos y miradores entre palmares de yatay, pastizales y selva ribereña, ideal para caminatas, observación de aves y avistaje de fauna como carpinchos y vizcachas. En el pueblo y su entorno rural se suman el turismo rural, los paisajes de monte nativo y el descanso en un ambiente tranquilo a orillas de la RN 14.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar la zona?",
+            "answer": "El parque se puede visitar todo el año. Para la observación de fauna y aves, la mañana temprano y el atardecer son los mejores momentos. Conviene tener en cuenta los horarios de visita del parque, que varían según la temporada (más reducidos en invierno y algo más amplios en la temporada cálida). La primavera y el otoño ofrecen temperaturas agradables para recorrer los senderos.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios hay en Ubajay y en el parque?",
+            "answer": "Ubajay es un pueblo pequeño con servicios básicos: algunos alojamientos rurales, comercios y la posibilidad de contratar remises para llegar al parque. Dentro del Parque Nacional El Palmar hay camping concesionado, proveeduría y un centro de visitantes con información y paneles educativos. Para una oferta más amplia de hotelería y gastronomía, la ciudad de Colón es el centro de referencia cercano.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es la palmera yatay y por qué es importante?",
+            "answer": "La yatay es una palmera nativa que da identidad al Parque Nacional El Palmar. El parque, creado en 1966 sobre más de 8.000 hectáreas en la costa del río Uruguay, protege una de las muestras más importantes de estos palmares, una especie que se volvió escasa fuera del área protegida. Recorrer el palmar entre ejemplares centenarios es la experiencia más característica de la visita.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

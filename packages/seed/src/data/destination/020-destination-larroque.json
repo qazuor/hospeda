@@ -4,7 +4,7 @@
     "slug": "larroque",
     "name": "Larroque",
     "summary": "Pueblo agropecuario del sur entrerriano, nacido alrededor de la estación de ferrocarril en 1909, con patrimonio ferroviario y entorno rural tranquilo.",
-    "description": "Larroque es una pequeña localidad del Departamento Gualeguaychú, en el sur de la provincia de Entre Ríos, ubicada a unos 50 km de Gualeguaychú, 30 km de Gualeguay y 43 km de Urdinarrain. El pueblo nació el 1 de diciembre de 1909 con la inauguración de la Estación del Ferrocarril Central Entrerriano Dr. Alberto Larroque, alrededor de la cual se asentaron pobladores rurales. Hoy mantiene un perfil netamente agropecuario, con calles tranquilas, una plaza central y la iglesia parroquial como hitos urbanos. Su principal atractivo cultural es el Museo de la Estación, instalado en la antigua sala de espera del ferrocarril, rodeado por un parque de dos hectáreas con sala de teatro. A pocos kilómetros, sobre el río Gualeguay, se encuentra el Paso Corralito, un paraje natural con playas de arena, pesca y actividades náuticas. Larroque es un destino ideal para quienes buscan turismo rural, historia local y descanso en un entorno de pueblo chico.",
+    "description": "## Larroque, pueblo ferroviario y rural\n\nLarroque es una pequeña localidad del departamento Gualeguaychú, en el sur de Entre Ríos, ubicada a unos **50 km de Gualeguaychú**, 30 km de Gualeguay y a poco más de 40 km de Urdinarrain. El pueblo nació el **1 de diciembre de 1909** con la inauguración de la estación del Ferrocarril Central Entrerriano, en torno a la cual se asentaron los primeros pobladores rurales. Conserva hasta hoy su fisonomía de pueblo chico, con calles tranquilas, una plaza central y la iglesia parroquial como principales hitos urbanos.\n\n## Patrimonio e historia local\n\nSu principal atractivo cultural es el **Museo de la Estación**, instalado en la antigua sala de espera del ferrocarril. Allí se exhiben más de 200 piezas (utensilios, vestimenta, mobiliario y objetos de distintas épocas) que invitan a recorrer la historia regional. El museo incluye además un Archivo y Centro de Investigaciones Históricas, dedicado a rescatar la memoria, el patrimonio y la identidad local, todo rodeado por un parque con sala de teatro.\n\n## Naturaleza y río\n\nA unos kilómetros del pueblo, sobre la costa del río Gualeguay, se encuentra el **Paso Corralito**, un paraje natural con bancos de arena rodeados de monte nativo. Es un espacio ideal para la pesca, los deportes náuticos y el ecoturismo, muy elegido en verano para pasar el día junto al río.\n\nCon su perfil netamente agropecuario y su ritmo pausado, Larroque es un destino pensado para quienes buscan **turismo rural, historia local y descanso** en el ambiente tranquilo de un pueblo del sur entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -282,6 +282,33 @@
         "055-attraction-museo_historico",
         "062-attraction-parque_municipal",
         "013-attraction-centro_agropecuario"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Larroque?",
+            "answer": "Larroque está en el sur de Entre Ríos, a unos 50 km de Gualeguaychú y 30 km de Gualeguay. Desde Buenos Aires se accede por la Ruta Nacional 12 tras cruzar el Complejo Ferrovial Zárate-Brazo Largo, conectando luego con las rutas provinciales que llevan al pueblo. Es un trayecto de aproximadamente 3 horas en auto.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Larroque?",
+            "answer": "El principal atractivo es el Museo de la Estación, montado en la antigua estación ferroviaria, con más de 200 piezas históricas y un parque con sala de teatro. También se puede recorrer la plaza, la iglesia parroquial y, a pocos kilómetros, disfrutar del Paso Corralito sobre el río Gualeguay, ideal para pesca, deportes náuticos y un día de playa.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo es la mejor época para visitar Larroque?",
+            "answer": "El verano es la temporada más elegida para combinar el pueblo con un día en el Paso Corralito y las playas del río Gualeguay. La primavera y el otoño ofrecen un clima templado, perfecto para recorrer el museo, la plaza y el entorno rural con tranquilidad. Al ser un pueblo chico, es un destino calmo durante todo el año.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos hay en Larroque?",
+            "answer": "Larroque es un pueblo pequeño y agropecuario, con una oferta acotada de alojamientos, comercios y gastronomía local, además de servicios básicos como estación de servicio y centro de salud. Para estadías conviene reservar con anticipación o combinar la visita con ciudades cercanas como Gualeguaychú o Gualeguay, que cuentan con más infraestructura.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es el Paso Corralito?",
+            "answer": "El Paso Corralito es un paraje natural sobre la costa del río Gualeguay, a pocos kilómetros de Larroque. Tiene bancos de arena rodeados de monte nativo y es un lugar muy elegido para la pesca, los deportes náuticos y el ecoturismo. En verano se llena de visitantes que buscan pasar el día junto al río en un entorno tranquilo y poco urbanizado.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

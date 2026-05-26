@@ -4,7 +4,7 @@
     "slug": "san-jose",
     "name": "San José",
     "summary": "Primera colonia agrícola organizada de Argentina (1857), fundada por inmigrantes suizos, saboyanos y piamonteses, con rico patrimonio inmigrante en el departamento Colón.",
-    "description": "San José, en el departamento Colón de Entre Ríos, fue la primera colonia agrícola organizada de la República Argentina, fundada en 1857 bajo el impulso del general Justo José de Urquiza con familias inmigrantes suizas, saboyanas y piamontesas. La ciudad conserva un valioso patrimonio cultural y arquitectónico vinculado a esa gesta colonizadora: casas de piedra, iglesias coloniales y el Museo Histórico Regional de la Colonia San José (creado en 1957 en el centenario del pueblo, ubicado en Urquiza 1127), que reúne objetos, herramientas y documentos de los primeros colonos. En las cercanías se encuentra el Molino Forclaz, monumento histórico nacional construido entre 1888 y 1890 por el inmigrante suizo Juan Bautista Forclaz, símbolo del esfuerzo de la colonia. Vecina del Palacio San José (residencia de Urquiza) y a pocos kilómetros de la ciudad turística de Colón sobre el río Uruguay, San José ofrece una experiencia auténtica que combina historia inmigrante, tradiciones agrícolas, gastronomía regional y paisajes del litoral entrerriano.",
+    "description": "## San José, cuna de la colonización agrícola argentina\n\nSan José, en el departamento Colón de Entre Ríos, fue la **primera colonia agrícola organizada de la República Argentina**, establecida el 2 de julio de 1857 bajo el impulso del general Justo José de Urquiza. La poblaron familias inmigrantes llegadas desde Suiza, Saboya, Piamonte y Valais, que dieron origen a una comunidad de fuerte impronta europea cuyas huellas se conservan hasta hoy en la arquitectura, la gastronomía y las tradiciones del pueblo.\n\n## Patrimonio inmigrante\n\nEl corazón de la propuesta cultural es el **Museo Histórico Regional de la Colonia San José**, alojado en un edificio de fines del siglo XIX. Mantiene viva la memoria de los colonos suizos, franceses e italianos a través de recreaciones de espacios y momentos de época, cientos de piezas exhibidas y un acervo de miles de objetos en conservación. Incorpora además recursos interactivos que permiten consultar datos de las familias fundadoras. A esto se suman casas históricas, iglesias y la trama colonial original del pueblo.\n\n## Naturaleza y río\n\nSan José cuenta con balnearios y campings sobre playas de arena fina a orillas del **río Uruguay**, consideradas entre las más lindas de la provincia. El entorno natural y la tranquilidad la convierten en una alternativa serena al bullicio de los grandes centros turísticos, sin renunciar a la cercanía del río.\n\n## Fiestas y cercanías\n\nEn julio, la **Fiesta de la Colonización** rinde homenaje a los inmigrantes fundadores con vecinos vestidos a la usanza de la época, gastronomía típica y actividades culturales. San José es vecina del **Palacio San José** —residencia de Urquiza— y está a pocos kilómetros de **Colón** y del **Parque Nacional El Palmar**, lo que permite combinar historia inmigrante con playas, termas y naturaleza en un mismo viaje.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -203,6 +203,38 @@
         "052-attraction-monumento_historico",
         "072-attraction-plaza_principal",
         "040-attraction-feria_artesanal"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo llego a San José en Entre Ríos?",
+            "answer": "San José se ubica en el departamento Colón, sobre la Ruta Nacional 14 y cerca de la Ruta Provincial 26, a pocos kilómetros de la ciudad de Colón. Desde Buenos Aires se accede por la Ruta Nacional 14 cruzando el complejo Zárate–Brazo Largo, un trayecto de algo más de 300 kilómetros. Muchos visitantes llegan primero a Colón y desde allí se acercan a San José en pocos minutos en auto.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede visitar en San José?",
+            "answer": "El principal atractivo es el Museo Histórico Regional de la Colonia San José, dedicado a los inmigrantes que fundaron la primera colonia agrícola del país en 1857. También se pueden recorrer casas históricas, iglesias y la traza colonial del pueblo, disfrutar de los balnearios sobre el río Uruguay y visitar el cercano Palacio San José y el Molino Forclaz.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene viajar a San José?",
+            "answer": "El verano es ideal para disfrutar de las playas y balnearios sobre el río Uruguay. Julio es un mes destacado por la Fiesta de la Colonización, que homenajea a los inmigrantes fundadores. La primavera y el otoño ofrecen un clima agradable para recorrer los museos, las casas históricas y los circuitos rurales con menos afluencia de turistas.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios para turistas hay en San José?",
+            "answer": "San José ofrece alojamientos, campings sobre el río, gastronomía regional de raíz inmigrante y comercios. Al estar muy cerca de Colón, los visitantes complementan la oferta local con la amplia infraestructura turística de esa ciudad: hoteles, cabañas, restaurantes, termas y prestadores de excursiones.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es la Fiesta de la Colonización?",
+            "answer": "Es la celebración más importante de San José, que se realiza en julio en torno al aniversario de la fundación de la colonia (2 de julio de 1857). Rinde homenaje a los inmigrantes suizos, franceses e italianos con vecinos vestidos a la usanza de la época, gastronomía típica, música y actividades culturales que recrean las tradiciones colonas.",
+            "category": "Eventos"
+        },
+        {
+            "question": "¿Qué relación tiene San José con el Palacio San José?",
+            "answer": "El Palacio San José fue la residencia del general Justo José de Urquiza, impulsor de la colonización agrícola de la zona. Se encuentra en las cercanías de la localidad de San José, en el departamento Uruguay, y es hoy un Museo y Monumento Histórico Nacional que se puede visitar con entrada libre y visitas guiadas.",
+            "category": "Historia"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

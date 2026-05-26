@@ -4,7 +4,7 @@
     "slug": "federacion",
     "name": "Federación",
     "summary": "Ciudad termal a orillas del lago Salto Grande, reconstruida tras la inundación de 1979 y reconocida como capital del termalismo argentino.",
-    "description": "Federación es una ciudad del norte de Entre Ríos ubicada a orillas del embalse de Salto Grande, sobre el río Uruguay. Su historia es única en el país: en 1979, con el llenado del embalse de la represa binacional Salto Grande, la vieja Federación quedó sumergida y el 82% de su población fue reubicada algunos kilómetros al noroeste, donde se inauguró la actual Nueva Federación el 25 de marzo de ese año. Desde 1997 funciona su Parque Termal, pionero en aprovechar las aguas del Acuífero Guaraní, que la convirtió en uno de los destinos termales más visitados de Argentina. La ciudad combina relax y bienestar con playas sobre el lago, una extensa avenida costanera de unos 8 km, paseos náuticos, museos dedicados a la memoria de la antigua ciudad y un entorno natural ideal para el turismo familiar.",
+    "description": "## Federación, la ciudad que renació junto al lago\n\nFederación es una ciudad del norte de Entre Ríos ubicada a orillas del embalse de Salto Grande, sobre el río Uruguay. Su historia es única en el país: a fines de la década de 1970, con la construcción de la represa binacional de Salto Grande, los terrenos de la vieja Federación quedaron destinados a desaparecer bajo el agua y cerca del 82% de su población fue trasladada algunos kilómetros al noroeste. Allí se inauguró la **Nueva Federación el 25 de marzo de 1979**, con un trazado moderno y planificado, mientras el llenado del embalse cubría la ciudad antigua. Hoy ese pasado se cuenta en sus museos y se respira en una comunidad que reconstruyó su vida frente a un enorme espejo de agua.\n\n## Parque Termal y parque acuático\n\nEl corazón del destino es el **Parque Termal de Federación**, que aprovecha las aguas del Acuífero Guaraní y la convirtió en uno de los destinos termales más visitados de la Argentina. El complejo combina piscinas termales de distintas temperaturas para el relax con un **parque acuático termal** —pionero en el país— cuya gran pileta de olas, de unos 1.700 m², simula el movimiento del mar con agua climatizada. Es una propuesta que une bienestar y diversión, especialmente pensada para familias.\n\n## Lago, costanera y playas\n\nFederación tiene una extensa avenida costanera de varios kilómetros, playas sobre el lago de Salto Grande, paseos náuticos y excelente pesca deportiva. El embalse, de gran superficie, ofrece un entorno natural ideal para deportes acuáticos, caminatas frente al agua y atardeceres sobre el río Uruguay.\n\n## Museos y memoria\n\nLa historia del traslado puede conocerse en espacios como el **Museo de los Asentamientos** y el **Museo de la Imagen**, que conservan fotografías, objetos y testimonios de cómo era la antigua ciudad y cómo fue el proceso de reubicación. Recorrerlos ayuda a entender por qué Federación es, además de un destino termal, un lugar con una identidad muy particular dentro del Litoral.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -204,6 +204,38 @@
         "055-attraction-museo_historico",
         "075-attraction-puerto_deportivo",
         "077-attraction-reserva_natural"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Federación desde Buenos Aires y Paraná?",
+            "answer": "Federación está en el norte de Entre Ríos, sobre la Ruta Nacional 14. Desde Buenos Aires son unos 480 km cruzando el complejo Zárate–Brazo Largo y tomando la RN 12 y luego la RN 14 hacia el norte. Desde Paraná son alrededor de 330 km por la RN 127 y la RN 14. Hay servicios de micros de larga distancia que conectan la ciudad con los principales centros del país.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Federación?",
+            "answer": "El gran atractivo es el Parque Termal, con piscinas termales para el relax y un parque acuático termal con pileta de olas, ideal para familias. Además podés disfrutar de las playas y la costanera del lago Salto Grande, hacer paseos náuticos y pesca deportiva, y visitar los museos que cuentan la historia del traslado de la ciudad en 1979.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo es la mejor época para visitar Federación?",
+            "answer": "El Parque Termal funciona todo el año y es muy elegido en otoño e invierno, cuando el baño termal contrasta con el aire frío. El verano suma las playas del lago, los deportes náuticos y el uso pleno del parque acuático. Por ser un destino familiar muy popular, en vacaciones de invierno y verano conviene reservar el alojamiento con anticipación.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios ofrece Federación al visitante?",
+            "answer": "La ciudad está muy orientada al turismo termal: ofrece hoteles, cabañas, departamentos y campings, además de restaurantes, comercios, bancos, cajeros y estaciones de servicio. El Parque Termal cuenta con instalaciones y servicios propios. Su escala mediana la hace cómoda y caminable, con la costanera y el parque termal como ejes.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Por qué Federación es una ciudad nueva?",
+            "answer": "Porque la ciudad fue trasladada. Con la construcción de la represa binacional de Salto Grande, los terrenos de la antigua Federación quedaron bajo el agua del embalse y cerca del 82% de la población fue reubicada algunos kilómetros al noroeste. La Nueva Federación se inauguró el 25 de marzo de 1979, con un trazado moderno y planificado frente al lago.",
+            "category": "Cultura"
+        },
+        {
+            "question": "¿Qué tiene de especial el parque acuático termal?",
+            "answer": "Fue el primer parque acuático termal de la Argentina. Su atracción principal es una gran pileta de olas de alrededor de 1.700 m² que simula el movimiento del mar con agua termal climatizada, sumada a otras piscinas recreativas. Combina la diversión de un parque acuático con los beneficios del agua termal, por lo que es un imán para el turismo familiar.",
+            "category": "Termas"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

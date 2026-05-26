@@ -4,7 +4,7 @@
     "slug": "colon",
     "name": "Colón",
     "summary": "Ciudad ribereña sobre el río Uruguay famosa por sus playas de arena, su complejo termal y el carnaval entrerriano.",
-    "description": "Colón es una de las ciudades turísticas más visitadas de Entre Ríos, ubicada sobre la costa del río Uruguay, en el centro-este de la provincia. Sus extensos kilómetros de playas de arena fina y aguas dulces forman uno de los corredores fluviales más concurridos del país, con balnearios públicos y gratuitos. El Complejo Termal de Colón ofrece trece piscinas con aguas mineromedicinales entre 33 y 40 grados, ideales para la relajación familiar durante todo el año. La ciudad combina su costanera arbolada con una activa vida cultural, donde se destacan el Carnaval de Colón en verano y la Fiesta Nacional de la Artesanía en febrero. A pocos kilómetros se encuentran la Colonia San José, fundada por inmigrantes europeos en 1857, y el Parque Nacional El Palmar, lo que la convierte en una base perfecta para explorar el litoral entrerriano.",
+    "description": "## Colón, capital turística del río Uruguay\n\nColón es una de las ciudades turísticas más visitadas de Entre Ríos, ubicada sobre la costa del **río Uruguay**, en el centro-este de la provincia. Pionera del turismo entrerriano, combina playas de arena fina, aguas termales y una vida cultural intensa que la convierten en una de las puertas de entrada al Corredor del río Uruguay. Su trazado urbano, agradable para recorrer a pie, invita a conocer la Plaza San Martín, la Catedral, el Parque Quirós y la extensa Avenida Costanera, desde donde se accede a los principales balnearios.\n\n## Playas y río\n\nLas **playas de Colón**, sobre el río Uruguay, son uno de los grandes atractivos del verano: arena fina, aguas tranquilas y balnearios sobre la costanera. En temporada alta es posible sumar excursiones en lancha hasta las playas agrestes de las islas y los bancos de arena del río, así como salidas de pesca deportiva, una de las actividades tradicionales de la zona.\n\n## Termas de Colón\n\nEl **Complejo Termal de Colón**, inaugurado en 1996, se emplaza en un predio de unas 4,5 hectáreas a metros del río. Cuenta con trece piscinas —nueve al aire libre y tres cubiertas, más una piscina octogonal—, con aguas mineromedicinales templadas ideales para el relax familiar durante todo el año. Es una propuesta que combina descanso, naturaleza y vistas al entorno fluvial.\n\n## Cultura y fiestas\n\nColón tiene una agenda cultural activa. En febrero se celebra la **Fiesta Nacional de la Artesanía**, uno de los eventos más importantes del país en su género, que reúne a artesanos de distintas provincias junto a una grilla de espectáculos musicales y propuestas gastronómicas. El carnaval entrerriano y otras celebraciones completan el calendario veraniego.\n\n## Base para explorar el Litoral\n\nA pocos kilómetros se encuentran la **Colonia San José**, fundada por inmigrantes europeos en 1857, el patrimonio industrial de **Pueblo Liebig** y el **Parque Nacional El Palmar**, que protege uno de los palmares de yatay más importantes del país. Esta cercanía hace de Colón una base ideal para descubrir el litoral entrerriano.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -168,6 +168,38 @@
         "065-attraction-pesca_deportiva",
         "072-attraction-plaza_principal",
         "018-attraction-centro_historico"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo llego a Colón desde Buenos Aires?",
+            "answer": "Desde Buenos Aires se llega por la Ruta Nacional 14, cruzando el complejo ferrovial Zárate–Brazo Largo, en un trayecto de unos 320 a 350 kilómetros (alrededor de 3 horas y media en auto, según el tránsito). También hay servicios de ómnibus de larga distancia que conectan la terminal de Retiro con la terminal de Colón. Quienes vienen desde el norte o desde Concordia también acceden por la Ruta 14.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Colón?",
+            "answer": "Colón ofrece playas sobre el río Uruguay, el Complejo Termal con sus piscinas de aguas mineromedicinales, paseos por la costanera y el centro histórico, excursiones en lancha a las islas y bancos de arena, y pesca deportiva. Es además una base para visitar el Parque Nacional El Palmar, la Colonia San José y Pueblo Liebig, todos a pocos kilómetros.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Colón?",
+            "answer": "La primavera y el verano son ideales para disfrutar de las playas y las actividades al aire libre, con clima cálido y agradable. Las termas, en cambio, se pueden disfrutar durante todo el año porque sus aguas mantienen una temperatura templada constante. Febrero es un mes especialmente animado por la Fiesta Nacional de la Artesanía y el carnaval.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece la ciudad?",
+            "answer": "Colón cuenta con una amplia oferta de alojamiento que incluye hoteles, cabañas, hostales y campings, además de restaurantes, cafés y tiendas de artesanías. Tiene oficina de informes turísticos, prestadores de excursiones fluviales y al Parque El Palmar, y comercios sobre la costanera y el centro.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿A qué distancia está el Parque Nacional El Palmar?",
+            "answer": "El Parque Nacional El Palmar se ubica sobre la Ruta Nacional 14, a la altura de Ubajay, a aproximadamente 50 a 60 kilómetros de Colón. Protege uno de los palmares de yatay más importantes del país y se puede visitar en una excursión de día completo, con senderos, áreas de acampe y actividades guiadas.",
+            "category": "Excursiones"
+        },
+        {
+            "question": "¿Cuándo es la Fiesta Nacional de la Artesanía?",
+            "answer": "La Fiesta Nacional de la Artesanía se celebra en febrero, generalmente a mediados de mes. Reúne a artesanos de distintas provincias que exhiben y venden piezas en cerámica, cuero, madera, metal, fibras naturales y textiles, acompañados por una grilla de espectáculos musicales y propuestas gastronómicas. Es uno de los eventos artesanales más importantes del país.",
+            "category": "Eventos"
+        }
     ],
     "tagIds": [
         "022-tag-historia",
