@@ -48,6 +48,16 @@ export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
         isOwner(actor, entity),
         'Permission denied to update accommodation'
     );
+
+    // SPEC-143 #29: while the owner is service-suspended (full pause) their
+    // accommodations are edit-locked. Staff holding ACCOMMODATION_UPDATE_ANY are
+    // exempt (admin management); the owner editing via UPDATE_OWN is blocked.
+    if (entity.ownerSuspended && !hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Cannot edit this accommodation while the owner subscription is paused'
+        );
+    }
 }
 
 /**

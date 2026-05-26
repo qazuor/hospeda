@@ -130,6 +130,23 @@ describe('Accommodation Permissions', () => {
             'Permission denied to update accommodation'
         );
     });
+    it('checkCanUpdate blocks the owner editing a service-suspended accommodation', () => {
+        const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+        expectForbidden(
+            () =>
+                checkCanUpdate(
+                    createActor([PermissionEnum.ACCOMMODATION_UPDATE_OWN], mockUserId),
+                    suspended
+                ),
+            'while the owner subscription is paused'
+        );
+    });
+    it('checkCanUpdate lets UPDATE_ANY staff edit a service-suspended accommodation', () => {
+        const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+        expect(() =>
+            checkCanUpdate(createActor([PermissionEnum.ACCOMMODATION_UPDATE_ANY]), suspended)
+        ).not.toThrow();
+    });
 
     it('checkCanSoftDelete allows with ANY permission', () => {
         expect(() =>

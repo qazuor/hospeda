@@ -516,8 +516,21 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeCreate(
         data: AccommodationCreateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<Accommodation>> {
+        // SPEC-143 #29: a service-suspended owner is "not selling", so they
+        // cannot create new accommodations while the subscription is paused.
+        // No exemption — this guards the owner target itself, not the caller.
+        if (data.ownerId) {
+            const owner = await this._userModel.findById(data.ownerId, ctx?.tx);
+            if (owner?.serviceSuspended) {
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Cannot create an accommodation while the owner subscription is paused'
+                );
+            }
+        }
+
         await this._assertDestinationIsCity(data.destinationId);
 
         // Only generate a slug if one is not already provided

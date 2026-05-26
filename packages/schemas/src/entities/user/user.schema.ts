@@ -147,6 +147,15 @@ export const UserSchema = z.object({
     profileCompleted: z.boolean().default(false).optional(),
     setPasswordPrompted: z.boolean().default(false).optional(),
 
+    /**
+     * SPEC-143 #29 service-suspension flag. Canonical source for the pause
+     * "service suspension" dimension; denormalized to
+     * `accommodations.ownerSuspended` for the public hot path. Mirrors the
+     * `users.service_suspended` column. Optional with default `false` so
+     * existing fixtures and create/update inputs that omit it keep working.
+     */
+    serviceSuspended: z.boolean().default(false).optional(),
+
     // User-specific nested objects
     profile: UserProfileSchema.nullish(),
     settings: UserSettingsSchema.optional(),
