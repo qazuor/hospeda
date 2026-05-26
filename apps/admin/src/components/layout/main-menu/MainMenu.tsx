@@ -26,9 +26,9 @@ import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useCurrentSection } from '@/hooks/use-current-section';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 import { cn } from '@/lib/utils';
-import { resolveIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -81,7 +81,7 @@ interface MainMenuItemProps {
  */
 function MainMenuItem({ section, isActive }: MainMenuItemProps) {
     const label = useLocalizedLabel(section.label);
-    const IconComponent = section.icon ? resolveIcon({ iconName: section.icon }) : undefined;
+    const IconComponent = section.icon ? resolveNavIcon({ iconName: section.icon }) : undefined;
     const href = section.defaultRoute ?? section.route;
 
     return (
@@ -89,11 +89,10 @@ function MainMenuItem({ section, isActive }: MainMenuItemProps) {
             to={href}
             className={cn(
                 'flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors duration-150',
-                'hover:bg-accent hover:text-accent-foreground',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-foreground/70 hover:bg-white/60 hover:text-primary'
             )}
             aria-current={isActive ? 'page' : undefined}
             data-section-id={section.id}
@@ -103,6 +102,7 @@ function MainMenuItem({ section, isActive }: MainMenuItemProps) {
                     <IconComponent
                         size="sm"
                         aria-hidden="true"
+                        className={isActive ? undefined : 'icon-river-header'}
                     />
                 </span>
             )}
@@ -155,7 +155,7 @@ export function MainMenu() {
 
     return (
         <nav
-            className="ml-6 hidden items-center gap-1 md:flex"
+            className="hidden items-center gap-1 md:flex"
             aria-label="Main navigation"
         >
             {visibleSections.map((section) => (

@@ -23,11 +23,17 @@
  *
  * Key shade-selection differences from web (per doc 05 §3 Eje 3):
  *
- *   - Primary uses `river[600]` (not `river[500]`): denser, more muted.
- *     Admin's working surfaces benefit from less saturated chrome.
- *   - Accent uses `accent[600]` (vs web's [500]): same muted reasoning.
- *   - Background uses `neutral[100]` (vs web's `oklch(0.985 0.002 210)`):
- *     slightly grayer "workspace" tone.
+ *   - Primary uses `river[500]` (same as web): the brand-cohesion pass nudged
+ *     this up from the original muted `river[600]` so the river blue reads as
+ *     a prominent brand marker across buttons, active nav, focus and links —
+ *     paired with the calmer river-tinted background it stays workspace-friendly.
+ *   - Accent uses `accent[600]` (vs web's [500]): muted reasoning retained.
+ *   - Background uses a faintly river-tinted off-white (`RIVER_TINTED_BG`).
+ *     This is a deliberate compromise: SPEC-153 originally used `neutral[100]`
+ *     (pure gray "workspace" tone), but to bring the admin closer to web's
+ *     brand feel we nudge it toward web's river-white — while staying calmer
+ *     than web's full `oklch(0.985 0.002 210)` (lower lightness, very low
+ *     chroma) so long working sessions over tables/forms stay comfortable.
  *   - Semantic feedback colors (success/warning/danger/info) all use
  *     `[600]` shades for the same muted-density principle.
  *
@@ -54,14 +60,21 @@ import type { Theme } from './types.js';
 /** White surface for elevated UI (cards, modals) — not part of neutral. */
 const PURE_WHITE: OKLCH = { l: 1, c: 0, h: 0 };
 
+/**
+ * App background: a faintly river-tinted off-white (river hue 259, matching the
+ * primary). Brighter and warmer than the old neutral[100] gray, but calmer than
+ * web's full river-white — the brand-cohesion-vs-workspace-ergonomics compromise.
+ */
+const RIVER_TINTED_BG: OKLCH = { l: 0.97, c: 0.006, h: 259 };
+
 export const adminLight: Theme = {
     // ========================================================================
-    // Primary (river — same hue family as web for brand coherence, denser
-    // shade for productivity-focused chrome)
+    // Primary (river — same shade as web [500] for a prominent brand marker;
+    // brand-cohesion pass raised it from the original muted [600])
     // ========================================================================
-    'color-primary': river[600],
-    'color-primary-hover': river[500],
-    'color-primary-pressed': river[700],
+    'color-primary': river[500],
+    'color-primary-hover': river[400],
+    'color-primary-pressed': river[600],
 
     // ========================================================================
     // Accent (orange — slightly muted vs web)
@@ -69,9 +82,9 @@ export const adminLight: Theme = {
     'color-accent': accent[600],
 
     // ========================================================================
-    // Background / surface (grayer "workspace" tone)
+    // Background / surface (faintly river-tinted off-white — see RIVER_TINTED_BG)
     // ========================================================================
-    'color-bg-app': neutral[100],
+    'color-bg-app': RIVER_TINTED_BG,
     'color-bg-elevated': PURE_WHITE,
 
     // ========================================================================

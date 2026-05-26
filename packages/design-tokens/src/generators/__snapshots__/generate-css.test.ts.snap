@@ -324,11 +324,11 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
 
 /* Admin light theme — applies whenever \`data-app="admin"\` is set on <html>. */
 [data-app="admin"] {
-    --color-primary: oklch(0.498 0.166 259);
-    --color-primary-hover: oklch(0.63 0.19 259);
-    --color-primary-pressed: oklch(0.365 0.143 259);
+    --color-primary: oklch(0.63 0.19 259);
+    --color-primary-hover: oklch(0.702 0.171 259);
+    --color-primary-pressed: oklch(0.498 0.166 259);
     --color-accent: oklch(0.55 0.158 55);
-    --color-bg-app: oklch(0.95 0 0);
+    --color-bg-app: oklch(0.97 0.006 259);
     --color-bg-elevated: oklch(1 0 0);
     --color-fg-primary: oklch(0.1 0 0);
     --color-fg-secondary: oklch(0.3 0 0);
@@ -345,9 +345,9 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
 
 /* Admin dark theme — combined selector requires both flags. */
 [data-app="admin"][data-theme="dark"] {
-    --color-primary: oklch(0.63 0.19 259);
-    --color-primary-hover: oklch(0.702 0.171 259);
-    --color-primary-pressed: oklch(0.498 0.166 259);
+    --color-primary: oklch(0.702 0.171 259);
+    --color-primary-hover: oklch(0.774 0.152 259);
+    --color-primary-pressed: oklch(0.63 0.19 259);
     --color-accent: oklch(0.7 0.18 55);
     --color-bg-app: oklch(0.1 0 0);
     --color-bg-elevated: oklch(0.18 0 0);

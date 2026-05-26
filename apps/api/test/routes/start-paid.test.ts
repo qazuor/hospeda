@@ -233,7 +233,10 @@ describe('handleStartPaidSubscription (monthly)', () => {
             notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
         });
         expect(typeof callArg.paymentMethodReturnUrl).toBe('string');
-        expect(callArg.paymentMethodReturnUrl).toContain('/billing/return');
+        // Finding #8: MP back_url points at the existing locale-prefixed
+        // checkout success page, not the old /billing/return (which Astro
+        // rewrote to a 404).
+        expect(callArg.paymentMethodReturnUrl).toContain('/es/suscriptores/checkout/success/');
         const metadata = callArg.metadata as Record<string, unknown>;
         expect(metadata.source).toBe('start-paid-monthly');
     });
@@ -537,8 +540,10 @@ describe('handleStartPaidSubscription (annual)', () => {
         });
 
         const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(call.successUrl).toBe('https://hospeda.test/billing/return');
-        expect(call.cancelUrl).toBe('https://hospeda.test/billing/return?cancelled=1');
+        // Finding #8: annual back_urls point at the existing locale-prefixed
+        // checkout pages (success/failure), not the old /billing/return.
+        expect(call.successUrl).toBe('https://hospeda.test/es/suscriptores/checkout/success/');
+        expect(call.cancelUrl).toBe('https://hospeda.test/es/suscriptores/checkout/failure/');
         expect(call.notificationUrl).toBe('https://api.hospeda.test/api/v1/webhooks/mercadopago');
         expect(call.statementDescriptor).toBe('HOSPEDA');
     });

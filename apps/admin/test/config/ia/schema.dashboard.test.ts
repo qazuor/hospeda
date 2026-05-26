@@ -236,6 +236,16 @@ describe('MobileConfigSchema', () => {
             // Act + Assert
             expect(MobileConfigSchema.safeParse(input).success).toBe(true);
         });
+
+        it('should accept bottomNav with 7 items (admin/super-admin compact nav)', () => {
+            // Arrange
+            const input = {
+                bottomNav: ['s1', 's2', 's3', 's4', 's5', 's6', 's7'],
+                fab: null
+            };
+            // Act + Assert
+            expect(MobileConfigSchema.safeParse(input).success).toBe(true);
+        });
     });
 
     describe('when given invalid input', () => {
@@ -246,10 +256,10 @@ describe('MobileConfigSchema', () => {
             expect(MobileConfigSchema.safeParse(input).success).toBe(false);
         });
 
-        it('should reject bottomNav with 6 items (exceeds max 5)', () => {
+        it('should reject bottomNav with 8 items (exceeds max 7)', () => {
             // Arrange
             const input = {
-                bottomNav: ['s1', 's2', 's3', 's4', 's5', 's6'],
+                bottomNav: ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'],
                 fab: null
             };
             // Act + Assert

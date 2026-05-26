@@ -50,17 +50,17 @@ describe('adminLight — coverage and naming', () => {
     });
 });
 
-describe("adminLight — primary uses river[600] (denser than web's [500])", () => {
-    it('color-primary = river[600]', () => {
-        expect(adminLight['color-primary']).toBe(river[600]);
+describe('adminLight — primary uses river[500] (brand-forward, matches web)', () => {
+    it('color-primary = river[500]', () => {
+        expect(adminLight['color-primary']).toBe(river[500]);
     });
 
-    it('color-primary-hover = river[500]', () => {
-        expect(adminLight['color-primary-hover']).toBe(river[500]);
+    it('color-primary-hover = river[400]', () => {
+        expect(adminLight['color-primary-hover']).toBe(river[400]);
     });
 
-    it('color-primary-pressed = river[700]', () => {
-        expect(adminLight['color-primary-pressed']).toBe(river[700]);
+    it('color-primary-pressed = river[600]', () => {
+        expect(adminLight['color-primary-pressed']).toBe(river[600]);
     });
 
     it('hover is LIGHTER than primary (lifts on hover)', () => {
@@ -79,7 +79,6 @@ describe("adminLight — primary uses river[600] (denser than web's [500])", () 
 describe('adminLight — accent + bg + fg + border + semantic shades', () => {
     it.each([
         ['color-accent', accent[600]],
-        ['color-bg-app', neutral[100]],
         ['color-fg-primary', neutral[900]],
         ['color-fg-secondary', neutral[700]],
         ['color-fg-muted', neutral[500]],
@@ -90,6 +89,12 @@ describe('adminLight — accent + bg + fg + border + semantic shades', () => {
         ['color-info', info[600]]
     ])('%s references the right palette shade', (key, expectedRef) => {
         expect(adminLight[key]).toBe(expectedRef);
+    });
+
+    it('bg-app is a faintly river-tinted off-white (brand-cohesion compromise)', () => {
+        // Brighter + warmer than the old neutral[100] gray, calmer than web's
+        // full river-white. River hue 259, very low chroma.
+        expect(adminLight['color-bg-app']).toEqual({ l: 0.97, c: 0.006, h: 259 });
     });
 });
 
@@ -134,9 +139,9 @@ describe('adminDark — coverage and strict subset of adminLight', () => {
 });
 
 describe('adminDark — primary shifts one shade LIGHTER vs adminLight', () => {
-    it('color-primary in dark = river[500] (vs adminLight river[600])', () => {
-        expect(adminDark['color-primary']).toBe(river[500]);
-        expect(adminLight['color-primary']).toBe(river[600]);
+    it('color-primary in dark = river[400] (vs adminLight river[500])', () => {
+        expect(adminDark['color-primary']).toBe(river[400]);
+        expect(adminLight['color-primary']).toBe(river[500]);
     });
 
     it('foreground inverts: dark uses neutral[100], light uses neutral[900]', () => {
@@ -144,9 +149,12 @@ describe('adminDark — primary shifts one shade LIGHTER vs adminLight', () => {
         expect(adminLight['color-fg-primary']).toBe(neutral[900]);
     });
 
-    it('bg-app inverts: dark uses neutral[900], light uses neutral[100]', () => {
+    it('bg-app inverts: dark is dark neutral[900], light is a bright off-white', () => {
         expect(adminDark['color-bg-app']).toBe(neutral[900]);
-        expect(adminLight['color-bg-app']).toBe(neutral[100]);
+        // Light bg is no longer pure neutral[100] — it's a faintly river-tinted
+        // off-white (RIVER_TINTED_BG). Assert it stays bright.
+        const light = adminLight['color-bg-app'] as { l: number };
+        expect(light.l).toBeGreaterThan(0.9);
     });
 });
 

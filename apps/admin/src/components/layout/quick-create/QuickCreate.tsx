@@ -37,8 +37,9 @@ import { validatedConfig } from '@/config/ia/validate';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
-import { resolveIcon } from '@repo/icons';
+import { ChevronDownIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
@@ -77,7 +78,7 @@ interface QuickCreateItemProps {
 function QuickCreateItem({ action }: QuickCreateItemProps) {
     const label = useLocalizedLabel(action.label);
     const navigate = useNavigate();
-    const IconComponent = action.icon ? resolveIcon({ iconName: action.icon }) : undefined;
+    const IconComponent = action.icon ? resolveNavIcon({ iconName: action.icon }) : undefined;
 
     return (
         <DropdownMenuItem
@@ -164,15 +165,19 @@ export function QuickCreate() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex h-9 items-center gap-0.5 rounded-md px-2 hover:bg-white/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Quick create"
             >
                 <span
-                    className="font-medium text-lg leading-none"
+                    className="font-medium text-lg text-primary leading-none"
                     aria-hidden="true"
                 >
                     +
                 </span>
+                <ChevronDownIcon
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                />
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"

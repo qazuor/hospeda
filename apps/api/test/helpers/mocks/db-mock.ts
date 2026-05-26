@@ -139,6 +139,28 @@ export function createDbMock() {
             }
         },
 
+        // Mock AccommodationModel — instantiated at module scope in
+        // routes/user/protected/reviews.ts, so it must exist on the mock or
+        // initApp() fails to load (breaking collection for every route test).
+        AccommodationModel: class MockAccommodationModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+        },
+
+        // Mock DestinationModel — same module-scope instantiation in reviews.ts.
+        DestinationModel: class MockDestinationModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+        },
+
         // Mock TagModel
         TagModel: class MockTagModel {
             async findById(_id: string) {
