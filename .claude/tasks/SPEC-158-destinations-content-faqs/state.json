@@ -1491,8 +1491,8 @@
         {
             "id": "T-041",
             "title": "Full seed run + 22-destination validation + coverage",
-            "description": "Run the T-018 harness green for all 22 cities; run pnpm db:fresh-dev locally to confirm FAQs seed end-to-end with categories; run typecheck + lint + test across affected packages; verify >=90% coverage on new code. Acceptance: all green, all 22 cities pass the harness.",
-            "status": "pending",
+            "description": "Run the T-018 harness green for all 22 cities; run pnpm db:fresh-dev locally to confirm FAQs seed end-to-end with categories; run typecheck + lint + test across affected packages; verify >=90% coverage on new code. Acceptance: all green, all 22 cities pass the harness. [PROGRESS: 22-city harness GREEN incl. completeness gate (46 tests: every CITY has 5-7 FAQs with baseline categories, description bounds). DEFERRED with T-008: pnpm db:fresh-dev end-to-end seed (needs local DB push) + coverage run.]",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [
                 "T-018",
@@ -1523,7 +1523,7 @@
             "subtasks": [
                 {
                     "title": "Harness green for all 22",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Local db:fresh-dev end-to-end seed",
@@ -1543,7 +1543,7 @@
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-26T00:00:00.000Z",
                 "completed": null
             }
         },
@@ -1582,7 +1582,7 @@
     "summary": {
         "total": 42,
         "pending": 2,
-        "inProgress": 2,
+        "inProgress": 3,
         "completed": 38,
         "blocked": 0,
         "averageComplexity": 2.6

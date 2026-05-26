@@ -60,6 +60,16 @@ describe('SPEC-158 destination content + FAQs', () => {
         expect(cityFiles.length).toBe(22);
     });
 
+    // SPEC-158 completeness gate (T-041): now that the content phase is done,
+    // every CITY destination MUST ship with FAQs. Guards against regressions
+    // that drop a city's FAQs.
+    it('every CITY destination ships with FAQs', () => {
+        const missing = cityFiles
+            .filter(({ data }) => !data.faqs || data.faqs.length === 0)
+            .map(({ file }) => file);
+        expect(missing, `cities missing FAQs: ${missing.join(', ')}`).toEqual([]);
+    });
+
     describe.each(cityFiles)('$file', ({ data }) => {
         it('has a markdown description within bounds (<= 8000 chars)', () => {
             expect(typeof data.description).toBe('string');
