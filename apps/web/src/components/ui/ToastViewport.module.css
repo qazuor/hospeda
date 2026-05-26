@@ -29,6 +29,9 @@
 }
 
 .toast {
+    /* Default auto-dismiss duration; ToastViewport.client.tsx overrides this
+       per-toast via an inline `--toast-duration` style from `toast.duration`. */
+    --toast-duration: 5000ms;
     pointer-events: auto;
     position: relative;
     overflow: hidden;

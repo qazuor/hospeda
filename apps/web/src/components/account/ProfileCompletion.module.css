@@ -176,12 +176,12 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
-    transition: border-color var(--duration-normal, 0.4s) ease, color
-        var(--duration-normal, 0.4s) ease;
+    transition: border-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s)
+        ease;
 }
 
 .birthDatePickerButton:hover:not(:disabled),
-.birthDatePickerButton[aria-expanded='true'] {
+.birthDatePickerButton[aria-expanded="true"] {
     border-color: var(--brand-primary);
     color: var(--brand-primary);
 }

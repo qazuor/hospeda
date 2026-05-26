@@ -200,15 +200,18 @@ async function main() {
     }
 
     const totalPairs = baseline.length;
+    // biome-ignore lint/suspicious/noConsoleLog: visual-snapshot diff CLI prints its report to the terminal
     console.log(
         `[diff-snapshots] compared ${totalPairs} baseline snapshots against actual/ ` +
             `(threshold ${(MAX_DIFF_RATIO * 100).toFixed(2)}% per snapshot).`
     );
+    // biome-ignore lint/suspicious/noConsoleLog: visual-snapshot diff CLI prints its report to the terminal
     console.log(
         `[diff-snapshots] peak diff ratio: ${(maxRatioSeen * 100).toFixed(4)}% (${maxRatioName || 'n/a'}).`
     );
 
     if (failures.length === 0 && overThreshold.length === 0) {
+        // biome-ignore lint/suspicious/noConsoleLog: visual-snapshot diff CLI prints its report to the terminal
         console.log('[diff-snapshots] OK - all snapshots within threshold. AC-5/AC-6 pass.');
         process.exit(0);
     }
