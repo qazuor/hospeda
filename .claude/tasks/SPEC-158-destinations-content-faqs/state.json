@@ -540,7 +540,7 @@
             "id": "T-017",
             "title": "Add faqs loop (with category) to destination seed factory",
             "description": "In the destination seed factory (packages/seed/src/example/destinations.seed.ts or equivalent) add a faqs loop calling service.addFaq, mirroring accommodations.seed.ts lines 214-259 BUT passing category through (accommodation omits it). JSON shape: faqs:[{question,answer,category}]. Idempotent (handle ALREADY_EXISTS). Acceptance: seeding a destination with faqs inserts them with categories.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009", "T-010"],
             "blocks": [
@@ -571,63 +571,63 @@
             "subtasks": [
                 {
                     "title": "Add faqs loop calling service.addFaq",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass category through (improvement over accommodation)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Idempotent ALREADY_EXISTS handling",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "phase-core", "REQ-5"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Create seed-content validation test harness for 22 destinations",
             "description": "Add a packages/seed test asserting each of the 22 CITY destination JSON files: parses against DestinationSchema; description length 2000-3500 (allow shorter for genuinely small towns, never >8000); faqs count 5-7; baseline categories present (Cómo llegar, Qué hacer, Cuándo visitar, Servicios); FAQ question/answer within schema bounds. The harness is RED until content lands; each content task turns its city green. Acceptance: harness runs, lists per-city pass/fail.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Parse each JSON against DestinationSchema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert description length + faqs count 5-7",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert baseline categories present",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "testing", "phase-testing", "REQ-5"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-26T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-26T00:00:00.000Z",
+                "completed": "2026-05-26T00:00:00.000Z"
             }
         },
         {
@@ -1581,9 +1581,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 28,
+        "pending": 24,
         "inProgress": 2,
-        "completed": 14,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.6
     }
