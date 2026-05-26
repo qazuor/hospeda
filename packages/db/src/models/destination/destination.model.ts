@@ -195,6 +195,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 'reviews',
                 'tags',
                 'attractions',
+                'faqs',
                 'createdBy',
                 'updatedBy',
                 'deletedBy'
