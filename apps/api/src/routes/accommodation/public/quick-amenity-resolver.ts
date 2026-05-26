@@ -45,7 +45,13 @@ async function ensureCache(): Promise<Map<string, string>> {
     // The catalog is ~90 items today; pageSize 500 leaves headroom without
     // pagination complexity. If it ever grows past that, switch to a loop.
     const { items } = await model.findAll({}, { page: 1, pageSize: 500 });
-    slugToIdCache = new Map(items.map((a) => [a.slug, a.id]));
+    // `slug` is typed nullable on the model row even though amenities always
+    // have one; filter to non-empty strings so the cache key is `string`.
+    slugToIdCache = new Map(
+        items
+            .filter((a): a is typeof a & { slug: string } => typeof a.slug === 'string')
+            .map((a) => [a.slug, a.id])
+    );
     return slugToIdCache;
 }
 
