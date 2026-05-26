@@ -352,6 +352,27 @@ Destination seeds include hierarchy fields (`parentDestinationId`, `destinationT
 
 The seed script uses `preProcess` to resolve `parentDestinationId` references from seed IDs to real UUIDs via `context.idMapper.getRealId('destinations', seedId)`. Hierarchy nodes must be seeded in order from root (COUNTRY) to leaf (CITY/TOWN).
 
+### Destination FAQs (SPEC-158)
+
+The 22 CITY destination seeds (`001`–`022`) carry a top-level `faqs` array:
+
+```json
+"faqs": [
+  { "question": "¿Cómo se llega a la ciudad?", "answer": "...", "category": "Cómo llegar" }
+]
+```
+
+`faqs` is a 1-to-N child relation (`destination_faqs` table), NOT a column, so the
+destination seed factory **excludes it in the `normalizer`** and creates the rows in a
+`postProcess` hook that loops the array and calls `DestinationService.addFaq`. Unlike the
+accommodation factory (which drops `category`), the destination loop **forwards `category`**
+so the grouped FAQ accordion + `FAQPage` JSON-LD render correctly.
+
+Content invariants are enforced by [`test/destination-content-faqs.test.ts`](test/destination-content-faqs.test.ts):
+every CITY ships 5–7 FAQs, the baseline categories `Cómo llegar` / `Qué hacer` /
+`Cuándo visitar` / `Servicios` are all present, question/answer lengths are within the
+`BaseFaqSchema` bounds, and the markdown `description` stays within `[30, 8000]` chars.
+
 ## Best Practices
 
 1. **Make seeds idempotent** - can run multiple times safely
