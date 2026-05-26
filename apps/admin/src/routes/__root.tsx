@@ -167,7 +167,10 @@ const titleForPath = (pathname: string): string => {
 
 export const Route = createRootRoute({
     head: () => ({
-        meta: [{ title: BASE_TITLE }]
+        meta: [
+            { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+            { title: BASE_TITLE }
+        ]
     }),
     component: () => {
         return (

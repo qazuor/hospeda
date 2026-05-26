@@ -181,12 +181,12 @@ describe(`AC-13 — ${RoleEnum.EDITOR} role navigation`, () => {
 
     // ── mobile ─────────────────────────────────────────────────────────────
 
-    it('mobile.fab is "newPost"', () => {
+    it('mobile.fab is null (create reachable via topbar quick-create)', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.EDITOR];
 
         // Act / Assert
-        expect(role?.mobile?.fab).toBe('newPost');
+        expect(role?.mobile?.fab).toBeNull();
     });
 
     it('mobile.bottomNav is [inicio, editorial, analisis, miCuenta]', () => {

@@ -679,7 +679,8 @@ export type TopbarConfig = z.infer<typeof TopbarConfigSchema>;
  * Mobile navigation configuration for a role.
  *
  * `bottomNav` contains section IDs to surface in the bottom navigation bar.
- * Min 2 (less doesn't justify a bottom nav); max 5 (more is unusable on small screens).
+ * Min 2 (less doesn't justify a bottom nav); max 7. With 6–7 entries the bar
+ * renders icon-only (compact mode) so it still fits a phone width.
  * Set to `null` to use hamburger menu only.
  *
  * @example
@@ -693,9 +694,9 @@ export type TopbarConfig = z.infer<typeof TopbarConfigSchema>;
 export const MobileConfigSchema = z.object({
     /**
      * Section IDs to surface in the bottom navigation bar.
-     * Must be between 2 and 5 entries. Set to `null` for hamburger-only.
+     * Must be between 2 and 7 entries (6–7 render icon-only). Set to `null` for hamburger-only.
      */
-    bottomNav: z.array(z.string()).min(2).max(5).nullable(),
+    bottomNav: z.array(z.string()).min(2).max(7).nullable(),
     /** ID of a single create-action to render as a Floating Action Button. `null` = no FAB. */
     fab: z.string().nullable()
 });

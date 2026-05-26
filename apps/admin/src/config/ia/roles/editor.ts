@@ -29,7 +29,9 @@ import type { RoleConfigSchema } from '../schema';
  * - Account link is surfaced in the main nav because EDITOR is not a power user
  *   who works exclusively from the sidebar.
  * - Bottom nav surfaces the 4 sections that match the main menu for mobile parity.
- * - FAB defaults to the most frequent editorial action: create a new post.
+ * - No mobile FAB (`fab: null`): the create actions are already reachable from the
+ *   topbar quick-create ("+"), so a bottom-nav FAB would duplicate it and crowd the
+ *   content area on mobile.
  * - `labelOverrides`: the `inicioSidebar.dashboard` item label is changed to
  *   "Dashboard editorial" to reinforce the editorial context for this role.
  *
@@ -37,7 +39,7 @@ import type { RoleConfigSchema } from '../schema';
  * ```ts
  * import { editorRole } from '@/config/ia/roles/editor';
  * editorRole.topbar.showQuickCreate; // ['newPost', 'newEvent', 'newCampaign']
- * editorRole.mobile.fab; // 'newPost'
+ * editorRole.mobile.fab; // null
  * ```
  */
 export const editorRole: z.input<typeof RoleConfigSchema> = {
@@ -52,7 +54,7 @@ export const editorRole: z.input<typeof RoleConfigSchema> = {
     },
     mobile: {
         bottomNav: ['inicio', 'editorial', 'analisis', 'miCuenta'],
-        fab: 'newPost'
+        fab: null
     },
     labelOverrides: {
         'inicioSidebar.dashboard': {

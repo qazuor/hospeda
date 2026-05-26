@@ -1,11 +1,15 @@
 /**
  * Icon resolver utility.
- * Maps icon name strings (stored in DB) to actual icon components.
- * Single source of truth for string -> component resolution.
  *
- * Covers icons stored as strings in the database: amenities, features,
- * attractions, entities, booking states, social links, and communication.
- * Admin/system/action icons are imported statically and excluded here.
+ * Resolves DATA-DRIVEN icon name strings — values that come from the database —
+ * to their components. Use this ONLY for data icons: amenities, attractions,
+ * accommodation features, and accommodation categories.
+ *
+ * Do NOT route UI / navigation / admin icons through here. Those are static and
+ * known at build time, so import the component directly or use an app-local map
+ * (e.g. `apps/web/src/lib/icon-map.ts` `WEB_ICON_MAP`, or
+ * `apps/admin/src/lib/nav-icon-map.ts` `resolveNavIcon`). Putting UI/nav icons in
+ * this shared map bloats it and defeats tree-shaking in consumers.
  */
 import type { IconProps } from './types';
 
@@ -256,14 +260,14 @@ import { WetlandsIcon } from './icons/attractions/WetlandsIcon';
 type IconComponent = React.ComponentType<IconProps>;
 
 /**
- * Map of icon name strings to their corresponding icon components.
- * Icon names match the component names exported from @repo/icons.
- * Used to resolve DB-stored icon strings to renderable components.
+ * Map of DATA-DRIVEN icon name strings to their components, for icon names that
+ * come from the database. Scope: amenities, attractions, accommodation features,
+ * and accommodation categories.
  *
- * Covers all icons that may be stored as strings in the database:
- * amenities, features, attractions, entities, booking states,
- * social links, and communication channels.
- * Admin/system/action icons are imported statically and excluded here.
+ * Icon names match the component names exported from @repo/icons.
+ *
+ * Do NOT add UI / navigation / admin icons here — import those directly or use
+ * an app-local map (see `resolveIcon` docs above).
  */
 export const ICON_MAP: Record<string, IconComponent> = {
     // Amenity icons

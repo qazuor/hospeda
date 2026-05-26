@@ -71,8 +71,8 @@ vi.mock('@/hooks/use-localized-label', () => ({
 // Mock icons
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/icons', () => ({
-    resolveIcon: ({ iconName }: { iconName: string }) => {
+vi.mock('@/lib/nav-icon-map', () => ({
+    resolveNavIcon: ({ iconName }: { iconName: string }) => {
         const MockIcon = ({ 'aria-hidden': _h, weight: _w, ...p }: Record<string, unknown>) => (
             <span
                 data-testid={`icon-${iconName}`}
@@ -127,7 +127,14 @@ vi.mock('@/config/ia/validate', () => ({
                 icon: 'PackageIcon',
                 route: '/catalogo',
                 sidebar: 'catalogoSidebar'
-            }
+            },
+            // sidebar:null sections are always visible (no items to filter) — used
+            // to exercise the compact (icon-only) threshold without permission setup.
+            s3: { id: 's3', label: { es: 'S3', en: 'S3', pt: 'S3' }, route: '/s3', sidebar: null },
+            s4: { id: 's4', label: { es: 'S4', en: 'S4', pt: 'S4' }, route: '/s4', sidebar: null },
+            s5: { id: 's5', label: { es: 'S5', en: 'S5', pt: 'S5' }, route: '/s5', sidebar: null },
+            s6: { id: 's6', label: { es: 'S6', en: 'S6', pt: 'S6' }, route: '/s6', sidebar: null },
+            s7: { id: 's7', label: { es: 'S7', en: 'S7', pt: 'S7' }, route: '/s7', sidebar: null }
         },
         sidebars: {
             inicioSidebar: {
@@ -388,6 +395,25 @@ describe('BottomNav', () => {
 
             const nav = screen.getByRole('navigation', { name: 'Mobile navigation' });
             expect(nav.className).toContain('md:hidden');
+        });
+    });
+
+    describe('compact mode (icon-only)', () => {
+        it('hides labels (sr-only) when more than 5 sections are visible', () => {
+            // 6 visible sections (inicio + 5 sidebar:null) exceeds the threshold.
+            setRole(buildRoleConfig(['inicio', 's3', 's4', 's5', 's6', 's7']));
+            render(<BottomNav />);
+
+            expect(screen.getByText('Inicio')).toHaveClass('sr-only');
+            expect(screen.getByText('S7')).toHaveClass('sr-only');
+        });
+
+        it('keeps labels visible when 5 or fewer sections are visible', () => {
+            // 4 visible sections stays under the threshold → labels shown.
+            setRole(buildRoleConfig(['inicio', 's3', 's4', 's5']));
+            render(<BottomNav />);
+
+            expect(screen.getByText('Inicio')).not.toHaveClass('sr-only');
         });
     });
 

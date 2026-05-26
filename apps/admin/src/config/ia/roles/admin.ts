@@ -2,8 +2,9 @@
  * Admin IA — ADMIN role configuration (T-012)
  *
  * The ADMIN has access to all 7 top-level sections, an admin-scoped dashboard,
- * full quick-create access, and no bottom nav. The ADMIN dashboard is a subset
- * of SUPER_ADMIN's — it excludes the system-ops widgets (Sentry, crons, audit).
+ * full quick-create access, and a compact icon-only bottom nav on mobile (all 7
+ * sections). The ADMIN dashboard is a subset of SUPER_ADMIN's — it excludes the
+ * system-ops widgets (Sentry, crons, audit).
  *
  * Design source of truth:
  *   `.claude/audit/admin-redesign/proposals/01-information-architecture.md` §13.
@@ -24,7 +25,7 @@ import type { RoleConfigSchema } from '../schema';
  *   is reserved for SUPER_ADMIN (Sentry errors, failed crons, admin audit preview).
  * - Quick-create shows all registered create actions, filtered at render time by
  *   the user's permissions.
- * - No bottom-nav or FAB — ADMIN operates from desktop.
+ * - Bottom nav exposes all 7 sections on mobile (icon-only compact mode); no FAB.
  * - No label overrides — canonical labels apply throughout.
  *
  * @example
@@ -52,7 +53,15 @@ export const adminRole: z.input<typeof RoleConfigSchema> = {
         accountInMenu: false
     },
     mobile: {
-        bottomNav: null,
+        bottomNav: [
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ],
         fab: null
     }
 };

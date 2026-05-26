@@ -130,10 +130,35 @@ code {
     body {
         @apply bg-background text-foreground;
     }
+    /*
+     * Brand heading font (Geologica) from @repo/design-tokens, loaded in
+     * __root.tsx. Applied to all headings so the admin matches apps/web, where
+     * headings are Geologica and body copy is Roboto (var(--font-body)).
+     */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+    }
 }
 
 .text-xss {
     font-size: 0.5rem;
+}
+
+/*
+ * Duotone icons on the river-tinted header band. Phosphor renders the duotone
+ * secondary layer as the path with opacity="0.2"; here we paint it solid white
+ * so non-active nav icons read as a river stroke over a white body — they pop
+ * against the river header. The active nav item is exempt (it sits on a white
+ * pill and keeps the default river duotone).
+ */
+.icon-river-header path[opacity='0.2'] {
+    fill: #fff;
+    opacity: 0.7;
 }
 
 .animate-router-pending {

@@ -195,12 +195,12 @@ describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
 
     // ── mobile ─────────────────────────────────────────────────────────────
 
-    it('mobile.fab is "newAccommodation"', () => {
+    it('mobile.fab is null (create reachable via topbar quick-create)', () => {
         // Arrange
         const hostRole = validatedConfig.roles[RoleEnum.HOST];
 
         // Act / Assert
-        expect(hostRole?.mobile?.fab).toBe('newAccommodation');
+        expect(hostRole?.mobile?.fab).toBeNull();
     });
 
     it('mobile.bottomNav is exactly [inicio, misAlojamientos, consultas, miCuenta] — 4 items', () => {

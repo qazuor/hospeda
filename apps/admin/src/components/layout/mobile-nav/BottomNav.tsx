@@ -27,12 +27,19 @@ import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useCurrentSection } from '@/hooks/use-current-section';
 import { useLocalizedLabel } from '@/hooks/use-localized-label';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import { cn } from '@/lib/utils';
-import { resolveIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
+
+/**
+ * Above this many visible sections the bottom nav switches to icon-only
+ * (compact) mode: labels become `sr-only` so 6–7 sections still fit a phone
+ * width without truncation. Roles with few sections (editor/host) keep labels.
+ */
+const COMPACT_THRESHOLD = 5;
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -74,14 +81,17 @@ function canAccessAction(
 interface BottomNavItemProps {
     readonly section: Section;
     readonly isActive: boolean;
+    /** When true, hide the text label visually (kept for screen readers). */
+    readonly compact: boolean;
 }
 
 /**
- * Renders a single bottom-nav section link (icon + label).
+ * Renders a single bottom-nav section link (icon + label). In compact mode the
+ * label is visually hidden but remains available to assistive technology.
  */
-function BottomNavItem({ section, isActive }: BottomNavItemProps) {
+function BottomNavItem({ section, isActive, compact }: BottomNavItemProps) {
     const label = useLocalizedLabel(section.label);
-    const IconComponent = section.icon ? resolveIcon({ iconName: section.icon }) : undefined;
+    const IconComponent = section.icon ? resolveNavIcon({ iconName: section.icon }) : undefined;
     const href = section.defaultRoute ?? section.route;
 
     return (
@@ -107,7 +117,7 @@ function BottomNavItem({ section, isActive }: BottomNavItemProps) {
                     aria-hidden="true"
                 />
             )}
-            <span className="max-w-16 truncate">{label}</span>
+            <span className={compact ? 'sr-only' : 'max-w-16 truncate'}>{label}</span>
         </Link>
     );
 }
@@ -122,7 +132,7 @@ interface BottomNavFabProps {
 function BottomNavFab({ action }: BottomNavFabProps) {
     const label = useLocalizedLabel(action.label);
     const navigate = useNavigate();
-    const IconComponent = action.icon ? resolveIcon({ iconName: action.icon }) : undefined;
+    const IconComponent = action.icon ? resolveNavIcon({ iconName: action.icon }) : undefined;
 
     return (
         <button
@@ -206,6 +216,9 @@ export function BottomNav() {
     if (!roleConfig.mobile?.bottomNav) return null;
     if (visibleSections.length === 0 && !fabAction) return null;
 
+    // Icon-only when too many sections to fit labels at phone width (e.g. admin's 7).
+    const compact = visibleSections.length > COMPACT_THRESHOLD;
+
     return (
         <nav
             className="fixed right-0 bottom-0 left-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
@@ -225,6 +238,7 @@ export function BottomNav() {
                         key={section.id}
                         section={section}
                         isActive={activeSection?.id === section.id}
+                        compact={compact}
                     />
                 ))}
 
