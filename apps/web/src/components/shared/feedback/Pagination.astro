@@ -164,7 +164,6 @@ const hasNext     = currentPage < totalPages;
                     <a
                         href={buildPageUrl(currentPage - 1)}
                         class="pagination__link pagination__link--prev"
-                        rel="prev"
                         aria-label={labels.previous}
                     >
                         <span class="pagination__label-full">{labels.previous}</span>
@@ -230,7 +229,6 @@ const hasNext     = currentPage < totalPages;
                     <a
                         href={buildPageUrl(currentPage + 1)}
                         class="pagination__link pagination__link--next"
-                        rel="next"
                         aria-label={labels.next}
                     >
                         <span class="pagination__label-full">{labels.next}</span>

@@ -250,6 +250,16 @@ const articleAuthorName =
 	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
 	'';
 
+// Speakable selectors (AEO / voice): the article headline and lead/summary
+// rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
+// selectors `.post-header__title` (h1) and `.post-header__summary` (lead p).
+// The summary element is only rendered when a summary exists, so include it
+// conditionally to avoid pointing voice assistants at a missing node.
+const speakableSelectors: ReadonlyArray<string> = [
+	'.post-header__title',
+	...(summary ? ['.post-header__summary'] : []),
+];
+
 const siteOriginClean = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
 	{ name: t('nav.home', 'Inicio'), url: `${siteOriginClean}/${locale}/` },
@@ -262,6 +272,8 @@ const breadcrumbItems = [
 	locale={locale}
 	title={seoTitle}
 	description={seoDescription}
+	ogImage={hasRealFeatured ? featuredImage : undefined}
+	ogType="Guía"
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
@@ -276,6 +288,7 @@ const breadcrumbItems = [
 			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
 			author={{ name: articleAuthorName }}
 			articleType="BlogPosting"
+			speakableCssSelectors={speakableSelectors}
 		/>
 	) : (
 		<ArticleJsonLd
@@ -288,6 +301,7 @@ const breadcrumbItems = [
 			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
 			author={{ name: 'Hospeda' }}
 			articleType="BlogPosting"
+			speakableCssSelectors={speakableSelectors}
 		/>
 	)}
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />

@@ -28,7 +28,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
-import { BRAND_NAME, SOCIAL_PROFILE_URLS } from "@/lib/constants";
+import { BRAND_NAME, ORGANIZATION_INFO, SOCIAL_PROFILE_URLS } from "@/lib/constants";
 import { getSiteUrl } from "@/lib/env";
 import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
@@ -160,10 +160,23 @@ const categoryTiles = [
     title={t("home.title")}
     description={t("home.description")}
     canonicalPath={`/${locale}/`}
+    ogTagline={t("home.hero.tagline", "Descubrí el Litoral")}
 >
     <!-- Site-level structured data (SPEC-157 REQ-5) -->
     <WebSiteJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} locale={locale} />
-    <OrganizationJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} logo={logoUrl} sameAs={SOCIAL_PROFILE_URLS} />
+    <OrganizationJsonLd
+        slot="head-extra"
+        name={BRAND_NAME}
+        url={siteUrl}
+        logo={logoUrl}
+        sameAs={SOCIAL_PROFILE_URLS}
+        description={ORGANIZATION_INFO.description}
+        telephone={ORGANIZATION_INFO.telephone}
+        email={ORGANIZATION_INFO.email}
+        address={ORGANIZATION_INFO.address}
+        areaServed={ORGANIZATION_INFO.areaServed}
+        foundingDate={ORGANIZATION_INFO.foundingDate}
+    />
 
     <!-- 1. Hero -->
     <HeroSection locale={locale} socialProof={socialProof} destinations={destinations} />

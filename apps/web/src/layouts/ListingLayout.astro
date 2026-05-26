@@ -20,6 +20,15 @@ interface Props {
 	readonly canonicalPath?: string;
 	readonly showFilters?: boolean;
 	readonly filterPosition?: 'left' | 'top';
+	/**
+	 * When true, emits a `noindex` robots meta tag (via SEOHead, which renders
+	 * `noindex,follow` — the page stays out of the index but links are still
+	 * followed). Used by facet/filter sub-pages that should not be indexed.
+	 * Defaults to false. Mirrors DefaultLayout.
+	 */
+	readonly noindex?: boolean;
+	/** Caveat tagline for the generated OG BRAND card. */
+	readonly ogTagline?: string;
 }
 
 const {
@@ -29,6 +38,8 @@ const {
 	canonicalPath = Astro.url.pathname,
 	showFilters = false,
 	filterPosition = 'left',
+	noindex = false,
+	ogTagline,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -48,6 +59,8 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		description={resolvedDescription}
 		locale={locale}
 		canonical={canonicalUrl}
+		noindex={noindex}
+		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
 

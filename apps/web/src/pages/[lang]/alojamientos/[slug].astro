@@ -313,6 +313,17 @@ const galleryImages = (() => {
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
 const seoDescription = accommodation.seo?.description ?? accommodation.summary;
 
+// --- OG card (PHOTO mode) ---
+// Use the entity featured image (skip the local placeholder so brand mode kicks
+// in instead of rendering a placeholder photo card). Subtitle = locality; rating
+// only when there is a real average (>0).
+const ogFeaturedImage =
+    accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')
+        ? accommodation.featuredImage
+        : undefined;
+const ogRating = accommodation.averageRating > 0 ? accommodation.averageRating.toFixed(1) : undefined;
+const ogSubtitle = accommodation.destination?.name || undefined;
+
 // --- Description rendering ---
 // `accommodation.description` may arrive as markdown (current authoring format),
 // HTML (future TipTap admin output), or plain text. `renderContent` normalizes
@@ -376,6 +387,10 @@ const faqSections = accommodation.faqs.map((faq) => ({
     locale={locale}
     title={seoTitle}
     description={seoDescription}
+    ogImage={ogFeaturedImage}
+    ogType="Alojamiento"
+    ogSubtitle={ogSubtitle}
+    ogRating={ogRating}
     showBreadcrumbs={true}
     showSidebar={true}
 >

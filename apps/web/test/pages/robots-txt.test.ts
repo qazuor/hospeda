@@ -270,6 +270,84 @@ describe('robots.txt — GET handler', () => {
     });
 
     // -----------------------------------------------------------------------
+    // AEO: explicit AI crawler allow blocks
+    // -----------------------------------------------------------------------
+
+    describe('AI crawler blocks (AEO)', () => {
+        const AI_BOTS = [
+            'GPTBot',
+            'OAI-SearchBot',
+            'ChatGPT-User',
+            'ClaudeBot',
+            'anthropic-ai',
+            'PerplexityBot',
+            'Google-Extended',
+            'CCBot'
+        ];
+
+        it('emits an explicit User-agent block for every AI crawler', async () => {
+            const { getSiteUrl } = await import('@/lib/env');
+            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+
+            const { GET } = await import('../../src/pages/robots.txt.js');
+            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
+            const body = await response.text();
+
+            for (const bot of AI_BOTS) {
+                expect(body).toContain(`User-agent: ${bot}`);
+            }
+        });
+
+        it('each AI crawler block carries Allow: / so they may crawl public pages', async () => {
+            const { getSiteUrl } = await import('@/lib/env');
+            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+
+            const { GET } = await import('../../src/pages/robots.txt.js');
+            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
+            const body = await response.text();
+
+            // Each AI bot block must be immediately followed by an Allow: / line.
+            for (const bot of AI_BOTS) {
+                const block = body.slice(body.indexOf(`User-agent: ${bot}`));
+                const firstLines = block.split('\n').slice(0, 2).join('\n');
+                expect(firstLines).toContain('Allow: /');
+            }
+        });
+
+        it('each AI crawler block repeats the same Disallow rules as the * block (no privileged paths leak)', async () => {
+            const { getSiteUrl } = await import('@/lib/env');
+            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+
+            const { GET } = await import('../../src/pages/robots.txt.js');
+            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
+            const body = await response.text();
+
+            // Split into per-agent blocks (blank line delimited) and verify each
+            // AI-bot block contains the privileged-path disallows + every
+            // SITEMAP_EXCLUDED_PATHS entry. A named block does NOT inherit the
+            // `*` rules in the robots.txt spec, so they must be repeated.
+            const blocks = body.split('\n\n');
+            const requiredDisallows = [
+                'Disallow: /api/',
+                'Disallow: /*/mi-cuenta/',
+                'Disallow: /*/signin',
+                'Disallow: /*/signup',
+                'Disallow: /*/forgot-password',
+                'Disallow: /_server-islands/',
+                ...SITEMAP_EXCLUDED_PATHS.map((p) => `Disallow: ${p}`)
+            ];
+
+            for (const bot of AI_BOTS) {
+                const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                for (const line of requiredDisallows) {
+                    expect(block, `${bot} block missing "${line}"`).toContain(line);
+                }
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // Noindex host behaviour
     // -----------------------------------------------------------------------
 
@@ -312,6 +390,23 @@ describe('robots.txt — GET handler', () => {
             const body = await response.text();
 
             expect(body).not.toContain('Sitemap:');
+        });
+
+        it('does NOT emit per-bot Allow blocks on a noindex host (the * Disallow: / governs every crawler)', async () => {
+            const { GET } = await import('../../src/pages/robots.txt.js');
+            const response = await GET({
+                request: makeRequest('staging.hospeda.com.ar')
+            } as never);
+            const body = await response.text();
+
+            // The whole body is just the universal block-all rule.
+            expect(body).toContain('User-agent: *');
+            expect(body).toContain('Disallow: /');
+            // No AI-bot-specific Allow blocks may appear here, otherwise they
+            // would override the universal block-all and expose staging.
+            expect(body).not.toContain('GPTBot');
+            expect(body).not.toContain('ClaudeBot');
+            expect(body).not.toContain('Allow: /\n');
         });
     });
 });

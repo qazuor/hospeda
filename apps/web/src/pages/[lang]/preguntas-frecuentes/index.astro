@@ -11,6 +11,7 @@
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -138,26 +139,14 @@ const resolvedCategories = categories.map((cat) => ({
 }));
 
 // ─── JSON-LD: FAQPage with every Q/A flattened ────────────────────────────────
-const faqJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	name: t('faq.title'),
-	description: t('faq.description'),
-	inLanguage: locale,
-	mainEntity: resolvedCategories.flatMap((cat) =>
-		cat.items.map((item) => ({
-			'@type': 'Question',
-			name: item.question,
-			acceptedAnswer: {
-				'@type': 'Answer',
-				text: item.answer
-			}
-		}))
-	)
-};
+// Routed through the shared, XSS-hardened FAQPageJsonLd component instead of an
+// inline JSON.stringify (SPEC-157 D-1: single canonical JSON-LD path).
+const faqSections = resolvedCategories.flatMap((cat) =>
+	cat.items.map((item) => ({ heading: item.question, body: item.answer }))
+);
 
 const contactHref = buildUrl({ locale, path: '/contacto/' });
-const whatsappHref = 'https://wa.me/5493442453797';
+const whatsappHref = 'https://wa.me/543442453797';
 
 // Split titles to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {
@@ -175,11 +164,13 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 	title={t('faq.title')}
 	description={t('faq.description')}
 >
-	<script
+	<FAQPageJsonLd
 		slot="head-extra"
-		type="application/ld+json"
-		set:html={JSON.stringify(faqJsonLd)}
-	></script>
+		sections={faqSections}
+		name={t('faq.title')}
+		description={t('faq.description')}
+		inLanguage={locale}
+	/>
 
 	<!-- ───── Hero ───────────────────────────────────────────────────────── -->
 	<section class="faq-hero section section--warm">

@@ -60,6 +60,7 @@ const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
 	title={`${authorName} - ${t('blog.title', 'Publicaciones')}`}
 	description={author.bio ?? t('blog.byAuthor.description', `Publicaciones de ${authorName}`)}
 	showFilters={false}
+	noindex={true}
 >
 	<Breadcrumbs
 		slot="breadcrumbs"

@@ -504,8 +504,10 @@
         {
             "specId": "SPEC-157",
             "title": "Web SEO Polish — Audit Backlog Remediation",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "31/31",
+            "completedAt": "2026-05-24T21:26:00Z",
+            "completionRef": "PR #1245 (bafccef6)",
             "path": "SPEC-157-web-seo-polish",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-157-web-seo-polish",
             "branch": "spec/SPEC-157-web-seo-polish",

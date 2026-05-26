@@ -15,7 +15,7 @@ import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridS
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
@@ -529,21 +529,24 @@ const sortOptions = [
 		: []),
 ];
 
-// ItemList JSON-LD
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'ItemList',
-	name: t('accommodations.title', 'Alojamientos'),
-	numberOfItems: total,
-	itemListElement: cards.map((card, i) => ({
-		'@type': 'ListItem',
-		position: (page - 1) * pageSize + i + 1,
-		url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
-		name: card.name,
-	})),
-};
+// ItemList JSON-LD — built from the visible page of cards. Routed through the
+// reusable ItemListJsonLd component (which wraps JsonLd) so escaping stays on
+// the single canonical JSON-LD path (SPEC-157 D-1).
+const itemListEntries = cards.map((card) => ({
+	url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
+	name: card.name,
+}));
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
+
+// Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
+// at `/{locale}/alojamientos/page/{n}/` via an Astro.rewrite to this listing
+// with `?page=n`. Because the rewrite makes `Astro.url.pathname` the base path
+// (dropping the `/page/n/` segment), ListingLayout's default
+// `canonicalPath = Astro.url.pathname` would canonicalize every paginated page
+// back to page 1. We rebuild the real crawlable URL from the page number so
+// each paginated page self-canonicalizes and stays indexable.
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
 /**
  * Quick-filter type badges shown above the listing grid. Uses the canonical
@@ -722,10 +725,18 @@ const emptyStateSuggestions = [
 	locale={locale}
 	title={t('accommodations.title', 'Alojamientos')}
 	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
+	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	ogTagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	<ItemListJsonLd
+		slot="head-extra"
+		name={t('accommodations.title', 'Alojamientos')}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
+	/>
 
 	<Breadcrumbs
 		slot="breadcrumbs"

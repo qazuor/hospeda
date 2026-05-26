@@ -22,13 +22,22 @@ export interface FAQSection {
 interface Props {
   /** Sections to render as Q/A pairs. Order is preserved. */
   readonly sections: ReadonlyArray<FAQSection>;
+  /** Optional FAQPage `name` (e.g. the page title). */
+  readonly name?: string;
+  /** Optional FAQPage `description`. */
+  readonly description?: string;
+  /** Optional BCP-47 language code for `inLanguage`. */
+  readonly inLanguage?: string;
 }
 
-const { sections } = Astro.props;
+const { sections, name, description, inLanguage } = Astro.props;
 
 const structuredData: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
+  ...(name ? { name } : {}),
+  ...(description ? { description } : {}),
+  ...(inLanguage ? { inLanguage } : {}),
   mainEntity: sections.map((section) => ({
     '@type': 'Question',
     name: section.heading,

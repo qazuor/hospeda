@@ -42,9 +42,15 @@ interface Props {
 	readonly address?: PlaceAddress;
 	/** GPS coordinates for GeoCoordinates structured data */
 	readonly geo?: PlaceGeo;
+	/**
+	 * Canonical external entity URLs for disambiguation (schema.org `sameAs`),
+	 * e.g. the Wikipedia/Wikidata page of the destination. When present and
+	 * non-empty, emitted as `sameAs` on the TouristDestination.
+	 */
+	readonly sameAs?: ReadonlyArray<string>;
 }
 
-const { name, description, url, image, address, geo } = Astro.props;
+const { name, description, url, image, address, geo, sameAs } = Astro.props;
 
 const structuredData: Record<string, unknown> = {
 	'@context': 'https://schema.org',
@@ -73,6 +79,10 @@ if (geo) {
 		latitude: geo.latitude,
 		longitude: geo.longitude,
 	};
+}
+
+if (sameAs && sameAs.length > 0) {
+	structuredData.sameAs = [...sameAs];
 }
 ---
 

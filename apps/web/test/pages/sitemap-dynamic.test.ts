@@ -32,12 +32,15 @@ vi.mock('../../src/lib/env', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Mirrors the REAL public API list shape: { success, data: { items, pagination } }.
+// (The previous mock used data.data, which masked the empty-sitemap bug.)
 function makeApiResponse(items: Array<{ slug: string; updatedAt?: string }>): Response {
     return new Response(
         JSON.stringify({
             success: true,
             data: {
-                data: items
+                items,
+                pagination: { page: 1, pageSize: 200, total: items.length, totalPages: 1 }
             }
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
@@ -45,10 +48,16 @@ function makeApiResponse(items: Array<{ slug: string; updatedAt?: string }>): Re
 }
 
 function makeEmptyApiResponse(): Response {
-    return new Response(JSON.stringify({ success: true, data: { data: [] } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+        JSON.stringify({
+            success: true,
+            data: { items: [], pagination: { page: 1, pageSize: 200, total: 0, totalPages: 0 } }
+        }),
+        {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        }
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +133,20 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/en/alojamientos/hotel-solanas/');
         // pt locale
         expect(body).toContain('https://hospeda.test/pt/alojamientos/hotel-solanas/');
+    });
+
+    it('does not send a status query param to the API (regression: status=published -> HTTP 400)', async () => {
+        // The public list endpoints reject an unknown `status` param with HTTP 400,
+        // which previously made every entity fetch fail and the sitemap come back empty.
+        const fetchMock = vi.fn().mockResolvedValue(makeEmptyApiResponse());
+        vi.stubGlobal('fetch', fetchMock);
+
+        await GET({});
+
+        expect(fetchMock).toHaveBeenCalled();
+        for (const call of fetchMock.mock.calls) {
+            expect(String(call[0])).not.toContain('status=');
+        }
     });
 
     it('emits destination entries with /destinos/ path for all 3 locales', async () => {

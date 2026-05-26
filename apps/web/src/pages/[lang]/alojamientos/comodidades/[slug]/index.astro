@@ -43,7 +43,7 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 const baseUrl = buildUrl({ locale, path: `alojamientos/comodidades/${slug}` });
 ---
 
-<ListingLayout locale={locale} title={`${amenityName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false}>
+<ListingLayout locale={locale} title={`${amenityName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.amenities', 'Comodidades') }, { label: amenityName }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byAmenity.tagline', 'Comodidad')} title={amenityName} totalCount={total} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}

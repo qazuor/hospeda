@@ -67,6 +67,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
     title={`#${tagName} - ${t('blog.title', 'Publicaciones')}`}
     description={`${t('blog.byTag.description', 'Publicaciones con etiqueta')} ${tagName}`}
     showFilters={false}
+    noindex={true}
 >
     <Breadcrumbs
         slot="breadcrumbs"

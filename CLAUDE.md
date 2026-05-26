@@ -149,7 +149,7 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
 
-`pnpm db:fresh-dev` creates 11 dev-only test users covering every role × plan combination (4 staff + 3 tourist tiers + 3 host tiers + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`.
+`pnpm db:fresh-dev` creates 13 dev-only test users covering every role × plan combination (2 staff + 3 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`.
 
 Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
 

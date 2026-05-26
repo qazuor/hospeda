@@ -30,10 +30,69 @@ export const prerender = false;
 const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
+ * AI / LLM crawler user-agents we explicitly welcome.
+ *
+ * Decision (AEO): Hospeda is a discovery platform for tourism in the Litoral
+ * region. Visibility inside AI assistant answers and presence in model
+ * knowledge benefits the brand far more than it risks, so we ALLOW these
+ * crawlers explicitly rather than relying on the default `*` permissiveness.
+ * An explicit per-bot block is clearer to operators and to the bots'
+ * compliance tooling. Revisit this if proprietary editorial content (paid
+ * guides, gated reviews) is added that we would not want reproduced verbatim.
+ *
+ * Covers OpenAI (GPTBot, OAI-SearchBot, ChatGPT-User), Anthropic (ClaudeBot,
+ * anthropic-ai), Perplexity (PerplexityBot), Google's AI training opt-in token
+ * (Google-Extended), and Common Crawl (CCBot, used to train many models).
+ */
+const AI_CRAWLER_USER_AGENTS = [
+    'GPTBot',
+    'OAI-SearchBot',
+    'ChatGPT-User',
+    'ClaudeBot',
+    'anthropic-ai',
+    'PerplexityBot',
+    'Google-Extended',
+    'CCBot'
+] as const;
+
+/**
+ * Privileged paths that must stay disallowed for EVERY crawler.
+ *
+ * Combines the hardcoded private/auth paths with the shared
+ * `SITEMAP_EXCLUDED_PATHS` (single source of truth with `astro.config.mjs`).
+ * In robots.txt a named `User-agent` block does NOT inherit the `*` block's
+ * rules, so this list is repeated verbatim in every agent block we emit.
+ */
+const DISALLOW_PATHS: ReadonlyArray<string> = [
+    '/api/',
+    '/*/mi-cuenta/',
+    '/*/signin',
+    '/*/signup',
+    '/*/forgot-password',
+    '/_server-islands/',
+    ...SITEMAP_EXCLUDED_PATHS
+];
+
+/**
+ * Build a single `User-agent` block: the agent line, an `Allow: /`, and the
+ * full {@link DISALLOW_PATHS} list. Used for `*` and each AI crawler so the
+ * disallow rules can never drift between blocks.
+ *
+ * @param userAgent - The robots.txt user-agent token (e.g. `*`, `GPTBot`)
+ * @returns The multi-line block (no trailing blank line)
+ */
+function buildAgentBlock(userAgent: string): string {
+    const disallowLines = DISALLOW_PATHS.map((path) => `Disallow: ${path}`).join('\n');
+    return `User-agent: ${userAgent}\nAllow: /\n${disallowLines}`;
+}
+
+/**
  * Build the permissive robots.txt body for indexable hosts.
  *
- * The Sitemap URL and the Disallow lines for excluded paths are derived from
- * shared constants so they can never drift out of sync.
+ * Emits one block for `*` plus an explicit block per AI crawler (each repeating
+ * the same Allow + Disallow rules, because named blocks do not inherit `*`),
+ * then the Sitemap directive. The Sitemap URL and the Disallow lines for
+ * excluded paths are derived from shared constants so they can never drift.
  *
  * @returns The robots.txt content string
  */
@@ -41,22 +100,12 @@ function buildPermissiveBody(): string {
     const siteUrl = getSiteUrl().replace(/\/$/, '');
     const sitemapUrl = `${siteUrl}/sitemap-index.xml`;
 
-    const sitemapDisallowLines = SITEMAP_EXCLUDED_PATHS.map((path) => `Disallow: ${path}`).join(
-        '\n'
-    );
+    const blocks = [
+        buildAgentBlock('*'),
+        ...AI_CRAWLER_USER_AGENTS.map((ua) => buildAgentBlock(ua))
+    ];
 
-    return `User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /*/mi-cuenta/
-Disallow: /*/signin
-Disallow: /*/signup
-Disallow: /*/forgot-password
-Disallow: /_server-islands/
-${sitemapDisallowLines}
-
-Sitemap: ${sitemapUrl}
-`;
+    return `${blocks.join('\n\n')}\n\nSitemap: ${sitemapUrl}\n`;
 }
 
 const NOINDEX_BODY = `User-agent: *

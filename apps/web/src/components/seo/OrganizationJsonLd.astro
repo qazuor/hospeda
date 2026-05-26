@@ -10,6 +10,21 @@
 
 import JsonLd from './JsonLd.astro';
 
+/** schema.org PostalAddress fields (without the `@type`, which is added here). */
+interface PostalAddress {
+	readonly streetAddress: string;
+	readonly addressLocality: string;
+	readonly addressRegion: string;
+	readonly postalCode: string;
+	readonly addressCountry: string;
+}
+
+/** Geographic area served, modelled as a schema.org State within a Country. */
+interface AreaServed {
+	readonly name: string;
+	readonly containedInPlace: { readonly name: string };
+}
+
 /** Props interface for OrganizationJsonLd component. */
 interface Props {
 	/** Organization name (e.g. "Hospeda"). */
@@ -20,17 +35,76 @@ interface Props {
 	readonly logo: string;
 	/** Array of social profile URLs for the organization (schema.org sameAs). */
 	readonly sameAs: ReadonlyArray<string>;
+	/** One-paragraph organization description. */
+	readonly description?: string;
+	/** Public contact phone in E.164-ish format. */
+	readonly telephone?: string;
+	/** Public contact email. */
+	readonly email?: string;
+	/** Postal address (emitted as schema.org PostalAddress). */
+	readonly address?: PostalAddress;
+	/** Area served (emitted as schema.org State → Country). */
+	readonly areaServed?: AreaServed;
+	/** Founding date (ISO 8601, e.g. a 4-digit year). */
+	readonly foundingDate?: string;
 }
 
-const { name, url, logo, sameAs } = Astro.props;
+const { name, url, logo, sameAs, description, telephone, email, address, areaServed, foundingDate } =
+	Astro.props;
 
+// Build optional schema.org sub-objects only when their source data exists, so
+// undefined values never leak into the serialized JSON-LD.
+const postalAddress = address
+	? {
+			'@type': 'PostalAddress',
+			streetAddress: address.streetAddress,
+			addressLocality: address.addressLocality,
+			addressRegion: address.addressRegion,
+			postalCode: address.postalCode,
+			addressCountry: address.addressCountry,
+		}
+	: undefined;
+
+// A single ContactPoint carrying whichever of telephone/email is present.
+const contactPoint =
+	telephone || email
+		? {
+				'@type': 'ContactPoint',
+				contactType: 'customer service',
+				...(telephone && { telephone }),
+				...(email && { email }),
+			}
+		: undefined;
+
+const areaServedNode = areaServed
+	? {
+			'@type': 'State',
+			name: areaServed.name,
+			containedInPlace: {
+				'@type': 'Country',
+				name: areaServed.containedInPlace.name,
+			},
+		}
+	: undefined;
+
+// `@id` gives the Organization a stable identifier other JSON-LD nodes can
+// reference (entity linking), improving how search engines and AI assistants
+// consolidate facts about the brand.
 const structuredData: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'Organization',
+	'@id': `${url}#organization`,
 	name,
 	url,
 	logo,
 	sameAs: [...sameAs],
+	...(description && { description }),
+	...(telephone && { telephone }),
+	...(email && { email }),
+	...(postalAddress && { address: postalAddress }),
+	...(contactPoint && { contactPoint }),
+	...(areaServedNode && { areaServed: areaServedNode }),
+	...(foundingDate && { foundingDate }),
 };
 ---
 

@@ -542,7 +542,7 @@ import SEOHead from '@/components/seo/SEOHead.astro';
     title="Page Title | Hospeda"
     description="Description for search engines"
     locale={locale}
-    canonicalPath={Astro.url.pathname}
+    canonical={new URL(Astro.url.pathname, Astro.site).href}
   />
 </BaseLayout>
 ```
