@@ -158,7 +158,7 @@ function SystemTagsListPage() {
                 )}
 
                 {!isLoading && !error && items.length > 0 && (
-                    <div className="overflow-x-auto rounded-lg border">
+                    <div className="overflow-x-auto rounded-lg border bg-card">
                         <table
                             className="w-full text-sm"
                             aria-label="Tabla de etiquetas de sistema"

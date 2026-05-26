@@ -470,8 +470,11 @@
     {
       "specId": "SPEC-154",
       "title": "Admin Config-Driven Information Architecture",
-      "status": "in-progress",
-      "progress": "39/40",
+      "status": "completed",
+      "progress": "40/40",
+      "archived": true,
+      "archivedAt": "2026-05-25T00:00:00Z",
+      "completionRef": "PR #1251 (merge commit f2618b42d)",
       "path": "SPEC-154-admin-config-driven-ia",
       "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-154-admin-config-driven-ia",
       "branch": "spec/SPEC-154-admin-config-driven-ia",
@@ -525,14 +528,14 @@
     {
       "specId": "SPEC-158",
       "title": "Destinations Rich Content + Structured FAQs",
-      "status": "pending",
-      "progress": "0/42",
+      "status": "in-progress",
+      "progress": "39/42",
       "path": "SPEC-158-destinations-content-faqs",
       "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-158-destinations-content-faqs",
       "branch": "spec/SPEC-158-destinations-content-faqs",
       "base": "staging",
       "createdAt": "2026-05-26T00:00:00.000Z",
-      "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only."
+      "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only. | PR #1269 open to staging. 39/42 done; T-008 (local db push) + T-013 (CI integ) + T-041 e2e gated."
     }
   ],
   "standalone": {

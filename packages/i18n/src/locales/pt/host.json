@@ -146,5 +146,23 @@
     },
     "fromAdminBanner": {
         "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
+    },
+    "miniForm": {
+        "fields": {
+            "type": "Tipo de acomodação",
+            "typePlaceholder": "Escolha uma opção"
+        },
+        "types": {
+            "APARTMENT": "Apartamento",
+            "HOUSE": "Casa",
+            "COUNTRY_HOUSE": "Casa de campo",
+            "CABIN": "Cabana",
+            "HOTEL": "Hotel",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Quarto",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }

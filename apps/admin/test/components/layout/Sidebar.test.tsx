@@ -106,8 +106,12 @@ vi.mock('@repo/icons', () => ({
         >
             Dropdown
         </span>
-    ),
-    resolveIcon:
+    )
+}));
+
+// ── nav-icon-map mock (admin nav resolves icons locally, not via @repo/icons) ──
+vi.mock('@/lib/nav-icon-map', () => ({
+    resolveNavIcon:
         () =>
         ({ size: _size, ...props }: { size?: string; [k: string]: unknown }) => (
             <span

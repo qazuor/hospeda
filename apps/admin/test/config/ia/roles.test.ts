@@ -8,7 +8,7 @@
  * - Enabled roles have the required navigation fields matching the spec values
  * - Disabled roles parse cleanly without navigation fields
  * - HOST / EDITOR bottomNav entries are a subset of their respective mainMenu
- * - HOST mobile.fab and EDITOR topbar.showQuickCreate match spec exactly
+ * - HOST / EDITOR mobile.fab is null and EDITOR topbar.showQuickCreate matches spec
  * - superRefine catches a synthetically invalid enabled role missing `dashboard`
  *
  * @see apps/admin/src/config/ia/roles/super-admin.ts
@@ -87,11 +87,19 @@ describe('superAdminRole', () => {
         expect(result.topbar?.accountInMenu).toBe(false);
     });
 
-    it('should have mobile with bottomNav=null and fab=null', () => {
+    it('should have mobile with bottomNav = all 7 sections and fab=null', () => {
         // Arrange
         const result = RoleConfigSchema.parse(superAdminRole);
         // Assert
-        expect(result.mobile?.bottomNav).toBeNull();
+        expect(result.mobile?.bottomNav).toEqual([
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ]);
         expect(result.mobile?.fab).toBeNull();
     });
 
@@ -151,11 +159,19 @@ describe('adminRole', () => {
         expect(result.topbar?.accountInMenu).toBe(false);
     });
 
-    it('should have mobile with bottomNav=null and fab=null', () => {
+    it('should have mobile with bottomNav = all 7 sections and fab=null', () => {
         // Arrange
         const result = RoleConfigSchema.parse(adminRole);
         // Assert
-        expect(result.mobile?.bottomNav).toBeNull();
+        expect(result.mobile?.bottomNav).toEqual([
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ]);
         expect(result.mobile?.fab).toBeNull();
     });
 });
@@ -206,11 +222,11 @@ describe('hostRole', () => {
         expect(result.topbar?.accountInMenu).toBe(true);
     });
 
-    it('should have mobile.fab === "newAccommodation"', () => {
+    it('should have mobile.fab === null (create reachable via topbar quick-create)', () => {
         // Arrange
         const result = RoleConfigSchema.parse(hostRole);
         // Assert
-        expect(result.mobile?.fab).toBe('newAccommodation');
+        expect(result.mobile?.fab).toBeNull();
     });
 
     it('should have bottomNav as a subset of mainMenu', () => {
@@ -293,11 +309,11 @@ describe('editorRole', () => {
         expect(result.topbar?.accountInMenu).toBe(true);
     });
 
-    it('should have mobile.fab === "newPost"', () => {
+    it('should have mobile.fab === null (create reachable via topbar quick-create)', () => {
         // Arrange
         const result = RoleConfigSchema.parse(editorRole);
         // Assert
-        expect(result.mobile?.fab).toBe('newPost');
+        expect(result.mobile?.fab).toBeNull();
     });
 
     it('should have bottomNav as a subset of mainMenu', () => {

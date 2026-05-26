@@ -415,7 +415,7 @@ export function PlanDialog({
 
                         <form.Field name="entitlements">
                             {(field) => (
-                                <div className="max-h-64 space-y-4 overflow-y-auto rounded-md border p-4">
+                                <div className="max-h-64 space-y-4 overflow-y-auto rounded-md border bg-card p-4">
                                     {ENTITLEMENT_GROUP_KEYS.map((group) => (
                                         <div key={group.labelKey}>
                                             <p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
@@ -467,7 +467,7 @@ export function PlanDialog({
 
                         <form.Field name="limits">
                             {(field) => (
-                                <div className="space-y-3 rounded-md border p-4">
+                                <div className="space-y-3 rounded-md border bg-card p-4">
                                     {field.state.value.map((limit, index) => {
                                         const meta = LIMIT_METADATA[limit.key];
                                         return (

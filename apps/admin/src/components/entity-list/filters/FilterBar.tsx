@@ -5,7 +5,7 @@
  * Renders filter controls, active filter chips, and action buttons.
  */
 
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { FilterActions } from './FilterActions';
 import { FilterBoolean } from './FilterBoolean';
@@ -21,6 +21,8 @@ type FilterBarProps = {
     readonly hasActiveFilters: boolean;
     readonly hasNonDefaultFilters: boolean;
     readonly chips: ReadonlyArray<FilterChipData>;
+    /** Optional search input rendered at the start of the controls row. */
+    readonly searchSlot?: ReactNode;
 };
 
 /**
@@ -67,7 +69,8 @@ export function FilterBar({
     onResetDefaults,
     hasActiveFilters,
     hasNonDefaultFilters,
-    chips
+    chips,
+    searchSlot
 }: FilterBarProps) {
     const sortedFilters = useMemo(
         () => [...config.filters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -77,6 +80,7 @@ export function FilterBar({
     return (
         <div className="mb-3 border-b pb-3">
             <div className="flex flex-wrap items-center gap-2">
+                {searchSlot}
                 {sortedFilters.map((filterConfig) => {
                     const value = activeFilters[filterConfig.paramKey];
 

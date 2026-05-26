@@ -230,8 +230,12 @@ describe('handlePlanChange — SPEC-141 D7 upgrade branch', () => {
         expect(call?.newPlanId).toBe(TARGET_PLAN_ID);
         expect(call?.billingInterval).toBe('month');
         expect(call?.intervalCount).toBe(1);
-        expect(call?.urls.successUrl).toBe('https://hospeda.test/billing/return');
-        expect(call?.urls.cancelUrl).toBe('https://hospeda.test/billing/return?cancelled=1');
+        // Finding #8: back_urls point at the existing locale-prefixed checkout
+        // pages (success/failure), not the old /billing/return.
+        expect(call?.urls.successUrl).toBe(
+            'https://hospeda.test/es/suscriptores/checkout/success/'
+        );
+        expect(call?.urls.cancelUrl).toBe('https://hospeda.test/es/suscriptores/checkout/failure/');
         expect(call?.urls.notificationUrl).toBe(
             'https://api.hospeda.test/api/v1/webhooks/mercadopago'
         );

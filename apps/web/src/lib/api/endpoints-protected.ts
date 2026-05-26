@@ -463,7 +463,7 @@ export const billingApi = {
         }>
     > {
         return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/me/pause`,
+            path: `${PROTECTED}/billing/me/subscription-pause`,
             body: {}
         });
     },
@@ -481,7 +481,7 @@ export const billingApi = {
         }>
     > {
         return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/me/resume`,
+            path: `${PROTECTED}/billing/me/subscription-resume`,
             body: {}
         });
     },

@@ -65,8 +65,8 @@ vi.mock('@/hooks/use-translations', () => ({
 // Mock icons
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/icons', () => ({
-    resolveIcon: ({ iconName }: { iconName: string }) => {
+vi.mock('@/lib/nav-icon-map', () => ({
+    resolveNavIcon: ({ iconName }: { iconName: string }) => {
         const MockIcon = ({ 'aria-hidden': _h, ...p }: Record<string, unknown>) => (
             <span
                 data-testid={`icon-${iconName}`}

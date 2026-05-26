@@ -43,6 +43,9 @@ function expectNoForbiddenKeys(whereArg: Record<string, unknown>): void {
 
 class MockModel {
     findAll = vi.fn().mockResolvedValue({ items: [], total: 0 });
+    // Post/Event _executeSearch load relations via findAllWithRelations.
+    // Signature: (relations, where, pagination, additionalConditions).
+    findAllWithRelations = vi.fn().mockResolvedValue({ items: [], total: 0 });
     count = vi.fn().mockResolvedValue([{ count: 0 }]);
 }
 
@@ -86,10 +89,11 @@ describe('Service-layer WHERE-clause leak regression', () => {
                 { pagination: { page: 1, pageSize: 4, sortBy: 'publishedAt', sortOrder: 'desc' } }
             );
 
-            expect(model.findAll).toHaveBeenCalledOnce();
-            const [whereArg, pagination] = model.findAll.mock.calls[0] ?? [];
-            expectNoForbiddenKeys(whereArg as Record<string, unknown>);
-            expect(pagination).toMatchObject({ page: 1, pageSize: 4 });
+            // PostService loads relations: findAllWithRelations(relations, where, pagination, ...)
+            expect(model.findAllWithRelations).toHaveBeenCalledOnce();
+            const call = model.findAllWithRelations.mock.calls[0] ?? [];
+            expectNoForbiddenKeys(call[1] as Record<string, unknown>);
+            expect(call[2]).toMatchObject({ page: 1, pageSize: 4 });
         });
 
         it('_executeCount does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {
@@ -129,10 +133,11 @@ describe('Service-layer WHERE-clause leak regression', () => {
                 { pagination: { page: 1, pageSize: 6, sortBy: 'createdAt', sortOrder: 'desc' } }
             );
 
-            expect(model.findAll).toHaveBeenCalledOnce();
-            const [whereArg, pagination] = model.findAll.mock.calls[0] ?? [];
-            expectNoForbiddenKeys(whereArg as Record<string, unknown>);
-            expect(pagination).toMatchObject({ page: 1, pageSize: 6 });
+            // EventService loads relations: findAllWithRelations(relations, where, pagination, ...)
+            expect(model.findAllWithRelations).toHaveBeenCalledOnce();
+            const call = model.findAllWithRelations.mock.calls[0] ?? [];
+            expectNoForbiddenKeys(call[1] as Record<string, unknown>);
+            expect(call[2]).toMatchObject({ page: 1, pageSize: 6 });
         });
 
         it('_executeCount does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {

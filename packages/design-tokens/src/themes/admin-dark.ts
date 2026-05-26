@@ -2,9 +2,9 @@
  * @file themes/admin-dark.ts
  * @description Admin dark theme overrides for SPEC-153.
  *
- * Doc 05 §6.3 prescribes admin-dark primary = `river[500]` (one shade
- * lighter than admin-light's `river[600]` since text must read brighter
- * on a dark background). Same pattern applies to every color-* token:
+ * Admin-dark primary is `river[400]` — one shade lighter than admin-light's
+ * `river[500]` (raised in the brand-cohesion pass), since text must read
+ * brighter on a dark background. Same pattern applies to every color-* token:
  * shift down one shade in the ladder.
  *
  * Tokens NOT listed here (`--font-body`, `--font-heading`, `--radius`)
@@ -35,9 +35,9 @@ export const adminDark: Theme = {
     // ========================================================================
     // Primary (one shade LIGHTER than admin-light for dark-bg contrast)
     // ========================================================================
-    'color-primary': river[500],
-    'color-primary-hover': river[400],
-    'color-primary-pressed': river[600],
+    'color-primary': river[400],
+    'color-primary-hover': river[300],
+    'color-primary-pressed': river[500],
 
     // ========================================================================
     // Accent

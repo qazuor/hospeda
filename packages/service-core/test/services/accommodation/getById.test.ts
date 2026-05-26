@@ -52,15 +52,13 @@ describe('AccommodationService.getById', () => {
         expect(model.findOneWithRelations).toHaveBeenCalledWith(
             { id: entity.id },
             {
+                // SPEC-117 A-6: amenities + features are NOT loaded on the base
+                // detail response (they go through join tables + dedicated tab
+                // endpoints). `tags` is also omitted (polymorphic r_entity_tag).
                 destination: true,
                 owner: true,
-                amenities: true,
-                features: true,
                 reviews: true,
                 faqs: true
-                // `tags` relation intentionally omitted — Drizzle cannot infer
-                // r_entity_tag (polymorphic entityId+entityType, no direct FK).
-                // Tags are loaded separately when needed.
             },
             undefined
         );

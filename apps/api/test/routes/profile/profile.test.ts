@@ -72,6 +72,8 @@ describe('completeProfileHandler', () => {
     });
 
     const body: CompleteProfileBody = {
+        firstName: 'Test',
+        lastName: 'User',
         displayName: 'Test User',
         acceptedTerms: true
     };

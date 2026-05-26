@@ -40,8 +40,9 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                 {/* Level 2: Contextual sidebar */}
                 <Sidebar />
 
-                {/* Main content area */}
-                <main className="min-w-0 flex-1">{children}</main>
+                {/* Main content area. Bottom padding on mobile reserves room for the
+                    fixed BottomNav (md:hidden) so it never overlaps page content. */}
+                <main className="min-w-0 flex-1 pb-16 md:pb-0">{children}</main>
             </div>
 
             {/* Mobile bottom navigation (hidden on md+) */}

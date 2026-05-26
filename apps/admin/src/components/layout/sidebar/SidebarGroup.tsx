@@ -6,7 +6,7 @@
  *
  * Breaking changes from the OLD system:
  * - Label is now an I18nLabel resolved via `useLocalizedLabel`.
- * - Icon is now a string icon-name resolved via `resolveIcon`.
+ * - Icon is now a string icon-name resolved via `resolveNavIcon`.
  * - Uses `defaultOpen` (not `defaultExpanded`).
  * - Active state check uses `item.route` on child link items (not `href`).
  * - Groups may be `disabled` when the user lacks permissions.
@@ -23,8 +23,9 @@ import type {
     VisibleLinkItem,
     VisibleSeparatorItem
 } from '@/hooks/use-visible-sidebar-items';
+import { resolveNavIcon } from '@/lib/nav-icon-map';
 import { cn } from '@/lib/utils';
-import { DropdownIcon, resolveIcon } from '@repo/icons';
+import { DropdownIcon } from '@repo/icons';
 import { useLocation } from '@tanstack/react-router';
 import { useCallback, useId, useState } from 'react';
 import { SidebarItem } from './SidebarItem';
@@ -64,7 +65,7 @@ export function SidebarGroup({ item, onItemClick, className }: SidebarGroupProps
     const location = useLocation();
     const contentId = useId();
     const label = useLocalizedLabel(item.label);
-    const IconComponent = item.icon ? resolveIcon({ iconName: item.icon }) : undefined;
+    const IconComponent = item.icon ? resolveNavIcon({ iconName: item.icon }) : undefined;
 
     const groupHasActiveChild = hasActiveChild(item.items, location.pathname);
     const [isExpanded, setIsExpanded] = useState(item.defaultOpen || groupHasActiveChild);

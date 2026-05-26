@@ -310,12 +310,12 @@ describe(`AC-11 — ${RoleEnum.SUPER_ADMIN} role navigation`, () => {
         expect(role?.topbar?.accountInMenu).toBe(false);
     });
 
-    it('mobile.bottomNav is null — SUPER_ADMIN is desktop-only', () => {
+    it('mobile.bottomNav is all 7 sections (icon-only compact nav on mobile)', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.SUPER_ADMIN];
 
         // Act / Assert
-        expect(role?.mobile?.bottomNav).toBeNull();
+        expect(role?.mobile?.bottomNav).toEqual([...EXPECTED_MAIN_MENU]);
     });
 
     it('all 7 sections have ≥1 accessible sidebar item for SUPER_ADMIN', () => {
@@ -409,12 +409,12 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         expect(role?.topbar?.accountInMenu).toBe(false);
     });
 
-    it('mobile.bottomNav is null — ADMIN is desktop-only', () => {
+    it('mobile.bottomNav is all 7 sections (icon-only compact nav on mobile)', () => {
         // Arrange
         const role = validatedConfig.roles[RoleEnum.ADMIN];
 
         // Act / Assert
-        expect(role?.mobile?.bottomNav).toBeNull();
+        expect(role?.mobile?.bottomNav).toEqual([...EXPECTED_MAIN_MENU]);
     });
 
     // ── AC-12 KEY ASSERTIONS — SUPER_ADMIN-only item visibility ─────────────

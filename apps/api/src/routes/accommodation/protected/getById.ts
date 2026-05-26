@@ -5,6 +5,7 @@
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
+    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';

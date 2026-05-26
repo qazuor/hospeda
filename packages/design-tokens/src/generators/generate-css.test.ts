@@ -173,8 +173,8 @@ describe('buildCSS — admin light theme block', () => {
         expect(countDeclarations(block)).toBe(17);
     });
 
-    it('color-primary references river[600] (denser admin shade)', () => {
-        expect(block).toContain(`--color-primary: ${formatOKLCH(river[600])};`);
+    it('color-primary references river[500] (brand-forward admin shade)', () => {
+        expect(block).toContain(`--color-primary: ${formatOKLCH(river[500])};`);
     });
 
     it('color-bg-elevated is pure white oklch(1 0 0)', () => {
@@ -193,8 +193,8 @@ describe('buildCSS — admin dark theme block', () => {
         expect(countDeclarations(block)).toBe(14);
     });
 
-    it('shifts color-primary one shade lighter to river[500] in dark', () => {
-        expect(block).toContain(`--color-primary: ${formatOKLCH(river[500])};`);
+    it('shifts color-primary one shade lighter to river[400] in dark', () => {
+        expect(block).toContain(`--color-primary: ${formatOKLCH(river[400])};`);
     });
 
     it('does NOT redeclare font-body or radius (those inherit from admin-light)', () => {

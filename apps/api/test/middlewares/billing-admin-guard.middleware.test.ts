@@ -248,6 +248,60 @@ describe('billingAdminGuardMiddleware', () => {
 
             expect(next).not.toHaveBeenCalled();
         });
+
+        it('should allow POST /subscriptions/start-paid for regular users', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/start-paid'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should allow POST /subscriptions/change-plan for regular users', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/change-plan'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        // SPEC-143 #29: self-serve pause/resume live OUTSIDE /subscriptions
+        // (at /me/subscription-pause), so this rule never matches them.
+        it('should allow POST /me/subscription-pause for regular users (self-serve)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/me/subscription-pause'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should allow POST /me/subscription-resume for regular users (self-serve)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/me/subscription-resume'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
     });
 
     // -----------------------------------------------------------------------

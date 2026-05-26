@@ -76,7 +76,7 @@ export function ChangePlanDialog({
                         <p className="mb-2 font-medium text-sm">
                             {t('admin-billing.subscriptions.changePlanDialog.currentPlan')}
                         </p>
-                        <div className="rounded-md border p-3">
+                        <div className="rounded-md border bg-card p-3">
                             <p className="font-medium">{currentPlan?.name}</p>
                             <p className="text-muted-foreground text-sm">
                                 {formatArs(currentPlan?.monthlyPriceArs ?? 0, locale)}
