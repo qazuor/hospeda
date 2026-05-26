@@ -130,6 +130,19 @@ code {
     body {
         @apply bg-background text-foreground;
     }
+    /*
+     * Brand heading font (Geologica) from @repo/design-tokens, loaded in
+     * __root.tsx. Applied to all headings so the admin matches apps/web, where
+     * headings are Geologica and body copy is Roboto (var(--font-body)).
+     */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+    }
 }
 
 .text-xss {
