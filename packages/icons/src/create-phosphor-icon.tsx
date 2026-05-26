@@ -48,6 +48,13 @@ interface PhosphorIconProps {
 interface CreatePhosphorIconOptions {
     /** CSS class applied by default (e.g. 'animate-spin' for loaders). Merged with consumer className. */
     readonly defaultClassName?: string;
+    /**
+     * Weight used when the consumer does not pass one explicitly.
+     * Line glyphs (plus, minus, chevrons) set this to 'regular' because
+     * the default duotone secondary layer renders poorly on them.
+     * Falls back to 'duotone' when unset.
+     */
+    readonly defaultWeight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 }
 
 /**
@@ -63,12 +70,12 @@ export function createPhosphorIcon(
     displayName: string,
     options?: CreatePhosphorIconOptions
 ): ComponentType<IconProps> {
-    const { defaultClassName } = options ?? {};
+    const { defaultClassName, defaultWeight } = options ?? {};
 
     const WrappedIcon = ({
         size = 'md',
         color = 'currentColor',
-        weight = 'duotone',
+        weight,
         duotoneColor = DEFAULT_DUOTONE_COLOR,
         mirrored = false,
         className = '',
@@ -76,7 +83,8 @@ export function createPhosphorIcon(
         ...props
     }: IconProps) => {
         const resolvedSize = typeof size === 'string' ? ICON_SIZES[size] : size;
-        const resolvedColor = weight === 'duotone' ? duotoneColor : color;
+        const resolvedWeight = weight ?? defaultWeight ?? 'duotone';
+        const resolvedColor = resolvedWeight === 'duotone' ? duotoneColor : color;
         const mergedClassName = defaultClassName
             ? `${defaultClassName} ${className}`.trim()
             : className;
@@ -85,7 +93,7 @@ export function createPhosphorIcon(
             <PhosphorComponent
                 size={resolvedSize}
                 color={resolvedColor}
-                weight={weight}
+                weight={resolvedWeight}
                 mirrored={mirrored}
                 className={mergedClassName}
                 aria-label={ariaLabel || `${displayName} icon`}
