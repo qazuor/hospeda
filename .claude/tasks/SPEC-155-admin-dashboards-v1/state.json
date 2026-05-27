@@ -847,7 +847,7 @@
             "id": "T-036",
             "title": "Parity verification for 6 ADMIN KPIs",
             "description": "Write and pass an integration test asserting that the 6 ADMIN KPI values (accommodations, destinations, events, posts, attractions, users) returned by the new dashboard renderer match those from the old `useDashboardStats()` on the same seeded database.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-parity.test.ts`\n\nAcceptance criteria (AC-37):\n- All 6 KPI values match between old and new data sources\n- Test runs against a seeded database (not mocks) to catch any aggregation discrepancy\n- Test passes with both code paths active\n\nTest requirements (AC-37):\n- Integration test using the standard db test harness\n- AAA: Arrange = seed DB; Act = call both old and new data paths; Assert = values match\n- Must produce a clear failure message identifying WHICH KPI diverged and by how much\n- BLOCKS T-037 (do not delete `useDashboardStats()` until this test is green)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-035"],
             "blocks": ["T-037"],
@@ -861,15 +861,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Delete useDashboardStats hook",
             "description": "After T-036 parity test passes, delete the old `useDashboardStats()` hook and confirm no other consumers reference it.\n\nFiles to delete/modify:\n- `apps/admin/src/features/dashboard/useDashboardStats.ts` (delete)\n- Any import of `useDashboardStats` in other files (remove or replace)\n\nAcceptance criteria (AC-38):\n- `useDashboardStats` file is deleted\n- No TypeScript compile errors after deletion\n- No other file in the codebase imports `useDashboardStats`\n- All tests still pass after deletion\n\nTest requirements (AC-38):\n- Run full typecheck after deletion: `pnpm typecheck`\n- Run tests after deletion: `pnpm test`\n- No `useDashboardStats` references remain in the codebase",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-036"],
             "blocks": [],
@@ -883,15 +883,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "HOST scope isolation tests",
             "description": "Write tests asserting that all HOST-scoped dashboard queries inject `ownerId` and that no global count leaks to HOST users.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-host-scope.test.ts`\n\nAcceptance criteria (AC-17):\n- For each HOST source ID registered in T-018, assert that `ownerId` is included in the query key\n- For each HOST source ID, assert that the query function URL includes the current user's ID as scope parameter\n- Simulate two HOST users with different accommodations; assert each user's query returns only their own data\n\nTest requirements (AC-17):\n- Unit test per source: query key includes `[..., userId]`\n- Integration test: HOST user A's response for `host.accommodations.list` does not include HOST user B's accommodations\n- Integration test: HOST user A's `host.favorites.breakdown` returns only their listings' counts\n- Scope injection must come from auth context, not from query params",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-034"],
             "blocks": [],
@@ -905,15 +905,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         },
         {
             "id": "T-039",
             "title": "SUPER gating tests",
             "description": "Write tests asserting that ADMIN users see 7 cards and SUPER_ADMIN users see 9 cards, and that toggling permissions renders or hides the super-only section correctly.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-super-gating.test.ts`\n\nAcceptance criteria (AC-31, AC-32, AC-8):\n- ADMIN role → `adminBaseDashboard` → 7 visible cards\n- SUPER_ADMIN role → `adminBaseDashboard` + `superAdminOnlySection` → 9 visible cards\n- ADMIN user: cards H and I are NOT rendered (not in DOM)\n- SUPER_ADMIN user: cards H and I ARE rendered\n- Simulate stripping `BILLING_METRICS_READ` from SUPER_ADMIN → card I hides (`onMissing: 'hide'`)\n- Simulate stripping `AUDIT_LOG_VIEW` from SUPER_ADMIN → card H hides\n\nTest requirements (AC-31, AC-32):\n- Unit test: renderDashboard with ADMIN role → 7 card elements in DOM\n- Unit test: renderDashboard with SUPER_ADMIN role → 9 card elements in DOM\n- Unit test: card H not present when ADMIN role\n- Unit test: card I not present when ADMIN role\n- Unit test: card I hidden when BILLING_METRICS_READ removed from user permissions",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034"],
             "blocks": [],
@@ -927,15 +927,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         },
         {
             "id": "T-040",
             "title": "Performance baseline tests",
             "description": "Write tests asserting that all dashboard queries fire in parallel (no waterfall) and that initial render completes in under 500ms on a warm cache.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-performance.test.ts`\n\nAcceptance criteria (AC-33, AC-34, AC-35):\n- All queries for the current role's dashboard are initiated within the same render cycle (no waterfall)\n- Initial render completes in < 500ms with warm cache\n- Multiple cards querying the same underlying entity share a TanStack Query key prefix and do not make duplicate network requests\n\nTest requirements (AC-33, AC-34, AC-35):\n- Unit test: use `useQueries` spy to assert all queries initiated in a single render\n- Unit test: measure time from mount to last query initiation — assert < 500ms\n- Unit test: ADMIN cards A (entities count) and B (accommodations list) share `['dashboard', 'admin', 'accommodations']` prefix — assert no duplicate fetches\n- Use vitest fake timers for the 500ms assertion",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034"],
             "blocks": [],
@@ -949,15 +949,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         },
         {
             "id": "T-041",
             "title": "Deferred-placeholder rendering tests",
             "description": "Write tests asserting that each 🔴 slot renders `DeferredWidget` without errors and that the remaining 🟢/🟡 slots in the same card are unaffected.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-deferred.test.ts`\n\nAcceptance criteria (AC-14):\n- Every deferred (🔴) slot renders `DeferredWidget` component\n- The `DeferredWidget` receives the correct `phaseSpec` prop for each slot:\n  - HOST card G views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card C open-rate slot → `phaseSpec: 'SPEC-160'`\n  - EDITOR card E views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card F views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card H (entire card) → `phaseSpec: 'SPEC-165'`\n  - ADMIN card D failed/last-run slot → `phaseSpec: 'SPEC-161'`\n  - ADMIN card F reviews-pending sub-slot → `phaseSpec: 'SPEC-166'`\n  - SUPER card H audit log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H security log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H Sentry slot → `phaseSpec: 'SPEC-163'`\n- In each mixed card, the non-deferred slots render their data correctly alongside DeferredWidget\n- No errors thrown when DeferredWidget is rendered\n\nTest requirements (AC-14):\n- Unit test per deferred slot: assert DeferredWidget rendered with correct phaseSpec\n- Unit test: HOST card G live KPI slots render alongside deferred views slot\n- Unit test: DeferredWidget renders in isolation without any query calls",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022", "T-034"],
             "blocks": [],
@@ -971,8 +971,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
             }
         }
     ],
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 32,
-        "pending": 6,
+        "completed": 38,
+        "pending": 0,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,
