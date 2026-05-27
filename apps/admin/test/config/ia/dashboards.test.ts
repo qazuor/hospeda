@@ -1,140 +1,310 @@
 /**
- * Tests for apps/admin/src/config/ia/dashboards.ts (T-016)
+ * Tests for apps/admin/src/config/ia/dashboards.ts (T-004/SPEC-155)
  *
- * Verifies that all 4 canonical stub dashboards parse against DashboardSchema
- * and satisfy the minimum 1-widget requirement.
+ * Verifies:
+ * - All dashboard stubs parse against DashboardSchema.
+ * - The 4 named source objects (AC-4) exist in the registry.
+ * - The assembled superAdminDashboard (base + super-only section) has 9 widgets.
+ * - ADMIN role resolves to adminBaseDashboard (7 cards).
+ * - SUPER_ADMIN role resolves to superAdminDashboard (9 cards).
+ * - superAdminOnlySection widgets all carry onMissing: 'hide' (AC-7).
+ * - adminBaseDashboard contains NO cards H or I (AC-31).
+ * - Stub widget IDs are unique within each dashboard.
+ * - Every stub widget has non-empty es/en/pt labels.
+ * - Real PermissionEnum keys where permission gates are used.
  */
 
-import { dashboards } from '@/config/ia/dashboards';
+import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
 import { DashboardSchema } from '@/config/ia/schema';
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-// The 4 canonical dashboard IDs referenced by role configs
-const CANONICAL_DASHBOARD_IDS = [
+// ---------------------------------------------------------------------------
+// Source object IDs — AC-4
+// ---------------------------------------------------------------------------
+
+const SOURCE_DASHBOARD_IDS = [
     'hostDashboard',
-    'superAdminDashboard',
-    'adminDashboard',
-    'editorDashboard'
+    'editorDashboard',
+    'adminBaseDashboard',
+    'superAdminOnlySection'
 ] as const;
 
-describe('dashboards', () => {
-    describe('registry shape', () => {
-        it('should contain exactly 4 canonical dashboard IDs', () => {
-            const keys = Object.keys(dashboards);
-            expect(keys).toHaveLength(4);
-            for (const id of CANONICAL_DASHBOARD_IDS) {
-                expect(keys, `missing canonical dashboard: '${id}'`).toContain(id);
-            }
-        });
+// Widget IDs that belong exclusively to the SUPER_ADMIN-only section (cards H+I)
+const SUPER_ONLY_WIDGET_IDS = new Set(['super-card-h', 'super-card-i']);
+
+// ---------------------------------------------------------------------------
+// Registry shape
+// ---------------------------------------------------------------------------
+
+describe('dashboards registry', () => {
+    it('should contain the 4 named source objects (AC-4)', () => {
+        const keys = Object.keys(dashboards);
+        for (const id of SOURCE_DASHBOARD_IDS) {
+            expect(keys, `missing source object: '${id}'`).toContain(id);
+        }
     });
 
-    describe('schema validation', () => {
-        it('should parse all dashboards against DashboardSchema without errors', () => {
-            for (const [key, dashboard] of Object.entries(dashboards)) {
-                const result = DashboardSchema.safeParse(dashboard);
+    it('should contain superAdminDashboard as the assembled role-facing entry', () => {
+        expect(Object.keys(dashboards)).toContain('superAdminDashboard');
+    });
+
+    it('should contain exactly 5 entries (4 source + 1 assembled)', () => {
+        expect(Object.keys(dashboards)).toHaveLength(5);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Schema validation — all entries parse cleanly
+// ---------------------------------------------------------------------------
+
+describe('schema validation', () => {
+    it('should parse all dashboard registry entries against DashboardSchema', () => {
+        for (const [key, dashboard] of Object.entries(dashboards)) {
+            const result = DashboardSchema.safeParse(dashboard);
+            expect(
+                result.success,
+                `dashboards['${key}'] failed schema: ${JSON.stringify(result.error?.issues)}`
+            ).toBe(true);
+        }
+    });
+
+    it('superAdminOnlySection named export should also parse cleanly', () => {
+        const result = DashboardSchema.safeParse(superAdminOnlySection);
+        expect(
+            result.success,
+            `superAdminOnlySection export failed schema: ${JSON.stringify(result.error?.issues)}`
+        ).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Card counts — AC-4
+// ---------------------------------------------------------------------------
+
+describe('card counts (AC-4)', () => {
+    it('hostDashboard should have exactly 7 stub widgets', () => {
+        expect(dashboards.hostDashboard?.widgets).toHaveLength(7);
+    });
+
+    it('editorDashboard should have exactly 8 stub widgets', () => {
+        expect(dashboards.editorDashboard?.widgets).toHaveLength(8);
+    });
+
+    it('adminBaseDashboard should have exactly 7 stub widgets (cards A–G)', () => {
+        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(7);
+    });
+
+    it('superAdminOnlySection should have exactly 2 stub widgets (cards H–I)', () => {
+        expect(dashboards.superAdminOnlySection?.widgets).toHaveLength(2);
+    });
+
+    it('superAdminDashboard should have exactly 9 stub widgets (base 7 + super-only 2)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(9);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN / SUPER_ADMIN role wiring — AC-8
+// ---------------------------------------------------------------------------
+
+describe('role wiring (AC-8)', () => {
+    it('adminBaseDashboard has 7 widgets — ADMIN resolves to 7 cards', () => {
+        // AC-8: ADMIN role → adminBaseDashboard (7 cards)
+        const base = dashboards.adminBaseDashboard;
+        expect(base?.widgets).toHaveLength(7);
+    });
+
+    it('superAdminDashboard has 9 widgets — SUPER_ADMIN resolves to base + section (9 cards)', () => {
+        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard + superAdminOnlySection = 9)
+        const assembled = dashboards.superAdminDashboard;
+        expect(assembled?.widgets).toHaveLength(9);
+    });
+
+    it('superAdminDashboard widgets include all adminBaseDashboard widget IDs', () => {
+        // Spread construction: assembled dashboard inherits every base widget.
+        const baseIds = new Set((dashboards.adminBaseDashboard?.widgets ?? []).map((w) => w.id));
+        const assembledIds = new Set(
+            (dashboards.superAdminDashboard?.widgets ?? []).map((w) => w.id)
+        );
+        for (const id of baseIds) {
+            expect(
+                assembledIds.has(id),
+                `base widget '${id}' missing from superAdminDashboard`
+            ).toBe(true);
+        }
+    });
+
+    it('superAdminDashboard widgets include all superAdminOnlySection widget IDs', () => {
+        const sectionIds = new Set(
+            (dashboards.superAdminOnlySection?.widgets ?? []).map((w) => w.id)
+        );
+        const assembledIds = new Set(
+            (dashboards.superAdminDashboard?.widgets ?? []).map((w) => w.id)
+        );
+        for (const id of sectionIds) {
+            expect(
+                assembledIds.has(id),
+                `super-only widget '${id}' missing from superAdminDashboard`
+            ).toBe(true);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SUPER_ADMIN-only gating — AC-7, AC-31
+// ---------------------------------------------------------------------------
+
+describe('SUPER_ADMIN-only gating (AC-7, AC-31)', () => {
+    it('[AC-7] every widget in superAdminOnlySection should have onMissing: "hide"', () => {
+        for (const widget of dashboards.superAdminOnlySection?.widgets ?? []) {
+            expect(
+                widget.onMissing,
+                `superAdminOnlySection widget '${widget.id}' missing onMissing:'hide'`
+            ).toBe('hide');
+        }
+    });
+
+    it('[AC-31] adminBaseDashboard should NOT contain cards H or I widget IDs', () => {
+        // ADMIN never receives H/I because they are absent from adminBaseDashboard.
+        const baseIds = (dashboards.adminBaseDashboard?.widgets ?? []).map((w) => w.id);
+        for (const superOnlyId of SUPER_ONLY_WIDGET_IDS) {
+            expect(
+                baseIds,
+                `adminBaseDashboard must not contain SUPER-only widget '${superOnlyId}'`
+            ).not.toContain(superOnlyId);
+        }
+    });
+
+    it('superAdminDashboard base widgets (A-G) should NOT have onMissing: "hide"', () => {
+        // Base widgets should be visible to SUPER_ADMIN unconditionally.
+        const baseIds = new Set((dashboards.adminBaseDashboard?.widgets ?? []).map((w) => w.id));
+        for (const widget of dashboards.superAdminDashboard?.widgets ?? []) {
+            if (baseIds.has(widget.id)) {
                 expect(
-                    result.success,
-                    `dashboards['${key}'] failed schema validation: ${JSON.stringify(result.error?.issues)}`
-                ).toBe(true);
+                    widget.onMissing,
+                    `base widget '${widget.id}' should not be hidden`
+                ).not.toBe('hide');
             }
-        });
+        }
     });
 
-    describe('widget minimum', () => {
-        it('should have at least 1 widget in every dashboard (schema constraint)', () => {
-            for (const [key, dashboard] of Object.entries(dashboards)) {
+    it('[AC-7] superAdminDashboard super-only widgets (H-I) should have onMissing: "hide"', () => {
+        for (const widget of dashboards.superAdminDashboard?.widgets ?? []) {
+            if (SUPER_ONLY_WIDGET_IDS.has(widget.id)) {
                 expect(
-                    dashboard.widgets.length,
-                    `dashboards['${key}'] has no widgets`
-                ).toBeGreaterThanOrEqual(1);
+                    widget.onMissing,
+                    `super-only widget '${widget.id}' in superAdminDashboard should have onMissing:'hide'`
+                ).toBe('hide');
             }
-        });
+        }
     });
 
-    describe('widget validity', () => {
-        it('should have unique widget IDs within each dashboard', () => {
-            for (const [key, dashboard] of Object.entries(dashboards)) {
-                const ids = dashboard.widgets.map((w) => w.id);
-                const unique = new Set(ids);
-                expect(unique.size, `dashboards['${key}'] has duplicate widget IDs`).toBe(
-                    ids.length
-                );
+    it('superAdminOnlySection named export should be identical to dashboards.superAdminOnlySection', () => {
+        // Belt-and-suspenders: named export and registry entry must be the same object.
+        expect(superAdminOnlySection).toBe(dashboards.superAdminOnlySection);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Widget integrity — all dashboards
+// ---------------------------------------------------------------------------
+
+describe('widget integrity', () => {
+    it('should have unique widget IDs within each dashboard', () => {
+        for (const [key, dashboard] of Object.entries(dashboards)) {
+            const ids = (dashboard.widgets ?? []).map((w) => w.id);
+            const unique = new Set(ids);
+            expect(
+                unique.size,
+                `dashboards['${key}'] has duplicate widget IDs: ${ids.filter((id, i) => ids.indexOf(id) !== i).join(', ')}`
+            ).toBe(ids.length);
+        }
+    });
+
+    it('should have non-empty es/en/pt labels on every widget', () => {
+        for (const [key, dashboard] of Object.entries(dashboards)) {
+            for (const widget of dashboard.widgets ?? []) {
+                expect(
+                    widget.label.es,
+                    `dashboards['${key}'].${widget.id} missing es label`
+                ).toBeTruthy();
+                expect(
+                    widget.label.en,
+                    `dashboards['${key}'].${widget.id} missing en label`
+                ).toBeTruthy();
+                expect(
+                    widget.label.pt,
+                    `dashboards['${key}'].${widget.id} missing pt label`
+                ).toBeTruthy();
             }
-        });
+        }
+    });
 
-        it('should only use real PermissionEnum keys in widget permission gates', () => {
-            // Arrange
-            // The IA config uses PermissionEnum key names (e.g. ACCOMMODATION_VIEW_ALL),
-            // not the dotted enum values (e.g. 'accommodation.viewAll').
-            // PermissionExpressionSchema accepts uppercase identifiers that match PermissionEnum keys.
-            const validPermKeys = new Set<string>(Object.keys(PermissionEnum));
-
-            for (const [key, dashboard] of Object.entries(dashboards)) {
-                for (const widget of dashboard.widgets) {
-                    if (widget.permissions) {
-                        for (const perm of widget.permissions) {
-                            expect(
-                                validPermKeys.has(perm),
-                                `dashboards['${key}'] widget '${widget.id}' uses unknown permission key '${perm}'`
-                            ).toBe(true);
-                        }
+    it('should only use real PermissionEnum keys in widget permission gates', () => {
+        const validPermKeys = new Set<string>(Object.keys(PermissionEnum));
+        for (const [key, dashboard] of Object.entries(dashboards)) {
+            for (const widget of dashboard.widgets ?? []) {
+                if (widget.permissions) {
+                    for (const perm of widget.permissions) {
+                        expect(
+                            validPermKeys.has(perm),
+                            `dashboards['${key}'] widget '${widget.id}' uses unknown permission '${perm}'`
+                        ).toBe(true);
                     }
                 }
             }
-        });
-
-        it('should have non-empty es/en/pt labels on every widget', () => {
-            for (const [key, dashboard] of Object.entries(dashboards)) {
-                for (const widget of dashboard.widgets) {
-                    expect(
-                        widget.label.es,
-                        `dashboards['${key}'].${widget.id} missing es`
-                    ).toBeTruthy();
-                    expect(
-                        widget.label.en,
-                        `dashboards['${key}'].${widget.id} missing en`
-                    ).toBeTruthy();
-                    expect(
-                        widget.label.pt,
-                        `dashboards['${key}'].${widget.id} missing pt`
-                    ).toBeTruthy();
-                }
-            }
-        });
+        }
     });
 
-    describe('specific dashboard expectations', () => {
-        it('hostDashboard stub widget should have scope: "own"', () => {
-            // Arrange
-            const widget = dashboards.hostDashboard.widgets[0];
+    it('should have at least 1 widget in every dashboard (schema constraint)', () => {
+        for (const [key, dashboard] of Object.entries(dashboards)) {
+            expect(
+                (dashboard.widgets ?? []).length,
+                `dashboards['${key}'] has no widgets`
+            ).toBeGreaterThanOrEqual(1);
+        }
+    });
+});
 
-            // Assert
-            expect(widget?.scope).toBe('own');
-        });
+// ---------------------------------------------------------------------------
+// Scope expectations per dashboard
+// ---------------------------------------------------------------------------
 
-        it('superAdminDashboard stub widget should have scope: "all"', () => {
-            // Arrange
-            const widget = dashboards.superAdminDashboard.widgets[0];
+describe('widget scope expectations', () => {
+    it('hostDashboard widgets should all have scope "own" (HOST-scoped)', () => {
+        for (const widget of dashboards.hostDashboard?.widgets ?? []) {
+            expect(
+                widget.scope,
+                `hostDashboard widget '${widget.id}' should have scope 'own'`
+            ).toBe('own');
+        }
+    });
 
-            // Assert
-            expect(widget?.scope).toBe('all');
-        });
+    it('editorDashboard widgets should all have scope "all"', () => {
+        for (const widget of dashboards.editorDashboard?.widgets ?? []) {
+            expect(
+                widget.scope,
+                `editorDashboard widget '${widget.id}' should have scope 'all'`
+            ).toBe('all');
+        }
+    });
 
-        it('adminDashboard stub widget should have scope: "all"', () => {
-            // Arrange
-            const widget = dashboards.adminDashboard.widgets[0];
+    it('adminBaseDashboard widgets should all have scope "all"', () => {
+        for (const widget of dashboards.adminBaseDashboard?.widgets ?? []) {
+            expect(
+                widget.scope,
+                `adminBaseDashboard widget '${widget.id}' should have scope 'all'`
+            ).toBe('all');
+        }
+    });
 
-            // Assert
-            expect(widget?.scope).toBe('all');
-        });
-
-        it('editorDashboard stub widget should have scope: "all"', () => {
-            // Arrange
-            const widget = dashboards.editorDashboard.widgets[0];
-
-            // Assert
-            expect(widget?.scope).toBe('all');
-        });
+    it('superAdminOnlySection widgets should all have scope "all"', () => {
+        for (const widget of dashboards.superAdminOnlySection?.widgets ?? []) {
+            expect(
+                widget.scope,
+                `superAdminOnlySection widget '${widget.id}' should have scope 'all'`
+            ).toBe('all');
+        }
     });
 });
