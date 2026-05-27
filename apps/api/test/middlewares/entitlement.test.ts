@@ -129,7 +129,28 @@ describe('entitlementMiddleware', () => {
     });
 
     describe('when billing customer is not set', () => {
-        it('should set empty entitlements and limits', async () => {
+        // SPEC-143 smoke F-B1: a missing billing customer row is NOT the same
+        // as "no entitlements". The customer is created by the (non-blocking)
+        // signup hook; until it exists, every AUTHENTICATED user must still get
+        // the role-appropriate default entitlements (tourist-free baseline;
+        // HOST → owner-basico draft defaults), mirroring the
+        // no-active-subscription branch. Only unauthenticated / guest requests
+        // get empty entitlements.
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectActor = (actor: {
+            id: string;
+            role: RoleEnum;
+            permissions: string[];
+            email: string;
+        }) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', null);
+                c.set('actor', actor as unknown as InjectedActor);
+                return next();
+            });
+
+        it('should set empty entitlements when there is no actor', async () => {
             app.use(entitlementMiddleware());
             app.get('/test', (c) => {
                 const entitlements = c.get('userEntitlements');
@@ -147,6 +168,83 @@ describe('entitlementMiddleware', () => {
             const data = await res.json();
             expect(data.entitlementsCount).toBe(0);
             expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set empty entitlements for a GUEST actor with no customer', async () => {
+            injectActor({
+                id: '00000000-0000-4000-8000-000000000000',
+                role: RoleEnum.GUEST,
+                permissions: [],
+                email: ''
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set tourist-free default entitlements for an authenticated non-HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'user-no-customer',
+                role: RoleEnum.USER,
+                permissions: [],
+                email: 'user@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // tourist-free baseline must be granted even without a customer row
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            // HOST-only entitlements must NOT leak to a USER actor
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should set owner-basico default entitlements for a HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'host-no-customer',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // HOST gets owner-basico draft defaults, not tourist-free
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
         });
     });
 
