@@ -217,7 +217,19 @@ describe('GET /api/v1/protected/users/me/subscription (get user subscription)', 
                 const { subscription } = body;
 
                 if (subscription !== null && subscription !== undefined) {
-                    const validStatuses = ['active', 'trial', 'cancelled', 'expired', 'pending'];
+                    // Must match SUBSCRIPTION_STATUSES in the route. `paused` was
+                    // added so the account UI can render the paused state + a
+                    // resume action (SPEC-143 smoke F-UI-RESUME); previously a
+                    // paused sub was returned as null and stranded the user.
+                    const validStatuses = [
+                        'active',
+                        'trial',
+                        'cancelled',
+                        'expired',
+                        'past_due',
+                        'pending',
+                        'paused'
+                    ];
                     expect(validStatuses).toContain(subscription.status);
                 }
             }
