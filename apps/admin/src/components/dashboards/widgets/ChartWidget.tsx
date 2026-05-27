@@ -394,8 +394,16 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     // -- 8. Data — narrow to ChartData shape ---------------------------------
     const chartData = data as ChartData;
 
-    // An empty series is treated as "no data" rather than an error.
-    if (!chartData.series || chartData.series.length === 0) {
+    // Defensive guard: if the resolver returned an unexpected shape (e.g. an
+    // object without `series`, or a raw array instead of { series }), fall
+    // back to the empty state instead of crashing in ChartRenderer.
+    if (
+        !chartData ||
+        typeof chartData !== 'object' ||
+        !('series' in chartData) ||
+        !Array.isArray(chartData.series) ||
+        chartData.series.length === 0
+    ) {
         return <WidgetEmpty variant="chart" />;
     }
 

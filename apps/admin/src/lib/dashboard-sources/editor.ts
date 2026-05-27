@@ -83,17 +83,6 @@ interface EventItem {
     readonly description?: string;
 }
 
-/** Shape of GET /api/v1/admin/newsletter/subscribers/by-preference response. */
-interface SubscribersByPreferenceApiResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly OFFERS?: number;
-        readonly EVENTS?: number;
-        readonly GUIDES?: number;
-        readonly PRODUCT_NEWS?: number;
-    };
-}
-
 /** Shape of a newsletter campaign item. */
 interface CampaignItem {
     readonly id: string;
@@ -143,20 +132,16 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
     queryFn: async () => {
         const monthStart = currentMonthStart();
-        const [publishedResult, draftsResult] = await Promise.all([
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
-            }),
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc'
-            })
-        ]);
+        // Only the published count is needed — drafts are loaded by the companion
+        // source `editor.posts.drafts` which ListWidget uses separately.
+        const publishedResult = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
+        });
 
-        return {
-            publishedThisMonth: publishedResult.data.data?.pagination?.total ?? 0,
-            pendingDraftsCount: draftsResult.data.data?.pagination?.total ?? 0,
-            recentDrafts: draftsResult.data.data?.data ?? []
-        };
+        const publishedThisMonth = publishedResult.data.data?.pagination?.total ?? 0;
+
+        // Normalize to KpiData shape expected by KpiWidget.
+        return { value: publishedThisMonth };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -176,10 +161,14 @@ registerDataSource('editor.posts.drafts', (ctx) => ({
         const result = await fetchApi<AdminListApiResponse<PostItem>>({
             path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc'
         });
-        return {
-            items: result.data.data?.data ?? [],
-            total: result.data.data?.pagination?.total ?? 0
-        };
+        const items = result.data.data?.data ?? [];
+        // Normalize to ListItem[] shape expected by ListWidget (companion source).
+        return items.map((post) => ({
+            id: post.id,
+            label: post.title,
+            meta: post.createdAt ? new Date(post.createdAt).toLocaleDateString('es-AR') : undefined,
+            href: `/contenido/posts/${post.id}`
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -202,23 +191,25 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.upcoming', ctx),
     queryFn: async () => {
         const now = nowIso();
-        const [countResult, listResult, featuredResult] = await Promise.all([
-            fetchApi<AdminListApiResponse<EventItem>>({
-                path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=1`
-            }),
-            fetchApi<AdminListApiResponse<EventItem>>({
-                path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=5&sort=start_date_asc`
-            }),
-            fetchApi<AdminListApiResponse<EventItem>>({
-                path: `/api/v1/admin/events?isFeatured=true&startDateAfter=${encodeURIComponent(now)}&pageSize=5`
-            })
-        ]);
+        // Only the upcoming list is needed for the ListWidget.
+        // Count and featured queries are dropped from this resolver; if a future
+        // multi-stat card needs them, add a separate dedicated source.
+        const listResult = await fetchApi<AdminListApiResponse<EventItem>>({
+            path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=5&sort=start_date_asc`
+        });
 
-        return {
-            upcomingCount: countResult.data.data?.pagination?.total ?? 0,
-            upcomingItems: listResult.data.data?.data ?? [],
-            featuredUpcomingItems: featuredResult.data.data?.data ?? []
-        };
+        const upcomingItems = listResult.data.data?.data ?? [];
+
+        // Normalize to ListItem[] shape expected by ListWidget.
+        return upcomingItems.map((event) => ({
+            id: event.id,
+            label: event.title,
+            meta: event.startDate
+                ? new Date(event.startDate).toLocaleDateString('es-AR')
+                : undefined,
+            badge: event.isFeatured ? 'destacado' : undefined,
+            href: `/catalogo/eventos/${event.id}`
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -245,19 +236,17 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
 registerDataSource('editor.newsletter.subscribers', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.subscribers', ctx),
     queryFn: async () => {
-        const [countResult, byPrefResult] = await Promise.all([
-            fetchApi<AdminListApiResponse>({
-                path: '/api/v1/admin/newsletter/subscribers?status=active&pageSize=1'
-            }),
-            fetchApi<SubscribersByPreferenceApiResponse>({
-                path: '/api/v1/admin/newsletter/subscribers/by-preference'
-            })
-        ]);
+        // Only the subscriber count is needed for KpiWidget.
+        // The by-preference breakdown is useful for a future chart/table widget
+        // but is not consumed by KpiWidget, so we skip that fetch here.
+        const countResult = await fetchApi<AdminListApiResponse>({
+            path: '/api/v1/admin/newsletter/subscribers?status=active&pageSize=1'
+        });
 
-        return {
-            activeCount: countResult.data.data?.pagination?.total ?? 0,
-            byPreference: byPrefResult.data.data ?? null
-        };
+        const activeCount = countResult.data.data?.pagination?.total ?? 0;
+
+        // Normalize to KpiData shape expected by KpiWidget.
+        return { value: activeCount };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -281,7 +270,16 @@ registerDataSource('editor.newsletter.campaigns', (ctx) => ({
         const result = await fetchApi<AdminListApiResponse<CampaignItem>>({
             path: '/api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3'
         });
-        return result.data.data?.data ?? [];
+        const campaigns = result.data.data?.data ?? [];
+        // Normalize to ListItem[] shape expected by ListWidget.
+        return campaigns.map((campaign) => ({
+            id: campaign.id,
+            label: campaign.subject,
+            meta: campaign.scheduledAt
+                ? new Date(campaign.scheduledAt).toLocaleDateString('es-AR')
+                : undefined,
+            badge: campaign.status
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -308,34 +306,45 @@ registerDataSource('editor.newsletter.campaigns', (ctx) => ({
 registerDataSource('editor.posts.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.stats', ctx),
     queryFn: async () => {
-        const [activeResult, draftResult, archivedResult, popularResult, trendResult] =
-            await Promise.all([
-                fetchApi<AdminListApiResponse<PostItem>>({
-                    path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
-                }),
-                fetchApi<AdminListApiResponse<PostItem>>({
-                    path: '/api/v1/admin/posts?status=DRAFT&pageSize=1'
-                }),
-                fetchApi<AdminListApiResponse<PostItem>>({
-                    path: '/api/v1/admin/posts?status=ARCHIVED&pageSize=1'
-                }),
-                fetchApi<AdminListApiResponse<PostItem>>({
-                    path: '/api/v1/admin/posts?status=ACTIVE&sort=engagement_desc&pageSize=5'
-                }),
-                fetchApi<PostsTrendApiResponse>({
-                    path: '/api/v1/admin/posts/trend'
-                })
-            ]);
+        const [activeResult, draftResult, archivedResult, trendResult] = await Promise.all([
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=DRAFT&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=ARCHIVED&pageSize=1'
+            }),
+            fetchApi<PostsTrendApiResponse>({
+                path: '/api/v1/admin/posts/trend'
+            })
+        ]);
 
+        const monthlyTrend = trendResult.data.data ?? [];
+
+        // Normalize to ChartData shape expected by ChartWidget.
+        // Use the monthly trend as the chart series (posts published per month).
+        // Fall back to status-distribution bar chart when trend is empty.
+        if (monthlyTrend.length > 0) {
+            return {
+                series: monthlyTrend.map((point) => ({
+                    label: point.month,
+                    value: point.count
+                }))
+            };
+        }
+
+        // Fallback: status distribution as a bar chart
+        const active = activeResult.data.data?.pagination?.total ?? 0;
+        const draft = draftResult.data.data?.pagination?.total ?? 0;
+        const archived = archivedResult.data.data?.pagination?.total ?? 0;
         return {
-            statusDistribution: {
-                active: activeResult.data.data?.pagination?.total ?? 0,
-                draft: draftResult.data.data?.pagination?.total ?? 0,
-                archived: archivedResult.data.data?.pagination?.total ?? 0
-            },
-            popularPosts: popularResult.data.data?.data ?? [],
-            totalPublished: activeResult.data.data?.pagination?.total ?? 0,
-            monthlyTrend: trendResult.data.data ?? []
+            series: [
+                { label: 'Publicados', value: active },
+                { label: 'Borradores', value: draft },
+                { label: 'Archivados', value: archived }
+            ]
         };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
@@ -360,7 +369,9 @@ registerDataSource('editor.events.stats', (ctx) => ({
         const result = await fetchApi<AdminListApiResponse<EventItem>>({
             path: '/api/v1/admin/events?pageSize=1'
         });
-        return { totalEvents: result.data.data?.pagination?.total ?? 0 };
+        const totalEvents = result.data.data?.pagination?.total ?? 0;
+        // Normalize to KpiData shape expected by KpiWidget.
+        return { value: totalEvents };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
