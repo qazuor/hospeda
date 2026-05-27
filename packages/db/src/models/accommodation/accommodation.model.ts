@@ -995,6 +995,36 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
     }
+
+    /**
+     * Returns the IDs of all non-deleted accommodations owned by a given user.
+     *
+     * Intended for service-layer scoping (e.g. conversation response-rate KPIs)
+     * where only the IDs are needed, avoiding the overhead of hydrating full
+     * accommodation rows.
+     *
+     * @param ownerId - UUID of the accommodation owner.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns Array of accommodation UUID strings (may be empty).
+     */
+    async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+        try {
+            const rows = await db
+                .select({ id: accommodations.id })
+                .from(accommodations)
+                .where(and(eq(accommodations.ownerId, ownerId), isNull(accommodations.deletedAt)));
+
+            const ids = rows.map((r) => r.id);
+            logQuery(this.entityName, 'findIdsByOwnerId', ctx, { count: ids.length });
+            return ids;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findIdsByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
 }
 
 /** Singleton instance of AccommodationModel for use across the application. */

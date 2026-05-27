@@ -38,6 +38,7 @@ import type {
     SelectConversation,
     SelectMessage
 } from '@repo/db';
+import type { HostConversationResponseRate } from '@repo/schemas';
 import {
     ConversationStatusEnum,
     MessageSenderTypeEnum,
@@ -1640,6 +1641,60 @@ export class ConversationService extends BaseService {
                 });
 
                 return { conversationId, rawToken };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // SPEC-155 T-006: Host conversation response-rate KPIs
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns aggregated conversation response-rate KPIs for the authenticated
+     * host.
+     *
+     * Scoped strictly to the host's own conversations by resolving the actor's
+     * accommodation IDs first (via `AccommodationModel.findByOwnerId`) and
+     * delegating the aggregation to `ConversationModel.getResponseRateByOwnerId`.
+     *
+     * Permission gating: requires `CONVERSATION_VIEW_OWN` — the same permission
+     * used by the host inbox (list route).  The ownerId is always derived from
+     * `actor.id`; callers cannot override the scope via a query param.
+     *
+     * @param actor - Authenticated host performing the request.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ responseRatePct, avgResponseTimeMinutes }`.
+     * @throws {ServiceError} FORBIDDEN when actor lacks `CONVERSATION_VIEW_OWN`.
+     * @throws {ServiceError} INTERNAL_ERROR on unexpected DB errors.
+     */
+    public async getHostResponseRate(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostConversationResponseRate>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getHostResponseRate',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!validatedActor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: CONVERSATION_VIEW_OWN required for host response rate'
+                    );
+                }
+
+                // Resolve the host's accommodation IDs (may be empty for a
+                // brand-new host who has not yet created any accommodations).
+                const ownerAccommodationIds = await this.accommodationModel.findIdsByOwnerId(
+                    validatedActor.id,
+                    execCtx?.tx
+                );
+
+                return this.conversationModel.getResponseRateByOwnerId(
+                    ownerAccommodationIds,
+                    execCtx?.tx
+                );
             }
         });
     }
