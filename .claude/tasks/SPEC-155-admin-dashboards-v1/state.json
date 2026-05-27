@@ -571,7 +571,7 @@
             "id": "T-024",
             "title": "Create ListWidget component",
             "description": "Build the list widget renderer displaying top-N items with optional per-item action button or link.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ListWidget.tsx`\n\nComponent interface (AC-11):\n```typescript\ninterface ListWidgetItem { id: string; label: string; subLabel?: string; badge?: string; }\ninterface ListWidgetProps {\n  items: ListWidgetItem[];\n  actionPerItem?: { label: string; href: (item: ListWidgetItem) => string } |\n                  { label: string; onClick: (item: ListWidgetItem) => void };\n  isLoading?: boolean;\n  error?: Error | null;\n  emptyState?: { message: string };\n}\n```\n\nAcceptance criteria (AC-9, AC-11, AC-15):\n- Renders item list with label, optional subLabel, optional badge\n- Per-item action rendered as button or link per config type\n- Loading skeleton from T-028\n- Empty state from `config.emptyState` message\n\nTest requirements:\n- Unit test: renders list of items correctly\n- Unit test: action button renders and calls onClick\n- Unit test: action link renders with correct href\n- Unit test: empty state renders when items=[]\n- Unit test: loading state renders skeleton",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -585,15 +585,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Create ChartWidget component",
             "description": "Build the chart widget renderer supporting line, bar, and area chart types.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ChartWidget.tsx`\n- Uses a charting library already present in the admin app (check for recharts or similar in package.json before adding a new dep)\n\nComponent interface (AC-12):\n```typescript\ninterface ChartDataPoint { label: string; value: number; }\ninterface ChartWidgetProps {\n  data: ChartDataPoint[];\n  chartType: 'line' | 'bar' | 'area';\n  xAxisLabel?: string;\n  yAxisLabel?: string;\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-12, AC-15):\n- Renders line chart when `chartType='line'`\n- Renders bar chart when `chartType='bar'`\n- Renders area chart when `chartType='area'`\n- Loading skeleton from T-028; error callout from T-028\n- Responsive sizing (fills card width)\n\nTest requirements:\n- Unit test: renders without error for each chartType\n- Unit test: renders loading state when `isLoading=true`\n- Unit test: data-point count matches props.data.length",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -607,15 +607,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Create ChecklistWidget component",
             "description": "Build the checklist widget renderer with dynamic items sourced from a loaded entity object, a visual completeness indicator, and an accommodation selector dropdown for HOST card D multi-listing behavior.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ChecklistWidget.tsx`\n- Requires `'checklist'` to be in `WidgetTypeSchema` (T-003) before this component type is valid in configs\n\nComponent interface (AC-13, AC-18):\n```typescript\ninterface ChecklistItem { key: string; label: string; completed: boolean; }\ninterface ChecklistWidgetProps {\n  items: ChecklistItem[];\n  completenessPercent: number;  // 0-100\n  selector?: {                   // Only for HOST card D with multiple listings\n    options: { id: string; label: string }[];\n    selectedId: string;\n    onSelect: (id: string) => void;\n  };\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-13, AC-15, AC-18):\n- Renders checklist items with visual completed/incomplete state\n- Shows completeness percentage indicator\n- When `selector` prop present, renders accommodation dropdown; selecting updates displayed checklist\n- Loading/error states from T-028\n\nTest requirements (AC-13, AC-18):\n- Unit test: renders all items with correct completed state\n- Unit test: completeness indicator shows correct fraction\n- Unit test: selecting different accommodation from dropdown triggers `onSelect` callback\n- Unit test: renders without selector when prop is absent",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -629,15 +629,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Create StatusWidget component",
             "description": "Build the status widget renderer for health/badge cards (subscription status, system health, maintenance mode).\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/StatusWidget.tsx`\n\nComponent interface:\n```typescript\ntype StatusLevel = 'healthy' | 'warning' | 'critical' | 'unknown';\ninterface StatusItem { label: string; status: StatusLevel; detail?: string; }\ninterface StatusWidgetProps {\n  items: StatusItem[];\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-15):\n- Each status item renders a color-coded badge (healthy=green, warning=amber, critical=red, unknown=gray)\n- Uses semantic design tokens from `@repo/design-tokens` (SPEC-153)\n- Loading/error states from T-028\n- Visually consistent with other widget types (same card padding, same header style)\n\nTest requirements:\n- Unit test: renders all four status levels with correct badge colors/classes\n- Unit test: loading state renders skeleton\n- Unit test: multiple status items render independently",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -651,8 +651,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
             }
         },
         {
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 20,
-        "pending": 18,
+        "completed": 24,
+        "pending": 14,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,

@@ -11,3 +11,15 @@ export type { DeferredWidgetProps } from './DeferredWidget';
 
 export { KpiWidget } from './KpiWidget';
 export type { KpiWidgetProps, KpiData, KpiWidgetConfig } from './KpiWidget';
+
+export { ListWidget } from './ListWidget';
+export type { ListWidgetProps } from './ListWidget';
+
+export { ChartWidget } from './ChartWidget';
+export type { ChartWidgetProps } from './ChartWidget';
+
+export { ChecklistWidget } from './ChecklistWidget';
+export type { ChecklistWidgetProps } from './ChecklistWidget';
+
+export { StatusWidget } from './StatusWidget';
+export type { StatusWidgetProps } from './StatusWidget';
