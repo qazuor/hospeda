@@ -229,7 +229,7 @@ describe('SPEC-143 T-143-35 — dispute/chargeback webhook', () => {
             variant: 'chargebacks',
             providerPaymentId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -269,7 +269,7 @@ describe('SPEC-143 T-143-35 — dispute/chargeback webhook', () => {
             variant: 'payment.dispute',
             providerPaymentId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -336,7 +336,7 @@ describe('SPEC-143 T-143-35 — dispute/chargeback webhook', () => {
             variant: 'chargebacks',
             providerPaymentId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -403,15 +403,18 @@ describe('SPEC-143 T-143-35 — dispute/chargeback webhook', () => {
             providerPaymentId,
             outerEventId
         });
-        const firstResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...first.headers
-            },
-            body: first.body
-        });
+        const firstResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...first.headers
+                },
+                body: first.body
+            }
+        );
         expect(firstResponse.status).toBe(200);
 
         const afterFirstRows = await testDb.getDb().select().from(billingWebhookEvents);
@@ -431,15 +434,18 @@ describe('SPEC-143 T-143-35 — dispute/chargeback webhook', () => {
             providerPaymentId,
             outerEventId
         });
-        const secondResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...second.headers
-            },
-            body: second.body
-        });
+        const secondResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...second.headers
+                },
+                body: second.body
+            }
+        );
         expect(secondResponse.status).toBe(200);
 
         const afterSecondRows = await testDb.getDb().select().from(billingWebhookEvents);

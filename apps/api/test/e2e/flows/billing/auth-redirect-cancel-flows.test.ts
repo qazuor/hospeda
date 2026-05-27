@@ -184,15 +184,18 @@ describe('SPEC-143 T-143-44 — auth / redirect / cancel secondary flows (D4, D6
             const headers = signWebhookPayload({ body });
 
             // ACT — POST the signed webhook.
-            const response = await app.request('/api/v1/webhooks/mercadopago', {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    'user-agent': 'mp-webhook-test',
-                    ...headers
-                },
-                body
-            });
+            const response = await app.request(
+                '/api/v1/webhooks/mercadopago?source_news=webhooks',
+                {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        'user-agent': 'mp-webhook-test',
+                        ...headers
+                    },
+                    body
+                }
+            );
 
             // ASSERT — webhook acknowledged.
             expect(response.status).toBe(200);

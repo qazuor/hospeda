@@ -569,7 +569,7 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
 
         // ACT: POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -642,7 +642,7 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
 
         // ACT
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -678,9 +678,17 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
         // ARRANGE: pending upgrade checkout (same as happy path)
         const { providerPaymentId } = await createPendingUpgradeCheckout();
 
-        // ACT: build a body but use wrong-hmac headers — Hospeda's
-        // webhookSignatureMiddleware (HMAC over the body with the test
-        // secret) rejects BEFORE the qzpay-hono handler runs.
+        // ARRANGE: configure the stub so qzpay-hono's verifySignature call
+        // returns false (= signature rejected). The custom hospeda signature
+        // middleware was removed (PR #1221); qzpay-hono's own middleware is
+        // now the sole verification layer. When verifySignature returns false,
+        // qzpay-hono short-circuits with 401 before constructEvent / any
+        // handler runs.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        // ACT: build a body but use wrong-hmac headers — qzpay-hono's
+        // verifySignature (via the stub returning false) rejects BEFORE the
+        // handler runs.
         const body = JSON.stringify({
             id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
             type: 'payment',
@@ -691,7 +699,7 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
         });
         const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
 
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -712,8 +720,10 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
         expect(subs).toHaveLength(1);
         expect(subs[0]?.planId).toBe(seed.cheap.planId);
 
-        // ASSERT: stub never reached (hospeda's middleware short-circuited).
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // ASSERT: verifySignature was called once (qzpay-hono runs it before
+        // constructEvent or any handler). constructEvent and payments.retrieve
+        // must NOT be called — they are downstream of the signature gate.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     });
@@ -835,7 +845,7 @@ describe('SPEC-143 T-143-11 — plan upgrade', () => {
             })
         );
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

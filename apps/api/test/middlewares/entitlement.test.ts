@@ -28,6 +28,7 @@ import {
     requireEntitlement,
     requireLimit
 } from '../../src/middlewares/entitlement';
+import { createErrorHandler } from '../../src/middlewares/response';
 import {
     gateAlerts,
     gateComparator,
@@ -128,7 +129,28 @@ describe('entitlementMiddleware', () => {
     });
 
     describe('when billing customer is not set', () => {
-        it('should set empty entitlements and limits', async () => {
+        // SPEC-143 smoke F-B1: a missing billing customer row is NOT the same
+        // as "no entitlements". The customer is created by the (non-blocking)
+        // signup hook; until it exists, every AUTHENTICATED user must still get
+        // the role-appropriate default entitlements (tourist-free baseline;
+        // HOST → owner-basico draft defaults), mirroring the
+        // no-active-subscription branch. Only unauthenticated / guest requests
+        // get empty entitlements.
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectActor = (actor: {
+            id: string;
+            role: RoleEnum;
+            permissions: string[];
+            email: string;
+        }) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', null);
+                c.set('actor', actor as unknown as InjectedActor);
+                return next();
+            });
+
+        it('should set empty entitlements when there is no actor', async () => {
             app.use(entitlementMiddleware());
             app.get('/test', (c) => {
                 const entitlements = c.get('userEntitlements');
@@ -146,6 +168,83 @@ describe('entitlementMiddleware', () => {
             const data = await res.json();
             expect(data.entitlementsCount).toBe(0);
             expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set empty entitlements for a GUEST actor with no customer', async () => {
+            injectActor({
+                id: '00000000-0000-4000-8000-000000000000',
+                role: RoleEnum.GUEST,
+                permissions: [],
+                email: ''
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set tourist-free default entitlements for an authenticated non-HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'user-no-customer',
+                role: RoleEnum.USER,
+                permissions: [],
+                email: 'user@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // tourist-free baseline must be granted even without a customer row
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            // HOST-only entitlements must NOT leak to a USER actor
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should set owner-basico default entitlements for a HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'host-no-customer',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // HOST gets owner-basico draft defaults, not tourist-free
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
         });
     });
 
@@ -1553,18 +1652,18 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.description).toContain('**Bold**');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract (PR #1250/#1252, smoke-validated): a user without
+            // CAN_USE_RICH_DESCRIPTION who submits markdown is blocked with a
+            // 403 ENTITLEMENT_REQUIRED envelope (not silently stripped). The gate
+            // throws a ServiceError, mapped to 403 by createErrorHandler.
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRichDescription());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip markdown but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1574,10 +1673,13 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            // Contract: 403 + ENTITLEMENT_REQUIRED. The full envelope (incl.
+            // details.requiredEntitlement) is exercised against the real app
+            // error handler by the accommodation e2e flow + the staging smoke;
+            // this bare-Hono harness pins the status + code.
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1609,18 +1711,16 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.videoUrl).toBe('https://www.youtube.com/watch?v=abc123');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract: a user without CAN_EMBED_VIDEO who submits a
+            // video URL is blocked with 403 ENTITLEMENT_REQUIRED (not stripped).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateVideoEmbed());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip video URLs but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1635,10 +1735,9 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1846,7 +1945,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -1854,37 +1953,36 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.SAVE_FAVORITES);
         });
 
-        it('should return 403 when limit is reached', async () => {
+        it('does NOT enforce the favorites limit — that is enforceFavoritesLimit() concern', async () => {
+            // Shipped contract (SPEC-143 #25): gateFavorites checks the
+            // SAVE_FAVORITES entitlement ONLY. The MAX_FAVORITES quota is
+            // enforced by the separate enforceFavoritesLimit() middleware, which
+            // counts existing bookmarks via UserBookmarkService (NOT a
+            // `currentFavoritesCount` context var). So an entitled user passes
+            // gateFavorites regardless of how many favorites they have; the
+            // 403 LIMIT_REACHED path is covered by the favorites e2e flow.
             app.use((c, next) => {
-                const entitlements = new Set([EntitlementKey.SAVE_FAVORITES]);
+                c.set('userEntitlements', new Set([EntitlementKey.SAVE_FAVORITES]));
                 const limits = new Map<LimitKey, number>();
                 limits.set(LimitKey.MAX_FAVORITES, 10);
-                c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount' as any, 10); // Already at limit
                 return next();
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.code).toBe('LIMIT_REACHED');
-            expect(data.error.details.limitKey).toBe(LimitKey.MAX_FAVORITES);
-            expect(data.error.details.currentCount).toBe(10);
-            expect(data.error.details.maxAllowed).toBe(10);
-            expect(data.error.message).toContain('10 favoritos');
+            expect(res.status).toBe(200);
         });
 
         it('should allow when limit is unlimited (-1)', async () => {

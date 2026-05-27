@@ -228,7 +228,7 @@ describe('SPEC-143 T-143-18 — subscription activation post-payment', () => {
             outerEventId,
             providerPaymentId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -341,7 +341,7 @@ describe('SPEC-143 T-143-18 — subscription activation post-payment', () => {
             outerEventId,
             mpSubId: mpSubscriptionId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

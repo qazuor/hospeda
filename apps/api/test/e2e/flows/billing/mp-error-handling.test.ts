@@ -68,7 +68,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
-import { billingSubscriptions } from '@repo/db';
+import { billingSubscriptions, eq } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
@@ -112,6 +112,7 @@ describe('SPEC-143 T-143-59 (reframed) — MercadoPago error handling regression
     let app: ReturnType<typeof initApp>;
     let client: E2EApiClient;
     let cheapPlanName: string;
+    let customerId: string;
 
     beforeAll(async () => {
         await testDb.setup();
@@ -132,11 +133,12 @@ describe('SPEC-143 T-143-59 (reframed) — MercadoPago error handling regression
         const user = await createTestUser({
             email: `mp-error-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`
         });
-        await createTestBillingCustomer({
+        const customer = await createTestBillingCustomer({
             externalId: user.id,
             email: user.email,
             providerCustomerIds: { mercadopago: `mp_cust_test_${user.id.slice(0, 8)}` }
         });
+        customerId = customer.customerId;
 
         const actor = createMockUserActor({ id: user.id });
         client = new E2EApiClient(app, actor);
@@ -161,9 +163,16 @@ describe('SPEC-143 T-143-59 (reframed) — MercadoPago error handling regression
         // adapter call. With the log strategy in place, this row stays
         // in `pending_provider` (annual) or `incomplete` (monthly). We
         // do not pin the exact status here — it varies per flow — but
-        // we do pin that EXACTLY ONE row exists. A second row would
-        // signal a duplicate-insert regression.
-        const subs = await testDb.getDb().select().from(billingSubscriptions);
+        // we do pin that EXACTLY ONE row exists FOR THIS TEST'S CUSTOMER.
+        // The query is scoped to customerId (not a global SELECT *) so a
+        // stray row leaked by another test in the same singleFork worker
+        // cannot turn this into a false "got 2" failure. A second row for
+        // THIS customer would still signal a real duplicate-insert regression.
+        const subs = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.customerId, customerId));
         expect(subs).toHaveLength(1);
         // The pre-checkout statuses are the only acceptable values: any
         // `active` here would mean the adapter error did not prevent

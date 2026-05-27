@@ -44,7 +44,7 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `tourist-vip@local.test` | USER | `tourist-vip` | top tourist tier |
 | `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=5 |
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=15 |
-| `host-premium@local.test` | HOST | `owner-premium` | unlimited |
+| `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=30, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=35 (15 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 14d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
