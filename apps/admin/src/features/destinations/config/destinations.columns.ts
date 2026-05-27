@@ -3,6 +3,7 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
@@ -146,7 +147,16 @@ export const createDestinationsColumns = (
         header: t('admin-entities.columns.reviewsCount'),
         accessorKey: 'reviewsCount',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(ReviewsCell, {
+                entityId: row.id,
+                entityName: row.name,
+                count: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                reviewsPath: '/api/v1/admin/destinations/reviews',
+                idParamName: 'destinationId',
+                queryKeyPrefix: 'destination-reviews'
+            })
     },
     {
         id: 'isFeatured',
