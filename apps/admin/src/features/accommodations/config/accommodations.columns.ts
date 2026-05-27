@@ -88,7 +88,7 @@ export const createAccommodationsColumns = (
     {
         id: 'destination',
         header: t('admin-entities.columns.destination'),
-        accessorKey: 'destination.name',
+        accessorKey: 'cityDestination.name',
         enableSorting: false,
         columnType: ColumnType.ENTITY,
         entityOptions: {
@@ -96,10 +96,10 @@ export const createAccommodationsColumns = (
             color: BadgeColor.GREEN
         },
         linkHandler: (row) =>
-            row.destination?.id
+            row.cityDestination?.id
                 ? {
                       to: '/destinations/$id',
-                      params: { id: row.destination.id }
+                      params: { id: row.cityDestination.id }
                   }
                 : undefined
     },
