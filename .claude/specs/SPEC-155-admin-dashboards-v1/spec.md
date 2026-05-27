@@ -16,6 +16,12 @@ related:
 
 > **Status**: DRAFT — base scope captured during the admin redesign planning session 2026-05-22. Widget configs locked in `.claude/audit/admin-redesign/proposals/03-dashboards.md` (v0.3+) after endpoint verification (`03b-endpoint-verification.md`).
 
+> **REVISED 2026-05-26** — The four dashboards were re-reviewed and redefined in `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md` (HOST 7 cards, EDITOR 8 cards, ADMIN+SUPER shared base + super-only section). **Treat `03c` as the authoritative widget definition** — the §3 Scope and §6 Task breakdown below predate this revision and must be re-atomized. The revision expanded SPEC-155 past its original "no new backend" premise:
+>
+> - **Now IN SPEC-155**: the 4 redefined dashboard configs; all 🟡 aggregations that need a route but **no DB change** (favorites scoped per-accommodation, conversation response-rate, posts-per-month + new-users trends, subscribers-by-content-preference, unified moderation-pending count, reviews-pending count, users-by-role); **two permission changes** — grant EDITOR `NEWSLETTER_CAMPAIGN_VIEW`+`NEWSLETTER_CAMPAIGN_WRITE`+`NEWSLETTER_SUBSCRIBER_VIEW` (NOT `SEND`); and **revoke** `BILLING_METRICS_VIEW`+`SUBSCRIPTION_VIEW_ALL` from ADMIN (billing becomes SUPER-only — wide blast radius, removes ADMIN from the whole billing section); computable checklists (HOST "mejorá"/"salud perfil", EDITOR "salud").
+> - **Extracted to new specs** (heavy 🔴 backend, phase 2, each FEEDS a 155 widget): **SPEC-159** cross-entity view tracking (HOST/EDITOR view widgets), **SPEC-160** newsletter open/click tracking (EDITOR open rate), **SPEC-161** cron run-history (ADMIN failed crons), **SPEC-162** admin audit & security log query (SUPER audit/security), **SPEC-163** Sentry error metrics (SUPER errors).
+> - **Still deferred**: SPONSOR and CLIENT_MANAGER dashboards (roles remain `enabled: false`, no dashboard defined).
+
 ## 1. Origin
 
 Phase 1 audit revealed the current admin dashboard shows **6 global KPI cards to everyone** regardless of role — HOST users see "10,000 accommodations" when they only have 3 of their own. Two main blocks ("Traffic Chart" + "Recent Activity") are placeholders marked "Coming Soon" for months. The dashboard misleads scoped users.
@@ -131,6 +137,12 @@ Indicative breakdown:
 
 - **REQUIRED**: SPEC-154 (admin-config-driven-ia) — provides the dashboard config schema, widget schema, and the section renderer that hosts dashboards.
 - **Optional but recommended**: SPEC-153 (design tokens) — dashboards look nicer with brand tokens, but can ship before tokens migrate.
+- **Phase-2 widget enablers** (per the 2026-05-26 revision — these widgets render only once their backend ships; the rest of SPEC-155 ships without them):
+  - SPEC-159 (cross-entity view tracking) → HOST + EDITOR view widgets.
+  - SPEC-160 (newsletter open/click tracking) → EDITOR open-rate widget.
+  - SPEC-161 (cron run-history) → ADMIN failed-crons widget.
+  - SPEC-162 (admin audit & security log query) → SUPER audit + security log widgets.
+  - SPEC-163 (Sentry error metrics) → SUPER Sentry-errors widget.
 
 ## 10. References
 
