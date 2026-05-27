@@ -51,8 +51,8 @@
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertTriangleIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
 
 // ============================================================================
 // LIST DATA SHAPES
@@ -142,116 +142,6 @@ export interface ListWidgetProps {
 }
 
 // ============================================================================
-// INLINE SHARED STATES (T-028 extracts these)
-// ============================================================================
-
-/**
- * Loading skeleton for a list widget.
- * Renders N placeholder rows matching the expected content density.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetSkeleton variant="list" />`.
- */
-function ListSkeleton() {
-    return (
-        <div
-            className="animate-pulse rounded-lg border bg-card p-4"
-            data-testid="list-widget-skeleton"
-            aria-busy="true"
-            aria-label="Loading"
-        >
-            <div className="mb-3 h-4 w-32 rounded bg-muted" />
-            <ul className="space-y-2">
-                {(['s1', 's2', 's3', 's4'] as const).map((skeletonId) => (
-                    <li
-                        key={skeletonId}
-                        className="flex items-center justify-between"
-                    >
-                        <div className="space-y-1">
-                            <div className="h-3.5 w-40 rounded bg-muted" />
-                            <div className="h-3 w-24 rounded bg-muted" />
-                        </div>
-                        <div className="h-3 w-10 rounded bg-muted" />
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
-
-/**
- * Error state for a list widget that failed to fetch its data.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetError onRetry={fn} />`.
- */
-interface WidgetErrorProps {
-    readonly onRetry: () => void;
-    readonly label: string;
-}
-
-function WidgetError({ onRetry, label }: WidgetErrorProps) {
-    return (
-        <div
-            className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-card p-4"
-            data-testid="list-widget-error"
-            role="alert"
-            aria-label={`Error loading ${label}`}
-        >
-            <div className="text-destructive">
-                <AlertTriangleIcon
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                />
-            </div>
-            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
-            >
-                Reintentar
-            </button>
-        </div>
-    );
-}
-
-/**
- * Empty state for a list widget that resolved but returned no items.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetEmpty />`.
- */
-function WidgetEmpty() {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border bg-card p-4 text-muted-foreground"
-            data-testid="list-widget-empty"
-        >
-            <span className="text-sm">Sin datos</span>
-        </div>
-    );
-}
-
-/**
- * Fallback when the source ID is not registered in the resolver registry.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetUnavailable />`.
- */
-interface WidgetUnavailableProps {
-    readonly label: string;
-}
-
-function WidgetUnavailable({ label }: WidgetUnavailableProps) {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border border-dashed bg-card p-4 text-muted-foreground"
-            data-testid="list-widget-unavailable"
-            aria-label={`${label} — data source unavailable`}
-        >
-            <span className="text-xs">Sin fuente de datos</span>
-        </div>
-    );
-}
-
-// ============================================================================
 // PER-ITEM ACTION
 // ============================================================================
 
@@ -325,18 +215,24 @@ export function ListWidget({ widget }: ListWidgetProps) {
 
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
-        return <WidgetUnavailable label={displayLabel} />;
+        return (
+            <WidgetUnavailable
+                variant="list"
+                label={displayLabel}
+            />
+        );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <ListSkeleton />;
+        return <WidgetSkeleton variant="list" />;
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
             <WidgetError
+                variant="list"
                 label={displayLabel}
                 onRetry={() => void refetch()}
             />
@@ -345,7 +241,12 @@ export function ListWidget({ widget }: ListWidgetProps) {
 
     // -- 7. Empty (null / undefined / empty array) ---------------------------
     if (data == null || (Array.isArray(data) && data.length === 0)) {
-        return <WidgetEmpty />;
+        return (
+            <WidgetEmpty
+                variant="list"
+                text="Sin datos"
+            />
+        );
     }
 
     // -- 8. Data — narrow to ListItem[] shape --------------------------------

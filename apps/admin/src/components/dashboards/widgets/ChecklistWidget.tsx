@@ -59,9 +59,10 @@ import {
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon } from '@repo/icons';
+import { AlertCircleIcon, CheckCircleIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
 
 // ============================================================================
 // CHECKSET TYPES
@@ -434,109 +435,6 @@ function computeItems(
 }
 
 // ============================================================================
-// INLINE SHARED STATES (T-028 extracts these)
-// ============================================================================
-
-/**
- * Loading skeleton for a checklist card.
- * T-028: extract to `widget-states.tsx` as `<WidgetSkeleton variant="checklist" />`.
- */
-function ChecklistSkeleton() {
-    return (
-        <div
-            className="animate-pulse rounded-lg border bg-card p-4"
-            data-testid="checklist-widget-skeleton"
-            aria-busy="true"
-            aria-label="Loading"
-        >
-            <div className="mb-4 h-4 w-32 rounded bg-muted" />
-            <div className="mb-3 h-3 w-24 rounded bg-muted" />
-            <div className="flex flex-col gap-2">
-                {(['c1', 'c2', 'c3', 'c4', 'c5'] as const).map((skeletonId) => (
-                    <div
-                        key={skeletonId}
-                        className="flex items-center gap-2"
-                    >
-                        <div className="h-4 w-4 rounded-full bg-muted" />
-                        <div className="h-3 flex-1 rounded bg-muted" />
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-/**
- * Error state for a checklist widget that failed to fetch its data.
- * T-028: extract to `widget-states.tsx` as `<WidgetError onRetry={fn} />`.
- */
-interface ChecklistErrorProps {
-    readonly onRetry: () => void;
-    readonly label: string;
-}
-
-function ChecklistError({ onRetry, label }: ChecklistErrorProps) {
-    return (
-        <div
-            className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-card p-4"
-            data-testid="checklist-widget-error"
-            role="alert"
-            aria-label={`Error loading ${label}`}
-        >
-            <div className="text-destructive">
-                <AlertTriangleIcon
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                />
-            </div>
-            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
-            >
-                Reintentar
-            </button>
-        </div>
-    );
-}
-
-/**
- * Empty state for a checklist that resolved but returned no entities.
- * T-028: extract to `widget-states.tsx` as `<WidgetEmpty />`.
- */
-function ChecklistEmpty() {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border bg-card p-4 text-muted-foreground"
-            data-testid="checklist-widget-empty"
-        >
-            <span className="text-sm">Sin datos disponibles</span>
-        </div>
-    );
-}
-
-/**
- * Fallback when the source ID is not registered in the resolver registry.
- * T-028: extract to `widget-states.tsx` as `<WidgetUnavailable />`.
- */
-interface ChecklistUnavailableProps {
-    readonly label: string;
-}
-
-function ChecklistUnavailable({ label }: ChecklistUnavailableProps) {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border border-dashed bg-card p-4 text-muted-foreground"
-            data-testid="checklist-widget-unavailable"
-            aria-label={`${label} — data source unavailable`}
-        >
-            <span className="text-xs">Sin fuente de datos</span>
-        </div>
-    );
-}
-
-// ============================================================================
 // COMPLETENESS INDICATOR
 // ============================================================================
 
@@ -810,24 +708,35 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
 
     // -- 4. Source mode: unavailable when source provided but not registered --
     if (sourceId !== '' && !found) {
-        return <ChecklistUnavailable label={displayLabel} />;
+        return (
+            <WidgetUnavailable
+                variant="checklist"
+                label={displayLabel}
+            />
+        );
     }
 
     // -- 5. Source mode: loading + error + empty states -----------------------
     if (sourceId !== '' && found) {
         if (isLoading) {
-            return <ChecklistSkeleton />;
+            return <WidgetSkeleton variant="checklist" />;
         }
         if (error) {
             return (
-                <ChecklistError
+                <WidgetError
+                    variant="checklist"
                     label={displayLabel}
                     onRetry={() => void refetch()}
                 />
             );
         }
         if (fetchedData == null) {
-            return <ChecklistEmpty />;
+            return (
+                <WidgetEmpty
+                    variant="checklist"
+                    text="Sin datos disponibles"
+                />
+            );
         }
     }
 
@@ -847,7 +756,12 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
 
     // -- 7. Empty (no entities at all) ----------------------------------------
     if (resolvedEntities.length === 0) {
-        return <ChecklistEmpty />;
+        return (
+            <WidgetEmpty
+                variant="checklist"
+                text="Sin datos disponibles"
+            />
+        );
     }
 
     // -- 8. Render the card ---------------------------------------------------

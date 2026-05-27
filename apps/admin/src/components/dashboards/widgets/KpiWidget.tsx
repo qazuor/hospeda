@@ -33,8 +33,9 @@
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertTriangleIcon, TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
+import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
 
 // ============================================================================
 // KPI DATA SHAPE
@@ -96,104 +97,6 @@ export interface KpiWidgetProps {
      * `widget.label` from this object.
      */
     readonly widget: Widget;
-}
-
-// ============================================================================
-// INLINE SHARED STATES (T-028 extracts these)
-// ============================================================================
-
-/**
- * Loading skeleton for a KPI card.
- * Mirrors the pulse card pattern from `DashboardSkeleton` in PageSkeleton.tsx.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetSkeleton variant="kpi" />`.
- */
-function KpiSkeleton() {
-    return (
-        <div
-            className="animate-pulse rounded-lg border bg-card p-4"
-            data-testid="kpi-widget-skeleton"
-            aria-busy="true"
-            aria-label="Loading"
-        >
-            <div className="mb-3 h-4 w-24 rounded bg-muted" />
-            <div className="h-9 w-20 rounded bg-muted" />
-            <div className="mt-2 h-4 w-16 rounded bg-muted" />
-        </div>
-    );
-}
-
-/**
- * Error state for a widget that failed to fetch its data.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetError onRetry={fn} />`.
- */
-interface WidgetErrorProps {
-    readonly onRetry: () => void;
-    readonly label: string;
-}
-
-function WidgetError({ onRetry, label }: WidgetErrorProps) {
-    return (
-        <div
-            className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-card p-4"
-            data-testid="kpi-widget-error"
-            role="alert"
-            aria-label={`Error loading ${label}`}
-        >
-            <div className="text-destructive">
-                <AlertTriangleIcon
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                />
-            </div>
-            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
-            >
-                Reintentar
-            </button>
-        </div>
-    );
-}
-
-/**
- * Empty state for a KPI that resolved but returned no data.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetEmpty />`.
- */
-function WidgetEmpty() {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border bg-card p-4 text-muted-foreground"
-            data-testid="kpi-widget-empty"
-        >
-            <span className="text-sm">—</span>
-        </div>
-    );
-}
-
-/**
- * Fallback when the source ID is not registered in the resolver registry.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetUnavailable />`.
- */
-interface WidgetUnavailableProps {
-    readonly label: string;
-}
-
-function WidgetUnavailable({ label }: WidgetUnavailableProps) {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border border-dashed bg-card p-4 text-muted-foreground"
-            data-testid="kpi-widget-unavailable"
-            aria-label={`${label} — data source unavailable`}
-        >
-            <span className="text-xs">Sin fuente de datos</span>
-        </div>
-    );
 }
 
 // ============================================================================
@@ -291,18 +194,24 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
 
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
-        return <WidgetUnavailable label={displayLabel} />;
+        return (
+            <WidgetUnavailable
+                variant="kpi"
+                label={displayLabel}
+            />
+        );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <KpiSkeleton />;
+        return <WidgetSkeleton variant="kpi" />;
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
             <WidgetError
+                variant="kpi"
                 label={displayLabel}
                 onRetry={() => void refetch()}
             />
@@ -311,7 +220,7 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty />;
+        return <WidgetEmpty variant="kpi" />;
     }
 
     // -- 8. Data — narrow to KpiData shape -----------------------------------

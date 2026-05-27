@@ -46,8 +46,8 @@
 
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
-import { AlertTriangleIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
 
 // ============================================================================
 // CHART DATA SHAPES
@@ -138,119 +138,6 @@ export interface ChartWidgetProps {
      * `widget.scope`, and `widget.label` from this object.
      */
     readonly widget: Widget;
-}
-
-// ============================================================================
-// INLINE SHARED STATES (T-028 extracts these)
-// ============================================================================
-
-/**
- * Loading skeleton for a chart widget card.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetSkeleton variant="chart" />`.
- */
-function ChartSkeleton() {
-    return (
-        <div
-            className="animate-pulse rounded-lg border bg-card p-4"
-            data-testid="chart-widget-skeleton"
-            aria-busy="true"
-            aria-label="Loading"
-        >
-            <div className="mb-3 h-4 w-32 rounded bg-muted" />
-            <div className="flex h-24 items-end gap-1">
-                {[40, 60, 45, 80, 55, 70, 50].map((pct, i) => (
-                    <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable skeleton, index is fine
-                        key={i}
-                        className="flex-1 rounded bg-muted"
-                        style={{ height: `${pct}%` }}
-                    />
-                ))}
-            </div>
-            <div className="mt-2 flex justify-between">
-                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                    <div
-                        key={i}
-                        className="h-3 w-6 rounded bg-muted"
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-/**
- * Error state for a widget that failed to fetch its data.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetError onRetry={fn} />`.
- */
-interface WidgetErrorProps {
-    readonly onRetry: () => void;
-    readonly label: string;
-}
-
-function WidgetError({ onRetry, label }: WidgetErrorProps) {
-    return (
-        <div
-            className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-card p-4"
-            data-testid="chart-widget-error"
-            role="alert"
-            aria-label={`Error loading ${label}`}
-        >
-            <div className="text-destructive">
-                <AlertTriangleIcon
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                />
-            </div>
-            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
-            <button
-                type="button"
-                onClick={onRetry}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
-            >
-                Reintentar
-            </button>
-        </div>
-    );
-}
-
-/**
- * Empty state for a chart that resolved but returned no data.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetEmpty />`.
- */
-function WidgetEmpty() {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border bg-card p-4 text-muted-foreground"
-            data-testid="chart-widget-empty"
-        >
-            <span className="text-sm">—</span>
-        </div>
-    );
-}
-
-/**
- * Fallback when the source ID is not registered in the resolver registry.
- *
- * T-028: extract to `widget-states.tsx` as `<WidgetUnavailable />`.
- */
-interface WidgetUnavailableProps {
-    readonly label: string;
-}
-
-function WidgetUnavailable({ label }: WidgetUnavailableProps) {
-    return (
-        <div
-            className="flex items-center justify-center rounded-lg border border-dashed bg-card p-4 text-muted-foreground"
-            data-testid="chart-widget-unavailable"
-            aria-label={`${label} — data source unavailable`}
-        >
-            <span className="text-xs">Sin fuente de datos</span>
-        </div>
-    );
 }
 
 // ============================================================================
@@ -475,18 +362,24 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
 
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
-        return <WidgetUnavailable label={displayLabel} />;
+        return (
+            <WidgetUnavailable
+                variant="chart"
+                label={displayLabel}
+            />
+        );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <ChartSkeleton />;
+        return <WidgetSkeleton variant="chart" />;
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
             <WidgetError
+                variant="chart"
                 label={displayLabel}
                 onRetry={() => void refetch()}
             />
@@ -495,7 +388,7 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty />;
+        return <WidgetEmpty variant="chart" />;
     }
 
     // -- 8. Data — narrow to ChartData shape ---------------------------------
@@ -503,7 +396,7 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
 
     // An empty series is treated as "no data" rather than an error.
     if (!chartData.series || chartData.series.length === 0) {
-        return <WidgetEmpty />;
+        return <WidgetEmpty variant="chart" />;
     }
 
     return (
