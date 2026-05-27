@@ -677,7 +677,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // MEDIA: Cross-entity media management
         PermissionEnum.MEDIA_UPLOAD,
-        PermissionEnum.MEDIA_DELETE
+        PermissionEnum.MEDIA_DELETE,
+
+        // NEWSLETTER: draft/view only — send stays admin-only (SPEC-155)
+        PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
+        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW
     ],
 
     [RoleEnum.HOST]: [
@@ -959,3 +964,11 @@ export async function seedRolePermissions(): Promise<void> {
         throw error;
     }
 }
+
+/**
+ * Exported internals for unit testing.
+ * Do not use these outside of tests.
+ */
+export const _internals = {
+    ROLE_PERMISSIONS
+};
