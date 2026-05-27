@@ -1,22 +1,23 @@
+import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
-import { AccommodationFeaturedCell } from '../components/AccommodationFeaturedCell';
 import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
 import { AccommodationReviewsCell } from '../components/AccommodationReviewsCell';
-import {
-    type AccommodationStateOption,
-    AccommodationStateSelectCell
-} from '../components/AccommodationStateSelectCell';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
+import { useUpdateAccommodationMutation } from '../hooks/useAccommodationQuery';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /**
  * Visibility options (value + localized label + badge color). Single source for
  * both the read-only badge fallback and the inline-edit dropdown.
  */
-const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<AccommodationStateOption> => [
+const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
     {
         value: 'PUBLIC',
         label: t('admin-entities.states.visibility.public'),
@@ -35,7 +36,7 @@ const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<AccommodationStat
 ];
 
 /** Lifecycle-state options. ARCHIVED is the destructive transition. */
-const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<AccommodationStateOption> => [
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
     {
         value: 'DRAFT',
         label: t('admin-entities.states.lifecycle.draft'),
@@ -54,7 +55,7 @@ const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<AccommodationState
 ];
 
 /** Moderation-state options. REJECTED is the destructive transition. */
-const MODERATION_OPTIONS = (t: ColumnTFunction): ReadonlyArray<AccommodationStateOption> => [
+const MODERATION_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
     {
         value: 'PENDING',
         label: t('admin-entities.states.moderation.pending'),
@@ -167,7 +168,15 @@ export const createAccommodationsColumns = (
         accessorKey: 'isFeatured',
         enableSorting: true,
         columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) => createElement(AccommodationFeaturedCell, { row })
+        widgetRenderer: (row) =>
+            createElement(InlineFeaturedCell, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                checked: Boolean(row.isFeatured),
+                permission: PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+                useUpdateMutation: useUpdateAccommodationMutation
+            })
     },
     {
         id: 'visibility',
@@ -176,12 +185,16 @@ export const createAccommodationsColumns = (
         enableSorting: true,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) =>
-            createElement(AccommodationStateSelectCell, {
-                row,
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.accommodation.singular',
                 field: 'visibility',
+                currentValue: row.visibility,
                 successMessageKey: 'admin-entities.messages.visibilityChanged',
                 options: VISIBILITY_OPTIONS(t),
-                permission: PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE
+                permission: PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
+                useUpdateMutation: useUpdateAccommodationMutation
             })
     },
     {
@@ -191,12 +204,16 @@ export const createAccommodationsColumns = (
         enableSorting: true,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) =>
-            createElement(AccommodationStateSelectCell, {
-                row,
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.accommodation.singular',
                 field: 'lifecycleState',
+                currentValue: row.lifecycleState,
                 successMessageKey: 'admin-entities.messages.stateChanged',
                 options: LIFECYCLE_OPTIONS(t),
                 permission: PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
+                useUpdateMutation: useUpdateAccommodationMutation,
                 confirmValues: ['ARCHIVED'],
                 confirmCopyKey: 'archive'
             })
@@ -208,12 +225,16 @@ export const createAccommodationsColumns = (
         enableSorting: true,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) =>
-            createElement(AccommodationStateSelectCell, {
-                row,
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.accommodation.singular',
                 field: 'moderationState',
+                currentValue: row.moderationState,
                 successMessageKey: 'admin-entities.messages.moderationChanged',
                 options: MODERATION_OPTIONS(t),
                 permission: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
+                useUpdateMutation: useUpdateAccommodationMutation,
                 confirmValues: ['REJECTED'],
                 confirmCopyKey: 'reject'
             })

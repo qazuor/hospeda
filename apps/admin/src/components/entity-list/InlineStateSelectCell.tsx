@@ -1,24 +1,18 @@
 /**
- * AccommodationStateSelectCell — generic inline editable badge-dropdown cell.
+ * InlineStateSelectCell — generic, entity-agnostic inline editable badge-dropdown cell.
  *
- * Used by the accommodations list for the Visibilidad / Estado / Moderación
- * columns. The current value renders as a colored badge that doubles as a
- * dropdown trigger; opening it lists every option as a colored pill, and
- * selecting a different value PATCHes `{ [field]: value }` via
- * `useUpdateAccommodationMutation` (optimistic update + cache rollback live
- * inside the hook). Success/error surface a toast.
+ * Renders the current value as a colored badge that doubles as a dropdown
+ * trigger; selecting a different option PATCHes `{ [field]: value }` via the
+ * mutation returned by `useUpdateMutation(entityId)`. Success/error surface a
+ * toast. When the user lacks `permission`, the value renders via the read-only
+ * `BadgeCell` (identical to a plain BADGE column).
  *
- * Permission gating: when the user lacks `permission`, the value renders via
- * the read-only `BadgeCell` (identical to the pre-inline-edit look) with no
- * interactive control.
+ * Destructive transitions (values in `confirmValues`, e.g. ARCHIVED / REJECTED)
+ * show a confirmation dialog before applying.
  *
- * Destructive transitions: when the selected value is in `confirmValues`
- * (e.g. ARCHIVED for lifecycle, REJECTED for moderation), a confirmation
- * dialog (`DeleteConfirmDialog`, the shared Radix AlertDialog wrapper) is shown
- * before the mutation runs. All other transitions apply directly.
- *
- * The mutation hook is mounted once per cell instance with `row.id` — the same
- * rules-of-hooks pattern used by the other accommodation widget cells.
+ * The hook-factory pattern mirrors {@link DeleteRowButton}: each consumer passes
+ * its own `useUpdate*Mutation` (a stable top-level import); the component invokes
+ * it once per render, so rules of hooks stay satisfied.
  */
 
 import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
@@ -39,46 +33,57 @@ import type { TranslationKey } from '@repo/i18n';
 import { ChevronDownIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { useState } from 'react';
-import { useUpdateAccommodationMutation } from '../hooks/useAccommodationQuery';
-import type { AccommodationCore } from '../schemas/accommodation-client.schema';
-import type { Accommodation } from '../schemas/accommodations.schemas';
 
-/** Editable state field handled by this cell. */
-export type AccommodationStateField = 'visibility' | 'lifecycleState' | 'moderationState';
+/** Minimal mutation shape required by the cell. */
+export interface InlineUpdateMutationLike<TPatch> {
+    readonly mutateAsync: (patch: TPatch) => Promise<unknown>;
+    readonly isPending: boolean;
+}
 
 /** A selectable option, mirroring the `badgeOptions` shape from the columns config. */
-export interface AccommodationStateOption {
+export interface InlineStateOption {
     readonly value: string;
     readonly label: string;
     readonly color: BadgeColor;
 }
 
 /**
- * Props for {@link AccommodationStateSelectCell}. RO-RO pattern.
+ * Props for {@link InlineStateSelectCell}. RO-RO pattern. Generic over the
+ * entity's PATCH shape so the mutation hook stays fully typed.
  */
-export interface AccommodationStateSelectCellProps {
-    /** The accommodation row being rendered. */
-    readonly row: Accommodation;
-    /** Which accommodation field this cell edits. */
-    readonly field: AccommodationStateField;
-    /**
-     * i18n key for the success toast. Receives `{ name, value }` (accommodation
-     * name + the new value's localized label), e.g. "Estado de «X» cambiado a Y".
-     */
-    readonly successMessageKey: TranslationKey;
+export interface InlineStateSelectCellProps<TPatch extends Record<string, unknown>> {
+    /** Entity ID being edited (passed to the mutation hook). */
+    readonly entityId: string;
+    /** Human-readable entity name, interpolated into the success toast. */
+    readonly entityName: string;
+    /** i18n key for the singular entity label, used in error/confirm copy. */
+    readonly entityLabelKey: TranslationKey;
+    /** PATCH key this cell edits (e.g. 'visibility', 'lifecycleState'). */
+    readonly field: keyof TPatch & string;
+    /** Current field value. */
+    readonly currentValue: unknown;
     /** Available options (value + localized label + badge color). */
-    readonly options: ReadonlyArray<AccommodationStateOption>;
+    readonly options: ReadonlyArray<InlineStateOption>;
     /** Permission required to edit. Without it the cell is read-only. */
     readonly permission: PermissionEnum;
     /**
+     * i18n key for the success toast. Receives `{ name, value }` (entity name +
+     * the new value's localized label), e.g. "Estado de «X» cambiado a Y".
+     */
+    readonly successMessageKey: TranslationKey;
+    /**
+     * Update mutation hook factory. Must be a stable top-level import; the
+     * component invokes it once per render with `entityId`.
+     */
+    readonly useUpdateMutation: (id: string) => InlineUpdateMutationLike<TPatch>;
+    /**
      * Option values that require a confirmation dialog before applying
-     * (destructive transitions, e.g. ARCHIVED / REJECTED). Defaults to none.
+     * (destructive transitions). Defaults to none.
      */
     readonly confirmValues?: ReadonlyArray<string>;
     /**
-     * Which `confirmations.*` i18n block drives the confirm dialog copy for a
-     * destructive transition. `archive` for lifecycle ARCHIVED, `reject` for
-     * moderation REJECTED. Ignored when `confirmValues` is empty.
+     * Which `confirmations.*` i18n block drives the confirm dialog copy.
+     * `archive` for lifecycle ARCHIVED, `reject` for moderation REJECTED.
      * Defaults to `reject`.
      */
     readonly confirmCopyKey?: 'archive' | 'reject';
@@ -88,42 +93,45 @@ export interface AccommodationStateSelectCellProps {
  * Renders a colored badge that, when permitted, opens a dropdown of options to
  * change `field` in place.
  */
-export const AccommodationStateSelectCell = ({
-    row,
+export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
+    entityId,
+    entityName,
+    entityLabelKey,
     field,
-    successMessageKey,
+    currentValue,
     options,
     permission,
+    successMessageKey,
+    useUpdateMutation,
     confirmValues = [],
     confirmCopyKey = 'reject'
-}: AccommodationStateSelectCellProps) => {
+}: InlineStateSelectCellProps<TPatch>) {
     const { t } = useTranslations();
     const { addToast } = useToast();
-    const mutation = useUpdateAccommodationMutation(row.id);
+    const mutation = useUpdateMutation(entityId);
     const [pendingValue, setPendingValue] = useState<string | null>(null);
 
-    const currentValue = row[field];
     const userPermissions = useUserPermissions();
     const canEdit = userPermissions.includes(permission);
 
     const applyChange = async (value: string) => {
         try {
-            await mutation.mutateAsync({ [field]: value } as Partial<AccommodationCore>);
+            await mutation.mutateAsync({ [field]: value } as TPatch);
             const valueLabel = options.find((option) => option.value === value)?.label ?? value;
             addToast({
-                message: t(successMessageKey, { name: row.name, value: valueLabel }),
+                message: t(successMessageKey, { name: entityName, value: valueLabel }),
                 variant: 'success'
             });
         } catch (error) {
-            adminLogger.error('[AccommodationStateSelectCell] Failed to update state', {
-                id: row.id,
+            adminLogger.error('[InlineStateSelectCell] Failed to update state', {
+                id: entityId,
                 field,
                 value,
                 error
             });
             addToast({
                 message: t('admin-entities.messages.error.update', {
-                    entity: t('admin-entities.entities.accommodation.singular')
+                    entity: t(entityLabelKey)
                 }),
                 variant: 'error'
             });
@@ -139,7 +147,7 @@ export const AccommodationStateSelectCell = ({
         void applyChange(value);
     };
 
-    // Read-only fallback: identical look to the previous BADGE column.
+    // Read-only fallback: identical look to a plain BADGE column.
     if (!canEdit) {
         return (
             <BadgeCell
@@ -174,7 +182,7 @@ export const AccommodationStateSelectCell = ({
         }
     };
     const dialogCopy = confirmKeys[confirmCopyKey];
-    const accommodationLabel = t('admin-entities.entities.accommodation.singular');
+    const entityLabel = t(entityLabelKey);
 
     const currentOption = options.find((option) => option.value === String(currentValue ?? ''));
     const triggerClasses = currentOption
@@ -223,8 +231,8 @@ export const AccommodationStateSelectCell = ({
                 onOpenChange={(open) => {
                     if (!open) setPendingValue(null);
                 }}
-                title={t(dialogCopy.title, { entity: accommodationLabel })}
-                description={t(dialogCopy.message, { entity: accommodationLabel })}
+                title={t(dialogCopy.title, { entity: entityLabel })}
+                description={t(dialogCopy.message, { entity: entityLabel })}
                 cancelLabel={t(dialogCopy.cancel)}
                 confirmLabel={t(dialogCopy.confirm)}
                 onConfirm={() => {
@@ -235,4 +243,4 @@ export const AccommodationStateSelectCell = ({
             />
         </>
     );
-};
+}
