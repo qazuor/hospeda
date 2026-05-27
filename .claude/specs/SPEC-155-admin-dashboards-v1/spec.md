@@ -17,6 +17,8 @@ related:
   - SPEC-162 (admin audit & security log query — phase 2, feeds SUPER card H)
   - SPEC-163 (Sentry error metrics — phase 2, feeds SUPER card H Sentry slot)
   - SPEC-164 (admin-billing-super-only — receives the ADMIN billing role-model change extracted from SPEC-155)
+  - SPEC-165 (post-event-comments-system — phase 2, feeds EDITOR card H; extracted from SPEC-155 Phase-1 scout 2026-05-27)
+  - SPEC-166 (review-moderation-state — phase 2, feeds ADMIN card F reviews-pending sub-slot; extracted from SPEC-155 Phase-1 scout 2026-05-27)
 ---
 
 # SPEC-155 — Admin Dashboards V1
@@ -77,7 +79,7 @@ Success criteria: every role sees only data relevant to their scope; no global K
 | E — Estadísticas blog | Status distribution + most popular posts + total published + posts-per-month trend 🟡; views per post deferred placeholder 🔴→SPEC-159 | 🟢/🟡/🔴 |
 | F — Estadísticas eventos | Total events + views per event deferred placeholder 🔴→SPEC-159 | 🟢/🔴 |
 | G — Salud | Posts (missing image/tags/SEO) + events (missing image/location/organizer/description) — computed client-side | 🟢 |
-| H — Comentarios | Recent comments on posts/events to moderate | 🟡 |
+| H — Comentarios | Recent comments on posts/events to moderate (deferred placeholder) | 🔴→SPEC-165 |
 
 **ADMIN base dashboard (cards A–G, shared with SUPER_ADMIN)**
 
@@ -88,7 +90,7 @@ Success criteria: every role sees only data relevant to their scope; no global K
 | C — Editorial | Featured upcoming events + recent draft posts + draft events + posts this month | 🟢 |
 | D — Crons | Cron job list + enabled/total count; failed/last-run deferred placeholder 🔴→SPEC-161 | 🟢/🔴 |
 | E — Estado del sistema | Health (db/redis/api) + maintenance-mode status 🟡 | 🟢/🟡 |
-| F — Pendiente de moderación | Unified pending-moderation count (4 entities) + reviews-pending count | 🟡 |
+| F — Pendiente de moderación | Unified pending-moderation count (4 entities: accommodations, destinations, posts, events) 🟡; reviews-pending sub-slot deferred placeholder 🔴→SPEC-166 | 🟡/🔴 |
 | G — Usuarios | Users by role count + new-users trend (date-grouped) | 🟡 |
 
 **SUPER_ADMIN-only section (cards H–I, gated by `onMissing: 'hide'`)**
@@ -102,17 +104,15 @@ Cards H and I are placed exclusively in the `superAdminOnlySection` config. ADMI
 
 ### IN — 🟡 aggregation routes (new route, no DB change)
 
-Each item below requires a new API route but no schema migration:
+Each item below requires a new API route but no schema migration. **Phase-1 scout (2026-05-27) reduced this list from 9 to 7**: the original item 5 (EDITOR recent-comments listing) was extracted to SPEC-165 because no `post_comments` or `event_comments` table exists; the original item 7 (ADMIN reviews-pending count) was extracted to SPEC-166 because `accommodation_reviews` and `destination_reviews` have `lifecycleState` only (not `moderationState`). The remaining 7 items are verified buildable without DB changes.
 
 1. **HOST favorites per-accommodation**: protected route scoped to host — iterates host's listings, calls `countBookmarksForEntity()` per listing; returns `[{ accommodationId, slug, bookmarkCount }]`.
 2. **HOST conversation response rate**: aggregation over `conversations` table fields `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` scoped to `ownerId={uid}` — returns `{ responseRatePct, avgResponseTimeMinutes }`.
 3. **EDITOR subscribers by content preference**: aggregation over `newsletter_subscribers.preferences` JSONB for `status=active` — returns counts for OFFERS, EVENTS, GUIDES, PRODUCT_NEWS.
 4. **EDITOR posts-per-month trend**: date-grouped count over `posts.createdAt` (last 12 months) — returns `[{ month: 'YYYY-MM', count }]`.
-5. **EDITOR recent comments listing**: verify or build comment-listing endpoint (posts + events comments, sorted by `createdAt` desc, `pageSize=10`).
-6. **ADMIN unified moderation-pending count**: single aggregator endpoint counting `moderationState=PENDING` across accommodations, destinations, posts, events — returns `{ total, byEntity: { accommodations, destinations, posts, events } }`.
-7. **ADMIN reviews-pending count**: count endpoint for `reviews` with `moderationState=PENDING`.
-8. **ADMIN users by role + new-users trend**: count-by-role aggregation + date-grouped `createdAt` aggregation (last 12 months) — returns `{ byRole: Record<Role, number>, newUsersTrend: [{ month, count }] }`.
-9. **ADMIN/SUPER maintenance-mode readable flag**: confirm or expose `SYSTEM_MAINTENANCE_MODE` flag as a readable value (LOW-MEDIUM effort, no DB change expected).
+5. **ADMIN unified moderation-pending count**: single aggregator endpoint counting `moderationState=PENDING` across accommodations, destinations, posts, events — returns `{ total, byEntity: { accommodations, destinations, posts, events } }`.
+6. **ADMIN users by role + new-users trend**: count-by-role aggregation + date-grouped `createdAt` aggregation (last 12 months) — returns `{ byRole: Record<Role, number>, newUsersTrend: [{ month, count }] }`.
+7. **ADMIN/SUPER maintenance-mode readable flag**: confirm or expose `SYSTEM_MAINTENANCE_MODE` flag as a readable value (LOW-MEDIUM effort, no DB change expected).
 
 > **Audit-log query endpoint — moved to SPEC-162 (NOT in 155).** 03c is internally inconsistent on this (🟡 in the card detail at line 258, 🔴 HIGH "DB change likely" in the planning table at line 275). The current audit infrastructure (`audit-logger.ts` / `AuditEventType`) is logger-only with no queryable store, so a query endpoint requires new backend → 🔴, deferred to SPEC-162. Card H therefore renders all three slots (audit log, security log, Sentry) as deferred placeholders until SPEC-162/163 ship.
 
@@ -154,6 +154,8 @@ These are **additive changes** to the SPEC-154 config schema — no existing con
 
 ### OUT of SPEC-155 (explicit exclusions)
 
+- **SPEC-165** — Post/event comments system. Phase-1 scout (2026-05-27) found no `post_comments` or `event_comments` table exists; `posts` has only an integer `comments` counter; `events` has nothing. No `POST_COMMENT_VIEW` / `EVENT_COMMENT_VIEW` permissions exist. SPEC-165 owns the full comments storage + permission + listing endpoint. EDITOR card H renders a deferred placeholder pointing to SPEC-165 until it ships.
+- **SPEC-166** — Review moderation state. Phase-1 scout (2026-05-27) found `accommodation_reviews` and `destination_reviews` have `lifecycleState` (ACTIVE/ARCHIVED) only, not a `moderationState`. No review moderation flow exists. SPEC-166 owns adding `moderationState` to both tables, the moderation flow, and the pending-count endpoint. ADMIN card F keeps the unified moderation-pending count over the 4 content entities (🟡, still in SPEC-155). The reviews-pending sub-slot of card F renders a deferred placeholder until SPEC-166 ships.
 - **SPEC-164** — ADMIN billing role-model change (admin-billing-super-only). T-002 audit found the spec-named permissions were fictional and that a clean revoke requires seed changes + SPEC-154 IA config edits (`roles/admin.ts` removing 'comercial', `sidebars.ts` `onMissing:'hide'`, re-gating billing routes) + 14 admin billing page route guards. The dashboard does not require this revoke: card I is config-gated to the SUPER-only section; ADMIN never sees it regardless of which permissions ADMIN holds. SPEC-164 owns the full role-model change.
 - **SPEC-159** — cross-entity view tracking (accommodation views / post views / event views). Feeds HOST card G views slot + EDITOR cards E/F views slots. 🔴 Architectural decision pending (own DB table vs PostHog API). Those slots render a deferred placeholder until SPEC-159 ships.
 - **SPEC-160** — newsletter open/click-rate tracking (email-open pixel). Feeds EDITOR card C open-rate slot. 🔴 Not stored today.
@@ -209,33 +211,31 @@ For each item, the route exists in the API, is covered by an integration test, a
 - AC-21: `GET /api/v1/protected/host/conversations/response-rate` returns `{ responseRatePct: number, avgResponseTimeMinutes: number }` scoped to the authenticated host.
 - AC-22: `GET /api/v1/admin/newsletter/subscribers/by-preference` returns `{ OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number }` (requires `NEWSLETTER_SUBSCRIBER_VIEW`).
 - AC-23: `GET /api/v1/admin/posts/trend` returns `[{ month: 'YYYY-MM', count: number }]` for the last 12 months.
-- AC-24: A comment-listing endpoint exists (or is built) that returns recent comments across posts and events, sorted by `createdAt` desc; requires `POST_COMMENT_VIEW` and `EVENT_COMMENT_VIEW`.
-- AC-25: `GET /api/v1/admin/moderation/pending-count` returns `{ total: number, byEntity: { accommodations, destinations, posts, events } }` (requires `MODERATION_REVIEW`).
-- AC-26: `GET /api/v1/admin/reviews/pending-count` returns `{ count: number }` (requires `REVIEW_MODERATE`).
-- AC-27: `GET /api/v1/admin/users/stats` returns `{ byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] }` (requires `USER_VIEW_ALL`).
-- AC-28: Maintenance-mode status is exposed as a readable value via an existing or new endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission.
+- AC-24: `GET /api/v1/admin/moderation/pending-count` returns `{ total: number, byEntity: { accommodations, destinations, posts, events } }` (requires `MODERATION_REVIEW`). Reviews are NOT included in this count (they lack `moderationState` — deferred to SPEC-166).
+- AC-25: `GET /api/v1/admin/users/stats` returns `{ byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] }` (requires `USER_VIEW_ALL`).
+- AC-26: Maintenance-mode status is exposed as a readable value via an existing or new endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission.
 
 ### F. Permission change (EDITOR grant)
 
-- AC-29: Given: a user with role EDITOR. When: they access the newsletter campaigns list. Then: they can view and create/edit draft campaigns; the "Send" action is not available to them.
-- AC-30: Given: a user with role EDITOR. When: they access the newsletter subscribers list. Then: they can view the list.
+- AC-27: Given: a user with role EDITOR. When: they access the newsletter campaigns list. Then: they can view and create/edit draft campaigns; the "Send" action is not available to them.
+- AC-28: Given: a user with role EDITOR. When: they access the newsletter subscribers list. Then: they can view the list.
 
 ### G. SUPER_ADMIN-only gating
 
-- AC-31: Given: a user with role ADMIN. When: the dashboard renders. Then: cards H (Audit Logs) and I (Estadísticas de billing) are not visible — they are absent from `adminBaseDashboard` by config, not by permission check.
-- AC-32: Given: a user with role SUPER_ADMIN. When: the dashboard renders. Then: cards A–I are all visible (base 7 + super 2 = 9).
+- AC-29: Given: a user with role ADMIN. When: the dashboard renders. Then: cards H (Audit Logs) and I (Estadísticas de billing) are not visible — they are absent from `adminBaseDashboard` by config, not by permission check.
+- AC-30: Given: a user with role SUPER_ADMIN. When: the dashboard renders. Then: cards A–I are all visible (base 7 + super 2 = 9).
 
 ### H. Refresh and performance
 
-- AC-33: Global "Actualizar" button invalidates all dashboard queries for the current role.
-- AC-34: All dashboard queries fire in parallel (no waterfall). Dashboard initial render completes in < 500ms on a warm cache.
-- AC-35: Multiple cards querying the same underlying entity (e.g., ADMIN card A accommodations count + card B accommodations list) share a TanStack Query key prefix and do not make duplicate requests.
+- AC-31: Global "Actualizar" button invalidates all dashboard queries for the current role.
+- AC-32: All dashboard queries fire in parallel (no waterfall). Dashboard initial render completes in < 500ms on a warm cache.
+- AC-33: Multiple cards querying the same underlying entity (e.g., ADMIN card A accommodations count + card B accommodations list) share a TanStack Query key prefix and do not make duplicate requests.
 
 ### I. Migration parity
 
-- AC-36: Existing `apps/admin/src/routes/_authed/dashboard.tsx` is replaced by the new per-role renderer consuming each role's dashboard config.
-- AC-37: The 6 existing ADMIN KPIs (accommodations, destinations, events, posts, attractions, users) return the same values under the new renderer as under the old `useDashboardStats()`.
-- AC-38: `useDashboardStats()` hook is deleted after parity is confirmed.
+- AC-34: Existing `apps/admin/src/routes/_authed/dashboard.tsx` is replaced by the new per-role renderer consuming each role's dashboard config.
+- AC-35: The 6 existing ADMIN KPIs (accommodations, destinations, events, posts, attractions, users) return the same values under the new renderer as under the old `useDashboardStats()`.
+- AC-36: `useDashboardStats()` hook is deleted after parity is confirmed.
 
 ## 5. Technical approach
 
@@ -276,12 +276,12 @@ Grouped by phase. Phase ordering reflects dependency: schema extension before co
 | T-006 | `GET /api/v1/protected/host/conversations/response-rate` — aggregate `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` scoped to `ownerId`; return `{ responseRatePct, avgResponseTimeMinutes }` | 3 |
 | T-007 | `GET /api/v1/admin/newsletter/subscribers/by-preference` — aggregate `preferences` JSONB for active subscribers; return counts for OFFERS/EVENTS/GUIDES/PRODUCT_NEWS | 3 |
 | T-008 | `GET /api/v1/admin/posts/trend` — date-grouped `createdAt` aggregation, last 12 months; return `[{ month, count }]` | 2 |
-| T-009 | Recent-comments listing endpoint — verify `GET /api/v1/admin/comments` exists or build it (posts + events, `sort=created_at_desc`, `pageSize=10`) | 2 |
+| T-009 | ~~EXTRACTED to SPEC-165~~ — Recent-comments listing endpoint: no `post_comments`/`event_comments` table exists. EDITOR card H renders a deferred placeholder. | — |
 | T-010 | `GET /api/v1/admin/moderation/pending-count` — unified count across accommodations, destinations, posts, events where `moderationState=PENDING`; return `{ total, byEntity }` | 3 |
-| T-011 | `GET /api/v1/admin/reviews/pending-count` — count reviews with `moderationState=PENDING`; return `{ count }` | 2 |
+| T-011 | ~~EXTRACTED to SPEC-166~~ — Reviews-pending count: `accommodation_reviews`/`destination_reviews` have `lifecycleState` only, no `moderationState`. ADMIN card F reviews sub-slot renders a deferred placeholder. | — |
 | T-012 | `GET /api/v1/admin/users/stats` — users by role + new-users trend (last 12 months date-grouped); return `{ byRole, newUsersTrend }` | 3 |
 | T-013 | Maintenance-mode readable flag — confirm or build endpoint exposing `maintenanceMode` boolean (requires `SYSTEM_MAINTENANCE_MODE` permission) | 2 |
-| T-014 | Integration tests for all 🟡 routes (T-005 through T-013) — one test file per route asserting shape, auth, and scope isolation | 4 |
+| T-014 | Integration tests for all 7 active 🟡 routes (T-005, T-006, T-007, T-008, T-010, T-012, T-013) — one test file per route asserting shape, auth, and scope isolation | 4 |
 
 ### Phase 2 — Permission change (EDITOR grant)
 
@@ -340,17 +340,21 @@ Grouped by phase. Phase ordering reflects dependency: schema extension before co
 | T-040 | Performance baseline — assert all dashboard queries fire in parallel (no waterfall); assert initial render < 500ms on warm cache | 2 |
 | T-041 | Deferred-placeholder rendering tests — assert each 🔴 slot renders `DeferredWidget` without errors; assert remaining 🟢/🟡 slots in the same card are unaffected | 2 |
 
-**Total estimated tasks**: 41 (T-001..T-041). Two tasks completed (T-001, T-002); two new tasks added for Phase 0.5 schema extension; two billing-revoke tasks removed (old T-015/T-016). Average complexity ~2.4.
+**Total estimated tasks**: 39 active (T-001..T-041, with T-009 and T-011 extracted). T-009 and T-011 IDs are preserved as extraction tombstones to avoid ID renumbering confusion. Five tasks completed (T-001, T-002, T-003, T-004, T-015). Phase 1 now covers 7 buildable routes. Average complexity ~2.4.
+
+**Extraction note (2026-05-27 Phase-1 scout)**: T-009 (comments listing) extracted to SPEC-165; T-011 (reviews-pending count) extracted to SPEC-166. IDs are tombstoned (not reused) to keep the task numbering stable for the ongoing parallel implementation work.
 
 **Hard-gate dependencies**:
 - T-003 and T-004 (schema extension) BLOCK Phases 3–5 (config validation requires the extended schema).
 - T-015 (permission name verification) BLOCKS T-016 (seed change).
+- T-014 (integration tests) BLOCKED BY T-005, T-006, T-007, T-008, T-010, T-012, T-013 (the 7 active routes; T-009 and T-011 removed from this blockedBy list).
 - T-036 (parity verification) BLOCKS T-037 (delete old hook).
 
 ## 7. Risks
 
 | Risk | Likelihood | Mitigation |
 |------|:---:|------|
+| **Spec-named tables, columns, or permissions do not exist** — Phase-1 scout (2026-05-27) found two 🔴 items disguised as 🟡: a comment-listing route (no `post_comments`/`event_comments` table) and a reviews-pending route (no `moderationState` column). The same pattern could apply to other routes before they are built. | Medium-High | Before implementing ANY 🟡 route task, the implementer MUST verify that every referenced table, column, and permission enum value actually exists in the codebase. Check `packages/db/src/schema/` and `packages/schemas/src/enums/permission.enum.ts` first. If anything is missing, escalate as a new extraction rather than inventing columns. |
 | Permission names not in PermissionEnum — T-002 already found that the spec-named billing perms (`BILLING_METRICS_VIEW`, `SUBSCRIPTION_VIEW_ALL`) do not exist. The same could apply to EDITOR newsletter perms. | Medium | T-015 explicitly verifies every permission name against `packages/schemas/src/enums/permission.enum.ts` before the seed change (T-016) runs. Any missing name is flagged and the seed change is blocked until resolved. |
 | HOST ownerId leak — aggregation routes accidentally return global counts instead of host-scoped | Medium | T-038 scope isolation tests explicitly assert per-user data boundaries. Each 🟡 HOST route receives `ownerId` from auth context, not from query params. |
 | 🟡 aggregation route shape mismatch — newly built endpoint returns a different structure than the dashboard source resolver expects | Medium | Each 🟡 route has a defined return shape in §4 ACs. T-014 integration tests verify shape before frontend wires it. |
@@ -379,6 +383,8 @@ Grouped by phase. Phase ordering reflects dependency: schema extension before co
   - SPEC-161 (cron run-history) — enables ADMIN card D failed/last-run.
   - SPEC-162 (admin audit & security log query) — enables SUPER card H audit + security.
   - SPEC-163 (Sentry error metrics) — enables SUPER card H Sentry errors.
+  - SPEC-165 (post/event comments system) — enables EDITOR card H (Comentarios). Extracted 2026-05-27 after scout found no comment tables exist.
+  - SPEC-166 (review moderation state) — enables ADMIN card F reviews-pending sub-slot. Extracted 2026-05-27 after scout found reviews have `lifecycleState` only, not `moderationState`.
 
 ## 10. References
 

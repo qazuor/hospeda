@@ -4,7 +4,7 @@
     "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
     "created": "2026-05-26T00:00:00.000Z",
     "lastRegenerated": "2026-05-27T00:00:00.000Z",
-    "replanNote": "Fully regenerated after spec §6 rewrite (2026-05-26). Phase 0.5 schema extension added (T-003/T-004). Tasks T-003..T-016 remapped. Old billing-revoke tasks removed. T-001/T-002 preserved as completed.",
+    "replanNote": "Fully regenerated after spec §6 rewrite (2026-05-26). Phase 0.5 schema extension added (T-003/T-004). Tasks T-003..T-016 remapped. Old billing-revoke tasks removed. T-001/T-002 preserved as completed. UPDATED 2026-05-27: T-009 (comments listing) and T-011 (reviews-pending count) extracted to SPEC-165/SPEC-166 after Phase-1 scout found required tables do not exist. IDs tombstoned (status: extracted). T-012 set in-progress (parallel route construction task). Summary reflects 39 active tasks (41 IDs - 2 tombstones).",
     "tasks": [
         {
             "id": "T-001",
@@ -147,7 +147,7 @@
             "id": "T-005",
             "title": "Implement GET /api/v1/protected/host/favorites/breakdown route",
             "description": "Build a new protected API route returning per-accommodation bookmark counts scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/favorites-breakdown.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Uses existing `countBookmarksForEntity()` from `@repo/db` or service layer\n\nRoute spec (AC-20):\n- `GET /api/v1/protected/host/favorites/breakdown`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` automatically injected from `ctx.user.id` — NOT from query params\n- Response shape: `{ data: [{ accommodationId: string, slug: string, bookmarkCount: number }] }`\n- Empty array if host has no accommodations\n\nTest requirements (AC-20):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/favorites-breakdown.test.ts`\n- Test: authenticated HOST user returns only their own accommodations\n- Test: response shape matches documented interface exactly\n- Test: unauthenticated request returns 401\n- Test: non-HOST role returns 403",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-018"],
@@ -161,7 +161,7 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-27T05:55:48.000Z",
                 "completed": null
             }
         },
@@ -169,7 +169,7 @@
             "id": "T-006",
             "title": "Implement GET /api/v1/protected/host/conversations/response-rate route",
             "description": "Build a new protected API route computing conversation response rate and average response time, scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/conversations-response-rate.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Aggregates over `conversations` table fields: `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` where `ownerId = ctx.user.id`\n\nRoute spec (AC-21):\n- `GET /api/v1/protected/host/conversations/response-rate`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` injected from auth context\n- Response shape: `{ data: { responseRatePct: number, avgResponseTimeMinutes: number } }`\n- `responseRatePct`: (conversations with owner reply / total conversations) * 100, rounded to 1 decimal\n- `avgResponseTimeMinutes`: mean of (`firstOwnerReplyAt` - `firstGuestMessageAt`) for replied conversations\n- Returns `{ responseRatePct: 0, avgResponseTimeMinutes: 0 }` when no conversations\n\nTest requirements (AC-21):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/conversations-response-rate.test.ts`\n- Test: correct pct and avg with seeded conversation data\n- Test: returns zeros when no conversations exist\n- Test: scope isolation — HOST A cannot see HOST B's rates\n- Test: 401/403 for unauthenticated/wrong role",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-018"],
@@ -183,7 +183,7 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-27T05:55:48.000Z",
                 "completed": null
             }
         },
@@ -191,7 +191,7 @@
             "id": "T-007",
             "title": "Implement GET /api/v1/admin/newsletter/subscribers/by-preference route",
             "description": "Build a new admin API route aggregating active newsletter subscribers by content preference.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/newsletter/subscribers-by-preference.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/newsletter/index.ts`\n- Aggregates over `newsletter_subscribers.preferences` JSONB column where `status = 'active'`\n\nRoute spec (AC-22):\n- `GET /api/v1/admin/newsletter/subscribers/by-preference`\n- Auth: requires `NEWSLETTER_SUBSCRIBER_VIEW` permission\n- Response shape: `{ data: { OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number } }`\n- Counts subscribers whose preferences include each category (a subscriber can appear in multiple categories)\n- Returns zeros for categories with no subscribers\n\nTest requirements (AC-22):\n- Integration test: `apps/api/src/routes/admin/newsletter/__tests__/subscribers-by-preference.test.ts`\n- Test: correct counts per preference category with seeded subscribers\n- Test: only active subscribers are counted\n- Test: 403 without `NEWSLETTER_SUBSCRIBER_VIEW`\n- Test: response shape matches documented interface",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-019"],
@@ -205,7 +205,7 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-27T05:55:48.000Z",
                 "completed": null
             }
         },
@@ -213,7 +213,7 @@
             "id": "T-008",
             "title": "Implement GET /api/v1/admin/posts/trend route",
             "description": "Build a new admin API route returning the post publication trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/posts/trend.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/posts/index.ts`\n- Date-grouped aggregation over `posts.createdAt` for the last 12 months\n\nRoute spec (AC-23):\n- `GET /api/v1/admin/posts/trend`\n- Auth: requires `POST_VIEW` or equivalent admin permission\n- Response shape: `{ data: [{ month: string, count: number }] }` where `month` is `'YYYY-MM'` format\n- Array has exactly 12 entries covering the last 12 calendar months (including current)\n- Months with zero posts return `{ month: 'YYYY-MM', count: 0 }`\n- Ordered chronologically (oldest first)\n\nTest requirements (AC-23):\n- Integration test: `apps/api/src/routes/admin/posts/__tests__/trend.test.ts`\n- Test: returns 12 entries\n- Test: correct counts for months with seeded posts\n- Test: zero-fill for months without posts\n- Test: 403 without required permission",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-019"],
@@ -227,20 +227,22 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
+                "started": "2026-05-27T05:55:48.000Z",
                 "completed": null
             }
         },
         {
             "id": "T-009",
-            "title": "Verify or build recent-comments listing endpoint",
-            "description": "Confirm whether `GET /api/v1/admin/comments` (or equivalent) exists and returns recent comments across posts and events sorted by `createdAt` desc. Build it if missing.\n\nFiles to check/create:\n- Check `apps/api/src/routes/admin/` for existing comment routes\n- If building: `apps/api/src/routes/admin/comments/index.ts`\n- Register in admin routes index if new\n\nRoute spec (AC-24):\n- Endpoint returns recent comments across posts AND events\n- Sorted by `createdAt` desc\n- Default `pageSize=10`\n- Requires `POST_COMMENT_VIEW` AND `EVENT_COMMENT_VIEW` permissions\n- Response shape: `{ data: [{ id, entityType: 'post'|'event', entityId, content, authorName, createdAt }] }`\n\nTest requirements (AC-24):\n- Integration test: `apps/api/src/routes/admin/comments/__tests__/list.test.ts`\n- Test: returns post and event comments combined, sorted by date desc\n- Test: `pageSize` respected\n- Test: 403 without required permissions\n- Test: response shape correct",
-            "status": "pending",
+            "title": "[EXTRACTED TO SPEC-165] Recent-comments listing endpoint",
+            "description": "TOMBSTONE — extracted 2026-05-27 after Phase-1 scout found no post_comments or event_comments table exists in the schema. The posts table has only an integer comments counter; events has nothing. No POST_COMMENT_VIEW or EVENT_COMMENT_VIEW permission entries exist. This work is now owned by SPEC-165 (post-event-comments-system). EDITOR dashboard card H renders a deferred placeholder until SPEC-165 ships.",
+            "status": "extracted",
+            "extractedTo": "SPEC-165",
+            "extractedOn": "2026-05-27",
             "complexity": 2,
             "blockedBy": [],
-            "blocks": ["T-014", "T-019"],
+            "blocks": [],
             "subtasks": [],
-            "tags": ["backend", "api", "editor", "comments", "aggregation"],
+            "tags": ["backend", "api", "editor", "comments", "extracted"],
             "phase": "core",
             "qualityGate": {
                 "lint": null,
@@ -250,7 +252,8 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": null,
+                "extracted": "2026-05-27T00:00:00.000Z"
             }
         },
         {
@@ -277,14 +280,16 @@
         },
         {
             "id": "T-011",
-            "title": "Implement GET /api/v1/admin/reviews/pending-count route",
-            "description": "Build a new admin API route returning the count of reviews pending moderation.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/reviews/pending-count.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/reviews/index.ts`\n- Count `reviews` where `moderationState = 'PENDING'`\n\nRoute spec (AC-26):\n- `GET /api/v1/admin/reviews/pending-count`\n- Auth: requires `REVIEW_MODERATE` permission\n- Response shape: `{ data: { count: number } }`\n- Returns `{ count: 0 }` when no pending reviews\n\nTest requirements (AC-26):\n- Integration test: `apps/api/src/routes/admin/reviews/__tests__/pending-count.test.ts`\n- Test: correct count with seeded pending reviews\n- Test: 403 without `REVIEW_MODERATE`\n- Test: response shape correct",
-            "status": "pending",
+            "title": "[EXTRACTED TO SPEC-166] Reviews-pending count endpoint",
+            "description": "TOMBSTONE — extracted 2026-05-27 after Phase-1 scout found accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not a moderationState column. No review moderation flow exists today. This work is now owned by SPEC-166 (review-moderation-state). ADMIN dashboard card F retains its unified moderation-pending count over the 4 content entities (T-010, still in SPEC-155). The reviews-pending sub-slot of card F renders a deferred placeholder until SPEC-166 ships.",
+            "status": "extracted",
+            "extractedTo": "SPEC-166",
+            "extractedOn": "2026-05-27",
             "complexity": 2,
             "blockedBy": [],
-            "blocks": ["T-014", "T-020"],
+            "blocks": [],
             "subtasks": [],
-            "tags": ["backend", "api", "admin", "reviews", "aggregation"],
+            "tags": ["backend", "api", "admin", "reviews", "extracted"],
             "phase": "core",
             "qualityGate": {
                 "lint": null,
@@ -294,14 +299,15 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": null,
+                "extracted": "2026-05-27T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Implement GET /api/v1/admin/users/stats route",
-            "description": "Build a new admin API route returning users grouped by role and a new-users trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/users/stats.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/users/index.ts`\n- Aggregates: (1) count per role from users table; (2) date-grouped `createdAt` for last 12 months\n\nRoute spec (AC-27):\n- `GET /api/v1/admin/users/stats`\n- Auth: requires `USER_VIEW_ALL` permission\n- Response shape: `{ data: { byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] } }`\n- `byRole`: key is role name (string), value is user count\n- `newUsersTrend`: 12 entries, `month` in `'YYYY-MM'` format, ordered oldest first\n- Zero-fill months with no new users\n\nTest requirements (AC-27):\n- Integration test: `apps/api/src/routes/admin/users/__tests__/stats.test.ts`\n- Test: correct role counts with seeded users\n- Test: trend has 12 entries with correct month format\n- Test: 403 without `USER_VIEW_ALL`\n- Test: response shape correct",
-            "status": "pending",
+            "description": "Build a new admin API route returning users grouped by role and a new-users trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/users/stats.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/users/index.ts`\n- Aggregates: (1) count per role from users table; (2) date-grouped `createdAt` for last 12 months\n\nRoute spec (AC-25):\n- `GET /api/v1/admin/users/stats`\n- Auth: requires `USER_VIEW_ALL` permission\n- Response shape: `{ data: { byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] } }`\n- `byRole`: key is role name (string), value is user count\n- `newUsersTrend`: 12 entries, `month` in `'YYYY-MM'` format, ordered oldest first\n- Zero-fill months with no new users\n\nTest requirements (AC-25):\n- Integration test: `apps/api/src/routes/admin/users/__tests__/stats.test.ts`\n- Test: correct role counts with seeded users\n- Test: trend has 12 entries with correct month format\n- Test: 403 without `USER_VIEW_ALL`\n- Test: response shape correct",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-020"],
@@ -315,8 +321,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T05:47:35.000Z"
             }
         },
         {
@@ -343,21 +349,11 @@
         },
         {
             "id": "T-014",
-            "title": "Integration tests for all 9 aggregation routes (T-005..T-013)",
-            "description": "Write comprehensive integration tests for each of the 9 new aggregation routes (T-005 through T-013). One test file per route, each asserting shape, authentication, and scope isolation.\n\nThis task is a consolidation/hardening pass — each individual route task includes its own inline test requirements. T-014 ensures all 9 are green as a group and adds cross-cutting edge cases.\n\nFiles to create (if not already created by T-005..T-013):\n- One `__tests__/*.test.ts` per route in its respective directory\n\nAcceptance criteria (AC-20 through AC-28):\n- All 9 routes pass their shape assertions\n- All 9 routes pass their auth assertions (401 unauthenticated, 403 wrong permission)\n- HOST routes assert scope isolation (no cross-owner data leaks)\n- Trend routes assert 12-entry arrays with correct `YYYY-MM` format\n- All tests run in under 30s total\n\nTest requirements:\n- Use the project's standard integration test harness (Vitest + db test setup)\n- AAA pattern throughout\n- No `.only()` or hard-coded `.skip()` in committed code",
+            "title": "Integration tests for all 7 active aggregation routes (T-005, T-006, T-007, T-008, T-010, T-012, T-013)",
+            "description": "Write comprehensive integration tests for each of the 7 active aggregation routes. One test file per route, each asserting shape, authentication, and scope isolation. T-009 (comments) and T-011 (reviews-pending) were extracted to SPEC-165/SPEC-166 and are NOT included.\n\nThis task is a consolidation/hardening pass — each individual route task includes its own inline test requirements. T-014 ensures all 7 are green as a group and adds cross-cutting edge cases.\n\nFiles to create (if not already created by individual route tasks):\n- One `__tests__/*.test.ts` per route in its respective directory\n\nAcceptance criteria (AC-20 through AC-26):\n- All 7 active routes pass their shape assertions\n- All 7 active routes pass their auth assertions (401 unauthenticated, 403 wrong permission)\n- HOST routes assert scope isolation (no cross-owner data leaks)\n- Trend routes assert 12-entry arrays with correct `YYYY-MM` format\n- All tests run in under 30s total\n\nTest requirements:\n- Use the project's standard integration test harness (Vitest + db test setup)\n- AAA pattern throughout\n- No `.only()` or hard-coded `.skip()` in committed code",
             "status": "pending",
             "complexity": 4,
-            "blockedBy": [
-                "T-005",
-                "T-006",
-                "T-007",
-                "T-008",
-                "T-009",
-                "T-010",
-                "T-011",
-                "T-012",
-                "T-013"
-            ],
+            "blockedBy": ["T-005", "T-006", "T-007", "T-008", "T-010", "T-012", "T-013"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "backend", "integration"],
@@ -464,10 +460,10 @@
         {
             "id": "T-019",
             "title": "Register EDITOR data sources in resolver",
-            "description": "Register all EDITOR dashboard source IDs in `dashboard-sources.ts`, excluding views-per-post (🔴) and open-rate (🔴).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (EDITOR cards A–H):\n- `editor.posts.publishedThisMonth` → existing posts endpoint with month filter\n- `editor.posts.drafts` → existing posts endpoint with draft status\n- `editor.events.upcoming` → existing events endpoint with date filter\n- `editor.newsletter.subscribers` → existing subscribers endpoint\n- `editor.newsletter.byPreference` → `GET /api/v1/admin/newsletter/subscribers/by-preference` (T-007)\n- `editor.newsletter.campaigns` → existing campaigns endpoint\n- `editor.posts.trend` → `GET /api/v1/admin/posts/trend` (T-008)\n- `editor.comments.recent` → comments listing endpoint (T-009)\n- `editor.posts.list` → posts list for health checks\n- `editor.events.list` → events list for health checks\n\nAcceptance criteria (AC-16, AC-19):\n- All EDITOR source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'editor', sourceId]` pattern\n\nTest requirements:\n- Unit test: all EDITOR source IDs are registered and return valid query options objects",
+            "description": "Register all EDITOR dashboard source IDs in `dashboard-sources.ts`, excluding views-per-post (🔴→SPEC-159), open-rate (🔴→SPEC-160), and comments (🔴→SPEC-165).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (EDITOR cards A–H, card H is deferred to SPEC-165):\n- `editor.posts.publishedThisMonth` → existing posts endpoint with month filter\n- `editor.posts.drafts` → existing posts endpoint with draft status\n- `editor.events.upcoming` → existing events endpoint with date filter\n- `editor.newsletter.subscribers` → existing subscribers endpoint\n- `editor.newsletter.byPreference` → `GET /api/v1/admin/newsletter/subscribers/by-preference` (T-007)\n- `editor.newsletter.campaigns` → existing campaigns endpoint\n- `editor.posts.trend` → `GET /api/v1/admin/posts/trend` (T-008)\n- `editor.posts.list` → posts list for health checks\n- `editor.events.list` → events list for health checks\n- Card H (Comentarios): no source registered — DeferredWidget pointing to SPEC-165 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All EDITOR source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'editor', sourceId]` pattern\n- Card H has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all EDITOR source IDs are registered and return valid query options objects",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-001", "T-003", "T-004", "T-007", "T-008", "T-009", "T-017"],
+            "blockedBy": ["T-001", "T-003", "T-004", "T-007", "T-008", "T-017"],
             "blocks": ["T-030"],
             "subtasks": [],
             "tags": ["frontend", "dashboard", "editor", "sources"],
@@ -486,10 +482,10 @@
         {
             "id": "T-020",
             "title": "Register ADMIN base data sources in resolver",
-            "description": "Register all ADMIN base dashboard source IDs in `dashboard-sources.ts`, excluding cron run-history (🔴).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (ADMIN base cards A–G):\n- `admin.stats.entities` → existing entity count endpoints (accommodations, destinations, events, posts, attractions, users)\n- `admin.accommodations.latest` → accommodations list sorted by createdAt desc\n- `admin.events.upcomingFeatured` → events with featured flag + upcoming date\n- `admin.posts.recentDrafts` → posts with draft status sorted by updatedAt\n- `admin.crons.list` → existing cron jobs list endpoint\n- `admin.system.health` → existing health endpoint\n- `admin.system.maintenanceMode` → maintenance-mode endpoint (T-013)\n- `admin.moderation.pendingCount` → `GET /api/v1/admin/moderation/pending-count` (T-010)\n- `admin.reviews.pendingCount` → `GET /api/v1/admin/reviews/pending-count` (T-011)\n- `admin.users.stats` → `GET /api/v1/admin/users/stats` (T-012)\n\nAcceptance criteria (AC-16, AC-19):\n- All ADMIN source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'admin', sourceId]` pattern\n\nTest requirements:\n- Unit test: all ADMIN source IDs are registered and return valid query options objects",
+            "description": "Register all ADMIN base dashboard source IDs in `dashboard-sources.ts`, excluding cron run-history (🔴→SPEC-161) and reviews-pending (🔴→SPEC-166).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (ADMIN base cards A–G):\n- `admin.stats.entities` → existing entity count endpoints (accommodations, destinations, events, posts, attractions, users)\n- `admin.accommodations.latest` → accommodations list sorted by createdAt desc\n- `admin.events.upcomingFeatured` → events with featured flag + upcoming date\n- `admin.posts.recentDrafts` → posts with draft status sorted by updatedAt\n- `admin.crons.list` → existing cron jobs list endpoint\n- `admin.system.health` → existing health endpoint\n- `admin.system.maintenanceMode` → maintenance-mode endpoint (T-013)\n- `admin.moderation.pendingCount` → `GET /api/v1/admin/moderation/pending-count` (T-010) — 4 entities only, no reviews\n- `admin.users.stats` → `GET /api/v1/admin/users/stats` (T-012)\n- Card F reviews-pending sub-slot: no source registered — DeferredWidget pointing to SPEC-166 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All ADMIN source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'admin', sourceId]` pattern\n- Card F reviews sub-slot has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all ADMIN source IDs are registered and return valid query options objects",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-001", "T-003", "T-004", "T-010", "T-011", "T-012", "T-013", "T-017"],
+            "blockedBy": ["T-001", "T-003", "T-004", "T-010", "T-012", "T-013", "T-017"],
             "blocks": ["T-031"],
             "subtasks": [],
             "tags": ["frontend", "dashboard", "admin", "sources"],
@@ -706,7 +702,7 @@
         {
             "id": "T-030",
             "title": "Write editorDashboard config",
-            "description": "Define the `editorDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the EDITOR role: 8 cards (A–H) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6):\n- Card A: Posts (KPI + list) — sources: `editor.posts.publishedThisMonth`, `editor.posts.drafts`\n- Card B: Eventos (KPI + list) — source: `editor.events.upcoming`\n- Card C: Suscriptores Newsletter (KPI 🟢 + breakdown 🟡 + DeferredWidget 🔴→SPEC-160) — sources: `editor.newsletter.subscribers`, `editor.newsletter.byPreference`\n- Card D: Campañas Newsletter (list) — source: `editor.newsletter.campaigns`\n- Card E: Estadísticas blog (KPI + chart 🟡 + DeferredWidget 🔴→SPEC-159) — sources: `editor.posts.publishedThisMonth`, `editor.posts.trend`\n- Card F: Estadísticas eventos (KPI + DeferredWidget 🔴→SPEC-159) — source: `editor.events.upcoming`\n- Card G: Salud (checklist — computed client-side) — sources: `editor.posts.list`, `editor.events.list`\n- Card H: Comentarios (list) — source: `editor.comments.recent`\n\nRequirements (AC-4, AC-5, AC-6):\n- Exactly 8 card configs\n- Passes extended SPEC-154 Zod schema\n- Deferred slots reference correct SPEC numbers\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `editorDashboard.cards.length === 8`",
+            "description": "Define the `editorDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the EDITOR role: 8 cards (A–H) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6):\n- Card A: Posts (KPI + list) — sources: `editor.posts.publishedThisMonth`, `editor.posts.drafts`\n- Card B: Eventos (KPI + list) — source: `editor.events.upcoming`\n- Card C: Suscriptores Newsletter (KPI 🟢 + breakdown 🟡 + DeferredWidget 🔴→SPEC-160) — sources: `editor.newsletter.subscribers`, `editor.newsletter.byPreference`\n- Card D: Campañas Newsletter (list) — source: `editor.newsletter.campaigns`\n- Card E: Estadísticas blog (KPI + chart 🟡 + DeferredWidget 🔴→SPEC-159) — sources: `editor.posts.publishedThisMonth`, `editor.posts.trend`\n- Card F: Estadísticas eventos (KPI + DeferredWidget 🔴→SPEC-159) — source: `editor.events.upcoming`\n- Card G: Salud (checklist — computed client-side) — sources: `editor.posts.list`, `editor.events.list`\n- Card H: Comentarios (deferred placeholder 🔴→SPEC-165) — no live source; DeferredWidget with `phaseSpec: 'SPEC-165'`\n\nRequirements (AC-4, AC-5, AC-6):\n- Exactly 8 card configs\n- Passes extended SPEC-154 Zod schema\n- Card H deferred slot references SPEC-165\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `editorDashboard.cards.length === 8`",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-019"],
@@ -728,7 +724,7 @@
         {
             "id": "T-031",
             "title": "Write adminBaseDashboard config",
-            "description": "Define the `adminBaseDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the ADMIN role: 7 cards (A–G) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6, AC-8):\n- Card A: Estadísticas de entidades (6 KPI widgets) — source: `admin.stats.entities`\n- Card B: Alojamientos (list) — source: `admin.accommodations.latest`\n- Card C: Editorial (list — events + posts) — sources: `admin.events.upcomingFeatured`, `admin.posts.recentDrafts`\n- Card D: Crons (list 🟢 + DeferredWidget 🔴→SPEC-161 for failed/last-run) — source: `admin.crons.list`\n- Card E: Estado del sistema (status widget 🟢 + maintenance flag 🟡) — sources: `admin.system.health`, `admin.system.maintenanceMode`\n- Card F: Pendiente de moderación (KPI + breakdown 🟡) — sources: `admin.moderation.pendingCount`, `admin.reviews.pendingCount`\n- Card G: Usuarios (KPI+breakdown 🟡 + chart 🟡) — source: `admin.users.stats`\n\nRequirements (AC-4, AC-5, AC-8):\n- Exactly 7 card configs\n- ADMIN (not SUPER_ADMIN) resolves to this config alone\n- Passes extended SPEC-154 Zod schema\n\nTest requirements (AC-4, AC-5, AC-8):\n- Tested by T-033 CI validation suite\n- Card count assertion: `adminBaseDashboard.cards.length === 7`",
+            "description": "Define the `adminBaseDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the ADMIN role: 7 cards (A–G) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6, AC-8):\n- Card A: Estadísticas de entidades (6 KPI widgets) — source: `admin.stats.entities`\n- Card B: Alojamientos (list) — source: `admin.accommodations.latest`\n- Card C: Editorial (list — events + posts) — sources: `admin.events.upcomingFeatured`, `admin.posts.recentDrafts`\n- Card D: Crons (list 🟢 + DeferredWidget 🔴→SPEC-161 for failed/last-run) — source: `admin.crons.list`\n- Card E: Estado del sistema (status widget 🟢 + maintenance flag 🟡) — sources: `admin.system.health`, `admin.system.maintenanceMode`\n- Card F: Pendiente de moderación (unified 4-entity count 🟡 + reviews-pending DeferredWidget 🔴→SPEC-166) — source: `admin.moderation.pendingCount`; reviews sub-slot: DeferredWidget with `phaseSpec: 'SPEC-166'`\n- Card G: Usuarios (KPI+breakdown 🟡 + chart 🟡) — source: `admin.users.stats`\n\nRequirements (AC-4, AC-5, AC-8):\n- Exactly 7 card configs\n- ADMIN (not SUPER_ADMIN) resolves to this config alone\n- Passes extended SPEC-154 Zod schema\n\nTest requirements (AC-4, AC-5, AC-8):\n- Tested by T-033 CI validation suite\n- Card count assertion: `adminBaseDashboard.cards.length === 7`",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-020"],
@@ -960,7 +956,7 @@
         {
             "id": "T-041",
             "title": "Deferred-placeholder rendering tests",
-            "description": "Write tests asserting that each 🔴 slot renders `DeferredWidget` without errors and that the remaining 🟢/🟡 slots in the same card are unaffected.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-deferred.test.ts`\n\nAcceptance criteria (AC-14):\n- Every deferred (🔴) slot renders `DeferredWidget` component\n- The `DeferredWidget` receives the correct `phaseSpec` prop for each slot:\n  - HOST card G views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card C open-rate slot → `phaseSpec: 'SPEC-160'`\n  - EDITOR card E views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card F views slot → `phaseSpec: 'SPEC-159'`\n  - ADMIN card D failed/last-run slot → `phaseSpec: 'SPEC-161'`\n  - SUPER card H audit log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H security log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H Sentry slot → `phaseSpec: 'SPEC-163'`\n- In each mixed card, the non-deferred slots render their data correctly alongside DeferredWidget\n- No errors thrown when DeferredWidget is rendered\n\nTest requirements (AC-14):\n- Unit test per deferred slot: assert DeferredWidget rendered with correct phaseSpec\n- Unit test: HOST card G live KPI slots render alongside deferred views slot\n- Unit test: DeferredWidget renders in isolation without any query calls",
+            "description": "Write tests asserting that each 🔴 slot renders `DeferredWidget` without errors and that the remaining 🟢/🟡 slots in the same card are unaffected.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-deferred.test.ts`\n\nAcceptance criteria (AC-14):\n- Every deferred (🔴) slot renders `DeferredWidget` component\n- The `DeferredWidget` receives the correct `phaseSpec` prop for each slot:\n  - HOST card G views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card C open-rate slot → `phaseSpec: 'SPEC-160'`\n  - EDITOR card E views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card F views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card H (entire card) → `phaseSpec: 'SPEC-165'`\n  - ADMIN card D failed/last-run slot → `phaseSpec: 'SPEC-161'`\n  - ADMIN card F reviews-pending sub-slot → `phaseSpec: 'SPEC-166'`\n  - SUPER card H audit log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H security log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H Sentry slot → `phaseSpec: 'SPEC-163'`\n- In each mixed card, the non-deferred slots render their data correctly alongside DeferredWidget\n- No errors thrown when DeferredWidget is rendered\n\nTest requirements (AC-14):\n- Unit test per deferred slot: assert DeferredWidget rendered with correct phaseSpec\n- Unit test: HOST card G live KPI slots render alongside deferred views slot\n- Unit test: DeferredWidget renders in isolation without any query calls",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-022", "T-034"],
@@ -982,10 +978,13 @@
     ],
     "summary": {
         "total": 41,
-        "completed": 5,
-        "pending": 36,
-        "inProgress": 0,
+        "activeTotal": 39,
+        "extracted": 2,
+        "completed": 6,
+        "pending": 29,
+        "inProgress": 4,
         "blocked": 0,
-        "averageComplexity": 2.4
+        "averageComplexity": 2.4,
+        "note": "T-009 (extracted to SPEC-165) and T-011 (extracted to SPEC-166) are tombstoned. activeTotal=39. completed=5 (T-001, T-002, T-003, T-004, T-015). inProgress=1 (T-012). pending=33 active."
     }
 }
