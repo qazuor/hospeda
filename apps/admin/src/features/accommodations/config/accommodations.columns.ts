@@ -1,5 +1,7 @@
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { createElement } from 'react';
+import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /**
@@ -131,7 +133,8 @@ export const createAccommodationsColumns = (
         header: t('admin-entities.columns.rating'),
         accessorKey: 'averageRating',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AccommodationRatingCell, { row })
     },
     {
         id: 'reviewsCount',
