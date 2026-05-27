@@ -746,7 +746,7 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
         if (fetchedData != null) {
             return Array.isArray(fetchedData)
                 ? (fetchedData as ReadonlyArray<ChecklistEntity>)
-                : ([fetchedData] as ReadonlyArray<ChecklistEntity>);
+                : ([fetchedData] as unknown as ReadonlyArray<ChecklistEntity>);
         }
         if (configEntities != null && configEntities.length > 0) {
             return configEntities;

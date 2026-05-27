@@ -37,7 +37,7 @@
  * @see apps/admin/src/lib/dashboard-sources/super.ts   — SUPER source IDs
  */
 
-import type { Dashboard } from './schema';
+import type { DashboardInput } from './schema';
 
 // ============================================================================
 // hostDashboard — "Mi negocio" — 7 cards A–G
@@ -61,7 +61,7 @@ import type { Dashboard } from './schema';
  * dashboards.hostDashboard.widgets.length; // 7
  * ```
  */
-const hostDashboard: Dashboard = {
+const hostDashboard: DashboardInput = {
     widgets: [
         // Card A — Mis alojamientos
         // own listings count KPI + DRAFT list with publish link
@@ -249,7 +249,7 @@ const hostDashboard: Dashboard = {
  * dashboards.editorDashboard.widgets.length; // 8
  * ```
  */
-const editorDashboard: Dashboard = {
+const editorDashboard: DashboardInput = {
     widgets: [
         // Card A — Posts
         // published this month (KPI) + pending drafts count + recent drafts (list)
@@ -451,7 +451,7 @@ const editorDashboard: Dashboard = {
  * dashboards.adminBaseDashboard.widgets.length; // 7
  * ```
  */
-const adminBaseDashboard: Dashboard = {
+const adminBaseDashboard: DashboardInput = {
     widgets: [
         // Card A — Estadísticas de entidades
         // 6 content KPIs: accommodations, destinations, events, posts, attractions, users
@@ -636,7 +636,7 @@ const adminBaseDashboard: Dashboard = {
  * superAdminOnlySection.widgets.every(w => w.onMissing === 'hide'); // true
  * ```
  */
-export const superAdminOnlySection: Dashboard = {
+export const superAdminOnlySection: DashboardInput = {
     widgets: [
         // Card H — Audit Logs (SUPER_ADMIN-only)
         // All three sub-slots are deferred — no queryable backend today:
@@ -724,7 +724,7 @@ export const superAdminOnlySection: Dashboard = {
  * dashboards.superAdminDashboard.widgets.length; // 9 (7 base + 2 super-only)
  * ```
  */
-const superAdminDashboard: Dashboard = {
+const superAdminDashboard: DashboardInput = {
     widgets: [...adminBaseDashboard.widgets, ...superAdminOnlySection.widgets]
 };
 
@@ -754,7 +754,7 @@ const superAdminDashboard: Dashboard = {
  * const allWidgets = dashboards['superAdminDashboard'].widgets; // 9 widgets
  * ```
  */
-export const dashboards: Record<string, Dashboard> = {
+export const dashboards: Record<string, DashboardInput> = {
     hostDashboard,
     editorDashboard,
     adminBaseDashboard,

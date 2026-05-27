@@ -634,6 +634,24 @@ export const DashboardSchema = z.object({
 export type Dashboard = z.infer<typeof DashboardSchema>;
 
 /**
+ * Input type for {@link DashboardSchema} — fields with Zod `.default()` values
+ * (e.g. `onMissing`, `scope`, `exact`) are optional at input time because the
+ * parser applies the defaults during `safeParse`.
+ *
+ * Use this type when defining raw dashboard config objects (before validation).
+ * At runtime `AdminIAConfigSchema.safeParse` converts `DashboardInput` to
+ * `Dashboard` by filling in all defaults.
+ *
+ * @example
+ * ```ts
+ * const myDashboard: DashboardInput = {
+ *   widgets: [{ id: 'w1', type: 'kpi', label: {...} }],
+ * };
+ * ```
+ */
+export type DashboardInput = z.input<typeof DashboardSchema>;
+
+/**
  * Which create actions to show in the topbar quick-create button.
  *
  * - `'all'`        — shorthand: show all create actions available to this role.
