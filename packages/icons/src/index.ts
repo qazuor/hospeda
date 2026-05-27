@@ -19,6 +19,21 @@ export { createPhosphorIcon } from './create-phosphor-icon';
 // of the Phosphor catalog, e.g. payment provider marks).
 export { createBrandIcon } from './create-brand-icon';
 
+// Export domain mappings (accommodation type → icon + color tokens). Single
+// source of truth shared by apps/web and apps/admin.
+export {
+    ACCOMMODATION_TYPE_FALLBACK_VISUAL,
+    ACCOMMODATION_TYPE_VISUALS,
+    getAccommodationTypeColorScheme,
+    getAccommodationTypeColorTokens,
+    getAccommodationTypeIcon,
+    getAccommodationTypeVisual
+} from './domain/accommodation-type';
+export type {
+    AccommodationTypeColorScheme,
+    AccommodationTypeVisual
+} from './domain/accommodation-type';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';

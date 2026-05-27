@@ -6,8 +6,8 @@
  * Output layout (theme-selector contract documented in spec.md §4 / doc 05 §6):
  *
  *   :root {
- *       <100 palette declarations — theme-independent primitives>
- *       <142 web light theme declarations — web is the default scope>
+ *       <150 palette declarations — theme-independent primitives>
+ *       <155 web light theme declarations — web is the default scope>
  *   }
  *
  *   @media (min-width: 1600px) {
@@ -129,7 +129,7 @@ export function buildCSS(): string {
     parts.push(HEADER);
     parts.push('');
     parts.push(':root {');
-    parts.push(`${INDENT}/* Palette primitives — theme-independent (100 declarations). */`);
+    parts.push(`${INDENT}/* Palette primitives — theme-independent (150 declarations). */`);
     parts.push(emitPalettes(INDENT));
     parts.push('');
     parts.push(`${INDENT}/* Web light theme — web is the default scope. */`);

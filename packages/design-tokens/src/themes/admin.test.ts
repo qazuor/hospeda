@@ -12,11 +12,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
     accent,
+    brandSecondary,
     danger,
+    forest,
     formatOKLCH,
     info,
     neutral,
     river,
+    sand,
+    sky,
     success,
     warning
 } from '../tokens/colors.js';
@@ -32,8 +36,16 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('adminLight — coverage and naming', () => {
-    it('declares 17 entries (doc 05 §6.2)', () => {
-        expect(Object.keys(adminLight)).toHaveLength(17);
+    it('declares 39 entries (17 doc 05 §6.2 core + 12 web brand tokens + 10 per-type tokens)', () => {
+        // Original narrow admin surface = 17 (doc 05 §6.2). The brand-cohesion
+        // pass added 12 web brand tokens (brand-primary/accent/secondary,
+        // hospeda-river/sky/forest/sand, muted, info, warning,
+        // warning-foreground, core-foreground) so the admin scope can render
+        // cross-app visual mappings (e.g. the accommodation-type badge whose
+        // SSOT lives in @repo/icons) with the SAME colors web uses. The layered
+        // color model added 10 more: the per-accommodation-type tokens
+        // (--accommodation-type-*), shared verbatim with web-light.
+        expect(Object.keys(adminLight)).toHaveLength(39);
     });
 
     it('keys do not include leading "--"', () => {
@@ -42,11 +54,38 @@ describe('adminLight — coverage and naming', () => {
         }
     });
 
-    it("uses the color-* naming scheme (not web's brand-* / core-*)", () => {
+    it("the core admin surface uses the color-* naming scheme (not web's brand-* / core-*)", () => {
         const colorKeys = Object.keys(adminLight).filter((k) => k.startsWith('color-'));
         // 4 color-primary* + color-accent + 2 color-bg-* + 3 color-fg-* +
         // color-border + 4 color-* feedback = 14 color-* entries.
         expect(colorKeys).toHaveLength(14);
+    });
+
+    it('declares the 10 per-accommodation-type tokens (cross-app badge identity)', () => {
+        const typeKeys = Object.keys(adminLight).filter((k) => k.startsWith('accommodation-type-'));
+        expect(typeKeys).toHaveLength(10);
+    });
+});
+
+describe('adminLight — web brand tokens (cross-app badge support)', () => {
+    it.each([
+        ['brand-primary', river[500]],
+        ['brand-accent', accent[500]],
+        ['brand-secondary', brandSecondary],
+        ['hospeda-river', river[500]],
+        ['hospeda-sky', sky[500]],
+        ['hospeda-forest', forest[500]],
+        ['hospeda-sand', sand[500]],
+        ['info', info[500]],
+        ['warning', warning[500]]
+    ])('%s mirrors the web-light palette value', (key, expectedRef) => {
+        expect(adminLight[key]).toBe(expectedRef);
+    });
+
+    it('muted / warning-foreground / core-foreground mirror web-light hand-tuned values', () => {
+        expect(adminLight.muted).toEqual({ l: 0.95, c: 0.01, h: 210 });
+        expect(adminLight['warning-foreground']).toEqual({ l: 0.2, c: 0.02, h: 85 });
+        expect(adminLight['core-foreground']).toEqual({ l: 0.2, c: 0.02, h: 220 });
     });
 });
 
@@ -119,8 +158,12 @@ describe('adminLight — fonts and radius match web (shared baseline)', () => {
 });
 
 describe('adminDark — coverage and strict subset of adminLight', () => {
-    it('declares 14 dark overrides (fonts + radius inherit from light)', () => {
-        expect(Object.keys(adminDark)).toHaveLength(14);
+    it('declares 22 dark overrides (14 color-* + 8 web brand tokens; fonts + radius inherit)', () => {
+        // 14 core color-* dark overrides + 8 web brand dark overrides
+        // (brand-primary/accent/secondary, muted, info, warning,
+        // warning-foreground, core-foreground). The hospeda-* family is NOT
+        // overridden in dark (it inherits admin-light), matching web-dark.
+        expect(Object.keys(adminDark)).toHaveLength(22);
     });
 
     it('every dark key has a corresponding light declaration', () => {
@@ -167,6 +210,23 @@ describe('adminDark — bg-elevated is neutral[800] (lighter than bg-app)', () =
         const bgApp = adminDark['color-bg-app'] as { l: number };
         const bgElevated = adminDark['color-bg-elevated'] as { l: number };
         expect(bgElevated.l).toBeGreaterThan(bgApp.l);
+    });
+});
+
+describe('adminLight — per-accommodation-type tokens reference base palettes', () => {
+    it.each([
+        ['accommodation-type-hotel', 'var(--palette-accent-500)'],
+        ['accommodation-type-apartment', 'var(--palette-river-500)'],
+        ['accommodation-type-house', 'var(--palette-forest-500)'],
+        ['accommodation-type-country-house', 'var(--palette-teal-500)'],
+        ['accommodation-type-cabin', 'var(--palette-terracotta-500)'],
+        ['accommodation-type-camping', 'var(--palette-sand-500)'],
+        ['accommodation-type-hostel', 'var(--palette-cyan-500)'],
+        ['accommodation-type-room', 'var(--palette-rose-500)'],
+        ['accommodation-type-motel', 'var(--palette-danger-500)'],
+        ['accommodation-type-resort', 'var(--palette-purple-500)']
+    ])('%s = %s (same value web uses → identical cross-app hue)', (key, expected) => {
+        expect(adminLight[key]).toBe(expected);
     });
 });
 

@@ -101,7 +101,8 @@ describe('color exports', () => {
         );
         expect(palettes.river).toBe(river);
         expect(palettes.neutral).toBe(neutral);
-        expect(Object.keys(palettes)).toHaveLength(10);
+        // 5 brand + 4 semantic + 5 accommodation-type + 1 neutral = 15.
+        expect(Object.keys(palettes)).toHaveLength(15);
     });
 
     it('exposes derivation + formatting helpers', () => {
@@ -165,10 +166,16 @@ describe('spacing / radius / shadows / motion / z-index / layout exports', () =>
 
 describe('theme exports', () => {
     it('all four theme records are imported and shaped correctly', () => {
-        expect(Object.keys(webLight)).toHaveLength(145);
+        // 145 web :root tokens + 10 per-accommodation-type tokens = 155.
+        expect(Object.keys(webLight)).toHaveLength(155);
         expect(Object.keys(webDark)).toHaveLength(56);
-        expect(Object.keys(adminLight)).toHaveLength(17);
-        expect(Object.keys(adminDark)).toHaveLength(14);
+        // Admin: 17 core (doc 05 §6.2) + 12 web brand tokens for cross-app
+        // visual mappings (accommodation-type badge SSOT in @repo/icons) + 10
+        // per-accommodation-type tokens (shared verbatim with web-light).
+        expect(Object.keys(adminLight)).toHaveLength(39);
+        // Admin dark: 14 core color-* overrides + 8 web brand dark overrides.
+        // Per-type tokens are NOT redeclared in dark — they inherit via cascade.
+        expect(Object.keys(adminDark)).toHaveLength(22);
     });
 
     it('themes share the Theme contract (no `--` prefix on keys)', () => {

@@ -208,6 +208,41 @@ export const semanticPalettes = { success, warning, danger, info } as const;
 export type SemanticPaletteName = keyof typeof semanticPalettes;
 
 // ============================================================================
+// Accommodation-type palettes — canonical 500 values
+//
+// These five palettes exist purely to give each of the 10 accommodation
+// types its OWN distinct hue. Five of the ten types reuse existing brand /
+// semantic palettes (hotel→accent, apartment→river, house→forest,
+// camping→sand, motel→danger); the remaining five need hues that none of the
+// brand/semantic palettes cover. Canonical 500 values are product-owner
+// approved and tuned to sit alongside the existing palettes' lightness /
+// chroma feel (mid lightness ~0.55-0.65, moderate chroma).
+//
+// They are aggregated SEPARATELY in `accommodationTypePalettes` and then
+// folded into the master `palettes` aggregate so the CSS generator emits a
+// `--palette-<name>-<shade>` ladder for each — which the per-type semantic
+// tokens (`--accommodation-type-<type>`) reference via `var()`.
+// ============================================================================
+
+/** Teal — country houses. Hue 185 (blue-green, distinct from forest 155). */
+export const teal: Palette = deriveShades({ l: 0.6, c: 0.1, h: 185 });
+
+/** Cyan — hostels. Hue 220 (sits between river 259 and teal 185). */
+export const cyan: Palette = deriveShades({ l: 0.65, c: 0.12, h: 220 });
+
+/** Terracotta — cabins. Hue 40 (warm clay, between danger 27 and accent 55). */
+export const terracotta: Palette = deriveShades({ l: 0.58, c: 0.12, h: 40 });
+
+/** Rose — rooms. Hue 350 (pink-red, distinct from danger's red-orange 27). */
+export const rose: Palette = deriveShades({ l: 0.62, c: 0.16, h: 350 });
+
+/** Purple — resorts. Hue 310 (magenta-purple, the only purple in the system). */
+export const purple: Palette = deriveShades({ l: 0.55, c: 0.17, h: 310 });
+
+export const accommodationTypePalettes = { teal, cyan, terracotta, rose, purple } as const;
+export type AccommodationTypePaletteName = keyof typeof accommodationTypePalettes;
+
+// ============================================================================
 // Neutral grays — 10 shades, chroma 0, hue 0
 //
 // Per doc 05 §5.1 — a true achromatic ladder used as the base for
@@ -241,6 +276,7 @@ export const neutral: Palette = Object.freeze({
 export const palettes = {
     ...brandPalettes,
     ...semanticPalettes,
+    ...accommodationTypePalettes,
     neutral
 } as const;
 export type PaletteName = keyof typeof palettes;

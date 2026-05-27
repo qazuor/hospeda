@@ -2,6 +2,7 @@ import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schem
 import {
     AccommodationSchema,
     AccommodationListItemSchema as BaseAccommodationListItemSchema,
+    CityDestinationRefSchema,
     LifecycleStatusEnumSchema,
     ModerationStatusEnumSchema,
     VisibilityEnumSchema,
@@ -30,7 +31,11 @@ export const AccommodationListItemSchema = BaseAccommodationListItemSchema.exten
         // Admin status fields not included in public list schema
         visibility: VisibilityEnumSchema.optional(),
         lifecycleState: LifecycleStatusEnumSchema.optional(),
-        moderationState: ModerationStatusEnumSchema.optional()
+        moderationState: ModerationStatusEnumSchema.optional(),
+        // The admin list API exposes the linked destination as the SPEC-095
+        // `cityDestination` projection (not a `destination` relation), so the
+        // schema must keep it to survive response validation.
+        cityDestination: CityDestinationRefSchema.nullable().optional()
     });
 
 /**

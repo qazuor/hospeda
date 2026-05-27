@@ -139,6 +139,7 @@ export type DataTableColumn<TData> = {
     readonly startVisibleOnTable?: boolean; // Controls initial visibility in table view (default: true)
     readonly startVisibleOnGrid?: boolean; // Controls initial visibility in grid view (default: true)
     readonly columnType?: ColumnType;
+    readonly align?: 'left' | 'right' | 'center';
     readonly badgeOptions?: readonly BadgeOption[];
     readonly linkHandler?: LinkHandler<TData>;
     readonly entityOptions?: EntityOption;
@@ -344,6 +345,15 @@ export const DataTable = <TData,>({
 
     const memoizedData = useMemo(() => data as TData[], [data]);
 
+    const alignClassById = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const col of columns) {
+            if (col.align === 'right') map[col.id] = 'text-right';
+            else if (col.align === 'center') map[col.id] = 'text-center';
+        }
+        return map;
+    }, [columns]);
+
     const table = useReactTable<TData>({
         data: memoizedData,
         columns: internalColumns,
@@ -377,7 +387,10 @@ export const DataTable = <TData,>({
                                         <th
                                             key={header.id}
                                             scope="col"
-                                            className="select-none px-3 py-2 font-medium"
+                                            className={cn(
+                                                'select-none px-3 py-2 font-medium',
+                                                alignClassById[header.column.id]
+                                            )}
                                         >
                                             {canSort ? (
                                                 <button
@@ -444,7 +457,10 @@ export const DataTable = <TData,>({
                                         {row.getVisibleCells().map((cell) => (
                                             <td
                                                 key={cell.id}
-                                                className="px-3 py-2"
+                                                className={cn(
+                                                    'px-3 py-2',
+                                                    alignClassById[cell.column.id]
+                                                )}
                                             >
                                                 {flexRender(
                                                     cell.column.columnDef.cell,

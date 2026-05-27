@@ -43,13 +43,18 @@
  * in Phase 3 T-153-25).
  */
 
+import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
 import {
     type OKLCH,
     accent,
+    brandSecondary,
     danger,
+    forest,
     info,
     neutral,
     river,
+    sand,
+    sky,
     success,
     warning
 } from '../tokens/colors.js';
@@ -59,6 +64,15 @@ import type { Theme } from './types.js';
 
 /** White surface for elevated UI (cards, modals) — not part of neutral. */
 const PURE_WHITE: OKLCH = { l: 1, c: 0, h: 0 };
+
+/**
+ * Hand-tuned web token values that don't map to a palette shade (mirrored from
+ * `web-light.ts`). Re-declared here so the admin scope can render the
+ * accommodation-type badge with the EXACT same colors web uses.
+ */
+const WEB_MUTED: OKLCH = { l: 0.95, c: 0.01, h: 210 };
+const WEB_CORE_FOREGROUND: OKLCH = { l: 0.2, c: 0.02, h: 220 };
+const WEB_WARNING_FOREGROUND: OKLCH = { l: 0.2, c: 0.02, h: 85 };
 
 /**
  * App background: a faintly river-tinted off-white (river hue 259, matching the
@@ -116,5 +130,35 @@ export const adminLight: Theme = {
     // ========================================================================
     // Radius (shared with web — same 0.75rem base)
     // ========================================================================
-    radius: radiusBase
+    radius: radiusBase,
+
+    // ========================================================================
+    // Web brand tokens — exposed in the admin scope so cross-app visual
+    // mappings (e.g. the accommodation-type badge, whose icon + color SSOT
+    // lives in `@repo/icons`) render with the SAME colors in admin as in web.
+    // Values mirror `web-light.ts` exactly. Names match web's CSS var names
+    // (`--brand-accent`, `--hospeda-forest`, …) so the shared scheme strings
+    // (`var(--brand-accent)`, `oklch(from var(--hospeda-forest) …)`) resolve.
+    // ========================================================================
+    'brand-primary': river[500],
+    'brand-accent': accent[500],
+    'brand-secondary': brandSecondary,
+    'hospeda-river': river[500],
+    'hospeda-sky': sky[500],
+    'hospeda-forest': forest[500],
+    'hospeda-sand': sand[500],
+    muted: WEB_MUTED,
+    info: info[500],
+    warning: warning[500],
+    'warning-foreground': WEB_WARNING_FOREGROUND,
+    'core-foreground': WEB_CORE_FOREGROUND,
+
+    // ========================================================================
+    // Accommodation-type per-type tokens — shared verbatim with web-light
+    // (same source constant). Each references its base palette's shade-500
+    // primitive (`--palette-<name>-500`), which is emitted once in `:root`
+    // and theme-independent, so the accommodation-type badge renders with the
+    // SAME hue in admin as in web across light and dark.
+    // ========================================================================
+    ...accommodationTypeTokens
 };

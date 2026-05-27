@@ -44,8 +44,12 @@ export const BadgeCell = ({ value, options }: BadgeCellProps): ReactNode => {
 
 /**
  * Maps BadgeColor enum values to Tailwind CSS classes.
+ *
+ * Exported so inline-editable cells (e.g. the accommodations state-select cell)
+ * can reuse the exact same colored-pill look for their dropdown options without
+ * duplicating the color map.
  */
-function getBadgeColorClasses(color: BadgeColor): string {
+export function getBadgeColorClasses(color: BadgeColor): string {
     switch (color) {
         case BadgeColor.DEFAULT:
             return 'bg-muted text-muted-foreground ring-border';
