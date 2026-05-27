@@ -3,6 +3,7 @@ import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable
 import { createElement } from 'react';
 import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
 import { AccommodationReviewsCell } from '../components/AccommodationReviewsCell';
+import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /**
@@ -31,59 +32,8 @@ export const createAccommodationsColumns = (
         header: t('admin-entities.columns.type'),
         accessorKey: 'type',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'HOTEL',
-                label: t('admin-entities.types.accommodation.hotel'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'HOSTEL',
-                label: t('admin-entities.types.accommodation.hostel'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'APARTMENT',
-                label: t('admin-entities.types.accommodation.apartment'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'HOUSE',
-                label: t('admin-entities.types.accommodation.house'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'COUNTRY_HOUSE',
-                label: t('admin-entities.types.accommodation.countryHouse'),
-                color: BadgeColor.TEAL
-            },
-            {
-                value: 'CABIN',
-                label: t('admin-entities.types.accommodation.cabin'),
-                color: BadgeColor.ORANGE
-            },
-            {
-                value: 'CAMPING',
-                label: t('admin-entities.types.accommodation.camping'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'ROOM',
-                label: t('admin-entities.types.accommodation.room'),
-                color: BadgeColor.PINK
-            },
-            {
-                value: 'MOTEL',
-                label: t('admin-entities.types.accommodation.motel'),
-                color: BadgeColor.INDIGO
-            },
-            {
-                value: 'RESORT',
-                label: t('admin-entities.types.accommodation.resort'),
-                color: BadgeColor.RED
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AccommodationTypeBadge, { row })
     },
     {
         id: 'destination',
