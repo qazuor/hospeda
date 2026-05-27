@@ -16,6 +16,7 @@ related:
   - SPEC-161 (cron run-history — phase 2, feeds ADMIN card D failed/last-run)
   - SPEC-162 (admin audit & security log query — phase 2, feeds SUPER card H)
   - SPEC-163 (Sentry error metrics — phase 2, feeds SUPER card H Sentry slot)
+  - SPEC-164 (admin-billing-super-only — receives the ADMIN billing role-model change extracted from SPEC-155)
 ---
 
 # SPEC-155 — Admin Dashboards V1
@@ -38,10 +39,11 @@ Deliver four per-role dashboard configurations (HOST, EDITOR, ADMIN base, SUPER_
 
 - Widget rendering components plugged into the SPEC-154 config-driven infrastructure.
 - New 🟡 aggregation routes (no DB schema changes) for data that exists but has no suitable endpoint.
-- Two targeted permission changes (EDITOR newsletter grant + ADMIN billing revoke).
+- One targeted permission change (EDITOR newsletter grant).
+- Additive extension of the SPEC-154 widget schema (`onMissing` field + `'checklist'` widget type) required by SPEC-155 dashboard configs.
 - Deferred placeholders for 🔴 phase-2 data points, so every card renders correctly today and upgrades automatically when the phase-2 backend spec ships.
 
-Success criteria: every role sees only data relevant to their scope; no global KPI leaks to HOST; existing 6 ADMIN KPIs pass parity; permission model accurately reflects who owns billing data.
+Success criteria: every role sees only data relevant to their scope; no global KPI leaks to HOST; existing 6 ADMIN KPIs pass parity; SUPER_ADMIN-only cards are hidden from ADMIN by config placement, not by a permission revoke (the revoke belongs to SPEC-164).
 
 ## 3. Scope
 
@@ -91,10 +93,12 @@ Success criteria: every role sees only data relevant to their scope; no global K
 
 **SUPER_ADMIN-only section (cards H–I, gated by `onMissing: 'hide'`)**
 
+Cards H and I are placed exclusively in the `superAdminOnlySection` config. ADMIN does not see them because they are absent from `adminBaseDashboard` — this is pure **config placement gating**, not a permission revoke. ADMIN currently retains the 6 real billing permissions (`BILLING_READ_ALL`, `BILLING_MANAGE`, `MANAGE_SUBSCRIPTIONS`, `BILLING_PROMO_CODE_READ`, `BILLING_PROMO_CODE_MANAGE`, `BILLING_METRICS_READ`); removing them from ADMIN is a separate role-model change tracked in SPEC-164.
+
 | Card | Summary | Backend |
 |------|---------|:---:|
 | H — Audit Logs | Admin actions audit log deferred 🔴→SPEC-162; security log deferred 🔴→SPEC-162; Sentry errors deferred 🔴→SPEC-163 | 🔴 |
-| I — Estadísticas de billing | Active subscriptions + MRR + monthly revenue 12m chart + ARPU + churn + subscription breakdown | 🟢 |
+| I — Estadísticas de billing | Active subscriptions + MRR + monthly revenue 12m chart + ARPU + churn + subscription breakdown. Gated to SUPER-only by `onMissing: 'hide'` in the config; no permission seed change required for the dashboard to be correct. | 🟢 |
 
 ### IN — 🟡 aggregation routes (new route, no DB change)
 
@@ -112,19 +116,25 @@ Each item below requires a new API route but no schema migration:
 
 > **Audit-log query endpoint — moved to SPEC-162 (NOT in 155).** 03c is internally inconsistent on this (🟡 in the card detail at line 258, 🔴 HIGH "DB change likely" in the planning table at line 275). The current audit infrastructure (`audit-logger.ts` / `AuditEventType`) is logger-only with no queryable store, so a query endpoint requires new backend → 🔴, deferred to SPEC-162. Card H therefore renders all three slots (audit log, security log, Sentry) as deferred placeholders until SPEC-162/163 ship.
 
-### IN — Permission changes (seed changes on `packages/seed/src/required/rolePermissions.seed.ts`)
+### IN — Permission change (seed change on `packages/seed/src/required/rolePermissions.seed.ts`)
 
-**Change 1 — GRANT to EDITOR**:
+**GRANT to EDITOR**:
 - `NEWSLETTER_CAMPAIGN_VIEW`
 - `NEWSLETTER_CAMPAIGN_WRITE`
 - `NEWSLETTER_SUBSCRIBER_VIEW`
 - Do NOT grant `NEWSLETTER_CAMPAIGN_SEND` — sending stays admin-only ("editor drafts, admin sends").
 
-**Change 2 — REVOKE from ADMIN**:
-- `BILLING_METRICS_VIEW`
-- `SUBSCRIPTION_VIEW_ALL`
-- Billing ownership becomes SUPER_ADMIN-only.
-- ⚠️ **Wide blast radius**: revoking these permissions removes ADMIN from the WHOLE billing section of the panel, not just the dashboard card. Before the seed change ships, every admin billing route and page must be audited to confirm none hard-assumes ADMIN access (ADMIN-Q2 from 03c). This audit is a blocker task.
+> **ADMIN billing revoke is NOT in SPEC-155.** T-002 (the blast-radius audit, already completed) found that the spec-named permissions `BILLING_METRICS_VIEW` and `SUBSCRIPTION_VIEW_ALL` do not exist in `PermissionEnum`. The real ADMIN billing perm set is 6 entries (`BILLING_READ_ALL`, `BILLING_MANAGE`, `MANAGE_SUBSCRIPTIONS`, `BILLING_PROMO_CODE_READ`, `BILLING_PROMO_CODE_MANAGE`, `BILLING_METRICS_READ`). A clean revoke also requires changes to the SPEC-154 IA config and 14 admin billing page route guards — scope far beyond dashboards. This work is extracted to **SPEC-164 (admin-billing-super-only)**.
+
+### IN — SPEC-154 schema extension (additive)
+
+T-001 verification found two gaps in the SPEC-154 `WidgetSchema` that SPEC-155 requires:
+
+1. **`onMissing` field on `WidgetSchema`**: `OnMissingSchema` exists for sidebar items but is not present on `WidgetSchema`. SPEC-155 needs `onMissing: 'hide'` to gate the SUPER-only cards (AC-4 / AC-5). Extension: add optional `onMissing` field to `WidgetSchema`, reusing `OnMissingSchema`, with default `'disable'`.
+2. **`'checklist'` widget type**: `WidgetTypeSchema` currently accepts `kpi | list | chart | feed | callout | shortcut | map | calendar`. HOST cards D/F and EDITOR card G require a checklist renderer. Extension: add `'checklist'` to `WidgetTypeSchema`.
+3. **Stub reconciliation**: the existing SPEC-154 stubs define `adminDashboard` and `superAdminDashboard` as separate top-level objects. SPEC-155 requires a `adminBaseDashboard` (cards A–G, shared) + `superAdminOnlySection` (cards H–I, `onMissing: 'hide'`) model. Reconcile the stubs to this structure as part of the dashboard config work.
+
+These are **additive changes** to the SPEC-154 config schema — no existing configs are broken. The schema lives in `apps/admin/src/config/ia/schema.ts`. SPEC-154 is already merged; the extension ships within SPEC-155 as a follow-on commit to that file, coordinated with the SPEC-154 owner.
 
 ### IN — Computable checklists (client-side, no new endpoints)
 
@@ -144,6 +154,7 @@ Each item below requires a new API route but no schema migration:
 
 ### OUT of SPEC-155 (explicit exclusions)
 
+- **SPEC-164** — ADMIN billing role-model change (admin-billing-super-only). T-002 audit found the spec-named permissions were fictional and that a clean revoke requires seed changes + SPEC-154 IA config edits (`roles/admin.ts` removing 'comercial', `sidebars.ts` `onMissing:'hide'`, re-gating billing routes) + 14 admin billing page route guards. The dashboard does not require this revoke: card I is config-gated to the SUPER-only section; ADMIN never sees it regardless of which permissions ADMIN holds. SPEC-164 owns the full role-model change.
 - **SPEC-159** — cross-entity view tracking (accommodation views / post views / event views). Feeds HOST card G views slot + EDITOR cards E/F views slots. 🔴 Architectural decision pending (own DB table vs PostHog API). Those slots render a deferred placeholder until SPEC-159 ships.
 - **SPEC-160** — newsletter open/click-rate tracking (email-open pixel). Feeds EDITOR card C open-rate slot. 🔴 Not stored today.
 - **SPEC-161** — cron run-history storage (per-run result, new table). Feeds ADMIN card D failed/last-run slot. 🔴 Needs new DB table.
@@ -159,65 +170,68 @@ Each item below requires a new API route but no schema migration:
 
 ## 4. Acceptance criteria
 
-### A. Config validity
+### A. SPEC-154 schema extension
 
-- AC-1: Four dashboard config objects exist: `hostDashboard` (7 cards), `editorDashboard` (8 cards), `adminBaseDashboard` (7 cards), `superAdminOnlySection` (2 cards). Card counts match 03c exactly.
-- AC-2: Every card config passes SPEC-154 Zod schema validation: unique `id`, valid `type`, tri-locale `label` (es/en/pt), valid `scope`.
-- AC-3: Every `source` ID in every card maps to a registered entry in `dashboard-sources.ts`.
-- AC-4: SUPER_ADMIN-only cards (H and I) are gated with `onMissing: 'hide'` and the appropriate permission check (`AUDIT_LOG_VIEW` for H, `BILLING_METRICS_VIEW` for I).
-- AC-5: ADMIN role resolves to `adminBaseDashboard` (7 cards). SUPER_ADMIN role resolves to `adminBaseDashboard` + `superAdminOnlySection` (9 cards total).
+- AC-1: `WidgetSchema` in `apps/admin/src/config/ia/schema.ts` accepts an optional `onMissing` field using `OnMissingSchema` (values: `'hide' | 'disable'`); default is `'disable'`. Existing configs that omit `onMissing` continue to pass Zod validation without change.
+- AC-2: `WidgetTypeSchema` accepts `'checklist'` as a valid widget type in addition to the existing types.
+- AC-3: The CI Zod schema validation suite (from SPEC-154) continues to pass after the schema extension is applied.
 
-### B. Widget rendering
+### B. Config validity
 
-- AC-6: All widget type renderers are visually consistent (same skeleton loader, same padding, same card header style, same error callout).
-- AC-7: KPI widgets display value + optional delta (up/down icon) + optional unit prefix/suffix.
-- AC-8: List widgets display top-N items with optional `actionPerItem` rendered as button/link per item.
-- AC-9: Chart widgets render line/bar/area per `config.chartType`.
-- AC-10: Checklist widgets render dynamic items sourced from the loaded entity object with visual completeness indicator.
-- AC-11: Deferred-placeholder renderer displays a "coming soon" visual for any 🔴 data slot, without erroring, without blocking other slots in the same card.
-- AC-12: Empty states use `config.emptyState` (variant + i18n message). Loading shows skeleton. Error shows red callout with retry.
+- AC-4: Four dashboard config objects exist: `hostDashboard` (7 cards), `editorDashboard` (8 cards), `adminBaseDashboard` (7 cards), `superAdminOnlySection` (2 cards). Card counts match 03c exactly.
+- AC-5: Every card config passes the extended SPEC-154 Zod schema validation: unique `id`, valid `type`, tri-locale `label` (es/en/pt), valid `scope`.
+- AC-6: Every `source` ID in every card maps to a registered entry in `dashboard-sources.ts`.
+- AC-7: SUPER_ADMIN-only cards (H and I) are placed exclusively in `superAdminOnlySection` and are configured with `onMissing: 'hide'`.
+- AC-8: ADMIN role resolves to `adminBaseDashboard` (7 cards). SUPER_ADMIN role resolves to `adminBaseDashboard` + `superAdminOnlySection` (9 cards total).
 
-### C. Data sources and scoping
+### C. Widget rendering
 
-- AC-13: `resolveDataSource(sourceId, ctx)` maps every source ID in the config to an API call returning the documented shape.
-- AC-14: HOST-scoped sources automatically inject `ownerId={currentUserId}` on every request. A HOST user's query results NEVER include data belonging to other owners.
-- AC-15: Given: a HOST user with 2 accommodations. When: card D loads. Then: an accommodation selector dropdown is displayed and selecting each listing updates the checklist to that listing's data.
-- AC-16: All TanStack queries use 60s `staleTime`, refetch-on-focus enabled, `queryKey` includes role and scope identifiers.
+- AC-9: All widget type renderers are visually consistent (same skeleton loader, same padding, same card header style, same error callout).
+- AC-10: KPI widgets display value + optional delta (up/down icon) + optional unit prefix/suffix.
+- AC-11: List widgets display top-N items with optional `actionPerItem` rendered as button/link per item.
+- AC-12: Chart widgets render line/bar/area per `config.chartType`.
+- AC-13: Checklist widgets render dynamic items sourced from the loaded entity object with visual completeness indicator.
+- AC-14: Deferred-placeholder renderer displays a "coming soon" visual for any 🔴 data slot, without erroring, without blocking other slots in the same card.
+- AC-15: Empty states use `config.emptyState` (variant + i18n message). Loading shows skeleton. Error shows red callout with retry.
 
-### D. 🟡 aggregation routes
+### D. Data sources and scoping
+
+- AC-16: `resolveDataSource(sourceId, ctx)` maps every source ID in the config to an API call returning the documented shape.
+- AC-17: HOST-scoped sources automatically inject `ownerId={currentUserId}` on every request. A HOST user's query results NEVER include data belonging to other owners.
+- AC-18: Given: a HOST user with 2 accommodations. When: card D loads. Then: an accommodation selector dropdown is displayed and selecting each listing updates the checklist to that listing's data.
+- AC-19: All TanStack queries use 60s `staleTime`, refetch-on-focus enabled, `queryKey` includes role and scope identifiers.
+
+### E. 🟡 aggregation routes
 
 For each item, the route exists in the API, is covered by an integration test, and returns the documented shape:
 
-- AC-17: `GET /api/v1/protected/host/favorites/breakdown` returns `[{ accommodationId, slug, bookmarkCount }]` scoped to the authenticated host.
-- AC-18: `GET /api/v1/protected/host/conversations/response-rate` returns `{ responseRatePct: number, avgResponseTimeMinutes: number }` scoped to the authenticated host.
-- AC-19: `GET /api/v1/admin/newsletter/subscribers/by-preference` returns `{ OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number }` (requires `NEWSLETTER_SUBSCRIBER_VIEW`).
-- AC-20: `GET /api/v1/admin/posts/trend` returns `[{ month: 'YYYY-MM', count: number }]` for the last 12 months.
-- AC-21: A comment-listing endpoint exists (or is built) that returns recent comments across posts and events, sorted by `createdAt` desc; requires `POST_COMMENT_VIEW` and `EVENT_COMMENT_VIEW`.
-- AC-22: `GET /api/v1/admin/moderation/pending-count` returns `{ total: number, byEntity: { accommodations, destinations, posts, events } }` (requires `MODERATION_REVIEW`).
-- AC-23: `GET /api/v1/admin/reviews/pending-count` returns `{ count: number }` (requires `REVIEW_MODERATE`).
-- AC-24: `GET /api/v1/admin/users/stats` returns `{ byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] }` (requires `USER_VIEW_ALL`).
-- AC-25: Maintenance-mode status is exposed as a readable value via an existing or new endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission.
+- AC-20: `GET /api/v1/protected/host/favorites/breakdown` returns `[{ accommodationId, slug, bookmarkCount }]` scoped to the authenticated host.
+- AC-21: `GET /api/v1/protected/host/conversations/response-rate` returns `{ responseRatePct: number, avgResponseTimeMinutes: number }` scoped to the authenticated host.
+- AC-22: `GET /api/v1/admin/newsletter/subscribers/by-preference` returns `{ OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number }` (requires `NEWSLETTER_SUBSCRIBER_VIEW`).
+- AC-23: `GET /api/v1/admin/posts/trend` returns `[{ month: 'YYYY-MM', count: number }]` for the last 12 months.
+- AC-24: A comment-listing endpoint exists (or is built) that returns recent comments across posts and events, sorted by `createdAt` desc; requires `POST_COMMENT_VIEW` and `EVENT_COMMENT_VIEW`.
+- AC-25: `GET /api/v1/admin/moderation/pending-count` returns `{ total: number, byEntity: { accommodations, destinations, posts, events } }` (requires `MODERATION_REVIEW`).
+- AC-26: `GET /api/v1/admin/reviews/pending-count` returns `{ count: number }` (requires `REVIEW_MODERATE`).
+- AC-27: `GET /api/v1/admin/users/stats` returns `{ byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] }` (requires `USER_VIEW_ALL`).
+- AC-28: Maintenance-mode status is exposed as a readable value via an existing or new endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission.
 
-### E. Permission changes
+### F. Permission change (EDITOR grant)
 
-- AC-26: Given: a user with role EDITOR. When: they access the newsletter campaigns list. Then: they can view and create/edit draft campaigns; the "Send" action is not available to them.
-- AC-27: Given: a user with role EDITOR. When: they access the newsletter subscribers list. Then: they can view the list.
-- AC-28: Given: a user with role ADMIN (not SUPER_ADMIN). When: they attempt to access any billing route (metrics, subscriptions, plans). Then: they receive a 403 response.
-- AC-29: Given: a user with role ADMIN. When: the admin billing section renders. Then: no page errors or 500s occur — the section gracefully reflects the permission removal.
-- AC-30: Given: a user with role SUPER_ADMIN. When: they access billing metrics. Then: access is granted and data loads correctly.
+- AC-29: Given: a user with role EDITOR. When: they access the newsletter campaigns list. Then: they can view and create/edit draft campaigns; the "Send" action is not available to them.
+- AC-30: Given: a user with role EDITOR. When: they access the newsletter subscribers list. Then: they can view the list.
 
-### F. SUPER_ADMIN-only gating
+### G. SUPER_ADMIN-only gating
 
-- AC-31: Given: a user with role ADMIN. When: the dashboard renders. Then: cards H (Audit Logs) and I (Estadísticas de billing) are not visible.
+- AC-31: Given: a user with role ADMIN. When: the dashboard renders. Then: cards H (Audit Logs) and I (Estadísticas de billing) are not visible — they are absent from `adminBaseDashboard` by config, not by permission check.
 - AC-32: Given: a user with role SUPER_ADMIN. When: the dashboard renders. Then: cards A–I are all visible (base 7 + super 2 = 9).
 
-### G. Refresh and performance
+### H. Refresh and performance
 
 - AC-33: Global "Actualizar" button invalidates all dashboard queries for the current role.
 - AC-34: All dashboard queries fire in parallel (no waterfall). Dashboard initial render completes in < 500ms on a warm cache.
 - AC-35: Multiple cards querying the same underlying entity (e.g., ADMIN card A accommodations count + card B accommodations list) share a TanStack Query key prefix and do not make duplicate requests.
 
-### H. Migration parity
+### I. Migration parity
 
 - AC-36: Existing `apps/admin/src/routes/_authed/dashboard.tsx` is replaced by the new per-role renderer consuming each role's dashboard config.
 - AC-37: The 6 existing ADMIN KPIs (accommodations, destinations, events, posts, attractions, users) return the same values under the new renderer as under the old `useDashboardStats()`.
@@ -225,50 +239,56 @@ For each item, the route exists in the API, is covered by an integration test, a
 
 ## 5. Technical approach
 
-1. **SPEC-154 dependency**: Confirm widget schema (`DashboardCardConfig`, `WidgetConfig`, section renderer) is available. SPEC-155 does not duplicate it.
-2. **🟡 aggregation routes first**: build and test each new API route in isolation before wiring the frontend. Each route is independently testable.
-3. **Permission changes**: the ADMIN billing revoke requires a dedicated blast-radius audit task that BLOCKS the seed change commit. The EDITOR newsletter grant is low-risk and can ship independently.
-4. **Widget renderers**: implement the renderer components receiving `{ card: DashboardCardConfig, resolved: ResolvedData }`. Compose multi-slot cards (e.g., card G with 🟢 + deferred 🔴 slots) by rendering each slot independently.
-5. **Deferred-placeholder component**: a single reusable `DeferredWidget` component that renders a "coming soon" visual for any 🔴 slot. Accepts a `phaseSpec` prop for display text.
-6. **Source resolver registry**: `dashboard-sources.ts` maps source IDs to TanStack Query options (key factory + queryFn). Role context (userId, permissions) injected via React context — not prop-drilled.
-7. **Dashboard configs**: populate `dashboards.ts` after renderers and resolver are in place. Config is pure data; validate against SPEC-154 schema at CI time.
-8. **Migration**: old dashboard page → new renderer. Run parity assertion against staging API for the 6 ADMIN KPIs before deleting `useDashboardStats()`.
-9. **Tests**: unit per renderer, integration per aggregation route, config validation, scope isolation.
+1. **SPEC-154 schema extension first**: extend `WidgetSchema` with `onMissing` + add `'checklist'` to `WidgetTypeSchema` + reconcile stubs before any dashboard config or renderer work. This is the schema foundation everything else depends on.
+2. **SPEC-154 dependency**: confirm `DashboardCardConfig`, section renderer, and the extended widget schema are available. SPEC-155 does not duplicate SPEC-154 internals.
+3. **🟡 aggregation routes**: build and test each new API route in isolation before wiring the frontend. Each route is independently testable.
+4. **Permission change**: the EDITOR newsletter grant is low-risk and can ship independently once T-013 verifies the permission names exist in `PermissionEnum`. No blast-radius concern.
+5. **Widget renderers**: implement renderer components receiving `{ card: DashboardCardConfig, resolved: ResolvedData }`. Compose multi-slot cards (e.g., card G with 🟢 + deferred 🔴 slots) by rendering each slot independently.
+6. **Deferred-placeholder component**: a single reusable `DeferredWidget` component that renders a "coming soon" visual for any 🔴 slot. Accepts a `phaseSpec` prop for display text.
+7. **Source resolver registry**: `dashboard-sources.ts` maps source IDs to TanStack Query options (key factory + queryFn). Role context (userId, permissions) injected via React context — not prop-drilled.
+8. **Dashboard configs**: populate `dashboards.ts` after renderers and resolver are in place. Config is pure data; validate against the extended SPEC-154 schema at CI time.
+9. **Migration**: old dashboard page → new renderer. Run parity assertion against staging API for the 6 ADMIN KPIs before deleting `useDashboardStats()`.
+10. **Tests**: unit per renderer, integration per aggregation route, config validation, scope isolation.
 
 ## 6. Task breakdown (atomic, complexity ≤ 4)
 
-Grouped by phase. Phase ordering reflects dependency: backend before frontend; blast-radius audit before seed change.
+Grouped by phase. Phase ordering reflects dependency: schema extension before configs; backend before frontend; permission name verification before seed change.
 
 ### Phase 0 — Pre-work (blockers)
 
 | # | Task | Complexity |
 |---|------|:---:|
-| T-001 | Confirm SPEC-154 exports: verify `DashboardCardConfig`, widget Zod schema, section renderer, and `onMissing: 'hide'` gating are available and match what SPEC-155 needs | 1 |
-| T-002 | **ADMIN billing blast-radius audit**: enumerate every admin billing route and page; confirm none hard-checks for ADMIN role instead of `BILLING_METRICS_VIEW` / `SUBSCRIPTION_VIEW_ALL`; produce written finding (BLOCKS T-015) | 3 |
+| T-001 | Confirm SPEC-154 exports: verify `DashboardCardConfig`, widget Zod schema, and section renderer are available; identify the two schema gaps (`onMissing` missing from `WidgetSchema`, `'checklist'` missing from `WidgetTypeSchema`) and the stub reconciliation needed — document findings to unblock T-002/T-003. **COMPLETED**: gaps confirmed, motivating Phase 0.5 tasks. | 1 |
+| T-002 | **ADMIN billing blast-radius audit**: enumerate every admin billing route and page; verify the real billing PermissionEnum entries; produce written finding. **COMPLETED**: fictional perm names confirmed; 6 real perms identified; blast-radius scope extracted to SPEC-164. No seed change in SPEC-155. | 3 |
+
+### Phase 0.5 — SPEC-154 schema extension (unblocks Phases 3–5)
+
+| # | Task | Complexity |
+|---|------|:---:|
+| T-003 | Extend `WidgetSchema` in `apps/admin/src/config/ia/schema.ts`: add optional `onMissing` field reusing `OnMissingSchema` (default `'disable'`); add `'checklist'` to `WidgetTypeSchema`; update Zod tests to assert both additions are valid and existing configs are unaffected | 2 |
+| T-004 | Reconcile `adminDashboard` / `superAdminDashboard` stubs in SPEC-154 into the `adminBaseDashboard` (cards A–G) + `superAdminOnlySection` (cards H–I, `onMissing: 'hide'`) model; update any existing stub references across `apps/admin/src/config/ia/` | 2 |
 
 ### Phase 1 — 🟡 Aggregation routes (backend)
 
 | # | Task | Complexity |
 |---|------|:---:|
-| T-003 | `GET /api/v1/protected/host/favorites/breakdown` — per-accommodation bookmark count scoped to authenticated host (uses existing `countBookmarksForEntity()`) | 2 |
-| T-004 | `GET /api/v1/protected/host/conversations/response-rate` — aggregate `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` scoped to `ownerId`; return `{ responseRatePct, avgResponseTimeMinutes }` | 3 |
-| T-005 | `GET /api/v1/admin/newsletter/subscribers/by-preference` — aggregate `preferences` JSONB for active subscribers; return counts for OFFERS/EVENTS/GUIDES/PRODUCT_NEWS | 3 |
-| T-006 | `GET /api/v1/admin/posts/trend` — date-grouped `createdAt` aggregation, last 12 months; return `[{ month, count }]` | 2 |
-| T-007 | Recent-comments listing endpoint — verify `GET /api/v1/admin/comments` exists or build it (posts + events, `sort=created_at_desc`, `pageSize=10`) | 2 |
-| T-008 | `GET /api/v1/admin/moderation/pending-count` — unified count across accommodations, destinations, posts, events where `moderationState=PENDING`; return `{ total, byEntity }` | 3 |
-| T-009 | `GET /api/v1/admin/reviews/pending-count` — count reviews with `moderationState=PENDING`; return `{ count }` | 2 |
-| T-010 | `GET /api/v1/admin/users/stats` — users by role + new-users trend (last 12 months date-grouped); return `{ byRole, newUsersTrend }` | 3 |
-| T-011 | Maintenance-mode readable flag — confirm or build endpoint exposing `maintenanceMode` boolean (requires `SYSTEM_MAINTENANCE_MODE` permission) | 2 |
-| T-012 | Integration tests for all 🟡 routes (T-003 through T-011) — one test file per route asserting shape, auth, and scope isolation | 4 |
+| T-005 | `GET /api/v1/protected/host/favorites/breakdown` — per-accommodation bookmark count scoped to authenticated host (uses existing `countBookmarksForEntity()`) | 2 |
+| T-006 | `GET /api/v1/protected/host/conversations/response-rate` — aggregate `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` scoped to `ownerId`; return `{ responseRatePct, avgResponseTimeMinutes }` | 3 |
+| T-007 | `GET /api/v1/admin/newsletter/subscribers/by-preference` — aggregate `preferences` JSONB for active subscribers; return counts for OFFERS/EVENTS/GUIDES/PRODUCT_NEWS | 3 |
+| T-008 | `GET /api/v1/admin/posts/trend` — date-grouped `createdAt` aggregation, last 12 months; return `[{ month, count }]` | 2 |
+| T-009 | Recent-comments listing endpoint — verify `GET /api/v1/admin/comments` exists or build it (posts + events, `sort=created_at_desc`, `pageSize=10`) | 2 |
+| T-010 | `GET /api/v1/admin/moderation/pending-count` — unified count across accommodations, destinations, posts, events where `moderationState=PENDING`; return `{ total, byEntity }` | 3 |
+| T-011 | `GET /api/v1/admin/reviews/pending-count` — count reviews with `moderationState=PENDING`; return `{ count }` | 2 |
+| T-012 | `GET /api/v1/admin/users/stats` — users by role + new-users trend (last 12 months date-grouped); return `{ byRole, newUsersTrend }` | 3 |
+| T-013 | Maintenance-mode readable flag — confirm or build endpoint exposing `maintenanceMode` boolean (requires `SYSTEM_MAINTENANCE_MODE` permission) | 2 |
+| T-014 | Integration tests for all 🟡 routes (T-005 through T-013) — one test file per route asserting shape, auth, and scope isolation | 4 |
 
-### Phase 2 — Permission changes
+### Phase 2 — Permission change (EDITOR grant)
 
 | # | Task | Complexity |
 |---|------|:---:|
-| T-013 | Verify EDITOR newsletter grant — confirm `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, `NEWSLETTER_SUBSCRIBER_VIEW` are defined in `packages/schemas/src/enums/permission.enum.ts` | 1 |
-| T-014 | Seed change: add `NEWSLETTER_CAMPAIGN_VIEW` + `NEWSLETTER_CAMPAIGN_WRITE` + `NEWSLETTER_SUBSCRIBER_VIEW` to EDITOR role in `rolePermissions.seed.ts`; add test asserting EDITOR has these 3 and does NOT have `NEWSLETTER_CAMPAIGN_SEND` | 2 |
-| T-015 | Seed change: revoke `BILLING_METRICS_VIEW` + `SUBSCRIPTION_VIEW_ALL` from ADMIN role in `rolePermissions.seed.ts` (BLOCKED by T-002 blast-radius audit passing); add tests asserting ADMIN lacks both and SUPER_ADMIN retains them | 3 |
-| T-016 | Verify admin billing UI graceful degradation — after T-015, test that admin billing pages return 403 cleanly with no 500s or unhandled errors | 2 |
+| T-015 | Verify EDITOR newsletter grant — confirm `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, `NEWSLETTER_SUBSCRIBER_VIEW` exist in `packages/schemas/src/enums/permission.enum.ts`; flag any missing name before proceeding (BLOCKS T-016) | 1 |
+| T-016 | Seed change: add `NEWSLETTER_CAMPAIGN_VIEW` + `NEWSLETTER_CAMPAIGN_WRITE` + `NEWSLETTER_SUBSCRIBER_VIEW` to EDITOR role in `rolePermissions.seed.ts`; add test asserting EDITOR has these 3 and does NOT have `NEWSLETTER_CAMPAIGN_SEND` (BLOCKED by T-015) | 2 |
 
 ### Phase 3 — Frontend infrastructure
 
@@ -299,8 +319,8 @@ Grouped by phase. Phase ordering reflects dependency: backend before frontend; b
 | T-029 | `hostDashboard` config — 7 cards (A–G) with source IDs, tri-locale labels, scope annotations | 3 |
 | T-030 | `editorDashboard` config — 8 cards (A–H) with source IDs, tri-locale labels | 3 |
 | T-031 | `adminBaseDashboard` config — 7 cards (A–G) with source IDs, tri-locale labels | 3 |
-| T-032 | `superAdminOnlySection` config — 2 cards (H–I) with `onMissing: 'hide'` permission gates | 2 |
-| T-033 | CI config validation test — vitest suite asserting all 4 configs pass SPEC-154 Zod schema and card counts match spec (HOST=7, EDITOR=8, ADMIN-base=7, SUPER-only=2) | 2 |
+| T-032 | `superAdminOnlySection` config — 2 cards (H–I) with `onMissing: 'hide'` | 2 |
+| T-033 | CI config validation test — vitest suite asserting all 4 configs pass the extended SPEC-154 Zod schema and card counts match spec (HOST=7, EDITOR=8, ADMIN-base=7, SUPER-only=2) | 2 |
 
 ### Phase 6 — Dashboard renderer and migration
 
@@ -308,7 +328,7 @@ Grouped by phase. Phase ordering reflects dependency: backend before frontend; b
 |---|------|:---:|
 | T-034 | Dashboard renderer component — reads role's resolved config(s), fires all source queries in parallel, dispatches to widget type renderers; includes "Actualizar" button (invalidates `['dashboard', role]`) | 3 |
 | T-035 | Dashboard page migration — replace `apps/admin/src/routes/_authed/dashboard.tsx` to consume the per-role renderer; keep old `useDashboardStats()` path active until parity confirmed | 2 |
-| T-036 | Parity verification — integration test asserting the 6 ADMIN KPI values from the new renderer match the old `useDashboardStats()` on a seeded DB | 3 |
+| T-036 | Parity verification — integration test asserting the 6 ADMIN KPI values from the new renderer match the old `useDashboardStats()` on a seeded DB (BLOCKS T-037) | 3 |
 | T-037 | Delete `useDashboardStats()` after T-036 passes; confirm no other consumer references it | 1 |
 
 ### Phase 7 — Tests and hardening
@@ -316,36 +336,43 @@ Grouped by phase. Phase ordering reflects dependency: backend before frontend; b
 | # | Task | Complexity |
 |---|------|:---:|
 | T-038 | HOST scope isolation tests — assert `ownerId` injected on all HOST-scoped queries; assert no global count leaks when two HOST users have different accommodations | 3 |
-| T-039 | SUPER gating tests — assert ADMIN sees 7 cards; assert SUPER_ADMIN sees 9 cards; assert toggling permission renders/hides super section correctly | 2 |
+| T-039 | SUPER gating tests — assert ADMIN sees 7 cards; assert SUPER_ADMIN sees 9 cards; assert `onMissing: 'hide'` hides super section for ADMIN | 2 |
 | T-040 | Performance baseline — assert all dashboard queries fire in parallel (no waterfall); assert initial render < 500ms on warm cache | 2 |
 | T-041 | Deferred-placeholder rendering tests — assert each 🔴 slot renders `DeferredWidget` without errors; assert remaining 🟢/🟡 slots in the same card are unaffected | 2 |
 
-**Total estimated tasks**: 41. Average complexity ~2.4.
+**Total estimated tasks**: 41 (T-001..T-041). Two tasks completed (T-001, T-002); two new tasks added for Phase 0.5 schema extension; two billing-revoke tasks removed (old T-015/T-016). Average complexity ~2.4.
+
+**Hard-gate dependencies**:
+- T-003 and T-004 (schema extension) BLOCK Phases 3–5 (config validation requires the extended schema).
+- T-015 (permission name verification) BLOCKS T-016 (seed change).
+- T-036 (parity verification) BLOCKS T-037 (delete old hook).
 
 ## 7. Risks
 
 | Risk | Likelihood | Mitigation |
 |------|:---:|------|
-| ADMIN billing revoke blast radius — existing admin billing pages 500 or behave unexpectedly after `BILLING_METRICS_VIEW` + `SUBSCRIPTION_VIEW_ALL` are removed from ADMIN | High | T-002 explicit blast-radius audit task BLOCKS T-015 seed change. T-016 verifies graceful degradation post-change. |
-| HOST ownerId leak — aggregation routes accidentally return global counts instead of host-scoped | Medium | T-039 scope isolation tests explicitly assert per-user data boundaries. Each 🟡 HOST route receives `ownerId` from auth context, not from query params. |
-| 🟡 aggregation route shape mismatch — newly built endpoint returns a different structure than the dashboard source resolver expects | Medium | Each 🟡 route has a defined return shape in §4 ACs. T-013 integration tests verify shape before frontend wires it. |
-| SPEC-154 schema gap — `onMissing: 'hide'` gating or multi-slot card config may not be expressible in the current SPEC-154 schema | Medium | T-001 pre-work task confirms SPEC-154 exports match SPEC-155 needs before any implementation starts. If gap found, coordinate with SPEC-154 owner to extend schema. |
+| Permission names not in PermissionEnum — T-002 already found that the spec-named billing perms (`BILLING_METRICS_VIEW`, `SUBSCRIPTION_VIEW_ALL`) do not exist. The same could apply to EDITOR newsletter perms. | Medium | T-015 explicitly verifies every permission name against `packages/schemas/src/enums/permission.enum.ts` before the seed change (T-016) runs. Any missing name is flagged and the seed change is blocked until resolved. |
+| HOST ownerId leak — aggregation routes accidentally return global counts instead of host-scoped | Medium | T-038 scope isolation tests explicitly assert per-user data boundaries. Each 🟡 HOST route receives `ownerId` from auth context, not from query params. |
+| 🟡 aggregation route shape mismatch — newly built endpoint returns a different structure than the dashboard source resolver expects | Medium | Each 🟡 route has a defined return shape in §4 ACs. T-014 integration tests verify shape before frontend wires it. |
+| SPEC-154 schema extension breaks existing configs — adding `onMissing` and `'checklist'` could accidentally invalidate configs that omit `onMissing` | Low-Medium | `onMissing` is optional with a default — no existing config is required to add it. T-003 includes a regression test asserting existing configs still pass. |
 | Deferred placeholder UX — partial cards (some slots live, some deferred) may confuse users if not clearly communicated | Low-Medium | `DeferredWidget` uses unambiguous "coming soon" language + links to what SPEC will unlock it. Design reviewed before T-035. |
-| Dashboard query waterfall — 7–9 parallel queries may create perceived latency | Low | TanStack Query parallel firing + warm cache target < 500ms (T-041). Add Suspense boundaries per card to prevent whole-dashboard block. |
-| Config validation drift — dashboard configs pass type-check but fail at runtime due to Zod schema mismatch | Low | T-034 CI validation suite catches this on every PR. |
+| Dashboard query waterfall — 7–9 parallel queries may create perceived latency | Low | TanStack Query parallel firing + warm cache target < 500ms (T-040). Add Suspense boundaries per card to prevent whole-dashboard block. |
+| Config validation drift — dashboard configs pass type-check but fail at runtime due to Zod schema mismatch | Low | T-033 CI validation suite catches this on every PR. |
 
 ## 8. Rollback plan
 
-- **Pre-merge**: full per-role visual review + integration tests green + parity confirmed (T-037).
+- **Pre-merge**: full per-role visual review + integration tests green + parity confirmed (T-036).
 - **Post-merge — dashboard renderer**: revert `dashboard.tsx` to restore old `useDashboardStats()` path (single file change).
-- **Post-merge — permission changes**: revert the seed change commit and re-run seed. Blast-radius audit (T-002) and graceful degradation test (T-017) reduce the probability of needing this.
+- **Post-merge — EDITOR permission grant**: revert the seed change commit and re-run seed. T-015 name-verification reduces the probability of needing this.
+- **Post-merge — schema extension**: the `onMissing` field is optional and `'checklist'` is additive — reverting means removing both additions from `schema.ts` and dropping the checklist renderer. Any config using `onMissing: 'hide'` would need fallback handling.
 - **Widget-by-widget**: any card can be removed from a dashboard config by editing `dashboards.ts` and deploying — no backend change required.
 - **🔴 placeholder cards**: these never break — they render `DeferredWidget` regardless of backend state.
 
 ## 9. Dependencies
 
-- **REQUIRED**: SPEC-154 (admin-config-driven-ia) — provides the dashboard config schema, widget schema, section renderer, and `onMissing: 'hide'` permission gating. SPEC-155 cannot ship without SPEC-154 in production.
+- **REQUIRED**: SPEC-154 (admin-config-driven-ia) — provides the dashboard config schema, widget schema, and section renderer. SPEC-155 extends the schema additively (T-003/T-004) and cannot ship without SPEC-154 in production.
 - **Optional but recommended**: SPEC-153 (design tokens) — widgets use brand tokens for visual consistency, but SPEC-155 can ship before full token migration.
+- **Extracted**: SPEC-164 (admin-billing-super-only) — receives the ADMIN billing role-model change (seed revoke of the 6 real billing perms + SPEC-154 IA config edits + 14 billing page route guards). SPEC-155 does not depend on SPEC-164 shipping; card I is config-gated today.
 - **Phase-2 widget enablers** (SPEC-155 ships without them; their cards render deferred placeholders):
   - SPEC-159 (cross-entity view tracking) — enables HOST card G views + EDITOR cards E/F views.
   - SPEC-160 (newsletter open/click tracking) — enables EDITOR card C open-rate.

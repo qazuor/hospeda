@@ -488,7 +488,7 @@
       "specId": "SPEC-155",
       "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
       "status": "in-progress",
-      "progress": "0/41",
+      "progress": "2/41",
       "path": "SPEC-155-admin-dashboards-v1",
       "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
       "branch": "spec/SPEC-155-admin-dashboards-v1",
@@ -497,8 +497,8 @@
       ],
       "reservedAt": "2026-05-22T00:00:00Z",
       "activatedAt": "2026-05-26T00:00:00Z",
-      "tasksAtomizedAt": "2026-05-26T00:00:00Z",
-      "note": "41 atomic tasks generated (all complexity <=4, avg 2.4). Phase breakdown: setup 2, core 10, integration 22, testing 4, cleanup 1 (tagged). Critical path 8 tasks deep. Hard gate: T-002 BLOCKS T-015 (billing blast-radius audit before ADMIN perm revoke). Spec fully redefined 2026-05-26 per 03c-dashboards-redefinition.md."
+      "tasksAtomizedAt": "2026-05-27T00:00:00Z",
+      "note": "41 atomic tasks (avg 2.4). State regenerated 2026-05-27 after spec §6 replan. Phase 0.5 schema extension added (T-003/T-004, gates all of Phases 3-5). Old billing-revoke tasks removed. T-001+T-002 completed. Hard gates: T-003+T-004 BLOCK T-017..T-033; T-015 BLOCKS T-016; T-036 BLOCKS T-037. Phase breakdown: setup 2 (done), core 12, integration 23, testing 4. Critical path 9 steps deep."
     },
     {
       "specId": "SPEC-156",
