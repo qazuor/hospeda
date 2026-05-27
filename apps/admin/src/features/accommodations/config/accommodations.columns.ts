@@ -2,6 +2,7 @@ import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/typ
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { createElement } from 'react';
 import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
+import { AccommodationReviewsCell } from '../components/AccommodationReviewsCell';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /**
@@ -141,7 +142,8 @@ export const createAccommodationsColumns = (
         header: t('admin-entities.columns.reviewsCount'),
         accessorKey: 'reviewsCount',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AccommodationReviewsCell, { row })
     },
     {
         id: 'isFeatured',
