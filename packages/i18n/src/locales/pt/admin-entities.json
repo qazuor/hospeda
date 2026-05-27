@@ -72,6 +72,8 @@
         "name": "Nome",
         "slug": "URL Amigável",
         "description": "Descrição",
+        "summary": "Resumo",
+        "photo": "Foto",
         "shortDescription": "Descrição Curta",
         "type": "Tipo",
         "category": "Categoria",
@@ -513,5 +515,14 @@
             "placeholder": "Selecionar um proprietário...",
             "unknown": "Usuário Desconhecido"
         }
+    },
+    "peek": {
+        "summary": "Resumo",
+        "viewFull": "Ver página completa",
+        "edit": "Editar",
+        "close": "Fechar",
+        "booleanYes": "Sim",
+        "booleanNo": "Não",
+        "emptyValue": "—"
     }
 }

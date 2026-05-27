@@ -81,6 +81,46 @@ export type LinkHandler<TData = unknown> = (row: TData) =>
     | undefined;
 
 /**
+ * Configuration for a single field shown in the peek drawer.
+ *
+ * When `peekFields` is set on `EntityConfig`, the drawer renders exactly these
+ * fields instead of the generic column list. Each entry maps an accessor path
+ * (supports dot-notation, e.g. `"destination.name"`) to a translated label key
+ * and an optional display format.
+ */
+export type PeekFieldConfig = {
+    /** Dot-notation accessor path on the row object (e.g. `"name"`, `"price.price"`). */
+    readonly accessorKey: string;
+    /** Translation key for the field label (passed through `t()`). */
+    readonly labelKey: string;
+    /**
+     * How to render the value:
+     * - `'text'` / omitted — String coercion (default inference behaviour).
+     * - `'boolean'` — renders as Sí/No.
+     * - `'date'` — formats an ISO string or Date as a short localised date.
+     * - `'list'` — comma-joins an array value.
+     * - `'badge'` — renders a colored badge using `badgeOptions` to map the raw value.
+     * - `'image'` — resolves the accessor to a URL and renders a preview image.
+     * - `'address'` — assembles a human-readable address from the `location` object.
+     */
+    readonly format?: 'text' | 'boolean' | 'date' | 'list' | 'badge' | 'image' | 'address';
+    /**
+     * Maximum length for text truncation (only applies when `format` is `'text'`
+     * or omitted). When set, values longer than this are truncated with `…`.
+     */
+    readonly maxLength?: number;
+    /**
+     * Badge options used when `format === 'badge'`. Maps raw enum values to
+     * human-readable labels + colors. When absent, the raw value is displayed
+     * as plain text inside a default badge shell.
+     *
+     * Prefer leaving this empty in the config and letting `EntityListPage` look
+     * up the matching column's `badgeOptions` automatically (avoids duplication).
+     */
+    readonly badgeOptions?: readonly BadgeOption[];
+};
+
+/**
  * Column configuration for entity lists
  */
 export type ColumnConfig<TData = unknown> = {
@@ -216,6 +256,27 @@ export type EntityConfig<TData = unknown> = {
 
     // Columns
     readonly createColumns: (t: ColumnTFunction) => readonly ColumnConfig<TData>[];
+
+    /**
+     * Curated list of fields to display in the peek drawer.
+     *
+     * When provided, the drawer renders only these fields (in order) instead of
+     * the generic column list derived from `createColumns`. Omit to keep the
+     * default fallback behaviour (all visible columns).
+     */
+    readonly peekFields?: ReadonlyArray<PeekFieldConfig>;
+
+    /**
+     * Accessor for a value shown as the peek drawer subtitle (under the title),
+     * e.g. the entity slug. Resolved against the row; dot-notation supported.
+     */
+    readonly peekSubtitleField?: string;
+
+    /**
+     * Accessor for a boolean field shown as a "featured" chip next to the peek
+     * drawer title when truthy (e.g. `isFeatured`).
+     */
+    readonly peekFeaturedField?: string;
 };
 
 /**

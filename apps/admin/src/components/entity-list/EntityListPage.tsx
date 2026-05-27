@@ -12,7 +12,8 @@ import type { TranslationKey } from '@repo/i18n';
 import { AddIcon } from '@repo/icons';
 import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { EntitySummarySheet, type SummaryColumn } from './EntitySummarySheet';
 import { createEntityApi } from './api/createEntityApi';
 import { FilterBar } from './filters/FilterBar';
 import { useFilterState } from './filters/useFilterState';
@@ -294,6 +295,18 @@ export const createEntityListPage = <TData extends { id: string }>(
         const rows: Row[] = (data?.data ?? []) as Row[];
         const total = data?.total ?? 0;
 
+        // Peek drawer state: holds the row whose own-entity link was clicked in table view
+        const [peekRow, setPeekRow] = useState<Row | null>(null);
+
+        /**
+         * Ref that always holds the current view mode.
+         * Using a ref here lets the column linkHandlers read the current view at call-time
+         * without needing to include `search.view` in the useMemo dependency array,
+         * which would re-build the entire columns array on every view toggle.
+         */
+        const viewRef = useRef(search.view);
+        viewRef.current = search.view;
+
         // Generate columns
         const columns = useMemo<readonly DataTableColumn<Row>[]>(() => {
             const columnsConfig = config.createColumns(t);
@@ -305,13 +318,21 @@ export const createEntityListPage = <TData extends { id: string }>(
                 linkHandler: columnConfig.linkHandler
                     ? (row: Row) => {
                           const result = columnConfig.linkHandler?.(row);
-                          if (result) {
-                              navigate(result);
+                          if (!result) return;
+                          // Own-entity link in table view → open the peek drawer instead of navigating.
+                          // viewRef.current is read at call-time so the check is always fresh.
+                          const isOwnEntity =
+                              typeof result.to === 'string' &&
+                              result.to.startsWith(config.basePath);
+                          if (isOwnEntity && viewRef.current === 'table') {
+                              setPeekRow(row);
+                              return;
                           }
+                          navigate(result);
                       }
                     : undefined
             }));
-        }, [navigate, config.createColumns, t]);
+        }, [navigate, config.createColumns, config.basePath, t]);
 
         // Column visibility logic
         const getInitialColumnVisibility = useCallback(
@@ -347,6 +368,72 @@ export const createEntityListPage = <TData extends { id: string }>(
             () => columns.map((c) => ({ id: c.id, label: String(c.header) })),
             [columns]
         );
+
+        /**
+         * Columns shaped for EntitySummarySheet.
+         *
+         * When `config.peekFields` is defined we use the curated list — each entry
+         * maps directly to a `SummaryColumn` with an explicit `format` hint.
+         * For badge fields, `badgeOptions` are resolved from the matching column
+         * definition (avoiding duplication in the config). If no matching column
+         * is found, any `badgeOptions` declared on the peek field itself are used.
+         * Otherwise we fall back to deriving the list from all `columns` (generic
+         * behaviour for entities that haven't declared peekFields yet).
+         */
+        const summaryColumns = useMemo<readonly SummaryColumn[]>(
+            () => {
+                if (config.peekFields) {
+                    return config.peekFields.map((pf) => {
+                        // For badge fields, look up the matching column to reuse its badgeOptions
+                        const matchingColumn =
+                            pf.format === 'badge'
+                                ? columns.find(
+                                      (c) =>
+                                          c.accessorKey === pf.accessorKey ||
+                                          c.id === pf.accessorKey
+                                  )
+                                : undefined;
+                        const badgeOptions = matchingColumn?.badgeOptions ?? pf.badgeOptions;
+
+                        return {
+                            id: pf.accessorKey,
+                            header: t(pf.labelKey as TranslationKey),
+                            accessorKey: pf.accessorKey,
+                            format: pf.format,
+                            maxLength: pf.maxLength,
+                            badgeOptions
+                        };
+                    });
+                }
+                return columns.map((c) => ({
+                    id: c.id,
+                    header: String(c.header),
+                    accessorKey: c.accessorKey as string
+                }));
+            },
+            // biome-ignore lint/correctness/useExhaustiveDependencies: config.peekFields is stable (config object is defined at module level)
+            [columns, config.peekFields, t]
+        );
+
+        /** Navigate to the full view page of the current peek row. */
+        const handlePeekViewFull = useCallback(() => {
+            if (!peekRow) return;
+            navigate({
+                to: `${config.basePath}/$id`,
+                params: { id: peekRow.id }
+            } as DynamicNavigateOptions);
+            setPeekRow(null);
+        }, [peekRow, navigate, config.basePath]);
+
+        /** Navigate to the edit page of the current peek row. */
+        const handlePeekEdit = useCallback(() => {
+            if (!peekRow) return;
+            navigate({
+                to: `${config.basePath}/$id/edit`,
+                params: { id: peekRow.id }
+            } as DynamicNavigateOptions);
+            setPeekRow(null);
+        }, [peekRow, navigate, config.basePath]);
 
         // Handlers
         const handleViewChange = useCallback(
@@ -478,6 +565,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                             onSortChange={handleSortChange}
                             columnVisibility={currentViewVisibility}
                             onColumnVisibilityChange={handleColsChange}
+                            highlightedRowId={peekRow?.id ?? undefined}
                         />
                     ) : (
                         <div
@@ -513,6 +601,49 @@ export const createEntityListPage = <TData extends { id: string }>(
                         </div>
                     )}
                 </div>
+
+                {/* Peek drawer: shows a summary of the selected row in table view.
+                    modal={false} → non-modal: no scroll-lock/focus-trap, overlay is
+                    pointer-events-none, list remains interactive. Clicking another
+                    entity name switches content instead of closing (handled via
+                    onInteractOutside inside EntitySummarySheet). */}
+                <EntitySummarySheet
+                    open={peekRow !== null}
+                    onOpenChange={(o) => {
+                        if (!o) setPeekRow(null);
+                    }}
+                    row={peekRow as Record<string, unknown> | null}
+                    columns={summaryColumns}
+                    title={
+                        peekRow !== null && peekRow !== undefined
+                            ? String(
+                                  (peekRow as Record<string, unknown>).name ??
+                                      (peekRow as Record<string, unknown>).title ??
+                                      (peekRow as Record<string, unknown>).id ??
+                                      ''
+                              )
+                            : ''
+                    }
+                    subtitle={
+                        config.peekSubtitleField && peekRow
+                            ? String(
+                                  (peekRow as Record<string, unknown>)[config.peekSubtitleField] ??
+                                      ''
+                              ) || undefined
+                            : undefined
+                    }
+                    featured={
+                        config.peekFeaturedField && peekRow
+                            ? Boolean(
+                                  (peekRow as Record<string, unknown>)[config.peekFeaturedField]
+                              )
+                            : false
+                    }
+                    featuredLabel={t('admin-entities.columns.featured' as TranslationKey)}
+                    onViewFull={handlePeekViewFull}
+                    onEdit={handlePeekEdit}
+                    modal={false}
+                />
             </SidebarPageLayout>
         );
     };

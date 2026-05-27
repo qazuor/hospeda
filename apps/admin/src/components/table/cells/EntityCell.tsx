@@ -64,6 +64,7 @@ export const EntityCell = <TData,>({
             onKeyDown={handleKeyDown}
             tabIndex={0}
             aria-label={`View ${entityOptions.entityType}: ${stringValue}`}
+            data-peek-trigger=""
         >
             <IconComponent className="h-4 w-4" />
             <span className="truncate">{stringValue}</span>

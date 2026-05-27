@@ -72,6 +72,8 @@
         "name": "Name",
         "slug": "Slug",
         "description": "Description",
+        "summary": "Summary",
+        "photo": "Photo",
         "shortDescription": "Short Description",
         "type": "Type",
         "category": "Category",
@@ -513,5 +515,14 @@
             "placeholder": "Select an owner...",
             "unknown": "Unknown User"
         }
+    },
+    "peek": {
+        "summary": "Summary",
+        "viewFull": "View full page",
+        "edit": "Edit",
+        "close": "Close",
+        "booleanYes": "Yes",
+        "booleanNo": "No",
+        "emptyValue": "—"
     }
 }
