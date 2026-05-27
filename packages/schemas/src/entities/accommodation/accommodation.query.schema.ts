@@ -295,6 +295,7 @@ export const AccommodationListItemSchema = AccommodationSchema.pick({
     id: true,
     name: true,
     slug: true,
+    summary: true,
     type: true,
     description: true,
     price: true,

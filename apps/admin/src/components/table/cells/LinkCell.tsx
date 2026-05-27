@@ -41,6 +41,7 @@ export const LinkCell = <TData,>({ value, row, linkHandler }: LinkCellProps<TDat
             onKeyDown={handleKeyDown}
             tabIndex={0}
             aria-label={`Navigate to ${stringValue}`}
+            data-peek-trigger=""
         >
             {stringValue}
         </button>

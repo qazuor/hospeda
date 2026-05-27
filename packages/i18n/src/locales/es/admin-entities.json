@@ -72,6 +72,8 @@
         "name": "Nombre",
         "slug": "URL Amigable",
         "description": "Descripción",
+        "summary": "Resumen",
+        "photo": "Foto",
         "shortDescription": "Descripción Corta",
         "type": "Tipo",
         "category": "Categoría",
@@ -137,7 +139,22 @@
         "postsCount": "Publicaciones",
         "relatedAccommodation": "Rel. Alojamiento",
         "relatedDestination": "Rel. Destino",
-        "relatedEvent": "Rel. Evento"
+        "relatedEvent": "Rel. Evento",
+        "publishedAt": "Publicado el",
+        "expiresAt": "Expira el",
+        "isNews": "Es Noticia",
+        "featuredInWebsite": "Destacado en Web",
+        "likes": "Likes",
+        "comments": "Comentarios",
+        "shares": "Compartidos",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "locationCity": "Ciudad",
+        "emailVerified": "Email Verificado",
+        "banned": "Baneado",
+        "banReason": "Razón de Baneo",
+        "banExpires": "Baneo Expira",
+        "avatar": "Avatar"
     },
     "actions": {
         "view": "Ver",
@@ -513,5 +530,14 @@
             "placeholder": "Seleccionar un propietario...",
             "unknown": "Usuario Desconocido"
         }
+    },
+    "peek": {
+        "summary": "Resumen",
+        "viewFull": "Ver página completa",
+        "edit": "Editar",
+        "close": "Cerrar",
+        "booleanYes": "Sí",
+        "booleanNo": "No",
+        "emptyValue": "—"
     }
 }

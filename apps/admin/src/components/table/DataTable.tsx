@@ -165,6 +165,13 @@ export type DataTableProps<TData> = {
 
     readonly columnVisibility: Record<string, boolean>;
     readonly onColumnVisibilityChange: (visibility: Record<string, boolean>) => void;
+
+    /**
+     * When provided, the row whose id matches this value will receive a subtle
+     * highlight (used by the peek drawer to visually indicate the selected row).
+     * Optional — when absent, all rows render with their default styles.
+     */
+    readonly highlightedRowId?: string;
 };
 
 /**
@@ -268,7 +275,8 @@ export const DataTable = <TData,>({
     sort,
     onSortChange,
     columnVisibility,
-    onColumnVisibilityChange
+    onColumnVisibilityChange,
+    highlightedRowId
 }: DataTableProps<TData>) => {
     const { t } = useTranslations();
 
@@ -424,24 +432,29 @@ export const DataTable = <TData,>({
                                 </td>
                             </tr>
                         ) : (
-                            table.getRowModel().rows.map((row) => (
-                                <tr
-                                    key={rowId(row.original)}
-                                    className="border-t"
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <td
-                                            key={cell.id}
-                                            className="px-3 py-2"
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
+                            table.getRowModel().rows.map((row) => {
+                                const id = rowId(row.original);
+                                const isHighlighted =
+                                    highlightedRowId !== undefined && id === highlightedRowId;
+                                return (
+                                    <tr
+                                        key={id}
+                                        className={cn('border-t', isHighlighted && 'bg-primary/5')}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <td
+                                                key={cell.id}
+                                                className="px-3 py-2"
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

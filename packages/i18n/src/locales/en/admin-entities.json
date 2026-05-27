@@ -72,6 +72,8 @@
         "name": "Name",
         "slug": "Slug",
         "description": "Description",
+        "summary": "Summary",
+        "photo": "Photo",
         "shortDescription": "Short Description",
         "type": "Type",
         "category": "Category",
@@ -137,7 +139,22 @@
         "postsCount": "Posts",
         "relatedAccommodation": "Rel. Accommodation",
         "relatedDestination": "Rel. Destination",
-        "relatedEvent": "Rel. Event"
+        "relatedEvent": "Rel. Event",
+        "publishedAt": "Published At",
+        "expiresAt": "Expires At",
+        "isNews": "Is News",
+        "featuredInWebsite": "Featured In Website",
+        "likes": "Likes",
+        "comments": "Comments",
+        "shares": "Shares",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "locationCity": "City",
+        "emailVerified": "Email Verified",
+        "banned": "Banned",
+        "banReason": "Ban Reason",
+        "banExpires": "Ban Expires",
+        "avatar": "Avatar"
     },
     "actions": {
         "view": "View",
@@ -513,5 +530,14 @@
             "placeholder": "Select an owner...",
             "unknown": "Unknown User"
         }
+    },
+    "peek": {
+        "summary": "Summary",
+        "viewFull": "View full page",
+        "edit": "Edit",
+        "close": "Close",
+        "booleanYes": "Yes",
+        "booleanNo": "No",
+        "emptyValue": "—"
     }
 }
