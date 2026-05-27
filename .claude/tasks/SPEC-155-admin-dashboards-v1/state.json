@@ -147,7 +147,7 @@
             "id": "T-005",
             "title": "Implement GET /api/v1/protected/host/favorites/breakdown route",
             "description": "Build a new protected API route returning per-accommodation bookmark counts scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/favorites-breakdown.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Uses existing `countBookmarksForEntity()` from `@repo/db` or service layer\n\nRoute spec (AC-20):\n- `GET /api/v1/protected/host/favorites/breakdown`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` automatically injected from `ctx.user.id` — NOT from query params\n- Response shape: `{ data: [{ accommodationId: string, slug: string, bookmarkCount: number }] }`\n- Empty array if host has no accommodations\n\nTest requirements (AC-20):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/favorites-breakdown.test.ts`\n- Test: authenticated HOST user returns only their own accommodations\n- Test: response shape matches documented interface exactly\n- Test: unauthenticated request returns 401\n- Test: non-HOST role returns 403",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-018"],
@@ -162,14 +162,14 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": "2026-05-27T05:55:48.000Z",
-                "completed": null
+                "completed": "2026-05-27T06:10:49.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Implement GET /api/v1/protected/host/conversations/response-rate route",
             "description": "Build a new protected API route computing conversation response rate and average response time, scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/conversations-response-rate.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Aggregates over `conversations` table fields: `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` where `ownerId = ctx.user.id`\n\nRoute spec (AC-21):\n- `GET /api/v1/protected/host/conversations/response-rate`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` injected from auth context\n- Response shape: `{ data: { responseRatePct: number, avgResponseTimeMinutes: number } }`\n- `responseRatePct`: (conversations with owner reply / total conversations) * 100, rounded to 1 decimal\n- `avgResponseTimeMinutes`: mean of (`firstOwnerReplyAt` - `firstGuestMessageAt`) for replied conversations\n- Returns `{ responseRatePct: 0, avgResponseTimeMinutes: 0 }` when no conversations\n\nTest requirements (AC-21):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/conversations-response-rate.test.ts`\n- Test: correct pct and avg with seeded conversation data\n- Test: returns zeros when no conversations exist\n- Test: scope isolation — HOST A cannot see HOST B's rates\n- Test: 401/403 for unauthenticated/wrong role",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-018"],
@@ -184,14 +184,14 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": "2026-05-27T05:55:48.000Z",
-                "completed": null
+                "completed": "2026-05-27T06:10:49.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Implement GET /api/v1/admin/newsletter/subscribers/by-preference route",
             "description": "Build a new admin API route aggregating active newsletter subscribers by content preference.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/newsletter/subscribers-by-preference.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/newsletter/index.ts`\n- Aggregates over `newsletter_subscribers.preferences` JSONB column where `status = 'active'`\n\nRoute spec (AC-22):\n- `GET /api/v1/admin/newsletter/subscribers/by-preference`\n- Auth: requires `NEWSLETTER_SUBSCRIBER_VIEW` permission\n- Response shape: `{ data: { OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number } }`\n- Counts subscribers whose preferences include each category (a subscriber can appear in multiple categories)\n- Returns zeros for categories with no subscribers\n\nTest requirements (AC-22):\n- Integration test: `apps/api/src/routes/admin/newsletter/__tests__/subscribers-by-preference.test.ts`\n- Test: correct counts per preference category with seeded subscribers\n- Test: only active subscribers are counted\n- Test: 403 without `NEWSLETTER_SUBSCRIBER_VIEW`\n- Test: response shape matches documented interface",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-019"],
@@ -206,14 +206,14 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": "2026-05-27T05:55:48.000Z",
-                "completed": null
+                "completed": "2026-05-27T06:10:49.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Implement GET /api/v1/admin/posts/trend route",
             "description": "Build a new admin API route returning the post publication trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/posts/trend.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/posts/index.ts`\n- Date-grouped aggregation over `posts.createdAt` for the last 12 months\n\nRoute spec (AC-23):\n- `GET /api/v1/admin/posts/trend`\n- Auth: requires `POST_VIEW` or equivalent admin permission\n- Response shape: `{ data: [{ month: string, count: number }] }` where `month` is `'YYYY-MM'` format\n- Array has exactly 12 entries covering the last 12 calendar months (including current)\n- Months with zero posts return `{ month: 'YYYY-MM', count: 0 }`\n- Ordered chronologically (oldest first)\n\nTest requirements (AC-23):\n- Integration test: `apps/api/src/routes/admin/posts/__tests__/trend.test.ts`\n- Test: returns 12 entries\n- Test: correct counts for months with seeded posts\n- Test: zero-fill for months without posts\n- Test: 403 without required permission",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-019"],
@@ -228,7 +228,7 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": "2026-05-27T05:55:48.000Z",
-                "completed": null
+                "completed": "2026-05-27T06:10:49.000Z"
             }
         },
         {
@@ -260,7 +260,7 @@
             "id": "T-010",
             "title": "Implement GET /api/v1/admin/moderation/pending-count route",
             "description": "Build a new admin API route returning unified pending-moderation counts across four entity types.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/moderation/pending-count.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/moderation/index.ts`\n- Aggregates `moderationState = 'PENDING'` across: accommodations, destinations, posts, events\n\nRoute spec (AC-25):\n- `GET /api/v1/admin/moderation/pending-count`\n- Auth: requires `MODERATION_REVIEW` permission\n- Response shape: `{ data: { total: number, byEntity: { accommodations: number, destinations: number, posts: number, events: number } } }`\n- `total` = sum of all four byEntity counts\n- Each entity count is independently computed\n\nTest requirements (AC-25):\n- Integration test: `apps/api/src/routes/admin/moderation/__tests__/pending-count.test.ts`\n- Test: correct totals per entity with seeded pending items\n- Test: `total` equals sum of byEntity values\n- Test: 403 without `MODERATION_REVIEW`\n- Test: response shape matches documented interface",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-020"],
@@ -274,8 +274,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T06:13:54.000Z",
+                "completed": "2026-05-27T06:40:17.000Z"
             }
         },
         {
@@ -329,7 +329,7 @@
             "id": "T-013",
             "title": "Expose maintenance-mode readable flag via API",
             "description": "Confirm or build an endpoint that exposes the current `maintenanceMode` boolean status, readable by users with the `SYSTEM_MAINTENANCE_MODE` permission.\n\nFiles to check/create:\n- Check `apps/api/src/routes/admin/system/` for existing health/status routes\n- May already exist as part of health endpoint — verify it returns maintenance-mode status\n- If building new: `apps/api/src/routes/admin/system/maintenance-status.ts`\n\nRoute spec (AC-28):\n- Endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission\n- Response includes `{ data: { maintenanceMode: boolean } }` (as part of system status or standalone)\n- No DB change required — reads from env/config\n\nTest requirements (AC-28):\n- Integration test: assert endpoint returns correct boolean based on maintenance config\n- Test: 403 without `SYSTEM_MAINTENANCE_MODE`\n- Test: response shape correct",
-            "status": "pending",
+            "status": "extracted",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-020"],
@@ -351,7 +351,7 @@
             "id": "T-014",
             "title": "Integration tests for all 7 active aggregation routes (T-005, T-006, T-007, T-008, T-010, T-012, T-013)",
             "description": "Write comprehensive integration tests for each of the 7 active aggregation routes. One test file per route, each asserting shape, authentication, and scope isolation. T-009 (comments) and T-011 (reviews-pending) were extracted to SPEC-165/SPEC-166 and are NOT included.\n\nThis task is a consolidation/hardening pass — each individual route task includes its own inline test requirements. T-014 ensures all 7 are green as a group and adds cross-cutting edge cases.\n\nFiles to create (if not already created by individual route tasks):\n- One `__tests__/*.test.ts` per route in its respective directory\n\nAcceptance criteria (AC-20 through AC-26):\n- All 7 active routes pass their shape assertions\n- All 7 active routes pass their auth assertions (401 unauthenticated, 403 wrong permission)\n- HOST routes assert scope isolation (no cross-owner data leaks)\n- Trend routes assert 12-entry arrays with correct `YYYY-MM` format\n- All tests run in under 30s total\n\nTest requirements:\n- Use the project's standard integration test harness (Vitest + db test setup)\n- AAA pattern throughout\n- No `.only()` or hard-coded `.skip()` in committed code",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-005", "T-006", "T-007", "T-008", "T-010", "T-012", "T-013"],
             "blocks": [],
@@ -366,7 +366,7 @@
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-27T06:40:17.000Z"
             }
         },
         {
@@ -978,11 +978,11 @@
     ],
     "summary": {
         "total": 41,
-        "activeTotal": 39,
-        "extracted": 2,
-        "completed": 6,
-        "pending": 29,
-        "inProgress": 4,
+        "activeTotal": 38,
+        "extracted": 3,
+        "completed": 12,
+        "pending": 26,
+        "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,
         "note": "T-009 (extracted to SPEC-165) and T-011 (extracted to SPEC-166) are tombstoned. activeTotal=39. completed=5 (T-001, T-002, T-003, T-004, T-015). inProgress=1 (T-012). pending=33 active."

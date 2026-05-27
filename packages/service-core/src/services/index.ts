@@ -27,6 +27,7 @@ export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';
+export * from './moderation';
 
 // HookState types for service consumers
 export type {

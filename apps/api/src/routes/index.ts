@@ -75,6 +75,7 @@ import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
+import { adminModerationRoutes } from './moderation/admin';
 import {
     newsletterAdminRoutes,
     newsletterProtectedRoutes,
@@ -330,6 +331,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing', adminBillingRoutes);
         app.route('/api/v1/admin/webhooks', adminWebhookRouter);
         app.route('/api/v1/admin/auth', adminAuthRoutes);
+
+        // Moderation aggregation — pending count across content entities (SPEC-155 T-010)
+        app.route('/api/v1/admin/moderation', adminModerationRoutes);
 
         // ISR revalidation management (admin only)
         app.route('/api/v1/admin/revalidation', revalidationRouter);
