@@ -580,10 +580,19 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 logger.info(`${STATUS_ICONS.Info}    Account row created for ${spec.email}`);
             }
 
-            // ── Ensure billing rows (for paid-tier users) ────────────────────
+            // ── Ensure a billing customer for EVERY test user ─────────────────
+            // Mirrors production: the Better Auth signup databaseHook eagerly
+            // creates a billing_customers row for every user, including free-tier
+            // ones with no subscription. Without a customer, the entitlement
+            // middleware's no-customer branch yields empty entitlements (no
+            // tourist-free defaults), so a free user cannot even save favorites.
+            // Seeding the customer unconditionally keeps the local free tier
+            // faithful to prod. (SPEC-143 smoke F-B2)
+            const customerId = await ensureBillingCustomer(userId, spec.email, db);
+
+            // ── Ensure subscription (+ addon) only for paid-tier users ────────
             if (spec.planSlug) {
                 const planId = await resolvePlanId(spec.planSlug, db);
-                const customerId = await ensureBillingCustomer(userId, spec.email, db);
                 const subscriptionId = await ensureSubscription(
                     customerId,
                     planId,
@@ -609,6 +618,10 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                         `${STATUS_ICONS.Info}    Addon ensured for ${spec.email} (addon: ${spec.addonSlug})`
                     );
                 }
+            } else {
+                logger.info(
+                    `${STATUS_ICONS.Info}    Billing customer ensured for ${spec.email} (free tier, no subscription)`
+                );
             }
 
             summaryTracker.trackSuccess(ENTITY_NAME);
