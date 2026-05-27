@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-167",
+    "title": "Downgrade preflight + excess remediation",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-27T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["billing", "downgrade", "plan-change", "entitlements", "limits", "billing-core"],
+    "extractedFrom": "SPEC-143 local smoke findings F-F1/F-F2 (engram spec-143/smoke-grupo-f-downgrade)",
+    "dependsOn": ["SPEC-143"],
+    "blocks": [],
+    "firstAllocatedViaEngramProtocol": true,
+    "worktree": null,
+    "branch": null,
+    "base": "staging",
+    "effortEstimateHours": "12-20",
+    "engramRefs": {
+        "allocation": "spec-registry/hospeda/last-number"
+    }
+}
