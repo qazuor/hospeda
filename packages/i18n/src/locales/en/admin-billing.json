@@ -418,7 +418,11 @@
             "durationLabel": "Trial Duration (days)",
             "durationHint": "For Owner and Complex plans",
             "autoBlockLabel": "Auto Block",
-            "autoBlockHint": "Block features on trial expiration"
+            "autoBlockHint": "Block features on trial expiration",
+            "ownerDurationLabel": "Trial duration — Owner (days)",
+            "ownerDurationHint": "Trial days for owner plans",
+            "complexDurationLabel": "Trial duration — Complex (days)",
+            "complexDurationHint": "Trial days for complex plans"
         },
         "payment": {
             "title": "Payment Configuration",
@@ -430,7 +434,9 @@
             "intervalLabel": "Retry Interval (hours)",
             "intervalHint": "Time between payment retries",
             "currencyLabel": "Default Currency",
-            "currencyHint": "ISO currency code (3 letters)"
+            "currencyHint": "ISO currency code (3 letters)",
+            "taxRateLabel": "Tax rate (%)",
+            "taxRateHint": "Tax percentage applied (0-100)"
         },
         "webhook": {
             "title": "Webhook Configuration",
@@ -450,7 +456,15 @@
             "daysLabel": "Days in Advance",
             "daysHint": "Send reminder X days before due date",
             "receiptLabel": "Payment Receipt",
-            "receiptHint": "Automatically send receipt on payment"
+            "receiptHint": "Automatically send receipt on payment",
+            "trialReminderLabel": "Trial expiry reminder",
+            "trialReminderHint": "Notify before the trial period expires",
+            "trialReminderDaysLabel": "Reminder days in advance",
+            "trialReminderDaysHint": "Send the reminder X days before expiry",
+            "paymentFailedLabel": "Notify failed payment",
+            "paymentFailedHint": "Notify the customer when a payment fails",
+            "subscriptionCancelledLabel": "Notify subscription cancellation",
+            "subscriptionCancelledHint": "Notify the customer when the subscription is cancelled"
         }
     },
     "sponsorships": {

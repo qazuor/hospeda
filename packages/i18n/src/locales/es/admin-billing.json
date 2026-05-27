@@ -418,7 +418,11 @@
             "durationLabel": "Duración de Prueba (días)",
             "durationHint": "Para planes de Propietario y Complejo",
             "autoBlockLabel": "Bloqueo Automático",
-            "autoBlockHint": "Bloquear funciones al vencer el período"
+            "autoBlockHint": "Bloquear funciones al vencer el período",
+            "ownerDurationLabel": "Duración de prueba — Propietario (días)",
+            "ownerDurationHint": "Días de prueba para planes de propietario",
+            "complexDurationLabel": "Duración de prueba — Complejo (días)",
+            "complexDurationHint": "Días de prueba para planes de complejo"
         },
         "payment": {
             "title": "Configuración de Pagos",
@@ -430,7 +434,9 @@
             "intervalLabel": "Intervalo de Reintentos (horas)",
             "intervalHint": "Tiempo entre reintentos de pago",
             "currencyLabel": "Moneda Predeterminada",
-            "currencyHint": "Código de moneda ISO (3 letras)"
+            "currencyHint": "Código de moneda ISO (3 letras)",
+            "taxRateLabel": "Tasa de impuesto (%)",
+            "taxRateHint": "Porcentaje de impuesto aplicado (0-100)"
         },
         "webhook": {
             "title": "Configuración de Webhooks",
@@ -450,7 +456,15 @@
             "daysLabel": "Días de Anticipación",
             "daysHint": "Enviar recordatorio X días antes del vencimiento",
             "receiptLabel": "Recibo de Pago",
-            "receiptHint": "Enviar recibo automáticamente al procesar pago"
+            "receiptHint": "Enviar recibo automáticamente al procesar pago",
+            "trialReminderLabel": "Recordatorio de fin de prueba",
+            "trialReminderHint": "Avisar antes de que venza el período de prueba",
+            "trialReminderDaysLabel": "Días de anticipación del recordatorio",
+            "trialReminderDaysHint": "Enviar el recordatorio X días antes del vencimiento",
+            "paymentFailedLabel": "Notificar pago fallido",
+            "paymentFailedHint": "Avisar al cliente cuando un pago falla",
+            "subscriptionCancelledLabel": "Notificar cancelación de suscripción",
+            "subscriptionCancelledHint": "Avisar al cliente cuando se cancela la suscripción"
         }
     },
     "sponsorships": {
