@@ -3,13 +3,36 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
-import { useUpdateDestinationMutation } from '../hooks/useDestinationQuery';
+import { useDestinationQuery, useUpdateDestinationMutation } from '../hooks/useDestinationQuery';
 import type { Destination } from '../schemas/destinations.schemas';
+
+/** Destination rating breakdown dimensions (18), in display order. */
+const DESTINATION_RATING_DIMENSIONS: ReadonlyArray<RatingDimension> = [
+    { key: 'landscape', label: 'admin-entities.ratingDimensions.landscape' },
+    { key: 'attractions', label: 'admin-entities.ratingDimensions.attractions' },
+    { key: 'gastronomy', label: 'admin-entities.ratingDimensions.gastronomy' },
+    { key: 'culturalOffer', label: 'admin-entities.ratingDimensions.culturalOffer' },
+    { key: 'safety', label: 'admin-entities.ratingDimensions.safety' },
+    { key: 'cleanliness', label: 'admin-entities.ratingDimensions.cleanliness' },
+    { key: 'hospitality', label: 'admin-entities.ratingDimensions.hospitality' },
+    { key: 'accessibility', label: 'admin-entities.ratingDimensions.accessibility' },
+    { key: 'infrastructure', label: 'admin-entities.ratingDimensions.infrastructure' },
+    { key: 'affordability', label: 'admin-entities.ratingDimensions.affordability' },
+    { key: 'nightlife', label: 'admin-entities.ratingDimensions.nightlife' },
+    { key: 'localEvents', label: 'admin-entities.ratingDimensions.localEvents' },
+    { key: 'beaches', label: 'admin-entities.ratingDimensions.beaches' },
+    { key: 'greenSpaces', label: 'admin-entities.ratingDimensions.greenSpaces' },
+    { key: 'shopping', label: 'admin-entities.ratingDimensions.shopping' },
+    { key: 'wifiAvailability', label: 'admin-entities.ratingDimensions.wifiAvailability' },
+    { key: 'environmentalCare', label: 'admin-entities.ratingDimensions.environmentalCare' },
+    { key: 'weatherSatisfaction', label: 'admin-entities.ratingDimensions.weatherSatisfaction' }
+];
 
 /**
  * Visibility options (value + localized label + badge color). Single source for
@@ -140,7 +163,16 @@ export const createDestinationsColumns = (
         header: t('admin-entities.columns.rating'),
         accessorKey: 'averageRating',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(RatingCell, {
+                entityId: row.id,
+                entityName: row.name,
+                averageRating: typeof row.averageRating === 'number' ? row.averageRating : 0,
+                reviewsCount: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                dimensions: DESTINATION_RATING_DIMENSIONS,
+                useDetailQuery: useDestinationQuery
+            })
     },
     {
         id: 'reviewsCount',

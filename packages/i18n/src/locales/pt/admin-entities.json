@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Paisagem",
+        "attractions": "Atrações",
+        "accessibility": "Acessibilidade",
+        "safety": "Segurança",
+        "cleanliness": "Limpeza",
+        "hospitality": "Hospitalidade",
+        "culturalOffer": "Oferta cultural",
+        "gastronomy": "Gastronomia",
+        "affordability": "Preço acessível",
+        "nightlife": "Vida noturna",
+        "infrastructure": "Infraestrutura",
+        "environmentalCare": "Cuidado ambiental",
+        "wifiAvailability": "Disponibilidade de WiFi",
+        "shopping": "Compras",
+        "beaches": "Praias",
+        "greenSpaces": "Espaços verdes",
+        "localEvents": "Eventos locais",
+        "weatherSatisfaction": "Clima"
+    },
     "entities": {
         "accommodation": {
             "singular": "Acomodação",

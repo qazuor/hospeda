@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Landscape",
+        "attractions": "Attractions",
+        "accessibility": "Accessibility",
+        "safety": "Safety",
+        "cleanliness": "Cleanliness",
+        "hospitality": "Hospitality",
+        "culturalOffer": "Cultural offer",
+        "gastronomy": "Gastronomy",
+        "affordability": "Affordability",
+        "nightlife": "Nightlife",
+        "infrastructure": "Infrastructure",
+        "environmentalCare": "Environmental care",
+        "wifiAvailability": "WiFi availability",
+        "shopping": "Shopping",
+        "beaches": "Beaches",
+        "greenSpaces": "Green spaces",
+        "localEvents": "Local events",
+        "weatherSatisfaction": "Weather"
+    },
     "entities": {
         "accommodation": {
             "singular": "Accommodation",
