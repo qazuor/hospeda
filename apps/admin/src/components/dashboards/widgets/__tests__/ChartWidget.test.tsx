@@ -197,7 +197,12 @@ describe('ChartWidget', () => {
         );
 
         expect(screen.getByTestId('chart-widget-unavailable')).toBeInTheDocument();
-        expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
+        // Title is always visible
+        expect(screen.getByTestId('chart-label')).toHaveTextContent('Nuevos usuarios');
+        // Badge is always visible (even unavailable)
+        expect(screen.getByTestId('chart-type-badge')).toBeInTheDocument();
     });
 
     // ── Loading state ──────────────────────────────────────────────────────
@@ -219,7 +224,10 @@ describe('ChartWidget', () => {
         );
 
         expect(screen.getByTestId('chart-widget-skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
+        // Card shell is always present while loading
+        expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
+        // Title is always visible while loading
+        expect(screen.getByTestId('chart-label')).toHaveTextContent('Nuevos usuarios');
     });
 
     // ── Error state ────────────────────────────────────────────────────────
@@ -238,7 +246,10 @@ describe('ChartWidget', () => {
 
         const errorEl = await screen.findByTestId('chart-widget-error');
         expect(errorEl).toBeInTheDocument();
-        expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
+        // Card shell is always present on error
+        expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
+        // Title is always visible on error
+        expect(screen.getByTestId('chart-label')).toHaveTextContent('Nuevos usuarios');
     });
 
     it('exposes a retry button inside the error state that does not throw on click', async () => {
@@ -273,6 +284,8 @@ describe('ChartWidget', () => {
         );
 
         expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('chart-label')).toHaveTextContent('Nuevos usuarios');
     });
 
     it('renders the empty state when series array is empty', async () => {
@@ -288,6 +301,8 @@ describe('ChartWidget', () => {
         );
 
         expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('chart-label')).toHaveTextContent('Nuevos usuarios');
     });
 
     // ── Data — shared content ─────────────────────────────────────────────

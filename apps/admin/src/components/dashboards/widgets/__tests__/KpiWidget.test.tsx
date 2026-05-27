@@ -165,7 +165,10 @@ describe('KpiWidget', () => {
         );
 
         expect(screen.getByTestId('kpi-widget-unavailable')).toBeInTheDocument();
-        expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
+        // Title is always visible
+        expect(screen.getByTestId('kpi-label')).toHaveTextContent('Total alojamientos');
     });
 
     // ── Loading state ──────────────────────────────────────────────────────
@@ -188,7 +191,10 @@ describe('KpiWidget', () => {
         );
 
         expect(screen.getByTestId('kpi-widget-skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
+        // Title is always visible while loading
+        expect(screen.getByTestId('kpi-label')).toHaveTextContent('Total alojamientos');
     });
 
     // ── Error state ────────────────────────────────────────────────────────
@@ -208,7 +214,10 @@ describe('KpiWidget', () => {
         // Wait for the error state to appear (query must settle).
         const errorEl = await screen.findByTestId('kpi-widget-error');
         expect(errorEl).toBeInTheDocument();
-        expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+        // Card shell is always present even on error
+        expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
+        // Title is always visible on error
+        expect(screen.getByTestId('kpi-label')).toHaveTextContent('Total alojamientos');
     });
 
     it('exposes a retry button inside the error state', async () => {
@@ -245,6 +254,8 @@ describe('KpiWidget', () => {
         );
 
         expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('kpi-label')).toHaveTextContent('Total alojamientos');
     });
 
     // ── Data — value ──────────────────────────────────────────────────────

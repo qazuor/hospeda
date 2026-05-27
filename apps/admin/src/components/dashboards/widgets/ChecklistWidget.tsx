@@ -62,7 +62,13 @@ import { cn } from '@/lib/utils';
 import { AlertCircleIcon, CheckCircleIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // CHECKSET TYPES
@@ -709,33 +715,55 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
     // -- 4. Source mode: unavailable when source provided but not registered --
     if (sourceId !== '' && !found) {
         return (
-            <WidgetUnavailable
-                variant="checklist"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="checklist"
+                dataTestId="checklist-widget"
+            >
+                <WidgetUnavailableBody variant="checklist" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Source mode: loading + error + empty states -----------------------
     if (sourceId !== '' && found) {
         if (isLoading) {
-            return <WidgetSkeleton variant="checklist" />;
+            return (
+                <WidgetCard
+                    label={displayLabel}
+                    variant="checklist"
+                    dataTestId="checklist-widget"
+                >
+                    <WidgetSkeletonBody variant="checklist" />
+                </WidgetCard>
+            );
         }
         if (error) {
             return (
-                <WidgetError
-                    variant="checklist"
+                <WidgetCard
                     label={displayLabel}
-                    onRetry={() => void refetch()}
-                />
+                    variant="checklist"
+                    dataTestId="checklist-widget"
+                >
+                    <WidgetErrorBody
+                        variant="checklist"
+                        onRetry={() => void refetch()}
+                    />
+                </WidgetCard>
             );
         }
         if (fetchedData == null) {
             return (
-                <WidgetEmpty
+                <WidgetCard
+                    label={displayLabel}
                     variant="checklist"
-                    text="Sin datos disponibles"
-                />
+                    dataTestId="checklist-widget"
+                >
+                    <WidgetEmptyBody
+                        variant="checklist"
+                        text="Sin datos disponibles"
+                    />
+                </WidgetCard>
             );
         }
     }
@@ -757,30 +785,26 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
     // -- 7. Empty (no entities at all) ----------------------------------------
     if (resolvedEntities.length === 0) {
         return (
-            <WidgetEmpty
+            <WidgetCard
+                label={displayLabel}
                 variant="checklist"
-                text="Sin datos disponibles"
-            />
+                dataTestId="checklist-widget"
+            >
+                <WidgetEmptyBody
+                    variant="checklist"
+                    text="Sin datos disponibles"
+                />
+            </WidgetCard>
         );
     }
 
     // -- 8. Render the card ---------------------------------------------------
     return (
-        <div
-            className="flex flex-col gap-0 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="checklist-widget"
-            aria-label={displayLabel}
+        <WidgetCard
+            label={displayLabel}
+            variant="checklist"
+            dataTestId="checklist-widget"
         >
-            {/* Header */}
-            <div className="mb-3 flex items-center justify-between">
-                <span
-                    className="text-muted-foreground text-sm"
-                    data-testid="checklist-label"
-                >
-                    {displayLabel}
-                </span>
-            </div>
-
             {/* Body — dispatched by checkset */}
             {checkset === 'accommodation-health' ? (
                 <AccommodationChecklistBody
@@ -792,6 +816,6 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                     entities={resolvedEntities}
                 />
             )}
-        </div>
+        </WidgetCard>
     );
 }
