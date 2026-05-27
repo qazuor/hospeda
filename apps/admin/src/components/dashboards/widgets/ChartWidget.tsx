@@ -1,18 +1,12 @@
 /**
- * ChartWidget — Placeholder renderer for chart-type dashboard widgets (SPEC-155 T-025).
+ * ChartWidget — Real chart renderer using shadcn/ui Charts + Recharts (SPEC-155 T-025).
  *
- * ## Chart library finding
+ * ## Chart library
  *
- * NO charting library (recharts, chart.js, visx, nivo, tremor, etc.) is present in
- * `apps/admin/package.json`. Adding a new dependency requires owner approval.
- *
- * This component therefore renders a **CSS/SVG placeholder** for V1:
- * - `'line'` → an SVG polyline connecting data points.
- * - `'area'` → an SVG polygon fill under the same polyline.
- * - `'bar'`  → horizontal flex bars (div-based, Tailwind only).
- *
- * The placeholders are functional enough to verify data wiring end-to-end.
- * Replace with a real chart library once the owner approves a dependency choice.
+ * Uses `recharts` (shadcn/ui Charts peer dependency) with the shared
+ * `ChartContainer` / `ChartTooltip` / `ChartTooltipContent` primitives from
+ * `@/components/ui/chart`. Colors are driven by the admin design tokens:
+ * `--color-chart-1` (river-500) is the primary series hue.
  *
  * ## Renderer pattern (follows KpiWidget T-023 canonical steps exactly)
  *
@@ -25,7 +19,7 @@
  * 7. If `isLoading` → render skeleton.
  * 8. If `error` → render `<WidgetError>` with `refetch`.
  * 9. If data is null/undefined → render `<WidgetEmpty>`.
- * 10. Otherwise render the placeholder chart.
+ * 10. Otherwise render the real chart.
  *
  * ## Expected data shape from resolvers
  *
@@ -34,19 +28,37 @@
  * type ChartData  = { series: ChartPoint[] };
  * ```
  *
- * The `label` on each point is used as a tick label (month name, date, etc.).
+ * The `label` on each point is used as the X-axis tick.
  * The `value` is the numeric magnitude.
  *
  * @module ChartWidget
  * @see apps/admin/src/components/dashboards/widgets/KpiWidget.tsx — canonical pattern
+ * @see apps/admin/src/components/ui/chart.tsx — shadcn chart primitives
  * @see apps/admin/src/lib/dashboard-sources.ts
  * @see apps/admin/src/contexts/dashboard-resolver-context.tsx
  * @see apps/admin/src/config/ia/schema.ts
  */
 
+import {
+    type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent
+} from '@/components/ui/chart';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useQuery } from '@tanstack/react-query';
+import {
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    XAxis,
+    YAxis
+} from 'recharts';
 import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
 
 // ============================================================================
@@ -96,9 +108,9 @@ export interface ChartData {
 /**
  * Supported chart render modes for ChartWidget.
  *
- * - `'line'`  → SVG polyline connecting data points.
- * - `'bar'`   → Div-based horizontal bars.
- * - `'area'`  → SVG polygon fill (area under the line).
+ * - `'line'`  → LineChart with a smooth Line series.
+ * - `'bar'`   → BarChart with rounded Bar columns.
+ * - `'area'`  → AreaChart with a filled Area series.
  *
  * When omitted from `widget.config.chartType`, the renderer defaults to `'bar'`.
  */
@@ -141,165 +153,157 @@ export interface ChartWidgetProps {
 }
 
 // ============================================================================
-// PLACEHOLDER CHART RENDERERS
+// CHART CONFIG (shadcn ChartConfig for color injection)
 // ============================================================================
 
 /**
- * SVG dimensions used for line and area chart placeholders.
- * Fixed viewport makes percentage-based point coordinates deterministic.
+ * Static ChartConfig that wires `value` series to the admin's first chart
+ * token (`--color-chart-1` = river-500). The CSS var is injected by
+ * ChartContainer's `<ChartStyle>` into the container's scope.
  */
-const SVG_WIDTH = 300;
-const SVG_HEIGHT = 80;
-/** Horizontal padding (left + right) so points don't clip at the edge. */
-const SVG_PAD_X = 8;
-/** Vertical padding so the topmost point isn't flush with the SVG top. */
-const SVG_PAD_Y = 6;
-
-/**
- * Normalises a series of `ChartPoint` values to (x, y) pairs within the SVG
- * viewport, accounting for padding.
- *
- * @param series - Ordered data points.
- * @returns Array of `{ x, y }` pixel coords (relative to the SVG viewport).
- */
-function normaliseSeries(
-    series: readonly ChartPoint[]
-): { readonly x: number; readonly y: number }[] {
-    if (series.length === 0) return [];
-
-    const values = series.map((p) => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min === 0 ? 1 : max - min;
-
-    const usableW = SVG_WIDTH - SVG_PAD_X * 2;
-    const usableH = SVG_HEIGHT - SVG_PAD_Y * 2;
-
-    return series.map((p, i) => ({
-        x: SVG_PAD_X + (i / Math.max(series.length - 1, 1)) * usableW,
-        // Invert Y: higher value = lower y coordinate in SVG.
-        y: SVG_PAD_Y + (1 - (p.value - min) / range) * usableH
-    }));
-}
+const SERIES_CHART_CONFIG = {
+    value: {
+        label: 'Valor',
+        color: 'var(--color-chart-1)'
+    }
+} satisfies ChartConfig;
 
 // ============================================================================
-// CHART TYPE PROP
+// CHART TYPE RENDERERS
 // ============================================================================
 
-interface ChartPlaceholderProps {
+interface ChartRendererProps {
     readonly chartType: ChartType;
-    readonly series: readonly ChartPoint[];
+    readonly data: readonly ChartPoint[];
     readonly label: string;
 }
 
 /**
- * Renders the appropriate placeholder visualisation for the given `chartType`.
- *
- * ## IMPORTANT — replace with a real chart library
- *
- * This is a placeholder only. When a charting library is approved and added as
- * a dependency (recharts, visx, nivo, etc.), delete this component and wire the
- * real chart renderer here. The rest of ChartWidget (resolver, useQuery, states)
- * stays unchanged.
+ * Renders the appropriate Recharts chart for the given `chartType`.
+ * All three variants share the same data format and ChartContainer wrapper.
  */
-function ChartPlaceholder({ chartType, series, label }: ChartPlaceholderProps) {
-    const points = normaliseSeries(series);
-    const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+function ChartRenderer({ chartType, data, label }: ChartRendererProps) {
+    // Recharts expects plain mutable objects; the readonly cast is safe here.
+    const rechartsData = data as ChartPoint[];
 
-    // ── Tick labels (shared across all types) ────────────────────────────────
-    const TickLabels = (
-        <div
-            className="mt-1 flex justify-between px-0"
-            aria-hidden="true"
-        >
-            {series.map((p) => (
-                <span
-                    key={p.label}
-                    className="truncate text-center text-[10px] text-muted-foreground leading-none"
-                    style={{ width: `${100 / series.length}%` }}
-                >
-                    {p.label}
-                </span>
-            ))}
-        </div>
+    const commonXAxis = (
+        <XAxis
+            dataKey="label"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tick={{ fontSize: 10 }}
+        />
+    );
+
+    const commonYAxis = (
+        <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={4}
+            width={28}
+            tick={{ fontSize: 10 }}
+        />
+    );
+
+    const commonGrid = (
+        <CartesianGrid
+            vertical={false}
+            strokeDasharray="3 3"
+        />
+    );
+
+    const tooltip = (
+        <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent hideLabel />}
+        />
     );
 
     if (chartType === 'bar') {
-        const max = Math.max(...series.map((p) => p.value), 1);
         return (
-            <figure
-                aria-label={label}
-                className="w-full"
+            <ChartContainer
+                config={SERIES_CHART_CONFIG}
+                className="h-20 w-full"
+                data-testid="chart-bars"
+                aria-label={`${label} — bar chart`}
             >
-                <div
-                    className="flex h-20 items-end gap-1 overflow-hidden"
-                    data-testid="chart-bars"
-                    role="img"
-                    aria-label={`${label} — bar chart`}
+                <BarChart
+                    accessibilityLayer
+                    data={rechartsData}
+                    margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
                 >
-                    {series.map((p) => (
-                        <div
-                            key={p.label}
-                            className="flex-1 rounded-t bg-primary/60 transition-all"
-                            style={{ height: `${(p.value / max) * 100}%` }}
-                            title={`${p.label}: ${p.value}`}
-                            data-testid={`bar-${p.label}`}
-                        />
-                    ))}
-                </div>
-                {TickLabels}
-            </figure>
+                    {commonGrid}
+                    {commonXAxis}
+                    {commonYAxis}
+                    {tooltip}
+                    <Bar
+                        dataKey="value"
+                        fill="var(--color-value)"
+                        radius={[4, 4, 0, 0]}
+                    />
+                </BarChart>
+            </ChartContainer>
         );
     }
 
-    // line or area — SVG-based
-    const bottomY = SVG_HEIGHT - SVG_PAD_Y;
-    const leftX = SVG_PAD_X;
-    const rightX = SVG_WIDTH - SVG_PAD_X;
-
-    return (
-        <figure
-            aria-label={label}
-            className="w-full"
-        >
-            <svg
-                viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-                className="h-20 w-full overflow-visible"
-                data-testid={chartType === 'area' ? 'chart-area' : 'chart-line'}
-                aria-label={`${label} — ${chartType} chart`}
-                role="img"
+    if (chartType === 'area') {
+        return (
+            <ChartContainer
+                config={SERIES_CHART_CONFIG}
+                className="h-20 w-full"
+                data-testid="chart-area"
+                aria-label={`${label} — area chart`}
             >
-                {chartType === 'area' && points.length > 0 && (
-                    <polygon
-                        points={`${leftX},${bottomY} ${polylinePoints} ${rightX},${bottomY}`}
-                        className="fill-primary/20"
-                        data-testid="area-fill"
+                <AreaChart
+                    accessibilityLayer
+                    data={rechartsData}
+                    margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                >
+                    {commonGrid}
+                    {commonXAxis}
+                    {commonYAxis}
+                    {tooltip}
+                    <Area
+                        dataKey="value"
+                        type="natural"
+                        fill="var(--color-value)"
+                        fillOpacity={0.2}
+                        stroke="var(--color-value)"
+                        strokeWidth={2}
                     />
-                )}
-                {points.length > 0 && (
-                    <polyline
-                        points={polylinePoints}
-                        className="fill-none stroke-[2] stroke-primary"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        data-testid="line-path"
-                    />
-                )}
-                {/* Data point dots */}
-                {points.map((pt, i) => (
-                    <circle
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable SVG dots indexed by position
-                        key={i}
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={3}
-                        className="fill-primary"
-                        data-testid={`chart-dot-${series[i].label}`}
-                    />
-                ))}
-            </svg>
-            {TickLabels}
-        </figure>
+                </AreaChart>
+            </ChartContainer>
+        );
+    }
+
+    // Default: line
+    return (
+        <ChartContainer
+            config={SERIES_CHART_CONFIG}
+            className="h-20 w-full"
+            data-testid="chart-line"
+            aria-label={`${label} — line chart`}
+        >
+            <LineChart
+                accessibilityLayer
+                data={rechartsData}
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+            >
+                {commonGrid}
+                {commonXAxis}
+                {commonYAxis}
+                {tooltip}
+                <Line
+                    dataKey="value"
+                    type="natural"
+                    stroke="var(--color-value)"
+                    strokeWidth={2}
+                    dot={{ fill: 'var(--color-value)', r: 3 }}
+                    activeDot={{ r: 4 }}
+                />
+            </LineChart>
+        </ChartContainer>
     );
 }
 
@@ -308,7 +312,11 @@ function ChartPlaceholder({ chartType, series, label }: ChartPlaceholderProps) {
 // ============================================================================
 
 /**
- * ChartWidget — renders a placeholder line/bar/area chart for the dashboard.
+ * ChartWidget — renders a real line/bar/area chart for the dashboard.
+ *
+ * Uses shadcn/ui Chart primitives (ChartContainer, ChartTooltip) backed by
+ * Recharts. Colors are driven by `--color-chart-1` from the admin design
+ * tokens (river-500 palette).
  *
  * Reads data from the resolver registry via `useDashboardResolver` and
  * `useQuery`. Handles all four states: loading, error, empty, and data.
@@ -330,14 +338,6 @@ function ChartPlaceholder({ chartType, series, label }: ChartPlaceholderProps) {
  *   ]
  * }
  * ```
- *
- * ## PLACEHOLDER WARNING
- *
- * This widget uses a pure CSS/SVG placeholder because no charting library is
- * installed in the admin app. Before shipping charts to production, the team
- * should decide on a library (recharts, visx, nivo, etc.) and replace the
- * `ChartPlaceholder` sub-component with a real renderer. The resolver/useQuery
- * wiring does NOT need to change.
  *
  * @example
  * ```tsx
@@ -422,10 +422,10 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
                 </span>
             </div>
 
-            {/* Chart area */}
-            <ChartPlaceholder
+            {/* Chart area — real Recharts chart */}
+            <ChartRenderer
                 chartType={chartType}
-                series={chartData.series}
+                data={chartData.series}
                 label={displayLabel}
             />
         </div>
