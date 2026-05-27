@@ -31,6 +31,7 @@
  * live in `web-dark.ts`.
  */
 
+import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
 import {
     type OKLCH,
     accent,
@@ -299,5 +300,16 @@ export const webLight: Theme = {
     // a separate @media block, NOT in this theme record.
     // ========================================================================
     'container-max': layoutContainer.max,
-    'container-narrow': layoutContainer.narrow
+    'container-narrow': layoutContainer.narrow,
+
+    // ========================================================================
+    // Accommodation-type per-type tokens — layered color model.
+    // Each `--accommodation-type-<type>` references its base palette's
+    // shade-500 primitive (`--palette-<name>-500`). Declared once in
+    // `tokens/accommodation-types.ts` and shared verbatim with admin-light so
+    // a given type renders with the SAME hue in both apps. Theme-independent
+    // (the palette primitives are not overridden in dark), so the dark themes
+    // inherit these via the cascade.
+    // ========================================================================
+    ...accommodationTypeTokens
 };

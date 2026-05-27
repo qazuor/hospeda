@@ -8,7 +8,7 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
  */
 
 :root {
-    /* Palette primitives — theme-independent (100 declarations). */
+    /* Palette primitives — theme-independent (150 declarations). */
     --palette-river-50: oklch(0.99 0.095 259);
     --palette-river-100: oklch(0.918 0.114 259);
     --palette-river-200: oklch(0.846 0.133 259);
@@ -99,6 +99,56 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --palette-info-700: oklch(0.365 0.143 259);
     --palette-info-800: oklch(0.232 0.119 259);
     --palette-info-900: oklch(0.1 0.095 259);
+    --palette-teal-50: oklch(0.99 0.05 185);
+    --palette-teal-100: oklch(0.912 0.06 185);
+    --palette-teal-200: oklch(0.834 0.07 185);
+    --palette-teal-300: oklch(0.756 0.08 185);
+    --palette-teal-400: oklch(0.678 0.09 185);
+    --palette-teal-500: oklch(0.6 0.1 185);
+    --palette-teal-600: oklch(0.475 0.088 185);
+    --palette-teal-700: oklch(0.35 0.075 185);
+    --palette-teal-800: oklch(0.225 0.063 185);
+    --palette-teal-900: oklch(0.1 0.05 185);
+    --palette-cyan-50: oklch(0.99 0.06 220);
+    --palette-cyan-100: oklch(0.922 0.072 220);
+    --palette-cyan-200: oklch(0.854 0.084 220);
+    --palette-cyan-300: oklch(0.786 0.096 220);
+    --palette-cyan-400: oklch(0.718 0.108 220);
+    --palette-cyan-500: oklch(0.65 0.12 220);
+    --palette-cyan-600: oklch(0.513 0.105 220);
+    --palette-cyan-700: oklch(0.375 0.09 220);
+    --palette-cyan-800: oklch(0.238 0.075 220);
+    --palette-cyan-900: oklch(0.1 0.06 220);
+    --palette-terracotta-50: oklch(0.99 0.06 40);
+    --palette-terracotta-100: oklch(0.908 0.072 40);
+    --palette-terracotta-200: oklch(0.826 0.084 40);
+    --palette-terracotta-300: oklch(0.744 0.096 40);
+    --palette-terracotta-400: oklch(0.662 0.108 40);
+    --palette-terracotta-500: oklch(0.58 0.12 40);
+    --palette-terracotta-600: oklch(0.46 0.105 40);
+    --palette-terracotta-700: oklch(0.34 0.09 40);
+    --palette-terracotta-800: oklch(0.22 0.075 40);
+    --palette-terracotta-900: oklch(0.1 0.06 40);
+    --palette-rose-50: oklch(0.99 0.08 350);
+    --palette-rose-100: oklch(0.916 0.096 350);
+    --palette-rose-200: oklch(0.842 0.112 350);
+    --palette-rose-300: oklch(0.768 0.128 350);
+    --palette-rose-400: oklch(0.694 0.144 350);
+    --palette-rose-500: oklch(0.62 0.16 350);
+    --palette-rose-600: oklch(0.49 0.14 350);
+    --palette-rose-700: oklch(0.36 0.12 350);
+    --palette-rose-800: oklch(0.23 0.1 350);
+    --palette-rose-900: oklch(0.1 0.08 350);
+    --palette-purple-50: oklch(0.99 0.085 310);
+    --palette-purple-100: oklch(0.902 0.102 310);
+    --palette-purple-200: oklch(0.814 0.119 310);
+    --palette-purple-300: oklch(0.726 0.136 310);
+    --palette-purple-400: oklch(0.638 0.153 310);
+    --palette-purple-500: oklch(0.55 0.17 310);
+    --palette-purple-600: oklch(0.438 0.149 310);
+    --palette-purple-700: oklch(0.325 0.128 310);
+    --palette-purple-800: oklch(0.213 0.106 310);
+    --palette-purple-900: oklch(0.1 0.085 310);
     --palette-neutral-50: oklch(0.985 0 0);
     --palette-neutral-100: oklch(0.95 0 0);
     --palette-neutral-200: oklch(0.9 0 0);
@@ -256,6 +306,16 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --frost-border: oklch(from var(--core-foreground) l c h / 0.08);
     --container-max: 1350px;
     --container-narrow: 900px;
+    --accommodation-type-hotel: var(--palette-accent-500);
+    --accommodation-type-apartment: var(--palette-river-500);
+    --accommodation-type-house: var(--palette-forest-500);
+    --accommodation-type-country-house: var(--palette-teal-500);
+    --accommodation-type-cabin: var(--palette-terracotta-500);
+    --accommodation-type-camping: var(--palette-sand-500);
+    --accommodation-type-hostel: var(--palette-cyan-500);
+    --accommodation-type-room: var(--palette-rose-500);
+    --accommodation-type-motel: var(--palette-danger-500);
+    --accommodation-type-resort: var(--palette-purple-500);
 }
 
 /* Viewport-conditional overrides from layoutMediaOverrides. */
@@ -344,6 +404,28 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --font-body: "Roboto", sans-serif;
     --font-heading: "Geologica", sans-serif;
     --radius: 0.75rem;
+    --brand-primary: oklch(0.63 0.19 259);
+    --brand-accent: oklch(0.7 0.18 55);
+    --brand-secondary: oklch(0.96 0.02 236);
+    --hospeda-river: oklch(0.63 0.19 259);
+    --hospeda-sky: oklch(0.8 0.08 259);
+    --hospeda-forest: oklch(0.5 0.14 155);
+    --hospeda-sand: oklch(0.7 0.12 75);
+    --muted: oklch(0.95 0.01 210);
+    --info: oklch(0.63 0.19 259);
+    --warning: oklch(0.75 0.18 85);
+    --warning-foreground: oklch(0.2 0.02 85);
+    --core-foreground: oklch(0.2 0.02 220);
+    --accommodation-type-hotel: var(--palette-accent-500);
+    --accommodation-type-apartment: var(--palette-river-500);
+    --accommodation-type-house: var(--palette-forest-500);
+    --accommodation-type-country-house: var(--palette-teal-500);
+    --accommodation-type-cabin: var(--palette-terracotta-500);
+    --accommodation-type-camping: var(--palette-sand-500);
+    --accommodation-type-hostel: var(--palette-cyan-500);
+    --accommodation-type-room: var(--palette-rose-500);
+    --accommodation-type-motel: var(--palette-danger-500);
+    --accommodation-type-resort: var(--palette-purple-500);
 }
 
 /* Admin dark theme — combined selector requires both flags. */
@@ -362,6 +444,14 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --color-warning: oklch(0.75 0.18 85);
     --color-danger: oklch(0.577 0.245 27.325);
     --color-info: oklch(0.63 0.19 259);
+    --brand-primary: oklch(0.68 0.17 259);
+    --brand-accent: oklch(0.72 0.19 55);
+    --brand-secondary: oklch(0.25 0.05 255);
+    --muted: oklch(0.22 0.02 220);
+    --info: oklch(0.68 0.17 259);
+    --warning: oklch(0.78 0.18 85);
+    --warning-foreground: oklch(0.1 0.02 85);
+    --core-foreground: oklch(0.92 0.01 210);
 }
 "
 `;
