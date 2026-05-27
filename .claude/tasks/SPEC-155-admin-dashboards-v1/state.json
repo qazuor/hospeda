@@ -659,7 +659,7 @@
             "id": "T-028",
             "title": "Create shared widget loading skeleton, error callout, and empty state",
             "description": "Build the shared UI primitives used across all widget types: loading skeleton, error callout with retry button, and empty state renderer.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/WidgetLoadingSkeleton.tsx`\n- `apps/admin/src/components/dashboards/widgets/WidgetErrorCallout.tsx`\n- `apps/admin/src/components/dashboards/widgets/WidgetEmptyState.tsx`\n- Or export all from a single `apps/admin/src/components/dashboards/widgets/shared.tsx`\n\nAcceptance criteria (AC-9, AC-15):\n- Loading skeleton has consistent height and padding across all widget types\n- Error callout is red, shows message, includes a 'Reintentar' button that calls provided `onRetry` callback\n- Empty state accepts a `message` string (from `config.emptyState.message`) and renders a neutral illustration or icon\n- All three primitives use the same card header style as other widgets\n\nTest requirements (AC-15):\n- Unit test: skeleton renders expected structure\n- Unit test: error callout renders message and retry button\n- Unit test: retry button calls `onRetry` callback\n- Unit test: empty state renders provided message",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -673,8 +673,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:48:22.000Z",
+                "completed": "2026-05-27T19:55:25.000Z"
             }
         },
         {
@@ -825,7 +825,7 @@
             "id": "T-035",
             "title": "Migrate dashboard page to per-role renderer",
             "description": "Replace the content of `apps/admin/src/routes/_authed/dashboard.tsx` to use `DashboardRenderer`. Keep the old `useDashboardStats()` path active (commented out or behind a feature flag) until parity is confirmed by T-036.\n\nFiles to modify:\n- `apps/admin/src/routes/_authed/dashboard.tsx` — replace implementation, keep old hook available\n\nAcceptance criteria (AC-36):\n- Route renders `DashboardRenderer` as its primary content\n- Old `useDashboardStats()` hook remains importable (not deleted yet)\n- Page header, breadcrumbs, and layout structure are preserved\n- Route guards and auth checks are unchanged\n\nTest requirements (AC-36):\n- Manual verification: navigate to `/dashboard` as ADMIN, HOST, EDITOR, and SUPER_ADMIN\n- No TypeScript errors on the modified page file\n- Existing route-level test (if any) still passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034"],
             "blocks": ["T-036"],
@@ -839,8 +839,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T19:48:22.000Z",
+                "completed": "2026-05-27T19:55:25.000Z"
             }
         },
         {
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 30,
-        "pending": 8,
+        "completed": 32,
+        "pending": 6,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,

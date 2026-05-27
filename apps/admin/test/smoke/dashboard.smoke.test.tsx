@@ -6,11 +6,48 @@
  * Verifies that each page renders without crashing.
  * These are NOT functional tests -- they only check that the component
  * tree mounts successfully with mocked dependencies.
+ *
+ * ## T-035 change
+ *
+ * The dashboard smoke test now additionally asserts that the config-driven
+ * `DashboardRenderer` is present in the rendered output (via the
+ * `data-testid="dashboard-renderer"` attribute set by `DashboardGrid`).
+ * This confirms that the page has been wired to the new renderer and that
+ * the hard-coded KPI layout is no longer used.
  */
 
 import { waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../helpers/render-with-providers';
+
+// Mock DashboardResolverProvider — the context it provides is tested in
+// unit tests; here we only care that DashboardRenderer mounts without crashing.
+vi.mock('@/contexts/dashboard-resolver-context', () => ({
+    DashboardResolverProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    useDashboardResolver: () => ({ resolveForScope: vi.fn() })
+}));
+
+// Mock the widget components so DashboardGrid renders without real API calls.
+vi.mock('@/components/dashboards/widgets', () => ({
+    KpiWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`kpi-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    ListWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`list-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    ChartWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`chart-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    ChecklistWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`checklist-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    StatusWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`status-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    DeferredWidget: ({ title }: { title: string; phaseSpec: string }) => (
+        <div data-testid="deferred-widget">{title}</div>
+    )
+}));
 
 // Override the global @tanstack/react-router mock to include createFileRoute
 // and createLazyFileRoute (dashboard uses lazy loading)
@@ -58,15 +95,17 @@ import { Route as AnalyticsUsageRoute } from '@/routes/_authed/analytics/usage';
 import { Route as DashboardRoute } from '@/routes/_authed/dashboard.lazy';
 
 describe('Dashboard & Analytics smoke tests', () => {
-    it('renders dashboard page without crashing', async () => {
+    it('renders dashboard page without crashing and mounts DashboardRenderer', async () => {
         const Page = DashboardRoute.options.component;
         if (!Page) throw new Error('Component not found in Route.options');
 
-        renderWithProviders(<Page />);
+        const { getByTestId } = renderWithProviders(<Page />);
 
+        // T-035: DashboardGrid sets data-testid="dashboard-renderer" — verifies
+        // that the config-driven renderer replaced the hard-coded KPI layout.
         await waitFor(
             () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
+                expect(getByTestId('dashboard-renderer')).toBeInTheDocument();
             },
             { timeout: 5000 }
         );
