@@ -19,7 +19,8 @@ const SUBSCRIPTION_STATUSES = [
     'cancelled',
     'expired',
     'past_due',
-    'pending'
+    'pending',
+    'paused'
 ] as const;
 
 /** Maps QZPay subscription status values to our API status enum */
@@ -34,7 +35,7 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     unpaid: 'expired',
     incomplete: 'pending',
     incomplete_expired: 'expired',
-    paused: 'pending',
+    paused: 'paused',
     pending: 'pending'
 };
 
@@ -146,16 +147,22 @@ export const userSubscriptionRoute = createProtectedRoute({
             return { subscription: null };
         }
 
-        // Find the most recent active, trial, or past_due subscription
+        // Find the current subscription. Includes `paused` so the account UI can
+        // render the paused state + a "Reanudar" action (SPEC-143 #29 self-serve
+        // pause/resume); excluding it made a paused sub look like "no subscription"
+        // and stranded the user with no way to resume (SPEC-143 smoke F-UI-RESUME).
         const activeSubscription = subscriptions.find(
             (sub) =>
-                sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
+                sub.status === 'active' ||
+                sub.status === 'trialing' ||
+                sub.status === 'past_due' ||
+                sub.status === 'paused'
         );
 
         if (!activeSubscription) {
             apiLogger.debug(
                 { userId: actor.id, customerId: customer.id },
-                'No active or trial subscription found for billing customer'
+                'No active, trial, past_due, or paused subscription found for billing customer'
             );
             return { subscription: null };
         }
