@@ -12,6 +12,7 @@ import { adminHardDeletePostRoute } from './hardDelete';
 import { adminListPostsRoute } from './list';
 import { adminPatchPostRoute } from './patch';
 import { adminRestorePostRoute } from './restore';
+import { adminPostTrendRoute } from './trend';
 import { adminUpdatePostRoute } from './update';
 import { adminUpdatePostSeoRoute } from './updateSeo';
 
@@ -19,6 +20,11 @@ const app = createRouter();
 
 // GET / - List all posts (including deleted)
 app.route('/', adminListPostsRoute);
+
+// GET /trend - Monthly post creation trend for admin dashboard (SPEC-155 T-008)
+// NOTE: registered before /:id routes to prevent the param segment from
+// matching the literal string "trend".
+app.route('/', adminPostTrendRoute);
 
 // POST / - Create post
 app.route('/', adminCreatePostRoute);
