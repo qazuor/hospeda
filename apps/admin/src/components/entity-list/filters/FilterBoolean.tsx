@@ -63,7 +63,7 @@ export function FilterBoolean({ config, value, onChange }: FilterBooleanProps) {
         >
             <SelectTrigger
                 className={cn(
-                    'h-8 w-auto min-w-[8rem] max-w-[14rem] gap-1 text-sm',
+                    'h-8 w-auto min-w-[8rem] max-w-[14rem] gap-1 text-sm focus:ring-1 focus:ring-primary/30 focus:ring-offset-0',
                     isActive ? 'border-primary border-solid' : 'border-dashed'
                 )}
                 aria-label={

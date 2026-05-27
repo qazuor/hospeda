@@ -102,6 +102,9 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
         allowedPageSizes: [10, 20, 30, 50]
     },
 
+    // Default sort: alphabetical by name (overrides the global newest-first default).
+    defaultSort: { id: 'name', desc: false },
+
     // Layout configuration
     layoutConfig: {
         showBreadcrumbs: true,

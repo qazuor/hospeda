@@ -21,7 +21,8 @@ import type {
     EntityConfig,
     EntityListComponents,
     EntityListSearchParams,
-    GenerateRowType
+    GenerateRowType,
+    SortConfig
 } from './types';
 
 /**
@@ -57,6 +58,13 @@ const DEFAULT_PAGINATION_CONFIG = {
     defaultPageSize: 10,
     allowedPageSizes: [10, 20, 30, 50] as const
 } as const;
+
+/**
+ * Fallback sort applied to any list whose config does not set `defaultSort`.
+ * Every entity table exposes a sortable `createdAt` column, so newest-first
+ * is the sensible shared default. A config can override it per entity.
+ */
+const DEFAULT_SORT_CONFIG: SortConfig = { id: 'createdAt', desc: true };
 
 /**
  * Static Tailwind grid column class map.
@@ -238,7 +246,7 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Parse sort from URL ("field:direction" format)
         const parsedSort: DataTableSort = useMemo(() => {
-            if (!search.sort) return [];
+            if (!search.sort) return [config.defaultSort ?? DEFAULT_SORT_CONFIG];
             try {
                 const parts = search.sort.split(':');
                 if (parts.length === 2 && parts[0]) {
@@ -248,7 +256,7 @@ export const createEntityListPage = <TData extends { id: string }>(
             } catch {
                 return [];
             }
-        }, [search.sort]);
+        }, [search.sort, config.defaultSort]);
 
         // updateSearch must be defined before useFilterState (which stores it in callbacks)
         const updateSearch = useCallback(
