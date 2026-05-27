@@ -395,7 +395,7 @@
             "id": "T-016",
             "title": "Seed EDITOR newsletter permission grant",
             "description": "Add `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, and `NEWSLETTER_SUBSCRIBER_VIEW` to the EDITOR role in the rolePermissions seed file. Do NOT add `NEWSLETTER_CAMPAIGN_SEND` — sending stays admin-only.\n\nFiles to modify:\n- `packages/seed/src/required/rolePermissions.seed.ts`\n\nAcceptance criteria (AC-29, AC-30):\n- EDITOR role gains exactly: `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, `NEWSLETTER_SUBSCRIBER_VIEW`.\n- EDITOR role does NOT get `NEWSLETTER_CAMPAIGN_SEND`.\n- All other roles are unchanged.\n- SUPER_ADMIN retains all newsletter permissions including SEND.\n\nTest requirements (AC-29, AC-30):\n- Unit test in `packages/seed/src/__tests__/rolePermissions.test.ts` (or equivalent):\n  - Assert EDITOR has all three new permissions\n  - Assert EDITOR does NOT have `NEWSLETTER_CAMPAIGN_SEND`\n  - Assert SUPER_ADMIN still has all four newsletter permissions\n- Run seed diff to confirm no unintended role mutations",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": [],
@@ -409,15 +409,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Create dashboard source resolver skeleton",
             "description": "Scaffold the `dashboard-sources.ts` registry with: role context provider hook, typed resolver interface, and query key factory. No actual source registrations yet — just the infrastructure.\n\nFiles to create:\n- `apps/admin/src/lib/dashboard-sources.ts` — main registry\n- `apps/admin/src/contexts/DashboardContext.tsx` (or similar) — role/user context provider\n\nKey types to define (AC-16, AC-19):\n```typescript\ntype SourceId = string;\ntype DashboardContext = { userId: string; role: string; permissions: string[] };\ntype ResolvedSource = { queryKey: readonly unknown[]; queryFn: () => Promise<unknown> };\ntype SourceResolver = (ctx: DashboardContext) => ResolvedSource;\n```\n\nQuery key convention (AC-19):\n- All dashboard query keys must include role and scope: `['dashboard', role, sourceId, scopeId?]`\n- 60s `staleTime` set as default in resolver output\n- Refetch-on-focus enabled by default\n\nTest requirements:\n- Unit test: registry returns a resolver for a given sourceId\n- Unit test: query key includes role identifier",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-018", "T-019", "T-020", "T-021"],
@@ -431,8 +431,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
             }
         },
         {
@@ -527,7 +527,7 @@
             "id": "T-022",
             "title": "Create DeferredWidget component",
             "description": "Build a reusable `DeferredWidget` component that renders a 'coming soon' placeholder for any 🔴 data slot, without erroring and without blocking other slots in the same card.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/DeferredWidget.tsx`\n\nComponent interface:\n```typescript\ninterface DeferredWidgetProps {\n  phaseSpec: string;       // e.g. 'SPEC-159'\n  description: string;     // Human-readable description of what will appear here\n  expectedLabel?: string;  // Optional: label of the future data point\n}\n```\n\nAcceptance criteria (AC-14, AC-15):\n- Renders a visually consistent 'coming soon' state\n- Does NOT throw errors\n- Does NOT block rendering of other slots in the same card\n- Uses i18n-safe labels (es/en/pt)\n\nTest requirements (AC-14):\n- Unit test: renders without errors given valid props\n- Unit test: displays phaseSpec reference in rendered output\n- Unit test: renders independently of any data fetching (no query calls)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034", "T-041"],
@@ -541,8 +541,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
             }
         },
         {
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 12,
-        "pending": 26,
+        "completed": 15,
+        "pending": 23,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,
