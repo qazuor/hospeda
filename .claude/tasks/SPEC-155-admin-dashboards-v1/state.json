@@ -439,7 +439,7 @@
             "id": "T-018",
             "title": "Register HOST data sources in resolver",
             "description": "Register all HOST dashboard source IDs in `dashboard-sources.ts`, mapping each to a TanStack Query options object pointing to the correct API endpoint.\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (HOST cards A–G, excluding views 🔴):\n- `host.accommodations.list` → `GET /api/v1/protected/accommodations?ownerId={userId}`\n- `host.plan.status` → existing billing subscription endpoint scoped to user\n- `host.inquiries.pending` → existing conversations endpoint filtered by pending + ownerId\n- `host.accommodation.detail` → `GET /api/v1/protected/accommodations/{id}` (for checklist card D)\n- `host.reviews.recent` → existing reviews endpoint scoped to host\n- `host.profile` → user profile endpoint\n- `host.favorites.breakdown` → `GET /api/v1/protected/host/favorites/breakdown` (T-005)\n- `host.conversations.responseRate` → `GET /api/v1/protected/host/conversations/response-rate` (T-006)\n- `host.stats.ratings` → existing rating aggregate endpoint\n\nAcceptance criteria (AC-16, AC-17, AC-19):\n- All HOST source IDs resolve to a valid TanStack Query options object\n- `ownerId` injected from context.userId on every HOST-scoped query — not from params\n- Query keys follow `['dashboard', 'host', sourceId, userId]` pattern\n\nTest requirements (AC-17):\n- Unit test: every registered HOST source injects userId into query key and queryFn URL",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004", "T-005", "T-006", "T-017"],
             "blocks": ["T-029", "T-038"],
@@ -453,15 +453,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Register EDITOR data sources in resolver",
             "description": "Register all EDITOR dashboard source IDs in `dashboard-sources.ts`, excluding views-per-post (🔴→SPEC-159), open-rate (🔴→SPEC-160), and comments (🔴→SPEC-165).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (EDITOR cards A–H, card H is deferred to SPEC-165):\n- `editor.posts.publishedThisMonth` → existing posts endpoint with month filter\n- `editor.posts.drafts` → existing posts endpoint with draft status\n- `editor.events.upcoming` → existing events endpoint with date filter\n- `editor.newsletter.subscribers` → existing subscribers endpoint\n- `editor.newsletter.byPreference` → `GET /api/v1/admin/newsletter/subscribers/by-preference` (T-007)\n- `editor.newsletter.campaigns` → existing campaigns endpoint\n- `editor.posts.trend` → `GET /api/v1/admin/posts/trend` (T-008)\n- `editor.posts.list` → posts list for health checks\n- `editor.events.list` → events list for health checks\n- Card H (Comentarios): no source registered — DeferredWidget pointing to SPEC-165 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All EDITOR source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'editor', sourceId]` pattern\n- Card H has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all EDITOR source IDs are registered and return valid query options objects",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004", "T-007", "T-008", "T-017"],
             "blocks": ["T-030"],
@@ -475,15 +475,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Register ADMIN base data sources in resolver",
             "description": "Register all ADMIN base dashboard source IDs in `dashboard-sources.ts`, excluding cron run-history (🔴→SPEC-161) and reviews-pending (🔴→SPEC-166).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (ADMIN base cards A–G):\n- `admin.stats.entities` → existing entity count endpoints (accommodations, destinations, events, posts, attractions, users)\n- `admin.accommodations.latest` → accommodations list sorted by createdAt desc\n- `admin.events.upcomingFeatured` → events with featured flag + upcoming date\n- `admin.posts.recentDrafts` → posts with draft status sorted by updatedAt\n- `admin.crons.list` → existing cron jobs list endpoint\n- `admin.system.health` → existing health endpoint\n- `admin.system.maintenanceMode` → maintenance-mode endpoint (T-013)\n- `admin.moderation.pendingCount` → `GET /api/v1/admin/moderation/pending-count` (T-010) — 4 entities only, no reviews\n- `admin.users.stats` → `GET /api/v1/admin/users/stats` (T-012)\n- Card F reviews-pending sub-slot: no source registered — DeferredWidget pointing to SPEC-166 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All ADMIN source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'admin', sourceId]` pattern\n- Card F reviews sub-slot has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all ADMIN source IDs are registered and return valid query options objects",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004", "T-010", "T-012", "T-013", "T-017"],
             "blocks": ["T-031"],
@@ -497,15 +497,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Register SUPER_ADMIN-only data sources in resolver",
             "description": "Register the SUPER_ADMIN-only dashboard source IDs in `dashboard-sources.ts`. Card H has no live sources (all slots are 🔴 deferred). Card I uses existing billing metrics endpoints.\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (SUPER-only cards H–I):\n- `super.billing.activeSubscriptions` → existing billing metrics endpoint\n- `super.billing.mrr` → existing billing MRR endpoint\n- `super.billing.revenueChart` → existing 12-month revenue endpoint\n- `super.billing.arpu` → existing ARPU endpoint\n- `super.billing.churn` → existing churn endpoint\n- `super.billing.breakdown` → existing subscription breakdown endpoint\n- Card H sources: none registered (all 🔴 — handled by DeferredWidget)\n\nAcceptance criteria (AC-7, AC-16):\n- All SUPER billing source IDs resolve to valid TanStack Query options\n- Card H has no registered sources (DeferredWidget handles all three slots)\n- Query keys include `'super'` role identifier\n\nTest requirements:\n- Unit test: all SUPER source IDs resolve correctly\n- Unit test: card H has no resolvable sources (confirming DeferredWidget path)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004", "T-017"],
             "blocks": ["T-032"],
@@ -519,8 +519,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
             }
         },
         {
@@ -549,7 +549,7 @@
             "id": "T-023",
             "title": "Create KpiWidget component",
             "description": "Build the KPI widget renderer displaying a numeric value with optional delta indicator and unit prefix/suffix.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/KpiWidget.tsx`\n\nComponent interface (AC-10):\n```typescript\ninterface KpiWidgetProps {\n  value: number;\n  label: string;\n  delta?: { direction: 'up' | 'down' | 'neutral'; value: number; unit?: string };\n  prefix?: string;\n  suffix?: string;\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-10, AC-15):\n- Displays value prominently with optional prefix/suffix\n- Delta shows up/down icon with value and optional unit\n- Loading state shows skeleton (from T-028)\n- Error state shows red callout (from T-028)\n\nTest requirements:\n- Unit test: renders value + prefix + suffix correctly\n- Unit test: renders up delta with correct icon\n- Unit test: renders down delta with correct icon\n- Unit test: renders loading skeleton when `isLoading=true`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-034"],
@@ -563,8 +563,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
             }
         },
         {
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 15,
-        "pending": 23,
+        "completed": 20,
+        "pending": 18,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,
