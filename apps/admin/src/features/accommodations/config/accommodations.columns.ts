@@ -3,12 +3,12 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
 import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
-import { AccommodationReviewsCell } from '../components/AccommodationReviewsCell';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
 import { useUpdateAccommodationMutation } from '../hooks/useAccommodationQuery';
 import type { Accommodation } from '../schemas/accommodations.schemas';
@@ -160,7 +160,15 @@ export const createAccommodationsColumns = (
         accessorKey: 'reviewsCount',
         enableSorting: true,
         columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) => createElement(AccommodationReviewsCell, { row })
+        widgetRenderer: (row) =>
+            createElement(ReviewsCell, {
+                entityId: row.id,
+                entityName: row.name,
+                count: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                reviewsPath: '/api/v1/admin/accommodations/reviews',
+                idParamName: 'accommodationId',
+                queryKeyPrefix: 'accommodation-reviews'
+            })
     },
     {
         id: 'isFeatured',
