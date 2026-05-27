@@ -132,6 +132,32 @@ export const UserBookmarkCountByUserSchema = z.object({
 });
 
 // ============================================================================
+// HOST DASHBOARD SCHEMAS (SPEC-155 T-005)
+// ============================================================================
+
+/**
+ * A single row in the host favorites-per-accommodation breakdown.
+ * Returned by `GET /api/v1/protected/accommodations/my/favorites-breakdown`.
+ */
+export const HostFavoritesBreakdownItemSchema = z.object({
+    /** UUID of the accommodation */
+    accommodationId: z.string().uuid(),
+    /** URL-friendly slug of the accommodation */
+    slug: z.string().min(1),
+    /** Total number of bookmarks received by this accommodation */
+    bookmarkCount: z.number().int().min(0)
+});
+
+/**
+ * Response schema: array of per-accommodation bookmark counts scoped to the
+ * authenticated host.
+ */
+export const HostFavoritesBreakdownSchema = z.array(HostFavoritesBreakdownItemSchema);
+
+export type HostFavoritesBreakdownItem = z.infer<typeof HostFavoritesBreakdownItemSchema>;
+export type HostFavoritesBreakdown = z.infer<typeof HostFavoritesBreakdownSchema>;
+
+// ============================================================================
 // RESULT ITEM SCHEMAS
 // ============================================================================
 

@@ -14,6 +14,7 @@ import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
+import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
@@ -31,6 +32,10 @@ ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 
 const app = createRouter();
+
+// GET /my/favorites-breakdown - Per-accommodation bookmark count (SPEC-155 T-005)
+// Registered before GET / to avoid the list route matching the /my/* prefix.
+app.route('/', hostFavoritesBreakdownRoute);
 
 // GET / - List own accommodations (no ownership check — filtered by actor.id in handler)
 app.route('/', protectedListOwnAccommodationsRoute);
