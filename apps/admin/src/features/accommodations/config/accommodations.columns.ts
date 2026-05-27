@@ -121,9 +121,10 @@ export const createAccommodationsColumns = (
     {
         id: 'price',
         header: t('admin-entities.columns.price'),
-        accessorKey: 'price.price',
+        accessorKey: 'price',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.PRICE,
+        align: 'right'
     },
     {
         id: 'averageRating',

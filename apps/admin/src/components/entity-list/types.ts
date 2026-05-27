@@ -91,6 +91,8 @@ export type ColumnConfig<TData = unknown> = {
     readonly startVisibleOnTable?: boolean;
     readonly startVisibleOnGrid?: boolean;
     readonly columnType?: ColumnType;
+    /** Horizontal alignment of the column header and cells. Defaults to left. */
+    readonly align?: 'left' | 'right' | 'center';
     readonly badgeOptions?: readonly BadgeOption[];
     readonly linkHandler?: LinkHandler<TData>;
     readonly entityOptions?: EntityOption;
