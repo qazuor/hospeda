@@ -139,7 +139,22 @@
         "postsCount": "Publicações",
         "relatedAccommodation": "Rel. Hospedagem",
         "relatedDestination": "Rel. Destino",
-        "relatedEvent": "Rel. Evento"
+        "relatedEvent": "Rel. Evento",
+        "publishedAt": "Publicado em",
+        "expiresAt": "Expira em",
+        "isNews": "É Notícia",
+        "featuredInWebsite": "Destaque no Site",
+        "likes": "Curtidas",
+        "comments": "Comentários",
+        "shares": "Compartilhamentos",
+        "firstName": "Nome",
+        "lastName": "Sobrenome",
+        "locationCity": "Cidade",
+        "emailVerified": "Email Verificado",
+        "banned": "Banido",
+        "banReason": "Motivo do Banimento",
+        "banExpires": "Banimento Expira",
+        "avatar": "Avatar"
     },
     "actions": {
         "view": "Ver",

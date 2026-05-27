@@ -619,6 +619,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                             ? String(
                                   (peekRow as Record<string, unknown>).name ??
                                       (peekRow as Record<string, unknown>).title ??
+                                      (peekRow as Record<string, unknown>).displayName ??
                                       (peekRow as Record<string, unknown>).id ??
                                       ''
                               )
