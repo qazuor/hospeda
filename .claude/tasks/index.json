@@ -484,7 +484,7 @@
             "specId": "SPEC-155",
             "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
             "status": "in-progress",
-            "progress": "5/39",
+            "progress": "38/38",
             "path": "SPEC-155-admin-dashboards-v1",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
             "branch": "spec/SPEC-155-admin-dashboards-v1",
@@ -492,7 +492,7 @@
             "reservedAt": "2026-05-22T00:00:00Z",
             "activatedAt": "2026-05-26T00:00:00Z",
             "tasksAtomizedAt": "2026-05-27T00:00:00Z",
-            "note": "39 active tasks (41 IDs - 2 tombstones: T-009→SPEC-165, T-011→SPEC-166). Updated 2026-05-27: Phase-1 scout extracted comments (T-009) to SPEC-165 and reviews-pending (T-011) to SPEC-166. 5 completed (T-001..T-004, T-015). T-012 in-progress. Phase 1 now has 7 buildable routes. Hard gates: T-003+T-004 BLOCK T-017..T-033; T-015 BLOCKS T-016; T-014 BLOCKED BY T-005/T-006/T-007/T-008/T-010/T-012/T-013; T-036 BLOCKS T-037."
+            "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Ready for PR to staging (not yet merged)."
         },
         {
             "specId": "SPEC-156",
