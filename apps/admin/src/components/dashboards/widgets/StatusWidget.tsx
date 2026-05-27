@@ -265,6 +265,13 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
 
     // -- 8. Data — narrow to StatusData shape --------------------------------
     const statusData = data as StatusData;
+
+    // Defensive guard: if the resolver returned an unexpected shape (e.g. an
+    // object without `status`, or a non-object), fall back to the empty state.
+    if (!statusData || typeof statusData !== 'object' || typeof statusData.status !== 'string') {
+        return <WidgetEmpty variant="status" />;
+    }
+
     const variant = resolveVariant(statusData.status, config.variantMap);
     const badgeLabel = statusData.label ?? capitalize(statusData.status);
 
