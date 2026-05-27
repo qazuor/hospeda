@@ -113,6 +113,10 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
 
     afterAll(async () => {
         await testDb.teardown();
+        // Reset the shared mp-stub config on file teardown so a leftover
+        // error/timeout mode doesn't bleed into the first test of the next
+        // file in the same vitest worker (was flaking mp-error-handling).
+        mpStub.config.reset();
     });
 
     beforeEach(async () => {

@@ -510,7 +510,7 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
 
         // ACT — POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -608,15 +608,18 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
 
         // ACT 1 — first event lands and creates the row.
         const first = buildSignedWebhookRequest({ providerPaymentId });
-        const firstResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...first.headers
-            },
-            body: first.body
-        });
+        const firstResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...first.headers
+                },
+                body: first.body
+            }
+        );
         expect(firstResponse.status).toBe(200);
 
         const afterFirst = await testDb.getDb().select().from(billingAddonPurchases);
@@ -629,15 +632,18 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
         // Hospeda's payment-logic.ts idempotency guard (SELECT by
         // paymentId) is what we want to validate here.
         const second = buildSignedWebhookRequest({ providerPaymentId });
-        const secondResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...second.headers
-            },
-            body: second.body
-        });
+        const secondResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...second.headers
+                },
+                body: second.body
+            }
+        );
         expect(secondResponse.status).toBe(200);
 
         // ASSERT — still exactly one row, same id. The idempotency guard
@@ -750,7 +756,7 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
         // ACT 2 — POST the signed webhook. confirmAddonPurchase runs and,
         // as a side effect, invokes clearEntitlementCache(customerId).
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

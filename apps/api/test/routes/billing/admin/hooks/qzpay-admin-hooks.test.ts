@@ -46,11 +46,17 @@ vi.mock('@repo/db', () => ({
     billingSubscriptionEvents: {
         id: 'id',
         subscriptionId: 'subscription_id',
+        previousStatus: 'previous_status',
         newStatus: 'new_status',
         triggerSource: 'trigger_source',
         eventType: 'event_type',
         metadata: 'metadata',
         createdAt: 'created_at'
+    },
+    billingSubscriptions: {
+        id: 'id',
+        customerId: 'customer_id',
+        status: 'status'
     }
 }));
 
@@ -158,11 +164,22 @@ function buildSubscription(overrides: Record<string, unknown> = {}) {
  * assert which tables/conditions/values were used.
  */
 function buildDbMock(
-    opts: { activePurchases?: Array<{ id: string; addonSlug: string; customerId: string }> } = {}
+    opts: {
+        activePurchases?: Array<{ id: string; addonSlug: string; customerId: string }>;
+        subscriptionStatus?: string;
+    } = {}
 ) {
     const activePurchases = opts.activePurchases ?? [];
+    const subscriptionStatus = opts.subscriptionStatus ?? 'active';
 
-    const selectWhere = vi.fn().mockResolvedValue(activePurchases);
+    // onBeforeSubscriptionCancel issues TWO selects: first the live-status
+    // guard query (returns the subscription's current status), then the active
+    // addon-purchases query. Resolve them in that order. Other hooks issue no
+    // select, so the leading once() value is simply never consumed there.
+    const selectWhere = vi
+        .fn()
+        .mockResolvedValueOnce([{ status: subscriptionStatus }])
+        .mockResolvedValue(activePurchases);
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
     const select = vi.fn().mockReturnValue({ from: selectFrom });
 
@@ -242,6 +259,29 @@ describe('adminBillingHooks.onBeforeSubscriptionCancel', () => {
             ok: false,
             reason: 'Billing service is not configured.'
         });
+    });
+
+    it('returns { ok: false } and skips side effects when the subscription is already cancelled', async () => {
+        const { db, spies } = buildDbMock({ subscriptionStatus: 'canceled' });
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const result = await adminBillingHooks.onBeforeSubscriptionCancel!({
+            subscriptionId: SUBSCRIPTION_ID,
+            immediate: false,
+            ctx: buildContext()
+        });
+
+        // Idempotency guard: the live row is already cancelled, so the hook
+        // aborts (HTTP 422 upstream) before revoking addons or writing events.
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.reason).toContain('already cancelled');
+        }
+        expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+        expect(spies.insert).not.toHaveBeenCalled();
     });
 
     it('returns { ok: true } and writes a compensating event when all revocations succeed', async () => {

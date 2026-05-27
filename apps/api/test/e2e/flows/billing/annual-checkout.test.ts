@@ -410,7 +410,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT: POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -473,7 +473,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -508,9 +508,13 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         const localSubscriptionId = await createPendingAnnualSubscription();
         const providerPaymentId = `pay_test_${randomUUID()}`;
 
-        // ACT: build a body but use wrong-hmac headers — Hospeda's own
-        // webhookSignatureMiddleware (HMAC over the body with the test secret)
-        // rejects BEFORE qzpay-hono even runs.
+        // qzpay-hono's webhook router is the signature gate now (the custom
+        // hospeda webhookSignatureMiddleware was removed in PR #1221). Make the
+        // stub's verifySignature reject so the gate returns 401.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        // ACT: build a body with wrong-hmac headers; qzpay-hono verifies the
+        // signature via the stub above and rejects with 401 before dispatch.
         const body = JSON.stringify({
             id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
             type: 'payment',
@@ -521,7 +525,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         });
         const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
 
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -542,8 +546,9 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         expect(subs).toHaveLength(1);
         expect(subs[0]?.status).toBe('pending_provider');
 
-        // ASSERT: stub never reached (hospeda's middleware short-circuited).
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // ASSERT: qzpay verified the signature once (and it failed); the event
+        // was never constructed because the gate rejected before dispatch.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     });
@@ -669,7 +674,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             })
         );
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

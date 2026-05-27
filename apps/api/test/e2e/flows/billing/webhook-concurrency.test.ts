@@ -307,7 +307,7 @@ describe('SPEC-143 T-143-64 — webhook concurrency (concurrent + out-of-order)'
                 providerPaymentId
             });
             const [first, second] = await Promise.all([
-                app.request('/api/v1/webhooks/mercadopago', {
+                app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
                     method: 'POST',
                     headers: {
                         'content-type': 'application/json',
@@ -316,7 +316,7 @@ describe('SPEC-143 T-143-64 — webhook concurrency (concurrent + out-of-order)'
                     },
                     body: requestPair.body
                 }),
-                app.request('/api/v1/webhooks/mercadopago', {
+                app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
                     method: 'POST',
                     headers: {
                         'content-type': 'application/json',
@@ -450,7 +450,7 @@ describe('SPEC-143 T-143-64 — webhook concurrency (concurrent + out-of-order)'
                 outerEventId: authPaymentEventId,
                 authorizedPaymentId
             });
-            const authRes = await app.request('/api/v1/webhooks/mercadopago', {
+            const authRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -499,7 +499,7 @@ describe('SPEC-143 T-143-64 — webhook concurrency (concurrent + out-of-order)'
                 outerEventId: preapprovalEventId,
                 mpSubId: mpSubscriptionId
             });
-            const preRes = await app.request('/api/v1/webhooks/mercadopago', {
+            const preRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
