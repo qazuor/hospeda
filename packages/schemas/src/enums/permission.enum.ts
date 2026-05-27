@@ -152,6 +152,8 @@ export enum PermissionEnum {
     DESTINATION_SOFT_DELETE_VIEW = 'destination.softDelete.view', // Allows viewing soft-deleted destinations.
     DESTINATION_FEATURED_TOGGLE = 'destination.featured.toggle', // Allows toggling featured status of a destination.
     DESTINATION_VISIBILITY_TOGGLE = 'destination.visibility.toggle', // Allows toggling visibility of a destination.
+    DESTINATION_LIFECYCLE_CHANGE = 'destination.lifecycle.change', // Allows changing destination lifecycle state.
+    DESTINATION_MODERATION_CHANGE = 'destination.moderation.change', // Allows changing destination moderation state.
     DESTINATION_REVIEW_MODERATE = 'destination.review.moderate', // Allows moderating destination reviews.
     DESTINATION_TAGS_MANAGE = 'destination.tags.manage', // Allows managing tags for destinations.
     DESTINATION_GALLERY_MANAGE = 'destination.gallery.manage', // Allows managing destination gallery.
