@@ -113,7 +113,7 @@ export const createAccommodationsColumns = (
         linkHandler: (row) =>
             row.owner?.id
                 ? {
-                      to: '/users/$id',
+                      to: '/access/users/$id',
                       params: { id: row.owner.id }
                   }
                 : undefined
