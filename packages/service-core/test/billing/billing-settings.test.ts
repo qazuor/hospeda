@@ -171,6 +171,38 @@ describe('BillingSettingsService', () => {
             expect(mockWithTransaction).toHaveBeenCalled();
         });
 
+        it('writes the audit log with a valid UUID entityId, not the literal "global" (F-ADMIN-SETTINGS-WRITE)', async () => {
+            // billing_audit_logs.entity_id is a NOT NULL UUID column; writing the
+            // string 'global' threw `invalid input syntax for type uuid` and rolled
+            // back every settings save. Assert the audit insert uses a UUID.
+            mockGetDb.mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            limit: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                })
+            });
+            const valuesSpy = vi.fn().mockReturnValue({
+                onConflictDoUpdate: vi.fn().mockResolvedValue([])
+            });
+            mockWithTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+                fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) })
+            );
+
+            await service.updateSettings({ taxRate: 10 });
+
+            const auditInsert = valuesSpy.mock.calls
+                .map((c) => c[0] as { entityType?: string; entityId?: string })
+                .find((v) => v?.entityType === 'settings');
+            expect(auditInsert).toBeDefined();
+            expect(auditInsert?.entityId).not.toBe('global');
+            expect(auditInsert?.entityId).toMatch(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+            );
+        });
+
         it('should throw when patch produces invalid settings', async () => {
             // Arrange
             mockGetDb.mockReturnValue({
