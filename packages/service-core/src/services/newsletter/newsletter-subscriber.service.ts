@@ -65,7 +65,8 @@ import {
 import type {
     NewsletterContentPreferences,
     NewsletterSubscriberAdminSearch,
-    NewsletterSubscriberStatsResponse
+    NewsletterSubscriberStatsResponse,
+    NewsletterSubscribersByPreference
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -1954,6 +1955,104 @@ export class NewsletterSubscriberService extends BaseService {
                     totalUnsubscribed: row.totalUnsubscribed ?? 0,
                     totalBounced: row.totalBounced ?? 0,
                     totalComplained: row.totalComplained ?? 0
+                };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Public API — getStatsByPreference
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns per-content-preference opt-in counts for ACTIVE subscribers (admin only).
+     *
+     * Requires `NEWSLETTER_SUBSCRIBER_VIEW` permission.
+     *
+     * A subscriber is counted for a preference when their `preferences` JSONB
+     * field contains `{ "<key>": true }` AND their `status` is `active` AND
+     * `deleted_at IS NULL`.
+     *
+     * The JSONB keys are camelCase (`offers`, `events`, `guides`, `productNews`)
+     * matching `NewsletterContentTypeEnum` values. The response uses UPPER_SNAKE
+     * keys (`OFFERS`, `EVENTS`, `GUIDES`, `PRODUCT_NEWS`) matching the enum
+     * member names so the client can reference them without a mapping table.
+     *
+     * A single SQL query with four `COUNT(*) FILTER` clauses avoids multiple
+     * round-trips; the JSONB boolean cast `(preferences->>'<key>')::boolean`
+     * handles `null` as falsy (PostgreSQL returns NULL for missing keys, which
+     * the `= true` comparison treats as false — no subscribers are
+     * over-counted).
+     *
+     * @param actor - The admin actor requesting the stats.
+     * @param ctx - Optional service context (e.g. for test transaction isolation).
+     * @returns Counts per content preference, keyed by UPPER_SNAKE enum name.
+     *
+     * @example
+     * ```ts
+     * const result = await svc.getStatsByPreference(actor);
+     * if (!result.error) {
+     *   console.log(result.data.OFFERS); // e.g. 980
+     * }
+     * ```
+     */
+    public async getStatsByPreference(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<NewsletterSubscribersByPreference>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getStatsByPreference',
+            input: { actor },
+            schema: z.object({ actor: z.unknown() }),
+            ctx,
+            execute: async () => {
+                checkCanViewSubscribers(actor);
+
+                const db = getDb();
+
+                // Each FILTER clause inspects the JSONB column using the
+                // camelCase key names stored in the database.
+                // (preferences->>'offers')::boolean = true  is safe:
+                //   - missing key  → NULL  → comparison is false (not counted)
+                //   - stored false → false → not counted
+                //   - stored true  → true  → counted
+                const result = await db.execute<{
+                    offers: number;
+                    events: number;
+                    guides: number;
+                    productNews: number;
+                }>(sql`
+                    SELECT
+                        COUNT(*) FILTER (
+                            WHERE status = ${NewsletterSubscriberStatusEnum.ACTIVE}
+                              AND deleted_at IS NULL
+                              AND (preferences->>'offers')::boolean = true
+                        )::int AS "offers",
+                        COUNT(*) FILTER (
+                            WHERE status = ${NewsletterSubscriberStatusEnum.ACTIVE}
+                              AND deleted_at IS NULL
+                              AND (preferences->>'events')::boolean = true
+                        )::int AS "events",
+                        COUNT(*) FILTER (
+                            WHERE status = ${NewsletterSubscriberStatusEnum.ACTIVE}
+                              AND deleted_at IS NULL
+                              AND (preferences->>'guides')::boolean = true
+                        )::int AS "guides",
+                        COUNT(*) FILTER (
+                            WHERE status = ${NewsletterSubscriberStatusEnum.ACTIVE}
+                              AND deleted_at IS NULL
+                              AND (preferences->>'productNews')::boolean = true
+                        )::int AS "productNews"
+                    FROM newsletter_subscribers
+                `);
+
+                const row = result.rows[0];
+
+                return {
+                    OFFERS: row?.offers ?? 0,
+                    EVENTS: row?.events ?? 0,
+                    GUIDES: row?.guides ?? 0,
+                    PRODUCT_NEWS: row?.productNews ?? 0
                 };
             }
         });

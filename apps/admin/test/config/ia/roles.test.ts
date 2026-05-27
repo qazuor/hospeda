@@ -143,11 +143,13 @@ describe('adminRole', () => {
         ]);
     });
 
-    it('should reference adminDashboard', () => {
+    it('should reference adminBaseDashboard (SPEC-155 base+section model)', () => {
+        // SPEC-155 AC-8: ADMIN resolves to adminBaseDashboard (7 cards A-G).
+        // Cards H-I are absent from adminBaseDashboard by config (AC-31).
         // Arrange
         const result = RoleConfigSchema.parse(adminRole);
         // Assert
-        expect(result.dashboard).toBe('adminDashboard');
+        expect(result.dashboard).toBe('adminBaseDashboard');
     });
 
     it('should have topbar with showSearch=true, showQuickCreate="all", accountInMenu=false', () => {

@@ -1,164 +1,736 @@
 /**
- * Admin IA — Dashboard Stubs (T-016)
+ * Admin IA — Dashboard Configs (SPEC-155)
  *
- * Stub dashboard definitions for the 4 canonical role dashboards.
- * Each dashboard has one minimal placeholder KPI widget to satisfy the
- * DashboardSchema constraint (widgets ≥ 1).
+ * Defines the per-role dashboard objects consumed by the config-driven IA
+ * system (SPEC-154). Phase 5 (T-029..T-033) replaces the placeholder stubs
+ * with the real widget definitions per the card set in
+ * `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md`.
  *
- * STUB — real widgets land in SPEC-155.
- * The widget set described in doc 01 §6 and doc 03-dashboards.md will replace
- * these placeholders when SPEC-155 is implemented.
+ * ## Structure
  *
- * Design source of truth: `.claude/audit/admin-redesign/proposals/01-information-architecture.md` §6.
+ * The ADMIN / SUPER_ADMIN shared model uses a "base + extension" pattern:
+ *
+ * - `adminBaseDashboard`     — 7 widgets (cards A–G), shared between ADMIN
+ *                              and SUPER_ADMIN. ADMIN role points directly to
+ *                              this dashboard and sees only cards A–G.
+ * - `superAdminOnlySection`  — 2 widgets (cards H–I) with `onMissing: 'hide'`.
+ *                              Never included in `adminBaseDashboard`. Exported
+ *                              as a named object so the renderer can reference it.
+ * - `superAdminDashboard`    — Assembled from `adminBaseDashboard.widgets` +
+ *                              `superAdminOnlySection.widgets` (9 total).
+ *                              SUPER_ADMIN role points to this dashboard.
+ *
+ * ## DeferredWidget contract
+ *
+ * Slots whose backend is deferred to a future spec use a phase-2 type (e.g.
+ * `type: 'callout'`) with a special `config.deferred` object so the renderer
+ * can delegate to `DeferredWidget`. Each deferred slot carries:
+ *   - `config.deferred: true`
+ *   - `config.phaseSpec`: the spec that will deliver the data (e.g. "SPEC-159")
+ *   - `config.description` (optional): human-readable description of the slot
  *
  * @see apps/admin/src/config/ia/schema.ts  — Dashboard / Widget type contracts
+ * @see .claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md
+ * @see apps/admin/src/lib/dashboard-sources/host.ts    — HOST source IDs
+ * @see apps/admin/src/lib/dashboard-sources/editor.ts  — EDITOR source IDs
+ * @see apps/admin/src/lib/dashboard-sources/admin.ts   — ADMIN source IDs
+ * @see apps/admin/src/lib/dashboard-sources/super.ts   — SUPER source IDs
  */
 
-import type { Dashboard } from './schema';
+import type { DashboardInput } from './schema';
 
-// ---------------------------------------------------------------------------
-// hostDashboard
-// ---------------------------------------------------------------------------
+// ============================================================================
+// hostDashboard — "Mi negocio" — 7 cards A–G
+// ============================================================================
 
 /**
- * STUB dashboard for the HOST role — "Mi negocio".
+ * Dashboard for the HOST role — 7-card "Mi negocio" view.
  *
- * Intended to show KPIs scoped to the host's own accommodations:
- * active listings, month revenue, upcoming check-ins, subscription status.
- * SPEC-155 will replace this stub with 6 scoped widgets.
+ * Card set (SPEC-155 §3 / 03c HOST section):
+ *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
+ *   B — Mi plan                 (callout,    source: host.billing.plan)
+ *   C — Consultas               (kpi + list, source: host.conversations.pending)
+ *   D — Estado de mi alojamiento (checklist, checkset: accommodation-health, w/ selector)
+ *   E — Reseñas                 (list,       source: host.reviews.latest)
+ *   F — Mi perfil               (checklist,  checkset: host-profile-health)
+ *   G — Estadísticas            (kpi + list + deferred, sources: host.stats.ratings / host.stats.favorites / host.stats.response-rate + DeferredWidget for views)
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 1 (stub)
+ * dashboards.hostDashboard.widgets.length; // 7
  * ```
  */
-const hostDashboard: Dashboard = {
-    // STUB — real widgets land in SPEC-155
+const hostDashboard: DashboardInput = {
     widgets: [
+        // Card A — Mis alojamientos
+        // own listings count KPI + DRAFT list with publish link
+        // sources: host.accommodations.count (count), host.accommodations.drafts (draft list)
         {
-            id: 'host-accommodations-count',
+            id: 'host-card-a',
             type: 'kpi',
             label: {
-                es: 'Mis alojamientos activos',
-                en: 'My active accommodations',
-                pt: 'Meus alojamentos ativos'
+                es: 'Mis alojamientos',
+                en: 'My accommodations',
+                pt: 'Meus alojamentos'
             },
             scope: 'own',
-            permissions: ['ACCOMMODATION_VIEW_ALL'],
-            config: { source: 'accommodation.list.count.own' }
+            config: {
+                source: 'host.accommodations.count',
+                // Companion draft list source — rendered below the KPI by the card renderer
+                companionSource: 'host.accommodations.drafts'
+            }
+        },
+
+        // Card B — Mi plan
+        // subscription status badge + next charge date + plan name
+        // source: host.billing.plan (fetches subscription + plan in parallel)
+        // type: 'status' — renders via StatusWidget with the subscription state badge
+        // (active / expiring / expired → success / warning / destructive).
+        // Plan usage (accommodations used / limit) is a phase-2 enhancement (SPEC-155).
+        {
+            id: 'host-card-b',
+            type: 'status',
+            label: {
+                es: 'Mi plan',
+                en: 'My plan',
+                pt: 'Meu plano'
+            },
+            scope: 'own',
+            config: {
+                source: 'host.billing.plan',
+                variantMap: {
+                    active: 'success',
+                    expiring: 'warning',
+                    expired: 'destructive',
+                    cancelled: 'neutral',
+                    trial: 'warning'
+                }
+            }
+        },
+
+        // Card C — Consultas
+        // pending inquiry count (large KPI) + top-5 list with "Responder" per-item action
+        // source: host.conversations.pending (fetches count + list in parallel)
+        {
+            id: 'host-card-c',
+            type: 'list',
+            label: {
+                es: 'Consultas',
+                en: 'Inquiries',
+                pt: 'Consultas'
+            },
+            scope: 'own',
+            config: {
+                source: 'host.conversations.pending',
+                maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Responder', en: 'Reply', pt: 'Responder' },
+                    hrefTemplate: '/consultas/{id}'
+                }
+            }
+        },
+
+        // Card D — Estado de mi alojamiento
+        // "Mejorá tu alojamiento" completeness checklist — computed client-side from
+        // the loaded accommodation object (no remote source). The ChecklistWidget
+        // renders an accommodation selector dropdown when the host has >1 listing.
+        // checkset: 'accommodation-health' → checks photos / description / amenities / price / location / contact
+        {
+            id: 'host-card-d',
+            type: 'checklist',
+            label: {
+                es: 'Estado de mi alojamiento',
+                en: 'Accommodation health',
+                pt: 'Estado do meu alojamento'
+            },
+            scope: 'own',
+            config: {
+                checkset: 'accommodation-health'
+                // No `source` — entities are loaded client-side from the page context.
+                // The ChecklistWidget falls back to config.entities injected by the card renderer.
+            }
+        },
+
+        // Card E — Reseñas
+        // latest reviews received (read-only list)
+        // source: host.reviews.latest (REVIEW_VIEW_OWN permission)
+        {
+            id: 'host-card-e',
+            type: 'list',
+            label: {
+                es: 'Reseñas',
+                en: 'Reviews',
+                pt: 'Avaliações'
+            },
+            scope: 'own',
+            config: {
+                source: 'host.reviews.latest',
+                maxItems: 5
+            }
+        },
+
+        // Card F — Mi perfil
+        // "Salud del perfil de host" completeness checklist — computed client-side
+        // from the authenticated user/host object (no remote source).
+        // checkset: 'host-profile-health' → checks avatar / bio / phone / social / verified email / full name
+        {
+            id: 'host-card-f',
+            type: 'checklist',
+            label: {
+                es: 'Mi perfil',
+                en: 'My profile',
+                pt: 'Meu perfil'
+            },
+            scope: 'own',
+            config: {
+                checkset: 'host-profile-health'
+                // No `source` — computed from the loaded user object.
+            }
+        },
+
+        // Card G — Estadísticas
+        // Four sub-slots:
+        //   1. Ratings: avg rating + total reviews (host.stats.ratings)
+        //   2. Favorites: per-accommodation breakdown (host.stats.favorites)
+        //   3. Response rate: % answered + avg time (host.stats.response-rate)
+        //   4. Views: unique + total 7/30d → DeferredWidget (SPEC-159, cross-entity view tracking)
+        //
+        // The card renderer is responsible for composing all four into one card surface.
+        // The `source` here is the primary (ratings) source; companion sources are listed
+        // in config so the renderer can load them. The views slot is marked deferred.
+        {
+            id: 'host-card-g',
+            type: 'kpi',
+            label: {
+                es: 'Estadísticas',
+                en: 'Statistics',
+                pt: 'Estatísticas'
+            },
+            scope: 'own',
+            config: {
+                // Primary: average rating + total reviews (already persisted on accommodation)
+                source: 'host.stats.ratings',
+                // Companion sources for the card renderer to co-load
+                companionSources: ['host.stats.favorites', 'host.stats.response-rate'],
+                // Views slot is deferred — no backend yet (PostHog client-side only, no DB)
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        description:
+                            'Vistas únicas y totales por alojamiento (7/30 días) — disponible cuando se implemente el tracking de vistas.'
+                    }
+                ]
+            }
         }
     ]
 };
 
-// ---------------------------------------------------------------------------
-// superAdminDashboard
-// ---------------------------------------------------------------------------
+// ============================================================================
+// editorDashboard — "La redacción" — 8 cards A–H
+// ============================================================================
 
 /**
- * STUB dashboard for the SUPER_ADMIN role — global KPIs + system health.
+ * Dashboard for the EDITOR role — 8-card "La redacción" view.
  *
- * Intended to show: global platform KPIs, MRR, system health (api/web/admin/db/redis),
- * Sentry errors (last 24h), failed crons, recent admin actions audit preview.
- * SPEC-155 will replace this stub with 10+ widgets.
+ * Card set (SPEC-155 §3 / 03c EDITOR section):
+ *   A — Posts                     (kpi + list, sources: editor.posts.published-this-month + editor.posts.drafts)
+ *   B — Eventos                   (list,       source: editor.events.upcoming)
+ *   C — Suscriptores Newsletter   (kpi,        source: editor.newsletter.subscribers + DeferredWidget for open rate)
+ *   D — Campañas Newsletter       (list,       source: editor.newsletter.campaigns)
+ *   E — Estadísticas blog         (chart,      source: editor.posts.stats + DeferredWidget for views)
+ *   F — Estadísticas eventos      (kpi,        source: editor.events.stats + DeferredWidget for views)
+ *   G — Salud                     (checklist,  checkset: content-health)
+ *   H — Comentarios               (callout,    DeferredWidget — backend pending SPEC-165)
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.superAdminDashboard.widgets.length; // 1 (stub)
+ * dashboards.editorDashboard.widgets.length; // 8
  * ```
  */
-const superAdminDashboard: Dashboard = {
-    // STUB — real widgets land in SPEC-155
+const editorDashboard: DashboardInput = {
     widgets: [
+        // Card A — Posts
+        // published this month (KPI) + pending drafts count + recent drafts (list)
+        // source: editor.posts.published-this-month (fetches both in parallel)
+        // companion: editor.posts.drafts (explicit draft list if renderer wants it separate)
         {
-            id: 'platform-mrr',
+            id: 'editor-card-a',
             type: 'kpi',
             label: {
-                es: 'MRR de la plataforma',
-                en: 'Platform MRR',
-                pt: 'MRR da plataforma'
+                es: 'Posts',
+                en: 'Posts',
+                pt: 'Posts'
             },
             scope: 'all',
-            permissions: ['BILLING_READ_ALL'],
-            config: { source: 'billing.mrr.current' }
+            config: {
+                source: 'editor.posts.published-this-month',
+                companionSource: 'editor.posts.drafts'
+            }
+        },
+
+        // Card B — Eventos
+        // upcoming count + upcoming list (top 5) + featured upcoming list
+        // source: editor.events.upcoming (fetches count + list + featured in parallel)
+        {
+            id: 'editor-card-b',
+            type: 'list',
+            label: {
+                es: 'Eventos',
+                en: 'Events',
+                pt: 'Eventos'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.events.upcoming',
+                maxItems: 5
+            }
+        },
+
+        // Card C — Suscriptores Newsletter
+        // active count (KPI) + by content preference breakdown (OFFERS/EVENTS/GUIDES/PRODUCT_NEWS)
+        // source: editor.newsletter.subscribers (fetches both in parallel)
+        // DeferredWidget for open rate (SPEC-160 — email-open tracking not built yet)
+        {
+            id: 'editor-card-c',
+            type: 'kpi',
+            label: {
+                es: 'Suscriptores Newsletter',
+                en: 'Newsletter subscribers',
+                pt: 'Assinantes Newsletter'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.newsletter.subscribers',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-160',
+                        description:
+                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email.'
+                    }
+                ]
+            }
+        },
+
+        // Card D — Campañas Newsletter
+        // scheduled campaigns list (top 3)
+        // source: editor.newsletter.campaigns (NEWSLETTER_CAMPAIGN_VIEW permission)
+        {
+            id: 'editor-card-d',
+            type: 'list',
+            label: {
+                es: 'Campañas Newsletter',
+                en: 'Newsletter campaigns',
+                pt: 'Campanhas Newsletter'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.newsletter.campaigns',
+                maxItems: 3
+            }
+        },
+
+        // Card E — Estadísticas blog
+        // status distribution + popular posts + total published + posts-per-month trend
+        // source: editor.posts.stats (fetches all in parallel)
+        // DeferredWidget for views per post (SPEC-159 — cross-entity view tracking)
+        {
+            id: 'editor-card-e',
+            type: 'chart',
+            label: {
+                es: 'Estadísticas blog',
+                en: 'Blog statistics',
+                pt: 'Estatísticas blog'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.posts.stats',
+                chartType: 'bar',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        description:
+                            'Vistas por post — disponible cuando se implemente el tracking de vistas.'
+                    }
+                ]
+            }
+        },
+
+        // Card F — Estadísticas eventos
+        // total events count
+        // source: editor.events.stats
+        // DeferredWidget for views per event (SPEC-159 — cross-entity view tracking)
+        {
+            id: 'editor-card-f',
+            type: 'kpi',
+            label: {
+                es: 'Estadísticas eventos',
+                en: 'Event statistics',
+                pt: 'Estatísticas eventos'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.events.stats',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        description:
+                            'Vistas por evento — disponible cuando se implemente el tracking de vistas.'
+                    }
+                ]
+            }
+        },
+
+        // Card G — Salud
+        // content completeness checklist — computed client-side from loaded post/event lists
+        // checkset: 'content-health' → posts: missing featured image / tags / SEO;
+        //                               events: missing featured image / locationId / organizerId / description
+        {
+            id: 'editor-card-g',
+            type: 'checklist',
+            label: {
+                es: 'Salud',
+                en: 'Health',
+                pt: 'Saúde'
+            },
+            scope: 'all',
+            config: {
+                checkset: 'content-health'
+                // No `source` — computed from loaded entity lists injected by the card renderer.
+            }
+        },
+
+        // Card H — Comentarios
+        // DeferredWidget — recent comments endpoint must be verified/built (SPEC-165)
+        // The whole card is deferred; `onMissing: 'hide'` keeps it invisible until the
+        // backend lands.
+        {
+            id: 'editor-card-h',
+            type: 'callout',
+            label: {
+                es: 'Comentarios',
+                en: 'Comments',
+                pt: 'Comentários'
+            },
+            scope: 'all',
+            onMissing: 'hide',
+            config: {
+                deferred: true,
+                phaseSpec: 'SPEC-165',
+                description:
+                    'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
+            }
         }
     ]
 };
 
-// ---------------------------------------------------------------------------
-// adminDashboard
-// ---------------------------------------------------------------------------
+// ============================================================================
+// adminBaseDashboard — cards A–G (shared between ADMIN and SUPER_ADMIN)
+// ============================================================================
 
 /**
- * STUB dashboard for the ADMIN role — same as SUPER_ADMIN minus system ops block.
+ * Base dashboard shared by both the ADMIN and SUPER_ADMIN roles — 7 cards A–G.
  *
- * Intended to show global KPIs without the "System ops" widget block
- * (Sentry errors, failed crons, admin audit preview — those are SUPER_ADMIN only).
- * SPEC-155 will replace this stub with 8+ widgets.
+ * Card set (SPEC-155 §3 / 03c ADMIN section):
+ *   A — Estadísticas de entidades   (kpi,    source: admin.entities.counts — 6 KPIs)
+ *   B — Alojamientos                (list,   source: admin.accommodations.latest)
+ *   C — Editorial                   (list,   source: admin.editorial.summary)
+ *   D — Crons                       (list,   source: admin.crons.list + DeferredWidget for failed/last-run)
+ *   E — Estado del sistema          (status, source: admin.system.health + DeferredWidget for maintenance)
+ *   F — Pendiente de moderación     (kpi,    source: admin.moderation.pending + DeferredWidget for reviews-pending)
+ *   G — Usuarios                    (chart,  source: admin.users.stats)
+ *
+ * ADMIN role points directly to `adminBaseDashboard`.
+ * SUPER_ADMIN role points to `superAdminDashboard`, which assembles this base
+ * plus `superAdminOnlySection` (cards H–I).
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.adminDashboard.widgets.length; // 1 (stub)
+ * dashboards.adminBaseDashboard.widgets.length; // 7
  * ```
  */
-const adminDashboard: Dashboard = {
-    // STUB — real widgets land in SPEC-155
+const adminBaseDashboard: DashboardInput = {
     widgets: [
+        // Card A — Estadísticas de entidades
+        // 6 content KPIs: accommodations, destinations, events, posts, attractions, users
+        // source: admin.entities.counts (registered in dashboard-sources.ts T-017 built-in)
         {
-            id: 'active-accommodations-count',
+            id: 'admin-card-a',
             type: 'kpi',
             label: {
-                es: 'Alojamientos activos',
-                en: 'Active accommodations',
-                pt: 'Alojamentos ativos'
+                es: 'Estadísticas de entidades',
+                en: 'Entity statistics',
+                pt: 'Estatísticas de entidades'
             },
             scope: 'all',
-            permissions: ['ACCOMMODATION_VIEW_ALL'],
-            config: { source: 'accommodation.list.count.all' }
+            config: { source: 'admin.entities.counts' }
+        },
+
+        // Card B — Alojamientos
+        // latest published accommodations (top 5 by published_desc)
+        // source: admin.accommodations.latest
+        {
+            id: 'admin-card-b',
+            type: 'list',
+            label: {
+                es: 'Alojamientos',
+                en: 'Accommodations',
+                pt: 'Alojamentos'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.accommodations.latest',
+                maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Ver', en: 'View', pt: 'Ver' },
+                    hrefTemplate: '/catalogo/alojamientos/{id}'
+                }
+            }
+        },
+
+        // Card C — Editorial
+        // featured upcoming events + recent draft posts + draft events + posts this month
+        // source: admin.editorial.summary (fetches all 4 in parallel)
+        {
+            id: 'admin-card-c',
+            type: 'list',
+            label: {
+                es: 'Editorial',
+                en: 'Editorial',
+                pt: 'Editorial'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.editorial.summary',
+                maxItems: 5
+            }
+        },
+
+        // Card D — Crons
+        // cron job list + enabled/total count
+        // source: admin.crons.list
+        // DeferredWidget for failed/last-run sub-slot (SPEC-161 — per-run history not persisted)
+        {
+            id: 'admin-card-d',
+            type: 'list',
+            label: {
+                es: 'Crons',
+                en: 'Crons',
+                pt: 'Crons'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.crons.list',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-161',
+                        description:
+                            'Historial de ejecuciones (fallos / última corrida) — disponible cuando se implemente el almacenamiento de resultados de cron.'
+                    }
+                ]
+            }
+        },
+
+        // Card E — Estado del sistema
+        // system health (db/redis/api status)
+        // source: admin.system.health (30s stale time, not 60s)
+        // type: 'status' — renders via StatusWidget with the health state badge
+        // (up / degraded / down → success / warning / destructive).
+        // DeferredWidget for maintenance-mode flag sub-slot (SPEC-161 — no spec yet).
+        {
+            id: 'admin-card-e',
+            type: 'status',
+            label: {
+                es: 'Estado del sistema',
+                en: 'System health',
+                pt: 'Estado do sistema'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.system.health',
+                variantMap: {
+                    up: 'success',
+                    degraded: 'warning',
+                    down: 'destructive'
+                },
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-161',
+                        description:
+                            'Estado del modo mantenimiento — pendiente de confirmación de la flag SYSTEM_MAINTENANCE_MODE.'
+                    }
+                ]
+            }
+        },
+
+        // Card F — Pendiente de moderación
+        // unified pending-moderation count across accommodations/destinations/posts/events
+        // source: admin.moderation.pending (new aggregator endpoint from Phase 1)
+        // DeferredWidget for reviews-pending sub-slot (SPEC-166)
+        {
+            id: 'admin-card-f',
+            type: 'kpi',
+            label: {
+                es: 'Pendiente de moderación',
+                en: 'Pending moderation',
+                pt: 'Pendente de moderação'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.moderation.pending',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-166',
+                        description:
+                            'Reseñas pendientes de moderación — disponible cuando se implemente el endpoint de conteo de reseñas en cola.'
+                    }
+                ]
+            }
+        },
+
+        // Card G — Usuarios
+        // users by role + new users registration trend
+        // source: admin.users.stats (registered in dashboard-sources.ts T-017 built-in)
+        {
+            id: 'admin-card-g',
+            type: 'chart',
+            label: {
+                es: 'Usuarios',
+                en: 'Users',
+                pt: 'Usuários'
+            },
+            scope: 'all',
+            config: {
+                source: 'admin.users.stats',
+                chartType: 'bar'
+            }
         }
     ]
 };
 
-// ---------------------------------------------------------------------------
-// editorDashboard
-// ---------------------------------------------------------------------------
+// ============================================================================
+// superAdminOnlySection — cards H–I (SUPER_ADMIN-exclusive)
+// ============================================================================
 
 /**
- * STUB dashboard for the EDITOR role — "La redacción".
+ * SUPER_ADMIN-exclusive section — 2 cards H–I, gated by `onMissing: 'hide'`.
  *
- * Intended to show: posts published this month, upcoming events, newsletter
- * open rate/CTR, editorial calendar (next 14 days), top performers, pending drafts.
- * SPEC-155 will replace this stub with 8 widgets.
+ * These widgets are absent from `adminBaseDashboard` and present only in
+ * `superAdminDashboard`. The `onMissing: 'hide'` on each widget acts as a
+ * belt-and-suspenders guard: any renderer path that evaluates widgets against
+ * permission gates will also hide them from non-SUPER_ADMIN users.
+ *
+ * Card set (SPEC-155 §3 / 03c SUPER_ADMIN section):
+ *   H — Audit Logs             — ALL sub-slots deferred (SPEC-162/163/Sentry)
+ *   I — Estadísticas de billing — kpi + chart, source: super.billing.stats
+ *
+ * SPEC-155 AC-7: every widget here MUST carry `onMissing: 'hide'`.
+ * SPEC-155 AC-31: ADMIN never receives these cards — they are absent from
+ * `adminBaseDashboard` by config (not by permission check).
+ *
+ * @example
+ * ```ts
+ * import { superAdminOnlySection } from '@/config/ia/dashboards';
+ * superAdminOnlySection.widgets.every(w => w.onMissing === 'hide'); // true
+ * ```
+ */
+export const superAdminOnlySection: DashboardInput = {
+    widgets: [
+        // Card H — Audit Logs (SUPER_ADMIN-only)
+        // All three sub-slots are deferred — no queryable backend today:
+        //   1. Admin actions audit log (SPEC-162 — logger-only, no queryable endpoint)
+        //   2. Security log (SPEC-162 — same infrastructure gap)
+        //   3. Sentry errors 24h (SPEC-163 — Sentry write-only, no API proxy)
+        //
+        // The entire card is a DeferredWidget cluster. `onMissing: 'hide'` means
+        // it is invisible until the backend lands.
+        {
+            id: 'super-card-h',
+            type: 'callout',
+            label: {
+                es: 'Audit Logs',
+                en: 'Audit Logs',
+                pt: 'Audit Logs'
+            },
+            scope: 'all',
+            onMissing: 'hide',
+            config: {
+                // All three sub-slots use DeferredWidget — no source registered
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-162',
+                        description:
+                            'Registro de acciones de administración — disponible cuando se implemente el endpoint de auditoría.'
+                    },
+                    {
+                        phaseSpec: 'SPEC-162',
+                        description:
+                            'Log de seguridad — disponible cuando se implemente el endpoint de log de seguridad.'
+                    },
+                    {
+                        phaseSpec: 'SPEC-163',
+                        description:
+                            'Errores Sentry (últimas 24h) — disponible cuando se implemente la integración proxy con la API de Sentry.'
+                    }
+                ]
+            }
+        },
+
+        // Card I — Estadísticas de billing (SUPER_ADMIN-only)
+        // active subscriptions, MRR, 12-month revenue chart, ARPU, churn, subscription breakdown
+        // source: super.billing.stats (requires BILLING_METRICS_VIEW — SUPER_ADMIN-only per 03c)
+        // Note: per 03c decision #2, BILLING_METRICS_VIEW is revoked from ADMIN role.
+        {
+            id: 'super-card-i',
+            type: 'kpi',
+            label: {
+                es: 'Estadísticas de billing',
+                en: 'Billing statistics',
+                pt: 'Estatísticas de billing'
+            },
+            scope: 'all',
+            onMissing: 'hide',
+            config: {
+                source: 'super.billing.stats',
+                // Companion chart for the 12-month revenue trend
+                chartType: 'line'
+            }
+        }
+    ]
+};
+
+// ============================================================================
+// superAdminDashboard — assembled base (A–G) + super-only section (H–I)
+// ============================================================================
+
+/**
+ * Assembled dashboard for the SUPER_ADMIN role — 9 cards (A–I).
+ *
+ * Built by spreading the widgets from `adminBaseDashboard` (cards A–G, shared)
+ * and `superAdminOnlySection` (cards H–I, `onMissing: 'hide'`).
+ *
+ * SUPER_ADMIN role config points to this key. ADMIN role config points to
+ * `adminBaseDashboard` — it never sees cards H or I because they are absent
+ * from that dashboard (SPEC-155 AC-31).
+ *
+ * The spread construction means editing the source constants automatically
+ * updates this assembled dashboard — no manual duplication required.
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.editorDashboard.widgets.length; // 1 (stub)
+ * dashboards.superAdminDashboard.widgets.length; // 9 (7 base + 2 super-only)
  * ```
  */
-const editorDashboard: Dashboard = {
-    // STUB — real widgets land in SPEC-155
-    widgets: [
-        {
-            id: 'posts-published-month',
-            type: 'kpi',
-            label: {
-                es: 'Posts publicados este mes',
-                en: 'Posts published this month',
-                pt: 'Posts publicados este mês'
-            },
-            scope: 'all',
-            permissions: ['POST_VIEW_ALL'],
-            config: { source: 'post.list.count.published.month' }
-        }
-    ]
+const superAdminDashboard: DashboardInput = {
+    widgets: [...adminBaseDashboard.widgets, ...superAdminOnlySection.widgets]
 };
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Registry export
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 /**
  * Registry of all admin dashboard definitions, keyed by canonical ID.
@@ -166,15 +738,26 @@ const editorDashboard: Dashboard = {
  * Role configs reference these IDs in their `dashboard` field.
  * The renderer looks up the active dashboard from this registry.
  *
+ * Named source objects (SPEC-155 AC-4):
+ * - `hostDashboard`          — HOST role (7 cards)
+ * - `editorDashboard`        — EDITOR role (8 cards)
+ * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
+ * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)
+ *
+ * Role-facing entries:
+ * - `superAdminDashboard`    — SUPER_ADMIN role (assembled: 9 cards = base + super-only)
+ *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * const widgets = dashboards['hostDashboard'].widgets;
+ * const widgets = dashboards['adminBaseDashboard'].widgets;  // 7 widgets
+ * const allWidgets = dashboards['superAdminDashboard'].widgets; // 9 widgets
  * ```
  */
-export const dashboards: Record<string, Dashboard> = {
+export const dashboards: Record<string, DashboardInput> = {
     hostDashboard,
-    superAdminDashboard,
-    adminDashboard,
-    editorDashboard
+    editorDashboard,
+    adminBaseDashboard,
+    superAdminOnlySection,
+    superAdminDashboard
 };

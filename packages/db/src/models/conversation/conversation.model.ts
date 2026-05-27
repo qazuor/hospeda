@@ -1,5 +1,6 @@
+import type { HostConversationResponseRate } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import type {
@@ -303,6 +304,107 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'closeAllForAccommodation', ctx, err);
             throw new DbError(this.entityName, 'closeAllForAccommodation', ctx, err.message);
+        }
+    }
+
+    /**
+     * Returns conversation response-rate KPIs for a specific accommodation owner.
+     *
+     * Scoped strictly to conversations whose `accommodationId` is in
+     * `ownerAccommodationIds`.  When the owner has no accommodation IDs the
+     * method short-circuits and returns zeroes without hitting the DB.
+     *
+     * Two aggregations are computed in a single round-trip:
+     *  1. `responseRatePct` — percentage of non-deleted conversations that have
+     *     at least one owner reply (`ownerMessageCount > 0`), rounded to one
+     *     decimal place.
+     *  2. `avgResponseTimeMinutes` — average of
+     *     `(firstOwnerReplyAt - firstGuestMessageAt)` in minutes, across all
+     *     non-deleted conversations that have both timestamps. Null when no
+     *     conversations have been replied to.
+     *
+     * @param ownerAccommodationIds - Accommodation IDs belonging to the host.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns Aggregated KPIs shaped as {@link HostConversationResponseRate}.
+     */
+    async getResponseRateByOwnerId(
+        ownerAccommodationIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<HostConversationResponseRate> {
+        if (ownerAccommodationIds.length === 0) {
+            return { responseRatePct: 0, avgResponseTimeMinutes: null };
+        }
+
+        const db = this.getClient(tx);
+        const ctx = { ownerAccommodationIds };
+
+        try {
+            const baseWhere = and(
+                inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
+                isNull(conversations.deletedAt)
+            );
+
+            // Run both aggregations in a single Promise.all to minimise
+            // round-trips.
+            const [countRows, avgRows] = await Promise.all([
+                // ---- responseRatePct aggregation --------------------------------
+                // Count total conversations vs conversations with at least one
+                // owner reply (ownerMessageCount > 0).
+                db
+                    .select({
+                        total: count(conversations.id),
+                        replied: sql<number>`
+                            COUNT(CASE WHEN ${conversations.ownerMessageCount} > 0 THEN 1 END)
+                        `.mapWith(Number)
+                    })
+                    .from(conversations)
+                    .where(baseWhere),
+
+                // ---- avgResponseTimeMinutes aggregation ----------------------
+                // Average minutes between first guest message and first owner
+                // reply, only for conversations that have both timestamps.
+                db
+                    .select({
+                        avgMinutes: sql<string | null>`
+                            AVG(
+                                EXTRACT(EPOCH FROM (
+                                    ${conversations.firstOwnerReplyAt} - ${conversations.firstGuestMessageAt}
+                                )) / 60.0
+                            )
+                        `
+                    })
+                    .from(conversations)
+                    .where(
+                        and(
+                            baseWhere,
+                            isNotNull(conversations.firstGuestMessageAt),
+                            isNotNull(conversations.firstOwnerReplyAt)
+                        )
+                    )
+            ]);
+
+            const row = countRows[0];
+            const total = row ? Number(row.total) : 0;
+            const replied = row ? Number(row.replied) : 0;
+
+            const responseRatePct = total === 0 ? 0 : Math.round((replied / total) * 1000) / 10;
+
+            const rawAvg = avgRows[0]?.avgMinutes;
+            const avgResponseTimeMinutes =
+                rawAvg !== null && rawAvg !== undefined ? Math.round(Number(rawAvg)) : null;
+
+            logQuery(this.entityName, 'getResponseRateByOwnerId', ctx, {
+                total,
+                replied,
+                responseRatePct,
+                avgResponseTimeMinutes
+            });
+
+            return { responseRatePct, avgResponseTimeMinutes };
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'getResponseRateByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'getResponseRateByOwnerId', ctx, err.message);
         }
     }
 }

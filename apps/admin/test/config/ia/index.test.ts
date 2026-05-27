@@ -67,16 +67,32 @@ describe('rawConfig (T-017 composer)', () => {
             expect(Object.keys(rawConfig.dashboards).length).toBeGreaterThan(0);
         });
 
-        it('should contain the 4 canonical dashboards', () => {
+        it('should contain the 4 named source objects (SPEC-155 AC-4)', () => {
+            // AC-4: hostDashboard (7), editorDashboard (8), adminBaseDashboard (7),
+            // superAdminOnlySection (2). These are the canonical source objects.
             const ids = Object.keys(rawConfig.dashboards);
             for (const id of [
                 'hostDashboard',
-                'superAdminDashboard',
-                'adminDashboard',
-                'editorDashboard'
+                'editorDashboard',
+                'adminBaseDashboard',
+                'superAdminOnlySection'
             ]) {
-                expect(ids).toContain(id);
+                expect(ids, `missing source object: '${id}'`).toContain(id);
             }
+        });
+
+        it('should contain superAdminDashboard as the assembled role-facing entry', () => {
+            // superAdminDashboard = adminBaseDashboard (A-G) + superAdminOnlySection (H-I)
+            // SUPER_ADMIN role points to this key.
+            expect(Object.keys(rawConfig.dashboards)).toContain('superAdminDashboard');
+        });
+
+        it('ADMIN role should reference adminBaseDashboard', () => {
+            expect(rawConfig.roles.ADMIN?.dashboard).toBe('adminBaseDashboard');
+        });
+
+        it('SUPER_ADMIN role should reference superAdminDashboard', () => {
+            expect(rawConfig.roles.SUPER_ADMIN?.dashboard).toBe('superAdminDashboard');
         });
     });
 

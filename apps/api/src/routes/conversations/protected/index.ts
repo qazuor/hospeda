@@ -19,6 +19,7 @@ import { archiveProtectedConversationRoute } from './archive';
 import { initiateProtectedConversationRoute } from './initiate';
 import { listProtectedConversationsRoute } from './list';
 import { replyProtectedConversationRoute } from './reply';
+import { hostConversationResponseRateRoute } from './response-rate';
 import { threadProtectedConversationRoute } from './thread';
 import { unreadCountProtectedConversationRoute } from './unread-count';
 
@@ -44,5 +45,8 @@ app.route('/', replyProtectedConversationRoute);
 
 // Archive toggle (PATCH /:id/archive)
 app.route('/', archiveProtectedConversationRoute);
+
+// Host response-rate KPIs (GET /me/response-rate) — SPEC-155 T-006
+app.route('/me', hostConversationResponseRateRoute);
 
 export { app as protectedConversationRoutes };

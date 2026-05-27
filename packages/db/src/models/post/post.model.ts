@@ -1,4 +1,4 @@
-import type { Post } from '@repo/schemas';
+import type { Post, PostMonthlyTrendItem } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
@@ -161,6 +161,45 @@ export class PostModel extends BaseModelImpl<Post> {
             .update(posts)
             .set({ likes: sql`GREATEST(COALESCE(${posts.likes}, 0) - 1, 0)` })
             .where(eq(posts.id, id));
+    }
+
+    /**
+     * Returns a 12-month posts-per-month trend series, zero-filled.
+     *
+     * Uses a PostgreSQL CTE with `generate_series` to materialise the
+     * 12-month window (current month included, oldest first) and a LEFT JOIN
+     * against `posts` so months with no creations appear as explicit zeros.
+     * Soft-deleted posts (deleted_at IS NOT NULL) are excluded.
+     *
+     * @param tx - Optional Drizzle transaction client (for test isolation).
+     * @returns Array of 12 `{ month: YYYY-MM, count: number }` items, ASC.
+     */
+    async getMonthlyTrend(tx?: DrizzleClient): Promise<PostMonthlyTrendItem[]> {
+        const db = this.getClient(tx);
+
+        const rows = await db.execute<{ month: string; count: string }>(sql`
+            WITH months AS (
+                SELECT to_char(
+                    date_trunc('month', now()) - (gs.n * interval '1 month'),
+                    'YYYY-MM'
+                ) AS month
+                FROM generate_series(11, 0, -1) AS gs(n)
+            )
+            SELECT
+                m.month,
+                COALESCE(COUNT(p.id), 0)::int AS count
+            FROM months m
+            LEFT JOIN posts p
+                ON to_char(date_trunc('month', p.created_at), 'YYYY-MM') = m.month
+                AND p.deleted_at IS NULL
+            GROUP BY m.month
+            ORDER BY m.month ASC
+        `);
+
+        return rows.rows.map((row) => ({
+            month: row.month,
+            count: Number(row.count)
+        }));
     }
 }
 

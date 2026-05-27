@@ -1538,9 +1538,12 @@
             "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-155-admin-dashboards-v1",
             "created": "2026-05-22T00:00:00Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
+            "branch": "spec/SPEC-155-admin-dashboards-v1",
+            "base": "staging",
             "discoveredDuring": "Admin panel redesign planning session 2026-05-22 — Phase 1 audit revealed current dashboard shows 6 global KPIs to everyone (misleads HOST). Per-role dashboards with scoped data needed. Endpoints verified in 03b-endpoint-verification.md (3 widgets dropped, filters corrected). HOST 6 widgets, EDITOR 8, ADMIN/SUPER_ADMIN 10 (shared adminDashboard).",
             "dependsOn": ["SPEC-154"],
             "firstAllocatedViaEngramProtocol": true,
@@ -1719,6 +1722,47 @@
                 "phase-2",
                 "backlog"
             ]
+        },
+        {
+            "specId": "SPEC-164",
+            "title": "Admin Billing Access — SUPER_ADMIN-Only",
+            "type": "feat",
+            "complexity": "medium-high",
+            "status": "draft",
+            "path": "SPEC-164-admin-billing-super-only",
+            "created": "2026-05-27T00:00:00.000Z",
+            "extractedFrom": "SPEC-155",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "openQuestions": "OQ-1 sponsorship/promotion scope; OQ-2 page-guard strategy (beforeLoad vs nav-hide+403)"
+        },
+        {
+            "specId": "SPEC-165",
+            "title": "Post and Event Comments System",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-165-post-event-comments-system",
+            "created": "2026-05-27T00:00:00.000Z",
+            "extractedFrom": "SPEC-155",
+            "archived": false,
+            "extractionReason": "Phase-1 scout 2026-05-27: no post_comments or event_comments table exists; posts has only an integer comments counter. EDITOR dashboard card H renders a deferred placeholder until this spec ships.",
+            "enables": ["SPEC-155 EDITOR card H (Comentarios)"],
+            "tags": ["comments", "editor", "backend", "phase-2"]
+        },
+        {
+            "specId": "SPEC-166",
+            "title": "Review Moderation State",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-166-review-moderation-state",
+            "created": "2026-05-27T00:00:00.000Z",
+            "extractedFrom": "SPEC-155",
+            "archived": false,
+            "extractionReason": "Phase-1 scout 2026-05-27: accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not moderationState. No review moderation flow exists. ADMIN dashboard card F reviews-pending sub-slot renders a deferred placeholder until this spec ships.",
+            "enables": ["SPEC-155 ADMIN card F reviews-pending sub-slot"],
+            "tags": ["reviews", "moderation", "admin", "backend", "phase-2"]
         }
     ]
 }

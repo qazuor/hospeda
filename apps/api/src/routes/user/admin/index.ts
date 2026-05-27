@@ -11,12 +11,18 @@ import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
 import { adminPatchUserRoute } from './patch';
 import { adminRestoreUserRoute } from './restore';
+import { adminUserStatsRoute } from './stats';
 import { adminUpdateUserRoute } from './update';
 
 const app = createRouter();
 
 // GET / - List all users
 app.route('/', adminListUsersRoute);
+
+// GET /stats - Aggregated stats for admin dashboard (SPEC-155 T-012)
+// NOTE: registered before /:id routes to prevent the param segment from
+// matching the literal string "stats".
+app.route('/', adminUserStatsRoute);
 
 // POST / - Create user
 app.route('/', adminCreateUserRoute);

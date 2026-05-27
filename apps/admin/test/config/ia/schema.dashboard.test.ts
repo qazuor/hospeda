@@ -49,7 +49,7 @@ describe('WidgetSchema', () => {
             }
         });
 
-        it('should accept all valid widget types', () => {
+        it('should accept all valid widget types including checklist (T-003)', () => {
             // Arrange
             const types = [
                 'kpi',
@@ -59,12 +59,77 @@ describe('WidgetSchema', () => {
                 'callout',
                 'shortcut',
                 'map',
-                'calendar'
+                'calendar',
+                'checklist'
             ] as const;
             // Act + Assert
             for (const type of types) {
                 const result = WidgetSchema.safeParse({ ...validWidget, id: `w-${type}`, type });
                 expect(result.success).toBe(true);
+            }
+        });
+
+        it('should accept type "checklist" (SPEC-155 HOST/EDITOR cards)', () => {
+            // Arrange
+            const input = { ...validWidget, id: 'profile-checklist', type: 'checklist' as const };
+            // Act
+            const result = WidgetSchema.safeParse(input);
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should default onMissing to "disable" when not provided', () => {
+            // Arrange — validWidget has no onMissing field
+            // Act
+            const result = WidgetSchema.safeParse(validWidget);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.onMissing).toBe('disable');
+            }
+        });
+
+        it('should accept onMissing "hide" for SUPER-only dashboard cards', () => {
+            // Arrange
+            const input = { ...validWidget, onMissing: 'hide' as const };
+            // Act
+            const result = WidgetSchema.safeParse(input);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.onMissing).toBe('hide');
+            }
+        });
+
+        it('should accept onMissing "disable" explicitly', () => {
+            // Arrange
+            const input = { ...validWidget, onMissing: 'disable' as const };
+            // Act
+            const result = WidgetSchema.safeParse(input);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.onMissing).toBe('disable');
+            }
+        });
+
+        it('should still validate existing-shaped widgets without onMissing (backward compat)', () => {
+            // Arrange — a fully-featured existing widget shape with no onMissing field
+            const existingWidget = {
+                id: 'accommodations-count',
+                type: 'kpi' as const,
+                label: validLabel,
+                scope: 'own' as const,
+                permissions: ['ACCOMMODATION_VIEW_OWN'],
+                config: { source: 'accommodation.list.count.own' }
+            };
+            // Act
+            const result = WidgetSchema.safeParse(existingWidget);
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                // onMissing defaults to 'disable' — additive, no breakage
+                expect(result.data.onMissing).toBe('disable');
             }
         });
 
@@ -104,6 +169,13 @@ describe('WidgetSchema', () => {
         it('should reject an empty id', () => {
             // Arrange
             const input = { ...validWidget, id: '' };
+            // Act + Assert
+            expect(WidgetSchema.safeParse(input).success).toBe(false);
+        });
+
+        it('should reject an invalid onMissing value', () => {
+            // Arrange
+            const input = { ...validWidget, onMissing: 'remove' };
             // Act + Assert
             expect(WidgetSchema.safeParse(input).success).toBe(false);
         });

@@ -17,6 +17,7 @@ import type {
     PostCreateInput,
     PostEngagementStats,
     PostListInput,
+    PostMonthlyTrendItem,
     PostSummary,
     PostTag,
     PostUpdateInput,
@@ -50,6 +51,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils/permission';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
@@ -1252,5 +1254,38 @@ export class PostService extends BaseCrudService<
                 resolvedCtx.hookState.updateId = undefined;
             }
         }
+    }
+
+    /**
+     * Returns a 12-month posts-per-month trend series for the admin dashboard.
+     *
+     * Gated on `POST_VIEW_ALL` — the same permission used by `adminList` and
+     * `getById`. Delegates the DB aggregation to `PostModel.getMonthlyTrend`.
+     *
+     * @param actor - The actor performing the action. Must have `POST_VIEW_ALL`.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns Array of 12 `{ month: YYYY-MM, count: number }` items, oldest first.
+     * @throws ServiceError (FORBIDDEN) when actor lacks permission.
+     * @throws ServiceError (INTERNAL_ERROR) on unexpected DB errors.
+     */
+    public async getMonthlyTrend(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PostMonthlyTrendItem[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getMonthlyTrend',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!hasPermission(validatedActor, PermissionEnum.POST_VIEW_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: POST_VIEW_ALL required for post monthly trend'
+                    );
+                }
+                return this.model.getMonthlyTrend(execCtx?.tx);
+            }
+        });
     }
 }

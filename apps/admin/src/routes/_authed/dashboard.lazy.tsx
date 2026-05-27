@@ -1,172 +1,52 @@
 /**
- * Dashboard page - Lazy loaded component
+ * Dashboard page - Lazy loaded component (SPEC-155 T-035)
  *
  * This file contains the heavy UI components that are loaded on demand.
- * The route configuration is in dashboard.tsx
+ * The route configuration is in dashboard.tsx.
+ *
+ * ## Migration note (T-035 → T-037)
+ *
+ * The previous hard-coded KPI grid driven by `useDashboardStats` has been
+ * replaced with the config-driven {@link DashboardRenderer}. The old
+ * `useDashboardStats` hook was deleted in T-037 after the T-036 parity audit
+ * confirmed no regression in the 5 shared entity KPIs (users moved to Card G).
+ *
+ * The "Actualizar" refresh button is now owned by DashboardRenderer →
+ * DashboardGrid → RefreshButton.  The page no longer needs a separate
+ * `actions` prop passed to SidebarPageLayout.
+ *
+ * Source-registry side-effect import lives inside DashboardRenderer itself
+ * (`@/lib/dashboard-sources/index`), so no extra import is needed here.
  */
-import { ComingSoon } from '@/components/feedback/ComingSoon';
+import { DashboardRenderer } from '@/components/dashboards/DashboardRenderer';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DashboardSkeleton } from '@/components/loading';
-import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
-import {
-    AccommodationIcon,
-    ActivityIcon,
-    BarChartIcon,
-    DestinationIcon,
-    EventIcon,
-    MapIcon,
-    PostIcon,
-    RefreshIcon,
-    UsersIcon
-} from '@repo/icons';
-import { useQueryClient } from '@tanstack/react-query';
-import { Link, createLazyFileRoute } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { createLazyFileRoute } from '@tanstack/react-router';
 
 export const Route = createLazyFileRoute('/_authed/dashboard')({
     component: Dashboard,
     pendingComponent: DashboardSkeleton
 });
 
+/**
+ * Dashboard page component.
+ *
+ * Delegates all dashboard content rendering — widget grid, KPI cards, and the
+ * global "Actualizar" refresh button — to {@link DashboardRenderer}, which
+ * reads the current user's role config and dispatches each widget to the
+ * appropriate renderer component.
+ *
+ * The SidebarPageLayout wrapper provides the standard page chrome (title,
+ * breadcrumbs, sidebar). No `actions` prop is passed here because the renderer
+ * owns the refresh button.
+ */
 function Dashboard() {
     const { t } = useTranslations();
-    const { entities, isLoading } = useDashboardStats();
-    const queryClient = useQueryClient();
-
-    const kpiConfig: readonly KpiConfig[] = [
-        {
-            key: 'accommodations',
-            titleKey: 'admin-dashboard.kpis.accommodations' as TranslationKey,
-            icon: <AccommodationIcon className="h-5 w-5" />,
-            href: '/accommodations'
-        },
-        {
-            key: 'destinations',
-            titleKey: 'admin-dashboard.kpis.destinations' as TranslationKey,
-            icon: <DestinationIcon className="h-5 w-5" />,
-            href: '/destinations'
-        },
-        {
-            key: 'events',
-            titleKey: 'admin-dashboard.kpis.events' as TranslationKey,
-            icon: <EventIcon className="h-5 w-5" />,
-            href: '/events'
-        },
-        {
-            key: 'posts',
-            titleKey: 'admin-dashboard.kpis.posts' as TranslationKey,
-            icon: <PostIcon className="h-5 w-5" />,
-            href: '/posts'
-        },
-        {
-            key: 'attractions',
-            titleKey: 'admin-dashboard.kpis.attractions' as TranslationKey,
-            icon: <MapIcon className="h-5 w-5" />,
-            href: '/content/destination-attractions'
-        },
-        {
-            key: 'users',
-            titleKey: 'admin-dashboard.kpis.users' as TranslationKey,
-            icon: <UsersIcon className="h-5 w-5" />,
-            href: '/access/users'
-        }
-    ];
-
-    const handleRefresh = () => {
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    };
 
     return (
-        <SidebarPageLayout
-            title={t('admin-dashboard.title')}
-            actions={
-                <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                    aria-label={t('admin-common.aria.refresh')}
-                >
-                    <RefreshIcon className="h-4 w-4" />
-                    {t('admin-dashboard.actions.refresh')}
-                </button>
-            }
-        >
-            <div className="space-y-6">
-                {/* KPI Cards */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {kpiConfig.map((kpi) => {
-                        const entity = entities.find((e) => e.name === kpi.key);
-                        return (
-                            <KpiCard
-                                key={kpi.key}
-                                title={t(kpi.titleKey)}
-                                value={entity?.isLoading ? '...' : String(entity?.count ?? 0)}
-                                icon={kpi.icon}
-                                href={kpi.href}
-                                loading={entity?.isLoading ?? isLoading}
-                            />
-                        );
-                    })}
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {/* Traffic chart - Coming Soon */}
-                    <div className="lg:col-span-2">
-                        <ComingSoon
-                            title={t('admin-dashboard.charts.traffic')}
-                            description={t(
-                                'admin-dashboard.comingSoon.analytics' as TranslationKey
-                            )}
-                            icon={<BarChartIcon className="h-8 w-8" />}
-                            className="h-full min-h-[200px]"
-                        />
-                    </div>
-
-                    {/* Recent activity - Coming Soon */}
-                    <ComingSoon
-                        title={t('admin-dashboard.activity.title')}
-                        description={t('admin-dashboard.comingSoon.auditLog' as TranslationKey)}
-                        icon={<ActivityIcon className="h-8 w-8" />}
-                        className="min-h-[200px]"
-                    />
-                </div>
-            </div>
+        <SidebarPageLayout title={t('admin-dashboard.title')}>
+            <DashboardRenderer />
         </SidebarPageLayout>
     );
 }
-
-type KpiConfig = {
-    readonly key: string;
-    readonly titleKey: TranslationKey;
-    readonly icon: ReactNode;
-    readonly href: string;
-};
-
-type KpiCardProps = {
-    readonly title: string;
-    readonly value: string;
-    readonly icon: ReactNode;
-    readonly href: string;
-    readonly loading?: boolean;
-};
-
-const KpiCard = ({ title, value, icon, href, loading }: KpiCardProps) => (
-    <Link
-        to={href}
-        className="group rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50"
-    >
-        <div className="mb-3 flex items-center gap-2">
-            <div className="rounded-md bg-primary/10 p-1.5 text-primary">{icon}</div>
-            <span className="text-muted-foreground text-sm">{title}</span>
-        </div>
-        <div className="flex items-end justify-between">
-            {loading ? (
-                <div className="h-9 w-20 animate-pulse rounded bg-muted" />
-            ) : (
-                <div className="font-semibold text-3xl">{value}</div>
-            )}
-        </div>
-    </Link>
-);

@@ -311,6 +311,36 @@ export type PostStats = z.infer<typeof PostStatsSchema>;
 // Compatibility aliases for existing code
 export type PostListInput = PostSearchInput;
 export type PostListOutput = PostListResponse;
+
+// ============================================================================
+// ADMIN DASHBOARD — MONTHLY TREND (SPEC-155 T-008)
+// ============================================================================
+
+/**
+ * A single data point in the posts-per-month trend series.
+ *
+ * `month` is a calendar month in `YYYY-MM` format (e.g. `"2024-03"`).
+ * `count` is the number of posts whose `createdAt` falls within that month.
+ * Months with no posts are included as explicit zero buckets so the caller
+ * always receives a fixed-length 12-element series.
+ */
+export const PostMonthlyTrendItemSchema = z.object({
+    /** Calendar month in YYYY-MM format. */
+    month: z.string().regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM'),
+    /** Number of posts created in that month (≥ 0). */
+    count: z.number().int().min(0)
+});
+
+/**
+ * Response schema for `GET /api/v1/admin/posts/trend`.
+ *
+ * Returns the last 12 calendar months ordered oldest-first, zero-filled
+ * so the array always has exactly 12 elements.
+ */
+export const PostMonthlyTrendSchema = z.array(PostMonthlyTrendItemSchema);
+
+export type PostMonthlyTrendItem = z.infer<typeof PostMonthlyTrendItemSchema>;
+export type PostMonthlyTrend = z.infer<typeof PostMonthlyTrendSchema>;
 export type PostSearchOutput = PostSearchResponse;
 export type PostSearchResult = PostSearchResultItem;
 

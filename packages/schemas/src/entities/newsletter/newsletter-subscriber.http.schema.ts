@@ -111,3 +111,50 @@ export const NewsletterSubscriberStatsResponseSchema = z.object({
 export type NewsletterSubscriberStatsResponse = z.infer<
     typeof NewsletterSubscriberStatsResponseSchema
 >;
+
+// ============================================================================
+// NewsletterSubscribersByPreferenceSchema
+// ============================================================================
+
+/**
+ * Response body for `GET /api/v1/admin/newsletter/subscribers/by-preference`.
+ *
+ * Count of ACTIVE (non-deleted) newsletter subscribers that have each
+ * content-preference opt-in flag set to `true` in the JSONB
+ * `newsletter_subscribers.preferences` column.
+ *
+ * Each key maps to a `NewsletterContentTypeEnum` value. The count for a given
+ * preference is the number of active subscribers whose `preferences` JSONB
+ * contains `{ "<key>": true }`.
+ *
+ * A subscriber is counted for a preference even if they also have other
+ * preferences enabled — the counts are independent (not mutually exclusive).
+ *
+ * @example
+ * ```ts
+ * const stats = NewsletterSubscribersByPreferenceSchema.parse({
+ *   OFFERS: 980,
+ *   EVENTS: 870,
+ *   GUIDES: 750,
+ *   PRODUCT_NEWS: 620
+ * });
+ * ```
+ */
+export const NewsletterSubscribersByPreferenceSchema = z.object({
+    /** Subscribers opted in to OFFERS content (promotions, discounts, deals). */
+    OFFERS: z.number().int().min(0),
+
+    /** Subscribers opted in to EVENTS content (festivals, cultural agenda). */
+    EVENTS: z.number().int().min(0),
+
+    /** Subscribers opted in to GUIDES content (travel guides, itineraries). */
+    GUIDES: z.number().int().min(0),
+
+    /** Subscribers opted in to PRODUCT_NEWS content (platform updates, features). */
+    PRODUCT_NEWS: z.number().int().min(0)
+});
+
+/** TypeScript type inferred from {@link NewsletterSubscribersByPreferenceSchema}. */
+export type NewsletterSubscribersByPreference = z.infer<
+    typeof NewsletterSubscribersByPreferenceSchema
+>;

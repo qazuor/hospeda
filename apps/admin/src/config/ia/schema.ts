@@ -516,14 +516,16 @@ export type WidgetScope = z.infer<typeof WidgetScopeSchema>;
 /**
  * Visual/behavioural type of a dashboard widget (V1 catalogue).
  *
- * - `'kpi'`      — single big number with optional delta.
- * - `'list'`     — top-N list (recent items, top performers, etc.).
- * - `'chart'`    — line/bar/area chart.
- * - `'feed'`     — chronological feed (activity log, audit preview).
- * - `'callout'`  — notice/banner with CTA.
- * - `'shortcut'` — group of quick-action buttons.
- * - `'map'`      — geographic visualisation.
- * - `'calendar'` — date-based visualisation (events, publishing schedule).
+ * - `'kpi'`       — single big number with optional delta.
+ * - `'list'`      — top-N list (recent items, top performers, etc.).
+ * - `'chart'`     — line/bar/area chart.
+ * - `'feed'`      — chronological feed (activity log, audit preview).
+ * - `'callout'`   — notice/banner with CTA.
+ * - `'shortcut'`  — group of quick-action buttons.
+ * - `'map'`       — geographic visualisation.
+ * - `'calendar'`  — date-based visualisation (events, publishing schedule).
+ * - `'checklist'` — completeness checklist (HOST/EDITOR profile/listing health).
+ * - `'status'`    — health/badge-style status card (system health, subscription status).
  *
  * @example
  * ```ts
@@ -538,7 +540,9 @@ export const WidgetTypeSchema = z.enum([
     'callout',
     'shortcut',
     'map',
-    'calendar'
+    'calendar',
+    'checklist',
+    'status'
 ]);
 
 /**
@@ -579,6 +583,12 @@ export const WidgetSchema = z.object({
     permissions: PermissionGateSchema.optional(),
     /** Data scope. Defaults to `'all'`. */
     scope: WidgetScopeSchema.default('all'),
+    /**
+     * Behaviour when the current user lacks the required permissions.
+     * `'hide'` removes the widget entirely; `'disable'` renders it greyed-out.
+     * Defaults to `'disable'` (same pattern as sidebar items).
+     */
+    onMissing: OnMissingSchema.default('disable'),
     /**
      * Widget-type-specific configuration. Kept loosely typed in V1 —
      * each renderer validates this with its own schema.
@@ -622,6 +632,24 @@ export const DashboardSchema = z.object({
  * ```
  */
 export type Dashboard = z.infer<typeof DashboardSchema>;
+
+/**
+ * Input type for {@link DashboardSchema} — fields with Zod `.default()` values
+ * (e.g. `onMissing`, `scope`, `exact`) are optional at input time because the
+ * parser applies the defaults during `safeParse`.
+ *
+ * Use this type when defining raw dashboard config objects (before validation).
+ * At runtime `AdminIAConfigSchema.safeParse` converts `DashboardInput` to
+ * `Dashboard` by filling in all defaults.
+ *
+ * @example
+ * ```ts
+ * const myDashboard: DashboardInput = {
+ *   widgets: [{ id: 'w1', type: 'kpi', label: {...} }],
+ * };
+ * ```
+ */
+export type DashboardInput = z.input<typeof DashboardSchema>;
 
 /**
  * Which create actions to show in the topbar quick-create button.

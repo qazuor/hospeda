@@ -1,0 +1,990 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-155",
+    "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
+    "created": "2026-05-26T00:00:00.000Z",
+    "lastRegenerated": "2026-05-27T00:00:00.000Z",
+    "replanNote": "Fully regenerated after spec §6 rewrite (2026-05-26). Phase 0.5 schema extension added (T-003/T-004). Tasks T-003..T-016 remapped. Old billing-revoke tasks removed. T-001/T-002 preserved as completed. UPDATED 2026-05-27: T-009 (comments listing) and T-011 (reviews-pending count) extracted to SPEC-165/SPEC-166 after Phase-1 scout found required tables do not exist. IDs tombstoned (status: extracted). T-012 set in-progress (parallel route construction task). Summary reflects 39 active tasks (41 IDs - 2 tombstones).",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Confirm SPEC-154 exports and identify schema gaps",
+            "description": "Verify that `DashboardCardConfig`, widget Zod schema, and section renderer are available and exported from SPEC-154's config infrastructure. Identify the two schema gaps (`onMissing` missing from `WidgetSchema`, `'checklist'` missing from `WidgetTypeSchema`) and the stub reconciliation needed.\n\nFiles checked:\n- `apps/admin/src/config/ia/` (SPEC-154 config schema exports)\n- `apps/admin/src/components/sections/` or equivalent renderer\n- `.claude/audit/admin-redesign/proposals/02-config-schema.md` §7\n\nAcceptance criteria (AC-1, AC-3):\n- `DashboardCardConfig` type is exported and includes `id`, `type`, `label` (tri-locale), `scope`, `source`.\n- Zod schema exists that validates dashboard card configs at runtime.\n- Two gaps documented: `onMissing` absent from `WidgetSchema`, `'checklist'` absent from `WidgetTypeSchema`.\n- Stub reconciliation need documented: `adminDashboard` / `superAdminDashboard` → `adminBaseDashboard` + `superAdminOnlySection`.\n\n**COMPLETED**: gaps confirmed, motivating Phase 0.5 tasks T-003 and T-004.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028"
+            ],
+            "subtasks": [],
+            "tags": ["frontend", "infra", "pre-work", "spec-154"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-27T04:13:53.000Z",
+                "completed": "2026-05-27T04:22:09.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "ADMIN billing blast-radius audit",
+            "description": "Enumerate every admin billing route and page; verify the real billing PermissionEnum entries; produce written finding.\n\nFiles audited:\n- `apps/api/src/routes/admin/billing/`\n- `apps/admin/src/routes/_authed/billing/`\n- `packages/seed/src/required/rolePermissions.seed.ts`\n- `packages/schemas/src/enums/permission.enum.ts`\n\nAcceptance criteria (§3 Permission changes):\n- Written finding documents each billing route/page with its permission check.\n- Finding confirms the real ADMIN billing perm set (6 entries: `BILLING_READ_ALL`, `BILLING_MANAGE`, `MANAGE_SUBSCRIPTIONS`, `BILLING_PROMO_CODE_READ`, `BILLING_PROMO_CODE_MANAGE`, `BILLING_METRICS_READ`).\n- Finding confirms spec-named perms (`BILLING_METRICS_VIEW`, `SUBSCRIPTION_VIEW_ALL`) do NOT exist in PermissionEnum.\n- Blast-radius scope extracted to SPEC-164. No seed change in SPEC-155.\n\n**COMPLETED**: fictional perm names confirmed; 6 real perms identified; blast-radius scope extracted to SPEC-164.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["audit", "security", "billing", "permissions", "pre-work"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-26T00:00:00.000Z",
+                "started": "2026-05-27T04:13:53.000Z",
+                "completed": "2026-05-27T04:22:09.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extend WidgetSchema with onMissing field and checklist type",
+            "description": "Extend `WidgetSchema` in `apps/admin/src/config/ia/schema.ts` with the two additions required by SPEC-155 dashboard configs.\n\nFiles to modify:\n- `apps/admin/src/config/ia/schema.ts` — add `onMissing` optional field to `WidgetSchema`; add `'checklist'` to `WidgetTypeSchema`\n- Update Zod test suite (SPEC-154 CI validation) to assert both additions\n\nChanges (AC-1, AC-2, AC-3):\n1. Add optional `onMissing` field to `WidgetSchema` reusing `OnMissingSchema` (values: `'hide' | 'disable'`); default `'disable'`. `OnMissingSchema` already exists for sidebar items — reuse it without duplication.\n2. Add `'checklist'` to `WidgetTypeSchema` alongside existing values (`kpi | list | chart | feed | callout | shortcut | map | calendar`).\n\nTest requirements (AC-1, AC-2, AC-3):\n- Zod test: `WidgetSchema.parse({ ...validWidget, onMissing: 'hide' })` succeeds\n- Zod test: `WidgetSchema.parse({ ...validWidget, onMissing: 'disable' })` succeeds\n- Zod test: existing config objects that omit `onMissing` continue to pass validation\n- Zod test: `WidgetTypeSchema.parse('checklist')` succeeds\n- Zod test: all pre-existing WidgetTypeSchema values still parse\n- SPEC-154 CI suite must remain green after extension",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033"
+            ],
+            "subtasks": [],
+            "tags": ["frontend", "schema", "spec-154", "infra", "phase-0.5"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T04:56:42.000Z",
+                "completed": "2026-05-27T05:02:10.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Reconcile adminDashboard/superAdminDashboard stubs to new model",
+            "description": "Reconcile the existing SPEC-154 stubs that define `adminDashboard` and `superAdminDashboard` as separate top-level objects into the `adminBaseDashboard` (cards A–G) + `superAdminOnlySection` (cards H–I, `onMissing: 'hide'`) model required by SPEC-155.\n\nFiles to modify:\n- `apps/admin/src/config/ia/dashboards.ts` (or wherever SPEC-154 defined the stubs)\n- Any file in `apps/admin/src/config/ia/` that references the old stub names\n- Update imports or re-exports that use the old identifiers\n\nChanges:\n- Rename / restructure `adminDashboard` → `adminBaseDashboard` (placeholder, cards to be populated in T-031)\n- Rename / restructure `superAdminDashboard` → `superAdminOnlySection` (placeholder, cards to be populated in T-032)\n- Ensure existing SPEC-154 tests that reference these stubs are updated to new names\n- Confirm no TypeScript errors after rename\n\nTest requirements (AC-3, AC-5):\n- TypeScript compiles cleanly after stub rename (`pnpm typecheck` on apps/admin)\n- SPEC-154 CI Zod validation suite still passes (updated names, same schema)\n- `adminBaseDashboard` and `superAdminOnlySection` are exported from config/ia index",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033"
+            ],
+            "subtasks": [],
+            "tags": ["frontend", "schema", "spec-154", "infra", "phase-0.5"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T05:02:10.000Z",
+                "completed": "2026-05-27T05:10:28.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement GET /api/v1/protected/host/favorites/breakdown route",
+            "description": "Build a new protected API route returning per-accommodation bookmark counts scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/favorites-breakdown.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Uses existing `countBookmarksForEntity()` from `@repo/db` or service layer\n\nRoute spec (AC-20):\n- `GET /api/v1/protected/host/favorites/breakdown`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` automatically injected from `ctx.user.id` — NOT from query params\n- Response shape: `{ data: [{ accommodationId: string, slug: string, bookmarkCount: number }] }`\n- Empty array if host has no accommodations\n\nTest requirements (AC-20):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/favorites-breakdown.test.ts`\n- Test: authenticated HOST user returns only their own accommodations\n- Test: response shape matches documented interface exactly\n- Test: unauthenticated request returns 401\n- Test: non-HOST role returns 403",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-018"],
+            "subtasks": [],
+            "tags": ["backend", "api", "host", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T05:55:48.000Z",
+                "completed": "2026-05-27T06:10:49.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement GET /api/v1/protected/host/conversations/response-rate route",
+            "description": "Build a new protected API route computing conversation response rate and average response time, scoped to the authenticated host.\n\nFiles to create/modify:\n- `apps/api/src/routes/protected/host/conversations-response-rate.ts` (new route handler)\n- Register in `apps/api/src/routes/protected/host/index.ts`\n- Aggregates over `conversations` table fields: `ownerMessageCount`, `firstGuestMessageAt`, `firstOwnerReplyAt` where `ownerId = ctx.user.id`\n\nRoute spec (AC-21):\n- `GET /api/v1/protected/host/conversations/response-rate`\n- Auth: requires authenticated session with HOST role\n- Scope: `ownerId` injected from auth context\n- Response shape: `{ data: { responseRatePct: number, avgResponseTimeMinutes: number } }`\n- `responseRatePct`: (conversations with owner reply / total conversations) * 100, rounded to 1 decimal\n- `avgResponseTimeMinutes`: mean of (`firstOwnerReplyAt` - `firstGuestMessageAt`) for replied conversations\n- Returns `{ responseRatePct: 0, avgResponseTimeMinutes: 0 }` when no conversations\n\nTest requirements (AC-21):\n- Integration test: `apps/api/src/routes/protected/host/__tests__/conversations-response-rate.test.ts`\n- Test: correct pct and avg with seeded conversation data\n- Test: returns zeros when no conversations exist\n- Test: scope isolation — HOST A cannot see HOST B's rates\n- Test: 401/403 for unauthenticated/wrong role",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-018"],
+            "subtasks": [],
+            "tags": ["backend", "api", "host", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T05:55:48.000Z",
+                "completed": "2026-05-27T06:10:49.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement GET /api/v1/admin/newsletter/subscribers/by-preference route",
+            "description": "Build a new admin API route aggregating active newsletter subscribers by content preference.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/newsletter/subscribers-by-preference.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/newsletter/index.ts`\n- Aggregates over `newsletter_subscribers.preferences` JSONB column where `status = 'active'`\n\nRoute spec (AC-22):\n- `GET /api/v1/admin/newsletter/subscribers/by-preference`\n- Auth: requires `NEWSLETTER_SUBSCRIBER_VIEW` permission\n- Response shape: `{ data: { OFFERS: number, EVENTS: number, GUIDES: number, PRODUCT_NEWS: number } }`\n- Counts subscribers whose preferences include each category (a subscriber can appear in multiple categories)\n- Returns zeros for categories with no subscribers\n\nTest requirements (AC-22):\n- Integration test: `apps/api/src/routes/admin/newsletter/__tests__/subscribers-by-preference.test.ts`\n- Test: correct counts per preference category with seeded subscribers\n- Test: only active subscribers are counted\n- Test: 403 without `NEWSLETTER_SUBSCRIBER_VIEW`\n- Test: response shape matches documented interface",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-019"],
+            "subtasks": [],
+            "tags": ["backend", "api", "editor", "newsletter", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T05:55:48.000Z",
+                "completed": "2026-05-27T06:10:49.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement GET /api/v1/admin/posts/trend route",
+            "description": "Build a new admin API route returning the post publication trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/posts/trend.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/posts/index.ts`\n- Date-grouped aggregation over `posts.createdAt` for the last 12 months\n\nRoute spec (AC-23):\n- `GET /api/v1/admin/posts/trend`\n- Auth: requires `POST_VIEW` or equivalent admin permission\n- Response shape: `{ data: [{ month: string, count: number }] }` where `month` is `'YYYY-MM'` format\n- Array has exactly 12 entries covering the last 12 calendar months (including current)\n- Months with zero posts return `{ month: 'YYYY-MM', count: 0 }`\n- Ordered chronologically (oldest first)\n\nTest requirements (AC-23):\n- Integration test: `apps/api/src/routes/admin/posts/__tests__/trend.test.ts`\n- Test: returns 12 entries\n- Test: correct counts for months with seeded posts\n- Test: zero-fill for months without posts\n- Test: 403 without required permission",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-019"],
+            "subtasks": [],
+            "tags": ["backend", "api", "editor", "posts", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T05:55:48.000Z",
+                "completed": "2026-05-27T06:10:49.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "[EXTRACTED TO SPEC-165] Recent-comments listing endpoint",
+            "description": "TOMBSTONE — extracted 2026-05-27 after Phase-1 scout found no post_comments or event_comments table exists in the schema. The posts table has only an integer comments counter; events has nothing. No POST_COMMENT_VIEW or EVENT_COMMENT_VIEW permission entries exist. This work is now owned by SPEC-165 (post-event-comments-system). EDITOR dashboard card H renders a deferred placeholder until SPEC-165 ships.",
+            "status": "extracted",
+            "extractedTo": "SPEC-165",
+            "extractedOn": "2026-05-27",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "editor", "comments", "extracted"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": null,
+                "completed": null,
+                "extracted": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement GET /api/v1/admin/moderation/pending-count route",
+            "description": "Build a new admin API route returning unified pending-moderation counts across four entity types.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/moderation/pending-count.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/moderation/index.ts`\n- Aggregates `moderationState = 'PENDING'` across: accommodations, destinations, posts, events\n\nRoute spec (AC-25):\n- `GET /api/v1/admin/moderation/pending-count`\n- Auth: requires `MODERATION_REVIEW` permission\n- Response shape: `{ data: { total: number, byEntity: { accommodations: number, destinations: number, posts: number, events: number } } }`\n- `total` = sum of all four byEntity counts\n- Each entity count is independently computed\n\nTest requirements (AC-25):\n- Integration test: `apps/api/src/routes/admin/moderation/__tests__/pending-count.test.ts`\n- Test: correct totals per entity with seeded pending items\n- Test: `total` equals sum of byEntity values\n- Test: 403 without `MODERATION_REVIEW`\n- Test: response shape matches documented interface",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-020"],
+            "subtasks": [],
+            "tags": ["backend", "api", "admin", "moderation", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T06:13:54.000Z",
+                "completed": "2026-05-27T06:40:17.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "[EXTRACTED TO SPEC-166] Reviews-pending count endpoint",
+            "description": "TOMBSTONE — extracted 2026-05-27 after Phase-1 scout found accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not a moderationState column. No review moderation flow exists today. This work is now owned by SPEC-166 (review-moderation-state). ADMIN dashboard card F retains its unified moderation-pending count over the 4 content entities (T-010, still in SPEC-155). The reviews-pending sub-slot of card F renders a deferred placeholder until SPEC-166 ships.",
+            "status": "extracted",
+            "extractedTo": "SPEC-166",
+            "extractedOn": "2026-05-27",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "admin", "reviews", "extracted"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": null,
+                "completed": null,
+                "extracted": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement GET /api/v1/admin/users/stats route",
+            "description": "Build a new admin API route returning users grouped by role and a new-users trend for the last 12 months.\n\nFiles to create/modify:\n- `apps/api/src/routes/admin/users/stats.ts` (new route handler)\n- Register in `apps/api/src/routes/admin/users/index.ts`\n- Aggregates: (1) count per role from users table; (2) date-grouped `createdAt` for last 12 months\n\nRoute spec (AC-25):\n- `GET /api/v1/admin/users/stats`\n- Auth: requires `USER_VIEW_ALL` permission\n- Response shape: `{ data: { byRole: Record<string, number>, newUsersTrend: [{ month: string, count: number }] } }`\n- `byRole`: key is role name (string), value is user count\n- `newUsersTrend`: 12 entries, `month` in `'YYYY-MM'` format, ordered oldest first\n- Zero-fill months with no new users\n\nTest requirements (AC-25):\n- Integration test: `apps/api/src/routes/admin/users/__tests__/stats.test.ts`\n- Test: correct role counts with seeded users\n- Test: trend has 12 entries with correct month format\n- Test: 403 without `USER_VIEW_ALL`\n- Test: response shape correct",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-020"],
+            "subtasks": [],
+            "tags": ["backend", "api", "admin", "users", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T05:47:35.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Expose maintenance-mode readable flag via API",
+            "description": "Confirm or build an endpoint that exposes the current `maintenanceMode` boolean status, readable by users with the `SYSTEM_MAINTENANCE_MODE` permission.\n\nFiles to check/create:\n- Check `apps/api/src/routes/admin/system/` for existing health/status routes\n- May already exist as part of health endpoint — verify it returns maintenance-mode status\n- If building new: `apps/api/src/routes/admin/system/maintenance-status.ts`\n\nRoute spec (AC-28):\n- Endpoint accessible with `SYSTEM_MAINTENANCE_MODE` permission\n- Response includes `{ data: { maintenanceMode: boolean } }` (as part of system status or standalone)\n- No DB change required — reads from env/config\n\nTest requirements (AC-28):\n- Integration test: assert endpoint returns correct boolean based on maintenance config\n- Test: 403 without `SYSTEM_MAINTENANCE_MODE`\n- Test: response shape correct",
+            "status": "extracted",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-020"],
+            "subtasks": [],
+            "tags": ["backend", "api", "admin", "system", "aggregation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Integration tests for all 7 active aggregation routes (T-005, T-006, T-007, T-008, T-010, T-012, T-013)",
+            "description": "Write comprehensive integration tests for each of the 7 active aggregation routes. One test file per route, each asserting shape, authentication, and scope isolation. T-009 (comments) and T-011 (reviews-pending) were extracted to SPEC-165/SPEC-166 and are NOT included.\n\nThis task is a consolidation/hardening pass — each individual route task includes its own inline test requirements. T-014 ensures all 7 are green as a group and adds cross-cutting edge cases.\n\nFiles to create (if not already created by individual route tasks):\n- One `__tests__/*.test.ts` per route in its respective directory\n\nAcceptance criteria (AC-20 through AC-26):\n- All 7 active routes pass their shape assertions\n- All 7 active routes pass their auth assertions (401 unauthenticated, 403 wrong permission)\n- HOST routes assert scope isolation (no cross-owner data leaks)\n- Trend routes assert 12-entry arrays with correct `YYYY-MM` format\n- All tests run in under 30s total\n\nTest requirements:\n- Use the project's standard integration test harness (Vitest + db test setup)\n- AAA pattern throughout\n- No `.only()` or hard-coded `.skip()` in committed code",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-006", "T-007", "T-008", "T-010", "T-012", "T-013"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "backend", "integration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-05-27T06:40:17.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Verify EDITOR newsletter permission enum entries",
+            "description": "Confirm that `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, `NEWSLETTER_SUBSCRIBER_VIEW`, and `NEWSLETTER_CAMPAIGN_SEND` are all defined in the permission enum before the seed change proceeds.\n\nFiles to check:\n- `packages/schemas/src/enums/permission.enum.ts`\n\nAcceptance criteria (AC-29, AC-30):\n- All four permission names exist as enum values.\n- `NEWSLETTER_CAMPAIGN_SEND` exists (needed to assert EDITOR does NOT have it in T-016).\n- Document the exact enum values for use in T-016.\n- If any is missing, add the missing entry to the enum and confirm no other tests break.\n\nTest requirements:\n- No seed code change in this task — verification only.\n- If enum entries are added, run `pnpm typecheck` to confirm no breakage.\n- Written finding: list the four exact enum string values as they appear in the file.\n\nBLOCKS T-016. BLOCKED BY T-002 (audit confirmed no fictional names were granted to EDITOR; safe to proceed).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "tags": ["backend", "permissions", "schemas", "editor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T04:56:42.000Z",
+                "completed": "2026-05-27T05:02:10.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Seed EDITOR newsletter permission grant",
+            "description": "Add `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, and `NEWSLETTER_SUBSCRIBER_VIEW` to the EDITOR role in the rolePermissions seed file. Do NOT add `NEWSLETTER_CAMPAIGN_SEND` — sending stays admin-only.\n\nFiles to modify:\n- `packages/seed/src/required/rolePermissions.seed.ts`\n\nAcceptance criteria (AC-29, AC-30):\n- EDITOR role gains exactly: `NEWSLETTER_CAMPAIGN_VIEW`, `NEWSLETTER_CAMPAIGN_WRITE`, `NEWSLETTER_SUBSCRIBER_VIEW`.\n- EDITOR role does NOT get `NEWSLETTER_CAMPAIGN_SEND`.\n- All other roles are unchanged.\n- SUPER_ADMIN retains all newsletter permissions including SEND.\n\nTest requirements (AC-29, AC-30):\n- Unit test in `packages/seed/src/__tests__/rolePermissions.test.ts` (or equivalent):\n  - Assert EDITOR has all three new permissions\n  - Assert EDITOR does NOT have `NEWSLETTER_CAMPAIGN_SEND`\n  - Assert SUPER_ADMIN still has all four newsletter permissions\n- Run seed diff to confirm no unintended role mutations",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "permissions", "seed", "editor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create dashboard source resolver skeleton",
+            "description": "Scaffold the `dashboard-sources.ts` registry with: role context provider hook, typed resolver interface, and query key factory. No actual source registrations yet — just the infrastructure.\n\nFiles to create:\n- `apps/admin/src/lib/dashboard-sources.ts` — main registry\n- `apps/admin/src/contexts/DashboardContext.tsx` (or similar) — role/user context provider\n\nKey types to define (AC-16, AC-19):\n```typescript\ntype SourceId = string;\ntype DashboardContext = { userId: string; role: string; permissions: string[] };\ntype ResolvedSource = { queryKey: readonly unknown[]; queryFn: () => Promise<unknown> };\ntype SourceResolver = (ctx: DashboardContext) => ResolvedSource;\n```\n\nQuery key convention (AC-19):\n- All dashboard query keys must include role and scope: `['dashboard', role, sourceId, scopeId?]`\n- 60s `staleTime` set as default in resolver output\n- Refetch-on-focus enabled by default\n\nTest requirements:\n- Unit test: registry returns a resolver for a given sourceId\n- Unit test: query key includes role identifier",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-018", "T-019", "T-020", "T-021"],
+            "subtasks": [],
+            "tags": ["frontend", "infra", "dashboard"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Register HOST data sources in resolver",
+            "description": "Register all HOST dashboard source IDs in `dashboard-sources.ts`, mapping each to a TanStack Query options object pointing to the correct API endpoint.\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (HOST cards A–G, excluding views 🔴):\n- `host.accommodations.list` → `GET /api/v1/protected/accommodations?ownerId={userId}`\n- `host.plan.status` → existing billing subscription endpoint scoped to user\n- `host.inquiries.pending` → existing conversations endpoint filtered by pending + ownerId\n- `host.accommodation.detail` → `GET /api/v1/protected/accommodations/{id}` (for checklist card D)\n- `host.reviews.recent` → existing reviews endpoint scoped to host\n- `host.profile` → user profile endpoint\n- `host.favorites.breakdown` → `GET /api/v1/protected/host/favorites/breakdown` (T-005)\n- `host.conversations.responseRate` → `GET /api/v1/protected/host/conversations/response-rate` (T-006)\n- `host.stats.ratings` → existing rating aggregate endpoint\n\nAcceptance criteria (AC-16, AC-17, AC-19):\n- All HOST source IDs resolve to a valid TanStack Query options object\n- `ownerId` injected from context.userId on every HOST-scoped query — not from params\n- Query keys follow `['dashboard', 'host', sourceId, userId]` pattern\n\nTest requirements (AC-17):\n- Unit test: every registered HOST source injects userId into query key and queryFn URL",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-005", "T-006", "T-017"],
+            "blocks": ["T-029", "T-038"],
+            "subtasks": [],
+            "tags": ["frontend", "dashboard", "host", "sources"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Register EDITOR data sources in resolver",
+            "description": "Register all EDITOR dashboard source IDs in `dashboard-sources.ts`, excluding views-per-post (🔴→SPEC-159), open-rate (🔴→SPEC-160), and comments (🔴→SPEC-165).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (EDITOR cards A–H, card H is deferred to SPEC-165):\n- `editor.posts.publishedThisMonth` → existing posts endpoint with month filter\n- `editor.posts.drafts` → existing posts endpoint with draft status\n- `editor.events.upcoming` → existing events endpoint with date filter\n- `editor.newsletter.subscribers` → existing subscribers endpoint\n- `editor.newsletter.byPreference` → `GET /api/v1/admin/newsletter/subscribers/by-preference` (T-007)\n- `editor.newsletter.campaigns` → existing campaigns endpoint\n- `editor.posts.trend` → `GET /api/v1/admin/posts/trend` (T-008)\n- `editor.posts.list` → posts list for health checks\n- `editor.events.list` → events list for health checks\n- Card H (Comentarios): no source registered — DeferredWidget pointing to SPEC-165 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All EDITOR source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'editor', sourceId]` pattern\n- Card H has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all EDITOR source IDs are registered and return valid query options objects",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-007", "T-008", "T-017"],
+            "blocks": ["T-030"],
+            "subtasks": [],
+            "tags": ["frontend", "dashboard", "editor", "sources"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Register ADMIN base data sources in resolver",
+            "description": "Register all ADMIN base dashboard source IDs in `dashboard-sources.ts`, excluding cron run-history (🔴→SPEC-161) and reviews-pending (🔴→SPEC-166).\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (ADMIN base cards A–G):\n- `admin.stats.entities` → existing entity count endpoints (accommodations, destinations, events, posts, attractions, users)\n- `admin.accommodations.latest` → accommodations list sorted by createdAt desc\n- `admin.events.upcomingFeatured` → events with featured flag + upcoming date\n- `admin.posts.recentDrafts` → posts with draft status sorted by updatedAt\n- `admin.crons.list` → existing cron jobs list endpoint\n- `admin.system.health` → existing health endpoint\n- `admin.system.maintenanceMode` → maintenance-mode endpoint (T-013)\n- `admin.moderation.pendingCount` → `GET /api/v1/admin/moderation/pending-count` (T-010) — 4 entities only, no reviews\n- `admin.users.stats` → `GET /api/v1/admin/users/stats` (T-012)\n- Card F reviews-pending sub-slot: no source registered — DeferredWidget pointing to SPEC-166 handles rendering\n\nAcceptance criteria (AC-16, AC-19):\n- All ADMIN source IDs resolve to valid TanStack Query options\n- Query keys follow `['dashboard', 'admin', sourceId]` pattern\n- Card F reviews sub-slot has no registered source (DeferredWidget path)\n\nTest requirements:\n- Unit test: all ADMIN source IDs are registered and return valid query options objects",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-010", "T-012", "T-013", "T-017"],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["frontend", "dashboard", "admin", "sources"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Register SUPER_ADMIN-only data sources in resolver",
+            "description": "Register the SUPER_ADMIN-only dashboard source IDs in `dashboard-sources.ts`. Card H has no live sources (all slots are 🔴 deferred). Card I uses existing billing metrics endpoints.\n\nFiles to modify:\n- `apps/admin/src/lib/dashboard-sources.ts`\n\nSources to register (SUPER-only cards H–I):\n- `super.billing.activeSubscriptions` → existing billing metrics endpoint\n- `super.billing.mrr` → existing billing MRR endpoint\n- `super.billing.revenueChart` → existing 12-month revenue endpoint\n- `super.billing.arpu` → existing ARPU endpoint\n- `super.billing.churn` → existing churn endpoint\n- `super.billing.breakdown` → existing subscription breakdown endpoint\n- Card H sources: none registered (all 🔴 — handled by DeferredWidget)\n\nAcceptance criteria (AC-7, AC-16):\n- All SUPER billing source IDs resolve to valid TanStack Query options\n- Card H has no registered sources (DeferredWidget handles all three slots)\n- Query keys include `'super'` role identifier\n\nTest requirements:\n- Unit test: all SUPER source IDs resolve correctly\n- Unit test: card H has no resolvable sources (confirming DeferredWidget path)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-017"],
+            "blocks": ["T-032"],
+            "subtasks": [],
+            "tags": ["frontend", "dashboard", "super-admin", "sources", "billing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create DeferredWidget component",
+            "description": "Build a reusable `DeferredWidget` component that renders a 'coming soon' placeholder for any 🔴 data slot, without erroring and without blocking other slots in the same card.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/DeferredWidget.tsx`\n\nComponent interface:\n```typescript\ninterface DeferredWidgetProps {\n  phaseSpec: string;       // e.g. 'SPEC-159'\n  description: string;     // Human-readable description of what will appear here\n  expectedLabel?: string;  // Optional: label of the future data point\n}\n```\n\nAcceptance criteria (AC-14, AC-15):\n- Renders a visually consistent 'coming soon' state\n- Does NOT throw errors\n- Does NOT block rendering of other slots in the same card\n- Uses i18n-safe labels (es/en/pt)\n\nTest requirements (AC-14):\n- Unit test: renders without errors given valid props\n- Unit test: displays phaseSpec reference in rendered output\n- Unit test: renders independently of any data fetching (no query calls)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034", "T-041"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "dashboard"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T06:49:15.000Z",
+                "completed": "2026-05-27T06:57:47.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create KpiWidget component",
+            "description": "Build the KPI widget renderer displaying a numeric value with optional delta indicator and unit prefix/suffix.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/KpiWidget.tsx`\n\nComponent interface (AC-10):\n```typescript\ninterface KpiWidgetProps {\n  value: number;\n  label: string;\n  delta?: { direction: 'up' | 'down' | 'neutral'; value: number; unit?: string };\n  prefix?: string;\n  suffix?: string;\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-10, AC-15):\n- Displays value prominently with optional prefix/suffix\n- Delta shows up/down icon with value and optional unit\n- Loading state shows skeleton (from T-028)\n- Error state shows red callout (from T-028)\n\nTest requirements:\n- Unit test: renders value + prefix + suffix correctly\n- Unit test: renders up delta with correct icon\n- Unit test: renders down delta with correct icon\n- Unit test: renders loading skeleton when `isLoading=true`",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T07:35:30.000Z",
+                "completed": "2026-05-27T14:42:56.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create ListWidget component",
+            "description": "Build the list widget renderer displaying top-N items with optional per-item action button or link.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ListWidget.tsx`\n\nComponent interface (AC-11):\n```typescript\ninterface ListWidgetItem { id: string; label: string; subLabel?: string; badge?: string; }\ninterface ListWidgetProps {\n  items: ListWidgetItem[];\n  actionPerItem?: { label: string; href: (item: ListWidgetItem) => string } |\n                  { label: string; onClick: (item: ListWidgetItem) => void };\n  isLoading?: boolean;\n  error?: Error | null;\n  emptyState?: { message: string };\n}\n```\n\nAcceptance criteria (AC-9, AC-11, AC-15):\n- Renders item list with label, optional subLabel, optional badge\n- Per-item action rendered as button or link per config type\n- Loading skeleton from T-028\n- Empty state from `config.emptyState` message\n\nTest requirements:\n- Unit test: renders list of items correctly\n- Unit test: action button renders and calls onClick\n- Unit test: action link renders with correct href\n- Unit test: empty state renders when items=[]\n- Unit test: loading state renders skeleton",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create ChartWidget component",
+            "description": "Build the chart widget renderer supporting line, bar, and area chart types.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ChartWidget.tsx`\n- Uses a charting library already present in the admin app (check for recharts or similar in package.json before adding a new dep)\n\nComponent interface (AC-12):\n```typescript\ninterface ChartDataPoint { label: string; value: number; }\ninterface ChartWidgetProps {\n  data: ChartDataPoint[];\n  chartType: 'line' | 'bar' | 'area';\n  xAxisLabel?: string;\n  yAxisLabel?: string;\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-12, AC-15):\n- Renders line chart when `chartType='line'`\n- Renders bar chart when `chartType='bar'`\n- Renders area chart when `chartType='area'`\n- Loading skeleton from T-028; error callout from T-028\n- Responsive sizing (fills card width)\n\nTest requirements:\n- Unit test: renders without error for each chartType\n- Unit test: renders loading state when `isLoading=true`\n- Unit test: data-point count matches props.data.length",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget", "chart"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Create ChecklistWidget component",
+            "description": "Build the checklist widget renderer with dynamic items sourced from a loaded entity object, a visual completeness indicator, and an accommodation selector dropdown for HOST card D multi-listing behavior.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/ChecklistWidget.tsx`\n- Requires `'checklist'` to be in `WidgetTypeSchema` (T-003) before this component type is valid in configs\n\nComponent interface (AC-13, AC-18):\n```typescript\ninterface ChecklistItem { key: string; label: string; completed: boolean; }\ninterface ChecklistWidgetProps {\n  items: ChecklistItem[];\n  completenessPercent: number;  // 0-100\n  selector?: {                   // Only for HOST card D with multiple listings\n    options: { id: string; label: string }[];\n    selectedId: string;\n    onSelect: (id: string) => void;\n  };\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-13, AC-15, AC-18):\n- Renders checklist items with visual completed/incomplete state\n- Shows completeness percentage indicator\n- When `selector` prop present, renders accommodation dropdown; selecting updates displayed checklist\n- Loading/error states from T-028\n\nTest requirements (AC-13, AC-18):\n- Unit test: renders all items with correct completed state\n- Unit test: completeness indicator shows correct fraction\n- Unit test: selecting different accommodation from dropdown triggers `onSelect` callback\n- Unit test: renders without selector when prop is absent",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget", "checklist"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create StatusWidget component",
+            "description": "Build the status widget renderer for health/badge cards (subscription status, system health, maintenance mode).\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/StatusWidget.tsx`\n\nComponent interface:\n```typescript\ntype StatusLevel = 'healthy' | 'warning' | 'critical' | 'unknown';\ninterface StatusItem { label: string; status: StatusLevel; detail?: string; }\ninterface StatusWidgetProps {\n  items: StatusItem[];\n  isLoading?: boolean;\n  error?: Error | null;\n}\n```\n\nAcceptance criteria (AC-9, AC-15):\n- Each status item renders a color-coded badge (healthy=green, warning=amber, critical=red, unknown=gray)\n- Uses semantic design tokens from `@repo/design-tokens` (SPEC-153)\n- Loading/error states from T-028\n- Visually consistent with other widget types (same card padding, same header style)\n\nTest requirements:\n- Unit test: renders all four status levels with correct badge colors/classes\n- Unit test: loading state renders skeleton\n- Unit test: multiple status items render independently",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget", "status"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T14:43:55.000Z",
+                "completed": "2026-05-27T14:50:15.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create shared widget loading skeleton, error callout, and empty state",
+            "description": "Build the shared UI primitives used across all widget types: loading skeleton, error callout with retry button, and empty state renderer.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/widgets/WidgetLoadingSkeleton.tsx`\n- `apps/admin/src/components/dashboards/widgets/WidgetErrorCallout.tsx`\n- `apps/admin/src/components/dashboards/widgets/WidgetEmptyState.tsx`\n- Or export all from a single `apps/admin/src/components/dashboards/widgets/shared.tsx`\n\nAcceptance criteria (AC-9, AC-15):\n- Loading skeleton has consistent height and padding across all widget types\n- Error callout is red, shows message, includes a 'Reintentar' button that calls provided `onRetry` callback\n- Empty state accepts a `message` string (from `config.emptyState.message`) and renders a neutral illustration or icon\n- All three primitives use the same card header style as other widgets\n\nTest requirements (AC-15):\n- Unit test: skeleton renders expected structure\n- Unit test: error callout renders message and retry button\n- Unit test: retry button calls `onRetry` callback\n- Unit test: empty state renders provided message",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "widget", "shared"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:48:22.000Z",
+                "completed": "2026-05-27T19:55:25.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Write hostDashboard config",
+            "description": "Define the `hostDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the HOST role: 7 cards (A–G) with source IDs, tri-locale labels, and scope annotations.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts` (create or extend)\n\nCards to define (AC-4, AC-5, AC-6, AC-7):\n- Card A: Mis alojamientos (list + KPI) — source: `host.accommodations.list`\n- Card B: Mi plan (status widget) — source: `host.plan.status`\n- Card C: Consultas (KPI + list with 'Responder' action per item) — source: `host.inquiries.pending`\n- Card D: Estado de mi alojamiento (checklist type; selector for multi-listing) — source: `host.accommodation.detail`\n- Card E: Reseñas (list) — source: `host.reviews.recent`\n- Card F: Mi perfil (checklist type) — source: `host.profile`\n- Card G: Estadísticas (mixed: KPI 🟢 + KPI 🟡 x2 + DeferredWidget 🔴→SPEC-159) — sources: `host.stats.ratings`, `host.favorites.breakdown`, `host.conversations.responseRate`\n\nRequirements (AC-4, AC-5, AC-6, AC-7):\n- Exactly 7 card configs\n- Each card has unique `id`, valid `type`, `label: { es, en, pt }`, correct `source` IDs matching T-018 registrations\n- Card G includes deferred slot config pointing to SPEC-159\n- Passes extended SPEC-154 Zod schema validation\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `hostDashboard.cards.length === 7`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-018"],
+            "blocks": ["T-033", "T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "config", "dashboard", "host"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Write editorDashboard config",
+            "description": "Define the `editorDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the EDITOR role: 8 cards (A–H) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6):\n- Card A: Posts (KPI + list) — sources: `editor.posts.publishedThisMonth`, `editor.posts.drafts`\n- Card B: Eventos (KPI + list) — source: `editor.events.upcoming`\n- Card C: Suscriptores Newsletter (KPI 🟢 + breakdown 🟡 + DeferredWidget 🔴→SPEC-160) — sources: `editor.newsletter.subscribers`, `editor.newsletter.byPreference`\n- Card D: Campañas Newsletter (list) — source: `editor.newsletter.campaigns`\n- Card E: Estadísticas blog (KPI + chart 🟡 + DeferredWidget 🔴→SPEC-159) — sources: `editor.posts.publishedThisMonth`, `editor.posts.trend`\n- Card F: Estadísticas eventos (KPI + DeferredWidget 🔴→SPEC-159) — source: `editor.events.upcoming`\n- Card G: Salud (checklist — computed client-side) — sources: `editor.posts.list`, `editor.events.list`\n- Card H: Comentarios (deferred placeholder 🔴→SPEC-165) — no live source; DeferredWidget with `phaseSpec: 'SPEC-165'`\n\nRequirements (AC-4, AC-5, AC-6):\n- Exactly 8 card configs\n- Passes extended SPEC-154 Zod schema\n- Card H deferred slot references SPEC-165\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `editorDashboard.cards.length === 8`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-019"],
+            "blocks": ["T-033", "T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "config", "dashboard", "editor"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Write adminBaseDashboard config",
+            "description": "Define the `adminBaseDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the ADMIN role: 7 cards (A–G) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6, AC-8):\n- Card A: Estadísticas de entidades (6 KPI widgets) — source: `admin.stats.entities`\n- Card B: Alojamientos (list) — source: `admin.accommodations.latest`\n- Card C: Editorial (list — events + posts) — sources: `admin.events.upcomingFeatured`, `admin.posts.recentDrafts`\n- Card D: Crons (list 🟢 + DeferredWidget 🔴→SPEC-161 for failed/last-run) — source: `admin.crons.list`\n- Card E: Estado del sistema (status widget 🟢 + maintenance flag 🟡) — sources: `admin.system.health`, `admin.system.maintenanceMode`\n- Card F: Pendiente de moderación (unified 4-entity count 🟡 + reviews-pending DeferredWidget 🔴→SPEC-166) — source: `admin.moderation.pendingCount`; reviews sub-slot: DeferredWidget with `phaseSpec: 'SPEC-166'`\n- Card G: Usuarios (KPI+breakdown 🟡 + chart 🟡) — source: `admin.users.stats`\n\nRequirements (AC-4, AC-5, AC-8):\n- Exactly 7 card configs\n- ADMIN (not SUPER_ADMIN) resolves to this config alone\n- Passes extended SPEC-154 Zod schema\n\nTest requirements (AC-4, AC-5, AC-8):\n- Tested by T-033 CI validation suite\n- Card count assertion: `adminBaseDashboard.cards.length === 7`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-020"],
+            "blocks": ["T-033", "T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "config", "dashboard", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Write superAdminOnlySection config",
+            "description": "Define the `superAdminOnlySection` configuration object in `apps/admin/src/config/ia/dashboards.ts` for SUPER_ADMIN-only cards: 2 cards (H–I) with `onMissing: 'hide'` permission gates.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-7, AC-8, AC-31, AC-32):\n- Card H: Audit Logs — ALL 3 slots deferred (DeferredWidget→SPEC-162 for audit log and security log; DeferredWidget→SPEC-163 for Sentry errors); gated with `AUDIT_LOG_VIEW` permission + `onMissing: 'hide'`\n- Card I: Estadísticas de billing — billing KPIs + chart from SUPER billing sources; gated with `BILLING_METRICS_READ` permission + `onMissing: 'hide'`\n\nRequirements (AC-4, AC-5, AC-7, AC-8):\n- Exactly 2 card configs\n- Both gated with `onMissing: 'hide'` so ADMIN users do not see them\n- ADMIN role → 0 visible cards from this section\n- SUPER_ADMIN role → 2 visible cards\n- Uses extended `onMissing` field from T-003\n\nTest requirements (AC-4, AC-7, AC-31, AC-32):\n- Tested by T-033 CI validation suite and T-039 gating tests\n- Card count assertion: `superAdminOnlySection.cards.length === 2`\n- Both cards have `onMissing: 'hide'` in config",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004", "T-021"],
+            "blocks": ["T-033", "T-034"],
+            "subtasks": [],
+            "tags": ["frontend", "config", "dashboard", "super-admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "CI config validation test suite",
+            "description": "Write a Vitest suite that validates all four dashboard config objects against the extended SPEC-154 Zod schema and asserts card counts match the spec exactly.\n\nFiles to create:\n- `apps/admin/src/config/ia/__tests__/dashboards.test.ts`\n\nAcceptance criteria (AC-3, AC-4, AC-5, AC-6, AC-7):\n- `hostDashboard` passes Zod schema and has exactly 7 cards\n- `editorDashboard` passes Zod schema and has exactly 8 cards\n- `adminBaseDashboard` passes Zod schema and has exactly 7 cards\n- `superAdminOnlySection` passes Zod schema and has exactly 2 cards\n- All source IDs in all configs are registered in `dashboard-sources.ts`\n- All cards have unique IDs within their config\n- All cards have `label.es`, `label.en`, `label.pt` (non-empty strings)\n- Both SUPER-only cards have `onMissing: 'hide'` (AC-7)\n\nTest requirements:\n- Runs in CI on every PR that touches `apps/admin/src/config/ia/`\n- No mocks — tests the real config objects against the real Zod schema\n- Fail message must identify WHICH card failed validation (include card id in assertion message)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004", "T-029", "T-030", "T-031", "T-032"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "config", "ci"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Build dashboard renderer component",
+            "description": "Build the main dashboard renderer component that reads the current user's resolved config(s), fires all source queries in parallel, dispatches to the appropriate widget type renderers, and includes the 'Actualizar' button.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/DashboardRenderer.tsx`\n\nBehavior (AC-8, AC-33, AC-34, AC-35):\n- Role resolution: ADMIN → `adminBaseDashboard`; SUPER_ADMIN → `adminBaseDashboard` + `superAdminOnlySection`; HOST → `hostDashboard`; EDITOR → `editorDashboard`\n- Fires all source queries in parallel using TanStack Query's `useQueries` (no waterfall — AC-34)\n- Each card renders in its own Suspense boundary so one slow card does not block others\n- 'Actualizar' button calls `queryClient.invalidateQueries({ queryKey: ['dashboard', role] })` (AC-33)\n- Cards sharing the same TanStack Query prefix key re-use cached data (AC-35)\n- Widget type dispatch: `kpi` → KpiWidget, `list` → ListWidget, `chart` → ChartWidget, `checklist` → ChecklistWidget, `status` → StatusWidget, deferred slot → DeferredWidget\n- `onMissing: 'hide'` gating evaluated against current user's permissions\n\nTest requirements (AC-8, AC-33, AC-34, AC-35):\n- Unit test: ADMIN resolves to 7 cards\n- Unit test: SUPER_ADMIN resolves to 9 cards\n- Unit test: 'Actualizar' button triggers invalidation\n- Unit test: cards without user permission are hidden when `onMissing: 'hide'`",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032"
+            ],
+            "blocks": ["T-035", "T-038", "T-039", "T-040", "T-041"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "dashboard", "renderer"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Migrate dashboard page to per-role renderer",
+            "description": "Replace the content of `apps/admin/src/routes/_authed/dashboard.tsx` to use `DashboardRenderer`. Keep the old `useDashboardStats()` path active (commented out or behind a feature flag) until parity is confirmed by T-036.\n\nFiles to modify:\n- `apps/admin/src/routes/_authed/dashboard.tsx` — replace implementation, keep old hook available\n\nAcceptance criteria (AC-36):\n- Route renders `DashboardRenderer` as its primary content\n- Old `useDashboardStats()` hook remains importable (not deleted yet)\n- Page header, breadcrumbs, and layout structure are preserved\n- Route guards and auth checks are unchanged\n\nTest requirements (AC-36):\n- Manual verification: navigate to `/dashboard` as ADMIN, HOST, EDITOR, and SUPER_ADMIN\n- No TypeScript errors on the modified page file\n- Existing route-level test (if any) still passes",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-036"],
+            "subtasks": [],
+            "tags": ["frontend", "dashboard", "migration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:48:22.000Z",
+                "completed": "2026-05-27T19:55:25.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Parity verification for 6 ADMIN KPIs",
+            "description": "Write and pass an integration test asserting that the 6 ADMIN KPI values (accommodations, destinations, events, posts, attractions, users) returned by the new dashboard renderer match those from the old `useDashboardStats()` on the same seeded database.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-parity.test.ts`\n\nAcceptance criteria (AC-37):\n- All 6 KPI values match between old and new data sources\n- Test runs against a seeded database (not mocks) to catch any aggregation discrepancy\n- Test passes with both code paths active\n\nTest requirements (AC-37):\n- Integration test using the standard db test harness\n- AAA: Arrange = seed DB; Act = call both old and new data paths; Assert = values match\n- Must produce a clear failure message identifying WHICH KPI diverged and by how much\n- BLOCKS T-037 (do not delete `useDashboardStats()` until this test is green)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-037"],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "dashboard", "migration", "parity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Delete useDashboardStats hook",
+            "description": "After T-036 parity test passes, delete the old `useDashboardStats()` hook and confirm no other consumers reference it.\n\nFiles to delete/modify:\n- `apps/admin/src/features/dashboard/useDashboardStats.ts` (delete)\n- Any import of `useDashboardStats` in other files (remove or replace)\n\nAcceptance criteria (AC-38):\n- `useDashboardStats` file is deleted\n- No TypeScript compile errors after deletion\n- No other file in the codebase imports `useDashboardStats`\n- All tests still pass after deletion\n\nTest requirements (AC-38):\n- Run full typecheck after deletion: `pnpm typecheck`\n- Run tests after deletion: `pnpm test`\n- No `useDashboardStats` references remain in the codebase",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-036"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["cleanup", "frontend", "dashboard"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "HOST scope isolation tests",
+            "description": "Write tests asserting that all HOST-scoped dashboard queries inject `ownerId` and that no global count leaks to HOST users.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-host-scope.test.ts`\n\nAcceptance criteria (AC-17):\n- For each HOST source ID registered in T-018, assert that `ownerId` is included in the query key\n- For each HOST source ID, assert that the query function URL includes the current user's ID as scope parameter\n- Simulate two HOST users with different accommodations; assert each user's query returns only their own data\n\nTest requirements (AC-17):\n- Unit test per source: query key includes `[..., userId]`\n- Integration test: HOST user A's response for `host.accommodations.list` does not include HOST user B's accommodations\n- Integration test: HOST user A's `host.favorites.breakdown` returns only their listings' counts\n- Scope injection must come from auth context, not from query params",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-034"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "host", "security", "scope"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "SUPER gating tests",
+            "description": "Write tests asserting that ADMIN users see 7 cards and SUPER_ADMIN users see 9 cards, and that toggling permissions renders or hides the super-only section correctly.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-super-gating.test.ts`\n\nAcceptance criteria (AC-31, AC-32, AC-8):\n- ADMIN role → `adminBaseDashboard` → 7 visible cards\n- SUPER_ADMIN role → `adminBaseDashboard` + `superAdminOnlySection` → 9 visible cards\n- ADMIN user: cards H and I are NOT rendered (not in DOM)\n- SUPER_ADMIN user: cards H and I ARE rendered\n- Simulate stripping `BILLING_METRICS_READ` from SUPER_ADMIN → card I hides (`onMissing: 'hide'`)\n- Simulate stripping `AUDIT_LOG_VIEW` from SUPER_ADMIN → card H hides\n\nTest requirements (AC-31, AC-32):\n- Unit test: renderDashboard with ADMIN role → 7 card elements in DOM\n- Unit test: renderDashboard with SUPER_ADMIN role → 9 card elements in DOM\n- Unit test: card H not present when ADMIN role\n- Unit test: card I not present when ADMIN role\n- Unit test: card I hidden when BILLING_METRICS_READ removed from user permissions",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-034"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "permissions", "super-admin", "gating"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Performance baseline tests",
+            "description": "Write tests asserting that all dashboard queries fire in parallel (no waterfall) and that initial render completes in under 500ms on a warm cache.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-performance.test.ts`\n\nAcceptance criteria (AC-33, AC-34, AC-35):\n- All queries for the current role's dashboard are initiated within the same render cycle (no waterfall)\n- Initial render completes in < 500ms with warm cache\n- Multiple cards querying the same underlying entity share a TanStack Query key prefix and do not make duplicate network requests\n\nTest requirements (AC-33, AC-34, AC-35):\n- Unit test: use `useQueries` spy to assert all queries initiated in a single render\n- Unit test: measure time from mount to last query initiation — assert < 500ms\n- Unit test: ADMIN cards A (entities count) and B (accommodations list) share `['dashboard', 'admin', 'accommodations']` prefix — assert no duplicate fetches\n- Use vitest fake timers for the 500ms assertion",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-034"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "performance", "tanstack-query"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Deferred-placeholder rendering tests",
+            "description": "Write tests asserting that each 🔴 slot renders `DeferredWidget` without errors and that the remaining 🟢/🟡 slots in the same card are unaffected.\n\nFiles to create:\n- `apps/admin/src/__tests__/dashboard-deferred.test.ts`\n\nAcceptance criteria (AC-14):\n- Every deferred (🔴) slot renders `DeferredWidget` component\n- The `DeferredWidget` receives the correct `phaseSpec` prop for each slot:\n  - HOST card G views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card C open-rate slot → `phaseSpec: 'SPEC-160'`\n  - EDITOR card E views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card F views slot → `phaseSpec: 'SPEC-159'`\n  - EDITOR card H (entire card) → `phaseSpec: 'SPEC-165'`\n  - ADMIN card D failed/last-run slot → `phaseSpec: 'SPEC-161'`\n  - ADMIN card F reviews-pending sub-slot → `phaseSpec: 'SPEC-166'`\n  - SUPER card H audit log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H security log slot → `phaseSpec: 'SPEC-162'`\n  - SUPER card H Sentry slot → `phaseSpec: 'SPEC-163'`\n- In each mixed card, the non-deferred slots render their data correctly alongside DeferredWidget\n- No errors thrown when DeferredWidget is rendered\n\nTest requirements (AC-14):\n- Unit test per deferred slot: assert DeferredWidget rendered with correct phaseSpec\n- Unit test: HOST card G live KPI slots render alongside deferred views slot\n- Unit test: DeferredWidget renders in isolation without any query calls",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-034"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "frontend", "deferred", "placeholder"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T19:56:22.000Z",
+                "completed": "2026-05-27T20:08:51.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 41,
+        "activeTotal": 38,
+        "extracted": 3,
+        "completed": 38,
+        "pending": 0,
+        "inProgress": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4,
+        "note": "T-009 (extracted to SPEC-165) and T-011 (extracted to SPEC-166) are tombstoned. activeTotal=39. completed=5 (T-001, T-002, T-003, T-004, T-015). inProgress=1 (T-012). pending=33 active."
+    }
+}

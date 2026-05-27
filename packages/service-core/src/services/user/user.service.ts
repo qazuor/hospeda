@@ -1,7 +1,7 @@
 import { UserModel, accounts, eq, getDb, safeIlike, users as userTable } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
-import type { EntityFilters, User } from '@repo/schemas';
+import type { EntityFilters, User, UserAdminStats } from '@repo/schemas';
 import {
     type CompleteProfileBody,
     CompleteProfileBodySchema,
@@ -984,6 +984,39 @@ export class UserService extends BaseCrudService<
                 }
 
                 return { setPasswordPrompted: true as const, credentialCreated: true as const };
+            }
+        });
+    }
+
+    /**
+     * Returns aggregated admin dashboard statistics for the users entity.
+     *
+     * Gated on `USER_READ_ALL` — the same permission used by `adminList` and
+     * `getById`. Delegates the two DB aggregations to `UserModel.getAdminStats`.
+     *
+     * @param actor - The actor performing the action. Must have `USER_READ_ALL`.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ byRole, newUsersTrend }` shaped per `UserAdminStatsSchema`.
+     * @throws ServiceError (FORBIDDEN) when actor lacks permission.
+     * @throws ServiceError (INTERNAL_ERROR) on unexpected DB errors.
+     */
+    public async getAdminStats(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UserAdminStats>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminStats',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!hasPermission(validatedActor, PermissionEnum.USER_READ_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: USER_READ_ALL required for user admin stats'
+                    );
+                }
+                return this.model.getAdminStats(execCtx?.tx);
             }
         });
     }

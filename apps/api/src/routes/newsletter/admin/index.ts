@@ -24,6 +24,7 @@ import {
     adminUpdateCampaignRoute
 } from './campaigns';
 import { adminListSubscribersRoute, adminSubscribersStatsRoute } from './subscribers';
+import { adminSubscribersByPreferenceRoute } from './subscribers-by-preference';
 
 /**
  * Admin newsletter router.
@@ -35,6 +36,8 @@ import { adminListSubscribersRoute, adminSubscribersStatsRoute } from './subscri
  */
 export const newsletterAdminRoutes = createRouter()
     // ── Subscriber routes ──────────────────────────────────────────────────
+    // /api/v1/admin/newsletter/subscribers/by-preference (most specific first — SPEC-155 T-007)
+    .route('/', adminSubscribersByPreferenceRoute)
     // /api/v1/admin/newsletter/subscribers/stats (more specific first)
     .route('/', adminSubscribersStatsRoute)
     // /api/v1/admin/newsletter/subscribers
