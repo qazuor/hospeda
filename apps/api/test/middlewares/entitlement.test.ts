@@ -28,6 +28,7 @@ import {
     requireEntitlement,
     requireLimit
 } from '../../src/middlewares/entitlement';
+import { createErrorHandler } from '../../src/middlewares/response';
 import {
     gateAlerts,
     gateComparator,
@@ -1553,18 +1554,18 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.description).toContain('**Bold**');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract (PR #1250/#1252, smoke-validated): a user without
+            // CAN_USE_RICH_DESCRIPTION who submits markdown is blocked with a
+            // 403 ENTITLEMENT_REQUIRED envelope (not silently stripped). The gate
+            // throws a ServiceError, mapped to 403 by createErrorHandler.
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRichDescription());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip markdown but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1574,10 +1575,13 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            // Contract: 403 + ENTITLEMENT_REQUIRED. The full envelope (incl.
+            // details.requiredEntitlement) is exercised against the real app
+            // error handler by the accommodation e2e flow + the staging smoke;
+            // this bare-Hono harness pins the status + code.
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1609,18 +1613,16 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.videoUrl).toBe('https://www.youtube.com/watch?v=abc123');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract: a user without CAN_EMBED_VIDEO who submits a
+            // video URL is blocked with 403 ENTITLEMENT_REQUIRED (not stripped).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateVideoEmbed());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip video URLs but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1635,10 +1637,9 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1846,7 +1847,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -1854,37 +1855,36 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.SAVE_FAVORITES);
         });
 
-        it('should return 403 when limit is reached', async () => {
+        it('does NOT enforce the favorites limit — that is enforceFavoritesLimit() concern', async () => {
+            // Shipped contract (SPEC-143 #25): gateFavorites checks the
+            // SAVE_FAVORITES entitlement ONLY. The MAX_FAVORITES quota is
+            // enforced by the separate enforceFavoritesLimit() middleware, which
+            // counts existing bookmarks via UserBookmarkService (NOT a
+            // `currentFavoritesCount` context var). So an entitled user passes
+            // gateFavorites regardless of how many favorites they have; the
+            // 403 LIMIT_REACHED path is covered by the favorites e2e flow.
             app.use((c, next) => {
-                const entitlements = new Set([EntitlementKey.SAVE_FAVORITES]);
+                c.set('userEntitlements', new Set([EntitlementKey.SAVE_FAVORITES]));
                 const limits = new Map<LimitKey, number>();
                 limits.set(LimitKey.MAX_FAVORITES, 10);
-                c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount' as any, 10); // Already at limit
                 return next();
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.code).toBe('LIMIT_REACHED');
-            expect(data.error.details.limitKey).toBe(LimitKey.MAX_FAVORITES);
-            expect(data.error.details.currentCount).toBe(10);
-            expect(data.error.details.maxAllowed).toBe(10);
-            expect(data.error.message).toContain('10 favoritos');
+            expect(res.status).toBe(200);
         });
 
         it('should allow when limit is unlimited (-1)', async () => {

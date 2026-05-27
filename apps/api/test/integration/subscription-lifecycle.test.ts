@@ -90,13 +90,23 @@ vi.mock('@repo/logger', () => {
         DEBUG: 'DEBUG'
     };
 
+    // AuditEventType is a pure const enum used by production code paths that
+    // call logger.audit(...). The logger itself is mocked (no-op), so the enum
+    // VALUE is irrelevant here — a Proxy returning the accessed key keeps the
+    // mock immune to new members being added upstream (no export drift).
+    const AuditEventType = new Proxy({}, { get: (_target, prop) => String(prop) }) as Record<
+        string,
+        string
+    >;
+
     return {
         default: mockedLogger,
         logger: mockedLogger,
         createLogger: mockedLogger.createLogger,
         LoggerColors,
         LogLevel,
-        apiLogger: createMockedLogger()
+        apiLogger: createMockedLogger(),
+        AuditEventType
     };
 });
 
