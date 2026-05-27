@@ -1,3 +1,16 @@
+/**
+ * RatingCell — generic, entity-agnostic rating cell for entity lists.
+ *
+ * Renders a gold star + the average score as a clickable value. Clicking opens
+ * a dialog with the per-dimension rating breakdown (bars), lazily fetched from
+ * the entity's detail query while the dialog is open. Renders an em dash when
+ * the entity has no rating yet.
+ *
+ * Dimensions are passed as config so each entity supplies its own set + labels;
+ * the detail query hook is passed as a prop (same pattern as the inline-edit
+ * cells), so the component stays decoupled from any specific entity.
+ */
+
 import {
     Dialog,
     DialogContent,
@@ -9,42 +22,63 @@ import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
-import { useAccommodationQuery } from '../hooks/useAccommodationQuery';
-import type { Accommodation } from '../schemas/accommodations.schemas';
 
-/**
- * Rating breakdown dimensions in display order, mapped to their i18n keys.
- * Keys are spelled out (not built via template literals) so they stay
- * within the generated `TranslationKey` union.
- */
-const RATING_DIMENSIONS: ReadonlyArray<{ readonly key: string; readonly label: TranslationKey }> = [
-    { key: 'cleanliness', label: 'review.form.ratingAspects.cleanliness' },
-    { key: 'hospitality', label: 'review.form.ratingAspects.hospitality' },
-    { key: 'services', label: 'review.form.ratingAspects.services' },
-    { key: 'accuracy', label: 'review.form.ratingAspects.accuracy' },
-    { key: 'communication', label: 'review.form.ratingAspects.communication' },
-    { key: 'location', label: 'review.form.ratingAspects.location' }
-];
+/** A rating dimension: the key in the rating record + its localized label. */
+export interface RatingDimension {
+    readonly key: string;
+    readonly label: TranslationKey;
+}
+
+/** Minimal detail-query result shape the cell needs. */
+export interface RatingDetailLike {
+    readonly rating?: unknown;
+}
+
+/** Minimal detail-query hook contract. */
+export type UseRatingDetailQuery = (
+    id: string,
+    options: { enabled: boolean }
+) => { data?: RatingDetailLike; isLoading: boolean };
+
+/** Props for {@link RatingCell}. RO-RO pattern. */
+export interface RatingCellProps {
+    /** Entity ID whose rating breakdown is fetched. */
+    readonly entityId: string;
+    /** Human-readable entity name, shown as the dialog title. */
+    readonly entityName: string;
+    /** Denormalized average rating shown on the trigger. */
+    readonly averageRating: number;
+    /** Review count shown next to the average in the dialog. */
+    readonly reviewsCount: number;
+    /** Rating dimensions (key + localized label) rendered as bars. */
+    readonly dimensions: ReadonlyArray<RatingDimension>;
+    /** Detail query hook factory; invoked once per render with `entityId`. */
+    readonly useDetailQuery: UseRatingDetailQuery;
+}
 
 type RatingBreakdownDialogProps = {
-    readonly id: string;
+    readonly entityId: string;
     readonly name: string;
     readonly averageRating: number;
     readonly reviewsCount: number;
+    readonly dimensions: ReadonlyArray<RatingDimension>;
+    readonly useDetailQuery: UseRatingDetailQuery;
     readonly open: boolean;
     readonly onOpenChange: (open: boolean) => void;
 };
 
 const RatingBreakdownDialog = ({
-    id,
+    entityId,
     name,
     averageRating,
     reviewsCount,
+    dimensions,
+    useDetailQuery,
     open,
     onOpenChange
 }: RatingBreakdownDialogProps) => {
     const { t } = useTranslations();
-    const { data, isLoading } = useAccommodationQuery(id, { enabled: open });
+    const { data, isLoading } = useDetailQuery(entityId, { enabled: open });
     const breakdown = (data?.rating ?? null) as Record<string, number> | null;
 
     return (
@@ -52,7 +86,7 @@ const RatingBreakdownDialog = ({
             open={open}
             onOpenChange={onOpenChange}
         >
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{name}</DialogTitle>
                     <DialogDescription className="sr-only">
@@ -79,7 +113,7 @@ const RatingBreakdownDialog = ({
                     <p className="text-muted-foreground text-sm">{t('ui.loading.text')}</p>
                 ) : breakdown ? (
                     <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                        {RATING_DIMENSIONS.map((dimension) => {
+                        {dimensions.map((dimension) => {
                             const value = breakdown[dimension.key] ?? 0;
                             return (
                                 <div
@@ -113,15 +147,18 @@ const RatingBreakdownDialog = ({
 };
 
 /**
- * Rating cell for the accommodations list: a gold star + the average score.
- * Clicking opens a dialog with the 6-dimension rating breakdown, lazily
- * fetched from the accommodation detail endpoint. Renders an em dash when
- * the accommodation has no rating yet.
+ * Gold star + average score; clicking opens the per-dimension breakdown dialog.
  */
-export const AccommodationRatingCell = ({ row }: { readonly row: Accommodation }) => {
+export const RatingCell = ({
+    entityId,
+    entityName,
+    averageRating,
+    reviewsCount,
+    dimensions,
+    useDetailQuery
+}: RatingCellProps) => {
     const { t } = useTranslations();
     const [open, setOpen] = useState(false);
-    const averageRating = typeof row.averageRating === 'number' ? row.averageRating : 0;
 
     if (!averageRating) {
         return <span className="text-muted-foreground">—</span>;
@@ -145,10 +182,12 @@ export const AccommodationRatingCell = ({ row }: { readonly row: Accommodation }
             </button>
             {open && (
                 <RatingBreakdownDialog
-                    id={row.id as string}
-                    name={row.name as string}
+                    entityId={entityId}
+                    name={entityName}
                     averageRating={averageRating}
-                    reviewsCount={typeof row.reviewsCount === 'number' ? row.reviewsCount : 0}
+                    reviewsCount={reviewsCount}
+                    dimensions={dimensions}
+                    useDetailQuery={useDetailQuery}
                     open={open}
                     onOpenChange={setOpen}
                 />

@@ -3,15 +3,28 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
-import { AccommodationRatingCell } from '../components/AccommodationRatingCell';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
-import { useUpdateAccommodationMutation } from '../hooks/useAccommodationQuery';
+import {
+    useAccommodationQuery,
+    useUpdateAccommodationMutation
+} from '../hooks/useAccommodationQuery';
 import type { Accommodation } from '../schemas/accommodations.schemas';
+
+/** Accommodation rating breakdown dimensions (6), in display order. */
+const ACCOMMODATION_RATING_DIMENSIONS: ReadonlyArray<RatingDimension> = [
+    { key: 'cleanliness', label: 'review.form.ratingAspects.cleanliness' },
+    { key: 'hospitality', label: 'review.form.ratingAspects.hospitality' },
+    { key: 'services', label: 'review.form.ratingAspects.services' },
+    { key: 'accuracy', label: 'review.form.ratingAspects.accuracy' },
+    { key: 'communication', label: 'review.form.ratingAspects.communication' },
+    { key: 'location', label: 'review.form.ratingAspects.location' }
+];
 
 /**
  * Visibility options (value + localized label + badge color). Single source for
@@ -152,7 +165,15 @@ export const createAccommodationsColumns = (
         accessorKey: 'averageRating',
         enableSorting: true,
         columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) => createElement(AccommodationRatingCell, { row })
+        widgetRenderer: (row) =>
+            createElement(RatingCell, {
+                entityId: row.id,
+                entityName: row.name,
+                averageRating: typeof row.averageRating === 'number' ? row.averageRating : 0,
+                reviewsCount: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                dimensions: ACCOMMODATION_RATING_DIMENSIONS,
+                useDetailQuery: useAccommodationQuery
+            })
     },
     {
         id: 'reviewsCount',
