@@ -4,17 +4,21 @@ import {
     prepareFormValues,
     unflattenValues
 } from '@/components/entity-form/utils/unflatten-values.utils';
+import {
+    EntityPageHeader,
+    type EntityPageHeaderMedia
+} from '@/components/entity-header/EntityPageHeader';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
-import { Icon } from '@/components/icons';
-import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent, CardHeader } from '@/components/ui-wrapped/Card';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
-
 import React, { Suspense, type ReactNode } from 'react';
 import type { ZodSchema } from 'zod';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 /**
  * Props for EntityPageBase component
@@ -32,6 +36,27 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
     className?: string;
     /** Optional Zod schema for form validation */
     zodSchema?: ZodSchema;
+    /**
+     * Optional media (thumbnail/avatar) for the EntityPageHeader.
+     * When omitted, the header renders without a media slot.
+     */
+    headerMedia?: EntityPageHeaderMedia;
+    /**
+     * Optional subtitle for the EntityPageHeader (e.g. "Hotel · Gualeguaychú").
+     * When omitted, no subtitle is shown.
+     */
+    headerSubtitle?: string;
+    /**
+     * Optional status badges for the EntityPageHeader.
+     * Pass pre-rendered React nodes (Badge components).
+     */
+    headerBadges?: ReactNode;
+    /**
+     * Placeholder slot for the quality score widget.
+     * Pass `null` for entities without a score (users, catalogs).
+     * Defaults to `null` until the score widget is implemented (another task).
+     */
+    qualityScore?: ReactNode;
     /** Entity data and configuration from the hook */
     entityData: {
         mode: 'view' | 'edit';
@@ -59,10 +84,20 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
     };
 }
 
+// ---------------------------------------------------------------------------
+// EntityPageBase
+// ---------------------------------------------------------------------------
+
 /**
- * Base component for entity pages (view and edit)
- * Handles common logic: permissions, configuration, state, errors
- * Renders mode-specific content
+ * Base component for entity pages (view and edit).
+ *
+ * Handles common logic: permissions, configuration, state, errors and form
+ * provider. Renders an EntityPageHeader (sticky, with mode-specific actions)
+ * and wraps children in an EntityFormProvider.
+ *
+ * The old Card/CardHeader layout is replaced by EntityPageHeader.
+ * SmartNavigation / PageTabs / SmartBreadcrumbs are no longer rendered here —
+ * EntityViewContent and EntityEditContent use a SectionAccordion instead.
  */
 export const EntityPageBase = <T = Record<string, unknown>>({
     entityType,
@@ -71,11 +106,14 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     children,
     className,
     zodSchema,
+    headerMedia,
+    headerSubtitle,
+    headerBadges,
+    qualityScore = null,
     entityData
 }: EntityPageBaseProps<T>) => {
     const { t } = useTranslations();
 
-    // Extract data from props
     const {
         mode,
         setMode,
@@ -86,24 +124,23 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         userPermissions,
         canView,
         canEdit,
-        goToList,
         goToView,
         goToEdit,
         updateMutation
     } = entityData;
 
-    // Set initial mode
+    // Set initial mode once
     React.useEffect(() => {
         setMode(initialMode);
     }, [initialMode, setMode]);
 
-    // Handle save function
+    // ------------------------------------------------------------------
+    // Save handler
+    // ------------------------------------------------------------------
     const handleSave = React.useCallback(
         async (values: Record<string, unknown>) => {
-            // DEBUG: Log all form values
             adminLogger.debug('[EntityPageBase] All form values', values);
 
-            // Extract only the fields that are defined in the configuration
             const fieldsToSave: Record<string, unknown> = {};
             const allFields = entityConfig.editSections.flatMap((section) => {
                 const sectionConfig = typeof section === 'function' ? section() : section;
@@ -116,26 +153,22 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 }
             }
 
-            // Convert dot-notated keys to nested objects (e.g. 'location.country' -> { location: { country: ... } })
             const payload = unflattenValues(fieldsToSave);
-
-            // DEBUG: Log filtered values being sent to API
             adminLogger.debug('[EntityPageBase] Filtered values for API', payload);
 
             await updateMutation.mutateAsync(payload);
-            // After successful save, navigate to view mode
             goToView();
         },
         [updateMutation, goToView, entityConfig.editSections]
     );
 
-    // Prepare initial values for the form by resolving dot-notated field IDs
-    // from nested entity data (e.g., entity.location.country → values["location.country"])
+    // ------------------------------------------------------------------
+    // Prepare initial form values
+    // ------------------------------------------------------------------
     const preparedValues = React.useMemo(() => {
         if (!entity) return {};
         const entityRecord = entity as Record<string, unknown>;
 
-        // Collect all field IDs from edit sections
         const editSections = entityConfig.editSections.map((section) =>
             typeof section === 'function' ? section() : section
         );
@@ -146,12 +179,12 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         return prepareFormValues(entityRecord, allFieldIds);
     }, [entity, entityConfig.editSections]);
 
-    // Loading state
+    // ------------------------------------------------------------------
+    // Loading / error / not-found states
+    // ------------------------------------------------------------------
     if (isLoading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
-                {/* sr-only h1 so the page always has a heading-1 for screen readers
-                    and axe page-has-heading-one, even during the data load. */}
                 <h1 className="sr-only">{t('admin-common.states.loading')}</h1>
                 <div className="text-center">
                     <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
@@ -163,23 +196,13 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         );
     }
 
-    // Error state
-    if (error) {
-        throw error;
-    }
+    if (error) throw error;
+    if (!entity) throw new Error(`${entityType} not found`);
+    if (!canView) throw new Error('You do not have permission to view this resource');
 
-    // Not found state
-    if (!entity) {
-        throw new Error(`${entityType} not found`);
-    }
-
-    // Permission check
-    if (!canView) {
-        throw new Error('You do not have permission to view this resource');
-    }
-
-    // Get entity name for display
-    // Try common name fields, then fall back to metadata entityName, then entityType
+    // ------------------------------------------------------------------
+    // Derive entity name for display
+    // ------------------------------------------------------------------
     const entityRecord = entity as Record<string, unknown>;
     const entityName =
         (entityRecord?.name as string) ||
@@ -189,16 +212,13 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         (entityConfig.metadata?.entityName as string) ||
         entityType;
 
-    // Create a complete EntityConfig from our entityConfig
-    // Use sections filtered by current mode
+    // ------------------------------------------------------------------
+    // Build complete entity config
+    // ------------------------------------------------------------------
     const currentSections =
         mode === 'view'
-            ? entityConfig.viewSections.map((section) =>
-                  typeof section === 'function' ? section() : section
-              )
-            : entityConfig.editSections.map((section) =>
-                  typeof section === 'function' ? section() : section
-              );
+            ? entityConfig.viewSections.map((s) => (typeof s === 'function' ? s() : s))
+            : entityConfig.editSections.map((s) => (typeof s === 'function' ? s() : s));
 
     const completeEntityConfig = {
         id: `${entityType}-${entityId}`,
@@ -209,13 +229,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             t('admin-common.entityPage.viewDescription').replace('{entity}', entityType),
         entityName: (entityConfig.metadata?.entityName as string) || entityType,
         entityNamePlural: (entityConfig.metadata?.entityNamePlural as string) || `${entityType}s`,
-        sections: currentSections, // ✅ Usar secciones filtradas por modo actual
-        viewSections: entityConfig.viewSections.map((section) =>
-            typeof section === 'function' ? section() : section
-        ),
-        editSections: entityConfig.editSections.map((section) =>
-            typeof section === 'function' ? section() : section
-        ),
+        sections: currentSections,
+        viewSections: entityConfig.viewSections.map((s) => (typeof s === 'function' ? s() : s)),
+        editSections: entityConfig.editSections.map((s) => (typeof s === 'function' ? s() : s)),
         routes: {
             base: `/${entityType}s`,
             view: `/${entityType}s/$id`,
@@ -231,119 +247,73 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         }
     };
 
-    // Always-present accessible page title. The visible heading below is rendered
-    // as h2 with h1-like styling to avoid duplicate-h1 warnings while ensuring
-    // axe page-has-heading-one always passes — even during any micro-window
-    // between loading and happy-path render where the visible heading isn't yet
-    // mounted.
+    // ------------------------------------------------------------------
+    // Header title text (for EntityPageHeader and sr-only h1)
+    // ------------------------------------------------------------------
     const pageTitleText =
         mode === 'view'
             ? entityName
             : t('admin-common.entityPage.editTitle').replace('{entity}', entityName);
 
     return (
-        <div className={`space-y-6 ${className || ''}`}>
+        <div className={`space-y-4 ${className ?? ''}`}>
+            {/* Accessible sr-only h1 — always present, even during loading */}
             <h1 className="sr-only">{pageTitleText}</h1>
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="font-semibold text-2xl leading-none tracking-tight">
-                                {pageTitleText}
-                            </h2>
-                            <p className="text-muted-foreground">
-                                {mode === 'view'
-                                    ? t('admin-common.entityPage.viewDescription').replace(
-                                          '{entity}',
-                                          completeEntityConfig.entityName
-                                      )
-                                    : t('admin-common.entityPage.editDescription').replace(
-                                          '{entity}',
-                                          completeEntityConfig.entityName
-                                      )}
-                            </p>
+
+            {/* ---- Sticky hybrid header ---- */}
+            <EntityPageHeader
+                mode={mode}
+                title={pageTitleText}
+                subtitle={headerSubtitle}
+                badges={headerBadges}
+                media={headerMedia}
+                qualityScore={qualityScore}
+                viewActions={
+                    mode === 'view'
+                        ? {
+                              onBack: () => window.history.back(),
+                              onEdit: canEdit ? goToEdit : () => undefined
+                          }
+                        : undefined
+                }
+                editActions={
+                    mode === 'edit'
+                        ? {
+                              onCancel: goToView,
+                              // Actual save is triggered by form submit;
+                              // the button calls handleSave indirectly via the
+                              // EntityFormProvider's save() which is wired in
+                              // EntityEditContent. Dirty state is unknown here
+                              // (it lives in the form context); left as `false`
+                              // until a lifting mechanism is added.
+                              isDirty: false,
+                              isSaving: updateMutation.isLoading
+                          }
+                        : undefined
+                }
+            />
+
+            {/* ---- Form provider + children (accordion sections) ---- */}
+            <EntityErrorBoundary>
+                <Suspense
+                    fallback={
+                        <div className="flex items-center justify-center p-8">
+                            <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
                         </div>
-                        <div className="flex items-center gap-3">
-                            {/* Navigation buttons */}
-                            {mode === 'view' ? (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => window.history.back()}
-                                    >
-                                        <Icon
-                                            name="arrow-left"
-                                            className="mr-2 h-4 w-4"
-                                        />
-                                        {t('admin-common.entityPage.actions.back')}
-                                    </Button>
-                                    {canEdit && (
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            onClick={goToEdit}
-                                        >
-                                            <Icon
-                                                name="edit"
-                                                className="mr-2 h-4 w-4"
-                                            />
-                                            {t('admin-common.entityPage.actions.edit')}
-                                        </Button>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={goToView}
-                                    >
-                                        <Icon
-                                            name="eye"
-                                            className="mr-2 h-4 w-4"
-                                        />
-                                        {t('admin-common.entityPage.actions.view')}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={goToList}
-                                    >
-                                        <Icon
-                                            name="close"
-                                            className="mr-2 h-4 w-4"
-                                        />
-                                        {t('admin-common.entityPage.actions.cancel')}
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <EntityErrorBoundary>
-                        <Suspense
-                            fallback={
-                                <div className="flex items-center justify-center p-8">
-                                    <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
-                                </div>
-                            }
-                        >
-                            <EntityFormProvider
-                                config={completeEntityConfig}
-                                mode={mode === 'view' ? FormModeEnum.VIEW : FormModeEnum.EDIT}
-                                initialValues={preparedValues}
-                                userPermissions={userPermissions}
-                                onSave={handleSave}
-                                zodSchema={zodSchema}
-                            >
-                                {children}
-                            </EntityFormProvider>
-                        </Suspense>
-                    </EntityErrorBoundary>
-                </CardContent>
-            </Card>
+                    }
+                >
+                    <EntityFormProvider
+                        config={completeEntityConfig}
+                        mode={mode === 'view' ? FormModeEnum.VIEW : FormModeEnum.EDIT}
+                        initialValues={preparedValues}
+                        userPermissions={userPermissions}
+                        onSave={handleSave}
+                        zodSchema={zodSchema}
+                    >
+                        {children}
+                    </EntityFormProvider>
+                </Suspense>
+            </EntityErrorBoundary>
         </div>
     );
 };

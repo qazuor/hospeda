@@ -22,6 +22,8 @@ import {
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
+import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 
 /**
  * Per-field upload/delete handlers for media fields (e.g., GalleryField).
@@ -33,8 +35,6 @@ export interface FieldMediaHandlers {
     /** Called with the Cloudinary publicId before removing an image. */
     onDelete?: (publicId: string) => Promise<void>;
 }
-import { GridLayout } from '@/components/entity-form/layouts';
-import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
@@ -431,10 +431,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             const fieldContent = renderFieldComponent();
 
+            // Derive the col-span CSS class automatically from field type.
+            // Per spec §4.2: span comes from TYPE, not per-field micro-config.
+            const colSpanClass = getFieldColSpanClass(field.type);
+
             // Wrap with entitlement or limit gate if needed
             if (field.entitlementKey) {
                 return (
-                    <div key={field.id}>
+                    <div
+                        key={field.id}
+                        className={colSpanClass}
+                    >
                         <EntitlementGate
                             entitlementKey={field.entitlementKey}
                             fallback={
@@ -462,7 +469,10 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             if (field.limitKey) {
                 return (
-                    <div key={field.id}>
+                    <div
+                        key={field.id}
+                        className={colSpanClass}
+                    >
                         <LimitGate
                             limitKey={field.limitKey}
                             fallback={
@@ -486,39 +496,37 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 );
             }
 
-            return <div key={field.id}>{fieldContent}</div>;
+            return (
+                <div
+                    key={field.id}
+                    className={colSpanClass}
+                >
+                    {fieldContent}
+                </div>
+            );
         };
 
-        // Render section content based on layout
+        // Render section content based on layout.
+        //
+        // Per spec §4.2 (anatomía de sección):
+        //   - Default layout: 2-column grid with items-start (so a tall field with error
+        //     doesn't misalign its neighbor). Mobile → 1 column (grid-cols-1).
+        //   - Each field wrapper carries its own col-span class derived from field type.
+        //   - TABS layout: fallback to stacked, no grid (nested sections handle their own layout).
         const renderSectionContent = () => {
-            if (!config.layout) {
-                // Default: simple vertical layout
+            if (config.layout === 'TABS') {
+                // TABS: stacked layout — nested sections manage their own grid
                 return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
             }
 
-            switch (config.layout) {
-                case 'GRID':
-                    return (
-                        <GridLayout
-                            columns={2}
-                            gap="md"
-                            responsive={{ sm: 1, md: 2 }}
-                        >
-                            {visibleFields.map(renderField)}
-                        </GridLayout>
-                    );
-
-                case 'TABS':
-                    // TODO: Implement tabs layout for nested sections
-                    return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-
-                // case 'ACCORDION':
-                //     // TODO: Implement accordion layout for nested sections
-                //     return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-
-                default:
-                    return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-            }
+            // Default and GRID: 2-column responsive grid with top alignment.
+            // `items-start` is critical: fields with error messages push down only
+            // themselves, not their grid neighbors. Per spec §4.6.
+            return (
+                <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+                    {visibleFields.map(renderField)}
+                </div>
+            );
         };
 
         if (!isVisible) {

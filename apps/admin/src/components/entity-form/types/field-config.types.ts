@@ -416,6 +416,20 @@ export type FieldConfig = {
     helpText?: string;
     helpTextKey?: string; // i18n key
 
+    /**
+     * Non-editable prefix visually attached to the input widget (e.g. "+54", "$", "https://").
+     * Rendered by FieldAffix. Does not affect the stored value.
+     * Per spec §4.2 "Prefijos / sufijos no editables".
+     */
+    prefix?: string;
+
+    /**
+     * Non-editable suffix visually attached to the input widget (e.g. "m²", "%", "kg").
+     * Rendered by FieldAffix. Does not affect the stored value.
+     * Per spec §4.2 "Prefijos / sufijos no editables".
+     */
+    suffix?: string;
+
     // Entitlement gating (for premium features)
     entitlementKey?: string;
     limitKey?: string; // For limit-based gates (e.g., max_photos)

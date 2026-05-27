@@ -1,9 +1,10 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
+import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 
 /**
  * Accommodation View Route Configuration
@@ -21,31 +22,30 @@ export const Route = createFileRoute('/_authed/accommodations/$id')({
 function AccommodationViewPage() {
     const { id } = Route.useParams();
 
-    // Use the hook at the top level
     const entityData = useAccommodationPage(id);
 
-    return (
-        <div className="space-y-4">
-            {/* Level 3 Navigation: Page Tabs */}
-            <PageTabs
-                tabs={accommodationTabs}
-                basePath={`/accommodations/${id}`}
-            />
+    // Determine section anchor order based on user permissions (spec §4.4):
+    // staff sees "states-moderation" first; hosts don't see it at all.
+    const anchorSectionIds = useMemo(
+        () => getAccommodationAnchorIds(entityData.userPermissions),
+        [entityData.userPermissions]
+    );
 
-            <EntityPageBase
+    return (
+        <EntityPageBase
+            entityType="accommodation"
+            entityId={id}
+            initialMode="view"
+            entityData={entityData}
+        >
+            <EntityViewContent
                 entityType="accommodation"
                 entityId={id}
-                initialMode="view"
-                entityData={entityData}
-            >
-                <EntityViewContent
-                    entityType="accommodation"
-                    entityId={id}
-                    sections={entityData.sections}
-                    entity={entityData.entity || {}}
-                    userPermissions={entityData.userPermissions}
-                />
-            </EntityPageBase>
-        </div>
+                sections={entityData.sections}
+                entity={entityData.entity ?? {}}
+                userPermissions={entityData.userPermissions}
+                anchorSectionIds={anchorSectionIds}
+            />
+        </EntityPageBase>
     );
 }
