@@ -198,6 +198,12 @@
             "confirm": "Yes, archive",
             "cancel": "Cancel"
         },
+        "reject": {
+            "title": "Reject {entity}",
+            "message": "Are you sure you want to reject this {entity}?",
+            "confirm": "Yes, reject",
+            "cancel": "Cancel"
+        },
         "restore": {
             "title": "Restore {entity}",
             "message": "Do you want to restore this {entity}?",
@@ -214,6 +220,11 @@
     "messages": {
         "created": "{entity} created successfully",
         "updated": "{entity} updated successfully",
+        "featuredOn": "«{name}» marked as featured",
+        "featuredOff": "«{name}» removed from featured",
+        "visibilityChanged": "Visibility of «{name}» changed to {value}",
+        "stateChanged": "Status of «{name}» changed to {value}",
+        "moderationChanged": "Moderation of «{name}» changed to {value}",
         "deleted": "{entity} deleted successfully",
         "deletedFeminine": "{entity} deleted successfully",
         "archived": "{entity} archived successfully",

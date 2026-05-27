@@ -46,11 +46,11 @@ export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps)
     const formattedPrice = formatPrice(price, currency, locale);
 
     return (
-        <div className="flex items-center gap-1">
-            <span className="font-medium text-foreground">{formattedPrice}</span>
+        <div className="inline-flex items-baseline gap-1">
             {currency && (
-                <span className="text-muted-foreground text-xs uppercase">{currency}</span>
+                <span className="text-muted-foreground text-xs uppercase">${currency}</span>
             )}
+            <span className="font-medium text-foreground">{formattedPrice}</span>
         </div>
     );
 };

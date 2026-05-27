@@ -10,12 +10,14 @@ import {
     type OKLCH,
     SHADES,
     accent,
+    accommodationTypePalettes,
     avatarGradients,
     brandPalettes,
     brandSecondary,
     brandSecondaryForeground,
     brandTertiary,
     chartColors,
+    cyan,
     danger,
     deriveShades,
     forest,
@@ -23,14 +25,18 @@ import {
     info,
     neutral,
     palettes,
+    purple,
     ratingStar,
     river,
+    rose,
     sand,
     semanticPalettes,
     sky,
     skyLight,
     success,
     surfaces,
+    teal,
+    terracotta,
     warning
 } from './colors.ts';
 
@@ -172,6 +178,36 @@ describe('Semantic palettes — canonical values match web baseline', () => {
     });
 });
 
+describe('Accommodation-type palettes — product-owner approved canonical values', () => {
+    // Each row is `[paletteName, palette, expected canonical CSS string]`.
+    // The 5 new palettes give each accommodation type its own distinct hue.
+    const cases: ReadonlyArray<readonly [string, typeof teal, string]> = [
+        ['teal', teal, 'oklch(0.6 0.1 185)'],
+        ['cyan', cyan, 'oklch(0.65 0.12 220)'],
+        ['terracotta', terracotta, 'oklch(0.58 0.12 40)'],
+        ['rose', rose, 'oklch(0.62 0.16 350)'],
+        ['purple', purple, 'oklch(0.55 0.17 310)']
+    ];
+
+    it.each(cases)('%s shade 500 serializes to %s', (_name, palette, expected) => {
+        expect(formatOKLCH(palette[500])).toBe(expected);
+    });
+
+    it('aggregates all 5 accommodation-type palettes', () => {
+        expect(Object.keys(accommodationTypePalettes).sort()).toEqual(
+            ['cyan', 'purple', 'rose', 'teal', 'terracotta'].sort()
+        );
+    });
+
+    it('matches the individual exports by reference', () => {
+        expect(accommodationTypePalettes.teal).toBe(teal);
+        expect(accommodationTypePalettes.cyan).toBe(cyan);
+        expect(accommodationTypePalettes.terracotta).toBe(terracotta);
+        expect(accommodationTypePalettes.rose).toBe(rose);
+        expect(accommodationTypePalettes.purple).toBe(purple);
+    });
+});
+
 describe('neutral palette', () => {
     it('declares all 10 shades with chroma 0 and hue 0', () => {
         for (const shade of SHADES) {
@@ -213,7 +249,7 @@ describe('neutral palette', () => {
 });
 
 describe('master palettes aggregate', () => {
-    it('contains all 5 brand + 4 semantic + 1 neutral = 10 palettes', () => {
+    it('contains all 5 brand + 4 semantic + 5 accommodation-type + 1 neutral = 15 palettes', () => {
         expect(Object.keys(palettes).sort()).toEqual(
             [
                 'accent',
@@ -225,7 +261,13 @@ describe('master palettes aggregate', () => {
                 'sand',
                 'sky',
                 'success',
-                'warning'
+                'warning',
+                // accommodation-type palettes (give each type its own hue)
+                'teal',
+                'cyan',
+                'terracotta',
+                'rose',
+                'purple'
             ].sort()
         );
     });

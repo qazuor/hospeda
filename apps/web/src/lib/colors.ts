@@ -5,6 +5,7 @@
  * Values are intended for inline styles (style attribute), not class names.
  */
 
+import { getAccommodationTypeColorScheme, getAccommodationTypeColorTokens } from '@repo/icons';
 import { PostCategoryEnum } from '@repo/schemas';
 
 /**
@@ -117,30 +118,14 @@ function schemeSolid({
  * ```
  */
 export function getAccommodationTypeColor({ type }: { readonly type: string }): ColorScheme {
-    switch (type) {
-        case 'hotel':
-            return scheme({ token: 'accent' });
-        case 'cabin':
-            return scheme({ token: 'hospeda-forest' });
-        case 'camping':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground' });
-        case 'apartment':
-            return scheme({ token: 'primary' });
-        case 'country_house':
-            return scheme({ token: 'secondary', textToken: 'foreground' });
-        case 'hostel':
-            return scheme({ token: 'hospeda-river' });
-        case 'resort':
-            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' });
-        case 'house':
-            return scheme({ token: 'muted', textToken: 'foreground' });
-        case 'motel':
-            return scheme({ token: 'warning', textToken: 'warning-foreground' });
-        case 'room':
-            return scheme({ token: 'info' });
-        default:
-            return scheme({ token: 'accent' });
-    }
+    // The per-type token mapping is the single source of truth in `@repo/icons`
+    // (shared with apps/admin). Web now uses the SAME `contrast` treatment as
+    // admin so a given accommodation type renders identically in both apps:
+    // each per-type token (`--accommodation-type-<type>`) is a distinct,
+    // saturated hue, and `contrast` derives a legible light fill + dark text
+    // from it. This intentionally changes the web badge look (product-owner
+    // approved) from the previous translucent 0.15-alpha pill.
+    return getAccommodationTypeColorScheme({ type, variant: 'contrast' });
 }
 
 /**
@@ -158,30 +143,12 @@ export function getAccommodationTypeColorSolid({
 }: {
     readonly type: string;
 }): ColorScheme {
-    switch (type) {
-        case 'hotel':
-            return schemeSolid({ token: 'accent' });
-        case 'cabin':
-            return schemeSolid({ token: 'hospeda-forest' });
-        case 'camping':
-            return schemeSolid({ token: 'hospeda-sand' });
-        case 'apartment':
-            return schemeSolid({ token: 'primary' });
-        case 'country_house':
-            return schemeSolid({ token: 'secondary' });
-        case 'hostel':
-            return schemeSolid({ token: 'hospeda-river' });
-        case 'resort':
-            return schemeSolid({ token: 'hospeda-sky' });
-        case 'house':
-            return schemeSolid({ token: 'muted' });
-        case 'motel':
-            return schemeSolid({ token: 'warning' });
-        case 'room':
-            return schemeSolid({ token: 'info' });
-        default:
-            return schemeSolid({ token: 'accent' });
-    }
+    // Reuse the shared per-type token mapping (SSOT in `@repo/icons`) but keep
+    // the solid (fully-opaque, contrast-clamped) rendering local to web. The
+    // solid variant intentionally ignores the mapping's `textToken` and uses
+    // `schemeSolid`'s default contrasting `card` text.
+    const { colorToken } = getAccommodationTypeColorTokens({ type });
+    return schemeSolid({ token: colorToken });
 }
 
 /**

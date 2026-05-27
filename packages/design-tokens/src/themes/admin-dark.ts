@@ -31,6 +31,21 @@ import type { Theme } from './types.js';
 /** Near-white for elevated surfaces in dark mode is wrong; use neutral[800] for cards. */
 const DARK_BG_ELEVATED: OKLCH = neutral[800];
 
+/**
+ * Web dark-theme overrides for the brand tokens we expose in the admin scope.
+ * Mirrored from `web-dark.ts`. Only the tokens web overrides in dark are
+ * listed; the `hospeda-*` family is NOT overridden in web dark mode, so it
+ * inherits the admin-light values via the cascade (matching web exactly).
+ */
+const WEB_DARK_BRAND_PRIMARY: OKLCH = { l: 0.68, c: 0.17, h: 259 };
+const WEB_DARK_BRAND_SECONDARY: OKLCH = { l: 0.25, c: 0.05, h: 255 };
+const WEB_DARK_BRAND_ACCENT: OKLCH = { l: 0.72, c: 0.19, h: 55 };
+const WEB_DARK_MUTED: OKLCH = { l: 0.22, c: 0.02, h: 220 };
+const WEB_DARK_INFO: OKLCH = { l: 0.68, c: 0.17, h: 259 };
+const WEB_DARK_WARNING: OKLCH = { l: 0.78, c: 0.18, h: 85 };
+const WEB_DARK_WARNING_FOREGROUND: OKLCH = { l: 0.1, c: 0.02, h: 85 };
+const WEB_DARK_CORE_FOREGROUND: OKLCH = { l: 0.92, c: 0.01, h: 210 };
+
 export const adminDark: Theme = {
     // ========================================================================
     // Primary (one shade LIGHTER than admin-light for dark-bg contrast)
@@ -69,5 +84,20 @@ export const adminDark: Theme = {
     'color-success': success[500],
     'color-warning': warning[500],
     'color-danger': danger[500],
-    'color-info': info[500]
+    'color-info': info[500],
+
+    // ========================================================================
+    // Web brand tokens — dark overrides (mirrored from `web-dark.ts`). Only
+    // the tokens web overrides in dark mode are listed; `hospeda-river/sky/
+    // forest/sand` inherit their admin-light values via the cascade, exactly
+    // as they do in web (web dark does not redeclare the hospeda-* family).
+    // ========================================================================
+    'brand-primary': WEB_DARK_BRAND_PRIMARY,
+    'brand-accent': WEB_DARK_BRAND_ACCENT,
+    'brand-secondary': WEB_DARK_BRAND_SECONDARY,
+    muted: WEB_DARK_MUTED,
+    info: WEB_DARK_INFO,
+    warning: WEB_DARK_WARNING,
+    'warning-foreground': WEB_DARK_WARNING_FOREGROUND,
+    'core-foreground': WEB_DARK_CORE_FOREGROUND
 };

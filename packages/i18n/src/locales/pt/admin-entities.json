@@ -198,6 +198,12 @@
             "confirm": "Sim, arquivar",
             "cancel": "Cancelar"
         },
+        "reject": {
+            "title": "Rejeitar {entity}",
+            "message": "Você tem certeza que deseja rejeitar este {entity}?",
+            "confirm": "Sim, rejeitar",
+            "cancel": "Cancelar"
+        },
         "restore": {
             "title": "Restaurar {entity}",
             "message": "Deseja restaurar este {entity}?",
@@ -214,6 +220,11 @@
     "messages": {
         "created": "{entity} criado com sucesso",
         "updated": "{entity} atualizado com sucesso",
+        "featuredOn": "«{name}» marcado como destaque",
+        "featuredOff": "«{name}» removido dos destaques",
+        "visibilityChanged": "Visibilidade de «{name}» alterada para {value}",
+        "stateChanged": "Status de «{name}» alterado para {value}",
+        "moderationChanged": "Moderação de «{name}» alterada para {value}",
         "deleted": "{entity} excluído com sucesso",
         "deletedFeminine": "{entity} excluída com sucesso",
         "archived": "{entity} arquivado com sucesso",

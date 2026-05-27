@@ -31,12 +31,31 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 145 web :root tokens', () => {
+    it('declares all 155 web :root tokens', () => {
         // 142 was the Phase 0 extractor count for tokens.light in the seed
         // manifest; +3 for the --text-sm / --text-h6 / --text-body-md tokens
-        // that web usages referenced but were never defined. Adding or
-        // removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(145);
+        // that web usages referenced but were never defined; +10 for the
+        // per-accommodation-type tokens (--accommodation-type-*) added by the
+        // layered color model. Adding or removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(155);
+    });
+
+    it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
+        const expected: ReadonlyArray<readonly [string, string]> = [
+            ['accommodation-type-hotel', 'var(--palette-accent-500)'],
+            ['accommodation-type-apartment', 'var(--palette-river-500)'],
+            ['accommodation-type-house', 'var(--palette-forest-500)'],
+            ['accommodation-type-country-house', 'var(--palette-teal-500)'],
+            ['accommodation-type-cabin', 'var(--palette-terracotta-500)'],
+            ['accommodation-type-camping', 'var(--palette-sand-500)'],
+            ['accommodation-type-hostel', 'var(--palette-cyan-500)'],
+            ['accommodation-type-room', 'var(--palette-rose-500)'],
+            ['accommodation-type-motel', 'var(--palette-danger-500)'],
+            ['accommodation-type-resort', 'var(--palette-purple-500)']
+        ];
+        for (const [key, ref] of expected) {
+            expect(webLight[key]).toBe(ref);
+        }
     });
 
     it('keys do not include leading `--` (generator prepends it)', () => {

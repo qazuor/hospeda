@@ -56,12 +56,14 @@ describe('buildCSS — header', () => {
 describe('buildCSS — palette primitives', () => {
     const rootBlock = blockOf(CSS, ':root');
 
-    it('emits a declaration for every palette × shade (100 total)', () => {
+    it('emits a declaration for every palette × shade (150 total)', () => {
         const paletteCount = Object.keys(palettes).length;
         const expected = paletteCount * SHADES.length;
-        expect(paletteCount).toBe(10);
+        // 5 brand + 4 semantic + 5 accommodation-type + 1 neutral = 15 palettes.
+        expect(paletteCount).toBe(15);
         const matches = [...rootBlock.matchAll(/--palette-[a-z]+-\d+:/g)];
         expect(matches).toHaveLength(expected);
+        expect(expected).toBe(150);
     });
 
     it('emits palettes in source order (brand → semantic → neutral)', () => {
@@ -97,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 100 palettes + 145 webLight = 245', () => {
+    it('total :root declarations = 150 palettes + 155 webLight = 305', () => {
         const total = countDeclarations(rootBlock);
-        expect(total).toBe(100 + Object.keys(webLight).length);
-        expect(total).toBe(245);
+        expect(total).toBe(150 + Object.keys(webLight).length);
+        expect(total).toBe(305);
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -120,6 +122,24 @@ describe('buildCSS — :root web-light declarations', () => {
 
     it('emits semantic typography clamp() expressions verbatim', () => {
         expect(rootBlock).toMatch(/--text-hero: clamp\([^)]+\);/);
+    });
+
+    it('emits all 10 per-type accommodation tokens referencing their base palette primitive', () => {
+        const expectedRefs: ReadonlyArray<readonly [string, string]> = [
+            ['accommodation-type-hotel', 'var(--palette-accent-500)'],
+            ['accommodation-type-apartment', 'var(--palette-river-500)'],
+            ['accommodation-type-house', 'var(--palette-forest-500)'],
+            ['accommodation-type-country-house', 'var(--palette-teal-500)'],
+            ['accommodation-type-cabin', 'var(--palette-terracotta-500)'],
+            ['accommodation-type-camping', 'var(--palette-sand-500)'],
+            ['accommodation-type-hostel', 'var(--palette-cyan-500)'],
+            ['accommodation-type-room', 'var(--palette-rose-500)'],
+            ['accommodation-type-motel', 'var(--palette-danger-500)'],
+            ['accommodation-type-resort', 'var(--palette-purple-500)']
+        ];
+        for (const [key, ref] of expectedRefs) {
+            expect(rootBlock).toContain(`--${key}: ${ref};`);
+        }
     });
 });
 
@@ -165,12 +185,33 @@ describe('buildCSS — web dark theme block', () => {
 describe('buildCSS — admin light theme block', () => {
     const block = blockOf(CSS, '[data-app="admin"]');
 
-    it(`emits all ${Object.keys(adminLight).length} (=17) admin light declarations`, () => {
+    it(`emits all ${Object.keys(adminLight).length} (=39) admin light declarations`, () => {
         for (const key of Object.keys(adminLight)) {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(adminLight).length);
-        expect(countDeclarations(block)).toBe(17);
+        expect(countDeclarations(block)).toBe(39);
+    });
+
+    it('exposes the web brand tokens (cross-app badge support) in the admin scope', () => {
+        expect(block).toContain('--brand-accent:');
+        expect(block).toContain('--brand-primary:');
+        expect(block).toContain('--hospeda-forest:');
+        expect(block).toContain('--hospeda-sky:');
+        expect(block).toContain('--hospeda-river:');
+        expect(block).toContain('--hospeda-sand:');
+    });
+
+    it('exposes the per-type accommodation tokens in the admin scope (identical to web)', () => {
+        // Same references as :root/web — so a given type renders the SAME hue
+        // in admin as in web. Spot-check the 5 new-palette-backed types plus one
+        // brand-backed type.
+        expect(block).toContain('--accommodation-type-hotel: var(--palette-accent-500);');
+        expect(block).toContain('--accommodation-type-country-house: var(--palette-teal-500);');
+        expect(block).toContain('--accommodation-type-cabin: var(--palette-terracotta-500);');
+        expect(block).toContain('--accommodation-type-hostel: var(--palette-cyan-500);');
+        expect(block).toContain('--accommodation-type-room: var(--palette-rose-500);');
+        expect(block).toContain('--accommodation-type-resort: var(--palette-purple-500);');
     });
 
     it('color-primary references river[500] (brand-forward admin shade)', () => {
@@ -185,12 +226,12 @@ describe('buildCSS — admin light theme block', () => {
 describe('buildCSS — admin dark theme block', () => {
     const block = blockOf(CSS, '[data-app="admin"][data-theme="dark"]');
 
-    it(`emits all ${Object.keys(adminDark).length} (=14) admin dark overrides`, () => {
+    it(`emits all ${Object.keys(adminDark).length} (=22) admin dark overrides`, () => {
         for (const key of Object.keys(adminDark)) {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(adminDark).length);
-        expect(countDeclarations(block)).toBe(14);
+        expect(countDeclarations(block)).toBe(22);
     });
 
     it('shifts color-primary one shade lighter to river[400] in dark', () => {
