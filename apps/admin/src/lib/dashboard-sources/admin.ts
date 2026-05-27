@@ -151,7 +151,14 @@ registerDataSource('admin.accommodations.latest', (ctx) => ({
         const result = await fetchApi<AdminListApiResponse<AccommodationItem>>({
             path: '/api/v1/admin/accommodations?sort=published_desc&pageSize=5'
         });
-        return result.data.data?.data ?? [];
+        const items = result.data.data?.data ?? [];
+        // Normalize to ListItem shape expected by ListWidget.
+        return items.map((item) => ({
+            id: item.id,
+            label: item.name,
+            meta: item.status,
+            href: `/catalogo/alojamientos/${item.id}`
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -201,12 +208,40 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
                 })
             ]);
 
-        return {
-            featuredUpcomingEvents: featuredEventsResult.data.data?.data ?? [],
-            recentDraftPosts: draftPostsResult.data.data?.data ?? [],
-            draftEvents: draftEventsResult.data.data?.data ?? [],
-            postsThisMonth: postsThisMonthResult.data.data?.pagination?.total ?? 0
-        };
+        const featuredEvents = featuredEventsResult.data.data?.data ?? [];
+        const draftPosts = draftPostsResult.data.data?.data ?? [];
+        const draftEvents = draftEventsResult.data.data?.data ?? [];
+        const postsThisMonth = postsThisMonthResult.data.data?.pagination?.total ?? 0;
+
+        // Normalize to ListItem[] shape expected by ListWidget.
+        // Combine all editorial items into a single flat list, tagged by type in meta.
+        const items = [
+            ...featuredEvents.slice(0, 2).map((e) => ({
+                id: e.id,
+                label: e.title,
+                meta: `Evento destacado${e.startDate ? ` · ${new Date(e.startDate).toLocaleDateString('es-AR')}` : ''}`,
+                href: `/catalogo/eventos/${e.id}`
+            })),
+            ...draftPosts.slice(0, 2).map((p) => ({
+                id: p.id,
+                label: p.title,
+                meta: `Post borrador${p.updatedAt ? ` · ${new Date(p.updatedAt).toLocaleDateString('es-AR')}` : ''}`,
+                href: `/contenido/posts/${p.id}`
+            })),
+            ...draftEvents.slice(0, 1).map((e) => ({
+                id: e.id,
+                label: e.title,
+                meta: 'Evento borrador',
+                href: `/catalogo/eventos/${e.id}`
+            }))
+        ];
+
+        // Surface the posts-this-month count as the first badge item if > 0
+        const result = items.map((item, i) =>
+            i === 0 && postsThisMonth > 0 ? { ...item, badge: `${postsThisMonth} este mes` } : item
+        );
+
+        return result;
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -232,12 +267,14 @@ registerDataSource('admin.crons.list', (ctx) => ({
             path: '/api/v1/admin/cron-jobs'
         });
         const jobs = result.data.data?.jobs ?? [];
-        const enabledCount = result.data.data?.enabled ?? jobs.filter((j) => j.enabled).length;
-        return {
-            jobs,
-            total: result.data.data?.total ?? jobs.length,
-            enabled: enabledCount
-        };
+
+        // Normalize to ListItem[] shape expected by ListWidget.
+        return jobs.map((job) => ({
+            id: job.id,
+            label: job.name,
+            meta: job.schedule ?? undefined,
+            badge: job.enabled ? 'activo' : 'inactivo'
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -263,11 +300,17 @@ registerDataSource('admin.system.health', (ctx) => ({
         const result = await fetchApi<HealthApiResponse>({
             path: '/api/v1/health'
         });
-        return {
-            status: result.data.status,
-            db: result.data.db ?? 'unknown',
-            redis: result.data.redis ?? 'unknown'
-        };
+        const rawStatus = result.data.status;
+        const db = result.data.db ?? 'unknown';
+        const redis = result.data.redis ?? 'unknown';
+
+        // Normalize to StatusData shape expected by StatusWidget.
+        // The health endpoint may return 'ok', 'degraded', 'down', or other values.
+        // Map 'ok' → 'up' (the variantMap in dashboards.ts uses 'up'/'degraded'/'down').
+        const normalizedStatus = rawStatus === 'ok' ? 'up' : (rawStatus ?? 'unknown');
+        const description = `DB: ${db} · Redis: ${redis}`;
+
+        return { status: normalizedStatus, description };
     },
     // Shorter stale time for health checks — 30 s gives more up-to-date feedback.
     staleTime: 30_000
@@ -295,7 +338,21 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
         const result = await fetchApi<ModerationPendingCountApiResponse>({
             path: '/api/v1/admin/moderation/pending-count'
         });
-        return result.data.data ?? null;
+        const data = result.data.data;
+        if (!data) return null;
+
+        // Normalize to KpiData shape expected by KpiWidget.
+        // `total` is the primary KPI value; breakdown fields are extra context.
+        return {
+            value: data.total ?? 0,
+            breakdown: {
+                accommodations: data.accommodations ?? 0,
+                destinations: data.destinations ?? 0,
+                posts: data.posts ?? 0,
+                events: data.events ?? 0,
+                reviews: data.reviews ?? 0
+            }
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

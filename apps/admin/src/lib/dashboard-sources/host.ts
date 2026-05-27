@@ -168,7 +168,9 @@ registerDataSource('host.accommodations.count', (ctx) => ({
         const result = await fetchApi<AccommodationListApiResponse>({
             path: `/api/v1/admin/accommodations?${params}`
         });
-        return result.data.data?.pagination?.total ?? 0;
+        const total = result.data.data?.pagination?.total ?? 0;
+        // Normalize to KpiData shape expected by KpiWidget.
+        return { value: total };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -187,10 +189,14 @@ registerDataSource('host.accommodations.drafts', (ctx) => ({
         const result = await fetchApi<AccommodationListApiResponse>({
             path: `/api/v1/admin/accommodations?${params}`
         });
-        return {
-            items: result.data.data?.data ?? [],
-            total: result.data.data?.pagination?.total ?? 0
-        };
+        const items = result.data.data?.data ?? [];
+        // Normalize to ListItem[] shape expected by ListWidget (companion list).
+        return items.map((item) => ({
+            id: item.id,
+            label: item.name,
+            meta: 'Borrador',
+            href: `/catalogo/alojamientos/${item.id}`
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -226,7 +232,30 @@ registerDataSource('host.billing.plan', (ctx) => ({
         const subscription = subResult.data.data?.data?.[0] ?? null;
         const usage = usageResult.data.data ?? null;
 
-        return { subscription, usage };
+        // Normalize to StatusData shape expected by StatusWidget.
+        // Map subscription status to a canonical status string.
+        // Possible subscription status values: 'active', 'cancelled', 'expired', 'trial'.
+        // We add 'expiring' when currentPeriodEnd is within 7 days.
+        let status = subscription?.status ?? 'expired';
+        if (subscription?.status === 'active' && subscription.currentPeriodEnd) {
+            const daysUntilExpiry =
+                (new Date(subscription.currentPeriodEnd).getTime() - Date.now()) /
+                (1000 * 60 * 60 * 24);
+            if (daysUntilExpiry <= 7) {
+                status = 'expiring';
+            }
+        }
+
+        const usageText =
+            usage?.accommodationsUsed !== undefined && usage?.accommodationsLimit !== undefined
+                ? `${usage.accommodationsUsed}/${usage.accommodationsLimit} alojamientos`
+                : undefined;
+
+        return {
+            status,
+            label: subscription?.planId ?? status,
+            description: usageText
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -263,10 +292,18 @@ registerDataSource('host.conversations.pending', (ctx) => ({
             })
         ]);
 
-        return {
-            pendingCount: countResult.data.data?.pagination?.total ?? 0,
-            items: listResult.data.data?.data ?? []
-        };
+        const pendingCount = countResult.data.data?.pagination?.total ?? 0;
+        const rawItems = listResult.data.data?.data ?? [];
+
+        // Normalize to ListItem[] shape expected by ListWidget.
+        // The widget is type 'list' — return a flat array of items.
+        // Surface the pending count as a badge on the first item if present.
+        return rawItems.map((item, idx) => ({
+            id: item.id,
+            label: item.guestName ?? `Consulta ${idx + 1}`,
+            meta: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('es-AR') : undefined,
+            badge: idx === 0 && pendingCount > 0 ? String(pendingCount) : undefined
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -291,7 +328,16 @@ registerDataSource('host.reviews.latest', (ctx) => ({
         const result = await fetchApi<ReviewListApiResponse>({
             path: `/api/v1/admin/reviews?${params}`
         });
-        return result.data.data?.data ?? [];
+        const reviews = result.data.data?.data ?? [];
+        // Normalize to ListItem[] shape expected by ListWidget.
+        return reviews.map((review) => ({
+            id: review.id,
+            label: review.comment ? review.comment.slice(0, 80) : 'Reseña sin comentario',
+            meta: review.createdAt
+                ? new Date(review.createdAt).toLocaleDateString('es-AR')
+                : undefined,
+            badge: review.rating !== undefined ? String(review.rating) : undefined
+        }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -367,7 +413,14 @@ registerDataSource('host.stats.ratings', (ctx) => ({
             listings.length > 0
                 ? listings.reduce((sum, l) => sum + (l.averageRating ?? 0), 0) / listings.length
                 : 0;
-        return { avgRating, totalReviews, listings };
+
+        // Normalize to KpiData shape expected by KpiWidget.
+        // Primary value: average rating (rounded to 1 decimal).
+        // unitSuffix shows total reviews for context.
+        return {
+            value: Math.round(avgRating * 10) / 10,
+            unitSuffix: `/ 5 (${totalReviews} reseñas)`
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

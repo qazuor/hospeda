@@ -239,8 +239,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
         );
     }
 
-    // -- 7. Empty (null / undefined / empty array) ---------------------------
-    if (data == null || (Array.isArray(data) && data.length === 0)) {
+    // -- 7. Empty (null / undefined / empty array / non-array shape) ----------
+    if (data == null || !Array.isArray(data) || data.length === 0) {
         return (
             <WidgetEmpty
                 variant="list"
@@ -292,7 +292,7 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                     className="truncate font-medium text-foreground text-sm"
                                     data-testid="list-item-label"
                                 >
-                                    {item.label}
+                                    {item.label ?? '—'}
                                 </p>
                                 {item.meta && (
                                     <p
