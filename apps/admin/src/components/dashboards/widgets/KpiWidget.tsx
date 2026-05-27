@@ -226,6 +226,13 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
     // -- 8. Data — narrow to KpiData shape -----------------------------------
     const kpi = data as KpiData;
 
+    // Defensive guard: if the resolver returned an unexpected shape (e.g. an
+    // array or an object without `value`), fall back to the empty state instead
+    // of crashing with "kpi.value.toLocaleString is not a function".
+    if (typeof kpi.value !== 'number') {
+        return <WidgetEmpty variant="kpi" />;
+    }
+
     // Config-level unit overrides take precedence over resolver-provided units.
     const prefix = config.unitPrefix ?? kpi.unitPrefix;
     const suffix = config.unitSuffix ?? kpi.unitSuffix;

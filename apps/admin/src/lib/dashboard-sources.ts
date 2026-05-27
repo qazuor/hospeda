@@ -362,6 +362,14 @@ async function fetchEntityCount(endpoint: string): Promise<number> {
  * Fetches the total count of accommodations, destinations, events, posts,
  * and attractions in parallel — same data as `useDashboardStats` but now
  * routed through the resolver registry so the dashboard renderer can use it.
+ *
+ * Returns `{ value: totalAcrossAllEntities }` so KpiWidget can render the
+ * aggregate count directly. Individual entity counts are included in
+ * `breakdown` for any renderer that wants to show the per-entity detail.
+ *
+ * Card-A design decision: one kpi widget cannot meaningfully show 6 numbers.
+ * The `value` is the SUM of all 6 entity counts (the "total platform entities"
+ * KPI). The `breakdown` record is available for a future multi-KPI renderer.
  */
 registerDataSource('admin.entities.counts', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.entities.counts', ctx),
@@ -381,7 +389,15 @@ registerDataSource('admin.entities.counts', (ctx) => ({
             }))
         );
 
-        return counts;
+        const breakdown: Record<string, number> = {};
+        let total = 0;
+        for (const entry of counts) {
+            breakdown[entry.name] = entry.count;
+            total += entry.count;
+        }
+
+        // Normalize to KpiData shape: value = total entities across all types.
+        return { value: total, breakdown };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -407,8 +423,8 @@ interface UsersStatsApiResponse {
  * Scope: `'all'` (platform-wide, no user scoping needed).
  *
  * Calls GET /api/v1/admin/users/stats — one of the new routes built in the
- * prior API task. Returns the raw response so the chart renderer (T-025)
- * can map it to chart data points.
+ * prior API task. Normalizes to ChartData shape expected by ChartWidget:
+ * `{ series: [{ label, value }] }` where each point is a role with its count.
  */
 registerDataSource('admin.users.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.users.stats', ctx),
@@ -416,7 +432,23 @@ registerDataSource('admin.users.stats', (ctx) => ({
         const result = await fetchApi<UsersStatsApiResponse>({
             path: '/api/v1/admin/users/stats'
         });
-        return result.data.data ?? null;
+        const data = result.data.data;
+        if (!data) return null;
+
+        // Normalize to ChartData shape for ChartWidget.
+        // If byRole is present, use role breakdown as chart series.
+        // Otherwise fall back to a single "total" data point.
+        const byRole = data.byRole;
+        if (byRole && Object.keys(byRole).length > 0) {
+            const series = Object.entries(byRole).map(([role, count]) => ({
+                label: role,
+                value: count
+            }));
+            return { series };
+        }
+
+        // Fallback: single total point
+        return { series: [{ label: 'Total', value: data.total ?? 0 }] };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

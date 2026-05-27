@@ -99,7 +99,18 @@ registerDataSource('super.billing.stats', (ctx) => ({
         const result = await fetchApi<BillingMetricsApiResponse>({
             path: '/api/v1/admin/billing/metrics'
         });
-        return result.data.data ?? null;
+        const data = result.data.data;
+        if (!data) return null;
+
+        // Normalize to KpiData shape expected by KpiWidget.
+        // Primary value: active subscriptions count.
+        // MRR is surfaced as unitPrefix/unitSuffix for context.
+        const mrrPesos = data.mrr !== undefined ? Math.round(data.mrr / 100) : undefined;
+        return {
+            value: data.activeSubscriptions ?? 0,
+            unitSuffix: 'suscripciones',
+            ...(mrrPesos !== undefined ? { mrr: mrrPesos } : {})
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
