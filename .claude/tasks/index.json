@@ -487,16 +487,18 @@
     {
       "specId": "SPEC-155",
       "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
-      "status": "reserved",
-      "progress": "0/0",
+      "status": "in-progress",
+      "progress": "0/41",
       "path": "SPEC-155-admin-dashboards-v1",
-      "worktree": null,
-      "branch": null,
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
+      "branch": "spec/SPEC-155-admin-dashboards-v1",
       "dependsOn": [
         "SPEC-154"
       ],
       "reservedAt": "2026-05-22T00:00:00Z",
-      "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 26-30 tasks across 8 widget renderers, source resolver, configs, migration)."
+      "activatedAt": "2026-05-26T00:00:00Z",
+      "tasksAtomizedAt": "2026-05-26T00:00:00Z",
+      "note": "41 atomic tasks generated (all complexity <=4, avg 2.4). Phase breakdown: setup 2, core 10, integration 22, testing 4, cleanup 1 (tagged). Critical path 8 tasks deep. Hard gate: T-002 BLOCKS T-015 (billing blast-radius audit before ADMIN perm revoke). Spec fully redefined 2026-05-26 per 03c-dashboards-redefinition.md."
     },
     {
       "specId": "SPEC-156",
