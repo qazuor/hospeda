@@ -681,7 +681,7 @@
             "id": "T-029",
             "title": "Write hostDashboard config",
             "description": "Define the `hostDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the HOST role: 7 cards (A–G) with source IDs, tri-locale labels, and scope annotations.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts` (create or extend)\n\nCards to define (AC-4, AC-5, AC-6, AC-7):\n- Card A: Mis alojamientos (list + KPI) — source: `host.accommodations.list`\n- Card B: Mi plan (status widget) — source: `host.plan.status`\n- Card C: Consultas (KPI + list with 'Responder' action per item) — source: `host.inquiries.pending`\n- Card D: Estado de mi alojamiento (checklist type; selector for multi-listing) — source: `host.accommodation.detail`\n- Card E: Reseñas (list) — source: `host.reviews.recent`\n- Card F: Mi perfil (checklist type) — source: `host.profile`\n- Card G: Estadísticas (mixed: KPI 🟢 + KPI 🟡 x2 + DeferredWidget 🔴→SPEC-159) — sources: `host.stats.ratings`, `host.favorites.breakdown`, `host.conversations.responseRate`\n\nRequirements (AC-4, AC-5, AC-6, AC-7):\n- Exactly 7 card configs\n- Each card has unique `id`, valid `type`, `label: { es, en, pt }`, correct `source` IDs matching T-018 registrations\n- Card G includes deferred slot config pointing to SPEC-159\n- Passes extended SPEC-154 Zod schema validation\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `hostDashboard.cards.length === 7`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-018"],
             "blocks": ["T-033", "T-034"],
@@ -695,15 +695,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Write editorDashboard config",
             "description": "Define the `editorDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the EDITOR role: 8 cards (A–H) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6):\n- Card A: Posts (KPI + list) — sources: `editor.posts.publishedThisMonth`, `editor.posts.drafts`\n- Card B: Eventos (KPI + list) — source: `editor.events.upcoming`\n- Card C: Suscriptores Newsletter (KPI 🟢 + breakdown 🟡 + DeferredWidget 🔴→SPEC-160) — sources: `editor.newsletter.subscribers`, `editor.newsletter.byPreference`\n- Card D: Campañas Newsletter (list) — source: `editor.newsletter.campaigns`\n- Card E: Estadísticas blog (KPI + chart 🟡 + DeferredWidget 🔴→SPEC-159) — sources: `editor.posts.publishedThisMonth`, `editor.posts.trend`\n- Card F: Estadísticas eventos (KPI + DeferredWidget 🔴→SPEC-159) — source: `editor.events.upcoming`\n- Card G: Salud (checklist — computed client-side) — sources: `editor.posts.list`, `editor.events.list`\n- Card H: Comentarios (deferred placeholder 🔴→SPEC-165) — no live source; DeferredWidget with `phaseSpec: 'SPEC-165'`\n\nRequirements (AC-4, AC-5, AC-6):\n- Exactly 8 card configs\n- Passes extended SPEC-154 Zod schema\n- Card H deferred slot references SPEC-165\n\nTest requirements (AC-4, AC-5):\n- Tested by T-033 CI validation suite\n- Card count assertion: `editorDashboard.cards.length === 8`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-019"],
             "blocks": ["T-033", "T-034"],
@@ -717,15 +717,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Write adminBaseDashboard config",
             "description": "Define the `adminBaseDashboard` configuration object in `apps/admin/src/config/ia/dashboards.ts` for the ADMIN role: 7 cards (A–G) with source IDs and tri-locale labels.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-6, AC-8):\n- Card A: Estadísticas de entidades (6 KPI widgets) — source: `admin.stats.entities`\n- Card B: Alojamientos (list) — source: `admin.accommodations.latest`\n- Card C: Editorial (list — events + posts) — sources: `admin.events.upcomingFeatured`, `admin.posts.recentDrafts`\n- Card D: Crons (list 🟢 + DeferredWidget 🔴→SPEC-161 for failed/last-run) — source: `admin.crons.list`\n- Card E: Estado del sistema (status widget 🟢 + maintenance flag 🟡) — sources: `admin.system.health`, `admin.system.maintenanceMode`\n- Card F: Pendiente de moderación (unified 4-entity count 🟡 + reviews-pending DeferredWidget 🔴→SPEC-166) — source: `admin.moderation.pendingCount`; reviews sub-slot: DeferredWidget with `phaseSpec: 'SPEC-166'`\n- Card G: Usuarios (KPI+breakdown 🟡 + chart 🟡) — source: `admin.users.stats`\n\nRequirements (AC-4, AC-5, AC-8):\n- Exactly 7 card configs\n- ADMIN (not SUPER_ADMIN) resolves to this config alone\n- Passes extended SPEC-154 Zod schema\n\nTest requirements (AC-4, AC-5, AC-8):\n- Tested by T-033 CI validation suite\n- Card count assertion: `adminBaseDashboard.cards.length === 7`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-020"],
             "blocks": ["T-033", "T-034"],
@@ -739,15 +739,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Write superAdminOnlySection config",
             "description": "Define the `superAdminOnlySection` configuration object in `apps/admin/src/config/ia/dashboards.ts` for SUPER_ADMIN-only cards: 2 cards (H–I) with `onMissing: 'hide'` permission gates.\n\nFiles to create/modify:\n- `apps/admin/src/config/ia/dashboards.ts`\n\nCards to define (AC-4, AC-5, AC-7, AC-8, AC-31, AC-32):\n- Card H: Audit Logs — ALL 3 slots deferred (DeferredWidget→SPEC-162 for audit log and security log; DeferredWidget→SPEC-163 for Sentry errors); gated with `AUDIT_LOG_VIEW` permission + `onMissing: 'hide'`\n- Card I: Estadísticas de billing — billing KPIs + chart from SUPER billing sources; gated with `BILLING_METRICS_READ` permission + `onMissing: 'hide'`\n\nRequirements (AC-4, AC-5, AC-7, AC-8):\n- Exactly 2 card configs\n- Both gated with `onMissing: 'hide'` so ADMIN users do not see them\n- ADMIN role → 0 visible cards from this section\n- SUPER_ADMIN role → 2 visible cards\n- Uses extended `onMissing` field from T-003\n\nTest requirements (AC-4, AC-7, AC-31, AC-32):\n- Tested by T-033 CI validation suite and T-039 gating tests\n- Card count assertion: `superAdminOnlySection.cards.length === 2`\n- Both cards have `onMissing: 'hide'` in config",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004", "T-021"],
             "blocks": ["T-033", "T-034"],
@@ -761,15 +761,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "CI config validation test suite",
             "description": "Write a Vitest suite that validates all four dashboard config objects against the extended SPEC-154 Zod schema and asserts card counts match the spec exactly.\n\nFiles to create:\n- `apps/admin/src/config/ia/__tests__/dashboards.test.ts`\n\nAcceptance criteria (AC-3, AC-4, AC-5, AC-6, AC-7):\n- `hostDashboard` passes Zod schema and has exactly 7 cards\n- `editorDashboard` passes Zod schema and has exactly 8 cards\n- `adminBaseDashboard` passes Zod schema and has exactly 7 cards\n- `superAdminOnlySection` passes Zod schema and has exactly 2 cards\n- All source IDs in all configs are registered in `dashboard-sources.ts`\n- All cards have unique IDs within their config\n- All cards have `label.es`, `label.en`, `label.pt` (non-empty strings)\n- Both SUPER-only cards have `onMissing: 'hide'` (AC-7)\n\nTest requirements:\n- Runs in CI on every PR that touches `apps/admin/src/config/ia/`\n- No mocks — tests the real config objects against the real Zod schema\n- Fail message must identify WHICH card failed validation (include card id in assertion message)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004", "T-029", "T-030", "T-031", "T-032"],
             "blocks": [],
@@ -783,15 +783,15 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Build dashboard renderer component",
             "description": "Build the main dashboard renderer component that reads the current user's resolved config(s), fires all source queries in parallel, dispatches to the appropriate widget type renderers, and includes the 'Actualizar' button.\n\nFiles to create:\n- `apps/admin/src/components/dashboards/DashboardRenderer.tsx`\n\nBehavior (AC-8, AC-33, AC-34, AC-35):\n- Role resolution: ADMIN → `adminBaseDashboard`; SUPER_ADMIN → `adminBaseDashboard` + `superAdminOnlySection`; HOST → `hostDashboard`; EDITOR → `editorDashboard`\n- Fires all source queries in parallel using TanStack Query's `useQueries` (no waterfall — AC-34)\n- Each card renders in its own Suspense boundary so one slow card does not block others\n- 'Actualizar' button calls `queryClient.invalidateQueries({ queryKey: ['dashboard', role] })` (AC-33)\n- Cards sharing the same TanStack Query prefix key re-use cached data (AC-35)\n- Widget type dispatch: `kpi` → KpiWidget, `list` → ListWidget, `chart` → ChartWidget, `checklist` → ChecklistWidget, `status` → StatusWidget, deferred slot → DeferredWidget\n- `onMissing: 'hide'` gating evaluated against current user's permissions\n\nTest requirements (AC-8, AC-33, AC-34, AC-35):\n- Unit test: ADMIN resolves to 7 cards\n- Unit test: SUPER_ADMIN resolves to 9 cards\n- Unit test: 'Actualizar' button triggers invalidation\n- Unit test: cards without user permission are hidden when `onMissing: 'hide'`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [
                 "T-022",
@@ -817,8 +817,8 @@
             },
             "timestamps": {
                 "created": "2026-05-27T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-27T15:04:33.000Z",
+                "completed": "2026-05-27T15:19:15.000Z"
             }
         },
         {
@@ -980,8 +980,8 @@
         "total": 41,
         "activeTotal": 38,
         "extracted": 3,
-        "completed": 24,
-        "pending": 14,
+        "completed": 30,
+        "pending": 8,
         "inProgress": 0,
         "blocked": 0,
         "averageComplexity": 2.4,
