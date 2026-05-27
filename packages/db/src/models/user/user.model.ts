@@ -1,5 +1,6 @@
+import type { UserAdminStats } from '@repo/schemas';
 import type { User } from '@repo/schemas';
-import { type SQL, and, count, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, isNull, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
@@ -261,6 +262,74 @@ export class UserModel extends BaseModelImpl<User> {
         }
 
         return { items: itemsWithCounts, total };
+    }
+
+    /**
+     * Returns admin-level aggregated user statistics.
+     *
+     * Runs two independent queries in parallel:
+     *  1. COUNT(*) GROUP BY role — excludes soft-deleted rows.
+     *  2. Monthly new-user trend for the last 12 complete months (current
+     *     calendar month included), derived from `created_at`. Months with
+     *     zero registrations are included as explicit zero buckets so the
+     *     caller always receives a fixed-length series.
+     *
+     * @param tx - Optional Drizzle transaction client (for test isolation).
+     * @returns Aggregated stats shaped as `UserAdminStats`.
+     */
+    async getAdminStats(tx?: DrizzleClient): Promise<UserAdminStats> {
+        const db = this.getClient(tx);
+
+        // ---- byRole aggregation ------------------------------------------
+        // Only count non-deleted users (deletedAt IS NULL).
+        const roleCountsQuery = db
+            .select({
+                role: users.role,
+                total: count(users.id)
+            })
+            .from(users)
+            .where(isNull(users.deletedAt))
+            .groupBy(users.role);
+
+        // ---- newUsersTrend aggregation ------------------------------------
+        // Extract YYYY-MM from created_at using to_char for deterministic
+        // formatting, covering the last 12 months (oldest first).
+        // The CTE `months` materialises the 12-month window; the LEFT JOIN
+        // ensures months with no registrations appear as 0.
+        const trendQuery = db.execute<{ month: string; count: string }>(sql`
+            WITH months AS (
+                SELECT to_char(
+                    date_trunc('month', now()) - (gs.n * interval '1 month'),
+                    'YYYY-MM'
+                ) AS month
+                FROM generate_series(11, 0, -1) AS gs(n)
+            )
+            SELECT
+                m.month,
+                COALESCE(COUNT(u.id), 0)::int AS count
+            FROM months m
+            LEFT JOIN users u
+                ON to_char(date_trunc('month', u.created_at), 'YYYY-MM') = m.month
+                AND u.deleted_at IS NULL
+            GROUP BY m.month
+            ORDER BY m.month ASC
+        `);
+
+        const [roleCounts, trendRows] = await Promise.all([roleCountsQuery, trendQuery]);
+
+        const byRole: Record<string, number> = {};
+        for (const row of roleCounts) {
+            if (row.role) {
+                byRole[row.role] = row.total;
+            }
+        }
+
+        const newUsersTrend = trendRows.rows.map((row) => ({
+            month: row.month,
+            count: Number(row.count)
+        }));
+
+        return { byRole, newUsersTrend };
     }
 }
 

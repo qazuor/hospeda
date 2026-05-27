@@ -302,3 +302,32 @@ export const UserStatsSchema = z.object({
     newUsersThisMonth: z.number().int().min(0).default(0),
     averageSessionDuration: z.number().min(0).optional()
 });
+
+// ============================================================================
+// ADMIN DASHBOARD STATS SCHEMAS (SPEC-155 T-012)
+// ============================================================================
+
+/**
+ * A single bucket in the new-users trend series.
+ */
+export const UserNewUsersTrendItemSchema = z.object({
+    /** ISO month string in YYYY-MM format (e.g. "2024-03") */
+    month: z.string().regex(/^\d{4}-\d{2}$/, 'month must be in YYYY-MM format'),
+    /** Number of new users registered in that month */
+    count: z.number().int().min(0)
+});
+
+/**
+ * Response schema for `GET /api/v1/admin/users/stats`.
+ *
+ * - `byRole`: count of users grouped by role (keys are role enum values).
+ * - `newUsersTrend`: array of monthly buckets covering the last 12 months,
+ *   ordered oldest → newest, each with a `month` (YYYY-MM) and `count`.
+ */
+export const UserAdminStatsSchema = z.object({
+    byRole: z.record(z.string(), z.number().int().min(0)),
+    newUsersTrend: z.array(UserNewUsersTrendItemSchema)
+});
+
+export type UserNewUsersTrendItem = z.infer<typeof UserNewUsersTrendItemSchema>;
+export type UserAdminStats = z.infer<typeof UserAdminStatsSchema>;
