@@ -92,7 +92,7 @@ function TestWrapper({ children }: { readonly children: ReactNode }) {
 function makeWidget(overrides: Partial<Widget> = {}): Widget {
     return {
         id: 'test-status',
-        type: 'kpi', // WidgetTypeSchema does not include 'status'; 'kpi' is the closest valid type for test purposes
+        type: 'status',
         label: { es: 'Estado del sistema', en: 'System status', pt: 'Estado do sistema' },
         scope: 'all',
         onMissing: 'disable',

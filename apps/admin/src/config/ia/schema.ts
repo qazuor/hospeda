@@ -525,6 +525,7 @@ export type WidgetScope = z.infer<typeof WidgetScopeSchema>;
  * - `'map'`       — geographic visualisation.
  * - `'calendar'`  — date-based visualisation (events, publishing schedule).
  * - `'checklist'` — completeness checklist (HOST/EDITOR profile/listing health).
+ * - `'status'`    — health/badge-style status card (system health, subscription status).
  *
  * @example
  * ```ts
@@ -540,7 +541,8 @@ export const WidgetTypeSchema = z.enum([
     'shortcut',
     'map',
     'calendar',
-    'checklist'
+    'checklist',
+    'status'
 ]);
 
 /**
