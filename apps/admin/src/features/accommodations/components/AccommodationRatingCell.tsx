@@ -132,7 +132,7 @@ export const AccommodationRatingCell = ({ row }: { readonly row: Accommodation }
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-1 rounded font-medium text-foreground hover:underline"
+                className="inline-flex cursor-pointer items-center gap-1 rounded font-medium text-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-primary"
                 aria-label={t('admin-entities.columns.rating')}
             >
                 <StarIcon
