@@ -53,7 +53,13 @@ import { Badge } from '@/components/ui-wrapped/Badge';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { useQuery } from '@tanstack/react-query';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // STATUS DATA SHAPE
@@ -235,32 +241,56 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
         return (
-            <WidgetUnavailable
-                variant="status"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="status"
+                dataTestId="status-widget"
+            >
+                <WidgetUnavailableBody variant="status" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <WidgetSkeleton variant="status" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="status"
+                dataTestId="status-widget"
+            >
+                <WidgetSkeletonBody variant="status" />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
-            <WidgetError
-                variant="status"
+            <WidgetCard
                 label={displayLabel}
-                onRetry={() => void refetch()}
-            />
+                variant="status"
+                dataTestId="status-widget"
+            >
+                <WidgetErrorBody
+                    variant="status"
+                    onRetry={() => void refetch()}
+                />
+            </WidgetCard>
         );
     }
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty variant="status" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="status"
+                dataTestId="status-widget"
+            >
+                <WidgetEmptyBody variant="status" />
+            </WidgetCard>
+        );
     }
 
     // -- 8. Data — narrow to StatusData shape --------------------------------
@@ -269,26 +299,27 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
     // Defensive guard: if the resolver returned an unexpected shape (e.g. an
     // object without `status`, or a non-object), fall back to the empty state.
     if (!statusData || typeof statusData !== 'object' || typeof statusData.status !== 'string') {
-        return <WidgetEmpty variant="status" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="status"
+                dataTestId="status-widget"
+            >
+                <WidgetEmptyBody variant="status" />
+            </WidgetCard>
+        );
     }
 
-    const variant = resolveVariant(statusData.status, config.variantMap);
+    const statusVariant = resolveVariant(statusData.status, config.variantMap);
     const badgeLabel = statusData.label ?? capitalize(statusData.status);
 
     return (
-        <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="status-widget"
-            aria-label={`${displayLabel}: ${badgeLabel}`}
+        <WidgetCard
+            label={displayLabel}
+            variant="status"
+            dataTestId="status-widget"
+            ariaLabel={`${displayLabel}: ${badgeLabel}`}
         >
-            {/* Header: label */}
-            <span
-                className="text-muted-foreground text-sm"
-                data-testid="status-label"
-            >
-                {displayLabel}
-            </span>
-
             {/* Status badge row */}
             <div
                 className="flex items-center gap-2"
@@ -296,16 +327,16 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
             >
                 {/* Indicator dot */}
                 <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT_CLASSES[variant]}`}
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT_CLASSES[statusVariant]}`}
                     data-testid="status-indicator-dot"
                     aria-hidden="true"
                 />
 
                 {/* Badge */}
                 <Badge
-                    className={VARIANT_CLASSES[variant]}
+                    className={VARIANT_CLASSES[statusVariant]}
                     data-testid="status-badge"
-                    data-variant={variant}
+                    data-variant={statusVariant}
                     aria-label={`Status: ${badgeLabel}`}
                 >
                     {badgeLabel}
@@ -321,7 +352,7 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                     {statusData.description}
                 </p>
             )}
-        </div>
+        </WidgetCard>
     );
 }
 

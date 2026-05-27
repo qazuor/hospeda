@@ -541,7 +541,8 @@ describe('resolver → widget integration (shape contract)', () => {
                 </TestWrapper>
             );
             expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
-            expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+            // Card shell always present (title always visible)
+            expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
         });
 
         // Non-null values without `value` field → defensive guard → empty state, NOT crash
@@ -562,7 +563,8 @@ describe('resolver → widget integration (shape contract)', () => {
                 );
                 // Defensive guard: typeof kpi.value !== 'number' → empty state, not crash
                 expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
-                expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
             });
         }
     });
@@ -588,12 +590,9 @@ describe('resolver → widget integration (shape contract)', () => {
                         <ChartWidget widget={makeChartWidget('test.source')} />
                     </TestWrapper>
                 );
-                if (data == null) {
-                    expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
-                } else {
-                    expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
-                }
-                expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
+                expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
             });
         }
     });
@@ -620,12 +619,9 @@ describe('resolver → widget integration (shape contract)', () => {
                         <StatusWidget widget={makeStatusWidget('test.source', variantMap)} />
                     </TestWrapper>
                 );
-                if (data == null) {
-                    expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
-                } else {
-                    expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
-                }
-                expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+                expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('status-widget')).toBeInTheDocument();
             });
         }
     });
@@ -650,7 +646,8 @@ describe('resolver → widget integration (shape contract)', () => {
                     </TestWrapper>
                 );
                 expect(await screen.findByTestId('list-widget-empty')).toBeInTheDocument();
-                expect(screen.queryByTestId('list-widget')).not.toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('list-widget')).toBeInTheDocument();
             });
         }
     });
