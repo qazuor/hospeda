@@ -26,6 +26,7 @@ import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
+import { isGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
 import { getQZPayBilling } from './billing';
 
@@ -382,9 +383,31 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
         const billingCustomerId = c.get('billingCustomerId');
 
         if (!billingCustomerId) {
-            // No billing customer - set empty entitlements
-            c.set('userEntitlements', new Set<EntitlementKey>());
-            c.set('userLimits', new Map<LimitKey, number>());
+            // No billing customer row yet. This is NOT "no entitlements": every
+            // authenticated user is entitled to at least the tourist-free
+            // baseline (HOST actors → owner-basico draft defaults), exactly like
+            // the no-active-subscription branch inside loadEntitlements. The
+            // customer row is created by the Better Auth signup databaseHook,
+            // which is non-blocking — if it has not run yet or failed, we must
+            // still grant the role-appropriate defaults instead of locking the
+            // user out of features every authenticated user should have (e.g.
+            // saving favorites). Guests get nothing. (SPEC-143 smoke F-B1)
+            const actor = c.get('actor');
+
+            if (!actor || isGuestActor(actor) || !actor.id) {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                c.set('userLimits', new Map<LimitKey, number>());
+                c.set('billingLoadFailed', false);
+                await next();
+                return;
+            }
+
+            const fallback =
+                (actor.role as RoleEnum | undefined) === RoleEnum.HOST
+                    ? buildHostDraftDefaultsResult()
+                    : buildDefaultEntitlementsResult();
+            c.set('userEntitlements', fallback.entitlements);
+            c.set('userLimits', fallback.limits);
             c.set('billingLoadFailed', false);
             await next();
             return;
