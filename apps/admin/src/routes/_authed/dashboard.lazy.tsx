@@ -4,13 +4,12 @@
  * This file contains the heavy UI components that are loaded on demand.
  * The route configuration is in dashboard.tsx.
  *
- * ## Migration note (T-035)
+ * ## Migration note (T-035 → T-037)
  *
  * The previous hard-coded KPI grid driven by `useDashboardStats` has been
- * replaced with the config-driven {@link DashboardRenderer}.
- * `useDashboardStats` is intentionally kept alive in
- * `@/features/dashboard/hooks/useDashboardStats` until T-036 (parity audit)
- * and T-037 (hook deletion) are complete.
+ * replaced with the config-driven {@link DashboardRenderer}. The old
+ * `useDashboardStats` hook was deleted in T-037 after the T-036 parity audit
+ * confirmed no regression in the 5 shared entity KPIs (users moved to Card G).
  *
  * The "Actualizar" refresh button is now owned by DashboardRenderer →
  * DashboardGrid → RefreshButton.  The page no longer needs a separate
