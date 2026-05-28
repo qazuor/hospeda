@@ -530,6 +530,18 @@
             "base": "staging",
             "createdAt": "2026-05-26T00:00:00.000Z",
             "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only. | PR #1269 open to staging. 39/42 done; T-008 (local db push) + T-013 (CI integ) + T-041 e2e gated."
+        },
+        {
+            "specId": "SPEC-164",
+            "title": "Admin Billing Access — SUPER_ADMIN-Only",
+            "status": "in-progress",
+            "progress": "8/8",
+            "path": "SPEC-164-admin-billing-super-only",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-164-admin-billing-super-only",
+            "branch": "spec/SPEC-164-admin-billing-super-only",
+            "base": "staging",
+            "createdAt": "2026-05-27T00:00:00.000Z",
+            "note": "8 atomic tasks across 5 phases (avg complexity 2.1). Extracted from SPEC-155 T-002. WIDE revoke (19 perms) + mainMenu hide + onMissing:'hide'/re-gate leaks + 14-page beforeLoad guards + seed/integration/degradation tests. OQ-1=WIDE, OQ-2=Option B (both resolved). Renderer-wiring confirmed: comercialSidebar renders on direct /billing/* URL regardless of mainMenu, so T-005 is strictly required. HOST self-billing (protected tier) verified unaffected."
         }
     ],
     "standalone": {
