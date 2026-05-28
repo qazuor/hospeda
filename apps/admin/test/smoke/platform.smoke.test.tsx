@@ -1,7 +1,7 @@
 /**
- * Smoke tests for Settings module routes.
+ * Smoke tests for the platform admin module routes.
  *
- * Covers critical settings and SEO settings. Tag management lives at
+ * Covers critical settings and SEO settings under /platform/*. Tag management lives at
  * `/tags/*` per SPEC-086 and is covered by separate smoke tests.
  *
  * Verifies that each page renders without crashing.
@@ -53,11 +53,11 @@ vi.mock('@tanstack/react-router', () => ({
 
 // Import route modules AFTER mocks are set up
 
+import { Route as SeoSettingsRoute } from '@/routes/_authed/platform/configuration/seo';
 // Settings pages
 import { Route as CriticalSettingsRoute } from '@/routes/_authed/platform/critical/index';
-import { Route as SeoSettingsRoute } from '@/routes/_authed/settings/seo';
 
-describe('Settings smoke tests', () => {
+describe('Platform smoke tests', () => {
     // --- Critical & SEO ---
 
     it('renders critical settings page without crashing', async () => {

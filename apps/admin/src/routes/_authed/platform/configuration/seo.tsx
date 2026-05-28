@@ -9,7 +9,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
-export const Route = createFileRoute('/_authed/settings/seo')({
+export const Route = createFileRoute('/_authed/platform/configuration/seo')({
     component: SeoSettingsPage
 });
 

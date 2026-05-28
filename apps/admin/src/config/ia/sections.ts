@@ -112,8 +112,8 @@ export const sections: Record<string, Section> = {
         id: 'plataforma',
         label: { es: 'Plataforma', en: 'Platform', pt: 'Plataforma' },
         icon: 'SettingsIcon',
-        route: '/settings/seo',
-        defaultRoute: '/settings/seo',
+        route: '/platform/configuration/seo',
+        defaultRoute: '/platform/configuration/seo',
         sidebar: 'plataformaSidebar'
     },
 

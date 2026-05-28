@@ -680,7 +680,7 @@ const plataformaSidebar: SidebarInput = {
                     id: 'seo',
                     label: { es: 'SEO defaults', en: 'SEO defaults', pt: 'SEO padrão' },
                     icon: 'SearchIcon',
-                    route: '/settings/seo',
+                    route: '/platform/configuration/seo',
                     permissions: ['SEO_MANAGE']
                 },
                 {

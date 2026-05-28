@@ -215,7 +215,7 @@ export const menuTree: readonly MenuItem[] = [
             },
             {
                 titleKey: 'admin-menu.admin.seo',
-                to: '/settings/seo',
+                to: '/platform/configuration/seo',
                 permission: PermissionEnum.SEO_MANAGE
             },
             {
