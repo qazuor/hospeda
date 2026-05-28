@@ -59,6 +59,7 @@ import {
     warning
 } from '../tokens/colors.js';
 import { eventCategoryTokens } from '../tokens/event-categories.js';
+import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase } from '../tokens/radius.js';
 import { fontFamily } from '../tokens/typography.js';
 import type { Theme } from './types.js';
@@ -165,5 +166,8 @@ export const adminLight: Theme = {
     // Per-event-category tokens (same source constant as web), each referencing
     // its base palette's shade-500 primitive so the category badge renders with
     // the SAME hue in admin as in web across light and dark.
-    ...eventCategoryTokens
+    ...eventCategoryTokens,
+    // Per-post-category tokens (same source constant as web), each referencing
+    // an existing base palette per the prior badge colors.
+    ...postCategoryTokens
 };

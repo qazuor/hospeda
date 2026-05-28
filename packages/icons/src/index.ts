@@ -53,6 +53,21 @@ export type {
     EventCategoryVisual
 } from './domain/event-category';
 
+// Post-category → icon + color tokens. Single source of truth shared by
+// apps/web and apps/admin.
+export {
+    POST_CATEGORY_FALLBACK_VISUAL,
+    POST_CATEGORY_VISUALS,
+    getPostCategoryColorScheme,
+    getPostCategoryIcon,
+    getPostCategoryVisual
+} from './domain/post-category';
+export type {
+    PostCategoryColorScheme,
+    PostCategoryColorVariant,
+    PostCategoryVisual
+} from './domain/post-category';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';

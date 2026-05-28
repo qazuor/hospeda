@@ -55,6 +55,7 @@ import {
 import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { layoutChrome, layoutContainer } from '../tokens/layout.js';
 import { webDuration, webEasing } from '../tokens/motion.js';
+import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../tokens/radius.js';
 import { shadowSemantic } from '../tokens/shadows.js';
 import { semanticSpacing, spacing } from '../tokens/spacing.js';
@@ -316,5 +317,8 @@ export const webLight: Theme = {
     // Per-event-category tokens (same source constant as admin), each
     // referencing an existing base palette's shade-500 primitive so a category
     // renders with the SAME hue in both apps across light and dark.
-    ...eventCategoryTokens
+    ...eventCategoryTokens,
+    // Per-post-category tokens — same layered model as the event-category and
+    // accommodation-type ones; declared once and shared with admin.
+    ...postCategoryTokens
 };

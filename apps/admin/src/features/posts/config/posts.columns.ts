@@ -7,6 +7,7 @@ import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/typ
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
+import { PostCategoryBadge } from '../components/PostCategoryBadge';
 import { PostSponsorshipCell } from '../components/PostSponsorshipCell';
 import { RelatedEntitiesCell } from '../components/RelatedEntitiesCell';
 import { useUpdatePostMutation } from '../hooks/usePostQuery';
@@ -93,99 +94,8 @@ export const createPostsColumns = (t: ColumnTFunction): readonly ColumnConfig<Po
         header: t('admin-entities.columns.category'),
         accessorKey: 'category',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'EVENTS',
-                label: t('admin-entities.types.postCategory.events'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'CULTURE',
-                label: t('admin-entities.types.postCategory.culture'),
-                color: BadgeColor.RED
-            },
-            {
-                value: 'GASTRONOMY',
-                label: t('admin-entities.types.postCategory.gastronomy'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'NATURE',
-                label: t('admin-entities.types.postCategory.nature'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'TOURISM',
-                label: t('admin-entities.types.postCategory.tourism'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'GENERAL',
-                label: t('admin-entities.types.postCategory.general'),
-                color: BadgeColor.PINK
-            },
-            {
-                value: 'SPORT',
-                label: t('admin-entities.types.postCategory.sport'),
-                color: BadgeColor.INDIGO
-            },
-            {
-                value: 'CARNIVAL',
-                label: t('admin-entities.types.postCategory.carnival'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'NIGHTLIFE',
-                label: t('admin-entities.types.postCategory.nightlife'),
-                color: BadgeColor.TEAL
-            },
-            {
-                value: 'HISTORY',
-                label: t('admin-entities.types.postCategory.history'),
-                color: BadgeColor.ORANGE
-            },
-            {
-                value: 'TRADITIONS',
-                label: t('admin-entities.types.postCategory.traditions'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'WELLNESS',
-                label: t('admin-entities.types.postCategory.wellness'),
-                color: BadgeColor.SLATE
-            },
-            {
-                value: 'FAMILY',
-                label: t('admin-entities.types.postCategory.family'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'TIPS',
-                label: t('admin-entities.types.postCategory.tips'),
-                color: BadgeColor.RED
-            },
-            {
-                value: 'ART',
-                label: t('admin-entities.types.postCategory.art'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'BEACH',
-                label: t('admin-entities.types.postCategory.beach'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'RURAL',
-                label: t('admin-entities.types.postCategory.rural'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'FESTIVALS',
-                label: t('admin-entities.types.postCategory.festivals'),
-                color: BadgeColor.PINK
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(PostCategoryBadge, { row })
     },
     {
         id: 'author',
