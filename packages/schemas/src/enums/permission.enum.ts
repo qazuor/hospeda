@@ -197,6 +197,9 @@ export enum PermissionEnum {
     POST_SPONSOR_MANAGE = 'post.sponsor.manage', // Allows managing post sponsors.
     POST_TAGS_MANAGE = 'post.tags.manage', // Allows managing tags for posts.
     POST_FEATURED_TOGGLE = 'post.featured.toggle', // Allows toggling featured status of a post.
+    POST_VISIBILITY_CHANGE = 'post.visibility.change', // Allows changing post visibility.
+    POST_LIFECYCLE_CHANGE = 'post.lifecycle.change', // Allows changing post lifecycle state.
+    POST_MODERATION_CHANGE = 'post.moderation.change', // Allows changing post moderation state.
     POST_SLUG_MANAGE = 'post.slug.manage', // Allows managing post slugs.
     POST_COMMENT_CREATE = 'post.comment.create', // Allows creating comments on posts.
     POST_VIEW_PRIVATE = 'post.view.private', // Allows viewing private posts.
