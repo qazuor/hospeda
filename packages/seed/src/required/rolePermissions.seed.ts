@@ -109,6 +109,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.EVENT_LOCATION_MANAGE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
 
         // POST: All permissions
         PermissionEnum.POST_CREATE,
@@ -119,6 +121,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SOFT_DELETE_VIEW,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_VISIBILITY_CHANGE,
@@ -406,6 +409,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.EVENT_LOCATION_MANAGE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
 
         // POST: Most permissions (no hard delete)
         PermissionEnum.POST_CREATE,
@@ -415,6 +420,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SOFT_DELETE_VIEW,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_VISIBILITY_CHANGE,
@@ -632,7 +638,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_PUBLISH_TOGGLE,
         PermissionEnum.EVENT_FEATURED_TOGGLE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
@@ -643,6 +651,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_UPDATE,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_SLUG_MANAGE,

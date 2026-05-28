@@ -523,6 +523,7 @@ export enum PermissionEnum {
     EVENT_LOCATION_VIEW = 'eventLocation.view', // Allows viewing event location information.
     EVENT_LOCATION_RESTORE = 'eventLocation.restore', // Allows restoring a deleted event location.
     EVENT_LOCATION_HARD_DELETE = 'eventLocation.hardDelete', // Allows permanently deleting an event location.
+    EVENT_LOCATION_LIFECYCLE_CHANGE = 'eventLocation.lifecycle.change', // Allows changing event location lifecycle state.
 
     // EVENT_ORGANIZER: Permissions related to event organizer catalog management
     EVENT_ORGANIZER_CREATE = 'eventOrganizer.create', // Allows creating a new event organizer.
@@ -531,6 +532,7 @@ export enum PermissionEnum {
     EVENT_ORGANIZER_VIEW = 'eventOrganizer.view', // Allows viewing event organizer information.
     EVENT_ORGANIZER_RESTORE = 'eventOrganizer.restore', // Allows restoring a deleted event organizer.
     EVENT_ORGANIZER_HARD_DELETE = 'eventOrganizer.hardDelete', // Allows permanently deleting an event organizer.
+    EVENT_ORGANIZER_LIFECYCLE_CHANGE = 'eventOrganizer.lifecycle.change', // Allows changing event organizer lifecycle state.
 
     // EXCHANGE_RATE: Permissions related to exchange rate management
     EXCHANGE_RATE_VIEW = 'exchange_rate.view', // Allows viewing exchange rates.
@@ -595,6 +597,7 @@ export enum PermissionEnum {
     POST_SPONSOR_DELETE = 'postSponsor.delete', // Allows deleting a post sponsor (soft delete).
     POST_SPONSOR_VIEW = 'postSponsor.view', // Allows viewing post sponsor information.
     POST_SPONSOR_RESTORE = 'postSponsor.restore', // Allows restoring a deleted post sponsor.
+    POST_SPONSOR_LIFECYCLE_CHANGE = 'postSponsor.lifecycle.change', // Allows changing post sponsor lifecycle state.
     POST_SPONSOR_HARD_DELETE = 'postSponsor.hardDelete', // Allows permanently deleting a post sponsor.
 
     // POST_SPONSORSHIP: Permissions related to post sponsorship contract management
