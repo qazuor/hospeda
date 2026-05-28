@@ -34,6 +34,10 @@ export type {
     AccommodationTypeVisual
 } from './domain/accommodation-type';
 
+// Attraction icon slug (Material Symbols) → Phosphor component. Single source of
+// truth shared by apps/web and apps/admin.
+export { getAttractionIcon } from './domain/attraction-icon';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';
