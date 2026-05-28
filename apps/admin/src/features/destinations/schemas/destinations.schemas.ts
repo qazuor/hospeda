@@ -15,16 +15,25 @@ import {
     ModerationStatusEnumSchema,
     VisibilityEnumSchema
 } from '@repo/schemas';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 /**
  * Admin Destination List Item Schema
- * Extends base with status fields not included in public list schema
+ * Extends base with status fields not included in public list schema, plus the
+ * attraction names projected by the admin list endpoint (string[]).
  */
 export const DestinationListItemSchema = BaseDestinationListItemSchema.extend({
     visibility: VisibilityEnumSchema.optional(),
     lifecycleState: LifecycleStatusEnumSchema.optional(),
-    moderationState: ModerationStatusEnumSchema.optional()
+    moderationState: ModerationStatusEnumSchema.optional(),
+    attractions: z
+        .array(
+            z.object({
+                name: z.string(),
+                icon: z.string().nullish()
+            })
+        )
+        .optional()
 });
 
 /**

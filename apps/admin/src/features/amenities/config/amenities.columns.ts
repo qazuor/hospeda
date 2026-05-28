@@ -1,12 +1,38 @@
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import { IconNameCell } from '@/components/entity-list/IconNameCell';
+import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
+import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { EditIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
-import { useDeleteAmenityMutation } from '../hooks/useAmenityQuery';
+import { AmenityTypeBadge } from '../components/AmenityTypeBadge';
+import { useDeleteAmenityMutation, useUpdateAmenityMutation } from '../hooks/useAmenityQuery';
 import type { Amenity } from '../schemas/amenities.schemas';
+
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'DRAFT',
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: 'ACTIVE',
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'ARCHIVED',
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
 
 export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfig<Amenity>[] => [
     {
@@ -33,39 +59,8 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.type'),
         accessorKey: 'type',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'BASIC',
-                label: t('admin-entities.types.amenity.basic'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'COMFORT',
-                label: t('admin-entities.types.amenity.comfort'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'LUXURY',
-                label: t('admin-entities.types.amenity.luxury'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'TECHNOLOGY',
-                label: t('admin-entities.types.amenity.technology'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'RECREATION',
-                label: t('admin-entities.types.amenity.recreation'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'BUSINESS',
-                label: t('admin-entities.types.amenity.business'),
-                color: BadgeColor.ORANGE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AmenityTypeBadge, { row })
     },
     {
         id: 'description',
@@ -79,7 +74,8 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.icon'),
         accessorKey: 'icon',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(IconNameCell, { iconName: row.icon })
     },
     {
         id: 'isBuiltin',
@@ -93,20 +89,30 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.featured'),
         accessorKey: 'isFeatured',
         enableSorting: true,
-        columnType: ColumnType.BOOLEAN
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(InlineFeaturedCell<Partial<Amenity>>, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.amenity.singular',
+                checked: row.isFeatured ?? false,
+                permission: PermissionEnum.AMENITY_FEATURED_TOGGLE,
+                useUpdateMutation: useUpdateAmenityMutation
+            })
     },
     {
         id: 'displayWeight',
         header: t('admin-entities.columns.weight'),
         accessorKey: 'displayWeight',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(WeightBarCell, { value: row.displayWeight })
     },
     {
         id: 'accommodationCount',
         header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER
     },
     {
@@ -114,24 +120,21 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.status'),
         accessorKey: 'lifecycleState',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'DRAFT',
-                label: t('admin-entities.states.lifecycle.draft'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'ACTIVE',
-                label: t('admin-entities.states.lifecycle.active'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'ARCHIVED',
-                label: t('admin-entities.states.lifecycle.archived'),
-                color: BadgeColor.ORANGE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(InlineStateSelectCell<Partial<Amenity>>, {
+                entityId: row.id,
+                entityName: row.name,
+                entityLabelKey: 'admin-entities.entities.amenity.singular',
+                field: 'lifecycleState',
+                currentValue: row.lifecycleState,
+                successMessageKey: 'admin-entities.messages.stateChanged',
+                options: LIFECYCLE_OPTIONS(t),
+                permission: PermissionEnum.AMENITY_LIFECYCLE_CHANGE,
+                useUpdateMutation: useUpdateAmenityMutation,
+                confirmValues: ['ARCHIVED'],
+                confirmCopyKey: 'archive'
+            })
     },
     {
         id: 'createdAt',

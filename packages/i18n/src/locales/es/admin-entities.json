@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Paisaje",
+        "attractions": "Atracciones",
+        "accessibility": "Accesibilidad",
+        "safety": "Seguridad",
+        "cleanliness": "Limpieza",
+        "hospitality": "Hospitalidad",
+        "culturalOffer": "Oferta cultural",
+        "gastronomy": "Gastronomía",
+        "affordability": "Precio accesible",
+        "nightlife": "Vida nocturna",
+        "infrastructure": "Infraestructura",
+        "environmentalCare": "Cuidado ambiental",
+        "wifiAvailability": "Disponibilidad de WiFi",
+        "shopping": "Compras",
+        "beaches": "Playas",
+        "greenSpaces": "Espacios verdes",
+        "localEvents": "Eventos locales",
+        "weatherSatisfaction": "Clima"
+    },
     "entities": {
         "accommodation": {
             "singular": "Alojamiento",
@@ -137,6 +157,7 @@
         "eventsCount": "Eventos",
         "destinationsCount": "Destinos",
         "postsCount": "Publicaciones",
+        "relatedEntities": "Relacionados",
         "relatedAccommodation": "Rel. Alojamiento",
         "relatedDestination": "Rel. Destino",
         "relatedEvent": "Rel. Evento",
@@ -202,6 +223,12 @@
             "title": "Rechazar {entity}",
             "message": "¿Estás seguro de que deseas rechazar este {entity}?",
             "confirm": "Sí, rechazar",
+            "cancel": "Cancelar"
+        },
+        "roleChange": {
+            "title": "Cambiar rol de {entity}",
+            "message": "¿Confirmás cambiar el rol de este {entity}? Es una acción sensible que afecta permisos críticos.",
+            "confirm": "Sí, cambiar rol",
             "cancel": "Cancelar"
         },
         "restore": {
@@ -336,12 +363,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Básica",
-            "comfort": "Confort",
-            "luxury": "Lujo",
-            "technology": "Tecnología",
-            "recreation": "Recreación",
-            "business": "Negocios"
+            "climateControl": "Climatización",
+            "connectivity": "Conectividad",
+            "entertainment": "Entretenimiento",
+            "kitchen": "Cocina",
+            "bedAndBath": "Dormitorio y baño",
+            "outdoors": "Exteriores",
+            "accessibility": "Accesibilidad",
+            "services": "Servicios",
+            "safety": "Seguridad",
+            "familyFriendly": "Apto familia",
+            "workFriendly": "Apto trabajo",
+            "generalAppliances": "Electrodomésticos"
         },
         "event": {
             "concert": "Concierto",

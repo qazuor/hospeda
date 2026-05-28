@@ -62,7 +62,8 @@ export const EventUpdateInputSchema = EventSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    moderationState: true,
+    // moderationState is editable on update so admins can change it inline from
+    // the events list (gated by EVENT_MODERATION_CHANGE on the frontend).
     tags: true
 })
     .partial()

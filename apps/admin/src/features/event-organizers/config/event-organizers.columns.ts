@@ -1,7 +1,40 @@
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
+import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
+import { SocialNetworksCell } from '@/components/entity-list/SocialNetworksCell';
+import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { EditIcon } from '@repo/icons';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { Fragment, createElement } from 'react';
+import {
+    useDeleteEventOrganizerMutation,
+    useUpdateEventOrganizerMutation
+} from '../hooks/useEventOrganizerQuery';
 import type { EventOrganizer } from '../schemas/event-organizers.schemas';
+
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: LifecycleStatusEnum.DRAFT,
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: LifecycleStatusEnum.ACTIVE,
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: LifecycleStatusEnum.ARCHIVED,
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
 
 /**
  * Creates column configuration for event organizers list
@@ -35,7 +68,11 @@ export const createEventOrganizersColumns = (
             header: t('admin-entities.columns.email'),
             accessorKey: 'contactInfo.personalEmail',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(MailLinkCell, {
+                    email: row.contactInfo?.personalEmail ?? row.contactInfo?.workEmail
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
@@ -44,7 +81,9 @@ export const createEventOrganizersColumns = (
             header: t('admin-entities.columns.phone'),
             accessorKey: 'contactInfo.mobilePhone',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(WhatsAppLinkCell, { phone: row.contactInfo?.mobilePhone }),
             startVisibleOnTable: false,
             startVisibleOnGrid: false
         },
@@ -70,47 +109,31 @@ export const createEventOrganizersColumns = (
             accessorKey: 'socialNetworks',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) => {
-                const social = row.socialNetworks;
-                if (!social) return null;
-
-                const networks = [];
-                if (social.facebook) networks.push('Facebook');
-                if (social.twitter) networks.push('Twitter');
-                if (social.instagram) networks.push('Instagram');
-                if (social.linkedIn) networks.push('LinkedIn');
-                if (social.youtube) networks.push('YouTube');
-
-                return networks.length > 0
-                    ? networks.join(', ')
-                    : t('admin-common.entityPage.none');
-            },
-            startVisibleOnTable: false,
-            startVisibleOnGrid: false
+            widgetRenderer: (row) =>
+                createElement(SocialNetworksCell, { social: row.socialNetworks }),
+            startVisibleOnTable: true,
+            startVisibleOnGrid: true
         },
         {
             id: 'lifecycleState',
             header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: LifecycleStatusEnum.ACTIVE,
-                    label: t('admin-entities.states.lifecycle.active'),
-                    color: BadgeColor.SUCCESS
-                },
-                {
-                    value: LifecycleStatusEnum.DRAFT,
-                    label: t('admin-entities.states.lifecycle.draft'),
-                    color: BadgeColor.WARNING
-                },
-                {
-                    value: LifecycleStatusEnum.ARCHIVED,
-                    label: t('admin-entities.states.lifecycle.archived'),
-                    color: BadgeColor.SECONDARY
-                }
-            ],
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell<Partial<EventOrganizer>>, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.eventOrganizer.singular',
+                    field: 'lifecycleState',
+                    currentValue: row.lifecycleState,
+                    successMessageKey: 'admin-entities.messages.stateChanged',
+                    options: LIFECYCLE_OPTIONS(t),
+                    permission: PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
+                    useUpdateMutation: useUpdateEventOrganizerMutation,
+                    confirmValues: ['ARCHIVED'],
+                    confirmCopyKey: 'archive'
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
@@ -122,5 +145,37 @@ export const createEventOrganizersColumns = (
             columnType: ColumnType.TIME_AGO,
             startVisibleOnTable: true,
             startVisibleOnGrid: false
+        },
+        {
+            id: 'actions',
+            header: t('admin-entities.columns.actions'),
+            accessorKey: 'id',
+            enableSorting: false,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(
+                    Fragment,
+                    null,
+                    createElement(
+                        Link,
+                        {
+                            to: '/events/organizers/$id/edit' as never,
+                            params: { id: row.id } as never,
+                            className:
+                                'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+                            'aria-label': t('admin-entities.actions.edit')
+                        } as never,
+                        createElement(EditIcon, { size: 16 })
+                    ),
+                    createElement(DeleteRowButton, {
+                        entityId: row.id,
+                        entityName: row.name,
+                        entityLabel: t('admin-entities.entities.eventOrganizer.singular'),
+                        permission: PermissionEnum.EVENT_ORGANIZER_DELETE,
+                        useDeleteMutation: useDeleteEventOrganizerMutation,
+                        variant: 'icon',
+                        entityGender: 'm'
+                    })
+                )
         }
     ] as const;

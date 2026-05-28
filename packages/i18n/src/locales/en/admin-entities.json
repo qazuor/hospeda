@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Landscape",
+        "attractions": "Attractions",
+        "accessibility": "Accessibility",
+        "safety": "Safety",
+        "cleanliness": "Cleanliness",
+        "hospitality": "Hospitality",
+        "culturalOffer": "Cultural offer",
+        "gastronomy": "Gastronomy",
+        "affordability": "Affordability",
+        "nightlife": "Nightlife",
+        "infrastructure": "Infrastructure",
+        "environmentalCare": "Environmental care",
+        "wifiAvailability": "WiFi availability",
+        "shopping": "Shopping",
+        "beaches": "Beaches",
+        "greenSpaces": "Green spaces",
+        "localEvents": "Local events",
+        "weatherSatisfaction": "Weather"
+    },
     "entities": {
         "accommodation": {
             "singular": "Accommodation",
@@ -137,6 +157,7 @@
         "eventsCount": "Events",
         "destinationsCount": "Destinations",
         "postsCount": "Posts",
+        "relatedEntities": "Related",
         "relatedAccommodation": "Rel. Accommodation",
         "relatedDestination": "Rel. Destination",
         "relatedEvent": "Rel. Event",
@@ -196,6 +217,12 @@
             "title": "Archive {entity}",
             "message": "Are you sure you want to archive this {entity}?",
             "confirm": "Yes, archive",
+            "cancel": "Cancel"
+        },
+        "roleChange": {
+            "title": "Change role of {entity}",
+            "message": "Are you sure you want to change the role of this {entity}? This is a sensitive action that affects critical permissions.",
+            "confirm": "Yes, change role",
             "cancel": "Cancel"
         },
         "reject": {
@@ -336,12 +363,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Basic",
-            "comfort": "Comfort",
-            "luxury": "Luxury",
-            "technology": "Technology",
-            "recreation": "Recreation",
-            "business": "Business"
+            "climateControl": "Climate control",
+            "connectivity": "Connectivity",
+            "entertainment": "Entertainment",
+            "kitchen": "Kitchen",
+            "bedAndBath": "Bedroom & bath",
+            "outdoors": "Outdoors",
+            "accessibility": "Accessibility",
+            "services": "Services",
+            "safety": "Safety",
+            "familyFriendly": "Family friendly",
+            "workFriendly": "Work friendly",
+            "generalAppliances": "Appliances"
         },
         "event": {
             "concert": "Concert",
