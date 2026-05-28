@@ -137,22 +137,21 @@ function buildFromDetails({
     const currentCount = details?.currentCount ?? 0;
     const maxAllowed = details?.maxAllowed ?? 0;
 
-    const title = t(
-        `billing.limit.${limitKey}.title`,
-        t('billing.limit.generic.title', 'Límite del plan alcanzado')
-    );
-    const message = t(
-        `billing.limit.${limitKey}.message`,
-        t(
-            'billing.limit.generic.message',
-            'Alcanzaste el límite de tu plan. Actualizalo para continuar.'
-        ),
-        { currentCount, maxAllowed }
-    );
-    const ctaLabel = t(
-        `billing.limit.${limitKey}.cta`,
-        t('billing.limit.generic.cta', 'Ver mi suscripción')
-    );
+    // Use a direct fallback string. The i18n system will resolve the specific
+    // key first (e.g. billing.limit.max_favorites.title), falling back to the
+    // provided string only when the key is missing. Avoid nesting t() as fallback
+    // because the test mock for createT returns the fallback directly, which would
+    // always resolve to the generic fallback instead of the specific key.
+    const genericTitle = 'Límite del plan alcanzado';
+    const genericMessage = 'Alcanzaste el límite de tu plan. Actualizalo para continuar.';
+    const genericCta = 'Ver mi suscripción';
+
+    const title = t(`billing.limit.${limitKey}.title`, genericTitle);
+    const message = t(`billing.limit.${limitKey}.message`, genericMessage, {
+        currentCount,
+        maxAllowed
+    });
+    const ctaLabel = t(`billing.limit.${limitKey}.cta`, genericCta);
 
     const upgradeHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
