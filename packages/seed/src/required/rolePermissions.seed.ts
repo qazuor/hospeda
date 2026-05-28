@@ -294,7 +294,17 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
-        PermissionEnum.CONVERSATION_DELETE_ANY
+        PermissionEnum.CONVERSATION_DELETE_ANY,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): full set — SUPER_ADMIN owns every gate.
+        PermissionEnum.SETTINGS_GENERAL_VIEW,
+        PermissionEnum.SETTINGS_GENERAL_WRITE,
+        PermissionEnum.MAINTENANCE_MODE_WRITE,
+        PermissionEnum.BILLING_SETTINGS_VIEW,
+        PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.ADMIN]: [
@@ -524,7 +534,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
-        PermissionEnum.CONVERSATION_BLOCK_ANY
+        PermissionEnum.CONVERSATION_BLOCK_ANY,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): ADMIN gets all gates except MAINTENANCE_MODE_WRITE (SUPER_ADMIN-only).
+        PermissionEnum.SETTINGS_GENERAL_VIEW,
+        PermissionEnum.SETTINGS_GENERAL_WRITE,
+        PermissionEnum.BILLING_SETTINGS_VIEW,
+        PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [
@@ -564,7 +583,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Admin panel and APIs
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (CLIENT_MANAGER buys complex tiers per SPEC-143 test users).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.EDITOR]: [
@@ -654,7 +679,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // NEWSLETTER: draft/view only — send stays admin-only (SPEC-155)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
         PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
-        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW
+        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit only.
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.HOST]: [
@@ -757,7 +785,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_REPLY_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
-        PermissionEnum.CONVERSATION_BLOCK_OWN
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
+        // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.USER]: [
@@ -789,7 +823,15 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_MESSAGE_SEND,
 
         // ACCESS: Public API only
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (USER buys tourist tiers + needs checkout flow to upgrade to HOST).
+        // BILLING_VIEW_OWN gates /protected/billing/*; ownership middleware
+        // still enforces per-resource scope.
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.SPONSOR]: [
@@ -812,7 +854,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
 
         // ACCESS: Public API only
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (SPONSOR pays for sponsorship packages — needs /protected/billing/* access).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.GUEST]: [

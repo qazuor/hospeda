@@ -128,3 +128,203 @@ describe('ROLE_PERMISSIONS — SPEC-164 admin billing surface (SUPER_ADMIN-only)
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-156 — Platform Settings V1 role bundle assignments (D1, AC-22..AC-27)
+// ---------------------------------------------------------------------------
+// Literal permission values from packages/schemas/src/enums/permission.enum.ts
+// (SPEC-156 block). Role literals from role.enum.ts.
+
+const HOST = 'HOST' as const;
+const CLIENT_MANAGER = 'CLIENT_MANAGER' as const;
+const SPONSOR = 'SPONSOR' as const;
+const USER = 'USER' as const;
+const GUEST = 'GUEST' as const;
+const SYSTEM = 'SYSTEM' as const;
+
+const SETTINGS_GENERAL_VIEW = 'settings.general.view' as const;
+const SETTINGS_GENERAL_WRITE = 'settings.general.write' as const;
+const MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write' as const;
+const BILLING_SETTINGS_VIEW = 'billing.settings.view' as const;
+const BILLING_SETTINGS_WRITE = 'billing.settings.write' as const;
+const BILLING_VIEW_OWN = 'billing.view.own' as const;
+const SUBSCRIPTION_VIEW_OWN = 'subscription.view.own' as const;
+const USER_UPDATE_SELF = 'user.update.self' as const;
+const BILLING_READ_ALL = 'billing.readAll' as const;
+
+const ALL_SPEC_156_PERMS = [
+    SETTINGS_GENERAL_VIEW,
+    SETTINGS_GENERAL_WRITE,
+    MAINTENANCE_MODE_WRITE,
+    BILLING_SETTINGS_VIEW,
+    BILLING_SETTINGS_WRITE,
+    BILLING_VIEW_OWN,
+    SUBSCRIPTION_VIEW_OWN,
+    USER_UPDATE_SELF
+] as const;
+
+describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
+    type RoleKey = keyof typeof ROLE_PERMISSIONS;
+    const get = (role: string): readonly string[] =>
+        ROLE_PERMISSIONS[role as unknown as RoleKey] as readonly string[];
+
+    const superAdmin = get(SUPER_ADMIN);
+    const admin = get(ADMIN);
+    const host = get(HOST);
+    const editor = get(EDITOR);
+    const clientManager = get(CLIENT_MANAGER);
+    const sponsor = get(SPONSOR);
+    const user = get(USER);
+    const guest = get(GUEST);
+    const system = get(SYSTEM);
+
+    describe('SUPER_ADMIN holds the full set (all 8 new perms)', () => {
+        for (const perm of ALL_SPEC_156_PERMS) {
+            it(`grants "${perm}" to SUPER_ADMIN`, () => {
+                expect(superAdmin).toContain(perm);
+            });
+        }
+    });
+
+    describe('ADMIN holds 7 (no MAINTENANCE_MODE_WRITE — SUPER_ADMIN-only)', () => {
+        const adminExpected = [
+            SETTINGS_GENERAL_VIEW,
+            SETTINGS_GENERAL_WRITE,
+            BILLING_SETTINGS_VIEW,
+            BILLING_SETTINGS_WRITE,
+            BILLING_VIEW_OWN,
+            SUBSCRIPTION_VIEW_OWN,
+            USER_UPDATE_SELF
+        ] as const;
+
+        for (const perm of adminExpected) {
+            it(`grants "${perm}" to ADMIN`, () => {
+                expect(admin).toContain(perm);
+            });
+        }
+
+        it('does NOT grant MAINTENANCE_MODE_WRITE to ADMIN', () => {
+            expect(admin).not.toContain(MAINTENANCE_MODE_WRITE);
+        });
+    });
+
+    describe('HOST has self-billing visibility but NOT admin-tier billing', () => {
+        it('grants BILLING_VIEW_OWN to HOST', () => {
+            expect(host).toContain(BILLING_VIEW_OWN);
+        });
+
+        it('grants SUBSCRIPTION_VIEW_OWN to HOST', () => {
+            expect(host).toContain(SUBSCRIPTION_VIEW_OWN);
+        });
+
+        it('grants USER_UPDATE_SELF to HOST', () => {
+            expect(host).toContain(USER_UPDATE_SELF);
+        });
+
+        it('does NOT grant BILLING_READ_ALL to HOST (admin-tier — kept SPEC-164 boundary)', () => {
+            expect(host).not.toContain(BILLING_READ_ALL);
+        });
+
+        it('does NOT grant MAINTENANCE_MODE_WRITE to HOST', () => {
+            expect(host).not.toContain(MAINTENANCE_MODE_WRITE);
+        });
+
+        it('does NOT grant SETTINGS_GENERAL_WRITE to HOST (admin-only)', () => {
+            expect(host).not.toContain(SETTINGS_GENERAL_WRITE);
+        });
+    });
+
+    describe('USER_UPDATE_SELF granted to all authenticated roles', () => {
+        const authenticatedRoles: Array<readonly [string, readonly string[]]> = [
+            ['SUPER_ADMIN', superAdmin],
+            ['ADMIN', admin],
+            ['HOST', host],
+            ['EDITOR', editor],
+            ['CLIENT_MANAGER', clientManager],
+            ['USER', user],
+            ['SPONSOR', sponsor]
+        ];
+
+        for (const [roleName, perms] of authenticatedRoles) {
+            it(`grants USER_UPDATE_SELF to ${roleName}`, () => {
+                expect(perms).toContain(USER_UPDATE_SELF);
+            });
+        }
+    });
+
+    describe('GUEST and SYSTEM hold none of the new SPEC-156 perms', () => {
+        for (const perm of ALL_SPEC_156_PERMS) {
+            it(`does NOT grant "${perm}" to GUEST`, () => {
+                expect(guest).not.toContain(perm);
+            });
+            it(`does NOT grant "${perm}" to SYSTEM`, () => {
+                expect(system).not.toContain(perm);
+            });
+        }
+    });
+
+    describe('Paying roles also have self-billing access (T-007 expansion)', () => {
+        // USER buys tourist tiers, CLIENT_MANAGER buys complex tiers, SPONSOR
+        // pays for sponsorship packages — all need /protected/billing/* access.
+        // Per the dev test-users matrix (SPEC-143): tourist-free / tourist-plus /
+        // tourist-vip (USER); complex-basico / complex-pro / complex-premium
+        // (CLIENT_MANAGER); sponsor (SPONSOR).
+        const payingRoles: Array<readonly [string, readonly string[]]> = [
+            ['USER', user],
+            ['CLIENT_MANAGER', clientManager],
+            ['SPONSOR', sponsor]
+        ];
+
+        for (const [roleName, perms] of payingRoles) {
+            it(`grants BILLING_VIEW_OWN to ${roleName}`, () => {
+                expect(perms).toContain(BILLING_VIEW_OWN);
+            });
+
+            it(`grants SUBSCRIPTION_VIEW_OWN to ${roleName}`, () => {
+                expect(perms).toContain(SUBSCRIPTION_VIEW_OWN);
+            });
+
+            it(`does NOT grant BILLING_READ_ALL to ${roleName} (admin-tier remains SPEC-164 boundary)`, () => {
+                expect(perms).not.toContain(BILLING_READ_ALL);
+            });
+        }
+    });
+
+    describe('EDITOR (internal role) does NOT receive billing gates', () => {
+        // EDITOR is content moderation, internal, non-paying. Should not be
+        // able to hit /protected/billing/* even with valid auth.
+        it('does NOT grant BILLING_VIEW_OWN to EDITOR', () => {
+            expect(editor).not.toContain(BILLING_VIEW_OWN);
+        });
+
+        it('does NOT grant SUBSCRIPTION_VIEW_OWN to EDITOR', () => {
+            expect(editor).not.toContain(SUBSCRIPTION_VIEW_OWN);
+        });
+    });
+
+    describe('Settings/maintenance gates remain admin-only', () => {
+        const nonAdminRoles: Array<readonly [string, readonly string[]]> = [
+            ['EDITOR', editor],
+            ['CLIENT_MANAGER', clientManager],
+            ['USER', user],
+            ['SPONSOR', sponsor],
+            ['HOST', host]
+        ];
+
+        const adminOnlyGates = [
+            SETTINGS_GENERAL_VIEW,
+            SETTINGS_GENERAL_WRITE,
+            MAINTENANCE_MODE_WRITE,
+            BILLING_SETTINGS_VIEW,
+            BILLING_SETTINGS_WRITE
+        ] as const;
+
+        for (const [roleName, perms] of nonAdminRoles) {
+            for (const perm of adminOnlyGates) {
+                it(`does NOT grant "${perm}" to ${roleName}`, () => {
+                    expect(perms).not.toContain(perm);
+                });
+            }
+        }
+    });
+});
