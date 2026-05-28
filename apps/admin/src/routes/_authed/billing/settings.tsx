@@ -14,19 +14,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
+    type BillingSettings,
     type UpdateBillingSettingsPayload,
     useBillingSettingsQuery,
     useUpdateBillingSettingsMutation
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/settings')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingSettingsPage
 });
 
@@ -45,10 +48,37 @@ const DEFAULT_VALUES = {
     sendSubscriptionCancelledNotification: true
 };
 
+/**
+ * Map the API settings payload to the form's value shape, falling back to the
+ * defaults for any field the server omits. Used as the dirty-tracking baseline
+ * via `form.reset(...)` so the form mounts pristine and only flags dirty on a
+ * real user edit (SPEC-143 smoke F-ADMIN-SETTINGS-DIRTY).
+ */
+function toFormValues(settings: BillingSettings): typeof DEFAULT_VALUES {
+    return {
+        ownerTrialDays: settings.ownerTrialDays ?? DEFAULT_VALUES.ownerTrialDays,
+        complexTrialDays: settings.complexTrialDays ?? DEFAULT_VALUES.complexTrialDays,
+        trialAutoBlock: settings.trialAutoBlock ?? DEFAULT_VALUES.trialAutoBlock,
+        gracePeriodDays: settings.gracePeriodDays ?? DEFAULT_VALUES.gracePeriodDays,
+        currency: settings.currency ?? DEFAULT_VALUES.currency,
+        taxRate: settings.taxRate ?? DEFAULT_VALUES.taxRate,
+        maxPaymentRetries: settings.maxPaymentRetries ?? DEFAULT_VALUES.maxPaymentRetries,
+        retryIntervalHours: settings.retryIntervalHours ?? DEFAULT_VALUES.retryIntervalHours,
+        sendTrialExpiryReminder:
+            settings.sendTrialExpiryReminder ?? DEFAULT_VALUES.sendTrialExpiryReminder,
+        trialExpiryReminderDays:
+            settings.trialExpiryReminderDays ?? DEFAULT_VALUES.trialExpiryReminderDays,
+        sendPaymentFailedNotification:
+            settings.sendPaymentFailedNotification ?? DEFAULT_VALUES.sendPaymentFailedNotification,
+        sendSubscriptionCancelledNotification:
+            settings.sendSubscriptionCancelledNotification ??
+            DEFAULT_VALUES.sendSubscriptionCancelledNotification
+    };
+}
+
 function BillingSettingsPage() {
     const { t } = useTranslations();
     const { addToast } = useToast();
-    const [hasChanges, setHasChanges] = useState(false);
 
     const { data: settings, isLoading, error } = useBillingSettingsQuery();
     const updateMutation = useUpdateBillingSettingsMutation();
@@ -58,13 +88,15 @@ function BillingSettingsPage() {
         onSubmit: async ({ value }) => {
             try {
                 const payload: UpdateBillingSettingsPayload = value;
-                await updateMutation.mutateAsync(payload);
+                const saved = await updateMutation.mutateAsync(payload);
+                // Adopt the persisted values as the new dirty baseline so the
+                // form returns to pristine (Save disabled) right after a save.
+                form.reset(toFormValues(saved));
                 addToast({
                     title: t('admin-billing.settings.toastSavedTitle'),
                     message: t('admin-billing.settings.toastSavedMessage'),
                     variant: 'success'
                 });
-                setHasChanges(false);
             } catch (err) {
                 addToast({
                     title: t('admin-billing.settings.toastErrorTitle'),
@@ -78,26 +110,14 @@ function BillingSettingsPage() {
         }
     });
 
-    // Seed the form once settings load. Each key maps 1:1 to the API contract.
+    // Seed the form once settings load, using the server values as the dirty
+    // baseline (reset updates the form's default values). This keeps the form
+    // pristine on mount even when server values differ from DEFAULT_VALUES.
     useEffect(() => {
-        if (!settings) {
-            return;
-        }
-        for (const key of Object.keys(DEFAULT_VALUES) as (keyof typeof DEFAULT_VALUES)[]) {
-            const value = settings[key];
-            if (value !== undefined && value !== null) {
-                form.setFieldValue(key, value as never);
-            }
+        if (settings) {
+            form.reset(toFormValues(settings));
         }
     }, [settings, form]);
-
-    // Track form changes
-    useEffect(() => {
-        const isDirty = form.state.isDirty;
-        if (isDirty !== hasChanges) {
-            setHasChanges(isDirty);
-        }
-    }, [form.state.isDirty, hasChanges]);
 
     // Report load errors to Sentry once per occurrence.
     useEffect(() => {
@@ -179,16 +199,20 @@ function BillingSettingsPage() {
                         </p>
                     </div>
 
-                    <Button
-                        type="submit"
-                        disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
-                    >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <form.Subscribe selector={(state) => state.isDirty}>
+                        {(isDirty) => (
+                            <Button
+                                type="submit"
+                                disabled={!isDirty || updateMutation.isPending || !isApiAvailable}
+                            >
+                                {updateMutation.isPending && (
+                                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                <SaveIcon className="mr-2 h-4 w-4" />
+                                {t('admin-billing.settings.saveChanges')}
+                            </Button>
                         )}
-                        <SaveIcon className="mr-2 h-4 w-4" />
-                        {t('admin-billing.settings.saveChanges')}
-                    </Button>
+                    </form.Subscribe>
                 </div>
 
                 {!isApiAvailable && (
@@ -532,27 +556,34 @@ function BillingSettingsPage() {
 
                 {/* Footer Actions */}
                 <div className="flex justify-end gap-4 border-t pt-6">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            form.reset();
-                            setHasChanges(false);
-                        }}
-                        disabled={!hasChanges || updateMutation.isPending}
-                    >
-                        {t('admin-billing.settings.discardChanges')}
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
-                    >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <form.Subscribe selector={(state) => state.isDirty}>
+                        {(isDirty) => (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        form.reset(settings ? toFormValues(settings) : undefined);
+                                    }}
+                                    disabled={!isDirty || updateMutation.isPending}
+                                >
+                                    {t('admin-billing.settings.discardChanges')}
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        !isDirty || updateMutation.isPending || !isApiAvailable
+                                    }
+                                >
+                                    {updateMutation.isPending && (
+                                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    <SaveIcon className="mr-2 h-4 w-4" />
+                                    {t('admin-billing.settings.saveConfig')}
+                                </Button>
+                            </>
                         )}
-                        <SaveIcon className="mr-2 h-4 w-4" />
-                        {t('admin-billing.settings.saveConfig')}
-                    </Button>
+                    </form.Subscribe>
                 </div>
             </form>
         </SidebarPageLayout>

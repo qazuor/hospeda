@@ -61,7 +61,7 @@ export function getPurchasedAddonColumns({
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium">{row.addonName}</div>
+                    {row.addonName && <div className="font-medium">{row.addonName}</div>}
                     <div className="font-mono text-muted-foreground text-xs">{row.addonSlug}</div>
                 </div>
             )
@@ -122,7 +122,7 @@ export function getPurchasedAddonColumns({
             enableSorting: true,
             cell: ({ row }) => (
                 <span className="font-medium">
-                    {formatCentsToArs({ cents: row.priceArs, locale })}
+                    {row.priceArs != null ? formatCentsToArs({ cents: row.priceArs, locale }) : '—'}
                 </span>
             )
         },

@@ -35,7 +35,13 @@ import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // KPI DATA SHAPE
@@ -195,32 +201,56 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
         return (
-            <WidgetUnavailable
-                variant="kpi"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <WidgetUnavailableBody variant="kpi" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <WidgetSkeleton variant="kpi" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <WidgetSkeletonBody variant="kpi" />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
-            <WidgetError
-                variant="kpi"
+            <WidgetCard
                 label={displayLabel}
-                onRetry={() => void refetch()}
-            />
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <WidgetErrorBody
+                    variant="kpi"
+                    onRetry={() => void refetch()}
+                />
+            </WidgetCard>
         );
     }
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty variant="kpi" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <WidgetEmptyBody variant="kpi" />
+            </WidgetCard>
+        );
     }
 
     // -- 8. Data — narrow to KpiData shape -----------------------------------
@@ -230,7 +260,15 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
     // array or an object without `value`), fall back to the empty state instead
     // of crashing with "kpi.value.toLocaleString is not a function".
     if (typeof kpi.value !== 'number') {
-        return <WidgetEmpty variant="kpi" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <WidgetEmptyBody variant="kpi" />
+            </WidgetCard>
+        );
     }
 
     // Config-level unit overrides take precedence over resolver-provided units.
@@ -241,21 +279,12 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
     const formattedValue = kpi.value.toLocaleString('es-AR');
 
     return (
-        <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="kpi-widget"
-            aria-label={`${displayLabel}: ${formattedValue}`}
+        <WidgetCard
+            label={displayLabel}
+            variant="kpi"
+            dataTestId="kpi-widget"
+            ariaLabel={`${displayLabel}: ${formattedValue}`}
         >
-            {/* Header: label */}
-            <div className="flex items-center justify-between">
-                <span
-                    className="text-muted-foreground text-sm"
-                    data-testid="kpi-label"
-                >
-                    {displayLabel}
-                </span>
-            </div>
-
             {/* Value row: prefix + value + suffix + optional delta */}
             <div className="flex items-end justify-between gap-2">
                 <div
@@ -289,6 +318,6 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 {/* Delta badge (optional) */}
                 {kpi.delta !== undefined && <DeltaBadge delta={kpi.delta} />}
             </div>
-        </div>
+        </WidgetCard>
     );
 }

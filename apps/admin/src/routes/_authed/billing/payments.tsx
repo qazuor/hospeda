@@ -7,10 +7,12 @@ import { RefundDialog } from '@/features/billing-payments/RefundDialog';
 import { usePaymentsQuery, useRefundPaymentMutation } from '@/features/billing-payments/hooks';
 import type { Payment, PaymentMethod, PaymentStatus } from '@/features/billing-payments/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/payments')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingPaymentsPage
 });
 

@@ -161,7 +161,10 @@ describe('ListWidget', () => {
         );
 
         expect(screen.getByTestId('list-widget-unavailable')).toBeInTheDocument();
-        expect(screen.queryByTestId('list-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('list-widget')).toBeInTheDocument();
+        // Title is always visible
+        expect(screen.getByTestId('list-label')).toHaveTextContent('Consultas recientes');
     });
 
     // ── Loading state ──────────────────────────────────────────────────────
@@ -183,7 +186,10 @@ describe('ListWidget', () => {
         );
 
         expect(screen.getByTestId('list-widget-skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('list-widget')).not.toBeInTheDocument();
+        // Card shell is always present while loading
+        expect(screen.getByTestId('list-widget')).toBeInTheDocument();
+        // Title is always visible while loading
+        expect(screen.getByTestId('list-label')).toHaveTextContent('Consultas recientes');
     });
 
     // ── Error state ────────────────────────────────────────────────────────
@@ -202,7 +208,10 @@ describe('ListWidget', () => {
 
         const errorEl = await screen.findByTestId('list-widget-error');
         expect(errorEl).toBeInTheDocument();
-        expect(screen.queryByTestId('list-widget')).not.toBeInTheDocument();
+        // Card shell is always present on error
+        expect(screen.getByTestId('list-widget')).toBeInTheDocument();
+        // Title is always visible on error
+        expect(screen.getByTestId('list-label')).toHaveTextContent('Consultas recientes');
     });
 
     it('exposes a retry button inside the error state that does not throw when clicked', async () => {
@@ -237,6 +246,8 @@ describe('ListWidget', () => {
         );
 
         expect(await screen.findByTestId('list-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('list-label')).toHaveTextContent('Consultas recientes');
     });
 
     it('renders the empty state when data is an empty array', async () => {
@@ -252,6 +263,8 @@ describe('ListWidget', () => {
         );
 
         expect(await screen.findByTestId('list-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('list-label')).toHaveTextContent('Consultas recientes');
     });
 
     // ── Data — renders N items ─────────────────────────────────────────────

@@ -15,6 +15,7 @@
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
 import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -324,16 +325,18 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
                     setIsPopoverOpen(true);
                 } else if (status === 403 && errorCode === 'LIMIT_REACHED') {
-                    // User hit their plan's favorites limit — rollback and show specific toast.
+                    // User hit their plan's limit — rollback and show localized toast with upgrade CTA.
                     setIsFavorited(prevFavorited);
                     setBookmarkId(prevBookmarkId);
                     onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
+                    const limitPayload = buildLimitReachedPayloadFromDetails({
+                        details: result.error.details,
+                        locale
+                    });
                     addToast({
                         type: 'error',
-                        message: t(
-                            'ui.favorite.error_limit_reached',
-                            'Alcanzaste el límite de favoritos. Actualizá tu plan para agregar más.'
-                        )
+                        message: limitPayload.message,
+                        action: limitPayload.action
                     });
                 } else {
                     // Any other API error — rollback and show generic toast.

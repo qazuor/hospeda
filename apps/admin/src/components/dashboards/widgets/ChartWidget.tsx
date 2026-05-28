@@ -59,7 +59,13 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // CHART DATA SHAPES
@@ -360,35 +366,74 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     // Derive display label from the widget's i18n label (admin locale = 'es').
     const displayLabel = widget.label.es;
 
+    // Chart-type badge rendered in the header of every state.
+    const chartTypeBadge = (
+        <span
+            className="text-muted-foreground/60 text-xs"
+            data-testid="chart-type-badge"
+            aria-label={`Chart type: ${chartType}`}
+        >
+            {chartType}
+        </span>
+    );
+
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
         return (
-            <WidgetUnavailable
-                variant="chart"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="chart"
+                dataTestId="chart-widget"
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetUnavailableBody variant="chart" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <WidgetSkeleton variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetSkeletonBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
-            <WidgetError
-                variant="chart"
+            <WidgetCard
                 label={displayLabel}
-                onRetry={() => void refetch()}
-            />
+                variant="chart"
+                dataTestId="chart-widget"
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetErrorBody
+                    variant="chart"
+                    onRetry={() => void refetch()}
+                />
+            </WidgetCard>
         );
     }
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetEmptyBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     // -- 8. Data — narrow to ChartData shape ---------------------------------
@@ -404,38 +449,31 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
         !Array.isArray(chartData.series) ||
         chartData.series.length === 0
     ) {
-        return <WidgetEmpty variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetEmptyBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     return (
-        <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="chart-widget"
-            aria-label={displayLabel}
+        <WidgetCard
+            label={displayLabel}
+            variant="chart"
+            dataTestId="chart-widget"
+            headerExtra={chartTypeBadge}
         >
-            {/* Header: label + chart type badge */}
-            <div className="flex items-center justify-between">
-                <span
-                    className="text-muted-foreground text-sm"
-                    data-testid="chart-label"
-                >
-                    {displayLabel}
-                </span>
-                <span
-                    className="text-muted-foreground/60 text-xs"
-                    data-testid="chart-type-badge"
-                    aria-label={`Chart type: ${chartType}`}
-                >
-                    {chartType}
-                </span>
-            </div>
-
             {/* Chart area — real Recharts chart */}
             <ChartRenderer
                 chartType={chartType}
                 data={chartData.series}
                 label={displayLabel}
             />
-        </div>
+        </WidgetCard>
     );
 }

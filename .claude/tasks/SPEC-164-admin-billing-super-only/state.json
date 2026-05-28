@@ -1,0 +1,249 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-164",
+    "title": "Admin Billing Access — SUPER_ADMIN-Only",
+    "created": "2026-05-27T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Blast-radius + safety verification (read-only go/no-go)",
+            "description": "Verify before any code lands. (a) Re-confirm the 19 revoked permission names against packages/schemas/src/enums/permission.enum.ts AND the current [RoleEnum.ADMIN] array in packages/seed/src/required/rolePermissions.seed.ts. (b) Re-confirm the renderer-wiring finding (spec §5.6): apps/admin/src/hooks/use-current-section.ts + use-current-sidebar.ts resolve the active sidebar by pathname with NO mainMenu filtering, so comercialSidebar renders for ADMIN on direct /billing/* URLs. (c) WIDE non-billing safety check: confirm no NON-billing ADMIN workflow gates on the revoked _ANY perms or POST_SPONSORSHIP_MANAGE — verify the /sponsors entity page gates on POST_SPONSOR_VIEW (already absent for ADMIN) and editorial post-sponsorship uses POST_SPONSOR_MANAGE (kept, distinct from POST_SPONSORSHIP_MANAGE). Produce a written go/no-go note; if anything would break, STOP and escalate. No code changes. Tests: none (verification task).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004", "T-005", "T-006"],
+            "result": "GO on all 19. Verified: all 20 perm names exist in permission.enum.ts; POST_SPONSOR_MANAGE (post.sponsor.manage, L192, KEPT) distinct from POST_SPONSORSHIP_MANAGE (post.sponsorship.manage, L200, revoked). Renderer-wiring re-confirmed (pathname-driven, no mainMenu filter → comercialSidebar renders on direct /billing/*). 12 _ANY perms consumed only by service-core sponsorship/owner-promotion services backing /billing/* pages. ONE non-billing consequence found+ACCEPTED by owner (2026-05-27, WIDE): POST_SPONSORSHIP_MANAGE gates edit (no OR fallback) on the post-editor 'Patrocinio' field (relations.consolidated.ts:96-114) → becomes view-only for ADMIN. See engram spec/spec-164/t001-go-no-go. Spec §7 risk row + AC-14b updated.",
+            "subtasks": [
+                {
+                    "title": "Re-confirm the 19 permission names exist in permission.enum.ts and are present in the ADMIN seed array",
+                    "completed": true
+                },
+                {
+                    "title": "Re-confirm pathname-driven sidebar resolution (no mainMenu filtering) per §5.6",
+                    "completed": true
+                },
+                {
+                    "title": "WIDE safety check: no non-billing ADMIN workflow depends on revoked _ANY / POST_SPONSORSHIP_MANAGE",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm POST_SPONSOR_MANAGE (kept) is distinct from POST_SPONSORSHIP_MANAGE (revoked)",
+                    "completed": true
+                },
+                {
+                    "title": "Write go/no-go note (escalate if any breakage found)",
+                    "completed": true
+                }
+            ],
+            "tags": ["verification", "permissions", "blast-radius"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Seed revoke — remove 19 billing/sponsorship/promotion perms from ADMIN",
+            "description": "In packages/seed/src/required/rolePermissions.seed.ts, remove from the [RoleEnum.ADMIN] array: the billing-six (BILLING_READ_ALL, BILLING_MANAGE, MANAGE_SUBSCRIPTIONS, BILLING_PROMO_CODE_READ, BILLING_PROMO_CODE_MANAGE, BILLING_METRICS_READ), the 6 sponsorship _ANY (SPONSORSHIP_VIEW_ANY, SPONSORSHIP_UPDATE_ANY, SPONSORSHIP_SOFT_DELETE_ANY, SPONSORSHIP_HARD_DELETE_ANY, SPONSORSHIP_RESTORE_ANY, SPONSORSHIP_UPDATE_VISIBILITY_ANY), the 6 owner-promotion _ANY (OWNER_PROMOTION_VIEW_ANY, OWNER_PROMOTION_UPDATE_ANY, OWNER_PROMOTION_SOFT_DELETE_ANY, OWNER_PROMOTION_HARD_DELETE_ANY, OWNER_PROMOTION_RESTORE_ANY, OWNER_PROMOTION_UPDATE_VISIBILITY_ANY), and POST_SPONSORSHIP_MANAGE. CRITICAL: leave POST_SPONSOR_MANAGE (post.sponsor.manage) and ACCESS_PANEL_ADMIN intact. Do NOT touch the SUPER_ADMIN array. Tests: covered by T-003.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-007"],
+            "subtasks": [
+                { "title": "Remove billing-six from ADMIN array", "completed": false },
+                { "title": "Remove 6 SPONSORSHIP_*_ANY from ADMIN array", "completed": false },
+                { "title": "Remove 6 OWNER_PROMOTION_*_ANY from ADMIN array", "completed": false },
+                {
+                    "title": "Remove POST_SPONSORSHIP_MANAGE (keep POST_SPONSOR_MANAGE)",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "permissions"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Seed tests — assert ADMIN revoke + retained perms + SUPER retention",
+            "description": "Add vitest assertions on ROLE_PERMISSIONS. (AC-15) ADMIN does NOT include any of the 19 revoked perms. (AC-16) ADMIN still includes POST_SPONSOR_MANAGE and ACCESS_PANEL_ADMIN. (AC-17) SUPER_ADMIN seed still lists all 19. Place tests alongside the seed package test suite (packages/seed/test/). Run green before merge.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Assert ADMIN lacks all 19 revoked perms (AC-15)", "completed": false },
+                {
+                    "title": "Assert ADMIN keeps POST_SPONSOR_MANAGE + ACCESS_PANEL_ADMIN (AC-16)",
+                    "completed": false
+                },
+                { "title": "Assert SUPER_ADMIN seed retains the 19 (AC-17)", "completed": false }
+            ],
+            "tags": ["seed", "tests"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Remove 'comercial' from ADMIN mainMenu + mobile.bottomNav (+ IA tests)",
+            "description": "In apps/admin/src/config/ia/roles/admin.ts, remove 'comercial' from both the mainMenu array and the mobile.bottomNav array. This is the mechanism that hides the Comercial section from ADMIN's navigation. Add IA config validation tests asserting adminRole.mainMenu does NOT contain 'comercial' and adminRole.mobile.bottomNav does NOT contain 'comercial' (AC-18). Verify the IA config still passes boot-time schema validation (mainMenu length, bottomNav refs in §13.5).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Remove 'comercial' from mainMenu", "completed": false },
+                { "title": "Remove 'comercial' from mobile.bottomNav", "completed": false },
+                {
+                    "title": "Add IA config tests for absence of 'comercial' (AC-18)",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ia-config", "navigation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "onMissing:'hide' sweep + re-gate billing-cron/billing-settings",
+            "description": "In apps/admin/src/config/ia/sidebars.ts (comercialSidebar): (1) set onMissing: 'hide' on the billing items so missing-permission items are removed from the DOM rather than rendered greyed-out (the default is 'disable'). (2) Re-gate billing-cron (inside ops-billing group) and billing-settings (top-level link) from permissions: ['ACCESS_PANEL_ADMIN'] to ['BILLING_READ_ALL'], closing the leak. STRICTLY REQUIRED per §5.6 (pathname-driven resolver renders comercialSidebar on direct /billing/* URLs for ADMIN), NOT defense-in-depth. Verify IA config still passes boot-time schema validation. Tests: extend IA config tests to assert billing items carry onMissing:'hide' and the two items gate on BILLING_READ_ALL.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Set onMissing:'hide' on comercialSidebar billing items",
+                    "completed": true
+                },
+                {
+                    "title": "Re-gate billing-cron ACCESS_PANEL_ADMIN -> BILLING_READ_ALL",
+                    "completed": false
+                },
+                {
+                    "title": "Re-gate billing-settings ACCESS_PANEL_ADMIN -> BILLING_READ_ALL",
+                    "completed": false
+                },
+                { "title": "IA config tests for onMissing + re-gate", "completed": false }
+            ],
+            "tags": ["admin", "ia-config", "security", "leak"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "beforeLoad BILLING_READ_ALL guard on the 14 billing route files",
+            "description": "Add a beforeLoad permission guard (checking BILLING_READ_ALL) to each of the 14 billing route files under apps/admin/src/routes/_authed/billing/: addons.tsx, cron.tsx, exchange-rates.tsx, invoices.tsx, metrics.tsx, notification-logs.tsx, owner-promotions.tsx, payments.tsx, plans.tsx, promo-codes.tsx, settings.tsx, sponsorships.tsx, subscriptions.tsx, webhook-events.tsx. On missing permission, redirect to the forbidden/dashboard route before the page component renders. Follow the existing _authed.tsx beforeLoad pattern and any shared permission helper. Tests: per-file or shared guard unit/behavior test where practical; cross-cutting coverage in T-008.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Identify the canonical beforeLoad permission-guard pattern (reuse, don't invent)",
+                    "completed": false
+                },
+                { "title": "Add guard to all 14 billing route files", "completed": false },
+                {
+                    "title": "Wire redirect target (forbidden/dashboard) on missing BILLING_READ_ALL",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "routing", "guards", "security"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-27T00:00:00.000Z",
+                "completed": "2026-05-27T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Integration test — ADMIN 403-not-500 / SUPER_ADMIN 200",
+            "description": "Seed an ADMIN actor; call representative admin billing endpoints (one read e.g. GET /api/v1/admin/billing/..., one write) plus one admin sponsorship _ANY endpoint; assert all return 403 NOT 500 (AC-19, AC-1, AC-2). Seed a SUPER_ADMIN actor; assert 200 on the same endpoints (AC-3). Use the existing admin API integration test harness. Confirm no billing data leaks in the 403 bodies.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "ADMIN actor -> admin billing read + write -> 403 not 500 (AC-1, AC-19)",
+                    "completed": true
+                },
+                {
+                    "title": "ADMIN actor -> admin sponsorship _ANY endpoint -> 403 (AC-2)",
+                    "completed": true
+                },
+                { "title": "SUPER_ADMIN actor -> same endpoints -> 200 (AC-3)", "completed": true }
+            ],
+            "tags": ["api", "integration", "tests"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "result": "8/8 tests passing. File: apps/api/test/e2e/flows/billing/spec-164-admin-billing-authz.test.ts. ADMIN (post-revoke, 14 perms, no BILLING_READ_ALL) gets 403 on GET /admin/billing/metrics, GET /admin/billing/plans, POST /admin/billing/promo-codes (AC-1), and GET /admin/sponsorships (AC-2). SUPER_ADMIN gets 200 on metrics/plans/sponsorships + auth gate passes on promo-codes write. Discovery: qzpay-hono promo-code response-schema stripping returns 500 in test env (pre-existing, auth layer passed — audit billing.mutation event fires before error). WRITE test asserts not-403 only.",
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-28T00:00:00.000Z",
+                "completed": "2026-05-28T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Graceful-degradation test — ADMIN direct-URL clean rejection",
+            "description": "With an ADMIN session, navigate directly to a /billing/* URL; assert the beforeLoad guard rejects cleanly (redirect to forbidden/dashboard) and that no 500, no unhandled exception, no partial-data render, and no broken layout occurs (AC-8, AC-9). Use the admin app test harness (component/route-level test as practical).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ADMIN direct-URL /billing/* -> beforeLoad clean reject (AC-8)",
+                    "completed": true
+                },
+                {
+                    "title": "Assert no 500 / unhandled error / partial render (AC-9)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "tests", "degradation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "result": "Approach (b): admin harness can't mount the route tree with beforeLoad active, so strengthened apps/admin/test/lib/billing-access.test.ts with 7 new assertions (14 total pass). AC-8: redirect fires before the component would render (control-flow never returns for ADMIN-shaped context). AC-9: the thrown value is a redirect object (isRedirect:true, to:'/auth/forbidden'), NOT an instanceof Error (which would surface as a 500). Full in-browser direct-URL degradation deferred to manual/staging smoke.",
+            "timestamps": {
+                "created": "2026-05-27T00:00:00.000Z",
+                "started": "2026-05-28T00:00:00.000Z",
+                "completed": "2026-05-28T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 8,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 8,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}

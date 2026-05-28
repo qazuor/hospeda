@@ -24,6 +24,16 @@ import { getQZPayBilling } from './billing';
  * These routes enable users to manage their subscription and export data
  */
 const ALLOWED_ROUTES_WHEN_BLOCKED = [
+    // Better-auth own endpoints (sign-in, sign-out, session, etc.). Gating
+    // these would prevent an expired-trial user from logging in or out at all,
+    // which is circular: they need to be able to log in to upgrade.
+    '/api/auth',
+
+    // Public tier (no-auth content + the current-user check). Public endpoints
+    // must remain reachable so the web app can render correct logged-in chrome
+    // (account menu, trial-expired banner) for an expired-trial user.
+    '/api/v1/public',
+
     // Billing routes (protected tier)
     '/api/v1/protected/billing',
     '/api/v1/protected/billing/trial',
@@ -32,6 +42,10 @@ const ALLOWED_ROUTES_WHEN_BLOCKED = [
     '/api/v1/protected/billing/checkout',
     '/api/v1/protected/billing/invoices',
     '/api/v1/protected/billing/payments',
+
+    // Users entitlements (read-only entitlement/limit/plan view). Needed by
+    // the web to render gates correctly even after the trial expired.
+    '/api/v1/protected/users/me/entitlements',
 
     // Data export routes
     '/api/v1/export',

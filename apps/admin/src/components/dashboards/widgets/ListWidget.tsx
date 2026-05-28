@@ -52,7 +52,13 @@ import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // LIST DATA SHAPES
@@ -216,36 +222,58 @@ export function ListWidget({ widget }: ListWidgetProps) {
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
         return (
-            <WidgetUnavailable
-                variant="list"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="list"
+                dataTestId="list-widget"
+            >
+                <WidgetUnavailableBody variant="list" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <WidgetSkeleton variant="list" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="list"
+                dataTestId="list-widget"
+            >
+                <WidgetSkeletonBody variant="list" />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
-            <WidgetError
-                variant="list"
+            <WidgetCard
                 label={displayLabel}
-                onRetry={() => void refetch()}
-            />
+                variant="list"
+                dataTestId="list-widget"
+            >
+                <WidgetErrorBody
+                    variant="list"
+                    onRetry={() => void refetch()}
+                />
+            </WidgetCard>
         );
     }
 
     // -- 7. Empty (null / undefined / empty array / non-array shape) ----------
     if (data == null || !Array.isArray(data) || data.length === 0) {
         return (
-            <WidgetEmpty
+            <WidgetCard
+                label={displayLabel}
                 variant="list"
-                text="Sin datos"
-            />
+                dataTestId="list-widget"
+            >
+                <WidgetEmptyBody
+                    variant="list"
+                    text="Sin datos"
+                />
+            </WidgetCard>
         );
     }
 
@@ -256,21 +284,11 @@ export function ListWidget({ widget }: ListWidgetProps) {
     const actionCfg = config.actionPerItem;
 
     return (
-        <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="list-widget"
-            aria-label={displayLabel}
+        <WidgetCard
+            label={displayLabel}
+            variant="list"
+            dataTestId="list-widget"
         >
-            {/* Header: label */}
-            <div className="flex items-center justify-between">
-                <span
-                    className="text-muted-foreground text-sm"
-                    data-testid="list-label"
-                >
-                    {displayLabel}
-                </span>
-            </div>
-
             {/* Item list */}
             <ul
                 className="divide-y divide-border"
@@ -344,6 +362,6 @@ export function ListWidget({ widget }: ListWidgetProps) {
                     );
                 })}
             </ul>
-        </div>
+        </WidgetCard>
     );
 }

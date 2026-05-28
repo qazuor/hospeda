@@ -24,9 +24,24 @@ export type { ChecklistWidgetProps } from './ChecklistWidget';
 export { StatusWidget } from './StatusWidget';
 export type { StatusWidgetProps } from './StatusWidget';
 
-export { WidgetSkeleton, WidgetError, WidgetEmpty, WidgetUnavailable } from './widget-states';
+export {
+    WidgetCard,
+    WidgetSkeletonBody,
+    WidgetErrorBody,
+    WidgetEmptyBody,
+    WidgetUnavailableBody,
+    WidgetSkeleton,
+    WidgetError,
+    WidgetEmpty,
+    WidgetUnavailable
+} from './widget-states';
 export type {
     WidgetVariant,
+    WidgetCardProps,
+    WidgetSkeletonBodyProps,
+    WidgetErrorBodyProps,
+    WidgetEmptyBodyProps,
+    WidgetUnavailableBodyProps,
     WidgetSkeletonProps,
     WidgetErrorProps,
     WidgetEmptyProps,
