@@ -3,7 +3,7 @@
  * Returns all destinations with full admin access
  */
 import {
-    DestinationAdminSchema,
+    DestinationAdminListItemSchema,
     DestinationAdminSearchSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -28,7 +28,7 @@ export const adminListDestinationsRoute = createAdminListRoute({
     tags: ['Destinations'],
     requiredPermissions: [PermissionEnum.DESTINATION_VIEW_ALL],
     requestQuery: DestinationAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: DestinationAdminSchema,
+    responseSchema: DestinationAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
@@ -40,8 +40,22 @@ export const adminListDestinationsRoute = createAdminListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        // adminList does not hydrate the attractions relation. Batch-load the
+        // attraction names for the page so the list can display them.
+        const items = result.data?.items ?? [];
+        const attractionsMap = await destinationService.getAttractionsMap(
+            items.map((destination) => destination.id)
+        );
+        const itemsWithAttractions = items.map((destination) => ({
+            ...destination,
+            attractions: (attractionsMap.get(destination.id) ?? []).map((attraction) => ({
+                name: attraction.name,
+                icon: attraction.icon
+            }))
+        }));
+
         return {
-            items: result.data?.items || [],
+            items: itemsWithAttractions,
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     }

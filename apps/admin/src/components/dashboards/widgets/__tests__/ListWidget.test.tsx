@@ -49,7 +49,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 // Mock icons so tests don't depend on Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
@@ -559,5 +560,57 @@ describe('ListWidget', () => {
         await screen.findByTestId('list-widget');
         expect(screen.queryByTestId('list-item-action-link')).not.toBeInTheDocument();
         expect(screen.queryByTestId('list-item-action-button')).not.toBeInTheDocument();
+    });
+
+    // ── i18n label resolution (regression) ─────────────────────────────────
+    // Dashboard configs supply `actionPerItem.label` as an { es, en, pt } object.
+    // Rendering that object directly crashes React ("Objects are not valid as a
+    // React child"). The widget must resolve it to the es locale string.
+
+    describe('i18n label resolution (regression)', () => {
+        it('renders the es locale when actionPerItem.label is an I18nLabel object', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions([
+                    { id: '1', label: 'Cabaña del Sol', href: '/accommodations/1' }
+                ])
+            });
+
+            const widget = makeWidget({
+                config: {
+                    source: 'admin.accommodations.latest',
+                    actionPerItem: {
+                        label: { es: 'Ver', en: 'View', pt: 'Ver' },
+                        hrefTemplate: '/x/{id}'
+                    }
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            const link = await screen.findByTestId('list-item-action-link');
+            // Renders the es string — NOT the raw object (which would crash React).
+            expect(link).toHaveTextContent('Ver');
+        });
+
+        it('renders the es locale when an item.label is an I18nLabel object', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions([{ id: '1', label: { es: 'Hola', en: 'Hi', pt: 'Olá' } }])
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            const label = await screen.findByTestId('list-item-label');
+            expect(label).toHaveTextContent('Hola');
+        });
     });
 });

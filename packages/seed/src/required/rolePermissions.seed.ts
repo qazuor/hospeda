@@ -58,9 +58,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
         PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.AMENITY_FEATURED_TOGGLE,
+        PermissionEnum.AMENITY_LIFECYCLE_CHANGE,
         PermissionEnum.FEATURE_CREATE,
         PermissionEnum.FEATURE_UPDATE,
         PermissionEnum.FEATURE_DELETE,
+        PermissionEnum.FEATURE_FEATURED_TOGGLE,
+        PermissionEnum.FEATURE_LIFECYCLE_CHANGE,
 
         // DESTINATION: All permissions
         PermissionEnum.DESTINATION_CREATE,
@@ -71,6 +75,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_SOFT_DELETE_VIEW,
         PermissionEnum.DESTINATION_FEATURED_TOGGLE,
         PermissionEnum.DESTINATION_VISIBILITY_TOGGLE,
+        PermissionEnum.DESTINATION_LIFECYCLE_CHANGE,
+        PermissionEnum.DESTINATION_MODERATION_CHANGE,
         PermissionEnum.DESTINATION_REVIEW_MODERATE,
         PermissionEnum.DESTINATION_TAGS_MANAGE,
         PermissionEnum.DESTINATION_GALLERY_MANAGE,
@@ -81,6 +87,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_VIEW_DRAFT,
         PermissionEnum.DESTINATION_VIEW_ALL,
         PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
+        PermissionEnum.ATTRACTION_LIFECYCLE_CHANGE,
 
         // EVENT: All permissions
         PermissionEnum.EVENT_CREATE,
@@ -91,6 +98,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_SOFT_DELETE_VIEW,
         PermissionEnum.EVENT_PUBLISH_TOGGLE,
         PermissionEnum.EVENT_FEATURED_TOGGLE,
+        PermissionEnum.EVENT_VISIBILITY_CHANGE,
+        PermissionEnum.EVENT_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
@@ -99,6 +109,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.EVENT_LOCATION_MANAGE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
 
         // POST: All permissions
         PermissionEnum.POST_CREATE,
@@ -109,8 +121,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SOFT_DELETE_VIEW,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
+        PermissionEnum.POST_VISIBILITY_CHANGE,
+        PermissionEnum.POST_LIFECYCLE_CHANGE,
+        PermissionEnum.POST_MODERATION_CHANGE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
         PermissionEnum.POST_VIEW_PRIVATE,
@@ -122,6 +138,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_IMPERSONATE,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,
+        PermissionEnum.USER_VISIBILITY_CHANGE,
+        PermissionEnum.USER_LIFECYCLE_CHANGE,
         PermissionEnum.USER_DELETE,
         PermissionEnum.USER_BOOKMARK_MANAGE,
         PermissionEnum.USER_VIEW_PROFILE,
@@ -294,7 +312,17 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
-        PermissionEnum.CONVERSATION_DELETE_ANY
+        PermissionEnum.CONVERSATION_DELETE_ANY,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): full set — SUPER_ADMIN owns every gate.
+        PermissionEnum.SETTINGS_GENERAL_VIEW,
+        PermissionEnum.SETTINGS_GENERAL_WRITE,
+        PermissionEnum.MAINTENANCE_MODE_WRITE,
+        PermissionEnum.BILLING_SETTINGS_VIEW,
+        PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.ADMIN]: [
@@ -342,9 +370,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
         PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.AMENITY_FEATURED_TOGGLE,
+        PermissionEnum.AMENITY_LIFECYCLE_CHANGE,
         PermissionEnum.FEATURE_CREATE,
         PermissionEnum.FEATURE_UPDATE,
         PermissionEnum.FEATURE_DELETE,
+        PermissionEnum.FEATURE_FEATURED_TOGGLE,
+        PermissionEnum.FEATURE_LIFECYCLE_CHANGE,
 
         // DESTINATION: Most permissions (no hard delete)
         PermissionEnum.DESTINATION_CREATE,
@@ -354,6 +386,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_SOFT_DELETE_VIEW,
         PermissionEnum.DESTINATION_FEATURED_TOGGLE,
         PermissionEnum.DESTINATION_VISIBILITY_TOGGLE,
+        PermissionEnum.DESTINATION_LIFECYCLE_CHANGE,
+        PermissionEnum.DESTINATION_MODERATION_CHANGE,
         PermissionEnum.DESTINATION_REVIEW_MODERATE,
         PermissionEnum.DESTINATION_TAGS_MANAGE,
         PermissionEnum.DESTINATION_GALLERY_MANAGE,
@@ -364,6 +398,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_VIEW_DRAFT,
         PermissionEnum.DESTINATION_VIEW_ALL,
         PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
+        PermissionEnum.ATTRACTION_LIFECYCLE_CHANGE,
 
         // EVENT: Most permissions (no hard delete)
         PermissionEnum.EVENT_CREATE,
@@ -373,6 +408,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_SOFT_DELETE_VIEW,
         PermissionEnum.EVENT_PUBLISH_TOGGLE,
         PermissionEnum.EVENT_FEATURED_TOGGLE,
+        PermissionEnum.EVENT_VISIBILITY_CHANGE,
+        PermissionEnum.EVENT_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
@@ -381,6 +419,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.EVENT_LOCATION_MANAGE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
 
         // POST: Most permissions (no hard delete)
         PermissionEnum.POST_CREATE,
@@ -390,8 +430,12 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SOFT_DELETE_VIEW,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
+        PermissionEnum.POST_VISIBILITY_CHANGE,
+        PermissionEnum.POST_LIFECYCLE_CHANGE,
+        PermissionEnum.POST_MODERATION_CHANGE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
         PermissionEnum.POST_VIEW_PRIVATE,
@@ -402,6 +446,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_READ_ALL,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,
+        PermissionEnum.USER_VISIBILITY_CHANGE,
+        PermissionEnum.USER_LIFECYCLE_CHANGE,
         PermissionEnum.USER_DELETE,
         PermissionEnum.USER_BOOKMARK_MANAGE,
         PermissionEnum.USER_VIEW_PROFILE,
@@ -524,7 +570,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
-        PermissionEnum.CONVERSATION_BLOCK_ANY
+        PermissionEnum.CONVERSATION_BLOCK_ANY,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): ADMIN gets all gates except MAINTENANCE_MODE_WRITE (SUPER_ADMIN-only).
+        PermissionEnum.SETTINGS_GENERAL_VIEW,
+        PermissionEnum.SETTINGS_GENERAL_WRITE,
+        PermissionEnum.BILLING_SETTINGS_VIEW,
+        PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [
@@ -564,7 +619,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Admin panel and APIs
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (CLIENT_MANAGER buys complex tiers per SPEC-143 test users).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.EDITOR]: [
@@ -574,7 +635,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_PUBLISH_TOGGLE,
         PermissionEnum.EVENT_FEATURED_TOGGLE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
+        PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
@@ -585,6 +648,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_UPDATE,
         PermissionEnum.POST_PUBLISH_TOGGLE,
         PermissionEnum.POST_SPONSOR_MANAGE,
+        PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_SLUG_MANAGE,
@@ -654,7 +718,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // NEWSLETTER: draft/view only — send stays admin-only (SPEC-155)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
         PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
-        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW
+        PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit only.
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.HOST]: [
@@ -757,7 +824,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_REPLY_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
-        PermissionEnum.CONVERSATION_BLOCK_OWN
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
+        // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.USER]: [
@@ -789,7 +862,15 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_MESSAGE_SEND,
 
         // ACCESS: Public API only
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (USER buys tourist tiers + needs checkout flow to upgrade to HOST).
+        // BILLING_VIEW_OWN gates /protected/billing/*; ownership middleware
+        // still enforces per-resource scope.
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.SPONSOR]: [
@@ -812,7 +893,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
 
         // ACCESS: Public API only
-        PermissionEnum.ACCESS_API_PUBLIC
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
+        // (SPONSOR pays for sponsorship packages — needs /protected/billing/* access).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.GUEST]: [

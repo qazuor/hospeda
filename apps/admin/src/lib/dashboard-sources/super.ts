@@ -46,29 +46,39 @@ import {
 
 /**
  * Shape of the billing metrics API response.
- * Matches GET /api/v1/admin/billing/metrics (qzpay-hono route).
+ * Matches GET /api/v1/admin/billing/metrics.
  * Requires `BILLING_METRICS_VIEW` permission (SUPER_ADMIN-only per 03c).
+ *
+ * The headline figures are nested under `data.overview` (NOT flat on `data`);
+ * reading them flat returned `undefined` → the card rendered 0 regardless of
+ * real data (SPEC-155 follow-up).
  */
 interface BillingMetricsApiResponse {
     readonly success: boolean;
     readonly data?: {
-        /** Total active paid subscriptions on the platform. */
-        readonly activeSubscriptions?: number;
-        /** Monthly Recurring Revenue in centavos (integer). */
-        readonly mrr?: number;
-        /** Annual Recurring Revenue in centavos (integer). */
-        readonly arr?: number;
-        /** Average Revenue Per User in centavos (integer). */
-        readonly arpu?: number;
-        /** Churn rate as a decimal (0–1). */
-        readonly churnRate?: number;
+        readonly overview?: {
+            /** Active paid subscriptions on the platform. */
+            readonly activeSubscriptions?: number;
+            /** Subscriptions currently in a trial period. */
+            readonly trialingSubscriptions?: number;
+            /** Monthly Recurring Revenue in centavos (integer). */
+            readonly mrr?: number;
+            /** Average Revenue Per User in centavos (integer). */
+            readonly arpu?: number;
+            /** Churn rate as a decimal (0–1). */
+            readonly churnRate?: number;
+            /** Total customers (paying or not). */
+            readonly totalCustomers?: number;
+            /** Total revenue to date in centavos (integer). */
+            readonly totalRevenue?: number;
+        };
         /** Revenue by month for the trailing 12 months. */
-        readonly monthlyRevenue?: ReadonlyArray<{
+        readonly revenueTimeSeries?: ReadonlyArray<{
             readonly month: string;
             readonly revenue: number;
         }>;
         /** Subscription counts broken down by plan tier. */
-        readonly subscriptionBreakdown?: Record<string, number>;
+        readonly subscriptionBreakdown?: ReadonlyArray<unknown>;
     };
 }
 
@@ -99,18 +109,61 @@ registerDataSource('super.billing.stats', (ctx) => ({
         const result = await fetchApi<BillingMetricsApiResponse>({
             path: '/api/v1/admin/billing/metrics'
         });
-        const data = result.data.data;
-        if (!data) return null;
+        const overview = result.data.data?.overview;
+        if (!overview) return null;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        // Primary value: active subscriptions count.
-        // MRR is surfaced as unitPrefix/unitSuffix for context.
-        const mrrPesos = data.mrr !== undefined ? Math.round(data.mrr / 100) : undefined;
-        return {
-            value: data.activeSubscriptions ?? 0,
-            unitSuffix: 'suscripciones',
-            ...(mrrPesos !== undefined ? { mrr: mrrPesos } : {})
-        };
+        // Multi-KPI grid: surface the headline billing figures as individual
+        // tiles so the card actually reads as data, not as a single 0. MRR is
+        // stored in centavos; convert to pesos for display.
+        const mrrPesos =
+            overview.mrr !== undefined && overview.mrr > 0 ? Math.round(overview.mrr / 100) : 0;
+        const churnPct =
+            overview.churnRate !== undefined ? Math.round(overview.churnRate * 1000) / 10 : 0;
+
+        // Short, plain-Spanish labels so each tile fits without truncation. MRR
+        // and Churn are jargon, so they get the meaning, not the acronym.
+        const kpis = [
+            {
+                key: 'activeSubs',
+                label: { es: 'Activas', en: 'Active', pt: 'Ativas' },
+                value: overview.activeSubscriptions ?? 0,
+                accent: 'success',
+                icon: 'billing'
+            },
+            {
+                key: 'trialingSubs',
+                label: { es: 'En prueba', en: 'Trialing', pt: 'Em teste' },
+                value: overview.trialingSubscriptions ?? 0,
+                accent: 'warning',
+                icon: 'clock'
+            },
+            {
+                key: 'mrr',
+                label: { es: 'Ingreso mensual', en: 'Monthly revenue', pt: 'Receita mensal' },
+                value: mrrPesos,
+                unitPrefix: '$',
+                accent: 'forest',
+                icon: 'chart'
+            },
+            {
+                key: 'customers',
+                label: { es: 'Clientes', en: 'Customers', pt: 'Clientes' },
+                value: overview.totalCustomers ?? 0,
+                accent: 'purple',
+                icon: 'users'
+            },
+            {
+                key: 'churn',
+                label: { es: 'Tasa de baja', en: 'Churn rate', pt: 'Taxa de saída' },
+                value: churnPct,
+                unitSuffix: '%',
+                accent: 'rose',
+                icon: 'activity'
+            }
+        ];
+
+        // `value` (active subs) retained for back-compat; not shown in grid mode.
+        return { value: overview.activeSubscriptions ?? 0, kpis };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

@@ -84,6 +84,52 @@ export interface StatusData {
      * Optional description rendered below the badge (e.g. "Checked 2 min ago").
      */
     readonly description?: string;
+    /**
+     * Optional multi-chip breakdown. When present and non-empty, the renderer
+     * switches to GRID MODE: instead of one badge, it renders one chip per
+     * sub-system (e.g. API / DB / Redis) with its own dot + status label.
+     * Used by the system-health card so all dependencies read uniformly.
+     */
+    readonly items?: ReadonlyArray<StatusItem>;
+    /**
+     * Optional uptime in seconds (process.uptime() on the server). When set,
+     * rendered as a humanised line below the chips ("Uptime: 3d 12h").
+     */
+    readonly uptime?: number;
+    /**
+     * Optional row of compact numeric stats rendered as small tiles under the
+     * status chips (system-health card). When set, REPLACES the uptime footer
+     * (uptime becomes one of the tiles instead).
+     */
+    readonly metrics?: StatusMetrics;
+}
+
+/**
+ * Compact server-side metrics surfaced as small tiles next to the status
+ * chips (e.g. uptime, active connections, request count, error rate).
+ */
+export interface StatusMetrics {
+    /** Server uptime in seconds (process.uptime). */
+    readonly uptime?: number;
+    /** In-flight HTTP connections (proxy for "users online" in dev). */
+    readonly activeConnections?: number;
+    /** Total requests served since the process started. */
+    readonly totalRequests?: number;
+    /** Global error rate as a decimal (0–1). */
+    readonly errorRate?: number;
+}
+
+/**
+ * A single sub-system status entry rendered in GRID MODE (see
+ * {@link StatusData.items}). Each chip has its own dot + label + status text.
+ */
+export interface StatusItem {
+    /** Stable key used for the React list key (e.g. `'api'`). */
+    readonly key: string;
+    /** Human-readable label (e.g. `'API'`, `'Base de datos'`). */
+    readonly label: string;
+    /** Status string — matched against `variantMap` for coloring. */
+    readonly status: string;
 }
 
 // ============================================================================
@@ -150,6 +196,35 @@ export interface StatusWidgetConfig {
      * ```
      */
     readonly variantMap?: Readonly<Record<string, StatusVariant>>;
+    /** Accent palette name for the card header chip (SPEC-155 redesign). */
+    readonly accent?: string;
+    /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
+    readonly icon?: string;
+}
+
+/**
+ * Humanised Spanish labels for the canonical status strings. Used by the
+ * multi-chip ("items") render mode so each chip reads as a sentence, not a
+ * token.
+ */
+const STATUS_LABELS_ES: Readonly<Record<string, string>> = {
+    up: 'Operativo',
+    down: 'Caído',
+    degraded: 'Degradado',
+    unknown: 'Desconocido',
+    connected: 'Conectado',
+    disconnected: 'Desconectado'
+};
+
+/** Formats `process.uptime()` (seconds) as a compact "Xd Yh" / "Xh Ym" string. */
+function formatUptime(seconds: number): string {
+    if (!Number.isFinite(seconds) || seconds < 0) return '—';
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
 }
 
 // ============================================================================
@@ -245,6 +320,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 label={displayLabel}
                 variant="status"
                 dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetUnavailableBody variant="status" />
             </WidgetCard>
@@ -258,6 +335,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 label={displayLabel}
                 variant="status"
                 dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetSkeletonBody variant="status" />
             </WidgetCard>
@@ -271,6 +350,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 label={displayLabel}
                 variant="status"
                 dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetErrorBody
                     variant="status"
@@ -287,6 +368,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 label={displayLabel}
                 variant="status"
                 dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetEmptyBody variant="status" />
             </WidgetCard>
@@ -304,8 +387,132 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 label={displayLabel}
                 variant="status"
                 dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetEmptyBody variant="status" />
+            </WidgetCard>
+        );
+    }
+
+    // -- 8a. Multi-chip mode — uniform sub-system breakdown -------------------
+    // When the resolver supplies an `items` array, render one chip per sub-system
+    // (e.g. API / DB / Redis) so they read uniformly. The legacy single-badge
+    // branch below is preserved for sources that don't provide items.
+    if (Array.isArray(statusData.items) && statusData.items.length > 0) {
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="status"
+                dataTestId="status-widget"
+                accent={config.accent}
+                icon={config.icon}
+                ariaLabel={`${displayLabel}: ${statusData.status}`}
+            >
+                <div
+                    className="grid grid-cols-1 gap-2.5 sm:grid-cols-3"
+                    data-testid="status-items"
+                >
+                    {statusData.items.map((item) => {
+                        const v = resolveVariant(item.status, config.variantMap);
+                        const itemLabel = STATUS_LABELS_ES[item.status] ?? capitalize(item.status);
+                        return (
+                            <div
+                                key={item.key}
+                                className="flex flex-col gap-1.5 rounded-xl bg-card p-3 ring-1 ring-border/40"
+                                data-testid="status-item"
+                            >
+                                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                                    {item.label}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        className={`size-2 shrink-0 rounded-full ${DOT_CLASSES[v]}`}
+                                        aria-hidden="true"
+                                    />
+                                    <span className="font-semibold text-foreground text-sm">
+                                        {itemLabel}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Metrics row — compact numeric tiles. Each chip pulls from
+                    `metrics` first; falls back to `uptime` alone when no full
+                    metrics object is present. */}
+                {(statusData.metrics || typeof statusData.uptime === 'number') && (
+                    <div
+                        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+                        data-testid="status-metrics"
+                    >
+                        {(() => {
+                            const m = statusData.metrics ?? {};
+                            const uptime = m.uptime ?? statusData.uptime;
+                            const tiles: Array<{
+                                key: string;
+                                label: string;
+                                value: string;
+                            }> = [];
+                            if (typeof uptime === 'number') {
+                                tiles.push({
+                                    key: 'uptime',
+                                    label: 'Uptime',
+                                    value: formatUptime(uptime)
+                                });
+                            }
+                            if (typeof m.activeConnections === 'number') {
+                                tiles.push({
+                                    key: 'active',
+                                    label: 'Conexiones',
+                                    value: m.activeConnections.toLocaleString('es-AR')
+                                });
+                            }
+                            if (typeof m.totalRequests === 'number') {
+                                tiles.push({
+                                    key: 'requests',
+                                    label: 'Requests',
+                                    value: m.totalRequests.toLocaleString('es-AR')
+                                });
+                            }
+                            if (typeof m.errorRate === 'number') {
+                                tiles.push({
+                                    key: 'errors',
+                                    label: 'Errores',
+                                    value: `${(m.errorRate * 100).toFixed(1)}%`
+                                });
+                            }
+                            return tiles.map((t) => (
+                                <div
+                                    key={t.key}
+                                    className="flex flex-col gap-0.5 rounded-lg bg-card p-2.5 ring-1 ring-border/40"
+                                    data-testid="status-metric"
+                                >
+                                    <span className="font-medium text-[0.65rem] text-muted-foreground uppercase tracking-wider">
+                                        {t.label}
+                                    </span>
+                                    <span
+                                        className="font-semibold text-foreground text-sm tabular-nums"
+                                        style={{ fontFamily: 'var(--font-heading)' }}
+                                    >
+                                        {t.value}
+                                    </span>
+                                </div>
+                            ));
+                        })()}
+                    </div>
+                )}
+
+                {/* Optional description (kept for back-compat) */}
+                {statusData.description && (
+                    <p
+                        className="text-muted-foreground text-xs"
+                        data-testid="status-description"
+                    >
+                        {statusData.description}
+                    </p>
+                )}
             </WidgetCard>
         );
     }
@@ -318,6 +525,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
             label={displayLabel}
             variant="status"
             dataTestId="status-widget"
+            accent={config.accent}
+            icon={config.icon}
             ariaLabel={`${displayLabel}: ${badgeLabel}`}
         >
             {/* Status badge row */}

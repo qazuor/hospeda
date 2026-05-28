@@ -29,6 +29,7 @@ import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling, requireBilling } from '../../middlewares/billing';
 import { billingAdminGuardMiddleware } from '../../middlewares/billing-admin-guard.middleware';
 import { billingOwnershipMiddleware } from '../../middlewares/billing-ownership.middleware';
+import { billingPermMiddleware } from '../../middlewares/billing-perm.middleware';
 import { pastDueGraceMiddleware } from '../../middlewares/past-due-grace.middleware';
 import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
@@ -168,6 +169,13 @@ export function createBillingRoutesHandler(): AppOpenAPI {
 
     // Apply billing requirement middleware
     router.use('*', requireBilling);
+
+    // SPEC-156 T-007: defense-in-depth self-permission gate. Requires the
+    // authenticated actor to carry BILLING_VIEW_OWN. The existing ownership
+    // middleware (mounted below on the QZPay wrapper) still enforces
+    // per-resource ownership. This new gate lets us revoke self-billing
+    // access at the user/role level without removing the user from HOST.
+    router.use('*', billingPermMiddleware());
 
     // Apply Sentry billing context middleware
     router.use('*', sentryBillingMiddleware());

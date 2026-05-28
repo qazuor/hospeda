@@ -44,6 +44,8 @@
  */
 
 import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
+import { amenityTypeTokens } from '../tokens/amenity-types.js';
+import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
     type OKLCH,
     accent,
@@ -58,8 +60,12 @@ import {
     success,
     warning
 } from '../tokens/colors.js';
+import { eventCategoryTokens } from '../tokens/event-categories.js';
+import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase } from '../tokens/radius.js';
+import { sponsorTypeTokens } from '../tokens/sponsor-types.js';
 import { fontFamily } from '../tokens/typography.js';
+import { userRoleTokens } from '../tokens/user-roles.js';
 import type { Theme } from './types.js';
 
 /** White surface for elevated UI (cards, modals) — not part of neutral. */
@@ -160,5 +166,23 @@ export const adminLight: Theme = {
     // and theme-independent, so the accommodation-type badge renders with the
     // SAME hue in admin as in web across light and dark.
     // ========================================================================
-    ...accommodationTypeTokens
+    ...accommodationTypeTokens,
+    // Per-event-category tokens (same source constant as web), each referencing
+    // its base palette's shade-500 primitive so the category badge renders with
+    // the SAME hue in admin as in web across light and dark.
+    ...eventCategoryTokens,
+    // Per-post-category tokens (same source constant as web), each referencing
+    // an existing base palette per the prior badge colors.
+    ...postCategoryTokens,
+    // Per-user-role tokens (same source constant as web), each referencing an
+    // existing base palette per the prior badge colors.
+    ...userRoleTokens,
+    // Per-auth-provider tokens (same source constant as web). Brand-aligned
+    // palette per provider; the SSOT in @repo/icons consumes these.
+    ...authProviderTokens,
+    // Per-amenity-type tokens (same source constant as web). Each references an
+    // existing base palette per the prior badge colors.
+    ...amenityTypeTokens,
+    // Per-sponsor-type tokens (same source constant as web).
+    ...sponsorTypeTokens
 };

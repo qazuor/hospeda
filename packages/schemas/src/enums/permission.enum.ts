@@ -138,10 +138,14 @@ export enum PermissionEnum {
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
     AMENITY_UPDATE = 'amenity.update', // Allows updating an amenity in the catalog.
     AMENITY_DELETE = 'amenity.delete', // Allows deleting an amenity from the catalog.
+    AMENITY_FEATURED_TOGGLE = 'amenity.featured.toggle', // Allows toggling featured status of an amenity.
+    AMENITY_LIFECYCLE_CHANGE = 'amenity.lifecycle.change', // Allows changing amenity lifecycle state.
     FEATURE_VIEW = 'feature.view', // Allows viewing feature information.
     FEATURE_CREATE = 'feature.create', // Allows creating a new feature in the catalog.
     FEATURE_UPDATE = 'feature.update', // Allows updating a feature in the catalog.
     FEATURE_DELETE = 'feature.delete', // Allows deleting a feature from the catalog.
+    FEATURE_FEATURED_TOGGLE = 'feature.featured.toggle', // Allows toggling featured status of a feature.
+    FEATURE_LIFECYCLE_CHANGE = 'feature.lifecycle.change', // Allows changing feature lifecycle state.
 
     // DESTINATION: Permissions related to destinations (cities, regions, etc.)
     DESTINATION_CREATE = 'destination.create', // Allows creating a new destination.
@@ -152,6 +156,8 @@ export enum PermissionEnum {
     DESTINATION_SOFT_DELETE_VIEW = 'destination.softDelete.view', // Allows viewing soft-deleted destinations.
     DESTINATION_FEATURED_TOGGLE = 'destination.featured.toggle', // Allows toggling featured status of a destination.
     DESTINATION_VISIBILITY_TOGGLE = 'destination.visibility.toggle', // Allows toggling visibility of a destination.
+    DESTINATION_LIFECYCLE_CHANGE = 'destination.lifecycle.change', // Allows changing destination lifecycle state.
+    DESTINATION_MODERATION_CHANGE = 'destination.moderation.change', // Allows changing destination moderation state.
     DESTINATION_REVIEW_MODERATE = 'destination.review.moderate', // Allows moderating destination reviews.
     DESTINATION_TAGS_MANAGE = 'destination.tags.manage', // Allows managing tags for destinations.
     DESTINATION_GALLERY_MANAGE = 'destination.gallery.manage', // Allows managing destination gallery.
@@ -172,6 +178,9 @@ export enum PermissionEnum {
     EVENT_SOFT_DELETE_VIEW = 'event.softDelete.view', // Allows viewing soft-deleted events.
     EVENT_PUBLISH_TOGGLE = 'event.publish.toggle', // Allows publishing or unpublishing an event.
     EVENT_FEATURED_TOGGLE = 'event.featured.toggle', // Allows toggling featured status of an event.
+    EVENT_VISIBILITY_CHANGE = 'event.visibility.change', // Allows changing event visibility.
+    EVENT_LIFECYCLE_CHANGE = 'event.lifecycle.change', // Allows changing event lifecycle state.
+    EVENT_MODERATION_CHANGE = 'event.moderation.change', // Allows changing event moderation state.
     EVENT_LOCATION_UPDATE = 'event.location.update', // Allows updating event location.
     EVENT_ORGANIZER_MANAGE = 'event.organizer.manage', // Allows managing event organizers.
     EVENT_SLUG_MANAGE = 'event.slug.manage', // Allows managing event slugs.
@@ -192,6 +201,9 @@ export enum PermissionEnum {
     POST_SPONSOR_MANAGE = 'post.sponsor.manage', // Allows managing post sponsors.
     POST_TAGS_MANAGE = 'post.tags.manage', // Allows managing tags for posts.
     POST_FEATURED_TOGGLE = 'post.featured.toggle', // Allows toggling featured status of a post.
+    POST_VISIBILITY_CHANGE = 'post.visibility.change', // Allows changing post visibility.
+    POST_LIFECYCLE_CHANGE = 'post.lifecycle.change', // Allows changing post lifecycle state.
+    POST_MODERATION_CHANGE = 'post.moderation.change', // Allows changing post moderation state.
     POST_SLUG_MANAGE = 'post.slug.manage', // Allows managing post slugs.
     POST_COMMENT_CREATE = 'post.comment.create', // Allows creating comments on posts.
     POST_VIEW_PRIVATE = 'post.view.private', // Allows viewing private posts.
@@ -205,6 +217,8 @@ export enum PermissionEnum {
     USER_CREATE = 'user.create', // Allows creating a new user.
     USER_UPDATE_ROLES = 'user.update.roles', // Allows updating user roles.
     USER_UPDATE_ANY = 'user.update.any', // Allows updating any user's profile.
+    USER_VISIBILITY_CHANGE = 'user.visibility.change', // Allows changing user visibility.
+    USER_LIFECYCLE_CHANGE = 'user.lifecycle.change', // Allows changing user lifecycle state.
     USER_DELETE = 'user.delete', // Allows deleting a user.
     USER_BOOKMARK_MANAGE = 'user.bookmark.manage', // Allows managing user bookmarks.
     USER_VIEW_PROFILE = 'user.view.profile', // Allows viewing own user profile.
@@ -463,6 +477,7 @@ export enum PermissionEnum {
     ATTRACTION_DELETE = 'attraction.delete', // Allows deleting an attraction (soft delete).
     ATTRACTION_VIEW = 'attraction.view', // Allows viewing attraction information.
     ATTRACTION_RESTORE = 'attraction.restore', // Allows restoring a deleted attraction.
+    ATTRACTION_LIFECYCLE_CHANGE = 'attraction.lifecycle.change', // Allows changing attraction lifecycle state.
     ATTRACTION_HARD_DELETE = 'attraction.hardDelete', // Allows permanently deleting an attraction.
 
     // CLIENT_ACCESS_RIGHT: Permissions related to client access rights management
@@ -508,6 +523,7 @@ export enum PermissionEnum {
     EVENT_LOCATION_VIEW = 'eventLocation.view', // Allows viewing event location information.
     EVENT_LOCATION_RESTORE = 'eventLocation.restore', // Allows restoring a deleted event location.
     EVENT_LOCATION_HARD_DELETE = 'eventLocation.hardDelete', // Allows permanently deleting an event location.
+    EVENT_LOCATION_LIFECYCLE_CHANGE = 'eventLocation.lifecycle.change', // Allows changing event location lifecycle state.
 
     // EVENT_ORGANIZER: Permissions related to event organizer catalog management
     EVENT_ORGANIZER_CREATE = 'eventOrganizer.create', // Allows creating a new event organizer.
@@ -516,6 +532,7 @@ export enum PermissionEnum {
     EVENT_ORGANIZER_VIEW = 'eventOrganizer.view', // Allows viewing event organizer information.
     EVENT_ORGANIZER_RESTORE = 'eventOrganizer.restore', // Allows restoring a deleted event organizer.
     EVENT_ORGANIZER_HARD_DELETE = 'eventOrganizer.hardDelete', // Allows permanently deleting an event organizer.
+    EVENT_ORGANIZER_LIFECYCLE_CHANGE = 'eventOrganizer.lifecycle.change', // Allows changing event organizer lifecycle state.
 
     // EXCHANGE_RATE: Permissions related to exchange rate management
     EXCHANGE_RATE_VIEW = 'exchange_rate.view', // Allows viewing exchange rates.
@@ -580,6 +597,7 @@ export enum PermissionEnum {
     POST_SPONSOR_DELETE = 'postSponsor.delete', // Allows deleting a post sponsor (soft delete).
     POST_SPONSOR_VIEW = 'postSponsor.view', // Allows viewing post sponsor information.
     POST_SPONSOR_RESTORE = 'postSponsor.restore', // Allows restoring a deleted post sponsor.
+    POST_SPONSOR_LIFECYCLE_CHANGE = 'postSponsor.lifecycle.change', // Allows changing post sponsor lifecycle state.
     POST_SPONSOR_HARD_DELETE = 'postSponsor.hardDelete', // Allows permanently deleting a post sponsor.
 
     // POST_SPONSORSHIP: Permissions related to post sponsorship contract management
@@ -786,5 +804,19 @@ export enum PermissionEnum {
     POST_TAG_UPDATE = 'postTag.update', // Allows updating PostTags.
     POST_TAG_DELETE = 'postTag.delete', // Allows hard-deleting PostTags (shows impact count before deletion).
     POST_TAG_VIEW = 'postTag.view', // Allows viewing PostTags in admin context (including INACTIVE/ARCHIVED).
-    POST_TAG_ASSIGN = 'postTag.assign' // Allows assigning or unassigning PostTags on a post.
+    POST_TAG_ASSIGN = 'postTag.assign', // Allows assigning or unassigning PostTags on a post.
+
+    // PLATFORM SETTINGS V1 (SPEC-156): finer-grained gates for the reorganized
+    // Plataforma / Comercial / Mi cuenta / Mi facturación areas. Coexist with
+    // existing SETTINGS_MANAGE / SYSTEM_MAINTENANCE_MODE / BILLING_READ_ALL /
+    // BILLING_MANAGE — V1 adds these for new routes; legacy routes keep the
+    // existing permissions.
+    SETTINGS_GENERAL_VIEW = 'settings.general.view', // Allows viewing Plataforma → Configuración general (SEO defaults, etc.). Read-only gate.
+    SETTINGS_GENERAL_WRITE = 'settings.general.write', // Allows editing Plataforma → Configuración general (SEO defaults, etc.).
+    MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write', // Allows writing maintenance mode + global announcements (Plataforma → Configuración crítica). SUPER_ADMIN-only.
+    BILLING_SETTINGS_VIEW = 'billing.settings.view', // Allows viewing Comercial → Configuración billing (trial/payment/webhook/notification fields).
+    BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
+    BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
+    SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
+    USER_UPDATE_SELF = 'user.update.self' // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
 }

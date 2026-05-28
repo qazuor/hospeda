@@ -25,7 +25,8 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key })
 }));
 
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     ClockIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="clock-icon"

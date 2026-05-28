@@ -144,7 +144,7 @@ export const trialMiddleware = (): MiddlewareHandler<AppBindings> => {
                     cause: {
                         code: 'TRIAL_EXPIRED',
                         trialStatus,
-                        upgradeUrl: '/billing/plans'
+                        upgradeAudience: 'host'
                     }
                 });
             }
@@ -278,7 +278,7 @@ export function requireActiveSubscription(): MiddlewareHandler<AppBindings> {
                 cause: {
                     code: 'TRIAL_EXPIRED',
                     trialStatus,
-                    upgradeUrl: '/billing/plans'
+                    upgradeAudience: 'host'
                 }
             });
         }

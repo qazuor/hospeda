@@ -465,7 +465,7 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Estatísticas de entidades'
             },
             scope: 'all',
-            config: { source: 'admin.entities.counts' }
+            config: { source: 'admin.entities.counts', accent: 'river', icon: 'chart' }
         },
 
         // Card B — Alojamientos
@@ -475,17 +475,19 @@ const adminBaseDashboard: DashboardInput = {
             id: 'admin-card-b',
             type: 'list',
             label: {
-                es: 'Alojamientos',
-                en: 'Accommodations',
-                pt: 'Alojamentos'
+                es: 'Últimos alojamientos',
+                en: 'Latest accommodations',
+                pt: 'Últimos alojamentos'
             },
             scope: 'all',
             config: {
                 source: 'admin.accommodations.latest',
+                accent: 'river',
+                icon: 'buildings',
                 maxItems: 5,
                 actionPerItem: {
                     label: { es: 'Ver', en: 'View', pt: 'Ver' },
-                    hrefTemplate: '/catalogo/alojamientos/{id}'
+                    hrefTemplate: '/accommodations/{id}'
                 }
             }
         },
@@ -495,7 +497,7 @@ const adminBaseDashboard: DashboardInput = {
         // source: admin.editorial.summary (fetches all 4 in parallel)
         {
             id: 'admin-card-c',
-            type: 'list',
+            type: 'kpi',
             label: {
                 es: 'Editorial',
                 en: 'Editorial',
@@ -504,7 +506,8 @@ const adminBaseDashboard: DashboardInput = {
             scope: 'all',
             config: {
                 source: 'admin.editorial.summary',
-                maxItems: 5
+                accent: 'terracotta',
+                icon: 'article'
             }
         },
 
@@ -523,6 +526,8 @@ const adminBaseDashboard: DashboardInput = {
             scope: 'all',
             config: {
                 source: 'admin.crons.list',
+                accent: 'teal',
+                icon: 'clock',
                 deferredSlots: [
                     {
                         phaseSpec: 'SPEC-161',
@@ -550,6 +555,8 @@ const adminBaseDashboard: DashboardInput = {
             scope: 'all',
             config: {
                 source: 'admin.system.health',
+                accent: 'forest',
+                icon: 'activity',
                 variantMap: {
                     up: 'success',
                     degraded: 'warning',
@@ -580,6 +587,8 @@ const adminBaseDashboard: DashboardInput = {
             scope: 'all',
             config: {
                 source: 'admin.moderation.pending',
+                accent: 'warning',
+                icon: 'shield',
                 deferredSlots: [
                     {
                         phaseSpec: 'SPEC-166',
@@ -604,7 +613,9 @@ const adminBaseDashboard: DashboardInput = {
             scope: 'all',
             config: {
                 source: 'admin.users.stats',
-                chartType: 'bar'
+                chartType: 'ranking',
+                accent: 'purple',
+                icon: 'users'
             }
         }
     ]
@@ -694,6 +705,8 @@ export const superAdminOnlySection: DashboardInput = {
             onMissing: 'hide',
             config: {
                 source: 'super.billing.stats',
+                accent: 'success',
+                icon: 'billing',
                 // Companion chart for the 12-month revenue trend
                 chartType: 'line'
             }

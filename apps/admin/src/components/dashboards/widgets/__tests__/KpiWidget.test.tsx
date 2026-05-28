@@ -46,7 +46,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 // Mock icons so tests don't depend on Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
@@ -434,5 +435,179 @@ describe('KpiWidget', () => {
         await screen.findByTestId('kpi-widget');
         expect(screen.queryByTestId('kpi-unit-prefix')).not.toBeInTheDocument();
         expect(screen.queryByTestId('kpi-unit-suffix')).not.toBeInTheDocument();
+    });
+
+    // ── Data — multi-KPI grid mode ─────────────────────────────────────────
+    // SPEC-155 follow-up: ADMIN card A must show the per-entity counts, not the
+    // single sum. When the resolver returns a non-empty `kpis` array the widget
+    // switches to GRID MODE.
+
+    describe('grid mode (multi-KPI breakdown)', () => {
+        const sixEntityKpis = {
+            value: 999,
+            kpis: [
+                {
+                    key: 'accommodations',
+                    label: { es: 'Alojamientos', en: 'Accommodations', pt: 'Alojamentos' },
+                    value: 120,
+                    href: '/accommodations'
+                },
+                {
+                    key: 'destinations',
+                    label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
+                    value: 45,
+                    href: '/destinations'
+                },
+                {
+                    key: 'events',
+                    label: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
+                    value: 38,
+                    href: '/events'
+                },
+                {
+                    key: 'posts',
+                    label: { es: 'Posts', en: 'Posts', pt: 'Posts' },
+                    value: 210,
+                    href: '/posts'
+                },
+                {
+                    key: 'attractions',
+                    label: { es: 'Atracciones', en: 'Attractions', pt: 'Atrações' },
+                    value: 17,
+                    href: '/content/destination-attractions'
+                },
+                {
+                    key: 'users',
+                    label: { es: 'Usuarios', en: 'Users', pt: 'Usuários' },
+                    value: 569,
+                    href: '/access/users'
+                }
+            ]
+        };
+
+        it('renders one tile per kpi entry (the 6 entity counts, not the sum)', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(sixEntityKpis)
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            const grid = await screen.findByTestId('kpi-grid');
+            expect(grid).toBeInTheDocument();
+            expect(screen.getAllByTestId('kpi-grid-item')).toHaveLength(6);
+        });
+
+        it('does NOT render the single summed value in grid mode', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(sixEntityKpis)
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            // The aggregate `value` (999) must NOT appear as the big single number.
+            expect(screen.queryByTestId('kpi-value')).not.toBeInTheDocument();
+        });
+
+        it('renders each tile es label and value', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(sixEntityKpis)
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            expect(screen.getByText('Alojamientos')).toBeInTheDocument();
+            expect(screen.getByText('Usuarios')).toBeInTheDocument();
+            expect(screen.getByText('120')).toBeInTheDocument();
+            expect(screen.getByText('569')).toBeInTheDocument();
+        });
+
+        it('renders a link tile (<a> with href) when item.href is present', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(sixEntityKpis)
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            const tiles = screen.getAllByTestId('kpi-grid-item');
+            // First tile = accommodations → anchor linking to its admin list.
+            expect(tiles[0].tagName).toBe('A');
+            expect(tiles[0]).toHaveAttribute('href', '/accommodations');
+        });
+
+        it('renders a non-link tile (<div>) when item.href is absent', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions({
+                    value: 10,
+                    kpis: [{ key: 'x', label: { es: 'Equis', en: 'X', pt: 'X' }, value: 10 }]
+                })
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            expect(screen.getByTestId('kpi-grid-item').tagName).toBe('DIV');
+        });
+
+        it('keeps the card title visible in grid mode', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(sixEntityKpis)
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            expect(screen.getByTestId('kpi-label')).toHaveTextContent('Total alojamientos');
+        });
+
+        it('falls back to single-value mode when kpis is an empty array', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions({ value: 42, kpis: [] })
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            // Empty kpis → grid NOT triggered → single-value path renders 42.
+            const valueEl = await screen.findByTestId('kpi-value');
+            expect(valueEl).toHaveTextContent('42');
+            expect(screen.queryByTestId('kpi-grid')).not.toBeInTheDocument();
+        });
     });
 });

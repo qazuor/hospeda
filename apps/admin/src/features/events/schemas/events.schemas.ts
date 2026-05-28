@@ -13,6 +13,7 @@
 import {
     EventListItemWithRelationsSchema,
     LifecycleStatusEnumSchema,
+    ModerationStatusEnumSchema,
     VisibilityEnumSchema
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -25,6 +26,7 @@ export const EventListItemSchema = EventListItemWithRelationsSchema.extend({
     // Admin status fields not included in public list schema
     visibility: VisibilityEnumSchema.optional(),
     lifecycleState: LifecycleStatusEnumSchema.optional(),
+    moderationState: ModerationStatusEnumSchema.optional(),
     // Computed fields for admin display when relations are null
     organizerName: z
         .string()

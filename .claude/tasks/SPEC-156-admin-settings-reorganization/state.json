@@ -1,0 +1,876 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-156",
+    "title": "Admin Settings Reorganization — V1 Page Consolidation",
+    "created": "2026-05-28T05:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create platform_settings DB schema",
+            "description": "Create the `platform_settings` table via Drizzle schema. Pure additive: no triggers, no JSONB CHECK constraints.\n\nFiles delivered:\n- `packages/db/src/schemas/platform/platform-settings.dbschema.ts` (NEW DIR + FILE)\n- `packages/db/src/schemas/platform/index.ts` (NEW — sub-index)\n- `packages/db/src/schemas/index.ts` (added `export * from './platform/index.ts'`)\n\nSchema:\n```ts\nplatform_settings (\n  key         varchar(128) PRIMARY KEY,\n  value       jsonb        NOT NULL,\n  updated_at  timestamptz  NOT NULL DEFAULT now(),\n  updated_by  uuid         NOT NULL REFERENCES users(id)\n)\n```\n\n**Migration generation deferred** — investigation revealed the project does NOT use the drizzle migration journal in dev (per packages/db/CLAUDE.md: 'bypass the migration system entirely and push the schema directly to the DB'). `db:fresh-dev` uses `db:push` directly from the TS schema. First `db:generate` would produce a 1892-line initial migration covering ALL existing tables, which is an architectural decision outside SPEC-156 scope. Owner sign-off (2026-05-28): only schema delivered; migration SQL generation deferred to a future production-release prep (not a SPEC-156 task).\n\nVerification done:\n- Schema file compiles in isolation (typecheck of packages/db is broken by pre-existing errors in src/billing/migrate-addon-purchases.ts unrelated to this change).\n- Schema export resolved via index chain (platform-settings.dbschema → platform/index → schemas/index).\n- Table will be created by `pnpm db:push` on next `db:fresh-dev`.\n\nAC: AC-12 (table definition exists; creation happens via db:push or future migration release).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004"],
+            "subtasks": [],
+            "tags": ["db", "schema", "pr-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "skipped-preexisting-errors",
+                "tests": "n/a-schema-only"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T05:40:00.000Z",
+                "completed": "2026-05-28T05:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create PlatformSettings model extending BaseModel",
+            "description": "Created the model wrapper around the new table per project convention.\n\nFiles delivered:\n- `packages/db/src/models/platform/platform-settings.model.ts` (NEW) — extends `BaseModelImpl<PlatformSettingRecord>` with `findByKey(key, tx?)` and `upsertByKey(key, value, actorId, tx?)`. Uses Drizzle `insert().values().onConflictDoUpdate({ target: key, set: {...} }).returning()` for atomic upsert. Exports singleton `platformSettingsModel`.\n- `packages/db/src/models/platform/index.ts` (NEW — sub-index)\n- `packages/db/src/models/index.ts` (added `export * from './platform/index.ts'` alphabetical)\n- `packages/db/test/models/platform-settings.model.test.ts` (NEW — 5 unit tests, all passing): findByKey returns row when present, findByKey returns undefined when absent, upsertByKey inserts on first write, upsertByKey updates on conflict, upsertByKey throws on empty returning() (driver edge case).\n\nVerification:\n- 5/5 unit tests passing (vitest, 10ms).\n- Typecheck of `packages/db` shows NO new errors in my files (pre-existing errors in `src/billing/migrate-addon-purchases.ts` remain — unrelated to SPEC-156).\n- Soft delete intentionally excluded (settings are upsert-only; absent key = built-in defaults).\n\nAC: supports AC-12, AC-14, AC-15.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [],
+            "tags": ["db", "model", "pr-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "5/5-passed"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T05:58:00.000Z",
+                "completed": "2026-05-28T06:18:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create Zod schemas for platform_settings (discriminated union)",
+            "description": "Added canonical Zod schemas for the 3 supported keys (single source of truth).\n\nFiles delivered:\n- `packages/schemas/src/entities/platformSettings/platform-settings.schema.ts` (NEW DIR + FILE) — 6 schemas: PlatformSettingsKeySchema (enum), SeoDefaultsValueSchema, MaintenanceModeValueSchema, AnnouncementVariantSchema, AnnouncementItemSchema (with UUID id + tri-locale text + ISO-8601 date window), AnnouncementsValueSchema (array), PlatformSettingsResponseSchema (z.discriminatedUnion('key', [...])).\n- `packages/schemas/src/entities/platformSettings/index.ts` (NEW — sub-index)\n- `packages/schemas/src/entities/index.ts` (added export, alphabetical between permission and post).\n- `packages/schemas/test/entities/platformSettings/platform-settings.schema.test.ts` (NEW — 22 unit tests, all passing).\n\n**Note**: Used the project convention `entities/platformSettings/` (camelCase dir) rather than the spec-mentioned `platform-settings/` because the repo's entities dir uses camelCase (eventOrganizer, ownerPromotion, postSponsor, userBookmark, etc.).\n\nDiscriminated union narrowing in tests requires explicit `result.data.key === 'maintenance.mode'` check inside `if (result.success)` — TS does not auto-narrow on success alone.\n\nVerification:\n- 22/22 tests passing in 11ms (vitest).\n- Typecheck of `packages/schemas` clean (cero errors).\n- JSDoc on every export + additive-only compatibility policy noted in file header.\n\nAC: supports AC-12, AC-13 (validation layer for endpoints), AC-17, AC-18 (announcement editor shape).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-008", "T-009", "T-010"],
+            "subtasks": [],
+            "tags": ["schemas", "zod", "pr-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-clean",
+                "tests": "22/22-passed"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T06:22:00.000Z",
+                "completed": "2026-05-28T06:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create PlatformSettingsService with SEO revalidation hook",
+            "description": "Service implementing key-value upsert semantics with permission gates per key + best-effort SEO revalidation hook.\n\n**Architectural deviation from tech-analysis**: extended `BaseService` (not `BaseCrudService`) because platform_settings is key-value upsert, not CRUD-by-id. `BaseCrudService` requires entity-with-UUID generics that don't fit. `BaseService` provides `runWithLoggingAndValidation` + validation + actor validation + logging — everything we need without forcing a UUID-based CRUD shape.\n\nFiles delivered:\n- `packages/service-core/src/services/platformSettings/platform-settings.service.ts` (NEW) — class extends `BaseService`, public `get` and `upsert` methods, private permission mappers + revalidation hook.\n- `packages/service-core/src/services/platformSettings/index.ts` (NEW sub-index)\n- `packages/service-core/src/services/index.ts` (1 line export added, alphabetical between permission and post)\n- `packages/service-core/test/services/platformSettings/platform-settings.service.test.ts` (NEW — 14 unit tests, all passing).\n\nPermission gates (per tech-analysis D1, mapped to new perms from T-005):\n- `seo.defaults` read → `SETTINGS_GENERAL_VIEW`\n- `seo.defaults` write → `SETTINGS_GENERAL_WRITE`\n- `maintenance.mode` / `announcements.global` (read or write) → `MAINTENANCE_MODE_WRITE` (SUPER_ADMIN-only)\n\nSEO revalidation hook (tech-analysis D7):\n- On successful `seo.defaults` upsert: `getRevalidationService()?.revalidateByEntityType({ entityType: 'post', trigger: 'hook' })`.\n- Best-effort: failures logged via `this.logger.warn`, do NOT roll back the upsert. RevalidationService not initialized = silent skip with warn log.\n- Non-SEO key upserts: NO revalidation call.\n\nInput validation: discriminated union by key — sending a SEO payload under `maintenance.mode` key is rejected with VALIDATION_ERROR before reaching the DB.\n\nVerification:\n- 14/14 tests passing (vitest, 48ms).\n- Typecheck of `packages/service-core` shows cero errors in my files (pre-existing `@repo/billing` import errors in billing/* persist — unrelated).\n- Test coverage: get success/null/forbidden/wrong-perm/invalid-key (5), upsert success-per-key/forbidden/value-key-mismatch (4), revalidation triggered/skipped/non-blocking-on-failure/no-op-when-uninitialized (5).\n\nAC: AC-13 (endpoints — service layer ready), AC-14, AC-15 (SEO + maintenance writes with permission gates).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-003", "T-006"],
+            "blocks": ["T-008", "T-009", "T-010"],
+            "subtasks": [],
+            "tags": ["service-core", "pr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "14/14-passed"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T07:05:00.000Z",
+                "completed": "2026-05-28T07:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add 8 new permissions to permission.enum.ts",
+            "description": "Added new finer-grained permissions per tech-analysis D1 owner sign-off.\n\nFiles delivered:\n- `packages/schemas/src/enums/permission.enum.ts` — appended a new 'PLATFORM SETTINGS V1 (SPEC-156)' block with 8 new entries + section comment explaining coexistence with legacy perms (SETTINGS_MANAGE, SYSTEM_MAINTENANCE_MODE, BILLING_READ_ALL, BILLING_MANAGE).\n- `packages/schemas/src/enums/__tests__/permission-platform-settings.test.ts` (NEW — 14 unit tests across 6 groups + cross-cutting integrity).\n\nValue conventions used (dot-notation lowercase, consistent with existing entries):\n- `settings.general.view` / `settings.general.write`\n- `system.maintenanceMode.write` (mirrors legacy `system.maintenanceMode`)\n- `billing.settings.view` / `billing.settings.write`\n- `billing.view.own` (distinct from `billing.readAll` admin-tier)\n- `subscription.view.own`\n- `user.update.self` (umbrella for Mi cuenta, distinct from `user.update.profile`/`user.update.any`)\n\nVerification:\n- 14/14 new tests passing in 5ms.\n- 91/91 src/enums/ tests passing (no regressions in sibling tag-system / exchange-rate / etc. tests).\n- Typecheck clean (cero errors).\n- Integrity tests verify: 8 unique values, dot-notation regex, no enum-wide value collisions.\n\nAC: AC-22..AC-27 (enum-level support; bundle assignments come in T-006).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [],
+            "tags": ["schemas", "permissions", "pr-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-clean",
+                "tests": "14/14-new-and-91/91-enum-suite"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T06:32:00.000Z",
+                "completed": "2026-05-28T06:42:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Assign new permissions to role bundles + bundle tests",
+            "description": "Assigned the 8 new permissions to existing role permission bundles.\n\n**Important finding**: Role-to-permission bundles do NOT live in `packages/schemas/` as the tech-analysis assumed — they live in the seed data at `packages/seed/src/required/rolePermissions.seed.ts` (`ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]>` constant, exported via `_internals` for tests). This is consistent with the Better Auth pattern: roles are seeded into `r_role_permission` rows.\n\nFiles delivered:\n- `packages/seed/src/required/rolePermissions.seed.ts` — appended a `// PLATFORM SETTINGS V1 (SPEC-156)` block to each role bundle:\n  - SUPER_ADMIN: all 8 perms\n  - ADMIN: 7 perms (no MAINTENANCE_MODE_WRITE)\n  - HOST: 3 perms (BILLING_VIEW_OWN, SUBSCRIPTION_VIEW_OWN, USER_UPDATE_SELF)\n  - EDITOR: 1 perm (USER_UPDATE_SELF)\n  - CLIENT_MANAGER: 1 perm (USER_UPDATE_SELF)\n  - USER: 1 perm (USER_UPDATE_SELF)\n  - SPONSOR: 1 perm (USER_UPDATE_SELF)\n  - GUEST, SYSTEM: none\n- `packages/seed/test/required/rolePermissions.seed.test.ts` — appended a SPEC-156 describe block (67 new tests across 6 nested describes) covering: SUPER_ADMIN full set, ADMIN 7-of-8 + explicit MAINTENANCE_MODE_WRITE absence, HOST positive + negative gates (no BILLING_READ_ALL, no MAINTENANCE_MODE_WRITE, no SETTINGS_GENERAL_WRITE), USER_UPDATE_SELF granted to all 7 authenticated roles, GUEST + SYSTEM hold zero, EDITOR/CM/USER/SPONSOR do not receive billing/settings gates.\n\nVerification:\n- 118/118 tests passing in `rolePermissions.seed.test.ts` (67 mine + 51 from SPEC-155/SPEC-164 sibling — no regressions).\n- Typecheck of `packages/seed/src/required/rolePermissions.seed.ts` + test file: cero errors.\n- Pre-existing TS errors in OTHER seed files (`billing*Seed.ts`, `testUsers.seed.ts`) remain — unrelated to SPEC-156 (`@repo/billing` import resolution issue).\n\nAC: AC-22..AC-27 (role bundle assignments). Middleware wiring for protected billing endpoints happens in T-007.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-004", "T-007"],
+            "subtasks": [],
+            "tags": ["schemas", "permissions", "seed", "pr-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "118/118-rolePermissions-suite"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T06:44:00.000Z",
+                "completed": "2026-05-28T07:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire BILLING_VIEW_OWN / SUBSCRIPTION_VIEW_OWN in billing middleware",
+            "description": "Added defense-in-depth self-billing permission gate on `/api/v1/protected/billing/*` via a new `billingPermMiddleware`. Sits alongside the existing `billingOwnershipMiddleware` (per-resource ownership) — the new middleware enforces 'actor carries BILLING_VIEW_OWN at all'.\n\n**T-006 expansion (forced by tests)**: original T-006 only assigned BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN to HOST/ADMIN/SUPER_ADMIN. But /protected/billing/* serves checkout/upgrade flows that USER + CLIENT_MANAGER + SPONSOR also need (paying roles per SPEC-143 test users matrix). Added the perms to those 3 roles too. EDITOR (internal non-paying) still excluded — this is where the middleware adds real value: blocks EDITOR from hitting self-billing endpoints despite admin-access.\n\nFiles delivered:\n- `apps/api/src/middlewares/billing-perm.middleware.ts` (NEW — middleware factory with configurable required perm, guest pass-through, missing-actor pass-through; throws 403 on missing perm)\n- `apps/api/src/routes/billing/index.ts` (extended — imports + `router.use('*', billingPermMiddleware())` in `createBillingRoutesHandler` after `requireBilling` and before sentry/grace/qzpay middlewares)\n- `apps/api/test/middlewares/billing-perm.middleware.test.ts` (NEW — 10 unit tests covering default gate, custom perm, no-actor/guest pass-through, SPEC-164 boundary)\n- `packages/seed/src/required/rolePermissions.seed.ts` (extended — added BILLING_VIEW_OWN + SUBSCRIPTION_VIEW_OWN to USER, CLIENT_MANAGER, SPONSOR with rationale comments)\n- `packages/seed/test/required/rolePermissions.seed.test.ts` (rewrote describe block — now tests positive assignments for USER/CLIENT_MANAGER/SPONSOR + explicit EDITOR exclusion + settings/maintenance gates remain admin-only)\n- `apps/api/test/helpers/auth.ts` (extended — `createMockUserActor` + `createMockClientManagerActor` factories now include BILLING_VIEW_OWN + SUBSCRIPTION_VIEW_OWN by default, matching seed)\n- `apps/api/test/helpers/mocks/db-mock.ts` (extended — added `PlatformSettingsModel` mock class + `platformSettings` table stub so the app boot in integration tests doesn't fail when the platform-settings public route module loads)\n\nGuest handling subtlety: guest actors carry a sentinel UUID. Without explicit guard, the middleware would pre-empt the upstream 401 (from `billingAuthMiddleware`) with a 403, breaking the auth contract. Added `if (isGuestActor(actor)) await next()` early-return.\n\nVerification:\n- 10/10 middleware tests passing.\n- 17/17 checkout integration tests passing (were 13/17 failing without my fixes).\n- 126/126 rolePermissions.seed.test.ts (75 SPEC-156 tests — 67 from T-006 + 8 new for T-007 expansion).\n- billing-public.test.ts still fails but the failure is PRE-EXISTING (ConversationService mock missing in test setup, unrelated to SPEC-156 — verified via `git stash` baseline).\n- Typecheck clean for my files.\n\nSPEC-164 boundary preserved: BILLING_VIEW_OWN is distinct from BILLING_READ_ALL. HOST/USER/CLIENT_MANAGER/SPONSOR get the OWN gate; only ADMIN/SUPER_ADMIN keep ALL. Test asserts this in two places.\n\nAC: AC-23 (BILLING_VIEW_OWN gate enforced on /protected/billing/*).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-PR1-QG"],
+            "subtasks": [],
+            "tags": ["api", "middleware", "permissions", "pr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "10-mw-plus-17-checkout-plus-126-roleperm"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T08:48:00.000Z",
+                "completed": "2026-05-28T09:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Admin endpoint GET /api/v1/admin/platform-settings/:key",
+            "description": "Created the admin read endpoint at `/api/v1/admin/platform-settings/{key}`.\n\n**Path note**: Used the project's per-entity routing convention (`routes/<entity>/admin/index.ts` + `routes/<entity>/index.ts` reexport + mounted at `/api/v1/admin/<entity>`) rather than the spec-mentioned `routes/admin/platform-settings/` flat path. There is no `routes/admin/` top-level dir in this codebase.\n\nFiles delivered:\n- `apps/api/src/routes/platform-settings/admin/index.ts` (NEW DIR + FILE) — `adminGetPlatformSettingsRoute` via `createAdminRoute`. Permission model documented inline: middleware only enforces admin-access; per-key gating lives in the service (T-004) because the required perm depends on the URL key.\n- `apps/api/src/routes/platform-settings/index.ts` (NEW — re-exports `adminPlatformSettingsRoutes`)\n- `apps/api/src/routes/index.ts` (added import + `app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes)` mount)\n- `apps/api/test/routes/platform-settings-admin.test.ts` (NEW — 5 unit tests: serializeRow null/Date-ISO/JSONB-passthrough + route module exports + service constructor invoked).\n\nRoute behavior:\n- `requiredPermissions: [ACCESS_PANEL_ADMIN]` (defense in depth — both ADMIN and SUPER_ADMIN have this).\n- `requestParams: { key: PlatformSettingsKeySchema }` — Zod rejects unknown keys (400).\n- Response: `PlatformSettingsResponseSchema.nullable()` shape with `value: z.unknown()` (the discriminated branch is enforced at the service layer via Zod input validation, not at the response schema).\n- Serializes `updatedAt: Date → ISO-8601 string` at the boundary.\n- Returns `null` when row absent (200 + null) — callers fall back to built-in defaults rather than 404-handling.\n- Re-throws `ServiceError(result.error.code, result.error.message)` on service errors → framework error handler converts to 403/etc.\n\nVerification:\n- 5/5 tests passing (vitest, 6.6s — slow because the route import loads the full api graph; tests themselves take ms).\n- Typecheck of `apps/api` shows cero errors in my files (pre-existing `@repo/billing` / `@repo/email` import errors persist — unrelated).\n\nAC: AC-13 (admin read endpoint, with per-key permission gates from T-004).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-009", "T-PR1-QG"],
+            "subtasks": [],
+            "tags": ["api", "endpoint", "admin", "pr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "5/5-passed"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T07:35:00.000Z",
+                "completed": "2026-05-28T08:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Admin endpoint PATCH /api/v1/admin/platform-settings/:key",
+            "description": "Extended the T-008 route file with the admin write endpoint.\n\nFiles delivered:\n- `apps/api/src/routes/platform-settings/admin/index.ts` (extended — added `adminPatchPlatformSettingsRoute` + mounted in the router after the GET handler; also imported `ServiceErrorCode` for the defensive empty-data guard).\n- `apps/api/test/routes/platform-settings-admin.test.ts` (extended — added a PATCH-specific serialization test + extended the module-export test to assert the PATCH route is exported).\n\nBody validation strategy: `requestBody: z.object({ value: z.unknown() })` at the route, with the per-key discriminated-union validation handled by `PlatformSettingsService.upsert` (T-004). Rationale: duplicating the discriminator at both layers is redundant — the service already rejects key/value mismatches with VALIDATION_ERROR before the DB write, and surface in the route stays thin.\n\nPermission gate: per-key (`SETTINGS_GENERAL_WRITE` for SEO, `MAINTENANCE_MODE_WRITE` for maintenance + announcements) enforced inside `PlatformSettingsService.upsert`. Route-level middleware only checks `ACCESS_PANEL_ADMIN` (defense in depth).\n\nSide effect: SEO PATCH triggers best-effort revalidation via the service hook (T-004) — covered by 5 service-layer tests; failure is non-blocking and does NOT roll back the upsert.\n\nVerification:\n- 6/6 route tests passing (5 from T-008 + 1 new PATCH serialization test + GET test that now asserts both routes are exported).\n- Typecheck of `apps/api` clean for my files.\n- Comprehensive PATCH behavior coverage lives in the 14 service tests (T-004): success per key, FORBIDDEN per key, validation rejection on value-key mismatch, revalidation triggered for SEO, revalidation skipped for other keys, revalidation non-blocking on failure, revalidation no-op when service uninitialized.\n\nAC: AC-13 (admin PATCH endpoint), AC-14 (maintenance write with perm gate), AC-15 (SEO write with auto-revalidation).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-PR1-QG", "T-029", "T-030"],
+            "subtasks": [],
+            "tags": ["api", "endpoint", "admin", "pr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "6/6-passed-plus-14-service-tests-from-T-004"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T08:05:00.000Z",
+                "completed": "2026-05-28T08:18:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Public endpoint GET /api/v1/public/announcements",
+            "description": "Created the public read endpoint per tech-analysis D2 — enables web app to render announcements cross-device.\n\n**Service extension (out of original T-004 scope, justified here)**: added `PlatformSettingsService.findActiveAnnouncements(now?: Date)` method that does NOT require an actor and does NOT check permissions (vs the admin `get` which gates on MAINTENANCE_MODE_WRITE for the announcements key). Filters items server-side by `startsAt <= now <= endsAt` using ISO-8601 lexicographic comparison (correct for UTC-Z + offset strings).\n\nFiles delivered:\n- `packages/service-core/src/services/platformSettings/platform-settings.service.ts` — extended with `findActiveAnnouncements` (added AnnouncementItem + AnnouncementsValueSchema imports).\n- `packages/service-core/test/services/platformSettings/platform-settings.service.test.ts` — extended with 7 new tests for the new method (row-absent, schema-validation-failure logged + empty, no-window passthrough, future filter, past filter, span-now inclusion, no-actor-required).\n- `apps/api/src/routes/platform-settings/public/index.ts` (NEW) — `publicGetAnnouncementsRoute` via `createPublicRoute` with `cacheTTL: 300` (5 min) + `customRateLimit: { requests: 100, windowMs: 60000 }`. Route path `/` so mount at `/api/v1/public/announcements` gives the spec URL.\n- `apps/api/src/routes/platform-settings/index.ts` — added export of `publicPlatformSettingsRoutes`.\n- `apps/api/src/routes/index.ts` — added import + `app.route('/api/v1/public/announcements', publicPlatformSettingsRoutes)`.\n- `apps/api/test/routes/platform-settings-public.test.ts` (NEW) — 4 wiring tests (module exports, service constructor invocation, passthrough, empty list).\n\nVerification:\n- 21/21 service tests passing (14 original + 7 new).\n- 4/4 public route tests passing.\n- Typecheck of `apps/api` and `packages/service-core` clean for my files.\n- Cache TTL = 5 min documented in route file with rationale (web app accepts up-to-5-min lag for new announcements — acceptable for the use case; admin endpoint does NOT auto-invalidate this cache).\n- Dismissal state is client-side (cookie) — endpoint always returns every active item.\n\nAC: AC-19 (public announcements display + cross-device cache).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-PR1-QG", "T-041"],
+            "subtasks": [],
+            "tags": ["api", "endpoint", "public", "pr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pending-pr1-qg",
+                "typecheck": "passed-for-my-files",
+                "tests": "4-route-passed-and-21-service-tests-total"
+            },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": "2026-05-28T08:22:00.000Z",
+                "completed": "2026-05-28T08:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-PR1-QG",
+            "title": "PR-1 quality gate + open PR to staging",
+            "description": "Run quality gate for PR-1 scope (B2 infrastructure): typecheck + lint + tests + 90% coverage check. Open PR targeting `staging`.\n\nCommands:\n- `pnpm typecheck`\n- `pnpm lint`\n- `pnpm test` (filter to affected packages: db, schemas, service-core, api)\n- `pnpm env:check:registry` (sanity — no new env vars expected)\n\nPR description includes: scope (platform_settings infra + 8 new perms + 3 new endpoints), AC refs (AC-12..AC-15, AC-19, AC-22..AC-27 partial), no UI changes.\n\nManual smoke (curl or REST client):\n- `GET /api/v1/admin/platform-settings/seo.defaults` with ADMIN cookie returns 200.\n- `PATCH` same with valid body returns 200.\n- `GET /api/v1/public/announcements` returns 200 unauthenticated.\n\nDoes NOT require staging billing smoke (no billing core changes per CLAUDE.md billing smoke rule).",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009", "T-010"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["quality-gate", "pr-1"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Move /me/profile → /mi-cuenta/perfil + 301 redirect",
+            "description": "Relocate the profile page per the new IA. No content changes.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/perfil.tsx` (NEW — content from `me/profile.tsx`, 468 LOC)\n- `apps/admin/src/routes/_authed/me/profile.tsx` (REWRITE as thin TanStack `beforeLoad` redirect file: `throw redirect({ to: '/mi-cuenta/perfil', permanent: true })`)\n\nTests:\n- E2E: GET `/me/profile` returns 301 → `/mi-cuenta/perfil`.\n- Page renders at new path, form submit still works.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Split /me/settings → /mi-cuenta/preferencias.tsx (preferences block)",
+            "description": "Extract the preferences block from `me/settings.tsx` (593 LOC) into a dedicated page.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/preferencias.tsx` (NEW — extracted preferences subset)\n- (Keep `me/settings.tsx` intact for now; T-014 handles split for notificaciones + the redirect)\n\nFields (per audit §2.2): tema web, tema admin, idioma UI web, idioma UI admin, timezone (read-only display).\n\nTests:\n- Form renders with all 5 fields.\n- Submit persists per existing user-settings update logic.\n- Theme/language change reflects immediately in UI.\n\nAC: AC-4.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Split /me/settings → /mi-cuenta/notificaciones.tsx + honest disclosure",
+            "description": "Extract the notifications block from `me/settings.tsx` into a dedicated page WITH honest disclosure labels.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/notificaciones.tsx` (NEW — extracted notifications subset)\n- `apps/admin/src/routes/_authed/me/settings.tsx` (REWRITE as redirect → `/mi-cuenta/preferencias` since that is the more general landing)\n\nFields (per audit §2.3): master toggle, email (wired), SMS (disabled + `(no disponible)` label), push (disabled + same label).\n\nHonest disclosure implementation: `disabled` attribute on toggle + small text label `(no disponible)` next to label. Optional Tooltip 'Próximamente — backend en desarrollo'.\n\nTests:\n- Master toggle works.\n- Email toggle wired (submit persists).\n- SMS + push toggles visually disabled.\n- SMS + push labels include `(no disponible)` text (assert via testing-library `getByText`).\n- `/me/settings` returns 301 to `/mi-cuenta/preferencias`.\n\nAC: AC-5, AC-20, AC-21.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "honest-disclosure", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Move /me/change-password → /mi-cuenta/seguridad/cambiar-password.tsx + redirect",
+            "description": "Relocate password change page. No content changes (existing 3-step flow preserved per audit §2.4).\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/seguridad/cambiar-password.tsx` (NEW — content from `me/change-password.tsx`, 343 LOC)\n- `apps/admin/src/routes/_authed/me/change-password.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- 3-step flow works at new path: current password → new (with strength meter) → confirm.\n- Validation rules unchanged (8+ chars, upper, lower, number, special).\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-016", "T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "New /mi-cuenta/seguridad/index.tsx landing page",
+            "description": "Create the security area landing page.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/seguridad/index.tsx` (NEW)\n\nContent: link to `/mi-cuenta/seguridad/cambiar-password` + `(próximamente)` stubs for 2FA / Sesiones / Historial de inicios de sesión / Cambiar email (deferred per spec §3 OUT and `99-future-enhancements.md` §3.1).\n\nTests:\n- Page renders.\n- Password change link navigates correctly.\n- Stubs visible with `(próximamente)` label and disabled affordance.\n\nAC: AC-6.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "New /mi-cuenta/datos.tsx GDPR placeholder",
+            "description": "Create the GDPR/data area placeholder.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/datos.tsx` (NEW)\n\nContent: 'Próximamente' notice + brief explanation that data export, account pause, and account deletion options will live here. Link to support email for current data requests.\n\nTests:\n- Page renders with placeholder content.\n- Email link works.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Move /me/tags → /mi-cuenta/etiquetas + redirect",
+            "description": "Relocate user tags page (HOST/EDITOR).\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/etiquetas.tsx` (NEW — content from `me/tags.tsx`, 24 LOC)\n- `apps/admin/src/routes/_authed/me/tags.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Page renders correctly at new path.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Move /settings/critical → /plataforma/critical + redirect (preserve current data layer)",
+            "description": "Relocate the critical settings page. **DATA layer change (localStorage → API) is deferred to PR-3 (T-029).** This task is pure relocation + redirect — preserve current localStorage logic verbatim at the new path so PR-2 ships independently.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/index.tsx` (NEW — content from `settings/critical.tsx`, 182 LOC, localStorage logic preserved)\n- `apps/admin/src/routes/_authed/settings/critical.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Page renders at new path with maintenance toggle + announcements list (current localStorage display preserved).\n- No regression in current behavior.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-029", "T-033"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Move /settings/seo → /plataforma/configuracion/seo + redirect (preserve current data layer)",
+            "description": "Relocate the SEO settings page. **DATA layer change (localStorage → API + auto-revalidation) deferred to PR-3 (T-030).**\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/configuracion/seo.tsx` (NEW — content from `settings/seo.tsx`, 188 LOC, localStorage logic preserved)\n- `apps/admin/src/routes/_authed/settings/seo.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Page renders with 3 SEO fields (meta title template, description default, OG image default) + read-only badges (sitemap, robots.txt).\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Move /revalidation → /plataforma/cache/revalidacion + redirect",
+            "description": "Relocate the revalidation page preserving its 3 tabs (Config, Logs, Manual) per audit §5.1.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/cache/revalidacion/index.tsx` (NEW — content from `revalidation/index.tsx`, 518 LOC)\n- `apps/admin/src/routes/_authed/revalidation/index.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- 3 tabs render and switch correctly.\n- No regression in per-entity rules, logs filter, manual trigger.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Move /billing/cron → /plataforma/ops/cron + redirect",
+            "description": "Relocate the cron jobs admin page per IA §15 Ops-vs-Config split.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/ops/cron.tsx` (NEW — content from `billing/cron.tsx`, 42 LOC)\n- `apps/admin/src/routes/_authed/billing/cron.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Cron list renders at new path.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Move /billing/webhook-events → /plataforma/ops/webhooks + redirect",
+            "description": "Relocate the webhook events admin page per IA §15.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/ops/webhooks.tsx` (NEW — content from `billing/webhook-events.tsx`, 527 LOC)\n- `apps/admin/src/routes/_authed/billing/webhook-events.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Delivery log, per-event detail, retry button all work at new path.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Move /billing/notification-logs → /plataforma/email/logs + redirect",
+            "description": "Relocate notification logs page per IA §15 (categorized under email infra, not billing).\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/email/logs.tsx` (NEW — content from `billing/notification-logs.tsx`, 462 LOC)\n- `apps/admin/src/routes/_authed/billing/notification-logs.tsx` (REWRITE as redirect)\n\nTests:\n- Redirect 301.\n- Email history with filters works at new path.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Move /tags/internal + /tags/system → /plataforma/tags/{internas,sistema} + redirects",
+            "description": "Relocate 2 tag CRUD route groups (each has 3 files: index, new, $id_.edit). `/tags/post-tags` and `/tags/user-moderation` stay at their paths (only sidebar refs change — handled in T-026).\n\nFiles (NEW):\n- `apps/admin/src/routes/_authed/plataforma/tags/internas/index.tsx`\n- `apps/admin/src/routes/_authed/plataforma/tags/internas/new.tsx`\n- `apps/admin/src/routes/_authed/plataforma/tags/internas/$id_.edit.tsx`\n- `apps/admin/src/routes/_authed/plataforma/tags/sistema/index.tsx`\n- `apps/admin/src/routes/_authed/plataforma/tags/sistema/new.tsx`\n- `apps/admin/src/routes/_authed/plataforma/tags/sistema/$id_.edit.tsx`\n\nFiles (REWRITE as redirects):\n- `apps/admin/src/routes/_authed/tags/internal/{index,new,$id_.edit}.tsx`\n- `apps/admin/src/routes/_authed/tags/system/{index,new,$id_.edit}.tsx`\n\nTests:\n- All 6 redirects return 301.\n- CRUD works at new paths.\n\nAC: AC-1, AC-2.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "pr-2"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Update IA config (SPEC-154) for new sections + routes",
+            "description": "Single config-driven update that surfaces all relocations in the sidebar/IA per SPEC-154 promise.\n\nFiles:\n- `apps/admin/src/config/ia/sidebars.ts`\n- `apps/admin/src/config/ia/roles/host.ts`\n- `apps/admin/src/config/ia/roles/admin.ts`\n- `apps/admin/src/config/ia/roles/super-admin.ts`\n- `apps/admin/src/config/ia/roles/editor.ts`\n- `apps/admin/src/config/ia/sections.ts` (if new sections needed)\n- `apps/admin/src/config/ia/__tests__/*.test.ts` (update fixtures + add assertions)\n\nChanges:\n- Add `Plataforma` parent with sub-items pointing to all `/plataforma/*` routes.\n- Add `Comercial` parent (keep billing/settings inside).\n- Add `Mi cuenta` group for non-HOST roles (topbar avatar dropdown) and main menu for HOST per IA §12.5 / §13.\n- Update existing item refs from old paths to new paths.\n- `/tags/post-tags` referenced from Editorial sidebar; `/tags/user-moderation` from Comunidad sidebar.\n\nTests:\n- Per-role sidebar snapshot updated.\n- Assertions: each new section appears with expected items + permission gates.\n- No dead refs to removed paths.\n\nAC: AC-3.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025"
+            ],
+            "blocks": ["T-PR2-QG"],
+            "subtasks": [],
+            "tags": ["config", "ia", "pr-2"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-PR2-QG",
+            "title": "PR-2 quality gate + open PR to staging",
+            "description": "Run quality gate for PR-2 scope (B1 page relocations + IA config + honest disclosure). Open PR targeting `staging`.\n\nCommands:\n- `pnpm typecheck`\n- `pnpm lint`\n- `pnpm test` (filter: admin, schemas)\n- E2E: assert all 15+ redirect URLs return 301 to expected new path.\n\nPR description includes: AC-1 through AC-6, AC-20, AC-21. No DB or API changes. Depends on PR-1 being merged to staging first (for new perms in config).\n\nManual smoke (browser, per role using SPEC-143 dev users):\n- SUPER_ADMIN, ADMIN, HOST: sidebar shows new IA structure correctly.\n- All redirect URLs functional.\n- `me/settings` split renders both new pages correctly.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-PR1-QG"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["quality-gate", "pr-2"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create localStorage→API migration helper utility",
+            "description": "Per-browser one-shot migration helper (tech-analysis D4).\n\nFiles:\n- `apps/admin/src/utils/settings-migration.ts` (NEW)\n- `apps/admin/src/routes/__root.tsx` (or root layout — invoke helper on first authenticated load)\n\nLogic:\n1. Check cookie `_settings_migrated`. If `true`, no-op (return immediately).\n2. For each migration key (`seo`, `critical-maintenance`, `critical-announcements`):\n   - Read localStorage value.\n   - If absent → skip.\n   - GET `/api/v1/admin/platform-settings/<api-key>`. If server has value → skip (don't overwrite).\n   - If server null and localStorage has value → PATCH server with localStorage value.\n3. On success: set cookie `_settings_migrated=true; max-age=63072000; path=/`.\n4. On any HTTP error: do NOT set cookie, do NOT clear localStorage (preserve user data per spec §7 risk mitigation). Log error to console + report to logger.\n\nAdd TODO comment: 'remove ~30 days post-deploy via spec-156 follow-up task'.\n\nTests:\n- Cookie present → no-op.\n- localStorage absent + server null → no-op.\n- localStorage present + server null → PATCH called + cookie set.\n- localStorage present + server has value → no PATCH, cookie set.\n- PATCH fails (mock 500) → no cookie set, no localStorage clear.\n\nAC: AC-16.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-PR1-QG"],
+            "blocks": ["T-029", "T-030", "T-PR3-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "migration", "pr-3"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Rewrite /plataforma/critical data source: localStorage → API",
+            "description": "Replace the data layer of the critical settings page (relocated in T-019) with TanStack Query against the new admin endpoints.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/index.tsx` (REWRITE data source)\n\nChanges:\n- Replace `localStorage.getItem('MAINTENANCE_KEY')` reads with `useQuery({ queryKey: ['platform-settings', 'maintenance.mode'], queryFn: () => fetchPlatformSetting('maintenance.mode') })`.\n- Replace localStorage writes with `useMutation` calling `PATCH /api/v1/admin/platform-settings/maintenance.mode`.\n- Same pattern for announcements display (preserved as read-only here; editor is in T-033/T-034).\n- Permission gate: page guarded by `MAINTENANCE_MODE_WRITE` per AC-25.\n\nTests:\n- Page loads value from server.\n- Toggle update calls PATCH endpoint and reflects in UI.\n- 403 handling: non-SUPER_ADMIN gets denied.\n\nAC: AC-14.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-019", "T-028", "T-009", "T-PR2-QG"],
+            "blocks": ["T-PR3-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "migration", "pr-3"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Rewrite /plataforma/configuracion/seo data source: localStorage → API",
+            "description": "Replace the data layer of the SEO settings page (relocated in T-020) with TanStack Query against the new admin endpoints. Auto-revalidation happens server-side in `PlatformSettingsService` (T-004).\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/configuracion/seo.tsx` (REWRITE data source)\n\nChanges:\n- TanStack Query for read.\n- Mutation PATCH `/api/v1/admin/platform-settings/seo.defaults`.\n- Success toast acknowledges auto-revalidation (e.g., 'Cambios guardados — caché del sitio público invalidada automáticamente').\n- Optional fallback note: 'Si las páginas no se actualizan, podés revalidar manualmente en /plataforma/cache/revalidacion'.\n\nTests:\n- Page loads SEO defaults from server.\n- Save calls PATCH endpoint.\n- Verify (mock) that PATCH success triggers revalidation in service layer (covered by T-031).\n\nAC: AC-15.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020", "T-028", "T-009", "T-PR2-QG"],
+            "blocks": ["T-031", "T-PR3-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "migration", "pr-3"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Integration test: SEO PATCH triggers auto-revalidation",
+            "description": "End-to-end integration test verifying the auto-revalidation wiring across PlatformSettingsService + revalidationService.\n\nFiles:\n- `apps/api/test/routes/admin/platform-settings.integration.test.ts` (NEW or extend existing)\n\nScenario:\n1. PATCH `/api/v1/admin/platform-settings/seo.defaults` with valid body and SUPER_ADMIN session.\n2. Assert: revalidation log table has a new entry for `entityType='post'` and `path='/'` within the test transaction window.\n\nAlternative if revalidation service is async (queue-based): spy on the service call rather than checking the log table.\n\nTests:\n- Happy path: PATCH → revalidation triggered.\n- Non-SEO key (e.g., maintenance.mode): PATCH does NOT trigger revalidation.\n- Revalidation failure: SEO PATCH still returns 200 (revalidation is best-effort, not blocking).\n\nAC: AC-15.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-PR3-QG"],
+            "subtasks": [],
+            "tags": ["api", "testing", "integration", "pr-3"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-PR3-QG",
+            "title": "PR-3 quality gate + open PR to staging",
+            "description": "Run quality gate for PR-3 (localStorage→API migration). Open PR targeting `staging`.\n\nCommands: typecheck + lint + test (admin, api).\n\nManual smoke (browser, post-merge to staging):\n- SUPER_ADMIN visits `/plataforma/critical` for the first time after deploy → migration helper runs → cookie set → maintenance toggle reflects DB value.\n- SUPER_ADMIN visits `/plataforma/configuracion/seo` → migration runs → SEO fields populate from DB.\n- Toggle maintenance mode → reflects on second browser within seconds (cross-device verified).\n- Edit SEO → confirm web pages revalidate (tail logs or check headers).\n\nDepends on PR-2 merged.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-029", "T-030", "T-031"],
+            "blocks": ["T-033"],
+            "subtasks": [],
+            "tags": ["quality-gate", "pr-3"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Mi facturación landing route + permission gate",
+            "description": "Create the HOST self-billing landing route shell with permission gate.\n\nFiles:\n- `apps/admin/src/routes/_authed/mi-cuenta/facturacion.tsx` (NEW)\n\nRoute config:\n- `beforeLoad`: check user has `BILLING_VIEW_OWN` + `SUBSCRIPTION_VIEW_OWN`. Redirect to `/` if denied.\n- Layout: page header 'Mi facturación' + 3 section slots (filled by T-034, T-036, T-037).\n- Skeleton/loading states while child queries resolve.\n\nTests:\n- Route renders for HOST with required perms.\n- 403/redirect for HOST without perms.\n- 403/redirect for users without HOST role.\n\nAC: AC-7.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-PR3-QG", "T-007", "T-019"],
+            "blocks": ["T-034", "T-036", "T-037", "T-042", "T-043"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "billing-host", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Mi facturación — SubscriptionSummarySection component",
+            "description": "Render the 'Mi plan actual' section.\n\nFiles:\n- `apps/admin/src/components/billing/host/SubscriptionSummarySection.tsx` (NEW)\n\nData (parallel queries):\n- `GET /api/v1/protected/billing/subscriptions?pageSize=1` → first active subscription.\n- `GET /api/v1/protected/billing/invoices?pageSize=1&sort=date_desc` → latest invoice (for PDF link).\n\nDisplays (per audit §3 Section 1):\n- Plan name + status badge (active/trial/past-due/cancelled/etc.).\n- Próximo cobro: fecha formateada.\n- Método de pago: brand + last4, or 'MercadoPago' fallback.\n- 'Descargar última factura' link visible only when `latestInvoice.pdfUrl` truthy.\n\nTests:\n- Loading skeleton renders while queries pending.\n- All fields render correctly with mocked data.\n- PDF link absent when no `pdfUrl`.\n- Error state (query rejects) shows friendly message.\n\nAC: AC-8, AC-11.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "billing-host", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Standalone <UsageProgressBar> component",
+            "description": "Standalone progress bar component for usage display (tech-analysis D5 = standalone, NOT widget infra).\n\nFiles:\n- `apps/admin/src/components/billing/host/UsageProgressBar.tsx` (NEW)\n- `apps/admin/src/components/billing/host/UsageProgressBar.test.tsx` (NEW)\n\nProps: `{ label: string, current: number, limit: number }`.\n\nBehavior:\n- Compute `percentage = current / limit`.\n- Color thresholds: < 80% default (e.g., blue/neutral), >= 80% warning (amber), >= 95% danger (red), = 100% danger + 'Bloqueado' suffix.\n- Use Tailwind v4 utility classes (admin app convention).\n- Aria-label includes label + percentage for screen readers.\n\nTests:\n- Renders with correct percentage.\n- Color class changes at thresholds (assert via getByRole + class assertion).\n- Edge cases: limit=0 (handle gracefully — show 'sin límite' or similar).\n\nAC: AC-9.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-036"],
+            "subtasks": [],
+            "tags": ["frontend", "component", "billing-host", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Mi facturación — PlanUsageSection component",
+            "description": "Render the 'Uso de mi plan' section using the new UsageProgressBar.\n\nFiles:\n- `apps/admin/src/components/billing/host/PlanUsageSection.tsx` (NEW)\n\nData:\n- `GET /api/v1/protected/billing/usage` → array of `{ key, limit, current, percentage, overallThreshold }`.\n\nDisplays (per audit §3 Section 2):\n- One `<UsageProgressBar>` per resource (alojamientos, imágenes, almacenamiento, etc.).\n- When any resource hits >= 95% (danger), show inline 'Actualizar plan' CTA linking to web `/{lang}/suscriptores/planes`.\n- Empty state: 'No hay datos de uso disponibles para tu plan.'\n\nTests:\n- Renders progress bars for each limit in mocked response.\n- 'Actualizar plan' CTA appears when overallThreshold='critical' or 'exceeded'.\n- Empty state when limits array empty.\n\nAC: AC-9.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-033", "T-035"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "billing-host", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Mi facturación — BillingActionsSection component",
+            "description": "Render the 'Actions' section with deep links to the web app for write actions.\n\nFiles:\n- `apps/admin/src/components/billing/host/BillingActionsSection.tsx` (NEW)\n- `apps/admin/src/lib/billing/web-deep-links.ts` (NEW — single source of truth for path constants per tech-analysis §4 risk mitigation)\n\nLinks (per audit §3 Section 3):\n- Primary CTA: 'Administrar mi suscripción en hospeda.com.ar' → `${PUBLIC_WEB_URL}/${lang}/mi-cuenta/suscripcion`.\n- Secondary CTA: 'Cambiar de plan' → `${PUBLIC_WEB_URL}/${lang}/suscriptores/planes`.\n- Inline link: 'Descargar última factura' (only when `latestInvoice.pdfUrl` from T-034 query is truthy).\n\nUse `PUBLIC_WEB_URL` env var (verify it's exposed to admin client-side; if not, add to admin's env exposure list).\n\nTests:\n- CTAs render with correct href per current locale.\n- 'Descargar última factura' link absent when no PDF available.\n- Both CTAs `target=\"_blank\" rel=\"noopener\"` for external nav.\n\nAC: AC-10, AC-11.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "billing-host", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Anuncios editor — list view",
+            "description": "List view for announcements management.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/anuncios/index.tsx` (NEW)\n\nData: TanStack Query against `GET /api/v1/admin/platform-settings/announcements.global` → array.\n\nDisplays:\n- Table/list of announcements with columns: texto (es preview), variante badge, dismissible (icon), fechas, acciones (editar, eliminar).\n- 'Crear nuevo anuncio' CTA → link to `new.tsx`.\n- Empty state: 'No hay anuncios configurados.'\n- Delete confirmation modal (announcement removal via PATCH with array minus the item).\n\nPermission gate: `MAINTENANCE_MODE_WRITE` (SUPER_ADMIN).\n\nTests:\n- List renders for SUPER_ADMIN.\n- 403 for non-SUPER_ADMIN.\n- Delete flow works (calls PATCH with filtered array).\n- Empty state when no announcements.\n\nAC: AC-17.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-PR3-QG"],
+            "blocks": ["T-039", "T-040", "T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "announcements", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Anuncios editor — create form",
+            "description": "Create form for new announcement.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/anuncios/new.tsx` (NEW)\n\nForm fields (per audit §8.2):\n- Texto i18n ×3 textareas (es, en, pt) — all required.\n- Variante: radio (info/warning/danger).\n- Dismissible: toggle.\n- Inicio (opcional): datetime picker.\n- Fin (opcional): datetime picker.\n\nValidation via Zod (`AnnouncementItemSchema` from T-003) + `schema.safeParse()` inside form handler (admin convention — NOT zodResolver).\n\nSubmit: PATCH `/api/v1/admin/platform-settings/announcements.global` with existing array + new item (generate UUID client-side or server-side — decide and document).\n\nTests:\n- Form renders all fields.\n- Validation errors display per field.\n- Submit creates new entry and redirects to list view.\n- Cancel returns to list.\n\nAC: AC-18.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-038"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "announcements", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Anuncios editor — edit form",
+            "description": "Edit form for existing announcement (mirror of T-039 with pre-filled values).\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/anuncios/$id.edit.tsx` (NEW)\n\nLoads announcement by `id` from the array. Form fields identical to T-039. Submit PATCHes with updated array (replace item by id).\n\nTests:\n- Form loads with existing values pre-filled.\n- 404 when id not found.\n- Submit updates entry and redirects to list.\n\nAC: AC-17, AC-18.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-038", "T-039"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["routes", "frontend", "announcements", "pr-4"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Web <GlobalAnnouncements> Astro component",
+            "description": "Web app component that consumes the new public endpoint and renders active announcements (tech-analysis D2).\n\nFiles:\n- `apps/web/src/components/announcements/GlobalAnnouncements.astro` (NEW)\n- `apps/web/src/components/announcements/AnnouncementBanner.client.tsx` (NEW — small React island for dismissible state)\n- `apps/web/src/layouts/BaseLayout.astro` (or main layout — mount component in slot)\n\nBehavior:\n- SSR fetches `GET /api/v1/public/announcements` with `cache: 'force-cache'` + revalidation per response cache headers.\n- Filters out dismissed announcements client-side (cookie `_dismissed_announcements=<id1,id2,...>`).\n- Renders each active announcement as a banner with variant styling (info/warning/danger).\n- Dismissible announcements have an X button → updates cookie + hides banner without page reload.\n- Uses i18n for current locale (lang param).\n- CSS Modules per web app convention (NOT Tailwind).\n\nTests (web vitest):\n- Component renders banner per mocked endpoint response.\n- Expired announcements (endsAt < now) filtered out.\n- Future announcements (startsAt > now) filtered out.\n- Dismissible click sets cookie.\n- i18n: correct text per locale.\n\nAC: AC-19.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "announcements", "pr-4"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Per-role manual smoke test (settings tour)",
+            "description": "Full settings tour per role using SPEC-143 dev test users (`<slug>@local.test` / `Password123!`). Manual checklist documented in spec dir.\n\nFiles:\n- `.claude/specs/SPEC-156-admin-settings-reorganization/docs/smoke-checklist.md` (NEW)\n\nFor each role (SUPER_ADMIN, ADMIN, HOST trial, HOST paid, EDITOR, CLIENT_MANAGER, SPONSOR):\n- Sidebar shows expected sections per IA.\n- Each new route accessible per permission gate.\n- Each redirect (`/me/*`, `/settings/*`, `/billing/*`, `/tags/*`, `/revalidation`) returns 301 to new path.\n- HOST: `/mi-cuenta/facturacion` works; non-HOST: redirected/denied.\n- SUPER_ADMIN: critical page maintenance toggle persists cross-device (open another browser, verify reflected).\n- SUPER_ADMIN: SEO defaults edit triggers visible revalidation in web (tail logs or check page meta).\n- SUPER_ADMIN: create announcement → web shows banner with i18n correctly.\n\nSign-off block per role (date, executor, result, notes). PR description links to this checklist.\n\nAC: ALL.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-034", "T-036", "T-037", "T-038", "T-039", "T-040", "T-041"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["testing", "smoke", "manual", "pr-4"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Permission gate audit + automated AC test",
+            "description": "Automated test that asserts every new route's permission gate enforces correctly. Complements T-042 manual smoke.\n\nFiles:\n- `apps/admin/test/routes/permission-gates.test.tsx` (NEW)\n\nFor each AC-22..AC-27 row, write a parametrized test:\n- Synthesize a session for a role lacking the gate's permission.\n- Attempt to navigate to the route.\n- Assert redirect to `/` or 403 view.\n- Conversely: with the permission, route renders.\n\nDoes NOT exercise UI fields, just gating.\n\nTests:\n- Mi cuenta routes require USER_UPDATE_SELF.\n- Mi facturación requires BILLING_VIEW_OWN + SUBSCRIPTION_VIEW_OWN.\n- Plataforma → Configuración general requires SETTINGS_GENERAL_VIEW/WRITE.\n- Plataforma → Configuración crítica requires MAINTENANCE_MODE_WRITE.\n- Comercial → Configuración billing requires BILLING_SETTINGS_VIEW/WRITE.\n- All 8 new permissions present in enum + role bundles.\n\nAC: AC-22..AC-27.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-PR4-QG"],
+            "subtasks": [],
+            "tags": ["testing", "permissions", "pr-4"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-PR4-QG",
+            "title": "PR-4 quality gate + open PR to staging + post-soak merge to main",
+            "description": "Final quality gate for PR-4 (Mi facturación + anuncios + web display + smoke). Open PR targeting `staging`. After soak time (per CLAUDE.md branch workflow), promote staging → main.\n\nCommands:\n- `pnpm typecheck`\n- `pnpm lint`\n- `pnpm test` (full suite — final SPEC-156 verification)\n- `pnpm test:coverage` — verify 90% coverage for new code.\n\nPR description includes ALL remaining ACs (AC-7..AC-11, AC-17, AC-18, AC-19, AC-19b, AC-22..AC-27), reference to smoke checklist (T-042) sign-off, dependency on PR-1, PR-2, PR-3 all merged.\n\nPost-merge actions:\n- Flip `.claude/specs/index.json` and `.claude/tasks/index.json` to `completed` + archived for SPEC-156.\n- Save engram observation `spec/SPEC-156/completed` with PR merge ref.\n- Schedule the migration-helper cleanup follow-up (~30 days, tech-analysis D4).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-034",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040",
+                "T-041",
+                "T-042",
+                "T-043"
+            ],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["quality-gate", "pr-4"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-28T05:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 44,
+        "pending": 34,
+        "inProgress": 0,
+        "completed": 10,
+        "blocked": 0,
+        "averageComplexity": 2.7,
+        "complexityDistribution": { "1": 4, "2": 12, "3": 20, "4": 8 },
+        "tasksByPR": { "pr-1": 11, "pr-2": 16, "pr-3": 5, "pr-4": 12 },
+        "note": "44 atomic tasks across 4 PRs (PR-1 platform_settings infra + 8 new perms: 11 tasks incl QG; PR-2 page relocations + IA config + honest disclosure: 16 tasks incl QG; PR-3 localStorage→API migration + auto-revalidation: 5 tasks incl QG; PR-4 Mi facturación HOST + anuncios + web display + smoke + permission audit: 12 tasks incl QG). All tasks complexity ≤ 4 (max 4 on 8 tasks, distribution 4:8 / 3:20 / 2:12 / 1:4, avg 2.73). Task IDs use T-NNN sequential within each PR plus T-PR{1-4}-QG quality-gate markers — IDs T-011, T-027, T-032 intentionally skipped to keep QG markers visually distinct. Critical path (longest): T-001→T-002→T-004→T-009→T-PR1-QG→T-028→T-029→T-PR3-QG→T-033→T-034→T-PR4-QG (~11 steps). PR-2 has highest parallelism (14 independent route relocations T-012..T-025 fan into T-026). Decisions D1-D8 resolved 2026-05-28 — see tech-analysis.md §5."
+    }
+}

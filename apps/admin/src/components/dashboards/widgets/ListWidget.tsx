@@ -48,7 +48,7 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import type { Widget } from '@/config/ia/schema';
+import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -70,11 +70,17 @@ import {
  * `label` is the only required field. Everything else degrades gracefully when
  * absent. The renderer never crashes on partially-shaped items.
  */
+/** Semantic variants for the per-row status badge (SPEC-155 redesign). */
+export type ListItemBadgeVariant = 'success' | 'warning' | 'destructive' | 'neutral';
+
 export interface ListItem {
     /** Unique identifier for the item — used in action href interpolation. */
     readonly id?: string;
-    /** Primary display text. Required. */
-    readonly label: string;
+    /**
+     * Primary display text. Required. Accepts a plain string or a tri-locale
+     * {@link I18nLabel} object (resolved to the `es` locale at render time).
+     */
+    readonly label: string | I18nLabel;
     /** Secondary text rendered below the label (subtitle, date, status…). */
     readonly meta?: string;
     /**
@@ -84,7 +90,27 @@ export interface ListItem {
     readonly href?: string;
     /** Optional badge/count to show on the right side of the row. */
     readonly badge?: string | number;
+    /**
+     * Optional colored status pill (e.g. `'Activo'` / `'Borrador'`) rendered
+     * next to the row label. Used to surface the entity's lifecycle state.
+     */
+    readonly statusBadge?: { readonly label: string; readonly variant: ListItemBadgeVariant };
+    /**
+     * Optional owner / author name rendered as a "by …" sub-row under the meta.
+     * When `ownerHref` is also set, the name becomes a clickable link.
+     */
+    readonly ownerName?: string;
+    /** Internal href for the owner / author link (e.g. `/access/users/{id}`). */
+    readonly ownerHref?: string;
 }
+
+/** Tailwind classes per status-badge variant. Mirrors the StatusWidget palette. */
+const STATUS_BADGE_CLASSES: Readonly<Record<ListItemBadgeVariant, string>> = {
+    success: 'bg-success/10 text-success ring-success/20',
+    warning: 'bg-warning/10 text-warning ring-warning/20',
+    destructive: 'bg-destructive/10 text-destructive ring-destructive/20',
+    neutral: 'bg-muted text-muted-foreground ring-border'
+};
 
 // ============================================================================
 // WIDGET-SPECIFIC CONFIG SHAPE
@@ -99,8 +125,12 @@ export interface ListItem {
  *   future callback config key; for V1 it is a no-op placeholder).
  */
 export interface ListWidgetActionConfig {
-    /** Text label for the action button/link. */
-    readonly label: string;
+    /**
+     * Text label for the action button/link. Accepts a plain string or a
+     * tri-locale {@link I18nLabel} (dashboard configs use the latter, e.g.
+     * `{ es: 'Ver', en: 'View', pt: 'Ver' }`); resolved to `es` at render time.
+     */
+    readonly label: string | I18nLabel;
     /**
      * URL template with `{id}` as the interpolation token.
      * Example: `"/admin/conversations/{id}"`.
@@ -128,6 +158,10 @@ export interface ListWidgetConfig {
      * Drives a button or link appended to each list row.
      */
     readonly actionPerItem?: ListWidgetActionConfig;
+    /** Accent palette name for the card header chip (SPEC-155 redesign). */
+    readonly accent?: string;
+    /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
+    readonly icon?: string;
 }
 
 // ============================================================================
@@ -166,6 +200,20 @@ function resolveItemHref(
     if (!action.hrefTemplate) return undefined;
     const token = item.id ?? String(index);
     return action.hrefTemplate.replace('{id}', token);
+}
+
+/**
+ * Resolves a label that may be a plain string or a tri-locale {@link I18nLabel}
+ * to display text. Renders the `es` locale (consistent with the rest of the
+ * dashboard until T-034 threads the active locale through). Returns `''` for
+ * nullish input so callers can apply their own fallback.
+ *
+ * Prevents the "Objects are not valid as a React child" crash when a config
+ * supplies an `{ es, en, pt }` object where a string is rendered.
+ */
+function resolveLabelText(value: string | I18nLabel | undefined): string {
+    if (value == null) return '';
+    return typeof value === 'string' ? value : (value.es ?? '');
 }
 
 // ============================================================================
@@ -226,6 +274,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 label={displayLabel}
                 variant="list"
                 dataTestId="list-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetUnavailableBody variant="list" />
             </WidgetCard>
@@ -239,6 +289,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 label={displayLabel}
                 variant="list"
                 dataTestId="list-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetSkeletonBody variant="list" />
             </WidgetCard>
@@ -252,6 +304,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 label={displayLabel}
                 variant="list"
                 dataTestId="list-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetErrorBody
                     variant="list"
@@ -268,6 +322,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 label={displayLabel}
                 variant="list"
                 dataTestId="list-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetEmptyBody
                     variant="list"
@@ -288,6 +344,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
             label={displayLabel}
             variant="list"
             dataTestId="list-widget"
+            accent={config.accent}
+            icon={config.icon}
         >
             {/* Item list */}
             <ul
@@ -297,27 +355,64 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 {items.map((item, index) => {
                     const itemKey = item.id ?? String(index);
                     const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
+                    const labelText = resolveLabelText(item.label);
+                    const actionLabelText = resolveLabelText(actionCfg?.label);
 
                     return (
                         <li
                             key={itemKey}
-                            className="flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
+                            className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
                             data-testid="list-item"
                         >
-                            {/* Left: label + meta */}
+                            {/* Left: label (with inline status badge) + meta + owner */}
                             <div className="min-w-0 flex-1">
-                                <p
-                                    className="truncate font-medium text-foreground text-sm"
-                                    data-testid="list-item-label"
-                                >
-                                    {item.label ?? '—'}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                    <p
+                                        className="truncate font-medium text-foreground text-sm"
+                                        data-testid="list-item-label"
+                                    >
+                                        {labelText || '—'}
+                                    </p>
+                                    {item.statusBadge && (
+                                        <span
+                                            className={cn(
+                                                'shrink-0 rounded-full px-2 py-0.5 font-semibold text-[0.65rem] uppercase tracking-wide ring-1 ring-inset',
+                                                STATUS_BADGE_CLASSES[item.statusBadge.variant]
+                                            )}
+                                            data-testid="list-item-status-badge"
+                                        >
+                                            {item.statusBadge.label}
+                                        </span>
+                                    )}
+                                </div>
                                 {item.meta && (
                                     <p
                                         className="truncate text-muted-foreground text-xs"
                                         data-testid="list-item-meta"
                                     >
                                         {item.meta}
+                                    </p>
+                                )}
+                                {item.ownerName && (
+                                    <p
+                                        className="mt-0.5 truncate text-muted-foreground text-xs"
+                                        data-testid="list-item-owner"
+                                    >
+                                        <span className="opacity-70">por </span>
+                                        {item.ownerHref ? (
+                                            <a
+                                                href={item.ownerHref}
+                                                className="font-medium text-foreground/80 hover:underline"
+                                                data-testid="list-item-owner-link"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {item.ownerName}
+                                            </a>
+                                        ) : (
+                                            <span className="font-medium text-foreground/80">
+                                                {item.ownerName}
+                                            </span>
+                                        )}
                                     </p>
                                 )}
                             </div>
@@ -341,9 +436,9 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         href={href}
                                         className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
                                         data-testid="list-item-action-link"
-                                        aria-label={`${actionCfg.label}: ${item.label}`}
+                                        aria-label={`${actionLabelText}: ${labelText}`}
                                     >
-                                        {actionCfg.label}
+                                        {actionLabelText}
                                     </a>
                                 )}
 
@@ -352,9 +447,9 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         type="button"
                                         className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
                                         data-testid="list-item-action-button"
-                                        aria-label={`${actionCfg.label}: ${item.label}`}
+                                        aria-label={`${actionLabelText}: ${labelText}`}
                                     >
-                                        {actionCfg.label}
+                                        {actionLabelText}
                                     </button>
                                 )}
                             </div>

@@ -32,6 +32,8 @@
  */
 
 import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
+import { amenityTypeTokens } from '../tokens/amenity-types.js';
+import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
     type OKLCH,
     accent,
@@ -52,12 +54,16 @@ import {
     surfaces,
     warning
 } from '../tokens/colors.js';
+import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { layoutChrome, layoutContainer } from '../tokens/layout.js';
 import { webDuration, webEasing } from '../tokens/motion.js';
+import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../tokens/radius.js';
 import { shadowSemantic } from '../tokens/shadows.js';
 import { semanticSpacing, spacing } from '../tokens/spacing.js';
+import { sponsorTypeTokens } from '../tokens/sponsor-types.js';
 import { fontFamily, semanticTypography } from '../tokens/typography.js';
+import { userRoleTokens } from '../tokens/user-roles.js';
 import { zIndex } from '../tokens/z-index.js';
 import type { Theme } from './types.js';
 
@@ -311,5 +317,20 @@ export const webLight: Theme = {
     // (the palette primitives are not overridden in dark), so the dark themes
     // inherit these via the cascade.
     // ========================================================================
-    ...accommodationTypeTokens
+    ...accommodationTypeTokens,
+    // Per-event-category tokens (same source constant as admin), each
+    // referencing an existing base palette's shade-500 primitive so a category
+    // renders with the SAME hue in both apps across light and dark.
+    ...eventCategoryTokens,
+    // Per-post-category tokens — same layered model as the event-category and
+    // accommodation-type ones; declared once and shared with admin.
+    ...postCategoryTokens,
+    // Per-user-role tokens — same layered model; declared once and shared with admin.
+    ...userRoleTokens,
+    // Per-auth-provider tokens — same layered model; declared once and shared with admin.
+    ...authProviderTokens,
+    // Per-amenity-type tokens — same layered model; declared once and shared with admin.
+    ...amenityTypeTokens,
+    // Per-sponsor-type tokens — same layered model; declared once and shared with admin.
+    ...sponsorTypeTokens
 };
