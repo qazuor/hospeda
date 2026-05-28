@@ -504,14 +504,15 @@
         {
             "specId": "SPEC-156",
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
-            "status": "reserved",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-156-admin-settings-reorganization",
-            "worktree": null,
-            "branch": null,
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-156-admin-settings-reorganization",
+            "branch": "spec/SPEC-156-admin-settings-reorganization",
             "dependsOn": ["SPEC-154"],
             "reservedAt": "2026-05-22T00:00:00Z",
-            "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 24-28 tasks across DB migration, page relocations, Mi facturación landing, anuncios editor)."
+            "activatedAt": "2026-05-28T05:15:00Z",
+            "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 24-28 tasks across DB migration, page relocations, Mi facturación landing, anuncios editor). Worktree opened 2026-05-28; tech-analysis pending before atomization."
         },
         {
             "specId": "SPEC-157",
