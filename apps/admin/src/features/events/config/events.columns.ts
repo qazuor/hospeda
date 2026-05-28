@@ -181,9 +181,10 @@ export const createEventsColumns = (t: ColumnTFunction): readonly ColumnConfig<E
     {
         id: 'ticketPrice',
         header: t('admin-entities.columns.price'),
-        accessorKey: 'pricing.price',
+        accessorKey: 'pricing',
         enableSorting: true,
-        columnType: ColumnType.PRICE
+        columnType: ColumnType.PRICE,
+        align: 'right'
     },
     {
         id: 'featuredImage',
