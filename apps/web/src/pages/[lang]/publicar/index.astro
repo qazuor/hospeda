@@ -25,6 +25,8 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import { webLogger as logger } from '@/lib/logger';
 import {
 	InfoIcon,
 	BuildingsIcon,
@@ -33,7 +35,8 @@ import {
 	StarIcon,
 	EyeIcon,
 	SettingsIcon,
-	ReceiptIcon
+	ReceiptIcon,
+	AlertCircleIcon
 } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -45,6 +48,47 @@ const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 // CTAs can be rendered statically without shipping JavaScript for the
 // simple "logged in → /publicar/nueva/" swap on the final CTA banner.
 const isAuthenticated = Boolean(Astro.locals.user);
+
+// F1-UI: For authenticated HOST users, check trial status.
+// If isExpired is true, the trial callout is replaced with the expired banner.
+type TrialStatusData = {
+    readonly isOnTrial: boolean;
+    readonly isExpired: boolean;
+    readonly daysRemaining: number | null;
+    readonly startedAt: string | null;
+    readonly expiresAt: string | null;
+    readonly planSlug: string | null;
+};
+
+let trialStatus: TrialStatusData | null = null;
+if (isAuthenticated) {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie');
+        if (cookieHeader) {
+            const trialResponse = await fetch(
+                `${getApiUrl()}/api/v1/protected/billing/trial/status`,
+                { headers: { cookie: cookieHeader } }
+            );
+            if (trialResponse.ok) {
+                const trialJson = (await trialResponse.json()) as {
+                    data?: TrialStatusData;
+                };
+                trialStatus = trialJson.data ?? null;
+            }
+        }
+    } catch (error) {
+        logger.warn({ error }, 'publicar/index: failed to fetch trial status');
+        // Non-fatal: keep the default trial callout on error.
+    }
+}
+
+const isTrialExpired = trialStatus?.isExpired === true;
+
+// Format expiresAt as a readable date string (YYYY-MM-DD substring is sufficient).
+const expiredAtDisplay = trialStatus?.expiresAt
+    ? trialStatus.expiresAt.substring(0, 10)
+    : '';
+const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
 // ---------------------------------------------------------------------------
 // Reuse marketing content from /suscriptores/propietarios/ via shared keys
@@ -121,13 +165,40 @@ const faqJsonLd = {
 					{t('host.landing.heroSubheadline', 'Publicá en minutos y empezá a recibir huéspedes')}
 				</p>
 
-				<!-- Trial callout: surfaces the 14-day free trial promise (SPEC-143 Block 1) -->
-				<div class="publicar-hero__trial-callout" role="note">
-					<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
-					<p class="publicar-hero__trial-callout-text">
-						{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. Sin tarjeta, sin compromiso.')}
-					</p>
-				</div>
+				<!-- F1-UI: Trial callout — shows expired banner for users whose trial ended,
+				     normal trial promo for guests + active-trial users. -->
+				{isTrialExpired ? (
+					<div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
+						<span class="publicar-hero__trial-expired-icon" aria-hidden="true">
+							<AlertCircleIcon size={20} weight="duotone" />
+						</span>
+						<div class="publicar-hero__trial-expired-body">
+							<p class="publicar-hero__trial-expired-title">
+								{t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
+							</p>
+							<p class="publicar-hero__trial-expired-text">
+								{t(
+									'billing.subscription.trial.expiredBanner.body',
+									'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
+									{ planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
+								)}
+							</p>
+							<a
+								href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
+								class="publicar-hero__trial-expired-cta"
+							>
+								{t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
+							</a>
+						</div>
+					</div>
+				) : (
+					<div class="publicar-hero__trial-callout" role="note">
+						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
+						<p class="publicar-hero__trial-callout-text">
+							{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. Sin tarjeta, sin compromiso.')}
+						</p>
+					</div>
+				)}
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
@@ -368,6 +439,65 @@ const faqJsonLd = {
 		font-size: var(--text-body-md);
 		color: var(--brand-accent);
 		font-weight: 500;
+	}
+
+	/* ── Trial-expired banner (F1-UI) ──────────────────────────────────── */
+	.publicar-hero__trial-expired {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+		font-family: var(--font-sans);
+		line-height: 1.5;
+		margin: 0 0 var(--space-6);
+		padding: var(--space-4) var(--space-5);
+		background-color: oklch(from var(--core-foreground) l c h / 0.06);
+		border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+		border-left: 4px solid var(--core-muted-foreground);
+		border-radius: var(--radius-button);
+		max-width: 56ch;
+	}
+
+	.publicar-hero__trial-expired-icon {
+		flex-shrink: 0;
+		color: var(--core-muted-foreground);
+		opacity: 0.8;
+		line-height: 1;
+		padding-top: 2px;
+	}
+
+	.publicar-hero__trial-expired-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.publicar-hero__trial-expired-title {
+		margin: 0;
+		font-size: var(--text-body-md);
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.publicar-hero__trial-expired-text {
+		margin: 0;
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.publicar-hero__trial-expired-cta {
+		display: inline-flex;
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--brand-primary);
+		text-decoration: none;
+		text-underline-offset: 2px;
+		margin-top: var(--space-1);
+		transition: color var(--duration-fast) ease;
+	}
+
+	.publicar-hero__trial-expired-cta:hover {
+		color: var(--brand-accent);
+		text-decoration: underline;
 	}
 
 	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */
