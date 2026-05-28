@@ -157,6 +157,7 @@
         "eventsCount": "Events",
         "destinationsCount": "Destinations",
         "postsCount": "Posts",
+        "relatedEntities": "Related",
         "relatedAccommodation": "Rel. Accommodation",
         "relatedDestination": "Rel. Destination",
         "relatedEvent": "Rel. Event",

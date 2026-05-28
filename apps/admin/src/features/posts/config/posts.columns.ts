@@ -7,6 +7,8 @@ import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/typ
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
+import { PostSponsorshipCell } from '../components/PostSponsorshipCell';
+import { RelatedEntitiesCell } from '../components/RelatedEntitiesCell';
 import { useUpdatePostMutation } from '../hooks/usePostQuery';
 import type { Post } from '../schemas/posts.schemas';
 
@@ -204,102 +206,22 @@ export const createPostsColumns = (t: ColumnTFunction): readonly ColumnConfig<Po
                 : undefined
     },
     {
-        id: 'relatedAccommodation',
-        header: t('admin-entities.columns.relatedAccommodation'),
-        accessorKey: 'accommodationName',
+        id: 'relatedEntities',
+        header: t('admin-entities.columns.relatedEntities'),
+        accessorKey: 'relatedAccommodation',
         enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.ACCOMMODATION,
-            color: BadgeColor.BLUE
-        },
-        linkHandler: (row) =>
-            row.relatedAccommodation?.id
-                ? {
-                      to: '/accommodations/$id',
-                      params: { id: row.relatedAccommodation.id }
-                  }
-                : undefined,
-        startVisibleOnTable: true,
-        startVisibleOnGrid: true
-    },
-    {
-        id: 'relatedDestination',
-        header: t('admin-entities.columns.relatedDestination'),
-        accessorKey: 'destinationName',
-        enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.DESTINATION,
-            color: BadgeColor.GREEN
-        },
-        linkHandler: (row) =>
-            row.relatedDestination?.id
-                ? {
-                      to: '/destinations/$id',
-                      params: { id: row.relatedDestination.id }
-                  }
-                : undefined,
-        startVisibleOnTable: true,
-        startVisibleOnGrid: true
-    },
-    {
-        id: 'relatedEvent',
-        header: t('admin-entities.columns.relatedEvent'),
-        accessorKey: 'eventName',
-        enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.EVENT,
-            color: BadgeColor.ORANGE
-        },
-        linkHandler: (row) =>
-            row.relatedEvent?.id
-                ? {
-                      to: '/events/$id',
-                      params: { id: row.relatedEvent.id }
-                  }
-                : undefined,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(RelatedEntitiesCell, { row }),
         startVisibleOnTable: true,
         startVisibleOnGrid: true
     },
     {
         id: 'sponsorship',
         header: t('admin-entities.columns.sponsorship'),
-        accessorKey: 'sponsorshipInfo',
+        accessorKey: 'sponsorship',
         enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.SPONSORSHIP,
-            color: BadgeColor.PURPLE
-        },
-        linkHandler: (row) =>
-            row.sponsorship?.id
-                ? {
-                      to: '/sponsorships/$id',
-                      params: { id: row.sponsorship.id }
-                  }
-                : undefined,
-        startVisibleOnTable: true,
-        startVisibleOnGrid: true
-    },
-    {
-        id: 'sponsor',
-        header: t('admin-entities.columns.sponsor'),
-        accessorKey: 'sponsorName',
-        enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.SPONSOR,
-            color: BadgeColor.ORANGE
-        },
-        linkHandler: (row) =>
-            row.sponsorship?.sponsor?.id
-                ? {
-                      to: '/sponsors/$id',
-                      params: { id: row.sponsorship.sponsor.id }
-                  }
-                : undefined,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(PostSponsorshipCell, { row }),
         startVisibleOnTable: true,
         startVisibleOnGrid: true
     },
@@ -309,13 +231,6 @@ export const createPostsColumns = (t: ColumnTFunction): readonly ColumnConfig<Po
         accessorKey: 'publishedAt',
         enableSorting: true,
         columnType: ColumnType.DATE
-    },
-    {
-        id: 'readingTimeMinutes',
-        header: t('admin-entities.columns.readingTime'),
-        accessorKey: 'readingTimeMinutes',
-        enableSorting: true,
-        columnType: ColumnType.NUMBER
     },
     {
         id: 'featuredImage',
