@@ -574,6 +574,36 @@ export type WidgetType = z.infer<typeof WidgetTypeSchema>;
  * };
  * ```
  */
+/**
+ * Bento grid span for a single widget at the `lg` breakpoint.
+ *
+ * `cols` is the column span in the 3-column lg grid (1 / 2 / 3). The renderer
+ * caps `cols` at 2 on `md` (where the grid is 2 columns) and ignores spans
+ * entirely on mobile (1-column grid).
+ *
+ * `rows` is the vertical span. Only `1` and `2` are supported in V1 — tall
+ * cards (e.g. lists, big-square crons) use `rows: 2`; everything else stays at
+ * the implicit `1`.
+ *
+ * Both fields are optional. Omitting `gridSpan` is equivalent to `{ cols: 1, rows: 1 }`.
+ *
+ * @example
+ * ```ts
+ * const wideHero: Widget = { ...w, gridSpan: { cols: 3 } };
+ * const tallList: Widget = { ...w, gridSpan: { rows: 2 } };
+ * const bigSquare: Widget = { ...w, gridSpan: { cols: 2, rows: 2 } };
+ * ```
+ */
+export const GridSpanSchema = z.object({
+    cols: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+    rows: z.union([z.literal(1), z.literal(2)]).optional()
+});
+
+/**
+ * Inferred TypeScript type for {@link GridSpanSchema}.
+ */
+export type GridSpan = z.infer<typeof GridSpanSchema>;
+
 export const WidgetSchema = z.object({
     /** Unique within the dashboard. */
     id: z.string().min(1),
@@ -589,6 +619,11 @@ export const WidgetSchema = z.object({
      * Defaults to `'disable'` (same pattern as sidebar items).
      */
     onMissing: OnMissingSchema.default('disable'),
+    /**
+     * Bento grid span at the `lg` breakpoint. Optional — omit for the implicit
+     * 1×1 span. See {@link GridSpanSchema}.
+     */
+    gridSpan: GridSpanSchema.optional(),
     /**
      * Widget-type-specific configuration. Kept loosely typed in V1 —
      * each renderer validates this with its own schema.

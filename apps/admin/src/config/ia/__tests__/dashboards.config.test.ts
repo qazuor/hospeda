@@ -53,8 +53,10 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     // T-018 HOST (host.ts)
     'host.accommodations.count',
     'host.accommodations.drafts',
+    'host.accommodations.entities',
     'host.billing.plan',
     'host.conversations.pending',
+    'host.profile.current',
     'host.reviews.latest',
     'host.stats.favorites',
     'host.stats.response-rate',

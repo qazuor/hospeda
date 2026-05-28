@@ -75,10 +75,18 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meus alojamentos'
             },
             scope: 'own',
+            // Bento: full hero — multi-KPI tiles + draft sub-list below benefit from full width.
+            gridSpan: { cols: 3 },
             config: {
                 source: 'host.accommodations.count',
                 // Companion draft list source — rendered below the KPI by the card renderer
-                companionSource: 'host.accommodations.drafts'
+                companionSource: 'host.accommodations.drafts',
+                accent: 'river',
+                icon: 'buildings',
+                emptyText: 'Todavía no tenés alojamientos',
+                emptyDescription: 'Cuando publiques tu primer alojamiento, vas a verlo acá.',
+                errorText: 'No pudimos cargar tus alojamientos',
+                errorDescription: 'Probá actualizar — si persiste, avisanos.'
             }
         },
 
@@ -97,15 +105,25 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu plano'
             },
             scope: 'own',
+            // Bento: compact (1×1) — status badge + small usage/charge sub-blocks.
             config: {
                 source: 'host.billing.plan',
+                accent: 'success',
+                icon: 'billing',
                 variantMap: {
                     active: 'success',
                     expiring: 'warning',
                     expired: 'destructive',
                     cancelled: 'neutral',
-                    trial: 'warning'
-                }
+                    trial: 'warning',
+                    past_due: 'destructive',
+                    pending: 'warning',
+                    paused: 'warning'
+                },
+                emptyText: 'Todavía no tenés un plan activo',
+                emptyDescription: 'Activá un plan para publicar y administrar tus alojamientos.',
+                errorText: 'No pudimos cargar tu plan',
+                errorDescription: 'El servicio de facturación no está disponible ahora mismo.'
             }
         },
 
@@ -121,13 +139,21 @@ const hostDashboard: DashboardInput = {
                 pt: 'Consultas'
             },
             scope: 'own',
+            // Bento: wide (2×1) — pending list reads better with horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.conversations.pending',
+                accent: 'sky',
+                icon: 'chat',
                 maxItems: 5,
                 actionPerItem: {
                     label: { es: 'Responder', en: 'Reply', pt: 'Responder' },
                     hrefTemplate: '/consultas/{id}'
-                }
+                },
+                emptyText: 'Sin consultas pendientes',
+                emptyDescription: 'Cuando un huésped te escriba, aparecerá acá para responder.',
+                errorText: 'No pudimos cargar tus consultas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
@@ -145,9 +171,26 @@ const hostDashboard: DashboardInput = {
                 pt: 'Estado do meu alojamento'
             },
             scope: 'own',
+            // Bento: compact (1×1) — checklist with completion bar + CTA.
             config: {
-                checkset: 'accommodation-health'
-                // No `source` — entities are loaded client-side from the page context.
+                checkset: 'accommodation-health',
+                // Resolves to full accommodation entities for the host (id +
+                // photos / description / amenities / price / lat-lng / contact).
+                source: 'host.accommodations.entities',
+                accent: 'warning',
+                icon: 'shield',
+                // CTA shown when completeness < 100%
+                cta: {
+                    label: {
+                        es: 'Editar alojamiento',
+                        en: 'Edit listing',
+                        pt: 'Editar alojamento'
+                    },
+                    hrefTemplate: '/accommodations/{id}/edit'
+                },
+                emptyText: 'Aún no tenés alojamientos',
+                emptyDescription: 'Creá uno y volvé acá para ver qué le falta a su ficha.',
+                errorText: 'No pudimos cargar el estado de tu alojamiento'
                 // The ChecklistWidget falls back to config.entities injected by the card renderer.
             }
         },
@@ -164,9 +207,19 @@ const hostDashboard: DashboardInput = {
                 pt: 'Avaliações'
             },
             scope: 'own',
+            // Bento: wide (2×1) — reviews list reads better with horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.reviews.latest',
-                maxItems: 5
+                accent: 'terracotta',
+                icon: 'star',
+                maxItems: 5,
+                // Render rating as visual stars (★★★★☆) instead of a plain number badge.
+                variant: 'stars',
+                emptyText: 'Todavía no recibiste reseñas',
+                emptyDescription: 'Cuando un huésped deje una opinión, vas a verla acá.',
+                errorText: 'No pudimos cargar tus reseñas',
+                errorDescription: 'Volvé a intentar en un momento.'
             }
         },
 
@@ -183,9 +236,26 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu perfil'
             },
             scope: 'own',
+            // Bento: compact (1×1) — checklist with completion bar + profile CTA.
             config: {
-                checkset: 'host-profile-health'
-                // No `source` — computed from the loaded user object.
+                checkset: 'host-profile-health',
+                // Resolves to the current host's user record (name / avatar /
+                // bio / phone / socialLink / emailVerified).
+                source: 'host.profile.current',
+                accent: 'accent',
+                icon: 'user',
+                // CTA shown when completeness < 100%
+                cta: {
+                    label: {
+                        es: 'Completar perfil',
+                        en: 'Complete profile',
+                        pt: 'Completar perfil'
+                    },
+                    href: '/access/profile'
+                },
+                emptyText: 'Perfil no disponible',
+                emptyDescription: 'No pudimos leer los datos de tu perfil para evaluarlo.',
+                errorText: 'No pudimos leer tu perfil'
             }
         },
 
@@ -208,9 +278,13 @@ const hostDashboard: DashboardInput = {
                 pt: 'Estatísticas'
             },
             scope: 'own',
+            // Bento: wide (2×1) — multi-KPI tiles + breakdown list need horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 // Primary: average rating + total reviews (already persisted on accommodation)
                 source: 'host.stats.ratings',
+                accent: 'purple',
+                icon: 'chart',
                 // Companion sources for the card renderer to co-load
                 companionSources: ['host.stats.favorites', 'host.stats.response-rate'],
                 // Views slot is deferred — no backend yet (PostHog client-side only, no DB)
@@ -220,7 +294,12 @@ const hostDashboard: DashboardInput = {
                         description:
                             'Vistas únicas y totales por alojamiento (7/30 días) — disponible cuando se implemente el tracking de vistas.'
                     }
-                ]
+                ],
+                emptyText: 'Aún no tenemos estadísticas',
+                emptyDescription:
+                    'Las métricas van a aparecer a medida que tu alojamiento tenga actividad.',
+                errorText: 'No pudimos cargar tus estadísticas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         }
     ]
@@ -465,6 +544,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Estatísticas de entidades'
             },
             scope: 'all',
+            // Bento: full-width hero — 6 horizontal KPI tiles benefit from max width.
+            gridSpan: { cols: 3 },
             config: { source: 'admin.entities.counts', accent: 'river', icon: 'chart' }
         },
 
@@ -480,6 +561,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Últimos alojamentos'
             },
             scope: 'all',
+            // Bento: tall (1×2) — vertical list of 5 needs height to breathe.
+            gridSpan: { rows: 2 },
             config: {
                 source: 'admin.accommodations.latest',
                 accent: 'river',
@@ -524,6 +607,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Crons'
             },
             scope: 'all',
+            // Bento: big square (2×2) — grouped list with categories + scrollable body.
+            gridSpan: { cols: 2, rows: 2 },
             config: {
                 source: 'admin.crons.list',
                 accent: 'teal',
@@ -553,6 +638,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Estado do sistema'
             },
             scope: 'all',
+            // Bento: wide (2×1) — 3 chips + 4 metric tiles row needs horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'admin.system.health',
                 accent: 'forest',
@@ -611,6 +698,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Usuários'
             },
             scope: 'all',
+            // Bento: wide (2×1) — horizontal ranking bars need width to show role spread.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'admin.users.stats',
                 chartType: 'ranking',
@@ -703,6 +792,8 @@ export const superAdminOnlySection: DashboardInput = {
             },
             scope: 'all',
             onMissing: 'hide',
+            // Bento: wide (2×1) — 5 KPIs + companion chart line need horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'super.billing.stats',
                 accent: 'success',

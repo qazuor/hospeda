@@ -185,7 +185,7 @@ export function WidgetCard({
 
     return (
         <div
-            className="group hover:-translate-y-0.5 relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
+            className="group hover:-translate-y-0.5 relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
             data-testid={testId}
             aria-label={ariaLabel ?? label}
         >
@@ -424,6 +424,17 @@ export function WidgetSkeleton({ variant }: WidgetSkeletonProps) {
 export interface WidgetErrorBodyProps extends WidgetStateBaseProps {
     /** Callback invoked when the user clicks "Reintentar". */
     readonly onRetry: () => void;
+    /**
+     * Optional override for the main error message (defaults to
+     * `'Error al cargar datos'`). Use a card-specific phrasing such as
+     * `'No se pudieron cargar tus reseñas'` to give the user context.
+     */
+    readonly text?: string;
+    /**
+     * Optional secondary description rendered under the title — typically a
+     * one-line hint about what to do next.
+     */
+    readonly description?: string;
 }
 
 /**
@@ -441,10 +452,10 @@ export interface WidgetErrorBodyProps extends WidgetStateBaseProps {
  * </WidgetCard>
  * ```
  */
-export function WidgetErrorBody({ variant, onRetry }: WidgetErrorBodyProps) {
+export function WidgetErrorBody({ variant, onRetry, text, description }: WidgetErrorBodyProps) {
     return (
         <div
-            className="flex flex-col items-center justify-center gap-3 py-2"
+            className="flex flex-col items-center justify-center gap-2 py-2 text-center"
             data-testid={`${variant}-widget-error`}
             role="alert"
         >
@@ -454,11 +465,14 @@ export function WidgetErrorBody({ variant, onRetry }: WidgetErrorBodyProps) {
                     aria-hidden="true"
                 />
             </div>
-            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
+            <p className="font-medium text-foreground text-sm">{text ?? 'Error al cargar datos'}</p>
+            {description && (
+                <p className="max-w-[28ch] text-muted-foreground text-xs">{description}</p>
+            )}
             <button
                 type="button"
                 onClick={onRetry}
-                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
+                className="mt-1 rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
             >
                 Reintentar
             </button>
@@ -530,10 +544,21 @@ export function WidgetError({ variant, onRetry, label }: WidgetErrorProps) {
  */
 export interface WidgetEmptyBodyProps extends WidgetStateBaseProps {
     /**
-     * Optional text to display inside the empty state.
-     * Defaults to `"—"` when not provided.
+     * Optional title for the empty state. Card-specific phrasing is preferred
+     * (e.g. `'Todavía no tenés reseñas'`). Defaults to `"—"` for back-compat.
      */
     readonly text?: string;
+    /**
+     * Optional secondary description rendered under the title (e.g.
+     * `'Cuando un huésped deje una opinión, aparecerá acá'`).
+     */
+    readonly description?: string;
+    /**
+     * Optional dashboard icon name (matches `config.icon` keys). When set,
+     * renders a muted icon above the title so the empty state still reads as
+     * the same card visually.
+     */
+    readonly icon?: string;
 }
 
 /**
@@ -551,13 +576,26 @@ export interface WidgetEmptyBodyProps extends WidgetStateBaseProps {
  * </WidgetCard>
  * ```
  */
-export function WidgetEmptyBody({ variant, text = '—' }: WidgetEmptyBodyProps) {
+export function WidgetEmptyBody({ variant, text = '—', description, icon }: WidgetEmptyBodyProps) {
+    const Icon = resolveDashboardIcon(icon);
+
     return (
         <div
-            className="flex items-center justify-center py-2 text-muted-foreground"
+            className="flex flex-col items-center justify-center gap-2 py-4 text-center"
             data-testid={`${variant}-widget-empty`}
         >
-            <span className="text-sm">{text}</span>
+            {Icon && (
+                <span
+                    className="flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground/60"
+                    aria-hidden="true"
+                >
+                    <Icon size={18} />
+                </span>
+            )}
+            <p className="font-medium text-foreground text-sm">{text}</p>
+            {description && (
+                <p className="max-w-[32ch] text-muted-foreground text-xs">{description}</p>
+            )}
         </div>
     );
 }
