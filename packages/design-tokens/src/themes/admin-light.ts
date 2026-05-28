@@ -62,6 +62,7 @@ import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase } from '../tokens/radius.js';
 import { fontFamily } from '../tokens/typography.js';
+import { userRoleTokens } from '../tokens/user-roles.js';
 import type { Theme } from './types.js';
 
 /** White surface for elevated UI (cards, modals) — not part of neutral. */
@@ -169,5 +170,8 @@ export const adminLight: Theme = {
     ...eventCategoryTokens,
     // Per-post-category tokens (same source constant as web), each referencing
     // an existing base palette per the prior badge colors.
-    ...postCategoryTokens
+    ...postCategoryTokens,
+    // Per-user-role tokens (same source constant as web), each referencing an
+    // existing base palette per the prior badge colors.
+    ...userRoleTokens
 };

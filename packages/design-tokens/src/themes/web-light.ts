@@ -60,6 +60,7 @@ import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../token
 import { shadowSemantic } from '../tokens/shadows.js';
 import { semanticSpacing, spacing } from '../tokens/spacing.js';
 import { fontFamily, semanticTypography } from '../tokens/typography.js';
+import { userRoleTokens } from '../tokens/user-roles.js';
 import { zIndex } from '../tokens/z-index.js';
 import type { Theme } from './types.js';
 
@@ -320,5 +321,7 @@ export const webLight: Theme = {
     ...eventCategoryTokens,
     // Per-post-category tokens — same layered model as the event-category and
     // accommodation-type ones; declared once and shared with admin.
-    ...postCategoryTokens
+    ...postCategoryTokens,
+    // Per-user-role tokens — same layered model; declared once and shared with admin.
+    ...userRoleTokens
 };

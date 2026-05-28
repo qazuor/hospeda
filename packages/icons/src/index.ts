@@ -68,6 +68,21 @@ export type {
     PostCategoryVisual
 } from './domain/post-category';
 
+// User-role → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    USER_ROLE_FALLBACK_VISUAL,
+    USER_ROLE_VISUALS,
+    getUserRoleColorScheme,
+    getUserRoleIcon,
+    getUserRoleVisual
+} from './domain/user-role';
+export type {
+    UserRoleColorScheme,
+    UserRoleColorVariant,
+    UserRoleVisual
+} from './domain/user-role';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';
