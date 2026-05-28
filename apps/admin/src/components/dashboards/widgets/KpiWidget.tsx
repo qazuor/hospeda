@@ -35,6 +35,7 @@ import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { accentVars, resolveDashboardIcon } from '../dashboard-accents';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -98,6 +99,20 @@ export interface KpiGridItem {
     readonly value: number;
     /** Optional internal link to the matching list page. */
     readonly href?: string;
+    /**
+     * Optional accent palette name (SPEC-155 redesign). Tints the tile's value
+     * + chip so each entry in the grid reads in its own color.
+     */
+    readonly accent?: string;
+    /**
+     * Optional dashboard icon name (e.g. `'buildings'`). Rendered in a chip on
+     * the left of the tile. Resolved via `resolveDashboardIcon`.
+     */
+    readonly icon?: string;
+    /** Optional prefix shown before the value (e.g. `'$'`). */
+    readonly unitPrefix?: string;
+    /** Optional suffix shown after the value (e.g. `'%'`). */
+    readonly unitSuffix?: string;
 }
 
 // ============================================================================
@@ -116,6 +131,10 @@ export interface KpiWidgetConfig {
     readonly unitPrefix?: string;
     /** Override unit suffix (takes precedence over data.unitSuffix). */
     readonly unitSuffix?: string;
+    /** Accent palette name for the card icon chip (SPEC-155 redesign). */
+    readonly accent?: string;
+    /** `@repo/icons` name for the card icon chip (SPEC-155 redesign). */
+    readonly icon?: string;
 }
 
 // ============================================================================
@@ -152,17 +171,21 @@ function DeltaBadge({ delta }: DeltaBadgeProps) {
     const isPositive = delta > 0;
     const isNegative = delta < 0;
 
-    const colorClass = isPositive
-        ? 'text-green-600'
+    // Pill style (refs): tinted background + colored text, not just colored text.
+    const pillClass = isPositive
+        ? 'bg-success/10 text-success'
         : isNegative
-          ? 'text-destructive'
-          : 'text-muted-foreground';
+          ? 'bg-destructive/10 text-destructive'
+          : 'bg-muted text-muted-foreground';
 
     const absValue = Math.abs(delta);
 
     return (
         <span
-            className={cn('flex items-center gap-0.5 font-medium text-xs', colorClass)}
+            className={cn(
+                'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-medium text-xs',
+                pillClass
+            )}
             data-testid="kpi-delta"
             aria-label={`${isPositive ? 'Up' : isNegative ? 'Down' : 'No change'} ${absValue}%`}
         >
@@ -203,28 +226,63 @@ interface KpiGridTileProps {
 function KpiGridTile({ item }: KpiGridTileProps) {
     const itemLabel = typeof item.label === 'string' ? item.label : item.label.es;
     const itemValue = typeof item.value === 'number' ? item.value.toLocaleString('es-AR') : '—';
+    const vars = accentVars(item.accent);
+    const ItemIcon = resolveDashboardIcon(item.icon);
 
+    // Horizontal compact layout: chip on the left, value + label stacked on the
+    // right. Halves the tile height vs the previous columnar layout and removes
+    // the decorative microbar (no real trend series to back it).
     const body = (
         <>
-            <span
-                className="font-semibold text-2xl text-foreground tabular-nums"
-                data-testid="kpi-grid-item-value"
-            >
-                {itemValue}
-            </span>
-            <span
-                className="text-muted-foreground text-xs"
-                data-testid="kpi-grid-item-label"
-            >
-                {itemLabel}
-            </span>
+            {ItemIcon ? (
+                <span
+                    className="flex size-11 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: vars.chip }}
+                    aria-hidden="true"
+                >
+                    <ItemIcon
+                        size={22}
+                        weight="duotone"
+                        color={vars.fg}
+                        duotoneColor={vars.solid}
+                    />
+                </span>
+            ) : (
+                <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: vars.solid }}
+                    aria-hidden="true"
+                />
+            )}
+
+            <div className="flex min-w-0 flex-col">
+                <span
+                    className="font-semibold text-2xl tabular-nums leading-none tracking-tight"
+                    style={{ color: vars.fg, fontFamily: 'var(--font-heading)' }}
+                    data-testid="kpi-grid-item-value"
+                >
+                    {item.unitPrefix && (
+                        <span className="text-base opacity-70">{item.unitPrefix}</span>
+                    )}
+                    {itemValue}
+                    {item.unitSuffix && (
+                        <span className="ml-0.5 text-base opacity-70">{item.unitSuffix}</span>
+                    )}
+                </span>
+                <span
+                    className="mt-1 line-clamp-2 font-medium text-muted-foreground text-xs leading-tight"
+                    data-testid="kpi-grid-item-label"
+                >
+                    {itemLabel}
+                </span>
+            </div>
         </>
     );
 
     return item.href ? (
         <a
             href={item.href}
-            className="flex flex-col gap-0.5 rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+            className="hover:-translate-y-0.5 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40 transition-all duration-200 hover:shadow-sm hover:ring-border/60"
             data-testid="kpi-grid-item"
             aria-label={`${itemLabel}: ${itemValue}`}
         >
@@ -232,7 +290,7 @@ function KpiGridTile({ item }: KpiGridTileProps) {
         </a>
     ) : (
         <div
-            className="flex flex-col gap-0.5 p-2"
+            className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40"
             data-testid="kpi-grid-item"
         >
             {body}
@@ -291,6 +349,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetUnavailableBody variant="kpi" />
             </WidgetCard>
@@ -304,6 +364,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetSkeletonBody variant="kpi" />
             </WidgetCard>
@@ -317,6 +379,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetErrorBody
                     variant="kpi"
@@ -333,6 +397,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetEmptyBody variant="kpi" />
             </WidgetCard>
@@ -352,6 +418,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <div
                     className="grid grid-cols-2 gap-3 sm:grid-cols-3"
@@ -377,6 +445,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 label={displayLabel}
                 variant="kpi"
                 dataTestId="kpi-widget"
+                accent={config.accent}
+                icon={config.icon}
             >
                 <WidgetEmptyBody variant="kpi" />
             </WidgetCard>
@@ -395,40 +465,45 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
             label={displayLabel}
             variant="kpi"
             dataTestId="kpi-widget"
+            accent={config.accent}
+            icon={config.icon}
             ariaLabel={`${displayLabel}: ${formattedValue}`}
         >
-            {/* Value row: prefix + value + suffix + optional delta */}
-            <div className="flex items-end justify-between gap-2">
-                <div
-                    className="flex items-baseline gap-1"
-                    data-testid="kpi-value-row"
-                >
-                    {prefix && (
-                        <span
-                            className="text-muted-foreground text-sm"
-                            data-testid="kpi-unit-prefix"
-                        >
-                            {prefix}
-                        </span>
-                    )}
-                    <span
-                        className="font-semibold text-3xl text-foreground tabular-nums"
-                        data-testid="kpi-value"
+            <div className="flex flex-col gap-4">
+                {/* Value row: prefix + value + suffix + optional delta */}
+                <div className="flex items-end justify-between gap-2">
+                    <div
+                        className="flex items-baseline gap-1"
+                        data-testid="kpi-value-row"
                     >
-                        {formattedValue}
-                    </span>
-                    {suffix && (
+                        {prefix && (
+                            <span
+                                className="text-muted-foreground text-sm"
+                                data-testid="kpi-unit-prefix"
+                            >
+                                {prefix}
+                            </span>
+                        )}
                         <span
-                            className="text-muted-foreground text-sm"
-                            data-testid="kpi-unit-suffix"
+                            className="font-semibold text-5xl text-foreground tabular-nums leading-none tracking-tighter"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                            data-testid="kpi-value"
                         >
-                            {suffix}
+                            {formattedValue}
                         </span>
-                    )}
-                </div>
+                        {suffix && (
+                            <span
+                                className="text-muted-foreground text-sm"
+                                data-testid="kpi-unit-suffix"
+                            >
+                                {suffix}
+                            </span>
+                        )}
+                    </div>
 
-                {/* Delta badge (optional) */}
-                {kpi.delta !== undefined && <DeltaBadge delta={kpi.delta} />}
+                    {/* Delta badge (optional) */}
+                    {kpi.delta !== undefined && <DeltaBadge delta={kpi.delta} />}
+                </div>
             </div>
         </WidgetCard>
     );

@@ -112,12 +112,58 @@ registerDataSource('super.billing.stats', (ctx) => ({
         const overview = result.data.data?.overview;
         if (!overview) return null;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        // Primary value: active paid subscriptions count.
-        return {
-            value: overview.activeSubscriptions ?? 0,
-            unitSuffix: 'suscripciones'
-        };
+        // Multi-KPI grid: surface the headline billing figures as individual
+        // tiles so the card actually reads as data, not as a single 0. MRR is
+        // stored in centavos; convert to pesos for display.
+        const mrrPesos =
+            overview.mrr !== undefined && overview.mrr > 0 ? Math.round(overview.mrr / 100) : 0;
+        const churnPct =
+            overview.churnRate !== undefined ? Math.round(overview.churnRate * 1000) / 10 : 0;
+
+        // Short, plain-Spanish labels so each tile fits without truncation. MRR
+        // and Churn are jargon, so they get the meaning, not the acronym.
+        const kpis = [
+            {
+                key: 'activeSubs',
+                label: { es: 'Activas', en: 'Active', pt: 'Ativas' },
+                value: overview.activeSubscriptions ?? 0,
+                accent: 'success',
+                icon: 'billing'
+            },
+            {
+                key: 'trialingSubs',
+                label: { es: 'En prueba', en: 'Trialing', pt: 'Em teste' },
+                value: overview.trialingSubscriptions ?? 0,
+                accent: 'warning',
+                icon: 'clock'
+            },
+            {
+                key: 'mrr',
+                label: { es: 'Ingreso mensual', en: 'Monthly revenue', pt: 'Receita mensal' },
+                value: mrrPesos,
+                unitPrefix: '$',
+                accent: 'forest',
+                icon: 'chart'
+            },
+            {
+                key: 'customers',
+                label: { es: 'Clientes', en: 'Customers', pt: 'Clientes' },
+                value: overview.totalCustomers ?? 0,
+                accent: 'purple',
+                icon: 'users'
+            },
+            {
+                key: 'churn',
+                label: { es: 'Tasa de baja', en: 'Churn rate', pt: 'Taxa de saída' },
+                value: churnPct,
+                unitSuffix: '%',
+                accent: 'rose',
+                icon: 'activity'
+            }
+        ];
+
+        // `value` (active subs) retained for back-compat; not shown in grid mode.
+        return { value: overview.activeSubscriptions ?? 0, kpis };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

@@ -82,7 +82,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 // Mock icons so tests don't depend on Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"

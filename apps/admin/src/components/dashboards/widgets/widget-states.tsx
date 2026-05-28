@@ -71,6 +71,7 @@
 
 import { AlertTriangleIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
+import { accentVars, resolveDashboardIcon } from '../dashboard-accents';
 
 // ============================================================================
 // VARIANT TYPE
@@ -126,9 +127,20 @@ export interface WidgetCardProps {
     readonly ariaLabel?: string;
     /**
      * Optional extra content rendered in the header row to the right of the
-     * title (e.g. a chart-type badge).
+     * title (e.g. a chart-type badge or a range selector).
      */
     readonly headerExtra?: ReactNode;
+    /**
+     * Optional accent palette name (SPEC-155 redesign). Tints the icon chip.
+     * Resolved via {@link accentVars}; defaults to river when omitted/unknown.
+     */
+    readonly accent?: string;
+    /**
+     * Optional `@repo/icons` component name (e.g. `'BuildingsIcon'`) rendered
+     * inside the accent chip to the left of the title. Resolved via
+     * `resolveIcon`; when absent or unresolved, no chip is shown.
+     */
+    readonly icon?: string;
     /** State content to render below the header. */
     readonly children: ReactNode;
 }
@@ -163,23 +175,61 @@ export function WidgetCard({
     dataTestId,
     ariaLabel,
     headerExtra,
+    accent,
+    icon,
     children
 }: WidgetCardProps) {
     const testId = dataTestId ?? `${variant}-widget-card`;
+    const vars = accentVars(accent);
+    const Icon = resolveDashboardIcon(icon);
+
     return (
         <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
+            className="group hover:-translate-y-0.5 relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
             data-testid={testId}
             aria-label={ariaLabel ?? label}
         >
-            {/* Header: title always visible */}
-            <div className="flex items-center justify-between">
+            {/* Subtle accent rail on the top edge — only when the card has an accent */}
+            {(accent || Icon) && (
                 <span
-                    className="text-muted-foreground text-sm"
-                    data-testid={`${variant}-label`}
-                >
-                    {label}
-                </span>
+                    className="-translate-x-1/2 pointer-events-none absolute top-0 left-1/2 h-1 w-16 rounded-b-full opacity-70 transition-all duration-300 group-hover:w-24 group-hover:opacity-100"
+                    style={{ backgroundColor: vars.solid }}
+                    aria-hidden="true"
+                />
+            )}
+
+            {/* Header: icon chip + title (always visible) + optional action */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
+                    {Icon && (
+                        <span
+                            className="relative flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-inset"
+                            style={{
+                                backgroundColor: vars.chip,
+                                color: vars.fg,
+                                // biome-ignore lint/style/useNamingConvention: CSS var
+                                ['--tw-ring-color' as string]: vars.solid
+                            }}
+                            aria-hidden="true"
+                        >
+                            <Icon
+                                size={20}
+                                weight="duotone"
+                                color={vars.fg}
+                                duotoneColor={vars.solid}
+                            />
+                        </span>
+                    )}
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                        <span
+                            className="truncate font-semibold text-[0.92rem] text-foreground tracking-tight"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                            data-testid={`${variant}-label`}
+                        >
+                            {label}
+                        </span>
+                    </div>
+                </div>
                 {headerExtra}
             </div>
 

@@ -20,7 +20,8 @@ import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from '../
 import type { WidgetVariant } from '../widget-states';
 
 // Mock icons — tests don't depend on the Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
