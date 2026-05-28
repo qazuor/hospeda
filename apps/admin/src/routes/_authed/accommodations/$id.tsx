@@ -1,6 +1,7 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
+import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -31,12 +32,18 @@ function AccommodationViewPage() {
         [entityData.userPermissions]
     );
 
+    // Derive media / subtitle / badges from the loaded entity.
+    const headerProps = useAccommodationHeaderProps({ entity: entityData.entity });
+
     return (
         <EntityPageBase
             entityType="accommodation"
             entityId={id}
             initialMode="view"
             entityData={entityData}
+            headerMedia={headerProps.media}
+            headerSubtitle={headerProps.subtitle}
+            headerBadges={headerProps.badges}
         >
             <EntityViewContent
                 entityType="accommodation"

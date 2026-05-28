@@ -17,6 +17,31 @@ import React, { Suspense, type ReactNode } from 'react';
 import type { ZodSchema } from 'zod';
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Read a (possibly dot-notation) field value from the live form state.
+ * Mirrors `EntityFormSection.readValue` so the save path picks up the same
+ * "nested-first" value the inputs render against. Returns `undefined` when
+ * neither the nested path nor the flat literal key carry a value.
+ */
+function readFieldValueForSave(source: Record<string, unknown>, id: string): unknown {
+    if (!id.includes('.')) return source[id];
+    const parts = id.split('.');
+    let current: unknown = source;
+    for (const part of parts) {
+        if (current === null || current === undefined) {
+            current = undefined;
+            break;
+        }
+        current = (current as Record<string, unknown>)[part];
+    }
+    if (current !== undefined) return current;
+    return source[id];
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -148,8 +173,13 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             });
 
             for (const field of allFields) {
-                if (field.id in values) {
-                    fieldsToSave[field.id] = values[field.id];
+                // Mirror EntityFormSection.readValue: for dot-notation ids the
+                // nested copy is the authoritative one (TanStack Form writes
+                // there). Falling back to the flat literal key avoids losing
+                // values that were never touched after initial seeding.
+                const fresh = readFieldValueForSave(values, field.id);
+                if (fresh !== undefined) {
+                    fieldsToSave[field.id] = fresh;
                 }
             }
 
@@ -256,7 +286,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             : t('admin-common.entityPage.editTitle').replace('{entity}', entityName);
 
     return (
-        <div className={`space-y-4 ${className ?? ''}`}>
+        <div className={`space-y-4 p-6 ${className ?? ''}`}>
             {/* Accessible sr-only h1 — always present, even during loading */}
             <h1 className="sr-only">{pageTitleText}</h1>
 

@@ -364,12 +364,17 @@ export function EntityPageHeader({
             ---------------------------------------------------------------- */}
             <header
                 className={cn(
-                    // Positioning
-                    'sticky top-0 z-40',
-                    // Surface
-                    'rounded-lg border border-border bg-card shadow-sm',
+                    // Positioning — sticks under the chrome row (h-14 = 56px). The chrome's
+                    // 12px wave svg sits at z-40 on top of this header (z-30), so the entity
+                    // header tucks under the wave without a visible gap.
+                    'sticky top-14 z-30',
+                    // Surface — card style at rest, morphs into a full-bleed bar when shrunken
+                    // (breaks out of the parent's p-6 with negative margins to reach the chrome).
+                    isReduced
+                        ? '-mx-6 -mt-6 rounded-none border-border border-x-0 border-t-0 border-b bg-card shadow-sm'
+                        : 'rounded-lg border border-border bg-card shadow-sm',
                     // Spacing — transitions between full and reduced
-                    isReduced ? 'px-4 py-2' : 'px-4 py-3 sm:px-5 sm:py-4',
+                    isReduced ? 'px-6 py-3' : 'px-4 py-3 sm:px-5 sm:py-4',
                     // Flex layout
                     'flex items-center gap-3',
                     // Smooth transitions for padding + children
@@ -420,7 +425,14 @@ export function EntityPageHeader({
                 </div>
 
                 {/* ---- Right side: quality score + actions ---- */}
-                <div className="flex flex-none items-center gap-2 sm:gap-3">
+                {/* When reduced, nudge the actions down a touch (`mt-1`) so the buttons */}
+                {/* don't feel glued to the bar's top edge in the slim chrome state. */}
+                <div
+                    className={cn(
+                        'flex flex-none items-center gap-2 sm:gap-3',
+                        isReduced && 'mt-1'
+                    )}
+                >
                     {/* Quality score slot — always visible (it's the point of sticky) */}
                     {qualityScore && (
                         <div

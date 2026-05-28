@@ -3,6 +3,7 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
+import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -62,6 +63,9 @@ function AccommodationEditPage() {
         [entityData.userPermissions]
     );
 
+    // Derive media / subtitle / badges from the loaded entity.
+    const headerProps = useAccommodationHeaderProps({ entity: entityData.entity });
+
     return (
         <RoutePermissionGuard
             permissions={[
@@ -83,6 +87,9 @@ function AccommodationEditPage() {
                     initialMode="edit"
                     entityData={entityData}
                     zodSchema={AccommodationUpdateInputSchema}
+                    headerMedia={headerProps.media}
+                    headerSubtitle={headerProps.subtitle}
+                    headerBadges={headerProps.badges}
                 >
                     <EntityEditContent
                         entityType="accommodation"

@@ -144,8 +144,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             const readValue = (source: Record<string, unknown>, id: string): unknown => {
                 if (!id.includes('.')) return source[id];
-                if (id in source) return source[id];
-                return getNestedValue(source, id);
+                // For dot-notation ids: TanStack Form treats the name as a NESTED
+                // path on writes (`setFieldValue("a.b", v)` updates `values.a.b`),
+                // so the nested location is the freshest copy. `prepareFormValues`
+                // also seeds a flat literal key at first load — fall back to it
+                // only when the nested path resolves to undefined.
+                const nested = getNestedValue(source, id);
+                if (nested !== undefined) return nested;
+                return source[id];
             };
 
             const rawFieldValue = readValue(values, field.id);
