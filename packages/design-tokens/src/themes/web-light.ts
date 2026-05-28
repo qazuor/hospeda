@@ -61,6 +61,7 @@ import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../tokens/radius.js';
 import { shadowSemantic } from '../tokens/shadows.js';
 import { semanticSpacing, spacing } from '../tokens/spacing.js';
+import { sponsorTypeTokens } from '../tokens/sponsor-types.js';
 import { fontFamily, semanticTypography } from '../tokens/typography.js';
 import { userRoleTokens } from '../tokens/user-roles.js';
 import { zIndex } from '../tokens/z-index.js';
@@ -329,5 +330,7 @@ export const webLight: Theme = {
     // Per-auth-provider tokens — same layered model; declared once and shared with admin.
     ...authProviderTokens,
     // Per-amenity-type tokens — same layered model; declared once and shared with admin.
-    ...amenityTypeTokens
+    ...amenityTypeTokens,
+    // Per-sponsor-type tokens — same layered model; declared once and shared with admin.
+    ...sponsorTypeTokens
 };

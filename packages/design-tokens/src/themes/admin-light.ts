@@ -63,6 +63,7 @@ import {
 import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { postCategoryTokens } from '../tokens/post-categories.js';
 import { radiusBase } from '../tokens/radius.js';
+import { sponsorTypeTokens } from '../tokens/sponsor-types.js';
 import { fontFamily } from '../tokens/typography.js';
 import { userRoleTokens } from '../tokens/user-roles.js';
 import type { Theme } from './types.js';
@@ -181,5 +182,7 @@ export const adminLight: Theme = {
     ...authProviderTokens,
     // Per-amenity-type tokens (same source constant as web). Each references an
     // existing base palette per the prior badge colors.
-    ...amenityTypeTokens
+    ...amenityTypeTokens,
+    // Per-sponsor-type tokens (same source constant as web).
+    ...sponsorTypeTokens
 };
