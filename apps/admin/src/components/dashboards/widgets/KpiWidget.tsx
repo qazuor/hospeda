@@ -30,7 +30,7 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import type { Widget } from '@/config/ia/schema';
+import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { TrendingDownIcon, TrendingUpIcon } from '@repo/icons';
@@ -68,6 +68,36 @@ export interface KpiData {
     readonly unitPrefix?: string;
     /** Optional suffix placed after the value (e.g. "%", "users"). */
     readonly unitSuffix?: string;
+    /**
+     * Optional multi-KPI breakdown. When present and non-empty, the renderer
+     * switches to GRID MODE: instead of one big number, it renders one mini-KPI
+     * per entry (value + label, optionally clickable). Used by the ADMIN
+     * "Estadísticas de entidades" card so all entity counts are visible at once
+     * rather than collapsed into a single sum (SPEC-155 follow-up).
+     *
+     * Resolvers that only provide a single `value` (e.g. moderation pending,
+     * host accommodation count) MUST NOT set this — they keep single-value mode.
+     */
+    readonly kpis?: ReadonlyArray<KpiGridItem>;
+}
+
+/**
+ * A single mini-KPI entry rendered in GRID MODE (see {@link KpiData.kpis}).
+ *
+ * The label is a tri-locale {@link I18nLabel}; the renderer displays the `es`
+ * locale (consistent with the rest of the dashboard until T-034 threads the
+ * active locale through). When `href` is set the whole tile is a navigation
+ * link to the matching admin list.
+ */
+export interface KpiGridItem {
+    /** Stable key used for the React list key (e.g. the entity name). */
+    readonly key: string;
+    /** Tri-locale display label for this metric. */
+    readonly label: I18nLabel;
+    /** Numeric value for this metric. */
+    readonly value: number;
+    /** Optional internal link to the matching list page. */
+    readonly href?: string;
 }
 
 // ============================================================================
@@ -151,6 +181,62 @@ function DeltaBadge({ delta }: DeltaBadgeProps) {
             {delta > 0 ? '+' : ''}
             {delta.toFixed(1)}%
         </span>
+    );
+}
+
+// ============================================================================
+// GRID TILE
+// ============================================================================
+
+/**
+ * Renders a single mini-KPI tile in GRID MODE.
+ *
+ * When `item.href` is set the tile is a navigation link to the matching admin
+ * list; otherwise it is a plain, non-interactive tile. Extracted as its own
+ * component so the `key` lives on the element returned by `.map()` (and so the
+ * value/label fragment is encapsulated rather than emitted inside the loop).
+ */
+interface KpiGridTileProps {
+    readonly item: KpiGridItem;
+}
+
+function KpiGridTile({ item }: KpiGridTileProps) {
+    const itemLabel = typeof item.label === 'string' ? item.label : item.label.es;
+    const itemValue = typeof item.value === 'number' ? item.value.toLocaleString('es-AR') : '—';
+
+    const body = (
+        <>
+            <span
+                className="font-semibold text-2xl text-foreground tabular-nums"
+                data-testid="kpi-grid-item-value"
+            >
+                {itemValue}
+            </span>
+            <span
+                className="text-muted-foreground text-xs"
+                data-testid="kpi-grid-item-label"
+            >
+                {itemLabel}
+            </span>
+        </>
+    );
+
+    return item.href ? (
+        <a
+            href={item.href}
+            className="flex flex-col gap-0.5 rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+            data-testid="kpi-grid-item"
+            aria-label={`${itemLabel}: ${itemValue}`}
+        >
+            {body}
+        </a>
+    ) : (
+        <div
+            className="flex flex-col gap-0.5 p-2"
+            data-testid="kpi-grid-item"
+        >
+            {body}
+        </div>
     );
 }
 
@@ -255,6 +341,32 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
 
     // -- 8. Data — narrow to KpiData shape -----------------------------------
     const kpi = data as KpiData;
+
+    // -- 8a. Grid mode — multiple mini-KPIs ----------------------------------
+    // When the resolver provides a non-empty `kpis` array, render one tile per
+    // metric instead of a single big number. Evaluated BEFORE the single-value
+    // guard so a resolver may omit the top-level `value` in grid mode.
+    if (Array.isArray(kpi.kpis) && kpi.kpis.length > 0) {
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="kpi"
+                dataTestId="kpi-widget"
+            >
+                <div
+                    className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+                    data-testid="kpi-grid"
+                >
+                    {kpi.kpis.map((item) => (
+                        <KpiGridTile
+                            key={item.key}
+                            item={item}
+                        />
+                    ))}
+                </div>
+            </WidgetCard>
+        );
+    }
 
     // Defensive guard: if the resolver returned an unexpected shape (e.g. an
     // array or an object without `value`), fall back to the empty state instead

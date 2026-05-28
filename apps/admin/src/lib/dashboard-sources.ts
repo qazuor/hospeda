@@ -353,51 +353,83 @@ async function fetchEntityCount(endpoint: string): Promise<number> {
 }
 
 /**
- * Example source 1: admin entity KPI counts.
+ * Source 1: admin entity KPI counts (multi-KPI grid).
  *
  * Source ID: `'admin.entities.counts'`
  * Used by: admin-card-a in `adminBaseDashboard`.
  * Scope: `'all'` (global platform count).
  *
  * Fetches the total count of accommodations, destinations, events, posts,
- * and attractions in parallel — same data as `useDashboardStats` but now
- * routed through the resolver registry so the dashboard renderer can use it.
+ * attractions, and users in parallel — same data as the old `useDashboardStats`
+ * hook but routed through the resolver registry.
  *
- * Returns `{ value: totalAcrossAllEntities }` so KpiWidget can render the
- * aggregate count directly. Individual entity counts are included in
- * `breakdown` for any renderer that wants to show the per-entity detail.
+ * Returns a {@link KpiData}-compatible object with BOTH:
+ *   - `value`: the sum across all entities (kept for back-compat / callers that
+ *     want the aggregate; not displayed when `kpis` is present).
+ *   - `kpis`: one entry per entity `{ key, label, value, href }`. When this
+ *     array is present KpiWidget renders GRID MODE — six mini-KPIs, each a link
+ *     to its admin list — instead of a single summed number (SPEC-155 follow-up:
+ *     "card A should show the 6 counts, not their sum").
  *
- * Card-A design decision: one kpi widget cannot meaningfully show 6 numbers.
- * The `value` is the SUM of all 6 entity counts (the "total platform entities"
- * KPI). The `breakdown` record is available for a future multi-KPI renderer.
+ * The `href` values point at the real admin list routes (verified against
+ * `routes/_authed/`): note `attractions` lives at `/content/destination-attractions`.
  */
 registerDataSource('admin.entities.counts', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.entities.counts', ctx),
     queryFn: async () => {
-        const endpoints = [
-            { name: 'accommodations', path: '/admin/accommodations' },
-            { name: 'destinations', path: '/admin/destinations' },
-            { name: 'events', path: '/admin/events' },
-            { name: 'posts', path: '/admin/posts' },
-            { name: 'attractions', path: '/admin/attractions' }
+        // `path` = API count endpoint; `href` = admin list route (frontend).
+        const entities = [
+            {
+                name: 'accommodations',
+                path: '/admin/accommodations',
+                href: '/accommodations',
+                label: { es: 'Alojamientos', en: 'Accommodations', pt: 'Alojamentos' }
+            },
+            {
+                name: 'destinations',
+                path: '/admin/destinations',
+                href: '/destinations',
+                label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' }
+            },
+            {
+                name: 'events',
+                path: '/admin/events',
+                href: '/events',
+                label: { es: 'Eventos', en: 'Events', pt: 'Eventos' }
+            },
+            {
+                name: 'posts',
+                path: '/admin/posts',
+                href: '/posts',
+                label: { es: 'Posts', en: 'Posts', pt: 'Posts' }
+            },
+            {
+                name: 'attractions',
+                path: '/admin/attractions',
+                href: '/content/destination-attractions',
+                label: { es: 'Atracciones', en: 'Attractions', pt: 'Atrações' }
+            },
+            {
+                name: 'users',
+                path: '/admin/users',
+                href: '/access/users',
+                label: { es: 'Usuarios', en: 'Users', pt: 'Usuários' }
+            }
         ] as const;
 
         const counts = await Promise.all(
-            endpoints.map(async (e) => ({
-                name: e.name,
-                count: await fetchEntityCount(e.path)
-            }))
+            entities.map(async (e) => ({ entity: e, count: await fetchEntityCount(e.path) }))
         );
 
-        const breakdown: Record<string, number> = {};
         let total = 0;
-        for (const entry of counts) {
-            breakdown[entry.name] = entry.count;
-            total += entry.count;
-        }
+        const kpis = counts.map(({ entity, count }) => {
+            total += count;
+            return { key: entity.name, label: entity.label, value: count, href: entity.href };
+        });
 
-        // Normalize to KpiData shape: value = total entities across all types.
-        return { value: total, breakdown };
+        // Grid mode: `kpis` triggers the per-entity tiles in KpiWidget.
+        // `value` (the sum) is retained for back-compat but not shown in grid mode.
+        return { value: total, kpis };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

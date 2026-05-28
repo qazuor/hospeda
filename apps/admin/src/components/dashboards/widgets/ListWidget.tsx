@@ -48,7 +48,7 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import type { Widget } from '@/config/ia/schema';
+import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -73,8 +73,11 @@ import {
 export interface ListItem {
     /** Unique identifier for the item — used in action href interpolation. */
     readonly id?: string;
-    /** Primary display text. Required. */
-    readonly label: string;
+    /**
+     * Primary display text. Required. Accepts a plain string or a tri-locale
+     * {@link I18nLabel} object (resolved to the `es` locale at render time).
+     */
+    readonly label: string | I18nLabel;
     /** Secondary text rendered below the label (subtitle, date, status…). */
     readonly meta?: string;
     /**
@@ -99,8 +102,12 @@ export interface ListItem {
  *   future callback config key; for V1 it is a no-op placeholder).
  */
 export interface ListWidgetActionConfig {
-    /** Text label for the action button/link. */
-    readonly label: string;
+    /**
+     * Text label for the action button/link. Accepts a plain string or a
+     * tri-locale {@link I18nLabel} (dashboard configs use the latter, e.g.
+     * `{ es: 'Ver', en: 'View', pt: 'Ver' }`); resolved to `es` at render time.
+     */
+    readonly label: string | I18nLabel;
     /**
      * URL template with `{id}` as the interpolation token.
      * Example: `"/admin/conversations/{id}"`.
@@ -166,6 +173,20 @@ function resolveItemHref(
     if (!action.hrefTemplate) return undefined;
     const token = item.id ?? String(index);
     return action.hrefTemplate.replace('{id}', token);
+}
+
+/**
+ * Resolves a label that may be a plain string or a tri-locale {@link I18nLabel}
+ * to display text. Renders the `es` locale (consistent with the rest of the
+ * dashboard until T-034 threads the active locale through). Returns `''` for
+ * nullish input so callers can apply their own fallback.
+ *
+ * Prevents the "Objects are not valid as a React child" crash when a config
+ * supplies an `{ es, en, pt }` object where a string is rendered.
+ */
+function resolveLabelText(value: string | I18nLabel | undefined): string {
+    if (value == null) return '';
+    return typeof value === 'string' ? value : (value.es ?? '');
 }
 
 // ============================================================================
@@ -297,6 +318,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
                 {items.map((item, index) => {
                     const itemKey = item.id ?? String(index);
                     const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
+                    const labelText = resolveLabelText(item.label);
+                    const actionLabelText = resolveLabelText(actionCfg?.label);
 
                     return (
                         <li
@@ -310,7 +333,7 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                     className="truncate font-medium text-foreground text-sm"
                                     data-testid="list-item-label"
                                 >
-                                    {item.label ?? '—'}
+                                    {labelText || '—'}
                                 </p>
                                 {item.meta && (
                                     <p
@@ -341,9 +364,9 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         href={href}
                                         className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
                                         data-testid="list-item-action-link"
-                                        aria-label={`${actionCfg.label}: ${item.label}`}
+                                        aria-label={`${actionLabelText}: ${labelText}`}
                                     >
-                                        {actionCfg.label}
+                                        {actionLabelText}
                                     </a>
                                 )}
 
@@ -352,9 +375,9 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         type="button"
                                         className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
                                         data-testid="list-item-action-button"
-                                        aria-label={`${actionCfg.label}: ${item.label}`}
+                                        aria-label={`${actionLabelText}: ${labelText}`}
                                     >
-                                        {actionCfg.label}
+                                        {actionLabelText}
                                     </button>
                                 )}
                             </div>
