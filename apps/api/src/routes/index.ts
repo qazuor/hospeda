@@ -82,6 +82,8 @@ import {
     newsletterPublicRoutes,
     newsletterRoutes
 } from './newsletter';
+import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
+import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
@@ -189,6 +191,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
+
+        // Global platform announcements (SPEC-156 T-010): cross-device cache
+        // for the web layout banner. Reads from platform_settings.announcements.global.
+        app.route('/api/v1/public/announcements', publicPlatformSettingsRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)
         // Public:    /api/v1/public/conversations/*
@@ -341,6 +347,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // ISR revalidation management (admin only)
         app.route('/api/v1/admin/revalidation', revalidationRouter);
+
+        // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
+        app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

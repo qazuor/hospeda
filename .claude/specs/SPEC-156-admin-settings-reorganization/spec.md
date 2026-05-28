@@ -1,15 +1,17 @@
 ---
 specId: SPEC-156
 title: Admin Settings Reorganization — V1 Page Consolidation
-status: draft
+status: in-progress
 complexity: medium
 owner: qazuor
 created: 2026-05-22
+updated: 2026-05-28
 parent: (none)
 related:
   - SPEC-154 (admin-config-driven-ia — REQUIRED dependency)
   - SPEC-153 (admin-design-tokens — visual styling for settings pages)
   - SPEC-155 (admin-dashboards-v1 — Mi facturación usage widget shares widget infrastructure)
+tech-analysis: tech-analysis.md (v0.2, decisions D1-D8 resolved 2026-05-28)
 ---
 
 # SPEC-156 — Admin Settings Reorganization
@@ -59,20 +61,32 @@ V1 scope discipline: ONLY existing functionality is reorganized. New features (2
 #### New admin pages (V1 only)
 - `/mi-cuenta/seguridad` — landing for security (currently only has password change link).
 - `/mi-cuenta/datos` — landing pointing to GDPR options (deferred — placeholder with "Próximamente" note in V1).
-- `/me/facturacion` (HOST only) — Mi facturación landing per `04-settings.md` §3 (A3):
+- `/mi-cuenta/facturacion` (HOST only) — Mi facturación landing per `04-settings.md` §3 (A3) (path resolved per tech-analysis D8 — consistent with rest of Mi cuenta IA):
   - Section 1: Mi plan actual (read-only summary).
-  - Section 2: Uso de mi plan (NEW UI consuming existing `GET /api/v1/protected/billing/usage`).
+  - Section 2: Uso de mi plan (NEW UI consuming existing `GET /api/v1/protected/billing/usage`). Standalone `<UsageProgressBar>` component, not SPEC-155 widget infra (tech-analysis D5).
   - Section 3: Actions (deep link to `hospeda.com.ar/mi-cuenta/suscripcion` + download latest invoice if PDF available).
 
 #### Storage migrations (small but real)
 - `platform_settings` table created with `(key, value, updatedAt, updatedBy)` columns.
-- 2 endpoints: `GET /api/v1/admin/platform-settings/:key`, `PATCH /api/v1/admin/platform-settings/:key`.
+- 3 endpoints: `GET /api/v1/admin/platform-settings/:key`, `PATCH /api/v1/admin/platform-settings/:key`, and **`GET /api/v1/public/announcements`** (public, cacheable — added per tech-analysis D2 so web app can render announcements cross-device).
 - `/plataforma/critical` migrates maintenance mode toggle + announcements from localStorage to API.
-- `/plataforma/configuracion/seo` migrates 3 SEO fields from localStorage to API.
+- `/plataforma/configuracion/seo` migrates 3 SEO fields from localStorage to API. PATCH triggers auto-revalidation via `revalidationService.revalidateByEntityType('post')` + revalidate `/` (tech-analysis D7).
+- Migration helper: per-browser one-shot with cookie flag `_settings_migrated=true` + scheduled cleanup task ~30 days post-deploy (tech-analysis D4).
 
 #### Small UI additions
 - Anuncios globales minimal editor: text (i18n ×3) + variant (info/warning/danger) + dismissible toggle + optional start/end dates. List + create/edit forms. Replaces the current display-only placeholder.
+- **Web display Astro component** (per tech-analysis D2): consumes `GET /api/v1/public/announcements`, renders active announcement(s) in layout slot with client-side filter by start/end date + dismissible state in cookie.
 - Honest disclosure labels: SMS/Push notification toggles in `/mi-cuenta/notificaciones` labeled `(no disponible)` until backend wired.
+
+#### Permission additions (per tech-analysis D1)
+8 new permissions added to `packages/schemas/src/enums/permission.enum.ts` + assigned to role bundles + bundle tests + middleware wiring:
+- `SETTINGS_GENERAL_VIEW`, `SETTINGS_GENERAL_WRITE` (ADMIN, SUPER_ADMIN)
+- `MAINTENANCE_MODE_WRITE` (SUPER_ADMIN)
+- `BILLING_SETTINGS_VIEW`, `BILLING_SETTINGS_WRITE` (ADMIN, SUPER_ADMIN)
+- `BILLING_VIEW_OWN`, `SUBSCRIPTION_VIEW_OWN` (HOST, ADMIN, SUPER_ADMIN)
+- `USER_UPDATE_SELF` (all authenticated roles)
+
+Existing permissions (`SETTINGS_MANAGE`, `SYSTEM_MAINTENANCE_MODE`, `BILLING_READ_ALL`, `BILLING_MANAGE`) kept — V1 just adds finer-grained perms on the new routes; old routes unchanged.
 
 #### URL redirects
 - Old URLs redirect to new (301) to avoid breaking external bookmarks.
@@ -102,7 +116,7 @@ V1 scope discipline: ONLY existing functionality is reorganized. New features (2
 - AC-6: `/mi-cuenta/seguridad` landing has password change link + `(próximamente)` items for 2FA / sessions / etc.
 
 ### C. Mi facturación HOST landing
-- AC-7: `/me/facturacion` exists, accessible only to users with `BILLING_VIEW_OWN` permission.
+- AC-7: `/mi-cuenta/facturacion` exists, accessible only to users with `BILLING_VIEW_OWN` permission.
 - AC-8: Section 1 (Mi plan) renders correctly from `GET /api/v1/protected/billing/subscriptions?pageSize=1` + latest invoice fetch.
 - AC-9: Section 2 (Uso) renders progress bars per resource consuming `GET /api/v1/protected/billing/usage`. Warning color at 80%, danger at 95%.
 - AC-10: Section 3 has working deep link to `hospeda.com.ar/{lang}/mi-cuenta/suscripcion` (with current locale).
@@ -118,46 +132,87 @@ V1 scope discipline: ONLY existing functionality is reorganized. New features (2
 ### E. Anuncios globales editor
 - AC-17: List view shows current announcements with create/edit/delete actions.
 - AC-18: Create form has text ×3 (es/en/pt), variant radio, dismissible toggle, optional start/end dates.
-- AC-19: Announcements render in web app + admin app (read-only display, current behavior preserved).
+- AC-19: Announcements render in web app via new public Astro component that consumes `GET /api/v1/public/announcements`, with start/end date filter client-side + dismissible state in cookie.
+- AC-19b: Admin app preserves current read-only display behavior (legacy localStorage display removed after migration helper runs).
 
 ### F. Honest disclosure
 - AC-20: SMS notification toggle in `/mi-cuenta/notificaciones` shows `(no disponible)` label + disabled state until backend wired.
 - AC-21: Push notification toggle same treatment.
 
-### G. Permission gates per setting area (per `04-settings.md` §7)
-- AC-22: Mi cuenta pages require `USER_UPDATE_SELF`.
-- AC-23: Mi facturación pages require `BILLING_VIEW_OWN` + `SUBSCRIPTION_VIEW_OWN`.
-- AC-24: Plataforma → Configuración general requires `SETTINGS_GENERAL_VIEW` + write permission for edits.
-- AC-25: Plataforma → Configuración crítica requires SUPER_ADMIN-only permissions (per `04 §7`).
-- AC-26: Comercial → Configuración billing requires `BILLING_SETTINGS_VIEW` / `BILLING_SETTINGS_WRITE`.
+### G. Permission gates per setting area (per `04-settings.md` §7, permissions created per tech-analysis D1)
+- AC-22: Mi cuenta pages require `USER_UPDATE_SELF` (new).
+- AC-23: Mi facturación pages require `BILLING_VIEW_OWN` + `SUBSCRIPTION_VIEW_OWN` (new).
+- AC-24: Plataforma → Configuración general requires `SETTINGS_GENERAL_VIEW` (new) + `SETTINGS_GENERAL_WRITE` (new) for edits.
+- AC-25: Plataforma → Configuración crítica requires `MAINTENANCE_MODE_WRITE` (new, SUPER_ADMIN only) per `04 §7`.
+- AC-26: Comercial → Configuración billing requires `BILLING_SETTINGS_VIEW` / `BILLING_SETTINGS_WRITE` (new).
+- AC-27: All 8 new permissions present in `permission.enum.ts` with JSDoc + assigned to correct role bundles + bundle tests passing.
 
 ## 5. Technical approach
 
-1. **DB migration** — create `platform_settings` table (Drizzle migration).
-2. **API endpoints** — `GET /admin/platform-settings/:key` + `PATCH`. Add to `apps/api/src/routes/admin/`.
-3. **Backend service** — `platform-settings.service.ts` in `service-core` with cache invalidation logic.
-4. **Storage migration helpers** — small client-side migration that on first load reads localStorage, POSTs to API if not already in DB, and clears localStorage entries. Idempotent.
-5. **Route relocations** — for each old path, create new path file + delete old. Add redirects in TanStack Start's redirect logic.
-6. **Page splitting (Mi cuenta)** — `/me/settings` split into `/mi-cuenta/preferencias` and `/mi-cuenta/notificaciones` with shared backend update logic.
-7. **Mi facturación landing** — new route file. Composed of 3 section components: `SubscriptionSummary`, `PlanUsage`, `BillingActions`. Reuses widget infrastructure from SPEC-155 where applicable.
-8. **Anuncios editor** — small CRUD form for `platform_settings.announcements` key (JSON array of announcement objects).
-9. **Honest disclosure** — add `disabled` + label modifier to SMS/Push toggles in `/mi-cuenta/notificaciones`.
-10. **Smoke test** — full settings tour per role, verify all 26 acceptance criteria.
+Full details in `tech-analysis.md` (v0.2). High-level steps, organized per the 4-PR strategy (tech-analysis D3):
+
+### PR-1 — `platform_settings` infrastructure
+1. **DB migration** — create `platform_settings` table (Drizzle migration). Schema in `packages/db/src/schemas/platform/`.
+2. **Zod schemas** — `PlatformSettingsKeySchema` (enum) + per-key value schemas + discriminated union response in `packages/schemas/src/platform-settings/`.
+3. **Backend service** — `PlatformSettingsService extends BaseCrudService` in `packages/service-core/src/services/platform-settings/`. Override `update()` to auto-revalidate when key is `seo.defaults` (tech-analysis D7).
+4. **Admin API endpoints** — `GET /api/v1/admin/platform-settings/:key` + `PATCH /api/v1/admin/platform-settings/:key`. Permission gate via discriminated key (`SYSTEM_MAINTENANCE_MODE` for critical keys, `SETTINGS_GENERAL_WRITE` for SEO).
+5. **Public announcements endpoint** — `GET /api/v1/public/announcements`, cacheable, no auth.
+6. **8 new permissions** — add to `permission.enum.ts` + assign to role bundles + bundle tests + middleware wiring (tech-analysis D1).
+
+### PR-2 — Page relocations + IA config
+7. **Route relocations** — for each old path, create new path file (move logic, no rewrite). Old path becomes a thin TanStack `beforeLoad` redirect file (`redirect({ to: NEW_PATH, permanent: true })`) per tech-analysis D6.
+8. **Page splitting (Mi cuenta)** — `me/settings.tsx` split into `mi-cuenta/preferencias.tsx` and `mi-cuenta/notificaciones.tsx` with shared backend update logic.
+9. **IA config update** — `apps/admin/src/config/ia/sidebars.ts` + `roles/*.ts` to add Plataforma/Comercial sections and re-point items to new routes.
+10. **Honest disclosure** — add `disabled` + `(no disponible)` label modifier to SMS/Push toggles in `mi-cuenta/notificaciones.tsx`.
+
+### PR-3 — localStorage→API migration helper (depends on PR-1)
+11. **Migration helper** — per-browser one-shot in admin app: on first load post-deploy, if `localStorage[KEY]` exists AND server has no value, PATCH to API + set cookie `_settings_migrated=true`. Idempotent on subsequent loads (cookie skip). Scheduled cleanup task ~30 days post-deploy (tech-analysis D4).
+12. **`/plataforma/critical/index.tsx`** and **`/plataforma/configuracion/seo.tsx`** — rewrite data source from localStorage to TanStack Query against new admin endpoints.
+
+### PR-4 — Mi facturación HOST + anuncios + web display + smoke
+13. **Mi facturación landing** — `apps/admin/src/routes/_authed/mi-cuenta/facturacion.tsx` composes 3 sections: `SubscriptionSummarySection`, `PlanUsageSection` (with standalone `<UsageProgressBar>` per tech-analysis D5), `BillingActionsSection`. Permission gate `BILLING_VIEW_OWN` + `SUBSCRIPTION_VIEW_OWN`.
+14. **Anuncios editor** — CRUD form for `platform_settings.announcements` key (JSON array of announcement objects) at `/plataforma/critical/anuncios/`.
+15. **Web display Astro component** — new component in `apps/web/src/components/announcements/` consumes `GET /api/v1/public/announcements`, renders in layout slot with client-side date filter + dismissible cookie state (tech-analysis D2).
+16. **Smoke test** — full settings tour per role using SPEC-143 dev test users (`*@local.test`), verify all 27 acceptance criteria.
 
 ## 6. Task breakdown (atomic, complexity ≤ 4)
 
-Estimated 24-28 tasks.
+Estimated **37-43 tasks** (revised from initial 24-28 per tech-analysis D1 expansion + D2 web display + per-PR quality gates). 4 PRs in order per tech-analysis D3.
 
-Indicative breakdown:
-- DB + API: 4 tasks (migration, GET endpoint, PATCH endpoint, service-core wiring).
-- Storage migration helpers: 2 tasks (localStorage→DB script for SEO + Critical).
-- Page relocations: 8-10 tasks (one per page move + redirect setup).
-- Mi cuenta split: 2 tasks (preferencias page + notificaciones page).
-- Mi facturación landing: 3 tasks (route + 3 section components).
-- Anuncios editor: 2 tasks (list view + create/edit form).
-- Honest disclosure: 1 task.
-- Permission gates audit: 1 task.
-- Smoke testing: 2 tasks (per role manual smoke + automated acceptance test).
+Indicative breakdown by PR:
+
+**PR-1 — `platform_settings` infrastructure (9-10 tasks)**
+- DB migration + schema model: 2 tasks.
+- Zod schemas (key enum, per-key value schemas, discriminated response): 1 task.
+- `PlatformSettingsService` extending `BaseCrudService` (with SEO revalidation hook): 1 task.
+- Admin endpoints (`GET` + `PATCH`): 2 tasks.
+- Public announcements endpoint: 1 task.
+- 8 new permissions in `permission.enum.ts` + role bundles + bundle tests + middleware wiring: 2-3 tasks.
+
+**PR-2 — Page relocations + IA config (10-12 tasks)**
+- Page relocations + 301 redirects: 8-9 tasks (one per route group: `me/*`, `settings/*`, `revalidation`, `billing/*`-to-`plataforma/*`, `tags/*`-to-`plataforma/tags/*`).
+- Mi cuenta split (`me/settings` → preferencias + notificaciones): 1 task.
+- New empty landings (`mi-cuenta/seguridad/index`, `mi-cuenta/datos`): 1 task.
+- IA config update (`sidebars.ts` + `roles/*.ts` + tests): 1 task.
+- Honest disclosure labels on SMS/Push toggles: 1 task.
+
+**PR-3 — localStorage→API migration helper (3-4 tasks, depends on PR-1)**
+- Migration helper utility + cookie flag + cleanup hook: 1 task.
+- `/plataforma/critical/index.tsx` rewrite (data source localStorage → API): 1 task.
+- `/plataforma/configuracion/seo.tsx` rewrite (data source localStorage → API): 1 task.
+- Auto-revalidation wiring verification + test: 1 task.
+
+**PR-4 — Mi facturación + anuncios + web display (11-13 tasks)**
+- Mi facturación landing route + permission gate: 1 task.
+- `SubscriptionSummarySection` component: 1 task.
+- `PlanUsageSection` + standalone `<UsageProgressBar>`: 1 task.
+- `BillingActionsSection` with deep links: 1 task.
+- Anuncios editor — list view: 1 task.
+- Anuncios editor — create/edit form (i18n ×3 + variant + dismissible + dates): 1 task.
+- Web Astro `<GlobalAnnouncements>` component (consume public endpoint + render + dismissible cookie): 1-2 tasks.
+- Per-role smoke test (using SPEC-143 `*@local.test` users): 1-2 tasks.
+- Permission gate audit + automated AC test: 1 task.
+- Quality gate per PR (typecheck + lint + test) ×4: 4 tasks.
 
 ## 7. Risks
 
