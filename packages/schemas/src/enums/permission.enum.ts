@@ -174,6 +174,9 @@ export enum PermissionEnum {
     EVENT_SOFT_DELETE_VIEW = 'event.softDelete.view', // Allows viewing soft-deleted events.
     EVENT_PUBLISH_TOGGLE = 'event.publish.toggle', // Allows publishing or unpublishing an event.
     EVENT_FEATURED_TOGGLE = 'event.featured.toggle', // Allows toggling featured status of an event.
+    EVENT_VISIBILITY_CHANGE = 'event.visibility.change', // Allows changing event visibility.
+    EVENT_LIFECYCLE_CHANGE = 'event.lifecycle.change', // Allows changing event lifecycle state.
+    EVENT_MODERATION_CHANGE = 'event.moderation.change', // Allows changing event moderation state.
     EVENT_LOCATION_UPDATE = 'event.location.update', // Allows updating event location.
     EVENT_ORGANIZER_MANAGE = 'event.organizer.manage', // Allows managing event organizers.
     EVENT_SLUG_MANAGE = 'event.slug.manage', // Allows managing event slugs.
