@@ -82,8 +82,9 @@ export const useUpdateDestinationMutation = (id: string) => {
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(destinationQueryKeys.detail(id), updatedData);
-            // Invalidate list queries
-            queryClient.invalidateQueries({ queryKey: destinationQueryKeys.lists() });
+            // Invalidate the whole entity tree so the list query (keyed by
+            // filters, not the `lists()` literal) refetches after an inline edit.
+            queryClient.invalidateQueries({ queryKey: destinationQueryKeys.all });
         }
     });
 };

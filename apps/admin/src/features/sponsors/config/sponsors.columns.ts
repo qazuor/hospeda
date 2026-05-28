@@ -1,7 +1,37 @@
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
+import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
+import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
+import { EditIcon } from '@repo/icons';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { Fragment, createElement } from 'react';
+import { SponsorTypeBadge } from '../components/SponsorTypeBadge';
+import { useDeleteSponsorMutation, useUpdateSponsorMutation } from '../hooks/useSponsorQuery';
 import type { Sponsor } from '../schemas/sponsors.schemas';
+
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: LifecycleStatusEnum.DRAFT,
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: LifecycleStatusEnum.ACTIVE,
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: LifecycleStatusEnum.ARCHIVED,
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
 
 /**
  * Creates column configuration for sponsors list
@@ -24,24 +54,8 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
             header: t('admin-entities.columns.type'),
             accessorKey: 'type',
             enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: ClientTypeEnum.POST_SPONSOR,
-                    label: t('admin-entities.types.sponsor.postSponsor'),
-                    color: BadgeColor.BLUE
-                },
-                {
-                    value: ClientTypeEnum.ADVERTISER,
-                    label: t('admin-entities.types.sponsor.advertiser'),
-                    color: BadgeColor.GREEN
-                },
-                {
-                    value: ClientTypeEnum.HOST,
-                    label: t('admin-entities.types.sponsor.host'),
-                    color: BadgeColor.PURPLE
-                }
-            ],
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) => createElement(SponsorTypeBadge, { row }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
@@ -57,25 +71,31 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
         {
             id: 'email',
             header: t('admin-entities.columns.email'),
-            accessorKey: 'contact.email',
+            accessorKey: 'contactInfo.personalEmail',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(MailLinkCell, {
+                    email: row.contactInfo?.personalEmail ?? row.contactInfo?.workEmail
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
         {
             id: 'phone',
             header: t('admin-entities.columns.phone'),
-            accessorKey: 'contact.phone',
+            accessorKey: 'contactInfo.mobilePhone',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(WhatsAppLinkCell, { phone: row.contactInfo?.mobilePhone }),
             startVisibleOnTable: false,
             startVisibleOnGrid: false
         },
         {
             id: 'website',
             header: t('admin-entities.columns.website'),
-            accessorKey: 'contact.website',
+            accessorKey: 'contactInfo.website',
             enableSorting: false,
             columnType: ColumnType.LINK,
             linkHandler: (row) => {
@@ -93,24 +113,21 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
             header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: LifecycleStatusEnum.ACTIVE,
-                    label: t('admin-entities.states.lifecycle.active'),
-                    color: BadgeColor.SUCCESS
-                },
-                {
-                    value: LifecycleStatusEnum.DRAFT,
-                    label: t('admin-entities.states.lifecycle.draft'),
-                    color: BadgeColor.WARNING
-                },
-                {
-                    value: LifecycleStatusEnum.ARCHIVED,
-                    label: t('admin-entities.states.lifecycle.archived'),
-                    color: BadgeColor.SECONDARY
-                }
-            ],
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell<Partial<Sponsor>>, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.sponsor.singular',
+                    field: 'lifecycleState',
+                    currentValue: row.lifecycleState,
+                    successMessageKey: 'admin-entities.messages.stateChanged',
+                    options: LIFECYCLE_OPTIONS(t),
+                    permission: PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
+                    useUpdateMutation: useUpdateSponsorMutation,
+                    confirmValues: ['ARCHIVED'],
+                    confirmCopyKey: 'archive'
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
@@ -122,5 +139,37 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
             columnType: ColumnType.TIME_AGO,
             startVisibleOnTable: true,
             startVisibleOnGrid: false
+        },
+        {
+            id: 'actions',
+            header: t('admin-entities.columns.actions'),
+            accessorKey: 'id',
+            enableSorting: false,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(
+                    Fragment,
+                    null,
+                    createElement(
+                        Link,
+                        {
+                            to: '/sponsors/$id/edit' as never,
+                            params: { id: row.id } as never,
+                            className:
+                                'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+                            'aria-label': t('admin-entities.actions.edit')
+                        } as never,
+                        createElement(EditIcon, { size: 16 })
+                    ),
+                    createElement(DeleteRowButton, {
+                        entityId: row.id,
+                        entityName: row.name,
+                        entityLabel: t('admin-entities.entities.sponsor.singular'),
+                        permission: PermissionEnum.POST_SPONSOR_DELETE,
+                        useDeleteMutation: useDeleteSponsorMutation,
+                        variant: 'icon',
+                        entityGender: 'm'
+                    })
+                )
         }
     ] as const;

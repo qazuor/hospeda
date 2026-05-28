@@ -42,6 +42,7 @@ import {
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { Sentry } from '../../../lib/sentry';
+import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
@@ -430,13 +431,12 @@ export const adminUploadMediaRoute = createAdminRoute({
                     throw new ServiceError(
                         ServiceErrorCode.LIMIT_REACHED,
                         planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                        {
+                        buildLimitReachedDetails({
                             limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                             currentCount: planLimitCheck.currentCount,
                             maxAllowed: planLimitCheck.maxAllowed,
-                            usagePercent,
-                            upgradeUrl: '/billing/plans'
-                        }
+                            usagePercent
+                        })
                     );
                 }
             }

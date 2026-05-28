@@ -56,10 +56,16 @@ export interface CreatePromoCodeInput {
     expiryDate?: Date;
     /** Maximum number of uses (optional, unlimited if not set) */
     maxUses?: number;
+    /** Maximum number of uses per individual user (maps to max_uses_per_user) */
+    maxUsesPerUser?: number;
+    /** Date before which the code is not yet valid (maps to starts_at) */
+    validFrom?: Date;
     /** Plan restrictions (array of plan IDs, optional) */
     planRestrictions?: string[];
     /** Only for first-time purchases (default: false) */
     firstPurchaseOnly?: boolean;
+    /** Whether the code can be combined with other codes (maps to combinable) */
+    isStackable?: boolean;
     /** Minimum amount required to use code (in cents, optional) */
     minAmount?: number;
     /** Whether the code is active (default: true) */
@@ -132,13 +138,19 @@ export interface PromoCode {
     value: number;
     active: boolean;
     expiresAt?: string;
+    /** ISO date before which the code is not yet valid (from starts_at) */
+    validFrom?: string;
     maxUses?: number;
+    /** Max redemptions per individual user (from max_uses_per_user) */
+    maxUsesPerUser?: number;
     timesRedeemed: number;
     metadata?: Record<string, unknown>;
     /** Plan IDs this code is restricted to (from DB column, not metadata) */
     validPlans?: string[];
     /** Whether this code is only for new customers (from DB column, not metadata) */
     newCustomersOnly?: boolean;
+    /** Whether the code can be combined with other codes (from combinable) */
+    isStackable?: boolean;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;

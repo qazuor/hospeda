@@ -1,3 +1,16 @@
+/**
+ * ReviewsCell — generic, entity-agnostic reviews cell for entity lists.
+ *
+ * Renders the review count as a clickable value that opens a dialog listing the
+ * entity's reviews (score, author, date, title, content), lazily fetched from
+ * the given admin reviews endpoint while the dialog is open. Renders an em dash
+ * when there are no reviews.
+ *
+ * Reused by any entity list whose admin API exposes a `GET <reviewsPath>?<idParam>=<id>`
+ * list endpoint returning the standard `{ data: { items } }` envelope
+ * (accommodations, destinations).
+ */
+
 import {
     Dialog,
     DialogContent,
@@ -9,41 +22,87 @@ import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import { StarIcon } from '@repo/icons';
-import type { AccommodationReviewAdmin } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import type { Accommodation } from '../schemas/accommodations.schemas';
+
+/** Minimal review shape the cell renders. Both AccommodationReviewAdmin and
+ * DestinationReviewAdmin satisfy this structurally. */
+export interface ReviewItemLike {
+    readonly id: string;
+    readonly averageRating?: number | null;
+    readonly user?: { readonly displayName?: string | null } | null;
+    readonly createdAt: Date | string;
+    readonly title?: string | null;
+    readonly content?: string | null;
+}
+
+/** Props for {@link ReviewsCell}. RO-RO pattern. */
+export interface ReviewsCellProps {
+    /** Entity ID whose reviews are listed. */
+    readonly entityId: string;
+    /** Human-readable entity name, shown as the dialog title. */
+    readonly entityName: string;
+    /** Review count shown as the clickable trigger. */
+    readonly count: number;
+    /** Admin reviews list endpoint, e.g. `/api/v1/admin/destinations/reviews`. */
+    readonly reviewsPath: string;
+    /** Query-param name carrying the entity id, e.g. `destinationId`. */
+    readonly idParamName: string;
+    /** React Query key prefix, e.g. `destination-reviews`. */
+    readonly queryKeyPrefix: string;
+}
 
 /**
- * Lazily fetches the reviews for a single accommodation (admin tier).
- * Only runs while the dialog is open.
+ * Lazily fetches the reviews for a single entity (admin tier). Only runs while
+ * the dialog is open.
  */
-const useAccommodationReviews = (accommodationId: string, enabled: boolean) =>
+const useEntityReviews = (
+    reviewsPath: string,
+    idParamName: string,
+    queryKeyPrefix: string,
+    entityId: string,
+    enabled: boolean
+) =>
     useQuery({
-        queryKey: ['accommodation-reviews', accommodationId],
-        queryFn: async (): Promise<AccommodationReviewAdmin[]> => {
+        queryKey: [queryKeyPrefix, entityId],
+        queryFn: async (): Promise<ReviewItemLike[]> => {
             const response = await fetchApi({
-                path: `/api/v1/admin/accommodations/reviews?accommodationId=${accommodationId}&pageSize=50`
+                path: `${reviewsPath}?${idParamName}=${entityId}&pageSize=50`
             });
-            const envelope = response.data as {
-                data: { items: AccommodationReviewAdmin[] };
-            };
+            const envelope = response.data as { data: { items: ReviewItemLike[] } };
             return envelope.data.items ?? [];
         },
-        enabled: enabled && Boolean(accommodationId),
+        enabled: enabled && Boolean(entityId),
         staleTime: 5 * 60 * 1000
     });
 
 type ReviewsDialogProps = {
-    readonly id: string;
+    readonly entityId: string;
     readonly name: string;
+    readonly reviewsPath: string;
+    readonly idParamName: string;
+    readonly queryKeyPrefix: string;
     readonly open: boolean;
     readonly onOpenChange: (open: boolean) => void;
 };
 
-const ReviewsDialog = ({ id, name, open, onOpenChange }: ReviewsDialogProps) => {
+const ReviewsDialog = ({
+    entityId,
+    name,
+    reviewsPath,
+    idParamName,
+    queryKeyPrefix,
+    open,
+    onOpenChange
+}: ReviewsDialogProps) => {
     const { t } = useTranslations();
-    const { data: reviews, isLoading } = useAccommodationReviews(id, open);
+    const { data: reviews, isLoading } = useEntityReviews(
+        reviewsPath,
+        idParamName,
+        queryKeyPrefix,
+        entityId,
+        open
+    );
 
     return (
         <Dialog
@@ -112,14 +171,17 @@ const ReviewsDialog = ({ id, name, open, onOpenChange }: ReviewsDialogProps) => 
 };
 
 /**
- * Reviews cell for the accommodations list: the review count as a clickable
- * value that opens a dialog listing the accommodation's reviews (author,
- * score, date, title, content), lazily fetched from the admin reviews
- * endpoint. Renders an em dash when there are no reviews.
+ * Reviews count as a clickable value opening a dialog with the entity's reviews.
  */
-export const AccommodationReviewsCell = ({ row }: { readonly row: Accommodation }) => {
+export const ReviewsCell = ({
+    entityId,
+    entityName,
+    count,
+    reviewsPath,
+    idParamName,
+    queryKeyPrefix
+}: ReviewsCellProps) => {
     const [open, setOpen] = useState(false);
-    const count = typeof row.reviewsCount === 'number' ? row.reviewsCount : 0;
 
     if (!count) {
         return <span className="text-muted-foreground">—</span>;
@@ -136,8 +198,11 @@ export const AccommodationReviewsCell = ({ row }: { readonly row: Accommodation 
             </button>
             {open && (
                 <ReviewsDialog
-                    id={row.id as string}
-                    name={row.name as string}
+                    entityId={entityId}
+                    name={entityName}
+                    reviewsPath={reviewsPath}
+                    idParamName={idParamName}
+                    queryKeyPrefix={queryKeyPrefix}
                     open={open}
                     onOpenChange={setOpen}
                 />

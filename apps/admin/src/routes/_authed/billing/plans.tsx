@@ -20,12 +20,14 @@ import {
     useUpdatePlanMutation
 } from '@/features/billing-plans';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import { ALL_PLANS } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/plans')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingPlansPage
 });
 

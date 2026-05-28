@@ -311,7 +311,7 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
                     limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                     currentCount: 5,
                     maxAllowed: 5,
-                    upgradeUrl: '/billing/plans'
+                    upgradeAudience: 'host'
                 });
             }
         });

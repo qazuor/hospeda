@@ -226,13 +226,45 @@ export class TrialService {
             );
 
             if (!activeSubscription) {
+                // No active/trialing subscription — check whether there is a historical
+                // canceled/ended subscription with a trial_end set. If found, surface the
+                // trial as expired rather than returning the "never had a trial" defaults.
+                // Note: a trial that converted to a paid plan (trialing → canceled + new active)
+                // won't reach this branch because the new active sub was found above.
+                const historicalTrialSub = subscriptions
+                    .filter((sub) => sub.status === 'canceled' && sub.trialEnd != null)
+                    .sort((a, b) => {
+                        // Most-recent first: use trialEnd as the ordering key.
+                        const aTime = a.trialEnd ? new Date(a.trialEnd).getTime() : 0;
+                        const bTime = b.trialEnd ? new Date(b.trialEnd).getTime() : 0;
+                        return bTime - aTime;
+                    })[0];
+
+                if (!historicalTrialSub) {
+                    // Never had a trial.
+                    return {
+                        isOnTrial: false,
+                        isExpired: false,
+                        startedAt: null,
+                        expiresAt: null,
+                        daysRemaining: 0,
+                        planSlug: null
+                    };
+                }
+
+                // Historical canceled/ended sub with a trial — fetch plan for its slug.
+                const historicalPlan = await this.billing.plans.get(historicalTrialSub.planId);
                 return {
                     isOnTrial: false,
-                    isExpired: false,
-                    startedAt: null,
-                    expiresAt: null,
+                    isExpired: true,
+                    startedAt: historicalTrialSub.trialStart
+                        ? new Date(historicalTrialSub.trialStart).toISOString()
+                        : null,
+                    expiresAt: historicalTrialSub.trialEnd
+                        ? new Date(historicalTrialSub.trialEnd).toISOString()
+                        : null,
                     daysRemaining: 0,
-                    planSlug: null
+                    planSlug: historicalPlan?.name || null
                 };
             }
 

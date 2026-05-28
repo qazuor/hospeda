@@ -329,9 +329,15 @@ export const createEntityListPage = <TData extends { id: string }>(
                           if (!result) return;
                           // Own-entity link in table view → open the peek drawer instead of navigating.
                           // viewRef.current is read at call-time so the check is always fresh.
+                          // The link must point to THIS row's own detail page: a basePath
+                          // prefix match alone is not enough, because related-entity columns
+                          // (e.g. event organizer/location live under the same /events subtree)
+                          // would falsely match — so also require the target id to be the row's.
+                          const linkParams = result.params as { id?: unknown } | undefined;
                           const isOwnEntity =
                               typeof result.to === 'string' &&
-                              result.to.startsWith(config.basePath);
+                              result.to.startsWith(config.basePath) &&
+                              linkParams?.id === row.id;
                           if (isOwnEntity && viewRef.current === 'table') {
                               setPeekRow(row);
                               return;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { formatCentsToArs, formatShortDate } from '@/lib/format-helpers';
 import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
-import type { PlanCategory, PromoCode } from './types';
+import type { PromoCode } from './types';
 
 /**
  * Format discount value based on type
@@ -60,31 +60,25 @@ export function getPromoCodeColumns(
     } = options;
 
     /**
-     * Get plan label using translations
+     * Format date range from ISO strings using translation patterns.
      */
-    const getPlanLabel = (plan: PlanCategory): string => {
-        switch (plan) {
-            case 'owner':
-                return t('admin-billing.promoCodes.planLabels.owner');
-            case 'complex':
-                return t('admin-billing.promoCodes.planLabels.complex');
-            case 'tourist':
-                return t('admin-billing.promoCodes.planLabels.tourist');
+    const formatDateRange = (from: string | null, until: string | null): string => {
+        const fromStr = from ? formatShortDate({ date: new Date(from), locale }) : null;
+        const untilStr = until ? formatShortDate({ date: new Date(until), locale }) : null;
+        if (fromStr && untilStr) {
+            return t('admin-billing.promoCodes.columns.validRange')
+                .replace('{from}', fromStr)
+                .replace('{until}', untilStr);
         }
-    };
-
-    /**
-     * Format date range using translation patterns
-     */
-    const formatDateRange = (from: Date, until: Date | null): string => {
-        const fromStr = formatShortDate({ date: from, locale });
-        if (!until) {
+        if (untilStr) {
+            return t('admin-billing.promoCodes.columns.validRange')
+                .replace('{from}', '—')
+                .replace('{until}', untilStr);
+        }
+        if (fromStr) {
             return t('admin-billing.promoCodes.columns.validFrom').replace('{date}', fromStr);
         }
-        const untilStr = formatShortDate({ date: until, locale });
-        return t('admin-billing.promoCodes.columns.validRange')
-            .replace('{from}', fromStr)
-            .replace('{until}', untilStr);
+        return '—';
     };
 
     return [
@@ -123,24 +117,22 @@ export function getPromoCodeColumns(
         {
             id: 'discount',
             header: t('admin-billing.promoCodes.columns.discount'),
-            accessorKey: 'discountValue',
+            accessorKey: 'value',
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
-                <span className="font-semibold">
-                    {formatDiscount(row.type, row.discountValue, locale)}
-                </span>
+                <span className="font-semibold">{formatDiscount(row.type, row.value, locale)}</span>
             )
         },
         {
             id: 'usage',
             header: t('admin-billing.promoCodes.columns.usage'),
-            accessorKey: 'usedCount',
+            accessorKey: 'timesRedeemed',
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <span className="text-muted-foreground text-sm">
-                    {formatUsage(row.usedCount, row.maxUses)}
+                    {formatUsage(row.timesRedeemed, row.maxUses)}
                 </span>
             )
         },
@@ -151,30 +143,23 @@ export function getPromoCodeColumns(
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
-                <span className="text-sm">{formatDateRange(row.validFrom, row.validUntil)}</span>
+                <span className="text-sm">{formatDateRange(row.validFrom, row.expiresAt)}</span>
             )
         },
         {
             id: 'plans',
             header: t('admin-billing.promoCodes.columns.plans'),
-            accessorKey: 'applicablePlans',
+            accessorKey: 'validPlans',
             enableSorting: false,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <div className="flex flex-wrap gap-1">
-                    {row.applicablePlans.length === 3 ? (
+                    {row.validPlans.length === 0 ? (
                         <Badge variant="secondary">
                             {t('admin-billing.promoCodes.columns.allPlans')}
                         </Badge>
                     ) : (
-                        row.applicablePlans.map((plan) => (
-                            <Badge
-                                key={plan}
-                                variant="outline"
-                            >
-                                {getPlanLabel(plan)}
-                            </Badge>
-                        ))
+                        <Badge variant="outline">{row.validPlans.length}</Badge>
                     )}
                 </div>
             )
@@ -193,7 +178,7 @@ export function getPromoCodeColumns(
                             {t('admin-billing.promoCodes.columns.stackable')}
                         </Badge>
                     )}
-                    {row.requiresFirstPurchase && (
+                    {row.newCustomersOnly && (
                         <Badge
                             variant="outline"
                             className="text-xs"
@@ -201,7 +186,7 @@ export function getPromoCodeColumns(
                             {t('admin-billing.promoCodes.columns.firstPurchase')}
                         </Badge>
                     )}
-                    {row.minimumAmount && (
+                    {row.minAmount && (
                         <Badge
                             variant="outline"
                             className="text-xs"
@@ -247,16 +232,16 @@ export function getPromoCodeColumns(
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onToggleActive(row.id, !row.isActive)}
+                            onClick={() => onToggleActive(row.id, !row.active)}
                             disabled={isTogglingActive}
                             title={
-                                row.isActive
+                                row.active
                                     ? t('admin-billing.promoCodes.actionDeactivate')
                                     : t('admin-billing.promoCodes.actionActivate')
                             }
                         >
                             <PowerIcon className="mr-1 h-3 w-3" />
-                            {row.isActive
+                            {row.active
                                 ? t('admin-billing.promoCodes.actionDeactivate')
                                 : t('admin-billing.promoCodes.actionActivate')}
                         </Button>
