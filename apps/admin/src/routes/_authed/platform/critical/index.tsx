@@ -8,7 +8,7 @@ import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
-export const Route = createFileRoute('/_authed/settings/critical')({
+export const Route = createFileRoute('/_authed/platform/critical/')({
     component: CriticalSettingsPage
 });
 

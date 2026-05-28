@@ -54,7 +54,7 @@ vi.mock('@tanstack/react-router', () => ({
 // Import route modules AFTER mocks are set up
 
 // Settings pages
-import { Route as CriticalSettingsRoute } from '@/routes/_authed/settings/critical';
+import { Route as CriticalSettingsRoute } from '@/routes/_authed/platform/critical/index';
 import { Route as SeoSettingsRoute } from '@/routes/_authed/settings/seo';
 
 describe('Settings smoke tests', () => {

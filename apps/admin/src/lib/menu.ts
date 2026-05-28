@@ -220,7 +220,7 @@ export const menuTree: readonly MenuItem[] = [
             },
             {
                 titleKey: 'admin-menu.admin.portalSettings',
-                to: '/settings/critical',
+                to: '/platform/critical',
                 permission: PermissionEnum.SETTINGS_MANAGE
             },
             {

@@ -692,7 +692,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Configuração crítica'
                     },
                     icon: 'ShieldAlertIcon',
-                    route: '/settings/critical',
+                    route: '/platform/critical',
                     // SUPER_ADMIN-only: gate on a permission ADMIN does NOT hold
                     // (ADMIN has ACCESS_PANEL_ADMIN, so that gate would never hide it).
                     // SYSTEM_MAINTENANCE_MODE is SUPER-exclusive in ROLE_PERMISSIONS.
