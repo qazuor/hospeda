@@ -225,7 +225,7 @@ export const menuTree: readonly MenuItem[] = [
             },
             {
                 titleKey: 'admin-menu.admin.revalidation',
-                to: '/revalidation',
+                to: '/platform/cache/revalidation',
                 permission: PermissionEnum.REVALIDATION_CONFIG_VIEW
             }
         ]

@@ -720,7 +720,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Revalidação ISR'
                     },
                     icon: 'RefreshIcon',
-                    route: '/revalidation',
+                    route: '/platform/cache/revalidation',
                     permissions: [
                         'REVALIDATION_TRIGGER',
                         'REVALIDATION_CONFIG_VIEW',

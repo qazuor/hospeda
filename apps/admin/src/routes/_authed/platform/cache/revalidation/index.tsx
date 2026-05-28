@@ -59,7 +59,7 @@ import {
     StatCard
 } from '@/features/revalidation/components/revalidation-shared';
 
-export const Route = createFileRoute('/_authed/revalidation/')({
+export const Route = createFileRoute('/_authed/platform/cache/revalidation/')({
     component: RevalidationPage
 });
 
