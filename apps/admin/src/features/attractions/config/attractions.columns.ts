@@ -68,7 +68,7 @@ export const createAttractionsColumns = (
         id: 'destinationCount',
         header: t('admin-entities.columns.destinationsCount'),
         accessorKey: 'destinationCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER
     },
     {

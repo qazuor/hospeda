@@ -106,7 +106,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         id: 'accommodationCount',
         header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER
     },
     {

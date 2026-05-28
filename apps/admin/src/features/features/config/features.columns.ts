@@ -67,7 +67,7 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         id: 'accommodationCount',
         header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER
     },
     {
