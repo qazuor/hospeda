@@ -2,6 +2,7 @@ import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     CreateAddonPayload,
+    PurchasedAddon,
     PurchasedAddonFilters,
     PurchasedAddonsResponse,
     UpdateAddonPayload
@@ -51,8 +52,21 @@ async function fetchAddons(filters: Record<string, unknown> = {}) {
     return { items, pagination: { total: Array.isArray(items) ? items.length : 0 } };
 }
 
+/** Raw envelope returned by the customer-addons list endpoint. */
+interface CustomerAddonsApiEnvelope {
+    data: PurchasedAddon[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+}
+
 /**
- * Fetch purchased add-ons (customer add-ons)
+ * Fetch purchased add-ons (customer add-ons).
+ *
+ * The API returns a flat `{ data, total, page, pageSize, totalPages }` envelope;
+ * map it to the UI's `{ items, pagination }` shape (the previous direct cast was
+ * wrong, so the table always rendered empty — SPEC-143 smoke F-ADMIN-ADDONS-LIST).
  */
 async function fetchPurchasedAddons(
     filters: PurchasedAddonFilters = {}
@@ -65,10 +79,20 @@ async function fetchPurchasedAddons(
     if (filters.addonSlug) params.append('addonSlug', filters.addonSlug);
     if (filters.customerEmail) params.append('customerEmail', filters.customerEmail);
 
-    const result = await fetchApi<{ success: boolean; data: PurchasedAddonsResponse }>({
+    const result = await fetchApi<{ success: boolean; data: CustomerAddonsApiEnvelope }>({
         path: `/api/v1/admin/billing/customer-addons?${params.toString()}`
     });
-    return result.data.data;
+
+    const envelope = result.data.data;
+    return {
+        items: envelope.data ?? [],
+        pagination: {
+            total: envelope.total ?? 0,
+            page: envelope.page ?? 1,
+            limit: envelope.pageSize ?? filters.limit ?? 20,
+            totalPages: envelope.totalPages ?? 0
+        }
+    };
 }
 
 /**

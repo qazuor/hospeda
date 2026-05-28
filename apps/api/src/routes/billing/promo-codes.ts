@@ -12,20 +12,20 @@
  * @module routes/billing/promo-codes
  */
 
-import { PermissionEnum } from '@repo/schemas';
-import { PromoCodeService } from '@repo/service-core';
-import { HTTPException } from 'hono/http-exception';
-import { z } from 'zod';
-import { getActorFromContext } from '../../middlewares/actor';
 import {
     ApplyPromoCodeSchema,
     CreatePromoCodeSchema,
     ListPromoCodesQuerySchema,
+    PermissionEnum,
     PromoCodeResponseSchema,
     UpdatePromoCodeSchema,
     ValidatePromoCodeSchema,
     ValidationResultSchema
-} from '../../schemas/promo-code.schema';
+} from '@repo/schemas';
+import { PromoCodeService } from '@repo/service-core';
+import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod';
+import { getActorFromContext } from '../../middlewares/actor';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env.js';
@@ -110,9 +110,12 @@ export const createPromoCodeRoute = createAdminRoute({
                 discountValue: body.discountValue as number,
                 description: body.description as string | undefined,
                 expiryDate: body.expiryDate as Date | undefined,
+                validFrom: body.validFrom as Date | undefined,
                 maxUses: body.maxUses as number | undefined,
+                maxUsesPerUser: body.maxUsesPerUser as number | undefined,
                 planRestrictions: body.planRestrictions as string[] | undefined,
                 firstPurchaseOnly: (body.firstPurchaseOnly as boolean | undefined) ?? false,
+                isStackable: (body.isStackable as boolean | undefined) ?? false,
                 minAmount: body.minAmount as number | undefined,
                 isActive: (body.isActive as boolean | undefined) ?? true
             },

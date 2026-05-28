@@ -603,6 +603,76 @@ export const billingApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons/my`
         });
+    },
+
+    /**
+     * Get the trial status for the authenticated user.
+     *
+     * Returns `isExpired: true` with populated `startedAt`, `expiresAt`, and
+     * `planSlug` for users whose trial expired and subscription was cancelled.
+     * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
+     *
+     * @returns Trial status information for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getTrialStatus();
+     * if (result.ok && result.data.isExpired) { ... }
+     * ```
+     */
+    getTrialStatus(): Promise<
+        ApiResult<{
+            readonly isOnTrial: boolean;
+            readonly isExpired: boolean;
+            readonly daysRemaining: number | null;
+            readonly startedAt: string | null;
+            readonly expiresAt: string | null;
+            readonly planSlug: string | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/trial/status`
+        });
+    },
+
+    /**
+     * Get the entitlements for the authenticated user.
+     *
+     * Returns the user's current feature flags (entitlements array), plan
+     * limits map, and active plan context. Mirrors the response shape of
+     * `GET /api/v1/protected/users/me/entitlements`.
+     *
+     * - `entitlements`: sorted array of feature-flag keys (e.g. `["can_use_rich_description"]`)
+     * - `limits`: object map of limit keys to numeric values (e.g. `{ max_accommodations: 1 }`).
+     *   A value of `-1` means unlimited.
+     * - `plan`: active plan summary or `null` if the user has no active paid plan.
+     * - `asOf`: ISO timestamp of when the values were resolved.
+     *
+     * @returns Entitlement data for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getEntitlements();
+     * if (result.ok) {
+     *   const maxAccommodations = result.data.limits.max_accommodations; // -1 = unlimited
+     * }
+     * ```
+     */
+    getEntitlements(): Promise<
+        ApiResult<{
+            readonly entitlements: ReadonlyArray<string>;
+            readonly limits: Readonly<Record<string, number>>;
+            readonly plan: {
+                readonly slug: string;
+                readonly name: string;
+                readonly status: string;
+            } | null;
+            readonly asOf: string;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/users/me/entitlements`
+        });
     }
 };
 

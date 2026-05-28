@@ -151,7 +151,7 @@ export function gateAlerts(): AppMiddleware {
                                 currentCount: limitCheck.currentCount,
                                 maxAllowed: limitCheck.maxAllowed,
                                 remaining: limitCheck.remaining,
-                                upgradeUrl: '/billing/plans'
+                                upgradeAudience: 'tourist'
                             }
                         }
                     })
@@ -247,7 +247,7 @@ export function gateComparator(): AppMiddleware {
                                 currentCount: limitCheck.currentCount,
                                 maxAllowed: limitCheck.maxAllowed,
                                 remaining: limitCheck.remaining,
-                                upgradeUrl: '/billing/plans'
+                                upgradeAudience: 'tourist'
                             }
                         }
                     })
