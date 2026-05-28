@@ -1,13 +1,108 @@
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
-import { EditIcon } from '@repo/icons';
+import { EditIcon, getUserRoleIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
 import { ImpersonateButton } from '../components/ImpersonateButton';
-import { useDeleteUserMutation } from '../hooks/useUserQuery';
+import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
+
+/**
+ * Role options for inline edit (7 total). SYSTEM and GUEST are kept in the
+ * dropdown so users with those roles still render a labeled, colored badge,
+ * but in normal operation admins won't pick them. The backend remains the
+ * authoritative validation.
+ */
+const ROLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'SUPER_ADMIN',
+        label: t('admin-entities.types.userRole.superAdmin'),
+        color: BadgeColor.RED,
+        icon: getUserRoleIcon({ role: 'super_admin' })
+    },
+    {
+        value: 'ADMIN',
+        label: t('admin-entities.types.userRole.admin'),
+        color: BadgeColor.ORANGE,
+        icon: getUserRoleIcon({ role: 'admin' })
+    },
+    {
+        value: 'EDITOR',
+        label: t('admin-entities.types.userRole.editor'),
+        color: BadgeColor.BLUE,
+        icon: getUserRoleIcon({ role: 'editor' })
+    },
+    {
+        value: 'HOST',
+        label: t('admin-entities.types.userRole.host'),
+        color: BadgeColor.PURPLE,
+        icon: getUserRoleIcon({ role: 'host' })
+    },
+    {
+        value: 'USER',
+        label: t('admin-entities.types.userRole.user'),
+        color: BadgeColor.GREEN,
+        icon: getUserRoleIcon({ role: 'user' })
+    },
+    {
+        value: 'GUEST',
+        label: t('admin-entities.types.userRole.guest'),
+        color: BadgeColor.GRAY,
+        icon: getUserRoleIcon({ role: 'guest' })
+    },
+    {
+        value: 'SYSTEM',
+        label: t('admin-entities.types.userRole.system'),
+        color: BadgeColor.SLATE,
+        icon: getUserRoleIcon({ role: 'system' })
+    }
+];
+
+/**
+ * Visibility options. Single source for both read-only badge and dropdown.
+ */
+const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'PUBLIC',
+        label: t('admin-entities.states.visibility.public'),
+        color: BadgeColor.PURPLE
+    },
+    {
+        value: 'PRIVATE',
+        label: t('admin-entities.states.visibility.private'),
+        color: BadgeColor.CYAN
+    },
+    {
+        value: 'RESTRICTED',
+        label: t('admin-entities.states.visibility.restricted'),
+        color: BadgeColor.PINK
+    }
+];
+
+/** Lifecycle options. ARCHIVED is the destructive transition. */
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'DRAFT',
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: 'ACTIVE',
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'ARCHIVED',
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
 
 export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<User>[] => [
     {
@@ -60,44 +155,26 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         header: t('admin-entities.columns.role'),
         accessorKey: 'role',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'SUPER_ADMIN',
-                label: t('admin-entities.types.userRole.superAdmin'),
-                color: BadgeColor.RED
-            },
-            {
-                value: 'ADMIN',
-                label: t('admin-entities.types.userRole.admin'),
-                color: BadgeColor.ORANGE
-            },
-            {
-                value: 'EDITOR',
-                label: t('admin-entities.types.userRole.editor'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'HOST',
-                label: t('admin-entities.types.userRole.host'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'USER',
-                label: t('admin-entities.types.userRole.user'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'GUEST',
-                label: t('admin-entities.types.userRole.guest'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'SYSTEM',
-                label: t('admin-entities.types.userRole.system'),
-                color: BadgeColor.SLATE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName:
+                    row.displayName ||
+                    `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() ||
+                    row.slug ||
+                    row.email ||
+                    '',
+                entityLabelKey: 'admin-entities.entities.user.singular',
+                field: 'role',
+                currentValue: row.role,
+                successMessageKey: 'admin-entities.messages.stateChanged',
+                options: ROLE_OPTIONS(t),
+                permission: PermissionEnum.USER_UPDATE_ROLES,
+                useUpdateMutation: useUpdateUserMutation,
+                confirmValues: ['SUPER_ADMIN', 'ADMIN'],
+                confirmCopyKey: 'roleChange'
+            })
     },
     {
         id: 'authProvider',
@@ -179,48 +256,50 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         header: t('admin-entities.columns.visibility'),
         accessorKey: 'visibility',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'PUBLIC',
-                label: t('admin-entities.states.visibility.public'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'PRIVATE',
-                label: t('admin-entities.states.visibility.private'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'RESTRICTED',
-                label: t('admin-entities.states.visibility.restricted'),
-                color: BadgeColor.PINK
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName:
+                    row.displayName ||
+                    `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() ||
+                    row.slug ||
+                    row.email ||
+                    '',
+                entityLabelKey: 'admin-entities.entities.user.singular',
+                field: 'visibility',
+                currentValue: row.visibility,
+                successMessageKey: 'admin-entities.messages.visibilityChanged',
+                options: VISIBILITY_OPTIONS(t),
+                permission: PermissionEnum.USER_VISIBILITY_CHANGE,
+                useUpdateMutation: useUpdateUserMutation
+            })
     },
     {
         id: 'lifecycleState',
         header: t('admin-entities.columns.status'),
         accessorKey: 'lifecycleState',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'DRAFT',
-                label: t('admin-entities.states.lifecycle.draft'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'ACTIVE',
-                label: t('admin-entities.states.lifecycle.active'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'ARCHIVED',
-                label: t('admin-entities.states.lifecycle.archived'),
-                color: BadgeColor.ORANGE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(InlineStateSelectCell, {
+                entityId: row.id,
+                entityName:
+                    row.displayName ||
+                    `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() ||
+                    row.slug ||
+                    row.email ||
+                    '',
+                entityLabelKey: 'admin-entities.entities.user.singular',
+                field: 'lifecycleState',
+                currentValue: row.lifecycleState,
+                successMessageKey: 'admin-entities.messages.stateChanged',
+                options: LIFECYCLE_OPTIONS(t),
+                permission: PermissionEnum.USER_LIFECYCLE_CHANGE,
+                useUpdateMutation: useUpdateUserMutation,
+                confirmValues: ['ARCHIVED'],
+                confirmCopyKey: 'archive'
+            })
     },
     {
         id: 'createdAt',
