@@ -426,6 +426,33 @@ export function createDbMock() {
             expiresAt: 'expires_at',
             createdAt: 'created_at',
             updatedAt: 'updated_at'
+        },
+
+        // SPEC-156 T-002 PlatformSettingsModel stub. Instantiated at module
+        // scope by PlatformSettingsService when the public announcements
+        // route loads, so a minimal class with no-op CRUD is enough — tests
+        // that hit /api/v1/public/announcements with this mock will see empty
+        // announcement lists.
+        PlatformSettingsModel: class MockPlatformSettingsModel {
+            async findByKey(_key: string) {
+                return undefined;
+            }
+            async upsertByKey(key: string, value: unknown, actorId: string) {
+                return {
+                    key,
+                    value,
+                    updatedAt: new Date(),
+                    updatedBy: actorId
+                };
+            }
+        },
+
+        // SPEC-156 T-001 platform_settings table stub.
+        platformSettings: {
+            key: 'key',
+            value: 'value',
+            updatedAt: 'updated_at',
+            updatedBy: 'updated_by'
         }
     };
 }
