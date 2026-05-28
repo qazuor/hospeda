@@ -30,7 +30,7 @@ type PageSpec = {
 const PAGES: ReadonlyArray<PageSpec> = [
     { key: 'dashboard', path: '/dashboard' },
     { key: 'accommodations-list', path: '/accommodations' },
-    { key: 'settings', path: '/me/settings' }
+    { key: 'settings', path: '/account/preferences' }
 ];
 
 const THEMES: ReadonlyArray<Theme> = ['light', 'dark'];

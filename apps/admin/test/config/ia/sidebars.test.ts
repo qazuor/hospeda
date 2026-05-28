@@ -302,22 +302,22 @@ describe('sidebars', () => {
 
         it('should contain /me/profile link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/profile');
+            expect(links.map((l) => l.route)).toContain('/account/profile');
         });
 
         it('should contain /me/settings link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/settings');
+            expect(links.map((l) => l.route)).toContain('/account/preferences');
         });
 
         it('should contain /me/change-password link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/change-password');
+            expect(links.map((l) => l.route)).toContain('/account/security/change-password');
         });
 
         it('should contain /me/tags link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/tags');
+            expect(links.map((l) => l.route)).toContain('/account/tags');
         });
 
         it('should have all permission gates using real PermissionEnum keys', () => {

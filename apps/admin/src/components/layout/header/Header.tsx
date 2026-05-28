@@ -164,7 +164,7 @@ export function Header() {
 
                         {/* Profile */}
                         <Link
-                            to="/me/profile"
+                            to="/account/profile"
                             aria-label={t('admin-common.aria.profile' as TranslationKey)}
                             title={t('admin-nav.topbar.profile' as TranslationKey)}
                             className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"
@@ -174,7 +174,7 @@ export function Header() {
 
                         {/* Settings */}
                         <Link
-                            to="/me/settings"
+                            to="/account/preferences"
                             aria-label={t('admin-common.aria.settings' as TranslationKey)}
                             title={t('admin-nav.topbar.settings' as TranslationKey)}
                             className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"

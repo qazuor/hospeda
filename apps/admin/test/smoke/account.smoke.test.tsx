@@ -1,7 +1,7 @@
 /**
- * Smoke tests for "Me" (user profile) routes.
+ * Smoke tests for the user account (profile, preferences, security) routes.
  *
- * Covers profile, settings, change-password, and my accommodations.
+ * Covers profile, preferences, change-password, and my accommodations.
  *
  * Verifies that each page renders without crashing.
  * These are NOT functional tests -- they only check that the component
@@ -59,13 +59,13 @@ vi.mock('@tanstack/react-router', () => ({
         })
 }));
 
-import { Route as MyAccommodationsRoute } from '@/routes/_authed/me/accommodations/index';
-import { Route as ChangePasswordRoute } from '@/routes/_authed/me/change-password';
+import { Route as PreferencesRoute } from '@/routes/_authed/account/preferences';
 // Import route modules AFTER mocks are set up
-import { Route as ProfileRoute } from '@/routes/_authed/me/profile';
-import { Route as SettingsRoute } from '@/routes/_authed/me/settings';
+import { Route as ProfileRoute } from '@/routes/_authed/account/profile';
+import { Route as ChangePasswordRoute } from '@/routes/_authed/account/security/change-password';
+import { Route as MyAccommodationsRoute } from '@/routes/_authed/me/accommodations/index';
 
-describe('Me (user profile) smoke tests', () => {
+describe('Account smoke tests', () => {
     it('renders profile page without crashing', async () => {
         const Page = ProfileRoute.options.component;
         if (!Page) throw new Error('Component not found in Route.options');
@@ -80,8 +80,8 @@ describe('Me (user profile) smoke tests', () => {
         );
     });
 
-    it('renders settings page without crashing', async () => {
-        const Page = SettingsRoute.options.component;
+    it('renders preferences page without crashing', async () => {
+        const Page = PreferencesRoute.options.component;
         if (!Page) throw new Error('Component not found in Route.options');
 
         renderWithProviders(<Page />);

@@ -98,7 +98,7 @@ describe('useCurrentSection', () => {
     });
 
     it('resolves /me/profile to the "miCuenta" section via sidebar link', () => {
-        setPathname('/me/profile');
+        setPathname('/account/profile');
         const { result } = renderHook(() => useCurrentSection());
         expect(result.current?.id).toBe('miCuenta');
     });

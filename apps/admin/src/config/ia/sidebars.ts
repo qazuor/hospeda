@@ -861,7 +861,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'mi-perfil',
             label: { es: 'Mi perfil', en: 'My profile', pt: 'Meu perfil' },
             icon: 'UserIcon',
-            route: '/me/profile',
+            route: '/account/profile',
             exact: true,
             permissions: ['USER_VIEW_PROFILE']
         },
@@ -870,7 +870,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'preferencias',
             label: { es: 'Preferencias', en: 'Preferences', pt: 'Preferências' },
             icon: 'SettingsIcon',
-            route: '/me/settings',
+            route: '/account/preferences',
             exact: true,
             permissions: ['USER_SETTINGS_UPDATE']
         },
@@ -879,7 +879,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'seguridad',
             label: { es: 'Seguridad', en: 'Security', pt: 'Segurança' },
             icon: 'ShieldIcon',
-            route: '/me/change-password',
+            route: '/account/security/change-password',
             exact: true,
             permissions: ['ACCESS_PANEL_ADMIN']
         },
@@ -888,7 +888,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'mis-tags',
             label: { es: 'Mis tags', en: 'My tags', pt: 'Minhas tags' },
             icon: 'TagsIcon',
-            route: '/me/tags',
+            route: '/account/tags',
             exact: true,
             permissions: ['TAG_USER_VIEW_OWN']
         }
