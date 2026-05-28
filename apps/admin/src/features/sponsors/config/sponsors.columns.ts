@@ -1,6 +1,11 @@
+import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
+import { EditIcon } from '@repo/icons';
+import { ClientTypeEnum, LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { Link } from '@tanstack/react-router';
+import { Fragment, createElement } from 'react';
+import { useDeleteSponsorMutation } from '../hooks/useSponsorQuery';
 import type { Sponsor } from '../schemas/sponsors.schemas';
 
 /**
@@ -122,5 +127,37 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
             columnType: ColumnType.TIME_AGO,
             startVisibleOnTable: true,
             startVisibleOnGrid: false
+        },
+        {
+            id: 'actions',
+            header: t('admin-entities.columns.actions'),
+            accessorKey: 'id',
+            enableSorting: false,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(
+                    Fragment,
+                    null,
+                    createElement(
+                        Link,
+                        {
+                            to: '/sponsors/$id/edit' as never,
+                            params: { id: row.id } as never,
+                            className:
+                                'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+                            'aria-label': t('admin-entities.actions.edit')
+                        } as never,
+                        createElement(EditIcon, { size: 16 })
+                    ),
+                    createElement(DeleteRowButton, {
+                        entityId: row.id,
+                        entityName: row.name,
+                        entityLabel: t('admin-entities.entities.sponsor.singular'),
+                        permission: PermissionEnum.POST_SPONSOR_DELETE,
+                        useDeleteMutation: useDeleteSponsorMutation,
+                        variant: 'icon',
+                        entityGender: 'm'
+                    })
+                )
         }
     ] as const;
