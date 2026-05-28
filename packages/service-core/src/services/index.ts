@@ -13,6 +13,7 @@ export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';
 export * from './feature/feature.normalizers';
 export * from './permission/permission.service';
+export * from './platformSettings/index.js';
 export * from './post/post.service';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
