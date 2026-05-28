@@ -57,16 +57,17 @@ export const EntityCell = <TData,>({
         <button
             type="button"
             className={cn(
-                'inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-sm ring-1 ring-inset transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
+                'inline-flex max-w-xs cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-sm ring-1 ring-inset transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
                 colorClasses
             )}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
             tabIndex={0}
             aria-label={`View ${entityOptions.entityType}: ${stringValue}`}
+            title={stringValue}
             data-peek-trigger=""
         >
-            <IconComponent className="h-4 w-4" />
+            <IconComponent className="h-4 w-4 shrink-0" />
             <span className="truncate">{stringValue}</span>
         </button>
     );
