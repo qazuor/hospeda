@@ -1,6 +1,12 @@
 import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreatePromoCodePayload, PromoCodeFilters, UpdatePromoCodePayload } from './types';
+import type {
+    CreatePromoCodePayload,
+    PromoCode,
+    PromoCodeFilters,
+    PromoCodeStatus,
+    UpdatePromoCodePayload
+} from './types';
 
 /**
  * Query keys for promo code-related queries
@@ -15,6 +21,86 @@ export const promoCodeQueryKeys = {
         detail: (id: string) => [...promoCodeQueryKeys.promoCodes.details(), id] as const
     }
 };
+
+/**
+ * Derive the UI status from the active flag and expiry date.
+ */
+function deriveStatus(active: boolean, expiresAt: string | null): PromoCodeStatus {
+    if (!active) {
+        return 'inactive';
+    }
+    if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
+        return 'expired';
+    }
+    return 'active';
+}
+
+/**
+ * Map an API response record to the UI PromoCode shape. `description` and
+ * `minAmount` are unpacked from the response `metadata` object.
+ */
+function mapResponseToPromoCode(item: Record<string, unknown>): PromoCode {
+    const metadata = (item.metadata as { description?: string; minAmount?: number } | null) ?? {};
+    const expiresAt = (item.expiresAt as string | undefined) ?? null;
+    const active = (item.active as boolean | undefined) ?? false;
+
+    return {
+        id: item.id as string,
+        code: item.code as string,
+        type: item.type as PromoCode['type'],
+        value: (item.value as number | undefined) ?? 0,
+        description: metadata.description ?? '',
+        active,
+        expiresAt,
+        validFrom: (item.validFrom as string | undefined) ?? null,
+        maxUses: (item.maxUses as number | undefined) ?? null,
+        maxUsesPerUser: (item.maxUsesPerUser as number | undefined) ?? null,
+        timesRedeemed: (item.timesRedeemed as number | undefined) ?? 0,
+        validPlans: (item.validPlans as string[] | undefined) ?? [],
+        newCustomersOnly: (item.newCustomersOnly as boolean | undefined) ?? false,
+        isStackable: (item.isStackable as boolean | undefined) ?? false,
+        minAmount: metadata.minAmount ?? null,
+        status: deriveStatus(active, expiresAt),
+        createdAt: item.createdAt as string | undefined
+    };
+}
+
+/**
+ * Build the create request body from the form payload, omitting empty optional
+ * fields so the API's `.optional()` (non-nullable) validators accept them.
+ */
+function toCreateRequestBody(payload: CreatePromoCodePayload): Record<string, unknown> {
+    const body: Record<string, unknown> = {
+        code: payload.code.toUpperCase(),
+        discountType: payload.discountType,
+        discountValue: payload.discountValue,
+        isActive: payload.isActive,
+        firstPurchaseOnly: payload.firstPurchaseOnly,
+        isStackable: payload.isStackable
+    };
+    if (payload.description.trim()) {
+        body.description = payload.description.trim();
+    }
+    if (payload.maxUses != null) {
+        body.maxUses = payload.maxUses;
+    }
+    if (payload.maxUsesPerUser != null) {
+        body.maxUsesPerUser = payload.maxUsesPerUser;
+    }
+    if (payload.validFrom) {
+        body.validFrom = payload.validFrom;
+    }
+    if (payload.expiryDate) {
+        body.expiryDate = payload.expiryDate;
+    }
+    if (payload.planRestrictions.length > 0) {
+        body.planRestrictions = payload.planRestrictions;
+    }
+    if (payload.minAmount != null) {
+        body.minAmount = payload.minAmount;
+    }
+    return body;
+}
 
 /**
  * Map UI filters to API query parameters.
@@ -63,11 +149,11 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
     });
 
     const responseData = result.data.data;
-    let items = responseData.items ?? [];
+    let items = (responseData.items ?? []).map(mapResponseToPromoCode);
 
     // Client-side filter for discount type (not supported by API)
     if (filters.type && filters.type !== 'all') {
-        items = items.filter((item: Record<string, unknown>) => item.type === filters.type);
+        items = items.filter((item) => item.type === filters.type);
     }
 
     return { items, pagination: responseData.pagination ?? { total: items.length } };
@@ -80,19 +166,34 @@ async function createPromoCode(payload: CreatePromoCodePayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: '/api/v1/admin/billing/promo-codes',
         method: 'POST',
-        body: payload
+        body: toCreateRequestBody(payload)
     });
     return result.data.data;
 }
 
 /**
- * Update an existing promo code
+ * Update an existing promo code. The API only accepts mutable fields
+ * (description, expiryDate, maxUses, isActive); empties are omitted.
  */
 async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
+    const body: Record<string, unknown> = {};
+    if (payload.description !== undefined) {
+        body.description = payload.description;
+    }
+    if (payload.expiryDate) {
+        body.expiryDate = payload.expiryDate;
+    }
+    if (payload.maxUses != null) {
+        body.maxUses = payload.maxUses;
+    }
+    if (payload.isActive !== undefined) {
+        body.isActive = payload.isActive;
+    }
+
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/billing/promo-codes/${id}`,
         method: 'PUT',
-        body: payload
+        body
     });
     return result.data.data;
 }
