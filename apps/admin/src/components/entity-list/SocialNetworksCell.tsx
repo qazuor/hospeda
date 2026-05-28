@@ -30,6 +30,22 @@ interface NetworkRow {
 }
 
 /**
+ * Defense-in-depth scheme allowlist. The stored URLs are already validated by
+ * `SocialNetworkSchema` (Zod regex per network), but rendering a raw value as
+ * an `href` is the kind of code that survives unrelated schema changes — so
+ * we re-check here to make sure no `javascript:` / `data:` / `vbscript:` URL
+ * ever makes it into the DOM.
+ */
+function isSafeUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Renders each present social-network URL as a small clickable brand icon.
  * Empty / missing networks are omitted. Icons open the URL in a new tab.
  */
@@ -47,7 +63,9 @@ export const SocialNetworksCell = ({ social }: SocialNetworksCellProps) => {
         { key: 'youtube', url: social.youtube, Icon: YoutubeIcon, label: 'YouTube' }
     ];
 
-    const present = rows.filter((r): r is NetworkRow & { url: string } => Boolean(r.url));
+    const present = rows.filter(
+        (r): r is NetworkRow & { url: string } => Boolean(r.url) && isSafeUrl(r.url as string)
+    );
 
     if (present.length === 0) {
         return <span className="text-muted-foreground">—</span>;
