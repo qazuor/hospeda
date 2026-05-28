@@ -10,6 +10,10 @@
  * PROTECTED_SEGMENTS), so this page does its own in-page auth guard, same
  * pattern as /mi-cuenta/*.
  *
+ * F4: If the user is at or over their max_accommodations limit, replaces the
+ * form with an AtLimit panel so the user sees a clear upgrade prompt instead
+ * of a confusing form that would fail on submit.
+ *
  * @route    /{lang}/publicar/nueva/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
@@ -26,7 +30,9 @@ import {
     BuildingsIcon,
     ImageIcon,
     FileTextIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    AlertCircleIcon,
+    ArrowRightIcon
 } from '@repo/icons';
 
 export const prerender = false;
@@ -53,12 +59,13 @@ const pageDescription = t(
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 const adminUrl = getAdminUrlOrThrow();
 
+const cookieHeader = Astro.request.headers.get('cookie');
+
 // Resolve admin panel access server-side so the form can branch the
 // post-create redirect: HOST users without `access.panelAdmin` would
 // otherwise land on /auth/forbidden after being sent to /admin/*.
 let canAccessAdminPanel = false;
 try {
-    const cookieHeader = Astro.request.headers.get('cookie');
     if (cookieHeader) {
         const meResponse = await fetch(`${getApiUrl()}/api/v1/public/auth/me`, {
             headers: { cookie: cookieHeader }
@@ -75,7 +82,45 @@ try {
     logger.warn({ error }, 'publicar/nueva: failed to resolve admin panel access');
 }
 
+// F4: Check if the user has hit their max_accommodations limit.
+// If so, render the AtLimit panel instead of the form.
+let isAtAccommodationLimit = false;
+let currentAccommodationCount = 0;
+let maxAccommodationAllowed = 0;
+
+try {
+    if (cookieHeader) {
+        const entitlementsResponse = await fetch(
+            `${getApiUrl()}/api/v1/protected/users/me/entitlements`,
+            { headers: { cookie: cookieHeader } }
+        );
+        if (entitlementsResponse.ok) {
+            const entJson = (await entitlementsResponse.json()) as {
+                data?: {
+                    entitlements?: Readonly<Record<string, number | boolean | null>>;
+                    usage?: Readonly<Record<string, number>>;
+                };
+            };
+            const maxAllowed = entJson.data?.entitlements?.max_accommodations;
+            const currentUsage = entJson.data?.usage?.max_accommodations;
+            if (
+                typeof maxAllowed === 'number' &&
+                maxAllowed > 0 &&
+                typeof currentUsage === 'number'
+            ) {
+                maxAccommodationAllowed = maxAllowed;
+                currentAccommodationCount = currentUsage;
+                isAtAccommodationLimit = currentUsage >= maxAllowed;
+            }
+        }
+    }
+} catch (error) {
+    logger.warn({ error }, 'publicar/nueva: failed to fetch entitlements for limit check');
+    // Non-fatal: render the form normally on error (let the API reject on submit if needed).
+}
+
 const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
+const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 ---
 
 <MarketingLayout
@@ -143,14 +188,61 @@ const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' })
 
     <section class="nueva-form nueva-form--compact section">
         <div class="nueva-form__container">
-            <CreatePropertyMiniForm
-                client:load
-                locale={locale}
-                apiUrl={apiUrl}
-                adminUrl={adminUrl}
-                accountPropertiesUrl={accountPropertiesUrl}
-                canAccessAdminPanel={canAccessAdminPanel}
-            />
+            {isAtAccommodationLimit ? (
+                <!-- F4: AtLimit panel — shown when the user has reached max_accommodations -->
+                <div class="at-limit-panel" role="alert" aria-live="polite">
+                    <span class="at-limit-panel__icon" aria-hidden="true">
+                        <AlertCircleIcon size={40} weight="duotone" />
+                    </span>
+                    <h2 class="at-limit-panel__title">
+                        {t(
+                            'billing.limit.max_accommodations.atLimitPanel.title',
+                            'Llegaste al límite de tu plan'
+                        )}
+                    </h2>
+                    <p class="at-limit-panel__body">
+                        {t(
+                            'billing.limit.max_accommodations.atLimitPanel.body',
+                            'Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.',
+                            { currentCount: currentAccommodationCount, maxAllowed: maxAccommodationAllowed }
+                        )}
+                    </p>
+                    <div class="at-limit-panel__actions">
+                        <a
+                            href={subscriptionUrl}
+                            class="at-limit-panel__primary-cta btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
+                        >
+                            <span class="gradient-btn__label">
+                                {t(
+                                    'billing.limit.max_accommodations.atLimitPanel.primaryCta',
+                                    'Ver mi suscripción'
+                                )}
+                            </span>
+                            <span aria-hidden="true">
+                                <ArrowRightIcon size={16} weight="bold" />
+                            </span>
+                        </a>
+                        <a
+                            href={accountPropertiesUrl}
+                            class="at-limit-panel__secondary-link"
+                        >
+                            {t(
+                                'billing.limit.max_accommodations.atLimitPanel.secondaryCta',
+                                'Ver mis propiedades'
+                            )}
+                        </a>
+                    </div>
+                </div>
+            ) : (
+                <CreatePropertyMiniForm
+                    client:load
+                    locale={locale}
+                    apiUrl={apiUrl}
+                    adminUrl={adminUrl}
+                    accountPropertiesUrl={accountPropertiesUrl}
+                    canAccessAdminPanel={canAccessAdminPanel}
+                />
+            )}
         </div>
     </section>
 </MarketingLayout>
@@ -362,5 +454,76 @@ const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' })
     @media (max-width: 768px) {
         .nueva-hero__container { grid-template-columns: 1fr; }
         .nueva-hero__visual { order: -1; min-height: 240px; }
+    }
+
+    /* ── AtLimit panel (F4) ────────────────────────────────────────────── */
+    .at-limit-panel {
+        max-width: 520px;
+        margin: 0 auto;
+        background-color: var(--core-card);
+        border: 1px solid oklch(from var(--brand-accent) l c h / 0.3);
+        border-radius: var(--radius-card);
+        padding: var(--space-8) var(--space-6);
+        text-align: center;
+        box-shadow: var(--shadow-card);
+    }
+
+    .at-limit-panel__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background-color: oklch(from var(--brand-accent) l c h / 0.12);
+        color: var(--brand-accent);
+        margin-bottom: var(--space-4);
+    }
+
+    .at-limit-panel__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-3);
+        text-wrap: balance;
+    }
+
+    .at-limit-panel__body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0 0 var(--space-6);
+        max-width: 44ch;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .at-limit-panel__actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .at-limit-panel__primary-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
+    }
+
+    .at-limit-panel__secondary-link {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .at-limit-panel__secondary-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
     }
 </style>

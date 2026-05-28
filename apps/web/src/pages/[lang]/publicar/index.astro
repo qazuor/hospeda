@@ -41,6 +41,11 @@ const { t } = createTranslations(locale);
 
 const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 
+// F3: determine if the user is authenticated server-side so auth-aware
+// CTAs can be rendered statically without shipping JavaScript for the
+// simple "logged in → /publicar/nueva/" swap on the final CTA banner.
+const isAuthenticated = Boolean(Astro.locals.user);
+
 // ---------------------------------------------------------------------------
 // Reuse marketing content from /suscriptores/propietarios/ via shared keys
 // ---------------------------------------------------------------------------
@@ -218,6 +223,8 @@ const faqJsonLd = {
 	</section>
 
 	<!-- Final CTA banner -->
+	<!-- F3: CTA is auth-aware. Authenticated users go to /publicar/nueva/,
+	     unauthenticated users go to /auth/signup. -->
 	<section class="publicar-cta">
 		<div class="publicar-cta__container" data-reveal="up">
 			<p class="publicar-cta__tagline">{t('owners.cta.tagline', '¿Listo para empezar?')}</p>
@@ -226,8 +233,12 @@ const faqJsonLd = {
 				{t('owners.cta.desc', 'Unite a los cientos de propietarios que ya confían en Hospeda para mostrar sus alojamientos al mundo.')}
 			</p>
 			<GradientButton
-				href={buildUrl({ locale, path: 'auth/signup' })}
-				label={t('owners.cta.button', 'Empezar ahora')}
+				href={isAuthenticated
+					? buildUrl({ locale, path: 'publicar/nueva' })
+					: buildUrl({ locale, path: 'auth/signup' })}
+				label={isAuthenticated
+					? t('host.landing.primaryCta', 'Publicar tu propiedad')
+					: t('owners.cta.button', 'Empezar ahora')}
 				variant="accent"
 				icon="true"
 			/>

@@ -603,6 +603,62 @@ export const billingApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons/my`
         });
+    },
+
+    /**
+     * Get the trial status for the authenticated user.
+     *
+     * Returns `isExpired: true` with populated `startedAt`, `expiresAt`, and
+     * `planSlug` for users whose trial expired and subscription was cancelled.
+     * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
+     *
+     * @returns Trial status information for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getTrialStatus();
+     * if (result.ok && result.data.isExpired) { ... }
+     * ```
+     */
+    getTrialStatus(): Promise<
+        ApiResult<{
+            readonly isOnTrial: boolean;
+            readonly isExpired: boolean;
+            readonly daysRemaining: number | null;
+            readonly startedAt: string | null;
+            readonly expiresAt: string | null;
+            readonly planSlug: string | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/trial/status`
+        });
+    },
+
+    /**
+     * Get the entitlements for the authenticated user.
+     *
+     * Returns the user's current plan limits and usage counts.
+     *
+     * @returns Entitlement map for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getEntitlements();
+     * if (result.ok) {
+     *   const maxAccommodations = result.data.entitlements.max_accommodations;
+     * }
+     * ```
+     */
+    getEntitlements(): Promise<
+        ApiResult<{
+            readonly entitlements: Readonly<Record<string, number | boolean | null>>;
+            readonly usage: Readonly<Record<string, number>>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/users/me/entitlements`
+        });
     }
 };
 
