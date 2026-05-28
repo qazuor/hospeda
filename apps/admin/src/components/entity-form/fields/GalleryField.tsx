@@ -341,17 +341,35 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                                     'admin-entities.fields.gallery.imageAlt',
                                                     { index: String(index + 1) }
                                                 )}
+                                                captionLabel={t(
+                                                    'admin-entities.fields.image.captionLabel'
+                                                )}
                                                 captionPlaceholder={t(
                                                     'admin-entities.fields.gallery.captionPlaceholder'
                                                 )}
+                                                altLabel={t(
+                                                    'admin-entities.fields.image.altTextLabel'
+                                                )}
                                                 altPlaceholder={t(
                                                     'admin-entities.fields.gallery.altTextPlaceholder'
+                                                )}
+                                                descriptionLabel={t(
+                                                    'admin-entities.fields.image.descriptionLabel'
+                                                )}
+                                                descriptionPlaceholder={t(
+                                                    'admin-entities.fields.gallery.descriptionPlaceholder'
+                                                )}
+                                                altRequiredHint={t(
+                                                    'admin-entities.fields.gallery.altTextRequiredHint'
                                                 )}
                                                 dragHandleLabel={t(
                                                     'admin-entities.fields.gallery.dnd.dragHandleLabel'
                                                 )}
                                                 deleteLabel={t(
                                                     'admin-entities.fields.gallery.deleteLabel'
+                                                )}
+                                                lightboxLabel={t(
+                                                    'admin-entities.fields.image.lightboxOpenLabel'
                                                 )}
                                                 onRemove={handleRemoveImage}
                                                 onUpdate={handleUpdateImage}
