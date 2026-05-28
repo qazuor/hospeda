@@ -933,5 +933,16 @@
                 "subtitle": "Actualizá la dirección asociada a tu cuenta"
             }
         }
+    },
+    "datos": {
+        "title": "Mis datos",
+        "comingSoon": {
+            "title": "Pronto vas a poder gestionar tus datos desde acá",
+            "description": "Estamos preparando la sección para exportar tu información, pausar tu cuenta y solicitar la eliminación de tus datos según las normativas vigentes."
+        },
+        "supportContact": {
+            "label": "Por ahora, escribinos a:",
+            "email": "soporte@hospeda.com.ar"
+        }
     }
 }

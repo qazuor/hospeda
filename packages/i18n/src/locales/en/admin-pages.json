@@ -933,5 +933,16 @@
                 "subtitle": "Update the address associated with your account"
             }
         }
+    },
+    "datos": {
+        "title": "My data",
+        "comingSoon": {
+            "title": "You'll soon be able to manage your data from here",
+            "description": "We're preparing the section to export your information, pause your account, and request data deletion in accordance with current regulations."
+        },
+        "supportContact": {
+            "label": "In the meantime, write to us at:",
+            "email": "soporte@hospeda.com.ar"
+        }
     }
 }
