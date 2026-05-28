@@ -430,12 +430,17 @@
         {
             "specId": "SPEC-143",
             "title": "Billing Testing Coverage (e2e + manual smoke)",
-            "status": "in_progress",
+            "status": "completed",
             "progress": "49/65",
             "path": "SPEC-143-billing-testing-coverage",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
             "branch": "spec/SPEC-143-billing-testing-coverage",
             "startedAt": "2026-05-17T23:55:00Z",
+            "completedAt": "2026-05-27T23:12:38Z",
+            "completionRef": "Multi-PR effort closed via last billing-local smoke PR #1288 (commit 40731b375).",
+            "archived": true,
+            "archivedAt": "2026-05-27T23:12:38Z",
+            "archiveNote": "Drift fix 2026-05-28: status was stale `in_progress` despite all local-smoke PRs merged. Closed at 49/65 — remaining 16 tasks were intentionally extracted to follow-up specs SPEC-145 (entitlements/limits), SPEC-147 (user self-service cancel), SPEC-148 (defensive grace + plan lifecycle), SPEC-149 (provider error propagation), SPEC-150 (multi-currency), SPEC-167. Engram: spec-143/local-billing-green-status (#798), spec-143/session-end-2026-05-25 (#752).",
             "followUpSpec": "SPEC-145"
         },
         {
@@ -483,7 +488,7 @@
         {
             "specId": "SPEC-155",
             "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "38/38",
             "path": "SPEC-155-admin-dashboards-v1",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
@@ -492,7 +497,9 @@
             "reservedAt": "2026-05-22T00:00:00Z",
             "activatedAt": "2026-05-26T00:00:00Z",
             "tasksAtomizedAt": "2026-05-27T00:00:00Z",
-            "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Ready for PR to staging (not yet merged)."
+            "completedAt": "2026-05-27T20:54:51Z",
+            "completionRef": "PR #1287 (commit b2a9c1393)",
+            "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Shipped via PR #1287."
         },
         {
             "specId": "SPEC-156",
@@ -534,13 +541,15 @@
         {
             "specId": "SPEC-164",
             "title": "Admin Billing Access — SUPER_ADMIN-Only",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "8/8",
             "path": "SPEC-164-admin-billing-super-only",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-164-admin-billing-super-only",
             "branch": "spec/SPEC-164-admin-billing-super-only",
             "base": "staging",
             "createdAt": "2026-05-27T00:00:00.000Z",
+            "completedAt": "2026-05-28T04:34:09Z",
+            "completionRef": "PR #1291 (commit bd6188c32)",
             "note": "8 atomic tasks across 5 phases (avg complexity 2.1). Extracted from SPEC-155 T-002. WIDE revoke (19 perms) + mainMenu hide + onMissing:'hide'/re-gate leaks + 14-page beforeLoad guards + seed/integration/degradation tests. OQ-1=WIDE, OQ-2=Option B (both resolved). Renderer-wiring confirmed: comercialSidebar renders on direct /billing/* URL regardless of mainMenu, so T-005 is strictly required. HOST self-billing (protected tier) verified unaffected."
         }
     ],
