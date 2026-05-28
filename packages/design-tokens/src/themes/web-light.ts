@@ -32,6 +32,7 @@
  */
 
 import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
+import { amenityTypeTokens } from '../tokens/amenity-types.js';
 import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
     type OKLCH,
@@ -326,5 +327,7 @@ export const webLight: Theme = {
     // Per-user-role tokens — same layered model; declared once and shared with admin.
     ...userRoleTokens,
     // Per-auth-provider tokens — same layered model; declared once and shared with admin.
-    ...authProviderTokens
+    ...authProviderTokens,
+    // Per-amenity-type tokens — same layered model; declared once and shared with admin.
+    ...amenityTypeTokens
 };

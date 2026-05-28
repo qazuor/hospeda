@@ -363,12 +363,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Básica",
-            "comfort": "Confort",
-            "luxury": "Lujo",
-            "technology": "Tecnología",
-            "recreation": "Recreación",
-            "business": "Negocios"
+            "climateControl": "Climatización",
+            "connectivity": "Conectividad",
+            "entertainment": "Entretenimiento",
+            "kitchen": "Cocina",
+            "bedAndBath": "Dormitorio y baño",
+            "outdoors": "Exteriores",
+            "accessibility": "Accesibilidad",
+            "services": "Servicios",
+            "safety": "Seguridad",
+            "familyFriendly": "Apto familia",
+            "workFriendly": "Apto trabajo",
+            "generalAppliances": "Electrodomésticos"
         },
         "event": {
             "concert": "Concierto",

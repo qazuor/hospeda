@@ -363,12 +363,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Basic",
-            "comfort": "Comfort",
-            "luxury": "Luxury",
-            "technology": "Technology",
-            "recreation": "Recreation",
-            "business": "Business"
+            "climateControl": "Climate control",
+            "connectivity": "Connectivity",
+            "entertainment": "Entertainment",
+            "kitchen": "Kitchen",
+            "bedAndBath": "Bedroom & bath",
+            "outdoors": "Outdoors",
+            "accessibility": "Accessibility",
+            "services": "Services",
+            "safety": "Safety",
+            "familyFriendly": "Family friendly",
+            "workFriendly": "Work friendly",
+            "generalAppliances": "Appliances"
         },
         "event": {
             "concert": "Concert",

@@ -98,6 +98,21 @@ export type {
     AuthProviderVisual
 } from './domain/auth-provider';
 
+// Amenity-type → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    AMENITY_TYPE_FALLBACK_VISUAL,
+    AMENITY_TYPE_VISUALS,
+    getAmenityTypeColorScheme,
+    getAmenityTypeIcon,
+    getAmenityTypeVisual
+} from './domain/amenity-type';
+export type {
+    AmenityTypeColorScheme,
+    AmenityTypeColorVariant,
+    AmenityTypeVisual
+} from './domain/amenity-type';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';
@@ -479,7 +494,17 @@ export { PowerIcon } from './icons/system/PowerIcon';
 export { PowerOffIcon } from './icons/system/PowerOffIcon';
 export { ReceiptIcon } from './icons/system/ReceiptIcon';
 export { ShieldAlertIcon } from './icons/system/ShieldAlertIcon';
+export { BedIcon } from './icons/system/BedIcon';
+export { BriefcaseIcon } from './icons/system/BriefcaseIcon';
+export { ConfettiIcon } from './icons/system/ConfettiIcon';
+export { CrownIcon } from './icons/system/CrownIcon';
+export { ForkKnifeIcon } from './icons/system/ForkKnifeIcon';
 export { LockIcon } from './icons/system/LockIcon';
+export { TelevisionIcon } from './icons/system/TelevisionIcon';
+export { ThermometerIcon } from './icons/system/ThermometerIcon';
+export { UsersThreeIcon } from './icons/system/UsersThreeIcon';
+export { WheelchairIcon } from './icons/system/WheelchairIcon';
+export { WrenchIcon } from './icons/system/WrenchIcon';
 export { ShieldIcon } from './icons/system/ShieldIcon';
 export { SunIcon } from './icons/system/SunIcon';
 export { ShoppingCartIcon } from './icons/system/ShoppingCartIcon';
