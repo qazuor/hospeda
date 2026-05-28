@@ -59,9 +59,10 @@ import {
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertCircleIcon, CheckCircleIcon } from '@repo/icons';
+import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -204,6 +205,31 @@ export interface ChecklistWidgetConfig {
      * and no remote fetch is needed.
      */
     readonly entities?: ReadonlyArray<ChecklistEntity>;
+    /** Accent palette name for the card icon chip (SPEC-155 redesign). */
+    readonly accent?: string;
+    /** `@repo/icons` name for the card icon chip (SPEC-155 redesign). */
+    readonly icon?: string;
+    /**
+     * Optional call-to-action shown at the foot of the checklist when
+     * completeness is below 100%. Either `href` (fixed) or `hrefTemplate`
+     * (interpolated with `{id}` of the currently selected entity).
+     *
+     * SPEC-155 HOST redesign — surfaces "Editar alojamiento" on card D and
+     * "Completar perfil" on card F.
+     */
+    readonly cta?: {
+        readonly label: string | { es: string; en: string; pt: string };
+        readonly href?: string;
+        readonly hrefTemplate?: string;
+    };
+    /** Card-specific empty-state title. */
+    readonly emptyText?: string;
+    /** Card-specific empty-state description. */
+    readonly emptyDescription?: string;
+    /** Card-specific error-state title. */
+    readonly errorText?: string;
+    /** Card-specific error-state description. */
+    readonly errorDescription?: string;
 }
 
 // ============================================================================
@@ -456,36 +482,52 @@ interface CompletenessBarProps {
 function CompletenessBar({ done, total }: CompletenessBarProps) {
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
-    const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-destructive';
+    // Threshold bands — premium tones over flat tailwind colors.
+    const barClass =
+        pct >= 80
+            ? 'bg-gradient-to-r from-green-400 to-green-500'
+            : pct >= 50
+              ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+              : 'bg-gradient-to-r from-rose-400 to-rose-500';
 
-    const textColor =
-        pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive';
+    const pctColor = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-rose-600';
 
     return (
         <div
-            className="mb-3"
+            className="mb-4 space-y-1.5"
             data-testid="checklist-completeness"
         >
-            <div className="mb-1 flex items-center justify-between text-xs">
+            <div className="flex items-baseline justify-between">
                 <span
-                    className={cn('font-semibold', textColor)}
+                    className="font-medium text-muted-foreground text-xs"
                     data-testid="checklist-completeness-fraction"
                 >
-                    {done}/{total} completado
+                    <span className="font-semibold text-foreground tabular-nums">{done}</span>
+                    <span className="opacity-60"> de </span>
+                    <span className="tabular-nums">{total}</span>
+                    <span className="opacity-60"> completos</span>
                 </span>
                 <span
-                    className={cn('font-medium tabular-nums', textColor)}
+                    className={cn(
+                        'font-semibold text-lg tabular-nums leading-none tracking-tight',
+                        pctColor
+                    )}
+                    style={{ fontFamily: 'var(--font-heading)' }}
                     data-testid="checklist-completeness-pct"
                 >
-                    {pct}%
+                    {pct}
+                    <span className="ml-0.5 text-xs opacity-70">%</span>
                 </span>
             </div>
             {/* Track */}
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted/70 ring-1 ring-border/30 ring-inset">
                 {/* Fill */}
                 {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator, not keyboard-interactive */}
                 <div
-                    className={cn('h-full rounded-full transition-all duration-300', barColor)}
+                    className={cn(
+                        'h-full rounded-full shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)] transition-all duration-500 ease-out',
+                        barClass
+                    )}
                     style={{ width: `${pct}%` }}
                     data-testid="checklist-completeness-bar"
                     role="progressbar"
@@ -495,6 +537,80 @@ function CompletenessBar({ done, total }: CompletenessBarProps) {
                 />
             </div>
         </div>
+    );
+}
+
+// ============================================================================
+// SORT HELPER — pending up, done down
+// ============================================================================
+
+/**
+ * Sorts checklist items so that pending (incomplete) entries appear first.
+ * Within each group the original relative order is preserved (stable sort
+ * via tagged index pairs).
+ *
+ * Used by both checklist bodies so the user always sees the actionable rows
+ * at the top of the list.
+ */
+function sortPendingFirst(items: ReadonlyArray<ChecklistItem>): ReadonlyArray<ChecklistItem> {
+    return items
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => {
+            if (a.item.done === b.item.done) return a.index - b.index;
+            return a.item.done ? 1 : -1;
+        })
+        .map(({ item }) => item);
+}
+
+// ============================================================================
+// CHECKLIST CTA (foot button — shown when pct < 100%)
+// ============================================================================
+
+/**
+ * Renders the call-to-action button at the foot of the checklist.
+ *
+ * Resolves the label from a tri-locale object (uses `es` for V1 to match the
+ * other widgets) or a plain string. Resolves the href from `cta.href` (fixed)
+ * or interpolates `{id}` on `cta.hrefTemplate` when a selected entity id is
+ * available.
+ *
+ * Returns `null` when no CTA is configured, pct is already 100%, or the
+ * template requires an id that wasn't provided.
+ */
+interface ChecklistCtaProps {
+    readonly cta: NonNullable<ChecklistWidgetConfig['cta']> | undefined;
+    readonly pct: number;
+    readonly selectedEntityId?: string;
+    readonly accent?: string;
+}
+
+function ChecklistCta({ cta, pct, selectedEntityId, accent }: ChecklistCtaProps) {
+    if (!cta || pct >= 100) return null;
+
+    const label = typeof cta.label === 'string' ? cta.label : cta.label.es;
+
+    let href: string | undefined = cta.href;
+    if (!href && cta.hrefTemplate) {
+        if (!selectedEntityId) return null;
+        href = cta.hrefTemplate.replace('{id}', selectedEntityId);
+    }
+    if (!href) return null;
+
+    const vars = accentVars(accent);
+
+    return (
+        <a
+            href={href}
+            className="group/cta mt-auto inline-flex items-center gap-1 self-start font-medium text-xs transition-colors hover:underline hover:decoration-2 hover:underline-offset-4"
+            style={{ color: vars.fg }}
+            data-testid="checklist-cta"
+        >
+            <span>{label}</span>
+            <ArrowRightIcon
+                className="size-3.5 transition-transform duration-200 group-hover/cta:translate-x-0.5"
+                aria-hidden="true"
+            />
+        </a>
     );
 }
 
@@ -512,24 +628,42 @@ interface ChecklistRowProps {
 function ChecklistRow({ item }: ChecklistRowProps) {
     return (
         <div
-            className="flex items-center gap-2 py-1"
+            className={cn(
+                'flex items-center gap-3 py-1.5 transition-opacity',
+                item.done && 'opacity-60'
+            )}
             data-testid={`checklist-item-${item.key}`}
         >
             {item.done ? (
-                <CheckCircleIcon
-                    className="h-4 w-4 shrink-0 text-green-500"
+                <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full bg-green-500 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)] ring-2 ring-green-500/15"
                     aria-hidden="true"
                     data-testid={`checklist-icon-done-${item.key}`}
-                />
+                >
+                    <CheckCircleIcon
+                        weight="fill"
+                        className="size-3.5 text-white"
+                    />
+                </span>
             ) : (
-                <AlertCircleIcon
-                    className="h-4 w-4 shrink-0 text-amber-500"
+                <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-300/60"
                     aria-hidden="true"
                     data-testid={`checklist-icon-missing-${item.key}`}
-                />
+                >
+                    <AlertCircleIcon
+                        className="size-3.5 text-amber-500"
+                        weight="fill"
+                    />
+                </span>
             )}
             <span
-                className={cn('text-sm', item.done ? 'text-foreground' : 'text-muted-foreground')}
+                className={cn(
+                    'text-sm leading-snug',
+                    item.done
+                        ? 'text-muted-foreground line-through decoration-1 decoration-muted-foreground/30'
+                        : 'font-medium text-foreground'
+                )}
             >
                 {item.label}
             </span>
@@ -548,20 +682,30 @@ function ChecklistRow({ item }: ChecklistRowProps) {
  */
 interface AccommodationChecklistBodyProps {
     readonly accommodations: ReadonlyArray<AccommodationEntity>;
+    readonly cta?: ChecklistWidgetConfig['cta'];
+    readonly accent?: string;
 }
 
-function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBodyProps) {
+function AccommodationChecklistBody({
+    accommodations,
+    cta,
+    accent
+}: AccommodationChecklistBodyProps) {
     const [selectedId, setSelectedId] = useState<string>(accommodations[0]?.id ?? '');
 
     const selectedAccommodation =
         accommodations.find((a) => a.id === selectedId) ?? accommodations[0];
 
-    const items = selectedAccommodation ? computeAccommodationHealth(selectedAccommodation) : [];
+    const rawItems = selectedAccommodation ? computeAccommodationHealth(selectedAccommodation) : [];
+
+    // Pending entries always render first so the user sees the actionable rows up top.
+    const items = sortPendingFirst(rawItems);
 
     const doneCount = items.filter((i) => i.done).length;
+    const pct = items.length === 0 ? 0 : Math.round((doneCount / items.length) * 100);
 
     return (
-        <div>
+        <div className="flex h-full flex-col">
             {/* Selector — shown only when > 1 accommodation */}
             {accommodations.length > 1 && (
                 <div
@@ -609,6 +753,13 @@ function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBo
                     </li>
                 ))}
             </ul>
+
+            <ChecklistCta
+                cta={cta}
+                pct={pct}
+                selectedEntityId={selectedAccommodation?.id}
+                accent={accent}
+            />
         </div>
     );
 }
@@ -625,14 +776,29 @@ function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBo
 interface GenericChecklistBodyProps {
     readonly checkset: ChecksetId;
     readonly entities: ReadonlyArray<ChecklistEntity>;
+    readonly cta?: ChecklistWidgetConfig['cta'];
+    readonly accent?: string;
 }
 
-function GenericChecklistBody({ checkset, entities }: GenericChecklistBodyProps) {
-    const items = entities.flatMap((entity, idx) => computeItems(checkset, entity, idx));
+function GenericChecklistBody({ checkset, entities, cta, accent }: GenericChecklistBodyProps) {
+    const rawItems = entities.flatMap((entity, idx) => computeItems(checkset, entity, idx));
+
+    // Pending entries always render first so the user sees the actionable rows up top.
+    const items = sortPendingFirst(rawItems);
+
     const doneCount = items.filter((i) => i.done).length;
+    const pct = items.length === 0 ? 0 : Math.round((doneCount / items.length) * 100);
+
+    // Generic body has no per-entity selector — `hrefTemplate` cannot be
+    // interpolated here. Pass the first entity's id as a best-effort, but the
+    // intended use for generic checksets is the fixed `cta.href` form.
+    const firstEntityId =
+        entities.length > 0 && typeof (entities[0] as { id?: unknown }).id === 'string'
+            ? (entities[0] as { id: string }).id
+            : undefined;
 
     return (
-        <div>
+        <div className="flex h-full flex-col">
             <CompletenessBar
                 done={doneCount}
                 total={items.length}
@@ -649,6 +815,13 @@ function GenericChecklistBody({ checkset, entities }: GenericChecklistBodyProps)
                     </li>
                 ))}
             </ul>
+
+            <ChecklistCta
+                cta={cta}
+                pct={pct}
+                selectedEntityId={firstEntityId}
+                accent={accent}
+            />
         </div>
     );
 }
@@ -691,6 +864,9 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
     const checkset = config.checkset ?? 'accommodation-health';
     const sourceId = config.source ?? '';
     const configEntities = config.entities ?? null;
+    const accent = config.accent;
+    const icon = config.icon;
+    const cta = config.cta;
 
     // -- 2. Resolver (always call — hooks cannot be conditional) --------------
     const { resolveForScope } = useDashboardResolver();
@@ -719,6 +895,8 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                 label={displayLabel}
                 variant="checklist"
                 dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
             >
                 <WidgetUnavailableBody variant="checklist" />
             </WidgetCard>
@@ -744,10 +922,14 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                     label={displayLabel}
                     variant="checklist"
                     dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
                 >
                     <WidgetErrorBody
                         variant="checklist"
                         onRetry={() => void refetch()}
+                        text={config.errorText}
+                        description={config.errorDescription}
                     />
                 </WidgetCard>
             );
@@ -758,10 +940,14 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                     label={displayLabel}
                     variant="checklist"
                     dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
                 >
                     <WidgetEmptyBody
                         variant="checklist"
-                        text="Sin datos disponibles"
+                        text={config.emptyText ?? 'Sin datos disponibles'}
+                        description={config.emptyDescription}
+                        icon={icon}
                     />
                 </WidgetCard>
             );
@@ -789,10 +975,14 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                 label={displayLabel}
                 variant="checklist"
                 dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
             >
                 <WidgetEmptyBody
                     variant="checklist"
-                    text="Sin datos disponibles"
+                    text={config.emptyText ?? 'Sin datos disponibles'}
+                    description={config.emptyDescription}
+                    icon={icon}
                 />
             </WidgetCard>
         );
@@ -809,11 +999,15 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
             {checkset === 'accommodation-health' ? (
                 <AccommodationChecklistBody
                     accommodations={resolvedEntities as ReadonlyArray<AccommodationEntity>}
+                    cta={cta}
+                    accent={accent}
                 />
             ) : (
                 <GenericChecklistBody
                     checkset={checkset}
                     entities={resolvedEntities}
+                    cta={cta}
+                    accent={accent}
                 />
             )}
         </WidgetCard>

@@ -80,6 +80,41 @@ export interface KpiData {
      * host accommodation count) MUST NOT set this — they keep single-value mode.
      */
     readonly kpis?: ReadonlyArray<KpiGridItem>;
+    /**
+     * Optional companion section rendered BELOW the KPI value or grid.
+     *
+     * Used by HOST card A to show the host's draft listings under the main
+     * accommodation counts, and by HOST card G to show the favorites breakdown
+     * per accommodation alongside the rating/response stats.
+     *
+     * Each entry is a short row with a label + optional secondary text + href.
+     * The renderer caps the visible list at 5 entries.
+     */
+    readonly companionItems?: ReadonlyArray<KpiCompanionItem>;
+    /**
+     * Optional heading shown above the companion section (e.g.
+     * `'Borradores sin publicar'`). Hidden when omitted.
+     */
+    readonly companionLabel?: string;
+}
+
+/**
+ * A row in the optional companion section below a KPI grid or value.
+ *
+ * Intentionally minimal — uses `label`/`meta` plain strings so resolvers do
+ * not need to construct the richer `ListItem` shape for a sub-bullet area.
+ */
+export interface KpiCompanionItem {
+    /** Stable key for React list reconciliation. */
+    readonly key: string;
+    /** Primary label (e.g. accommodation name, draft title). */
+    readonly label: string;
+    /** Optional secondary text (e.g. relative timestamp, accommodation name). */
+    readonly meta?: string;
+    /** Optional internal link — when present, the row becomes a `<a>`. */
+    readonly href?: string;
+    /** Optional trailing numeric/string indicator (e.g. favorite count). */
+    readonly badge?: string | number;
 }
 
 /**
@@ -135,6 +170,27 @@ export interface KpiWidgetConfig {
     readonly accent?: string;
     /** `@repo/icons` name for the card icon chip (SPEC-155 redesign). */
     readonly icon?: string;
+    /**
+     * Deferred sub-slots — phase-2 placeholders rendered AFTER the KPI grid
+     * as muted tiles labelled with a `phaseSpec` badge. The widget never
+     * fetches data for these; they advertise upcoming functionality.
+     *
+     * Used on HOST card G to surface the "Vistas (SPEC-159)" placeholder
+     * alongside the live rating / favorites / response tiles.
+     */
+    readonly deferredSlots?: ReadonlyArray<{
+        readonly phaseSpec: string;
+        readonly description?: string;
+        readonly label?: string;
+    }>;
+    /** Card-specific empty-state title. */
+    readonly emptyText?: string;
+    /** Card-specific empty-state description. */
+    readonly emptyDescription?: string;
+    /** Card-specific error-state title. */
+    readonly errorText?: string;
+    /** Card-specific error-state description. */
+    readonly errorDescription?: string;
 }
 
 // ============================================================================
@@ -299,6 +355,132 @@ function KpiGridTile({ item }: KpiGridTileProps) {
 }
 
 // ============================================================================
+// DEFERRED TILE — placeholder for upcoming phase-2 slots
+// ============================================================================
+
+/**
+ * Renders a muted placeholder tile next to live KPI tiles, advertising a
+ * phase-2 capability. Used when `config.deferredSlots` lists a slot the
+ * resolver does not yet feed (e.g. HOST card G "Vistas (SPEC-159)").
+ */
+interface DeferredKpiTileProps {
+    readonly phaseSpec: string;
+    readonly label?: string;
+}
+
+function DeferredKpiTile({ phaseSpec, label }: DeferredKpiTileProps) {
+    return (
+        <div
+            className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 ring-1 ring-border/20"
+            data-testid="kpi-grid-deferred-tile"
+            aria-label={`${label ?? 'Próximamente'} (${phaseSpec})`}
+        >
+            <span
+                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/60 font-semibold text-[0.65rem] text-muted-foreground uppercase tracking-wider"
+                aria-hidden="true"
+            >
+                {phaseSpec.replace('SPEC-', '')}
+            </span>
+            <div className="flex min-w-0 flex-col">
+                <span
+                    className="font-semibold text-2xl text-muted-foreground/70 leading-none tracking-tight"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                    —
+                </span>
+                <span className="mt-1 line-clamp-2 font-medium text-muted-foreground text-xs leading-tight">
+                    {label ?? 'Próximamente'}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// ============================================================================
+// COMPANION SECTION — short list below the KPI grid/value
+// ============================================================================
+
+/**
+ * Renders the optional companion section below the primary KPI display.
+ *
+ * Used by HOST card A (draft listings under the accommodation counts) and
+ * HOST card G (favorites breakdown alongside rating stats). Caps the visible
+ * list at 5 entries; resolvers should pre-trim when more is available.
+ */
+interface KpiCompanionListProps {
+    readonly label?: string;
+    readonly items: ReadonlyArray<KpiCompanionItem>;
+}
+
+function KpiCompanionList({ label, items }: KpiCompanionListProps) {
+    const visible = items.slice(0, 5);
+    if (visible.length === 0) return null;
+
+    return (
+        <div
+            className="mt-4 border-border/40 border-t pt-4"
+            data-testid="kpi-companion"
+        >
+            {label && (
+                <p
+                    className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                    data-testid="kpi-companion-label"
+                >
+                    {label}
+                </p>
+            )}
+            <ul className="flex list-none flex-col divide-y divide-border/30">
+                {visible.map((item) => {
+                    const row = (
+                        <>
+                            <div className="min-w-0 flex-1">
+                                <p
+                                    className="truncate font-medium text-foreground text-sm"
+                                    data-testid="kpi-companion-item-label"
+                                >
+                                    {item.label}
+                                </p>
+                                {item.meta && (
+                                    <p className="truncate text-muted-foreground text-xs">
+                                        {item.meta}
+                                    </p>
+                                )}
+                            </div>
+                            {item.badge !== undefined && (
+                                <span
+                                    className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs tabular-nums"
+                                    data-testid="kpi-companion-item-badge"
+                                >
+                                    {item.badge}
+                                </span>
+                            )}
+                        </>
+                    );
+                    return (
+                        <li
+                            key={item.key}
+                            className="py-2 first:pt-0 last:pb-0"
+                            data-testid="kpi-companion-item"
+                        >
+                            {item.href ? (
+                                <a
+                                    href={item.href}
+                                    className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-0.5 hover:bg-muted/40"
+                                >
+                                    {row}
+                                </a>
+                            ) : (
+                                <div className="flex items-center justify-between gap-3">{row}</div>
+                            )}
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -385,6 +567,8 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 <WidgetErrorBody
                     variant="kpi"
                     onRetry={() => void refetch()}
+                    text={config.errorText}
+                    description={config.errorDescription}
                 />
             </WidgetCard>
         );
@@ -400,7 +584,12 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="kpi" />
+                <WidgetEmptyBody
+                    variant="kpi"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -413,6 +602,7 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
     // metric instead of a single big number. Evaluated BEFORE the single-value
     // guard so a resolver may omit the top-level `value` in grid mode.
     if (Array.isArray(kpi.kpis) && kpi.kpis.length > 0) {
+        const deferred = config.deferredSlots ?? [];
         return (
             <WidgetCard
                 label={displayLabel}
@@ -431,7 +621,20 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                             item={item}
                         />
                     ))}
+                    {deferred.map((slot) => (
+                        <DeferredKpiTile
+                            key={slot.phaseSpec}
+                            phaseSpec={slot.phaseSpec}
+                            label={slot.label}
+                        />
+                    ))}
                 </div>
+                {kpi.companionItems && kpi.companionItems.length > 0 && (
+                    <KpiCompanionList
+                        label={kpi.companionLabel}
+                        items={kpi.companionItems}
+                    />
+                )}
             </WidgetCard>
         );
     }
@@ -448,7 +651,12 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="kpi" />
+                <WidgetEmptyBody
+                    variant="kpi"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -505,6 +713,12 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                     {kpi.delta !== undefined && <DeltaBadge delta={kpi.delta} />}
                 </div>
             </div>
+            {kpi.companionItems && kpi.companionItems.length > 0 && (
+                <KpiCompanionList
+                    label={kpi.companionLabel}
+                    items={kpi.companionItems}
+                />
+            )}
         </WidgetCard>
     );
 }

@@ -270,7 +270,7 @@ describe('StatusWidget', () => {
         expect(label).toHaveTextContent('Estado del sistema');
     });
 
-    it('capitalises the status string as badge label when data.label is absent', async () => {
+    it('capitalises the status string as the hero plan label when data.label is absent', async () => {
         mockResolveForScope.mockReturnValue({
             found: true,
             options: stubQueryOptions({ status: 'up' })
@@ -282,11 +282,11 @@ describe('StatusWidget', () => {
             </TestWrapper>
         );
 
-        const badge = await screen.findByTestId('status-badge');
-        expect(badge).toHaveTextContent('Up');
+        const planName = await screen.findByTestId('status-plan-name');
+        expect(planName).toHaveTextContent('Up');
     });
 
-    it('uses data.label when provided', async () => {
+    it('uses data.label as the hero plan name when provided', async () => {
         mockResolveForScope.mockReturnValue({
             found: true,
             options: stubQueryOptions({ status: 'up', label: 'Operational' })
@@ -298,8 +298,8 @@ describe('StatusWidget', () => {
             </TestWrapper>
         );
 
-        const badge = await screen.findByTestId('status-badge');
-        expect(badge).toHaveTextContent('Operational');
+        const planName = await screen.findByTestId('status-plan-name');
+        expect(planName).toHaveTextContent('Operational');
     });
 
     // ── Data — description ────────────────────────────────────────────────
@@ -400,7 +400,8 @@ describe('StatusWidget', () => {
 
         const badge = await screen.findByTestId('status-badge');
         expect(badge).toHaveAttribute('data-variant', 'success');
-        expect(badge).toHaveTextContent('Activa');
+        const planName = await screen.findByTestId('status-plan-name');
+        expect(planName).toHaveTextContent('Activa');
     });
 
     it('applies warning variant for subscription "expiring" status', async () => {

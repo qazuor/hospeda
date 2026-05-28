@@ -49,9 +49,10 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import { Badge } from '@/components/ui-wrapped/Badge';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
+import { cn } from '@/lib/utils';
+import { CalendarIcon, ClockIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import {
     WidgetCard,
@@ -102,6 +103,37 @@ export interface StatusData {
      * (uptime becomes one of the tiles instead).
      */
     readonly metrics?: StatusMetrics;
+    /**
+     * Optional usage / consumption bar shown below the badge. Used by HOST card
+     * B to surface listing-quota usage ("3 de 5 alojamientos"). The bar fills
+     * to `used / limit` and turns warning / destructive above the 80% / 100%
+     * thresholds.
+     */
+    readonly usage?: StatusUsage;
+    /**
+     * Optional next-charge date as an ISO date string (e.g. `'2026-06-15'`).
+     * Rendered below the badge as "Próximo cobro: dd MMM" when present.
+     */
+    readonly nextChargeDate?: string;
+    /**
+     * Optional trial expiration date as an ISO date string. When present and
+     * still in the future, rendered as a "Quedan N días de prueba" line.
+     */
+    readonly trialEndsAt?: string;
+}
+
+/**
+ * Usage / quota indicator (HOST card B — listing-quota gate).
+ *
+ * The renderer derives `pct = round(used / limit * 100)` and selects the bar
+ * color from the threshold bands: ≥100% destructive, ≥80% warning, otherwise
+ * success.
+ */
+export interface StatusUsage {
+    readonly used: number;
+    readonly limit: number;
+    /** Optional human-readable label (e.g. `'alojamientos'`). */
+    readonly label?: string;
 }
 
 /**
@@ -147,20 +179,6 @@ export interface StatusItem {
 export type StatusVariant = 'success' | 'warning' | 'destructive' | 'neutral';
 
 /**
- * Mapping from variant name to Tailwind utility classes for the badge background,
- * text, and border.
- *
- * These are kept outside the render function so they are defined once and shared
- * by the status indicator dot and the badge.
- */
-const VARIANT_CLASSES: Readonly<Record<StatusVariant, string>> = {
-    success: 'bg-green-100 text-green-800 border-green-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
-    destructive: 'bg-destructive/10 text-destructive border-destructive/20',
-    neutral: 'bg-muted text-muted-foreground border-border'
-} as const;
-
-/**
  * Tailwind classes for the small status indicator dot next to the badge.
  */
 const DOT_CLASSES: Readonly<Record<StatusVariant, string>> = {
@@ -168,6 +186,18 @@ const DOT_CLASSES: Readonly<Record<StatusVariant, string>> = {
     warning: 'bg-amber-500',
     destructive: 'bg-destructive',
     neutral: 'bg-muted-foreground'
+} as const;
+
+/**
+ * Tailwind classes for the refined status pill rendered in the single-status
+ * card hero (HOST card B redesign). Soft tinted background + matching ring so
+ * it reads as a sub-label, not the primary visual element of the card.
+ */
+const STATUS_PILL_CLASSES: Readonly<Record<StatusVariant, string>> = {
+    success: 'bg-green-50 text-green-700 ring-green-200/60',
+    warning: 'bg-amber-50 text-amber-700 ring-amber-200/60',
+    destructive: 'bg-rose-50 text-rose-700 ring-rose-200/60',
+    neutral: 'bg-muted text-muted-foreground ring-border/60'
 } as const;
 
 // ============================================================================
@@ -200,6 +230,14 @@ export interface StatusWidgetConfig {
     readonly accent?: string;
     /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
     readonly icon?: string;
+    /** Card-specific empty-state title. */
+    readonly emptyText?: string;
+    /** Card-specific empty-state description. */
+    readonly emptyDescription?: string;
+    /** Card-specific error-state title. */
+    readonly errorText?: string;
+    /** Card-specific error-state description. */
+    readonly errorDescription?: string;
 }
 
 /**
@@ -262,6 +300,90 @@ function resolveVariant(
 ): StatusVariant {
     if (!variantMap) return 'neutral';
     return variantMap[status] ?? 'neutral';
+}
+
+// ============================================================================
+// BILLING SUB-BLOCKS — usage bar, next charge, trial countdown
+// ============================================================================
+
+/**
+ * Renders the usage bar for HOST card B.
+ *
+ * Color bands: ≥100% destructive (over-limit), ≥80% warning, otherwise success.
+ * Returns `null` when `limit` is zero or negative so the widget degrades to a
+ * clean badge-only card.
+ */
+interface UsageBarProps {
+    readonly usage: StatusUsage;
+}
+
+function UsageBar({ usage }: UsageBarProps) {
+    const { used, limit, label } = usage;
+    if (limit <= 0) return null;
+    const pct = Math.min(100, Math.round((used / limit) * 100));
+    const overflow = used > limit;
+    const barColor = overflow ? 'bg-destructive' : pct >= 80 ? 'bg-amber-500' : 'bg-green-500';
+    const textColor = overflow
+        ? 'text-destructive'
+        : pct >= 80
+          ? 'text-amber-600'
+          : 'text-foreground';
+
+    return (
+        <div
+            className="space-y-1"
+            data-testid="status-usage"
+        >
+            <div className={cn('flex items-center justify-between text-xs', textColor)}>
+                <span data-testid="status-usage-fraction">
+                    <span className="font-semibold tabular-nums">{used}</span>
+                    <span className="opacity-70"> de </span>
+                    <span className="font-semibold tabular-nums">{limit}</span>
+                    {label ? <span className="opacity-70"> {label}</span> : null}
+                </span>
+                <span
+                    className="font-medium tabular-nums"
+                    data-testid="status-usage-pct"
+                >
+                    {pct}%
+                </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator, not keyboard-interactive */}
+                <div
+                    className={cn('h-full rounded-full transition-all duration-300', barColor)}
+                    style={{ width: `${pct}%` }}
+                    data-testid="status-usage-bar"
+                    role="progressbar"
+                    aria-valuenow={pct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                />
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Formats an ISO date string as `dd MMM` in Spanish locale (e.g. `15 jun`).
+ * Returns the raw string when parsing fails so we never crash the widget.
+ */
+function formatShortDate(isoDate: string): string {
+    const d = new Date(isoDate);
+    if (Number.isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+}
+
+/**
+ * Computes whole days remaining between `now` and an ISO date string.
+ * Returns `null` for invalid dates or past dates so callers can short-circuit.
+ */
+function daysUntil(isoDate: string): number | null {
+    const target = new Date(isoDate);
+    if (Number.isNaN(target.getTime())) return null;
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return null;
+    return Math.ceil(diffMs / (24 * 60 * 60 * 1000));
 }
 
 // ============================================================================
@@ -356,6 +478,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 <WidgetErrorBody
                     variant="status"
                     onRetry={() => void refetch()}
+                    text={config.errorText}
+                    description={config.errorDescription}
                 />
             </WidgetCard>
         );
@@ -371,7 +495,12 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="status" />
+                <WidgetEmptyBody
+                    variant="status"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -390,7 +519,12 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="status" />
+                <WidgetEmptyBody
+                    variant="status"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -519,6 +653,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
 
     const statusVariant = resolveVariant(statusData.status, config.variantMap);
     const badgeLabel = statusData.label ?? capitalize(statusData.status);
+    const statusText = STATUS_LABELS_ES[statusData.status] ?? capitalize(statusData.status);
+    const hasBillingMeta = statusData.nextChargeDate || statusData.trialEndsAt;
 
     return (
         <WidgetCard
@@ -529,30 +665,40 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
             icon={config.icon}
             ariaLabel={`${displayLabel}: ${badgeLabel}`}
         >
-            {/* Status badge row */}
+            {/* Hero — plan name (Geologica) + status pill below */}
             <div
-                className="flex items-center gap-2"
+                className="flex flex-col gap-1.5"
                 data-testid="status-badge-row"
             >
-                {/* Indicator dot */}
                 <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT_CLASSES[statusVariant]}`}
-                    data-testid="status-indicator-dot"
-                    aria-hidden="true"
-                />
-
-                {/* Badge */}
-                <Badge
-                    className={VARIANT_CLASSES[statusVariant]}
-                    data-testid="status-badge"
-                    data-variant={statusVariant}
-                    aria-label={`Status: ${badgeLabel}`}
+                    className="truncate font-semibold text-2xl text-foreground leading-tight tracking-tight"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                    data-testid="status-plan-name"
                 >
                     {badgeLabel}
-                </Badge>
+                </span>
+                <span
+                    className={cn(
+                        'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs ring-1 ring-inset',
+                        STATUS_PILL_CLASSES[statusVariant]
+                    )}
+                    data-testid="status-badge"
+                    data-variant={statusVariant}
+                    aria-label={`Status: ${statusText}`}
+                >
+                    <span
+                        className={cn(
+                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                            DOT_CLASSES[statusVariant]
+                        )}
+                        data-testid="status-indicator-dot"
+                        aria-hidden="true"
+                    />
+                    {statusText}
+                </span>
             </div>
 
-            {/* Optional description */}
+            {/* Optional description (legacy line, free-text) */}
             {statusData.description && (
                 <p
                     className="text-muted-foreground text-xs"
@@ -560,6 +706,52 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 >
                     {statusData.description}
                 </p>
+            )}
+
+            {/* Billing sub-blocks (HOST card B) — usage bar, next charge, trial countdown */}
+            {statusData.usage && <UsageBar usage={statusData.usage} />}
+
+            {hasBillingMeta && (
+                <div
+                    className="mt-auto space-y-2 border-border/40 border-t pt-3 text-xs"
+                    data-testid="status-billing-meta"
+                >
+                    {statusData.nextChargeDate && (
+                        <div
+                            className="flex items-center gap-2"
+                            data-testid="status-next-charge"
+                        >
+                            <ClockIcon
+                                className="size-4 shrink-0 text-muted-foreground/70"
+                                aria-hidden="true"
+                            />
+                            <span className="text-muted-foreground">Próximo cobro</span>
+                            <span className="ml-auto font-semibold text-foreground tabular-nums">
+                                {formatShortDate(statusData.nextChargeDate)}
+                            </span>
+                        </div>
+                    )}
+                    {statusData.trialEndsAt &&
+                        (() => {
+                            const days = daysUntil(statusData.trialEndsAt);
+                            if (days === null) return null;
+                            return (
+                                <div
+                                    className="flex items-center gap-2"
+                                    data-testid="status-trial-countdown"
+                                >
+                                    <CalendarIcon
+                                        className="size-4 shrink-0 text-amber-500"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="text-muted-foreground">Período de prueba</span>
+                                    <span className="ml-auto font-semibold text-amber-700 tabular-nums">
+                                        {days === 1 ? 'Queda 1 día' : `Quedan ${days} días`}
+                                    </span>
+                                </div>
+                            );
+                        })()}
+                </div>
             )}
         </WidgetCard>
     );
