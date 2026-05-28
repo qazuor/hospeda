@@ -40,11 +40,11 @@
 import type { DashboardInput } from './schema';
 
 // ============================================================================
-// hostDashboard — "Mi negocio" — 8 cards A–H
+// hostDashboard — "Mi negocio" — 9 cards A–I
 // ============================================================================
 
 /**
- * Dashboard for the HOST role — 8-card "Mi negocio" view.
+ * Dashboard for the HOST role — 9-card "Mi negocio" view.
  *
  * Card set (SPEC-155 §3 / 03c HOST section):
  *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
@@ -58,7 +58,7 @@ import type { DashboardInput } from './schema';
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 8
+ * dashboards.hostDashboard.widgets.length; // 9
  * ```
  */
 const hostDashboard: DashboardInput = {
@@ -333,6 +333,34 @@ const hostDashboard: DashboardInput = {
                 emptyDescription:
                     'No tenés pendientes urgentes. Cuando algo pida atención, lo verás acá.',
                 errorText: 'No pudimos cargar tus pendientes',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card I — Tendencia mensual
+        // Bar chart with the host's monthly inquiry count for the last 6 months.
+        // Source: host.stats.conversations-monthly (gap-filled server-side).
+        {
+            id: 'host-card-i',
+            type: 'chart',
+            label: {
+                es: 'Consultas por mes',
+                en: 'Inquiries per month',
+                pt: 'Consultas por mês'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — a time-series with 6 monthly buckets reads
+            // better with horizontal room.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.conversations-monthly',
+                chartType: 'bar',
+                accent: 'sky',
+                icon: 'chart',
+                emptyText: 'Aún no hay consultas',
+                emptyDescription:
+                    'Cuando empieces a recibir consultas, vas a ver la tendencia mensual acá.',
+                errorText: 'No pudimos cargar la tendencia',
                 errorDescription: 'Probá actualizar el panel.'
             }
         }
@@ -877,7 +905,7 @@ const superAdminDashboard: DashboardInput = {
  * The renderer looks up the active dashboard from this registry.
  *
  * Named source objects (SPEC-155 AC-4):
- * - `hostDashboard`          — HOST role (8 cards)
+ * - `hostDashboard`          — HOST role (9 cards)
  * - `editorDashboard`        — EDITOR role (8 cards)
  * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
  * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)

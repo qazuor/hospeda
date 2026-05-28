@@ -939,6 +939,75 @@ registerDataSource('host.profile.current', (ctx) => ({
 }));
 
 // ============================================================================
+// CARD I — Tendencia mensual: conversations-monthly time-series
+// ============================================================================
+
+/**
+ * Shape of GET /api/v1/protected/conversations/me/monthly-inquiries.
+ *
+ * The service gap-fills the series so every month within the requested
+ * window appears, even when count is zero. Always returns 200.
+ */
+interface MonthlyInquiriesApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly months: ReadonlyArray<{ readonly month: string; readonly count: number }>;
+    };
+}
+
+/**
+ * Localised short month labels for the chart x-axis. The API returns ISO
+ * `YYYY-MM` keys; the resolver maps them to "ene", "feb", "mar"...
+ */
+const SHORT_MONTH_LABELS_ES = [
+    'ene',
+    'feb',
+    'mar',
+    'abr',
+    'may',
+    'jun',
+    'jul',
+    'ago',
+    'sep',
+    'oct',
+    'nov',
+    'dic'
+];
+
+/**
+ * HOST card I: monthly inquiry trend for the chart widget.
+ *
+ * Pulls the 6-month series from the backend (already gap-filled) and
+ * normalises it to the ChartWidget's expected shape — a chart-friendly
+ * pair of arrays (labels + values).
+ *
+ * Source ID: `'host.stats.conversations-monthly'`
+ * Scope: `'own'` — the endpoint is implicitly user-scoped.
+ * Endpoint: GET /api/v1/protected/conversations/me/monthly-inquiries?months=6
+ */
+registerDataSource('host.stats.conversations-monthly', (ctx) => ({
+    queryKey: buildDashboardQueryKey('host.stats.conversations-monthly', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<MonthlyInquiriesApiResponse>({
+            path: '/api/v1/protected/conversations/me/monthly-inquiries?months=6'
+        });
+        const rawSeries = result.data.data?.months ?? [];
+
+        // Normalise to ChartData shape: { series: [{ label, value }] }.
+        const series = rawSeries.map((point) => {
+            const monthIdx = Number(point.month.slice(5, 7)) - 1;
+            return {
+                label: SHORT_MONTH_LABELS_ES[monthIdx] ?? point.month,
+                value: point.count
+            };
+        });
+
+        return { series };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
 // CARD H — Próximos pasos: actionable suggestions composed client-side
 // ============================================================================
 

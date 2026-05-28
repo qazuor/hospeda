@@ -18,6 +18,7 @@ import { createRouter } from '../../../utils/create-app';
 import { archiveProtectedConversationRoute } from './archive';
 import { initiateProtectedConversationRoute } from './initiate';
 import { listProtectedConversationsRoute } from './list';
+import { hostConversationMonthlyInquiriesRoute } from './monthly-inquiries';
 import { replyProtectedConversationRoute } from './reply';
 import { hostConversationResponseRateRoute } from './response-rate';
 import { threadProtectedConversationRoute } from './thread';
@@ -48,5 +49,8 @@ app.route('/', archiveProtectedConversationRoute);
 
 // Host response-rate KPIs (GET /me/response-rate) — SPEC-155 T-006
 app.route('/me', hostConversationResponseRateRoute);
+
+// Host monthly inquiry trend (GET /me/monthly-inquiries) — SPEC-155 card I
+app.route('/me', hostConversationMonthlyInquiriesRoute);
 
 export { app as protectedConversationRoutes };
