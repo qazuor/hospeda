@@ -434,6 +434,7 @@ const comercialSidebar: SidebarInput = {
             icon: 'CreditCardIcon',
             defaultOpen: true,
             permissions: ['PRICING_PLAN_VIEW', 'SUBSCRIPTION_VIEW'],
+            onMissing: 'hide',
             items: [
                 {
                     type: 'link',
@@ -441,7 +442,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Planes', en: 'Plans', pt: 'Planos' },
                     icon: 'ListIcon',
                     route: '/billing/plans',
-                    permissions: ['PRICING_PLAN_VIEW']
+                    permissions: ['PRICING_PLAN_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -453,7 +455,8 @@ const comercialSidebar: SidebarInput = {
                     },
                     icon: 'ReceiptIcon',
                     route: '/billing/subscriptions',
-                    permissions: ['SUBSCRIPTION_VIEW']
+                    permissions: ['SUBSCRIPTION_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -461,7 +464,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Add-ons', en: 'Add-ons', pt: 'Add-ons' },
                     icon: 'AddIcon',
                     route: '/billing/addons',
-                    permissions: ['SUBSCRIPTION_ITEM_VIEW']
+                    permissions: ['SUBSCRIPTION_ITEM_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -469,7 +473,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Métricas de uso', en: 'Usage metrics', pt: 'Métricas de uso' },
                     icon: 'MetricsIcon',
                     route: '/billing/metrics',
-                    permissions: ['BILLING_METRICS_READ']
+                    permissions: ['BILLING_METRICS_READ'],
+                    onMissing: 'hide'
                 }
             ]
         },
@@ -482,6 +487,7 @@ const comercialSidebar: SidebarInput = {
             icon: 'ReceiptIcon',
             defaultOpen: false,
             permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW'],
+            onMissing: 'hide',
             items: [
                 {
                     type: 'link',
@@ -489,7 +495,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Transacciones', en: 'Transactions', pt: 'Transações' },
                     icon: 'PriceIcon',
                     route: '/billing/payments',
-                    permissions: ['PAYMENT_VIEW']
+                    permissions: ['PAYMENT_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -497,7 +504,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Facturas', en: 'Invoices', pt: 'Faturas' },
                     icon: 'FileTextIcon',
                     route: '/billing/invoices',
-                    permissions: ['INVOICE_VIEW']
+                    permissions: ['INVOICE_VIEW'],
+                    onMissing: 'hide'
                 }
             ]
         },
@@ -510,6 +518,7 @@ const comercialSidebar: SidebarInput = {
             icon: 'PromotionsIcon',
             defaultOpen: false,
             permissions: ['DISCOUNT_CODE_VIEW', 'OWNER_PROMOTION_VIEW'],
+            onMissing: 'hide',
             items: [
                 {
                     type: 'link',
@@ -521,7 +530,8 @@ const comercialSidebar: SidebarInput = {
                     },
                     icon: 'CouponsIcon',
                     route: '/billing/promo-codes',
-                    permissions: ['DISCOUNT_CODE_VIEW']
+                    permissions: ['DISCOUNT_CODE_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -533,7 +543,8 @@ const comercialSidebar: SidebarInput = {
                     },
                     icon: 'OffersIcon',
                     route: '/billing/owner-promotions',
-                    permissions: ['OWNER_PROMOTION_VIEW']
+                    permissions: ['OWNER_PROMOTION_VIEW'],
+                    onMissing: 'hide'
                 }
             ]
         },
@@ -546,6 +557,7 @@ const comercialSidebar: SidebarInput = {
             icon: 'PostSponsorshipIcon',
             defaultOpen: false,
             permissions: ['SPONSORSHIP_VIEW', 'POST_SPONSOR_VIEW'],
+            onMissing: 'hide',
             items: [
                 {
                     type: 'link',
@@ -557,7 +569,8 @@ const comercialSidebar: SidebarInput = {
                     },
                     icon: 'ListIcon',
                     route: '/billing/sponsorships',
-                    permissions: ['SPONSORSHIP_VIEW']
+                    permissions: ['SPONSORSHIP_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -569,7 +582,8 @@ const comercialSidebar: SidebarInput = {
                     },
                     icon: 'PostSponsorIcon',
                     route: '/sponsors',
-                    permissions: ['POST_SPONSOR_VIEW']
+                    permissions: ['POST_SPONSOR_VIEW'],
+                    onMissing: 'hide'
                 }
             ]
         },
@@ -582,6 +596,7 @@ const comercialSidebar: SidebarInput = {
             icon: 'WebhookIcon',
             defaultOpen: false,
             permissions: ['EXCHANGE_RATE_VIEW', 'BILLING_READ_ALL'],
+            onMissing: 'hide',
             items: [
                 {
                     type: 'link',
@@ -589,7 +604,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Tipos de cambio', en: 'Exchange rates', pt: 'Taxas de câmbio' },
                     icon: 'DollarSignIcon',
                     route: '/billing/exchange-rates',
-                    permissions: ['EXCHANGE_RATE_VIEW']
+                    permissions: ['EXCHANGE_RATE_VIEW'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -597,7 +613,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Webhook events', en: 'Webhook events', pt: 'Webhook events' },
                     icon: 'WebhookIcon',
                     route: '/billing/webhook-events',
-                    permissions: ['BILLING_READ_ALL']
+                    permissions: ['BILLING_READ_ALL'],
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -605,7 +622,8 @@ const comercialSidebar: SidebarInput = {
                     label: { es: 'Cron de billing', en: 'Billing cron', pt: 'Cron de billing' },
                     icon: 'ClockIcon',
                     route: '/billing/cron',
-                    permissions: ['ACCESS_PANEL_ADMIN']
+                    permissions: ['BILLING_READ_ALL'],
+                    onMissing: 'hide'
                 }
             ]
         },
@@ -620,7 +638,8 @@ const comercialSidebar: SidebarInput = {
             },
             icon: 'SettingsIcon',
             route: '/billing/settings',
-            permissions: ['ACCESS_PANEL_ADMIN']
+            permissions: ['BILLING_READ_ALL'],
+            onMissing: 'hide'
         }
     ]
 };

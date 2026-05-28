@@ -16,6 +16,7 @@ import {
 } from '@/features/owner-promotions/hooks';
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
 import { AddIcon } from '@repo/icons';
 import { LifecycleStatusEnum } from '@repo/schemas';
@@ -26,6 +27,7 @@ import { PromotionDetailDialog } from '@/features/owner-promotions/components/Pr
 import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingOwnerPromotionsPage
 });
 

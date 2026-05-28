@@ -18,6 +18,7 @@ import {
     useWebhookEventsQuery
 } from '@/features/billing-webhook-events';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { formatDateWithSeconds } from '@/lib/format-helpers';
 import {
     AlertCircleIcon,
@@ -38,6 +39,7 @@ import {
 } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/webhook-events')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: WebhookEventsPage
 });
 

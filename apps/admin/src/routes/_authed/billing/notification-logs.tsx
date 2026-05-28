@@ -16,6 +16,7 @@ import {
     useNotificationLogsQuery
 } from '@/features/billing-notification-logs';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { CalendarIcon, FilterIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
@@ -30,6 +31,7 @@ import {
 } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/notification-logs')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: NotificationLogsPage
 });
 

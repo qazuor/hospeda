@@ -500,38 +500,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // METRICS: All permissions
         PermissionEnum.METRICS_RESET,
 
-        // POST Sponsorship management
-        PermissionEnum.POST_SPONSORSHIP_MANAGE,
-
-        // SPONSORSHIP: All _ANY granular ownership-scoped permissions (admin manages any)
-        PermissionEnum.SPONSORSHIP_VIEW_ANY,
-        PermissionEnum.SPONSORSHIP_UPDATE_ANY,
-        PermissionEnum.SPONSORSHIP_SOFT_DELETE_ANY,
-        PermissionEnum.SPONSORSHIP_HARD_DELETE_ANY,
-        PermissionEnum.SPONSORSHIP_RESTORE_ANY,
-        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_ANY,
-
-        // OWNER_PROMOTION: All _ANY granular ownership-scoped permissions (admin manages any)
-        PermissionEnum.OWNER_PROMOTION_VIEW_ANY,
-        PermissionEnum.OWNER_PROMOTION_UPDATE_ANY,
-        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_ANY,
-        PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY,
-        PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
-        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
-
-        // BILLING: All billing admin permissions. MANAGE_SUBSCRIPTIONS and
-        // BILLING_MANAGE gate write ops on the qzpay-hono admin tier (cancel,
-        // change-plan, extend-trial, force-cancel, refund, mark-paid, void,
-        // entitlements/limits manage). Without them ADMIN can only READ; today
-        // only SUPER_ADMIN can write (via the actor.ts catch-all bypass that
-        // grants every PermissionEnum value regardless of role_permission).
-        // Surfaced during SPEC-143 Block 2 smoke 2.2 (admin subscription cancel).
-        PermissionEnum.BILLING_READ_ALL,
-        PermissionEnum.BILLING_MANAGE,
-        PermissionEnum.MANAGE_SUBSCRIPTIONS,
-        PermissionEnum.BILLING_PROMO_CODE_READ,
-        PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-        PermissionEnum.BILLING_METRICS_READ,
+        // SPEC-164: POST_SPONSORSHIP_MANAGE, all SPONSORSHIP _ANY, all OWNER_PROMOTION _ANY,
+        // and all BILLING permissions (BILLING_READ_ALL, BILLING_MANAGE, MANAGE_SUBSCRIPTIONS,
+        // BILLING_PROMO_CODE_READ, BILLING_PROMO_CODE_MANAGE, BILLING_METRICS_READ) have been
+        // revoked from ADMIN (19 total). These are now SUPER_ADMIN-only.
 
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,

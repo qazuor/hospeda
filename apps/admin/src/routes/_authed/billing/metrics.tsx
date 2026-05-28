@@ -19,10 +19,12 @@ import {
     useSystemUsageStatsQuery
 } from '@/features/billing-metrics';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { LoaderIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/billing/metrics')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingMetricsPage
 });
 

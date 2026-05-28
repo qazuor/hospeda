@@ -1728,13 +1728,16 @@
             "title": "Admin Billing Access — SUPER_ADMIN-Only",
             "type": "feat",
             "complexity": "medium-high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-164-admin-billing-super-only",
             "created": "2026-05-27T00:00:00.000Z",
+            "startedAt": "2026-05-27T00:00:00.000Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-164-admin-billing-super-only",
+            "branch": "spec/SPEC-164-admin-billing-super-only",
             "extractedFrom": "SPEC-155",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
-            "openQuestions": "OQ-1 sponsorship/promotion scope; OQ-2 page-guard strategy (beforeLoad vs nav-hide+403)"
+            "openQuestions": "RESOLVED — OQ-1 = WIDE (revoke billing-six + sponsorship/promotion _ANY + POST_SPONSORSHIP_MANAGE); OQ-2 = explicit beforeLoad guards (Option B) on the 14 admin billing pages"
         },
         {
             "specId": "SPEC-165",
