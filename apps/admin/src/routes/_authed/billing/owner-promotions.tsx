@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
+import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
+import { useActiveOwnerPromotionCount } from '@/features/billing/use-limit-counts';
 import {
     useDeleteOwnerPromotionMutation,
     useOwnerPromotionsQuery,
@@ -18,8 +20,7 @@ import {
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { LimitGate } from '@qazuor/qzpay-react';
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import { AddIcon } from '@repo/icons';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -45,6 +46,7 @@ function BillingOwnerPromotionsPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+    const { count: activePromotionCount } = useActiveOwnerPromotionCount();
 
     const { data, isLoading, error } = useOwnerPromotionsQuery({
         page,
@@ -343,8 +345,9 @@ function BillingOwnerPromotionsPage() {
                             </div>
                         }
                     >
-                        <LimitGate
-                            limitKey="max_active_promotions"
+                        <PlanLimitGate
+                            limitKey={LimitKey.MAX_ACTIVE_PROMOTIONS}
+                            currentCount={activePromotionCount}
                             fallback={
                                 <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
                                     <p className="font-medium text-foreground">
@@ -360,7 +363,7 @@ function BillingOwnerPromotionsPage() {
                                 <AddIcon className="mr-2 h-4 w-4" />
                                 {t('admin-billing.ownerPromotions.createButton')}
                             </Button>
-                        </LimitGate>
+                        </PlanLimitGate>
                     </PlanEntitlementGate>
                 </div>
 

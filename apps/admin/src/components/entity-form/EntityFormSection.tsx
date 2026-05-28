@@ -37,9 +37,9 @@ import { GridLayout } from '@/components/entity-form/layouts';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
+import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { LimitGate } from '@qazuor/qzpay-react';
 import * as React from 'react';
 
 /**
@@ -449,10 +449,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             }
 
             if (field.limitKey) {
+                // Derive current count from the field's live value:
+                // - Array fields (e.g. gallery): count of uploaded items.
+                // - Other field types should not set limitKey; default to 0.
+                const currentFieldCount = Array.isArray(rawFieldValue) ? rawFieldValue.length : 0;
+
                 return (
                     <div key={field.id}>
-                        <LimitGate
+                        <PlanLimitGate
                             limitKey={field.limitKey}
+                            currentCount={currentFieldCount}
+                            fieldLabel={field.label || field.id}
                             fallback={
                                 <div className="space-y-2">
                                     <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
@@ -469,7 +476,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             }
                         >
                             {fieldContent}
-                        </LimitGate>
+                        </PlanLimitGate>
                     </div>
                 );
             }

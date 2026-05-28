@@ -533,7 +533,10 @@
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limite atingido",
-        "description": "Você atingiu o limite do seu plano atual"
+        "description": "Você atingiu o limite do seu plano atual",
+        "titleDefault": "Atingiste o limite do teu plano",
+        "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Atualiza o teu plano para teres mais.",
+        "upgradeLink": "Ver minha assinatura"
     },
     "selects": {
         "destination": {

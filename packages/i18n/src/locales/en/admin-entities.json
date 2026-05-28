@@ -533,7 +533,10 @@
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limit reached",
-        "description": "You have reached the limit of your current plan"
+        "description": "You have reached the limit of your current plan",
+        "titleDefault": "You reached your plan limit",
+        "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
+        "upgradeLink": "View my subscription"
     },
     "selects": {
         "destination": {

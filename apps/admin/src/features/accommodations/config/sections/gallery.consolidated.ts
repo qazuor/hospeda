@@ -1,6 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -87,25 +87,23 @@ export const createGalleryConsolidatedSection = (
             },
             // Galería de imágenes
             //
-            // SPEC-143 Finding #13: the `limitKey` field config drives the
-            // `LimitGate` wrapper from `@qazuor/qzpay-react` (see
-            // EntityFormSection.tsx:463-487). On owner-basico the gate
-            // erroneously rendered "Límite alcanzado: Has alcanzado el límite
-            // de tu plan actual" with 0 / 5 photos uploaded — a UI pre-block
-            // false-positive that prevented hosts from ever uploading the
-            // FIRST photo. Removed the `limitKey` here so the gate no longer
-            // wraps this field; the server-side `enforcePhotoLimit` check
-            // wired into `POST /api/v1/admin/media/upload` (PR #1239,
-            // Finding #15) is now the single source of truth for the
-            // `MAX_PHOTOS_PER_ACCOMMODATION` plan limit. The user can upload
-            // up to their plan cap; the API returns a structured 403
-            // LIMIT_REACHED at the (cap+1)-th attempt with the right
-            // `limitKey`/`maxAllowed`/`upgradeUrl` for the client to surface.
+            // SPEC-143 Finding #13 (resolved): the original `limitKey` was
+            // removed because the upstream `LimitGate` from `@qazuor/qzpay-react`
+            // read `customerId` from `QZPayContext.customer`, which was never
+            // set in the admin app — so the gate always fired with 0/N photos
+            // uploaded (false-positive block). PR #1239 / Finding #15 added
+            // server-side `enforcePhotoLimit` in `POST /api/v1/admin/media/upload`
+            // as the primary guard.
             //
-            // If/when the upstream `LimitGate` behavior is fixed (or the API
-            // contract used by `useLimits.checkLimit` is investigated and
-            // aligned), this `limitKey` can be re-added to bring back the
-            // proactive UI warning before the user uploads up to the cap.
+            // SPEC-143 followup (fix/SPEC-143-followup-batch-2): `PlanLimitGate`
+            // replaces the broken `LimitGate`. It reads limits from
+            // `GET /api/v1/protected/users/me/entitlements` via `useMyEntitlements`
+            // (no QZPayContext needed) and compares them against the current
+            // gallery array length from the live form values. The `limitKey` is
+            // re-enabled here so the UI shows a proactive cap warning before
+            // the user reaches the server-side 403. The API guard remains as
+            // the authoritative source of truth; the UI gate is an ergonomic
+            // early signal.
             //
             // SPEC-143 Block 1: field id MUST be `media.gallery` (dot-notation
             // path), not `images`. Same root cause as `media.featuredImage`
@@ -114,6 +112,7 @@ export const createGalleryConsolidatedSection = (
             // must match this id so the upload handler is wired correctly.
             {
                 id: 'media.gallery',
+                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                 type: FieldTypeEnum.GALLERY,
                 required: false,
                 modes: ['view', 'edit', 'create'],

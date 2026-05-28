@@ -6,11 +6,13 @@ import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent } from '@/components/ui-wrapped/Card';
 import { createAccommodationConsolidatedConfig } from '@/features/accommodations/config';
 import { useCreateAccommodationMutation } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
+import { useAccommodationCount } from '@/features/billing/use-limit-counts';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
-import { LimitGate } from '@qazuor/qzpay-react';
+import { LimitKey } from '@repo/billing';
 import {
     AccommodationCreateInputSchema,
     AccommodationTypeEnum,
@@ -43,6 +45,7 @@ function AccommodationCreatePage() {
     const { user } = useAuthContext();
     const createMutation = useCreateAccommodationMutation();
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
+    const { count: accommodationCount } = useAccommodationCount();
 
     const entityName = t('admin-entities.entities.accommodation.singular');
     const entityNamePlural = t('admin-entities.entities.accommodation.plural');
@@ -80,8 +83,9 @@ function AccommodationCreatePage() {
                     bypassesPlanLimit ? (
                         <>{children}</>
                     ) : (
-                        <LimitGate
-                            limitKey="max_accommodations"
+                        <PlanLimitGate
+                            limitKey={LimitKey.MAX_ACCOMMODATIONS}
+                            currentCount={accommodationCount}
                             fallback={
                                 <Card>
                                     <CardContent className="py-8">
@@ -127,7 +131,7 @@ function AccommodationCreatePage() {
                             }
                         >
                             {children}
-                        </LimitGate>
+                        </PlanLimitGate>
                     )
                 }
             />
