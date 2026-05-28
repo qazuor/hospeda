@@ -225,6 +225,12 @@
             "confirm": "Sí, rechazar",
             "cancel": "Cancelar"
         },
+        "roleChange": {
+            "title": "Cambiar rol de {entity}",
+            "message": "¿Confirmás cambiar el rol de este {entity}? Es una acción sensible que afecta permisos críticos.",
+            "confirm": "Sí, cambiar rol",
+            "cancel": "Cancelar"
+        },
         "restore": {
             "title": "Restaurar {entity}",
             "message": "¿Deseas restaurar este {entity}?",

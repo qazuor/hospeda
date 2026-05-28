@@ -219,6 +219,12 @@
             "confirm": "Yes, archive",
             "cancel": "Cancel"
         },
+        "roleChange": {
+            "title": "Change role of {entity}",
+            "message": "Are you sure you want to change the role of this {entity}? This is a sensitive action that affects critical permissions.",
+            "confirm": "Yes, change role",
+            "cancel": "Cancel"
+        },
         "reject": {
             "title": "Reject {entity}",
             "message": "Are you sure you want to reject this {entity}?",

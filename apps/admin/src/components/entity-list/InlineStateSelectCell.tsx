@@ -30,9 +30,9 @@ import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
-import { ChevronDownIcon } from '@repo/icons';
+import { ChevronDownIcon, type IconProps } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
-import { useState } from 'react';
+import { type ComponentType, useState } from 'react';
 
 /** Minimal mutation shape required by the cell. */
 export interface InlineUpdateMutationLike<TPatch> {
@@ -45,6 +45,11 @@ export interface InlineStateOption {
     readonly value: string;
     readonly label: string;
     readonly color: BadgeColor;
+    /**
+     * Optional per-value icon. When provided, it renders next to the label in
+     * both the dropdown trigger and the menu items (e.g. role badges).
+     */
+    readonly icon?: ComponentType<IconProps>;
 }
 
 /**
@@ -83,10 +88,11 @@ export interface InlineStateSelectCellProps<TPatch extends Record<string, unknow
     readonly confirmValues?: ReadonlyArray<string>;
     /**
      * Which `confirmations.*` i18n block drives the confirm dialog copy.
-     * `archive` for lifecycle ARCHIVED, `reject` for moderation REJECTED.
-     * Defaults to `reject`.
+     * `archive` for lifecycle ARCHIVED, `reject` for moderation REJECTED,
+     * `roleChange` for sensitive role transitions (e.g. promoting to
+     * ADMIN/SUPER_ADMIN). Defaults to `reject`.
      */
-    readonly confirmCopyKey?: 'archive' | 'reject';
+    readonly confirmCopyKey?: 'archive' | 'reject' | 'roleChange';
 }
 
 /**
@@ -160,7 +166,7 @@ export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
     // Resolve confirm-dialog i18n keys statically per copy variant so the
     // generated `TranslationKey` union stays satisfied (no dynamic key building).
     const confirmKeys: Record<
-        'archive' | 'reject',
+        'archive' | 'reject' | 'roleChange',
         Readonly<{
             title: TranslationKey;
             message: TranslationKey;
@@ -179,6 +185,12 @@ export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
             message: 'admin-entities.confirmations.reject.message',
             cancel: 'admin-entities.confirmations.reject.cancel',
             confirm: 'admin-entities.confirmations.reject.confirm'
+        },
+        roleChange: {
+            title: 'admin-entities.confirmations.roleChange.title',
+            message: 'admin-entities.confirmations.roleChange.message',
+            cancel: 'admin-entities.confirmations.roleChange.cancel',
+            confirm: 'admin-entities.confirmations.roleChange.confirm'
         }
     };
     const dialogCopy = confirmKeys[confirmCopyKey];
@@ -189,6 +201,7 @@ export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
         ? getBadgeColorClasses(currentOption.color)
         : 'bg-muted text-muted-foreground ring-border';
     const triggerLabel = currentOption?.label ?? String(currentValue ?? '—');
+    const TriggerIcon = currentOption?.icon;
 
     return (
         <>
@@ -202,6 +215,12 @@ export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
                         triggerClasses
                     )}
                 >
+                    {TriggerIcon ? (
+                        <TriggerIcon
+                            size={12}
+                            aria-hidden="true"
+                        />
+                    ) : null}
                     {triggerLabel}
                     <ChevronDownIcon
                         size={12}
@@ -209,21 +228,30 @@ export function InlineStateSelectCell<TPatch extends Record<string, unknown>>({
                     />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                    {options.map((option) => (
-                        <DropdownMenuItem
-                            key={option.value}
-                            onSelect={() => handleSelect(option.value)}
-                        >
-                            <span
-                                className={cn(
-                                    'inline-flex items-center rounded-md px-2 py-0.5 font-medium text-xs ring-1 ring-inset',
-                                    getBadgeColorClasses(option.color)
-                                )}
+                    {options.map((option) => {
+                        const OptionIcon = option.icon;
+                        return (
+                            <DropdownMenuItem
+                                key={option.value}
+                                onSelect={() => handleSelect(option.value)}
                             >
-                                {option.label}
-                            </span>
-                        </DropdownMenuItem>
-                    ))}
+                                <span
+                                    className={cn(
+                                        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium text-xs ring-1 ring-inset',
+                                        getBadgeColorClasses(option.color)
+                                    )}
+                                >
+                                    {OptionIcon ? (
+                                        <OptionIcon
+                                            size={12}
+                                            aria-hidden="true"
+                                        />
+                                    ) : null}
+                                    {option.label}
+                                </span>
+                            </DropdownMenuItem>
+                        );
+                    })}
                 </DropdownMenuContent>
             </DropdownMenu>
             <DeleteConfirmDialog

@@ -219,6 +219,12 @@
             "confirm": "Sim, arquivar",
             "cancel": "Cancelar"
         },
+        "roleChange": {
+            "title": "Alterar função de {entity}",
+            "message": "Tem certeza de que deseja alterar a função desta {entity}? É uma ação sensível que afeta permissões críticas.",
+            "confirm": "Sim, alterar função",
+            "cancel": "Cancelar"
+        },
         "reject": {
             "title": "Rejeitar {entity}",
             "message": "Você tem certeza que deseja rejeitar este {entity}?",
