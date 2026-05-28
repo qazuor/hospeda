@@ -84,38 +84,80 @@ try {
 
 // F4: Check if the user has hit their max_accommodations limit.
 // If so, render the AtLimit panel instead of the form.
+//
+// Two fetches are needed:
+//   1. /me/entitlements  → limits.max_accommodations (plan ceiling; -1 = unlimited)
+//   2. /accommodations?pageSize=1  → pagination.total (actual owned count)
+//
+// Either fetch failing is non-fatal: we fall through and render the form,
+// letting the API reject on submit if needed.
 let isAtAccommodationLimit = false;
 let currentAccommodationCount = 0;
 let maxAccommodationAllowed = 0;
 
 try {
     if (cookieHeader) {
-        const entitlementsResponse = await fetch(
-            `${getApiUrl()}/api/v1/protected/users/me/entitlements`,
-            { headers: { cookie: cookieHeader } }
-        );
+        const [entitlementsResponse, ownedResponse] = await Promise.all([
+            fetch(`${getApiUrl()}/api/v1/protected/users/me/entitlements`, {
+                headers: { cookie: cookieHeader }
+            }),
+            // pageSize=1 is enough — we only need pagination.total, not the items.
+            fetch(`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`, {
+                headers: { cookie: cookieHeader }
+            })
+        ]);
+
+        let maxAllowed: number | undefined;
+        let currentCount: number | undefined;
+
         if (entitlementsResponse.ok) {
             const entJson = (await entitlementsResponse.json()) as {
                 data?: {
-                    entitlements?: Readonly<Record<string, number | boolean | null>>;
-                    usage?: Readonly<Record<string, number>>;
+                    limits?: Readonly<Record<string, number>>;
                 };
             };
-            const maxAllowed = entJson.data?.entitlements?.max_accommodations;
-            const currentUsage = entJson.data?.usage?.max_accommodations;
-            if (
-                typeof maxAllowed === 'number' &&
-                maxAllowed > 0 &&
-                typeof currentUsage === 'number'
-            ) {
-                maxAccommodationAllowed = maxAllowed;
-                currentAccommodationCount = currentUsage;
-                isAtAccommodationLimit = currentUsage >= maxAllowed;
+            const raw = entJson.data?.limits?.max_accommodations;
+            if (typeof raw === 'number') {
+                maxAllowed = raw;
             }
+        } else {
+            logger.warn(
+                { status: entitlementsResponse.status },
+                'publicar/nueva: entitlements fetch returned non-ok'
+            );
+        }
+
+        if (ownedResponse.ok) {
+            const ownedJson = (await ownedResponse.json()) as {
+                data?: {
+                    pagination?: { total?: number };
+                };
+            };
+            const raw = ownedJson.data?.pagination?.total;
+            if (typeof raw === 'number') {
+                currentCount = raw;
+            }
+        } else {
+            logger.warn(
+                { status: ownedResponse.status },
+                'publicar/nueva: owned-accommodations fetch returned non-ok'
+            );
+        }
+
+        // Only flip the gate when BOTH values resolved successfully.
+        // A limit of -1 means unlimited — never block in that case.
+        if (
+            typeof maxAllowed === 'number' &&
+            maxAllowed !== -1 &&
+            typeof currentCount === 'number'
+        ) {
+            maxAccommodationAllowed = maxAllowed;
+            currentAccommodationCount = currentCount;
+            isAtAccommodationLimit = currentCount >= maxAllowed;
         }
     }
 } catch (error) {
-    logger.warn({ error }, 'publicar/nueva: failed to fetch entitlements for limit check');
+    logger.warn({ error }, 'publicar/nueva: failed to fetch entitlements or owned count for limit check');
     // Non-fatal: render the form normally on error (let the API reject on submit if needed).
 }
 

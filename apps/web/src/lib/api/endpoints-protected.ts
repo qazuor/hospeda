@@ -638,22 +638,36 @@ export const billingApi = {
     /**
      * Get the entitlements for the authenticated user.
      *
-     * Returns the user's current plan limits and usage counts.
+     * Returns the user's current feature flags (entitlements array), plan
+     * limits map, and active plan context. Mirrors the response shape of
+     * `GET /api/v1/protected/users/me/entitlements`.
      *
-     * @returns Entitlement map for the current user.
+     * - `entitlements`: sorted array of feature-flag keys (e.g. `["can_use_rich_description"]`)
+     * - `limits`: object map of limit keys to numeric values (e.g. `{ max_accommodations: 1 }`).
+     *   A value of `-1` means unlimited.
+     * - `plan`: active plan summary or `null` if the user has no active paid plan.
+     * - `asOf`: ISO timestamp of when the values were resolved.
+     *
+     * @returns Entitlement data for the current user.
      *
      * @example
      * ```ts
      * const result = await billingApi.getEntitlements();
      * if (result.ok) {
-     *   const maxAccommodations = result.data.entitlements.max_accommodations;
+     *   const maxAccommodations = result.data.limits.max_accommodations; // -1 = unlimited
      * }
      * ```
      */
     getEntitlements(): Promise<
         ApiResult<{
-            readonly entitlements: Readonly<Record<string, number | boolean | null>>;
-            readonly usage: Readonly<Record<string, number>>;
+            readonly entitlements: ReadonlyArray<string>;
+            readonly limits: Readonly<Record<string, number>>;
+            readonly plan: {
+                readonly slug: string;
+                readonly name: string;
+                readonly status: string;
+            } | null;
+            readonly asOf: string;
         }>
     > {
         return apiClient.getProtected({
