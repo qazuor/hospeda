@@ -1,5 +1,5 @@
 /**
- * @file me-profile.test.ts
+ * @file mi-cuenta-perfil.test.ts
  * @description Source-based tests for the editable admin profile route.
  * Verifies that the profile page is wired to the right schema, mutation
  * hook, form library and toast helper for SPEC-096 / REQ-096-31 (T-055).
@@ -10,13 +10,13 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const profileSrc = readFileSync(
-    resolve(__dirname, '../../src/routes/_authed/me/profile.tsx'),
+    resolve(__dirname, '../../src/routes/_authed/mi-cuenta/perfil.tsx'),
     'utf8'
 );
 
 const hookSrc = readFileSync(resolve(__dirname, '../../src/hooks/use-user-profile.ts'), 'utf8');
 
-describe('me/profile.tsx (editable profile, T-055)', () => {
+describe('mi-cuenta/perfil.tsx (editable profile, T-055)', () => {
     describe('imports + schema wiring', () => {
         it('imports ProfileEditSchema from @repo/schemas', () => {
             expect(profileSrc).toContain("from '@repo/schemas'");
