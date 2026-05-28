@@ -68,8 +68,9 @@ beforeEach(() => {
 describe('resolver real-shape contract', () => {
     // ── Card A — admin.entities.counts ──────────────────────────────────────
     describe('admin.entities.counts (card A)', () => {
-        it('reads pagination.total and emits 6 per-entity kpis (not the sum)', async () => {
-            // Every entity endpoint returns total=7 → 6 tiles, sum 42.
+        it('emits 6 per-entity kpis (4 content + tourists + owners; no attractions)', async () => {
+            // Mock returns pagination.total=7 for the 4 content entities AND the
+            // users/stats fetch (no byRole → tourists=0, owners=0). Sum = 28.
             mockFetchApi.mockResolvedValue(
                 envelope({ success: true, data: { items: [], pagination: { total: 7 } } })
             );
@@ -79,22 +80,52 @@ describe('resolver real-shape contract', () => {
                 kpis: ReadonlyArray<{ key: string; value: number; href: string }>;
             };
 
-            expect(result.value).toBe(42);
+            // 4 content (4×7=28) + tourists 0 + owners 0 = 28.
+            expect(result.value).toBe(28);
             expect(result.kpis).toHaveLength(6);
             expect(result.kpis.map((k) => k.key)).toEqual([
                 'accommodations',
                 'destinations',
                 'events',
                 'posts',
-                'attractions',
-                'users'
+                'tourists',
+                'owners'
             ]);
-            // Each tile carries its real admin-list route.
+            // No attractions tile any more (dropped per owner feedback).
+            expect(result.kpis.find((k) => k.key === 'attractions')).toBeUndefined();
             expect(result.kpis[0]).toMatchObject({ value: 7, href: '/accommodations' });
-            expect(result.kpis.find((k) => k.key === 'attractions')?.href).toBe(
-                '/content/destination-attractions'
-            );
-            expect(result.kpis.find((k) => k.key === 'users')?.href).toBe('/access/users');
+            // Tourists + owners both link to the users admin list.
+            expect(result.kpis.find((k) => k.key === 'tourists')?.href).toBe('/access/users');
+            expect(result.kpis.find((k) => k.key === 'owners')?.href).toBe('/access/users');
+        });
+
+        it('splits users into tourists (USER+GUEST) and owners (HOST) from byRole', async () => {
+            // The users/stats fetch returns byRole; the content fetches return
+            // pagination.total. The implementation issues a single fetchApi mock,
+            // so we vary the response by URL.
+            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
+                if (path.includes('/users/stats')) {
+                    return envelope({
+                        success: true,
+                        data: { byRole: { USER: 5, GUEST: 2, HOST: 38 } }
+                    });
+                }
+                return envelope({
+                    success: true,
+                    data: { items: [], pagination: { total: 10 } }
+                });
+            });
+
+            const result = (await runSource('admin.entities.counts')) as {
+                value: number;
+                kpis: ReadonlyArray<{ key: string; value: number }>;
+            };
+
+            // tourists = USER(5) + GUEST(2) = 7; owners = HOST(38).
+            expect(result.kpis.find((k) => k.key === 'tourists')?.value).toBe(7);
+            expect(result.kpis.find((k) => k.key === 'owners')?.value).toBe(38);
+            // total = 4*10 + 7 + 38 = 85.
+            expect(result.value).toBe(85);
         });
     });
 
@@ -148,37 +179,36 @@ describe('resolver real-shape contract', () => {
 
     // ── Card C — admin.editorial.summary ────────────────────────────────────
     describe('admin.editorial.summary (card C)', () => {
-        it('reads data.items across its parallel fetches and uses real routes', async () => {
+        it('emits 4 named editorial kpis from pagination totals (not a mixed list)', async () => {
             mockFetchApi.mockResolvedValue(
                 envelope({
                     success: true,
-                    data: {
-                        items: [
-                            { id: 'x1', title: 'Cosa', status: 'ACTIVE', startDate: '2026-06-01' }
-                        ],
-                        pagination: { total: 5 }
-                    }
+                    data: { items: [], pagination: { total: 7 } }
                 })
             );
 
-            const result = (await runSource('admin.editorial.summary')) as ReadonlyArray<{
-                href: string;
-            }>;
+            const result = (await runSource('admin.editorial.summary')) as {
+                value: number;
+                kpis: ReadonlyArray<{ key: string; value: number; href: string }>;
+            };
 
-            expect(result.length).toBeGreaterThan(0);
-            expect(result.some((i) => i.href.startsWith('/events/'))).toBe(true);
-            expect(result.some((i) => i.href.startsWith('/posts/'))).toBe(true);
-            // No legacy routes anywhere.
+            // 4 metrics × 7 = 28.
+            expect(result.value).toBe(28);
+            expect(result.kpis).toHaveLength(4);
+            expect(result.kpis.map((k) => k.key)).toEqual([
+                'featuredEvents',
+                'postsThisMonth',
+                'draftPosts',
+                'draftEvents'
+            ]);
+            // No legacy routes; events/posts links resolve to the real lists.
             expect(
-                result.every(
-                    (i) => !i.href.includes('/catalogo/') && !i.href.includes('/contenido/')
+                result.kpis.every(
+                    (k) => !k.href.includes('/catalogo/') && !k.href.includes('/contenido/')
                 )
             ).toBe(true);
-            // No fetch uses the invalid `field_desc` sort format (HTTP 400). A single
-            // rejected query rejects the whole Promise.all and empties the card.
-            const calledPaths = mockFetchApi.mock.calls.map((c) => (c[0] as { path: string }).path);
-            expect(calledPaths.some((p) => p.includes('sort=updatedAt:desc'))).toBe(true);
-            expect(calledPaths.every((p) => !p.includes('_desc'))).toBe(true);
+            expect(result.kpis.find((k) => k.key === 'featuredEvents')?.href).toBe('/events');
+            expect(result.kpis.find((k) => k.key === 'draftPosts')?.href).toBe('/posts');
         });
     });
 
@@ -212,24 +242,60 @@ describe('resolver real-shape contract', () => {
 
     // ── Card E — admin.system.health ────────────────────────────────────────
     describe('admin.system.health (card E)', () => {
-        it('calls the CORS-enabled admin endpoint and reads the rolled-up status', async () => {
-            mockFetchApi.mockResolvedValue(
-                envelope({
-                    success: true,
-                    data: { status: 'up', db: 'connected', redis: 'connected' }
-                })
-            );
+        it('emits 3 chips (api/db/redis) + a metrics row (uptime, requests, …)', async () => {
+            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
+                if (path.includes('/system/health')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            status: 'up',
+                            db: 'connected',
+                            redis: 'connected',
+                            uptime: 3600
+                        }
+                    });
+                }
+                if (path.includes('/admin/metrics')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            summary: {
+                                totalRequests: 884,
+                                totalErrors: 0,
+                                globalErrorRate: 0,
+                                activeConnections: 1
+                            }
+                        }
+                    });
+                }
+                return envelope({ success: true, data: {} });
+            });
 
             const result = (await runSource('admin.system.health')) as {
                 status: string;
-                description: string;
+                items: ReadonlyArray<{ key: string; status: string }>;
+                metrics?: {
+                    uptime?: number;
+                    activeConnections?: number;
+                    totalRequests?: number;
+                    errorRate?: number;
+                };
             };
 
             expect(result.status).toBe('up');
-            expect(result.description).toContain('connected');
-            // Must use the admin endpoint (has CORS), NOT the root /health (blocked).
+            // 3 sub-systems, all up.
+            expect(result.items.map((i) => i.key)).toEqual(['api', 'db', 'redis']);
+            // Metrics: uptime from health + summary from metrics.
+            expect(result.metrics?.uptime).toBe(3600);
+            expect(result.metrics?.totalRequests).toBe(884);
+            expect(result.metrics?.activeConnections).toBe(1);
+            expect(result.metrics?.errorRate).toBe(0);
+            // Must use the admin endpoint (has CORS), NOT the root /health.
             expect(mockFetchApi).toHaveBeenCalledWith(
                 expect.objectContaining({ path: '/api/v1/admin/system/health' })
+            );
+            expect(mockFetchApi).toHaveBeenCalledWith(
+                expect.objectContaining({ path: '/api/v1/admin/metrics' })
             );
         });
 
@@ -242,7 +308,7 @@ describe('resolver real-shape contract', () => {
 
     // ── Card F — admin.moderation.pending ───────────────────────────────────
     describe('admin.moderation.pending (card F)', () => {
-        it('reads total + nested byEntity breakdown', async () => {
+        it('emits per-entity kpis (mini-grid) from byEntity', async () => {
             mockFetchApi.mockResolvedValue(
                 envelope({
                     success: true,
@@ -255,21 +321,35 @@ describe('resolver real-shape contract', () => {
 
             const result = (await runSource('admin.moderation.pending')) as {
                 value: number;
-                breakdown: Record<string, number>;
+                kpis: ReadonlyArray<{ key: string; value: number; href: string }>;
             };
 
             expect(result.value).toBe(3);
-            expect(result.breakdown).toMatchObject({ accommodations: 1, destinations: 2 });
+            expect(result.kpis).toHaveLength(4);
+            expect(result.kpis.find((k) => k.key === 'accommodations')?.value).toBe(1);
+            expect(result.kpis.find((k) => k.key === 'destinations')?.value).toBe(2);
+            expect(result.kpis.find((k) => k.key === 'accommodations')?.href).toBe(
+                '/accommodations'
+            );
         });
     });
 
     // ── Card G — admin.users.stats ──────────────────────────────────────────
     describe('admin.users.stats (card G)', () => {
-        it('reads data.byRole into chart series', async () => {
+        it('filters platform roles, relabels in es, and sorts desc by value', async () => {
             mockFetchApi.mockResolvedValue(
                 envelope({
                     success: true,
-                    data: { byRole: { HOST: 38, ADMIN: 2 }, newUsersTrend: [] }
+                    data: {
+                        byRole: {
+                            HOST: 38,
+                            ADMIN: 2,
+                            SYSTEM: 1,
+                            SPONSOR: 1,
+                            CLIENT_MANAGER: 3
+                        },
+                        newUsersTrend: []
+                    }
                 })
             );
 
@@ -277,31 +357,58 @@ describe('resolver real-shape contract', () => {
                 series: ReadonlyArray<{ label: string; value: number }>;
             };
 
-            expect(result.series).toEqual(
-                expect.arrayContaining([
-                    { label: 'HOST', value: 38 },
-                    { label: 'ADMIN', value: 2 }
-                ])
-            );
+            // SYSTEM / SPONSOR / CLIENT_MANAGER are filtered out by config.
+            expect(result.series).toHaveLength(2);
+            // Relabeled to Spanish + sorted descending.
+            expect(result.series).toEqual([
+                { label: 'Anfitriones', value: 38 },
+                { label: 'Admins', value: 2 }
+            ]);
         });
     });
 
     // ── Card I — super.billing.stats ────────────────────────────────────────
     describe('super.billing.stats (card I)', () => {
-        it('reads activeSubscriptions from the nested overview object', async () => {
+        it('emits 5 billing kpis from the nested overview object', async () => {
             mockFetchApi.mockResolvedValue(
                 envelope({
                     success: true,
                     data: {
-                        overview: { activeSubscriptions: 5, mrr: 100000, churnRate: 0 },
+                        overview: {
+                            activeSubscriptions: 5,
+                            trialingSubscriptions: 2,
+                            mrr: 100000,
+                            churnRate: 0.025,
+                            totalCustomers: 12
+                        },
                         revenueTimeSeries: [],
                         subscriptionBreakdown: []
                     }
                 })
             );
 
-            const result = (await runSource('super.billing.stats')) as { value: number };
+            const result = (await runSource('super.billing.stats')) as {
+                value: number;
+                kpis: ReadonlyArray<{
+                    key: string;
+                    value: number;
+                    unitPrefix?: string;
+                    unitSuffix?: string;
+                }>;
+            };
+
             expect(result.value).toBe(5);
+            expect(result.kpis).toHaveLength(5);
+            expect(result.kpis.find((k) => k.key === 'activeSubs')?.value).toBe(5);
+            expect(result.kpis.find((k) => k.key === 'trialingSubs')?.value).toBe(2);
+            // MRR converted from centavos (100000 → 1000 pesos), with $ prefix.
+            const mrrKpi = result.kpis.find((k) => k.key === 'mrr');
+            expect(mrrKpi?.value).toBe(1000);
+            expect(mrrKpi?.unitPrefix).toBe('$');
+            // Churn 0.025 → 2.5% with suffix.
+            const churnKpi = result.kpis.find((k) => k.key === 'churn');
+            expect(churnKpi?.value).toBe(2.5);
+            expect(churnKpi?.unitSuffix).toBe('%');
         });
 
         it('returns null when overview is missing (renders empty, not 0)', async () => {

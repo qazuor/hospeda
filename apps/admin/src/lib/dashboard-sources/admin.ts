@@ -61,12 +61,48 @@ interface AdminListApiResponse<T = unknown> {
     };
 }
 
-/** Minimal accommodation item fields used in the latest-list widget. */
+/** Accommodation fields surfaced in the "Últimos alojamientos" card. */
 interface AccommodationItem {
     readonly id: string;
     readonly name: string;
-    readonly status: string;
+    readonly type?: string;
+    readonly lifecycleState?: string;
+    readonly isFeatured?: boolean;
+    readonly cityDestination?: { readonly name?: string } | null;
+    readonly owner?: { readonly id?: string; readonly displayName?: string } | null;
+    readonly createdAt?: string;
     readonly publishedAt?: string;
+}
+
+/** Spanish labels for the accommodation type enum (UI display only). */
+const ACCOMMODATION_TYPE_LABELS_ES: Readonly<Record<string, string>> = {
+    APARTMENT: 'Departamento',
+    HOTEL: 'Hotel',
+    HOUSE: 'Casa',
+    CABIN: 'Cabaña',
+    HOSTEL: 'Hostel',
+    CAMPING: 'Camping',
+    COUNTRY_HOUSE: 'Casa de campo',
+    BEDANDBREAKFAST: 'B&B'
+};
+
+/** Lifecycle state → list-item status badge mapping. */
+const ACCOMMODATION_LIFECYCLE_BADGE: Readonly<
+    Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'neutral' }>
+> = {
+    ACTIVE: { label: 'Activo', variant: 'success' },
+    DRAFT: { label: 'Borrador', variant: 'warning' },
+    ARCHIVED: { label: 'Archivado', variant: 'neutral' },
+    SOFT_DELETED: { label: 'Eliminado', variant: 'destructive' },
+    INACTIVE: { label: 'Inactivo', variant: 'neutral' }
+};
+
+/** Formats an ISO timestamp as a short Spanish date ("29 may"). */
+function shortDateEs(iso: string | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
 }
 
 /** Shape of an event item used in the editorial summary. */
@@ -117,6 +153,20 @@ interface SystemHealthApiResponse {
         readonly status?: 'up' | 'degraded' | 'down';
         readonly db?: string;
         readonly redis?: string;
+        readonly uptime?: number;
+    };
+}
+
+/** Shape of GET /api/v1/admin/metrics — used as second source for card E. */
+interface AdminMetricsApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly summary?: {
+            readonly totalRequests?: number;
+            readonly totalErrors?: number;
+            readonly globalErrorRate?: number;
+            readonly activeConnections?: number;
+        };
     };
 }
 
@@ -176,13 +226,35 @@ registerDataSource('admin.accommodations.latest', (ctx) => ({
             path: '/api/v1/admin/accommodations?sort=createdAt:desc&pageSize=5'
         });
         const items = result.data.data?.items ?? [];
-        // Normalize to ListItem shape expected by ListWidget.
-        return items.map((item) => ({
-            id: item.id,
-            label: item.name,
-            meta: item.status,
-            href: `/accommodations/${item.id}`
-        }));
+
+        // Normalize to ListItem shape expected by ListWidget. Each row carries:
+        //  - meta: `Tipo · Destino · Fecha`
+        //  - statusBadge: lifecycle state (Activo / Borrador / …)
+        //  - ownerName / ownerHref: clickable author of the accommodation
+        //  - badge: `★ Destacado` when featured
+        return items.map((item) => {
+            const parts: string[] = [];
+            if (item.type) {
+                parts.push(ACCOMMODATION_TYPE_LABELS_ES[item.type] ?? item.type);
+            }
+            const destName = item.cityDestination?.name;
+            if (destName) parts.push(destName);
+            const date = shortDateEs(item.createdAt ?? item.publishedAt);
+            if (date) parts.push(date);
+
+            return {
+                id: item.id,
+                label: item.name,
+                meta: parts.join(' · '),
+                href: `/accommodations/${item.id}`,
+                badge: item.isFeatured ? '★' : undefined,
+                statusBadge: item.lifecycleState
+                    ? ACCOMMODATION_LIFECYCLE_BADGE[item.lifecycleState]
+                    : undefined,
+                ownerName: item.owner?.displayName,
+                ownerHref: item.owner?.id ? `/access/users/${item.owner.id}` : undefined
+            };
+        });
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -219,54 +291,80 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
         const [featuredEventsResult, draftPostsResult, draftEventsResult, postsThisMonthResult] =
             await Promise.all([
                 fetchApi<AdminListApiResponse<EventItem>>({
-                    path: `/api/v1/admin/events?isFeatured=true&startDateAfter=${encodeURIComponent(now)}&pageSize=5`
+                    path: `/api/v1/admin/events?isFeatured=true&startDateAfter=${encodeURIComponent(now)}&pageSize=1`
                 }),
                 fetchApi<AdminListApiResponse<PostItem>>({
-                    // Sort format is `field:asc|desc` (NOT `field_desc`).
-                    path: '/api/v1/admin/posts?status=DRAFT&sort=updatedAt:desc&pageSize=5'
+                    path: '/api/v1/admin/posts?status=DRAFT&pageSize=1'
                 }),
                 fetchApi<AdminListApiResponse<EventItem>>({
-                    path: '/api/v1/admin/events?status=DRAFT&pageSize=5'
+                    path: '/api/v1/admin/events?status=DRAFT&pageSize=1'
                 }),
                 fetchApi<AdminListApiResponse<PostItem>>({
                     path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
                 })
             ]);
 
-        const featuredEvents = featuredEventsResult.data.data?.items ?? [];
-        const draftPosts = draftPostsResult.data.data?.items ?? [];
-        const draftEvents = draftEventsResult.data.data?.items ?? [];
-        const postsThisMonth = postsThisMonthResult.data.data?.pagination?.total ?? 0;
+        // Read pagination totals (we only need counts; pageSize=1 is fine).
+        const featuredEventsTotal = featuredEventsResult.data.data?.pagination?.total ?? 0;
+        const draftPostsTotal = draftPostsResult.data.data?.pagination?.total ?? 0;
+        const draftEventsTotal = draftEventsResult.data.data?.pagination?.total ?? 0;
+        const postsThisMonthTotal = postsThisMonthResult.data.data?.pagination?.total ?? 0;
 
-        // Normalize to ListItem[] shape expected by ListWidget.
-        // Combine all editorial items into a single flat list, tagged by type in meta.
-        const items = [
-            ...featuredEvents.slice(0, 2).map((e) => ({
-                id: e.id,
-                label: e.title,
-                meta: `Evento destacado${e.startDate ? ` · ${new Date(e.startDate).toLocaleDateString('es-AR')}` : ''}`,
-                href: `/events/${e.id}`
-            })),
-            ...draftPosts.slice(0, 2).map((p) => ({
-                id: p.id,
-                label: p.title,
-                meta: `Post borrador${p.updatedAt ? ` · ${new Date(p.updatedAt).toLocaleDateString('es-AR')}` : ''}`,
-                href: `/posts/${p.id}`
-            })),
-            ...draftEvents.slice(0, 1).map((e) => ({
-                id: e.id,
-                label: e.title,
-                meta: 'Evento borrador',
-                href: `/events/${e.id}`
-            }))
+        // 4 explicit KPIs (mini-grid) — each one is a clear, named metric so
+        // the card actually communicates what's happening editorially.
+        const kpis = [
+            {
+                key: 'featuredEvents',
+                label: {
+                    es: 'Eventos destacados próximos',
+                    en: 'Upcoming featured events',
+                    pt: 'Eventos destacados próximos'
+                },
+                value: featuredEventsTotal,
+                href: '/events',
+                accent: 'accent',
+                icon: 'calendar'
+            },
+            {
+                key: 'postsThisMonth',
+                label: {
+                    es: 'Posts publicados este mes',
+                    en: 'Posts published this month',
+                    pt: 'Posts publicados este mês'
+                },
+                value: postsThisMonthTotal,
+                href: '/posts',
+                accent: 'forest',
+                icon: 'article'
+            },
+            {
+                key: 'draftPosts',
+                label: {
+                    es: 'Posts borrador',
+                    en: 'Draft posts',
+                    pt: 'Posts rascunho'
+                },
+                value: draftPostsTotal,
+                href: '/posts',
+                accent: 'terracotta',
+                icon: 'article'
+            },
+            {
+                key: 'draftEvents',
+                label: {
+                    es: 'Eventos borrador',
+                    en: 'Draft events',
+                    pt: 'Eventos rascunho'
+                },
+                value: draftEventsTotal,
+                href: '/events',
+                accent: 'sand',
+                icon: 'calendar'
+            }
         ];
 
-        // Surface the posts-this-month count as the first badge item if > 0
-        const result = items.map((item, i) =>
-            i === 0 && postsThisMonth > 0 ? { ...item, badge: `${postsThisMonth} este mes` } : item
-        );
-
-        return result;
+        const total = kpis.reduce((sum, k) => sum + k.value, 0);
+        return { value: total, kpis };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -323,21 +421,45 @@ registerDataSource('admin.crons.list', (ctx) => ({
 registerDataSource('admin.system.health', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.system.health', ctx),
     queryFn: async () => {
-        const result = await fetchApi<SystemHealthApiResponse>({
-            path: '/api/v1/admin/system/health'
-        });
-        const data = result.data.data;
+        // Two fetches in parallel: rollup health (db/redis chips + uptime) +
+        // metrics summary (active connections, requests, error rate) so the
+        // card surfaces both system status AND traffic at a glance.
+        const [healthResult, metricsResult] = await Promise.all([
+            fetchApi<SystemHealthApiResponse>({ path: '/api/v1/admin/system/health' }),
+            fetchApi<AdminMetricsApiResponse>({ path: '/api/v1/admin/metrics' }).catch(
+                () => undefined
+            )
+        ]);
+
+        const data = healthResult.data.data;
         if (!data) return null;
 
-        // Normalize to StatusData shape expected by StatusWidget.
-        // `status` already arrives rolled-up as 'up' | 'degraded' | 'down'
-        // (matches the variantMap in dashboards.ts), so no remap is needed.
-        const status = data.status ?? 'unknown';
-        const db = data.db ?? 'unknown';
-        const redis = data.redis ?? 'unknown';
-        const description = `DB: ${db} · Redis: ${redis}`;
+        // Multi-chip StatusData shape: one chip per sub-system (API / DB /
+        // Redis) so they read uniformly. `status` (rollup up/degraded/down)
+        // is retained for the card-level rollup.
+        const dbItemStatus =
+            data.db === 'connected' ? 'up' : data.db === 'disconnected' ? 'down' : 'unknown';
+        const redisItemStatus =
+            data.redis === 'connected' ? 'up' : data.redis === 'disconnected' ? 'down' : 'unknown';
 
-        return { status, description };
+        const summary = metricsResult?.data.data?.summary;
+
+        return {
+            status: data.status ?? 'unknown',
+            items: [
+                // If we got the response at all, the API is up — surfaced as a
+                // first chip so the card always reads as 3 uniform entries.
+                { key: 'api', label: 'API', status: 'up' },
+                { key: 'db', label: 'Base de datos', status: dbItemStatus },
+                { key: 'redis', label: 'Redis', status: redisItemStatus }
+            ],
+            metrics: {
+                uptime: data.uptime,
+                activeConnections: summary?.activeConnections,
+                totalRequests: summary?.totalRequests,
+                errorRate: summary?.globalErrorRate
+            }
+        };
     },
     // Shorter stale time for health checks — 30 s gives more up-to-date feedback.
     staleTime: 30_000
@@ -368,19 +490,47 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
         const data = result.data.data;
         if (!data) return null;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        // `total` is the primary KPI value; per-entity counts live in `byEntity`.
+        // Normalize to KpiData GRID MODE shape (kpis array) so the card renders
+        // one mini-tile per entity instead of a single opaque total. Matches
+        // the visual pattern of card A (multi-accent per entity).
         const byEntity = data.byEntity ?? {};
-        return {
-            value: data.total ?? 0,
-            breakdown: {
-                accommodations: byEntity.accommodations ?? 0,
-                destinations: byEntity.destinations ?? 0,
-                posts: byEntity.posts ?? 0,
-                events: byEntity.events ?? 0,
-                reviews: byEntity.reviews ?? 0
+        const total = data.total ?? 0;
+        const kpis = [
+            {
+                key: 'accommodations',
+                label: { es: 'Alojamientos', en: 'Accommodations', pt: 'Alojamentos' },
+                value: byEntity.accommodations ?? 0,
+                href: '/accommodations',
+                accent: 'river',
+                icon: 'buildings'
+            },
+            {
+                key: 'destinations',
+                label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
+                value: byEntity.destinations ?? 0,
+                href: '/destinations',
+                accent: 'forest',
+                icon: 'compass'
+            },
+            {
+                key: 'posts',
+                label: { es: 'Posts', en: 'Posts', pt: 'Posts' },
+                value: byEntity.posts ?? 0,
+                href: '/posts',
+                accent: 'terracotta',
+                icon: 'article'
+            },
+            {
+                key: 'events',
+                label: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
+                value: byEntity.events ?? 0,
+                href: '/events',
+                accent: 'accent',
+                icon: 'calendar'
             }
-        };
+        ];
+
+        return { value: total, kpis };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

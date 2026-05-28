@@ -359,73 +359,102 @@ async function fetchEntityCount(endpoint: string): Promise<number> {
  * Used by: admin-card-a in `adminBaseDashboard`.
  * Scope: `'all'` (global platform count).
  *
- * Fetches the total count of accommodations, destinations, events, posts,
- * attractions, and users in parallel — same data as the old `useDashboardStats`
- * hook but routed through the resolver registry.
+ * Returns a {@link KpiData}-compatible object with `kpis` (one entry per
+ * metric) so KpiWidget renders GRID MODE — 6 mini-KPIs, each a link to its
+ * admin list. Each tile carries its own accent + icon + href.
  *
- * Returns a {@link KpiData}-compatible object with BOTH:
- *   - `value`: the sum across all entities (kept for back-compat / callers that
- *     want the aggregate; not displayed when `kpis` is present).
- *   - `kpis`: one entry per entity `{ key, label, value, href }`. When this
- *     array is present KpiWidget renders GRID MODE — six mini-KPIs, each a link
- *     to its admin list — instead of a single summed number (SPEC-155 follow-up:
- *     "card A should show the 6 counts, not their sum").
+ * Tiles (per SPEC-155 follow-up #2): accommodations, destinations, events,
+ * posts, tourists (USER + GUEST roles), owners (HOST role). Attractions was
+ * dropped per owner feedback; users was split into tourists/owners so the
+ * platform's two main audiences read separately.
  *
- * The `href` values point at the real admin list routes (verified against
- * `routes/_authed/`): note `attractions` lives at `/content/destination-attractions`.
+ * Data sources: 4 entity counts via `fetchEntityCount` (pagination total) +
+ * one `/admin/users/stats` fetch to read role breakdown.
  */
 registerDataSource('admin.entities.counts', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.entities.counts', ctx),
     queryFn: async () => {
-        // `path` = API count endpoint; `href` = admin list route (frontend).
-        const entities = [
+        // Content entities — `path` = API count endpoint; `href` = admin list
+        // route (frontend); `accent` = per-tile palette; `icon` = dashboard
+        // icon name (resolved by `resolveDashboardIcon`).
+        const contentEntities = [
             {
                 name: 'accommodations',
                 path: '/admin/accommodations',
                 href: '/accommodations',
+                accent: 'river',
+                icon: 'buildings',
                 label: { es: 'Alojamientos', en: 'Accommodations', pt: 'Alojamentos' }
             },
             {
                 name: 'destinations',
                 path: '/admin/destinations',
                 href: '/destinations',
+                accent: 'forest',
+                icon: 'compass',
                 label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' }
             },
             {
                 name: 'events',
                 path: '/admin/events',
                 href: '/events',
+                accent: 'accent',
+                icon: 'calendar',
                 label: { es: 'Eventos', en: 'Events', pt: 'Eventos' }
             },
             {
                 name: 'posts',
                 path: '/admin/posts',
                 href: '/posts',
+                accent: 'terracotta',
+                icon: 'article',
                 label: { es: 'Posts', en: 'Posts', pt: 'Posts' }
-            },
-            {
-                name: 'attractions',
-                path: '/admin/attractions',
-                href: '/content/destination-attractions',
-                label: { es: 'Atracciones', en: 'Attractions', pt: 'Atrações' }
-            },
-            {
-                name: 'users',
-                path: '/admin/users',
-                href: '/access/users',
-                label: { es: 'Usuarios', en: 'Users', pt: 'Usuários' }
             }
         ] as const;
 
-        const counts = await Promise.all(
-            entities.map(async (e) => ({ entity: e, count: await fetchEntityCount(e.path) }))
-        );
+        // Fetch the 4 content counts + the users role breakdown in parallel.
+        const [contentCounts, usersStatsResult] = await Promise.all([
+            Promise.all(
+                contentEntities.map(async (e) => ({
+                    entity: e,
+                    count: await fetchEntityCount(e.path)
+                }))
+            ),
+            fetchApi<UsersStatsApiResponse>({ path: '/api/v1/admin/users/stats' })
+        ]);
 
-        let total = 0;
-        const kpis = counts.map(({ entity, count }) => {
-            total += count;
-            return { key: entity.name, label: entity.label, value: count, href: entity.href };
-        });
+        const byRole = (usersStatsResult.data.data?.byRole ?? {}) as Record<string, number>;
+        const tourists = (byRole.USER ?? 0) + (byRole.GUEST ?? 0);
+        const owners = byRole.HOST ?? 0;
+
+        const kpis = [
+            ...contentCounts.map(({ entity, count }) => ({
+                key: entity.name,
+                label: entity.label,
+                value: count,
+                href: entity.href,
+                accent: entity.accent,
+                icon: entity.icon
+            })),
+            {
+                key: 'tourists',
+                label: { es: 'Turistas', en: 'Tourists', pt: 'Turistas' },
+                value: tourists,
+                href: '/access/users',
+                accent: 'sky',
+                icon: 'user'
+            },
+            {
+                key: 'owners',
+                label: { es: 'Owners', en: 'Owners', pt: 'Owners' },
+                value: owners,
+                href: '/access/users',
+                accent: 'purple',
+                icon: 'users'
+            }
+        ];
+
+        const total = kpis.reduce((sum, k) => sum + k.value, 0);
 
         // Grid mode: `kpis` triggers the per-entity tiles in KpiWidget.
         // `value` (the sum) is retained for back-compat but not shown in grid mode.
@@ -458,6 +487,19 @@ interface UsersStatsApiResponse {
  * prior API task. Normalizes to ChartData shape expected by ChartWidget:
  * `{ series: [{ label, value }] }` where each point is a role with its count.
  */
+/** Excluded roles for the dashboard users-stats chart (per owner feedback). */
+const USERS_STATS_EXCLUDED_ROLES = new Set<string>(['SYSTEM', 'SPONSOR', 'CLIENT_MANAGER']);
+
+/** Human-friendly labels for the role enum, in Spanish (admin default locale). */
+const ROLE_LABELS_ES: Readonly<Record<string, string>> = {
+    HOST: 'Anfitriones',
+    USER: 'Turistas',
+    GUEST: 'Invitados',
+    ADMIN: 'Admins',
+    EDITOR: 'Editores',
+    SUPER_ADMIN: 'Super admins'
+};
+
 registerDataSource('admin.users.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.users.stats', ctx),
     queryFn: async () => {
@@ -467,15 +509,19 @@ registerDataSource('admin.users.stats', (ctx) => ({
         const data = result.data.data;
         if (!data) return null;
 
-        // Normalize to ChartData shape for ChartWidget.
-        // If byRole is present, use role breakdown as chart series.
-        // Otherwise fall back to a single "total" data point.
+        // Normalize to ChartData shape for ChartWidget. Drop platform / partner
+        // roles that don't represent end users on the dashboard, relabel to
+        // human-friendly Spanish, and sort descending so the chart reads as a
+        // ranking.
         const byRole = data.byRole;
         if (byRole && Object.keys(byRole).length > 0) {
-            const series = Object.entries(byRole).map(([role, count]) => ({
-                label: role,
-                value: count
-            }));
+            const series = Object.entries(byRole)
+                .filter(([role]) => !USERS_STATS_EXCLUDED_ROLES.has(role))
+                .map(([role, count]) => ({
+                    label: ROLE_LABELS_ES[role] ?? role,
+                    value: count
+                }))
+                .sort((a, b) => b.value - a.value);
             return { series };
         }
 
