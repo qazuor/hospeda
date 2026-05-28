@@ -324,7 +324,7 @@ export function computeAccommodationHealth(
  * @param entity - The host profile to inspect.
  * @returns Ordered list of checklist items.
  */
-function computeHostProfileHealth(entity: HostProfileEntity): ReadonlyArray<ChecklistItem> {
+export function computeHostProfileHealth(entity: HostProfileEntity): ReadonlyArray<ChecklistItem> {
     return [
         {
             key: 'name',

@@ -105,7 +105,9 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu plano'
             },
             scope: 'own',
-            // Bento: compact (1×1) — status badge + small usage/charge sub-blocks.
+            // Bento: wide (2×1) — plan name hero + 3 limit tiles + chips + CTA
+            // is dense content; a 1×1 felt cramped.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.billing.plan',
                 accent: 'success',
@@ -139,13 +141,13 @@ const hostDashboard: DashboardInput = {
                 pt: 'Consultas'
             },
             scope: 'own',
-            // Bento: wide (2×1) — pending list reads better with horizontal room.
-            gridSpan: { cols: 2 },
+            // Bento: compact (1×1) — header counter pill + 3 pending rows fit
+            // in a single column; the full counter stays visible regardless.
             config: {
                 source: 'host.conversations.pending',
                 accent: 'sky',
                 icon: 'chat',
-                maxItems: 5,
+                maxItems: 3,
                 actionPerItem: {
                     label: { es: 'Responder', en: 'Reply', pt: 'Responder' },
                     hrefTemplate: '/consultas/{id}'
@@ -236,7 +238,9 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu perfil'
             },
             scope: 'own',
-            // Bento: compact (1×1) — checklist with completion bar + profile CTA.
+            // Bento: tall (1×2) — fills the col-1 slot alongside the wide
+            // 2×1 cards on rows 4-5 so the grid never leaves col-3 holes.
+            gridSpan: { rows: 2 },
             config: {
                 checkset: 'host-profile-health',
                 // Resolves to the current host's user record (name / avatar /
@@ -317,7 +321,8 @@ const hostDashboard: DashboardInput = {
                 pt: 'Próximos passos'
             },
             scope: 'own',
-            // Bento: wide (2×1) — actionable text + per-row CTA need horizontal room.
+            // Bento: wide (2×1) — actionable rows are short; 3×1 left a lot
+            // of empty horizontal space.
             gridSpan: { cols: 2 },
             config: {
                 source: 'host.suggestions.list',
@@ -349,9 +354,9 @@ const hostDashboard: DashboardInput = {
                 pt: 'Consultas por mês'
             },
             scope: 'own',
-            // Bento: wide (2×1) — a time-series with 6 monthly buckets reads
-            // better with horizontal room.
-            gridSpan: { cols: 2 },
+            // Bento: full hero (3×1) — a 6-bucket time-series + month labels
+            // need maximum horizontal room to stay legible.
+            gridSpan: { cols: 3 },
             config: {
                 source: 'host.stats.conversations-monthly',
                 chartType: 'bar',
@@ -379,12 +384,28 @@ const hostDashboard: DashboardInput = {
                 pt: 'Comparativo de mercado'
             },
             scope: 'own',
-            gridSpan: { cols: 2 },
+            // Bento: full hero (3×1) — per-row meta lines + CTA need horizontal
+            // room; the comparison reads as a small table of N accommodations.
+            gridSpan: { cols: 3 },
             config: {
                 source: 'host.stats.market-comparison',
                 accent: 'cyan',
                 icon: 'compass',
                 maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Ver alojamiento', en: 'View listing', pt: 'Ver alojamento' },
+                    hrefTemplate: '/accommodations/{id}'
+                },
+                additionalActionsPerItem: [
+                    {
+                        label: {
+                            es: 'Editar',
+                            en: 'Edit',
+                            pt: 'Editar'
+                        },
+                        hrefTemplate: '/accommodations/{id}/edit'
+                    }
+                ],
                 emptyText: 'Sin datos para comparar todavía',
                 emptyDescription:
                     'Publicá un alojamiento y volvé acá para ver cómo te comparás con el destino.',

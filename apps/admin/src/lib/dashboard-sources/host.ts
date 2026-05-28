@@ -36,7 +36,10 @@
  * @see SPEC-155 T-018
  */
 
-import { computeAccommodationHealth } from '@/components/dashboards/widgets/ChecklistWidget';
+import {
+    computeAccommodationHealth,
+    computeHostProfileHealth
+} from '@/components/dashboards/widgets/ChecklistWidget';
 import { fetchApi } from '@/lib/api/client';
 import {
     DASHBOARD_STALE_TIME_MS,
@@ -44,6 +47,7 @@ import {
     registerDataSource
 } from '@/lib/dashboard-sources';
 import type { ResolverContext } from '@/lib/dashboard-sources';
+import { buildMarketComparisonMetaLines } from '@/lib/dashboard-sources/host-market-comparison-meta';
 import { ApiError } from '@/lib/errors';
 
 // ============================================================================
@@ -1015,12 +1019,10 @@ registerDataSource('host.stats.conversations-monthly', (ctx) => ({
  * Shape of GET /api/v1/protected/accommodations/my/market-comparison.
  *
  * One entry per accommodation owned by the host with the listing's own
- * rating + review count alongside the destination averages (nullable when
- * the host is the only listing in the destination with reviews).
+ * rating + price alongside the destination averages (nullable when the
+ * host is the only listing in the destination with the relevant signal).
  *
- * (Price comparison was considered but skipped — `accommodations.price` is
- * stored as JSONB so it can't be averaged with a straight SQL `AVG`. The
- * card currently surfaces rating + reviews; price is a phase-2 follow-up.)
+ * Price uses the JSONB `price->>'price'` extraction (see model docs).
  */
 interface HostMarketComparisonApiResponse {
     readonly success: boolean;
@@ -1028,39 +1030,17 @@ interface HostMarketComparisonApiResponse {
         readonly comparisons: ReadonlyArray<{
             readonly accommodationId: string;
             readonly accommodationName: string;
+            readonly accommodationType: string;
             readonly destinationId: string;
             readonly destinationName: string | null;
             readonly yourRating: number | null;
             readonly yourReviews: number;
             readonly destinationAvgRating: number | null;
             readonly destinationReviewsTotal: number;
+            readonly yourPrice: number | null;
+            readonly destinationAvgPrice: number | null;
         }>;
     };
-}
-
-/**
- * Builds the meta string a single accommodation row shows on card J.
- * Format: `{destinationName} · ★ {you} vs {dest} · {reviews} reseñas`
- * with sensible fallbacks for missing data (rating averages are nullable
- * when no listings in the destination have reviews yet).
- */
-function formatMarketMeta(row: {
-    yourRating: number | null;
-    yourReviews: number;
-    destinationAvgRating: number | null;
-}): string {
-    const fragments: string[] = [];
-    if (row.yourRating !== null) {
-        fragments.push(
-            row.destinationAvgRating !== null
-                ? `★ ${row.yourRating.toFixed(1)} vs ${row.destinationAvgRating.toFixed(1)}`
-                : `★ ${row.yourRating.toFixed(1)}`
-        );
-    }
-    if (row.yourReviews > 0) {
-        fragments.push(`${row.yourReviews} reseñas`);
-    }
-    return fragments.join(' · ');
 }
 
 /**
@@ -1100,15 +1080,18 @@ registerDataSource('host.stats.market-comparison', (ctx) => ({
         });
         const comparisons = result.data.data?.comparisons ?? [];
 
-        // Normalise to ListItem[] expected by ListWidget. Each item has the
-        // accommodation name as label, destination + comparison meta as
-        // sub-line, and a status badge encoding the verdict.
+        // Normalise to ListItem[] expected by ListWidget. Each item shows the
+        // accommodation name as label, a 2-line meta (destination + rating
+        // delta), and a status badge encoding the verdict. The per-row link
+        // (`href`) navigates to the accommodation detail view; the
+        // `actionPerItem` CTA on the config supplies the visible "Ver"
+        // button at the end of each row.
         return comparisons.map((row) => {
             const verdict = computeMarketVerdict(row);
             return {
                 id: row.accommodationId,
                 label: row.accommodationName,
-                meta: `${row.destinationName ?? 'Sin destino'} · ${formatMarketMeta(row)}`,
+                metaLines: buildMarketComparisonMetaLines(row),
                 href: `/accommodations/${row.accommodationId}`,
                 statusBadge: { label: verdict.label, variant: verdict.variant }
             };
@@ -1167,10 +1150,10 @@ registerDataSource('host.suggestions.list', (ctx) => ({
         });
         const reviewParams = ownerParams(ctx, { pageSize: '20', sort: 'createdAt:desc' });
 
-        // Fan-out fetches. Reviews / subscription / accommodations / convos
-        // all degrade gracefully — a single failed source must not blank the
-        // card; the remaining suggestions still surface.
-        const [accommodationsResult, conversationsResult, reviewsResult, subResult] =
+        // Fan-out fetches. Reviews / subscription / accommodations / convos /
+        // profile all degrade gracefully — a single failed source must not
+        // blank the card; the remaining suggestions still surface.
+        const [accommodationsResult, conversationsResult, reviewsResult, subResult, profileResult] =
             await Promise.all([
                 fetchApi<AccommodationFullApiResponse>({
                     path: `/api/v1/admin/accommodations?${params}`
@@ -1188,6 +1171,9 @@ registerDataSource('host.suggestions.list', (ctx) => ({
                 ),
                 fetchApi<UserSubscriptionApiResponse>({
                     path: '/api/v1/protected/users/me/subscription'
+                }).catch(() => null),
+                fetchApi<UserGetByIdApiResponse>({
+                    path: `/api/v1/protected/users/${ctx.userId}`
                 }).catch(() => null)
             ]);
 
@@ -1223,7 +1209,7 @@ registerDataSource('host.suggestions.list', (ctx) => ({
                 suggestions.push({
                     id: `review-${review.id}`,
                     priority: 20,
-                    label: `Reseña baja (${review.rating}★) sin responder`,
+                    label: `Reseña baja (${review.rating} de 5) sin responder`,
                     meta: review.comment ? review.comment.slice(0, 60) : undefined,
                     href: `/reviews/${review.id}`
                 });
@@ -1263,6 +1249,35 @@ registerDataSource('host.suggestions.list', (ctx) => ({
                     label: `Completá "${acc.name}"`,
                     meta: `${pct}% listo — ${total - done} datos faltantes`,
                     href: `/accommodations/${acc.id}/edit`
+                });
+            }
+        }
+
+        // 5. Host profile with completeness < 100% — priority 50.
+        //    Uses the same compute fn the card F checklist uses, so the
+        //    suggestion stays in lock-step with the on-card status.
+        const userRecord = profileResult?.data.data ?? null;
+        if (userRecord) {
+            const profileEntity = {
+                id: userRecord.id,
+                name: userRecord.displayName ?? userRecord.name ?? '',
+                avatarUrl: userRecord.avatarUrl ?? '',
+                bio: userRecord.bio ?? '',
+                phone: userRecord.phone ?? '',
+                socialLink: userRecord.socialLink ?? '',
+                emailVerified: userRecord.emailVerified ?? false
+            };
+            const items = computeHostProfileHealth(profileEntity);
+            const done = items.filter((i) => i.done).length;
+            const total = items.length;
+            const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+            if (pct < 100) {
+                suggestions.push({
+                    id: 'host-profile',
+                    priority: 50,
+                    label: 'Completá tu perfil de host',
+                    meta: `${pct}% listo — ${total - done} datos faltantes`,
+                    href: '/access/profile'
                 });
             }
         }

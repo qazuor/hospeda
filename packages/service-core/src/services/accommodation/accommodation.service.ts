@@ -2080,12 +2080,15 @@ export class AccommodationService extends BaseCrudService<
             ReadonlyArray<{
                 readonly accommodationId: string;
                 readonly accommodationName: string;
+                readonly accommodationType: string;
                 readonly destinationId: string;
                 readonly destinationName: string | null;
                 readonly yourRating: number | null;
                 readonly yourReviews: number;
                 readonly destinationAvgRating: number | null;
                 readonly destinationReviewsTotal: number;
+                readonly yourPrice: number | null;
+                readonly destinationAvgPrice: number | null;
             }>
         >
     > {
@@ -2095,12 +2098,15 @@ export class AccommodationService extends BaseCrudService<
             schema: z.object({}),
             ctx,
             execute: async (_validated, validatedActor, execCtx) => {
-                if (
-                    !validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_VIEW)
-                ) {
+                // ACCOMMODATION_VIEW_ALL is the permission HOSTs hold on
+                // their own listing surface (see seed/role-permissions for
+                // HOST). The endpoint scopes results to ownerId = actor.id
+                // so this gate is about being able to read accommodation
+                // data at all, not about seeing other hosts' listings.
+                if (!validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'Permission denied: ACCOMMODATION_LISTING_VIEW required for market comparison'
+                        'Permission denied: ACCOMMODATION_VIEW_ALL required for market comparison'
                     );
                 }
                 return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);

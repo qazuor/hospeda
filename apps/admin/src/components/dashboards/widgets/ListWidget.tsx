@@ -85,6 +85,15 @@ export interface ListItem {
     /** Secondary text rendered below the label (subtitle, date, status…). */
     readonly meta?: string;
     /**
+     * Multi-line meta. When set, each entry renders as its own muted line
+     * below the label so a row can carry hierarchical context (e.g. host
+     * card J: "Destino: X" + "Tu rating 4.6 vs promedio 4.3"). Each entry
+     * carries a stable `key` (so React reconciliation is deterministic) and
+     * a `content` ReactNode (so resolvers can compose icon-aware lines).
+     * Takes precedence over `meta` when both are present.
+     */
+    readonly metaLines?: ReadonlyArray<{ readonly key: string; readonly content: ReactNode }>;
+    /**
      * Optional direct navigation URL for the item row itself.
      * Takes precedence over the config-level `hrefTemplate` when present.
      */
@@ -156,9 +165,16 @@ export interface ListWidgetConfig {
     readonly maxItems?: number;
     /**
      * Optional per-item action configuration (AC-7).
-     * Drives a button or link appended to each list row.
+     * Drives the PRIMARY button or link appended to each list row.
      */
     readonly actionPerItem?: ListWidgetActionConfig;
+    /**
+     * Optional secondary actions appended after the primary `actionPerItem`.
+     * Each entry renders as its own button/link with the same per-id href
+     * interpolation rules; useful when a row needs more than one CTA (e.g.
+     * "Ver" + "Editar" on the host card J market comparison).
+     */
+    readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
     /** Accent palette name for the card header chip (SPEC-155 redesign). */
     readonly accent?: string;
     /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
@@ -545,13 +561,29 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         </span>
                                     )}
                                 </div>
-                                {item.meta && (
-                                    <p
-                                        className="truncate text-muted-foreground text-xs"
-                                        data-testid="list-item-meta"
+                                {item.metaLines && item.metaLines.length > 0 ? (
+                                    <div
+                                        className="mt-0.5 space-y-0.5"
+                                        data-testid="list-item-meta-lines"
                                     >
-                                        {item.meta}
-                                    </p>
+                                        {item.metaLines.map((line) => (
+                                            <div
+                                                key={`${itemKey}-meta-${line.key}`}
+                                                className="truncate text-muted-foreground text-xs"
+                                            >
+                                                {line.content}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    item.meta && (
+                                        <p
+                                            className="truncate text-muted-foreground text-xs"
+                                            data-testid="list-item-meta"
+                                        >
+                                            {item.meta}
+                                        </p>
+                                    )
                                 )}
                                 {item.ownerName && (
                                     <p
@@ -623,6 +655,44 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                         {actionLabelText}
                                     </button>
                                 )}
+
+                                {/* Secondary actions — render each entry from
+                                    `config.additionalActionsPerItem` after the
+                                    primary CTA. Each uses the same per-id href
+                                    interpolation rules so callers don't have to
+                                    duplicate the resolution logic. */}
+                                {(config.additionalActionsPerItem ?? []).map((extraAction) => {
+                                    const extraHref = resolveItemHref(item, index, extraAction);
+                                    const extraLabelText = resolveLabelText(extraAction.label);
+                                    // Stable per-row key derived from the action label so
+                                    // React reconciliation is deterministic (the label
+                                    // doubles as the action identity in practice).
+                                    const extraKey = `${itemKey}-extra-${extraLabelText}`;
+                                    if (extraHref) {
+                                        return (
+                                            <a
+                                                key={extraKey}
+                                                href={extraHref}
+                                                className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                                                data-testid="list-item-action-extra-link"
+                                                aria-label={`${extraLabelText}: ${labelText}`}
+                                            >
+                                                {extraLabelText}
+                                            </a>
+                                        );
+                                    }
+                                    return (
+                                        <button
+                                            key={extraKey}
+                                            type="button"
+                                            className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                                            data-testid="list-item-action-extra-button"
+                                            aria-label={`${extraLabelText}: ${labelText}`}
+                                        >
+                                            {extraLabelText}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </li>
                     );

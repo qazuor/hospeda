@@ -1054,12 +1054,15 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         ReadonlyArray<{
             readonly accommodationId: string;
             readonly accommodationName: string;
+            readonly accommodationType: string;
             readonly destinationId: string;
             readonly destinationName: string | null;
             readonly yourRating: number | null;
             readonly yourReviews: number;
             readonly destinationAvgRating: number | null;
             readonly destinationReviewsTotal: number;
+            readonly yourPrice: number | null;
+            readonly destinationAvgPrice: number | null;
         }>
     > {
         const db = this.getClient(tx);
@@ -1088,17 +1091,41 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                       AND a2.deleted_at IS NULL
                 )
             `;
+            // Price is stored as JSONB { price: number, currency, ... }.
+            // We extract the numeric base price for the host's listing and
+            // for the destination average using the same JSONB cast the sort
+            // helpers in this file already use (see buildPriceOrderExpr).
+            // Price average is filtered by `type` so a "Casa quinta para 30"
+            // doesn't get compared against a "Monoambiente para 1".
+            const yourPrice = sql<number | null>`
+                (${accommodations.price}->>'price')::numeric
+            `;
+            const avgPriceForDestinationAndType = sql<number | null>`
+                (
+                    SELECT AVG((a2.price->>'price')::numeric)
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.type = ${accommodations.type}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                      AND (a2.price->>'price') IS NOT NULL
+                      AND (a2.price->>'price')::numeric > 0
+                )
+            `;
 
             const rows = await db
                 .select({
                     accommodationId: accommodations.id,
                     accommodationName: accommodations.name,
+                    accommodationType: accommodations.type,
                     destinationId: accommodations.destinationId,
                     destinationName: destinations.name,
                     yourRating: accommodations.averageRating,
                     yourReviews: accommodations.reviewsCount,
                     destinationAvgRating: ratedListingsForDestination,
-                    destinationReviewsTotal: reviewsTotalForDestination
+                    destinationReviewsTotal: reviewsTotalForDestination,
+                    yourPrice,
+                    destinationAvgPrice: avgPriceForDestinationAndType
                 })
                 .from(accommodations)
                 .leftJoin(destinations, eq(destinations.id, accommodations.destinationId))
@@ -1117,13 +1144,17 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             return rows.map((row) => ({
                 accommodationId: row.accommodationId,
                 accommodationName: row.accommodationName,
+                accommodationType: row.accommodationType as string,
                 destinationId: row.destinationId,
                 destinationName: row.destinationName ?? null,
                 yourRating: row.yourRating !== null ? Number(row.yourRating) : null,
                 yourReviews: Number(row.yourReviews ?? 0),
                 destinationAvgRating:
                     row.destinationAvgRating !== null ? Number(row.destinationAvgRating) : null,
-                destinationReviewsTotal: Number(row.destinationReviewsTotal ?? 0)
+                destinationReviewsTotal: Number(row.destinationReviewsTotal ?? 0),
+                yourPrice: row.yourPrice !== null ? Number(row.yourPrice) : null,
+                destinationAvgPrice:
+                    row.destinationAvgPrice !== null ? Number(row.destinationAvgPrice) : null
             }));
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

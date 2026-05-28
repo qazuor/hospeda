@@ -29,12 +29,15 @@ const HostMarketComparisonSchema = z.object({
         z.object({
             accommodationId: z.string().uuid(),
             accommodationName: z.string(),
+            accommodationType: z.string(),
             destinationId: z.string().uuid(),
             destinationName: z.string().nullable(),
             yourRating: z.number().nullable(),
             yourReviews: z.number().int().min(0),
             destinationAvgRating: z.number().nullable(),
-            destinationReviewsTotal: z.number().int().min(0)
+            destinationReviewsTotal: z.number().int().min(0),
+            yourPrice: z.number().nullable(),
+            destinationAvgPrice: z.number().nullable()
         })
     )
 });
