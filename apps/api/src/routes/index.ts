@@ -89,6 +89,7 @@ import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorshi
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
+import { adminSystemRoutes } from './system/admin';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
@@ -334,6 +335,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Moderation aggregation — pending count across content entities (SPEC-155 T-010)
         app.route('/api/v1/admin/moderation', adminModerationRoutes);
+
+        // System operations — health rollup for the admin dashboard (SPEC-155 card E)
+        app.route('/api/v1/admin/system', adminSystemRoutes);
 
         // ISR revalidation management (admin only)
         app.route('/api/v1/admin/revalidation', revalidationRouter);
