@@ -31,10 +31,12 @@ import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { translateApiError } from '@/lib/api-errors';
 import { destinationsApi } from '@/lib/api/endpoints';
+import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { buildUrlWithParams } from '@/lib/urls';
+import { addToast } from '@/store/toast-store';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { DestinationPublic } from '@repo/schemas';
 import { useCallback, useId, useMemo, useState } from 'react';
@@ -110,6 +112,7 @@ type OnboardingStartResponse = {
     readonly error?: {
         readonly message?: string;
         readonly code?: string;
+        readonly details?: unknown;
     };
 };
 
@@ -298,15 +301,34 @@ export function CreatePropertyMiniForm({
                     'host.miniForm.errors.submit',
                     'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
                 );
-                let apiError: { code?: string; message?: string } | undefined;
+                let parsedErrorBody: OnboardingStartResponse | undefined;
                 try {
-                    const body = (await response.json()) as OnboardingStartResponse;
-                    if (body.error) apiError = body.error;
+                    parsedErrorBody = (await response.json()) as OnboardingStartResponse;
                 } catch {
                     // Body wasn't JSON; keep the localized fallback message.
                 }
+
+                // 403 LIMIT_REACHED: host has hit their accommodation publish limit.
+                // Show a localized toast with an upgrade CTA instead of an inline form error.
+                if (response.status === 403 && parsedErrorBody?.error?.code === 'LIMIT_REACHED') {
+                    const limitPayload = buildLimitReachedPayloadFromDetails({
+                        details: parsedErrorBody.error?.details,
+                        locale
+                    });
+                    addToast({
+                        type: 'error',
+                        message: limitPayload.message,
+                        action: limitPayload.action
+                    });
+                    return;
+                }
+
                 setSubmitError(
-                    translateApiError({ error: apiError, t, fallback: localizedFallback })
+                    translateApiError({
+                        error: parsedErrorBody?.error,
+                        t,
+                        fallback: localizedFallback
+                    })
                 );
                 return;
             }

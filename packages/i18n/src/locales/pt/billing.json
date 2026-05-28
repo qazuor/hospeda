@@ -55,7 +55,12 @@
             "daysRemaining": "Você tem {{count}} dias de teste restantes",
             "dayRemaining": "Você tem 1 dia de teste restante",
             "noCharge": "Nenhuma cobrança foi realizada",
-            "subscribeNow": "Assinar agora"
+            "subscribeNow": "Assinar agora",
+            "expiredBanner": {
+                "title": "Seu período de teste gratuito encerrou",
+                "body": "Seu teste do plano {{planSlug}} venceu em {{expiresAt}}. Assine para voltar a publicar.",
+                "cta": "Ver planos"
+            }
         },
         "cancelled": {
             "title": "Assinatura cancelada",
@@ -214,6 +219,49 @@
             "unauthCta": "Faça login para contratar",
             "currentPlan": "Plano atual",
             "currentPlanAriaLabel": "Este é o seu plano atual"
+        }
+    },
+    "limit": {
+        "max_favorites": {
+            "title": "Você atingiu o limite de favoritos",
+            "message": "Você já salvou {{currentCount}} de {{maxAllowed}} favoritos no seu plano. Faça um upgrade para salvar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_accommodations": {
+            "title": "Você atingiu o limite de propriedades",
+            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para publicar mais.",
+            "cta": "Ver minha assinatura",
+            "atLimitPanel": {
+                "title": "Você atingiu o limite do seu plano",
+                "body": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
+                "primaryCta": "Ver minha assinatura",
+                "secondaryCta": "Ver minhas propriedades"
+            }
+        },
+        "max_photos_per_accommodation": {
+            "title": "Você atingiu o limite de fotos",
+            "message": "Você já enviou {{currentCount}} de {{maxAllowed}} fotos permitidas no seu plano. Faça um upgrade para enviar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_active_promotions": {
+            "title": "Você atingiu o limite de promoções",
+            "message": "Você tem {{currentCount}} de {{maxAllowed}} promoções ativas no seu plano. Faça um upgrade para criar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_properties": {
+            "title": "Você atingiu o limite de propriedades",
+            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para adicionar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_staff_accounts": {
+            "title": "Você atingiu o limite de contas de staff",
+            "message": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "generic": {
+            "title": "Limite do plano atingido",
+            "message": "Você atingiu o limite do seu plano. Faça um upgrade para continuar.",
+            "cta": "Ver minha assinatura"
         }
     },
     "limits": {

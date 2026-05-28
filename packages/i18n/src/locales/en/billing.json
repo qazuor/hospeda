@@ -55,7 +55,12 @@
             "daysRemaining": "You have {{count}} days left in your trial",
             "dayRemaining": "You have 1 day left in your trial",
             "noCharge": "No charges have been made",
-            "subscribeNow": "Subscribe now"
+            "subscribeNow": "Subscribe now",
+            "expiredBanner": {
+                "title": "Your free trial has ended",
+                "body": "Your trial of the {{planSlug}} plan expired on {{expiresAt}}. Subscribe to publish again.",
+                "cta": "View plans"
+            }
         },
         "cancelled": {
             "title": "Subscription canceled",
@@ -214,6 +219,49 @@
             "unauthCta": "Sign in to subscribe",
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan"
+        }
+    },
+    "limit": {
+        "max_favorites": {
+            "title": "You've reached your favorites limit",
+            "message": "You've saved {{currentCount}} of {{maxAllowed}} favorites in your plan. Upgrade to save more.",
+            "cta": "View my subscription"
+        },
+        "max_accommodations": {
+            "title": "You've reached your property limit",
+            "message": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to publish more.",
+            "cta": "View my subscription",
+            "atLimitPanel": {
+                "title": "You've reached your plan limit",
+                "body": "You're using {{currentCount}} of {{maxAllowed}} properties. To publish another, upgrade your plan.",
+                "primaryCta": "View my subscription",
+                "secondaryCta": "View my properties"
+            }
+        },
+        "max_photos_per_accommodation": {
+            "title": "You've reached your photo limit",
+            "message": "You've uploaded {{currentCount}} of {{maxAllowed}} photos allowed in your plan. Upgrade to upload more.",
+            "cta": "View my subscription"
+        },
+        "max_active_promotions": {
+            "title": "You've reached your promotions limit",
+            "message": "You have {{currentCount}} of {{maxAllowed}} active promotions in your plan. Upgrade to create more.",
+            "cta": "View my subscription"
+        },
+        "max_properties": {
+            "title": "You've reached your property limit",
+            "message": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to add more.",
+            "cta": "View my subscription"
+        },
+        "max_staff_accounts": {
+            "title": "You've reached your staff account limit",
+            "message": "You have {{currentCount}} of {{maxAllowed}} staff accounts in your plan. Upgrade to add more.",
+            "cta": "View my subscription"
+        },
+        "generic": {
+            "title": "Plan limit reached",
+            "message": "You've reached your plan's limit. Upgrade to continue.",
+            "cta": "View my subscription"
         }
     },
     "limits": {
