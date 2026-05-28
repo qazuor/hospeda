@@ -9,6 +9,7 @@ import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import {
     useDeleteOwnerPromotionMutation,
     useOwnerPromotionsQuery,
@@ -17,7 +18,8 @@ import {
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
+import { LimitGate } from '@qazuor/qzpay-react';
+import { EntitlementKey } from '@repo/billing';
 import { AddIcon } from '@repo/icons';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -331,8 +333,8 @@ function BillingOwnerPromotionsPage() {
                         </select>
                     </div>
 
-                    <EntitlementGate
-                        entitlementKey="create-promotions"
+                    <PlanEntitlementGate
+                        entitlementKey={EntitlementKey.CREATE_PROMOTIONS}
                         fallback={
                             <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
                                 <p className="font-medium text-foreground">
@@ -359,7 +361,7 @@ function BillingOwnerPromotionsPage() {
                                 {t('admin-billing.ownerPromotions.createButton')}
                             </Button>
                         </LimitGate>
-                    </EntitlementGate>
+                    </PlanEntitlementGate>
                 </div>
 
                 {/* Table */}

@@ -124,7 +124,7 @@ export const createBasicInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE]
             },
-            entitlementKey: 'featured-listing', // T-G-009: Gate featured listing toggle
+            entitlementKey: EntitlementKey.FEATURED_LISTING, // T-G-009: Gate featured listing toggle
             typeConfig: {}
         },
         {

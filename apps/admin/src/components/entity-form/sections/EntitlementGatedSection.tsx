@@ -4,8 +4,8 @@
  * Wrapper component that gates a section based on entitlement
  * Used for premium features that require specific plan entitlements
  */
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
-import { EntitlementGate } from '@qazuor/qzpay-react';
 import { ShieldAlertIcon } from '@repo/icons';
 
 export interface EntitlementGatedSectionProps {
@@ -66,11 +66,11 @@ export function EntitlementGatedSection({
     const fallbackComponent = fallback || <DefaultFallback sectionTitle={sectionTitle} />;
 
     return (
-        <EntitlementGate
+        <PlanEntitlementGate
             entitlementKey={entitlementKey}
             fallback={fallbackComponent}
         >
             {children}
-        </EntitlementGate>
+        </PlanEntitlementGate>
     );
 }
