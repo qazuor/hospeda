@@ -4,6 +4,7 @@ import {
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
 import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
+import { SocialNetworksCell } from '@/components/entity-list/SocialNetworksCell';
 import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
@@ -108,23 +109,10 @@ export const createEventOrganizersColumns = (
             accessorKey: 'socialNetworks',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) => {
-                const social = row.socialNetworks;
-                if (!social) return null;
-
-                const networks = [];
-                if (social.facebook) networks.push('Facebook');
-                if (social.twitter) networks.push('Twitter');
-                if (social.instagram) networks.push('Instagram');
-                if (social.linkedIn) networks.push('LinkedIn');
-                if (social.youtube) networks.push('YouTube');
-
-                return networks.length > 0
-                    ? networks.join(', ')
-                    : t('admin-common.entityPage.none');
-            },
-            startVisibleOnTable: false,
-            startVisibleOnGrid: false
+            widgetRenderer: (row) =>
+                createElement(SocialNetworksCell, { social: row.socialNetworks }),
+            startVisibleOnTable: true,
+            startVisibleOnGrid: true
         },
         {
             id: 'lifecycleState',

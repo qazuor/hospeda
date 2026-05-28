@@ -8,9 +8,10 @@ import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { EditIcon } from '@repo/icons';
-import { ClientTypeEnum, LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
+import { SponsorTypeBadge } from '../components/SponsorTypeBadge';
 import { useDeleteSponsorMutation, useUpdateSponsorMutation } from '../hooks/useSponsorQuery';
 import type { Sponsor } from '../schemas/sponsors.schemas';
 
@@ -53,24 +54,8 @@ export const createSponsorsColumns = (t: ColumnTFunction): readonly ColumnConfig
             header: t('admin-entities.columns.type'),
             accessorKey: 'type',
             enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: ClientTypeEnum.POST_SPONSOR,
-                    label: t('admin-entities.types.sponsor.postSponsor'),
-                    color: BadgeColor.BLUE
-                },
-                {
-                    value: ClientTypeEnum.ADVERTISER,
-                    label: t('admin-entities.types.sponsor.advertiser'),
-                    color: BadgeColor.GREEN
-                },
-                {
-                    value: ClientTypeEnum.HOST,
-                    label: t('admin-entities.types.sponsor.host'),
-                    color: BadgeColor.PURPLE
-                }
-            ],
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) => createElement(SponsorTypeBadge, { row }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },

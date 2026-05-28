@@ -3,6 +3,7 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import { EditIcon, getUserRoleIcon } from '@repo/icons';
@@ -190,7 +191,8 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         header: t('admin-entities.columns.email'),
         accessorKey: 'email',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(MailLinkCell, { email: row.email })
     },
     {
         id: 'location',
