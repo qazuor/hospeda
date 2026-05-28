@@ -12,8 +12,8 @@
  */
 
 import {
-    CustomerAddonActionResponseSchema,
     CustomerAddonIdParamSchema,
+    CustomerAddonResponseSchema,
     CustomerAddonsListResponseSchema,
     ListCustomerAddonsQuerySchema,
     PermissionEnum
@@ -165,7 +165,7 @@ export const expireCustomerAddonRoute = createAdminRoute({
     tags: ['Billing', 'Add-ons'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestParams: CustomerAddonIdParamSchema.shape,
-    responseSchema: CustomerAddonActionResponseSchema,
+    responseSchema: CustomerAddonResponseSchema,
     handler: expireCustomerAddonHandler
 });
 
@@ -182,6 +182,6 @@ export const activateCustomerAddonRoute = createAdminRoute({
     tags: ['Billing', 'Add-ons'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestParams: CustomerAddonIdParamSchema.shape,
-    responseSchema: CustomerAddonActionResponseSchema,
+    responseSchema: CustomerAddonResponseSchema,
     handler: activateCustomerAddonHandler
 });
