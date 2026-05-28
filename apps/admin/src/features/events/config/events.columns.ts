@@ -138,9 +138,20 @@ export const createEventsColumns = (t: ColumnTFunction): readonly ColumnConfig<E
     {
         id: 'organizer',
         header: t('admin-entities.columns.organizer'),
-        accessorKey: 'organizerName',
-        enableSorting: true,
-        columnType: ColumnType.STRING
+        accessorKey: 'organizer.name',
+        enableSorting: false,
+        columnType: ColumnType.ENTITY,
+        entityOptions: {
+            entityType: EntityType.EVENT_ORGANIZER,
+            color: BadgeColor.PURPLE
+        },
+        linkHandler: (row) =>
+            row.organizer?.id
+                ? {
+                      to: '/events/organizers/$id',
+                      params: { id: row.organizer.id }
+                  }
+                : undefined
     },
     {
         id: 'startDate',
@@ -152,9 +163,20 @@ export const createEventsColumns = (t: ColumnTFunction): readonly ColumnConfig<E
     {
         id: 'location',
         header: t('admin-entities.columns.location'),
-        accessorKey: 'locationName',
-        enableSorting: true,
-        columnType: ColumnType.STRING
+        accessorKey: 'location.placeName',
+        enableSorting: false,
+        columnType: ColumnType.ENTITY,
+        entityOptions: {
+            entityType: EntityType.EVENT_LOCATION,
+            color: BadgeColor.CYAN
+        },
+        linkHandler: (row) =>
+            row.location?.id
+                ? {
+                      to: '/events/locations/$id',
+                      params: { id: row.location.id }
+                  }
+                : undefined
     },
     {
         id: 'ticketPrice',
