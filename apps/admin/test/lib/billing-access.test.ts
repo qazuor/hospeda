@@ -135,4 +135,154 @@ describe('requireBillingAccess', () => {
         expect(() => requireBillingAccess(context)).toThrow();
         expect(getRedirectSpy()).toHaveBeenCalledWith({ to: '/auth/forbidden' });
     });
+
+    // -------------------------------------------------------------------------
+    // AC-8 / AC-9 — Graceful-degradation contract
+    //
+    // These tests encode the semantics of:
+    //   AC-8: ADMIN direct-URL → beforeLoad guard rejects access (redirect fires)
+    //         BEFORE the page component renders — i.e. the function THROWS,
+    //         meaning control-flow never returns, so the component body is never
+    //         reached.
+    //   AC-9: ADMIN hitting a /billing/* URL directly → NO unhandled exception,
+    //         NO 500, NO partial-data render, NO broken layout — a clean rejected
+    //         state only.  The throw MUST be a TanStack Router redirect object,
+    //         NOT a plain Error (which would bubble up as an unhandled exception
+    //         and surface as a 500 / ErrorBoundary crash in SSR).
+    //
+    // Full in-browser direct-URL degradation (browser address bar → SSR render
+    // → redirect response) is validated by the manual / staging smoke test
+    // documented in .claude/specs/SPEC-164-admin-billing-super-only/spec.md §8.
+    // -------------------------------------------------------------------------
+
+    describe('AC-8: redirect fires before component renders (control-flow never returns)', () => {
+        it('ADMIN context — function throws, so the component body is never reached', () => {
+            // Arrange: ADMIN context without BILLING_READ_ALL (T-002 seed revoke)
+            const context = makeContext([PermissionEnum.ACCESS_PANEL_ADMIN]);
+            let componentWouldRender = false;
+
+            // Act: simulate what a beforeLoad callback does — if it throws,
+            // the component render path is skipped entirely
+            try {
+                requireBillingAccess(context);
+                // This line is the stand-in for "component starts rendering"
+                componentWouldRender = true;
+            } catch {
+                // redirect was thrown — component never rendered
+            }
+
+            // Assert: the line after the call was never reached
+            expect(componentWouldRender).toBe(false);
+        });
+
+        it('ADMIN context with no permissions — component never renders', () => {
+            const context = makeContext([]);
+            let componentWouldRender = false;
+
+            try {
+                requireBillingAccess(context);
+                componentWouldRender = true;
+            } catch {
+                // swallowed — redirect thrown as expected
+            }
+
+            expect(componentWouldRender).toBe(false);
+        });
+
+        it('SUPER_ADMIN context — function returns, component IS allowed to render', () => {
+            // Inverse: when BILLING_READ_ALL is present the function returns void,
+            // control-flow continues, and the component would render.
+            const context = makeContext([
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.BILLING_READ_ALL
+            ]);
+            let componentWouldRender = false;
+
+            try {
+                requireBillingAccess(context);
+                componentWouldRender = true;
+            } catch {
+                // should NOT reach here
+            }
+
+            expect(componentWouldRender).toBe(true);
+        });
+    });
+
+    describe('AC-9: thrown value is a redirect object, never a plain Error (no 500 / unhandled exception)', () => {
+        it('ADMIN context — thrown value has isRedirect:true (TanStack Router redirect shape)', () => {
+            // The real `redirect()` from @tanstack/react-router returns an object
+            // with `{ isRedirect: true, ... }` which the router handles as a
+            // navigation instruction.  Our mock mirrors this by throwing
+            // `{ isRedirect: true, ...opts }`.  This test asserts that what
+            // escapes requireBillingAccess is THAT object — not a generic Error.
+            const context = makeContext([PermissionEnum.ACCESS_PANEL_ADMIN]);
+            let thrownValue: unknown;
+
+            try {
+                requireBillingAccess(context);
+            } catch (e) {
+                thrownValue = e;
+            }
+
+            // AC-9 core assertion: thrown value is NOT a plain Error
+            // (a plain Error would bubble to the framework as an unhandled
+            // exception and surface as a 500 or broken layout)
+            expect(thrownValue).not.toBeInstanceOf(Error);
+
+            // It IS a redirect descriptor with the correct destination
+            expect(thrownValue).toMatchObject({ isRedirect: true, to: '/auth/forbidden' });
+        });
+
+        it('ADMIN context with no permissions — same redirect shape, no plain Error', () => {
+            const context = makeContext([]);
+            let thrownValue: unknown;
+
+            try {
+                requireBillingAccess(context);
+            } catch (e) {
+                thrownValue = e;
+            }
+
+            expect(thrownValue).not.toBeInstanceOf(Error);
+            expect(thrownValue).toMatchObject({ isRedirect: true, to: '/auth/forbidden' });
+        });
+
+        it('ADMIN context with other billing permissions but NOT BILLING_READ_ALL — clean redirect, no 500', () => {
+            // Even if the ADMIN somehow has partial billing perms, the guard
+            // MUST throw a redirect — not an Error — so no 500 escapes.
+            const context = makeContext([
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.BILLING_MANAGE
+            ]);
+            let thrownValue: unknown;
+
+            try {
+                requireBillingAccess(context);
+            } catch (e) {
+                thrownValue = e;
+            }
+
+            expect(thrownValue).not.toBeInstanceOf(Error);
+            expect(thrownValue).toMatchObject({ isRedirect: true, to: '/auth/forbidden' });
+        });
+
+        it('SUPER_ADMIN context — function does NOT throw at all (no redirect, no error)', () => {
+            // AC-9 inverse: SUPER_ADMIN must pass through cleanly — no throw means
+            // no redirect AND no unhandled exception.
+            const context = makeContext(Object.values(PermissionEnum));
+            let thrownValue: unknown;
+            let threw = false;
+
+            try {
+                requireBillingAccess(context);
+            } catch (e) {
+                threw = true;
+                thrownValue = e;
+            }
+
+            expect(threw).toBe(false);
+            expect(thrownValue).toBeUndefined();
+        });
+    });
 });
