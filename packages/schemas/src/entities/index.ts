@@ -14,6 +14,7 @@ export * from './feature/index.js';
 export * from './newsletter/index.js';
 export * from './ownerPromotion/index.js';
 export * from './permission/index.js';
+export * from './platformSettings/index.js';
 export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';

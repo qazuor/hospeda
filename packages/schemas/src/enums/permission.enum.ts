@@ -786,5 +786,19 @@ export enum PermissionEnum {
     POST_TAG_UPDATE = 'postTag.update', // Allows updating PostTags.
     POST_TAG_DELETE = 'postTag.delete', // Allows hard-deleting PostTags (shows impact count before deletion).
     POST_TAG_VIEW = 'postTag.view', // Allows viewing PostTags in admin context (including INACTIVE/ARCHIVED).
-    POST_TAG_ASSIGN = 'postTag.assign' // Allows assigning or unassigning PostTags on a post.
+    POST_TAG_ASSIGN = 'postTag.assign', // Allows assigning or unassigning PostTags on a post.
+
+    // PLATFORM SETTINGS V1 (SPEC-156): finer-grained gates for the reorganized
+    // Plataforma / Comercial / Mi cuenta / Mi facturación areas. Coexist with
+    // existing SETTINGS_MANAGE / SYSTEM_MAINTENANCE_MODE / BILLING_READ_ALL /
+    // BILLING_MANAGE — V1 adds these for new routes; legacy routes keep the
+    // existing permissions.
+    SETTINGS_GENERAL_VIEW = 'settings.general.view', // Allows viewing Plataforma → Configuración general (SEO defaults, etc.). Read-only gate.
+    SETTINGS_GENERAL_WRITE = 'settings.general.write', // Allows editing Plataforma → Configuración general (SEO defaults, etc.).
+    MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write', // Allows writing maintenance mode + global announcements (Plataforma → Configuración crítica). SUPER_ADMIN-only.
+    BILLING_SETTINGS_VIEW = 'billing.settings.view', // Allows viewing Comercial → Configuración billing (trial/payment/webhook/notification fields).
+    BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
+    BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
+    SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
+    USER_UPDATE_SELF = 'user.update.self' // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
 }
