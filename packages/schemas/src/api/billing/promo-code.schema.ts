@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Discount type enum for promo codes.
@@ -206,14 +207,8 @@ export type UpdatePromoCode = z.infer<typeof UpdatePromoCodeSchema>;
  * Query schema for listing promo codes (admin operation).
  */
 export const ListPromoCodesQuerySchema = z.object({
-    active: z
-        .string()
-        .optional()
-        .transform((val) => val === 'true'),
-    expired: z
-        .string()
-        .optional()
-        .transform((val) => val === 'true'),
+    active: queryBooleanParam(),
+    expired: queryBooleanParam(),
     codeSearch: z.string().optional(),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20)

@@ -526,11 +526,17 @@
         "titleDefault": "Premium Feature",
         "description": "This feature is available on higher plans. Upgrade your plan to access this section.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "This feature is available on higher plans"
+        "fieldPremiumDescription": "This feature is available on higher plans",
+        "richDescriptionNudge": "Your plan does not include rich descriptions. You can edit the description as plain text.",
+        "videoNudge": "Video embedding is available on higher plans.",
+        "upgradeLink": "Upgrade plan"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limit reached",
-        "description": "You have reached the limit of your current plan"
+        "description": "You have reached the limit of your current plan",
+        "titleDefault": "You reached your plan limit",
+        "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
+        "upgradeLink": "View my subscription"
     },
     "selects": {
         "destination": {

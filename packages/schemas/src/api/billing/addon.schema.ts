@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
@@ -134,10 +135,7 @@ export const ListAddonsQuerySchema = z.object({
     /** Filter by target category */
     targetCategory: AddonTargetCategorySchema.optional(),
     /** Filter by active status */
-    active: z
-        .string()
-        .optional()
-        .transform((val) => val === 'true')
+    active: queryBooleanParam()
 });
 
 /** Cancel add-on request schema */

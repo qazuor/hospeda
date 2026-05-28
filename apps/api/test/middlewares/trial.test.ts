@@ -354,7 +354,7 @@ describe('Trial Middleware', () => {
                     expect(error.status).toBe(402);
                     expect(error.message).toContain('trial has expired');
                     expect((error as any).cause.code).toBe('TRIAL_EXPIRED');
-                    expect((error as any).cause.upgradeUrl).toBe('/billing/plans');
+                    expect((error as any).cause.upgradeAudience).toBe('host');
                 }
             }
 

@@ -526,11 +526,17 @@
         "titleDefault": "Recurso Premium",
         "description": "Este recurso está disponível em planos superiores. Atualize seu plano para acessar esta seção.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "Este recurso está disponível em planos superiores"
+        "fieldPremiumDescription": "Este recurso está disponível em planos superiores",
+        "richDescriptionNudge": "Seu plano não inclui descrições enriquecidas. Você pode editar a descrição como texto simples.",
+        "videoNudge": "A incorporação de vídeos está disponível em planos superiores.",
+        "upgradeLink": "Atualizar plano"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limite atingido",
-        "description": "Você atingiu o limite do seu plano atual"
+        "description": "Você atingiu o limite do seu plano atual",
+        "titleDefault": "Atingiste o limite do teu plano",
+        "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Atualiza o teu plano para teres mais.",
+        "upgradeLink": "Ver minha assinatura"
     },
     "selects": {
         "destination": {
