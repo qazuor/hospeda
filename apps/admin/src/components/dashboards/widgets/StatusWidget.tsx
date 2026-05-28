@@ -52,8 +52,9 @@
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, ClockIcon } from '@repo/icons';
+import { ArrowRightIcon, CalendarIcon, CheckIcon, ClockIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -120,6 +121,50 @@ export interface StatusData {
      * still in the future, rendered as a "Quedan N días de prueba" line.
      */
     readonly trialEndsAt?: string;
+    /**
+     * Optional plan-quota tiles surfaced on HOST card B (e.g. "Alojamientos
+     * 5", "Fotos / alojamiento 20", "Promos activas 3"). Each entry maps a
+     * limit key from {@link EntitlementsApiResponse} to a short label + numeric
+     * cap. Omit to hide the tile grid.
+     */
+    readonly limitTiles?: ReadonlyArray<StatusLimitTile>;
+    /**
+     * Optional URL for an "upgrade plan" call-to-action rendered at the foot
+     * of the card. Built by the resolver so it can interpolate the site URL
+     * (the admin lives on a different origin than the public web).
+     */
+    readonly upgradeHref?: string;
+    /**
+     * Optional list of plan-feature chips (HOST card B). Each entry maps an
+     * active EntitlementKey to a short Spanish label. Rendered as a compact
+     * pill row below the limit tiles so the host can see at a glance which
+     * premium features are included in their current plan.
+     */
+    readonly featureChips?: ReadonlyArray<StatusFeatureChip>;
+}
+
+/**
+ * A single plan-feature chip (HOST card B). Represents one active
+ * EntitlementKey curated for consumer-facing display.
+ */
+export interface StatusFeatureChip {
+    readonly key: string;
+    readonly label: string;
+}
+
+/**
+ * A single plan-quota tile (HOST card B). Rendered in a 3-col grid below the
+ * usage bar so the user can see their plan's caps at a glance.
+ *
+ * `used` is optional — when set, the tile shows `used / value` plus a thin
+ * progress bar coloured against the same thresholds as {@link UsageBar}
+ * (≥100% destructive, ≥80% warning, otherwise the muted accent).
+ */
+export interface StatusLimitTile {
+    readonly key: string;
+    readonly label: string;
+    readonly value: number;
+    readonly used?: number;
 }
 
 /**
@@ -303,66 +348,9 @@ function resolveVariant(
 }
 
 // ============================================================================
-// BILLING SUB-BLOCKS — usage bar, next charge, trial countdown
+// BILLING SUB-BLOCKS — date helpers (legacy UsageBar dropped in HOST card B
+// redesign; per-tile usage progress lives inside the limit-tile grid)
 // ============================================================================
-
-/**
- * Renders the usage bar for HOST card B.
- *
- * Color bands: ≥100% destructive (over-limit), ≥80% warning, otherwise success.
- * Returns `null` when `limit` is zero or negative so the widget degrades to a
- * clean badge-only card.
- */
-interface UsageBarProps {
-    readonly usage: StatusUsage;
-}
-
-function UsageBar({ usage }: UsageBarProps) {
-    const { used, limit, label } = usage;
-    if (limit <= 0) return null;
-    const pct = Math.min(100, Math.round((used / limit) * 100));
-    const overflow = used > limit;
-    const barColor = overflow ? 'bg-destructive' : pct >= 80 ? 'bg-amber-500' : 'bg-green-500';
-    const textColor = overflow
-        ? 'text-destructive'
-        : pct >= 80
-          ? 'text-amber-600'
-          : 'text-foreground';
-
-    return (
-        <div
-            className="space-y-1"
-            data-testid="status-usage"
-        >
-            <div className={cn('flex items-center justify-between text-xs', textColor)}>
-                <span data-testid="status-usage-fraction">
-                    <span className="font-semibold tabular-nums">{used}</span>
-                    <span className="opacity-70"> de </span>
-                    <span className="font-semibold tabular-nums">{limit}</span>
-                    {label ? <span className="opacity-70"> {label}</span> : null}
-                </span>
-                <span
-                    className="font-medium tabular-nums"
-                    data-testid="status-usage-pct"
-                >
-                    {pct}%
-                </span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator, not keyboard-interactive */}
-                <div
-                    className={cn('h-full rounded-full transition-all duration-300', barColor)}
-                    style={{ width: `${pct}%` }}
-                    data-testid="status-usage-bar"
-                    role="progressbar"
-                    aria-valuenow={pct}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                />
-            </div>
-        </div>
-    );
-}
 
 /**
  * Formats an ISO date string as `dd MMM` in Spanish locale (e.g. `15 jun`).
@@ -665,13 +653,19 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
             icon={config.icon}
             ariaLabel={`${displayLabel}: ${badgeLabel}`}
         >
-            {/* Hero — plan name (Geologica) + status pill below */}
+            {/* Hero — "Plan actual" caption + plan name (Geologica) + status pill below */}
             <div
-                className="flex flex-col gap-1.5"
+                className="flex flex-col gap-1"
                 data-testid="status-badge-row"
             >
                 <span
-                    className="truncate font-semibold text-2xl text-foreground leading-tight tracking-tight"
+                    className="font-medium text-[0.65rem] text-muted-foreground uppercase tracking-wider"
+                    data-testid="status-plan-caption"
+                >
+                    Plan actual
+                </span>
+                <span
+                    className="mb-0.5 truncate font-semibold text-2xl text-foreground leading-tight tracking-tight"
                     style={{ fontFamily: 'var(--font-heading)' }}
                     data-testid="status-plan-name"
                 >
@@ -708,8 +702,93 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 </p>
             )}
 
-            {/* Billing sub-blocks (HOST card B) — usage bar, next charge, trial countdown */}
-            {statusData.usage && <UsageBar usage={statusData.usage} />}
+            {/* Billing sub-blocks (HOST card B) — plan-quota tiles, next charge, trial countdown.
+                The legacy `UsageBar` is no longer rendered: the `max_accommodations`
+                tile already surfaces `used / limit` plus a thin progress bar, so
+                the big bar would be redundant. `statusData.usage` is still consumed
+                by the resolver to feed the tile's `used` field. */}
+            {statusData.limitTiles && statusData.limitTiles.length > 0 && (
+                <div
+                    className="grid grid-cols-3 gap-2"
+                    data-testid="status-limit-tiles"
+                >
+                    {statusData.limitTiles.map((tile) => {
+                        const hasUsage = typeof tile.used === 'number' && tile.value > 0;
+                        const pct = hasUsage
+                            ? Math.min(100, Math.round(((tile.used ?? 0) / tile.value) * 100))
+                            : 0;
+                        const barClass =
+                            pct >= 100
+                                ? 'bg-destructive'
+                                : pct >= 80
+                                  ? 'bg-amber-500'
+                                  : 'bg-green-500';
+                        return (
+                            <div
+                                key={tile.key}
+                                className="flex flex-col items-start gap-1 rounded-lg bg-muted/40 p-2 ring-1 ring-border/30"
+                                data-testid={`status-limit-tile-${tile.key}`}
+                            >
+                                <span
+                                    className="font-semibold text-base text-foreground tabular-nums leading-none tracking-tight"
+                                    style={{ fontFamily: 'var(--font-heading)' }}
+                                >
+                                    {hasUsage ? (
+                                        <>
+                                            {tile.used}
+                                            <span className="text-muted-foreground/70"> / </span>
+                                            {tile.value}
+                                        </>
+                                    ) : (
+                                        tile.value
+                                    )}
+                                </span>
+                                <span className="line-clamp-2 text-[0.65rem] text-muted-foreground leading-tight">
+                                    {tile.label}
+                                </span>
+                                {hasUsage && (
+                                    <div className="h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                                        {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator */}
+                                        <div
+                                            className={cn(
+                                                'h-full rounded-full transition-all duration-300',
+                                                barClass
+                                            )}
+                                            style={{ width: `${pct}%` }}
+                                            role="progressbar"
+                                            aria-valuenow={pct}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {statusData.featureChips && statusData.featureChips.length > 0 && (
+                <div
+                    className="flex flex-wrap gap-1.5"
+                    data-testid="status-feature-chips"
+                >
+                    {statusData.featureChips.map((chip) => (
+                        <span
+                            key={chip.key}
+                            className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 font-medium text-[0.65rem] text-green-700 ring-1 ring-green-200/60 ring-inset"
+                            data-testid={`status-feature-chip-${chip.key}`}
+                        >
+                            <CheckIcon
+                                className="size-3"
+                                aria-hidden="true"
+                                weight="bold"
+                            />
+                            {chip.label}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             {hasBillingMeta && (
                 <div
@@ -752,6 +831,23 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                             );
                         })()}
                 </div>
+            )}
+
+            {/* Upgrade CTA — HOST card B. Link-style consistent with the
+                ChecklistWidget foot CTA so the redesign reads uniformly. */}
+            {statusData.upgradeHref && (
+                <a
+                    href={statusData.upgradeHref}
+                    className="group/upgrade mt-auto inline-flex items-center gap-1 self-start font-medium text-xs transition-colors hover:underline hover:decoration-2 hover:underline-offset-4"
+                    style={{ color: accentVars(config.accent).fg }}
+                    data-testid="status-upgrade-cta"
+                >
+                    <span>Mejorar plan</span>
+                    <ArrowRightIcon
+                        className="size-3.5 transition-transform duration-200 group-hover/upgrade:translate-x-0.5"
+                        aria-hidden="true"
+                    />
+                </a>
             )}
         </WidgetCard>
     );

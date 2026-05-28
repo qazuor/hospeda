@@ -40,11 +40,11 @@
 import type { DashboardInput } from './schema';
 
 // ============================================================================
-// hostDashboard — "Mi negocio" — 7 cards A–G
+// hostDashboard — "Mi negocio" — 8 cards A–H
 // ============================================================================
 
 /**
- * Dashboard for the HOST role — 7-card "Mi negocio" view.
+ * Dashboard for the HOST role — 8-card "Mi negocio" view.
  *
  * Card set (SPEC-155 §3 / 03c HOST section):
  *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
@@ -58,7 +58,7 @@ import type { DashboardInput } from './schema';
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 7
+ * dashboards.hostDashboard.widgets.length; // 8
  * ```
  */
 const hostDashboard: DashboardInput = {
@@ -299,6 +299,40 @@ const hostDashboard: DashboardInput = {
                 emptyDescription:
                     'Las métricas van a aparecer a medida que tu alojamiento tenga actividad.',
                 errorText: 'No pudimos cargar tus estadísticas',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card H — Próximos pasos
+        // Priority-sorted list of actionable items composed from the same
+        // sources that feed cards B/C/D/E (subscription, conversations,
+        // reviews, accommodations). Each row is a concrete next step the
+        // host can tackle, with a CTA per item.
+        {
+            id: 'host-card-h',
+            type: 'list',
+            label: {
+                es: 'Próximos pasos',
+                en: 'Next steps',
+                pt: 'Próximos passos'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — actionable text + per-row CTA need horizontal room.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.suggestions.list',
+                accent: 'warning',
+                icon: 'compass',
+                maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Ir', en: 'Go', pt: 'Ir' }
+                    // hrefTemplate omitted — each suggestion row supplies its
+                    // own `href` and the ListWidget honors it directly.
+                },
+                emptyText: '¡Todo al día!',
+                emptyDescription:
+                    'No tenés pendientes urgentes. Cuando algo pida atención, lo verás acá.',
+                errorText: 'No pudimos cargar tus pendientes',
                 errorDescription: 'Probá actualizar el panel.'
             }
         }
@@ -843,7 +877,7 @@ const superAdminDashboard: DashboardInput = {
  * The renderer looks up the active dashboard from this registry.
  *
  * Named source objects (SPEC-155 AC-4):
- * - `hostDashboard`          — HOST role (7 cards)
+ * - `hostDashboard`          — HOST role (8 cards)
  * - `editorDashboard`        — EDITOR role (8 cards)
  * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
  * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)

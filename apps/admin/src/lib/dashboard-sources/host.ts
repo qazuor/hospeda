@@ -36,6 +36,7 @@
  * @see SPEC-155 T-018
  */
 
+import { computeAccommodationHealth } from '@/components/dashboards/widgets/ChecklistWidget';
 import { fetchApi } from '@/lib/api/client';
 import {
     DASHBOARD_STALE_TIME_MS,
@@ -87,15 +88,94 @@ interface UserSubscriptionApiResponse {
     };
 }
 
-/** Shape of GET /api/v1/protected/billing/usage response. */
+/**
+ * Shape of GET /api/v1/protected/billing/usage response.
+ *
+ * The endpoint returns a per-limit breakdown — one entry per LimitKey with
+ * `currentUsage` + `maxAllowed`. We index it by `limitKey` so each card-B
+ * tile can look up its own usage. The `upgradeUrl` is the canonical pricing
+ * URL composed by the billing module (preferred over hand-rolled fallbacks).
+ */
 interface BillingUsageApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly accommodationsUsed?: number;
-        readonly accommodationsLimit?: number;
-        readonly usagePercent?: number;
+        readonly customerId: string;
+        readonly limits: ReadonlyArray<{
+            readonly limitKey: string;
+            readonly displayName: string;
+            readonly currentUsage: number;
+            readonly maxAllowed: number;
+            readonly usagePercentage: number;
+            readonly threshold: 'ok' | 'warning' | 'critical' | 'exceeded';
+            readonly planBaseLimit: number;
+            readonly addonBonusLimit: number;
+        }>;
+        readonly overallThreshold: 'ok' | 'warning' | 'critical' | 'exceeded';
+        readonly upgradeUrl: string;
     };
 }
+
+/**
+ * Shape of GET /api/v1/protected/users/me/entitlements.
+ *
+ * The endpoint surfaces the merged entitlement set + limit map + plan
+ * context. We use the `limits` map to render per-plan quota tiles on
+ * HOST card B and the `entitlements` array to surface plan-feature badges.
+ */
+interface EntitlementsApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly entitlements: ReadonlyArray<string>;
+        readonly limits: Record<string, number>;
+        readonly plan: {
+            readonly slug: string;
+            readonly name: string;
+            readonly status: string;
+        } | null;
+        readonly asOf: string;
+    };
+}
+
+/**
+ * Curated mapping from `LimitKey` to a short Spanish label for the HOST
+ * card B tile grid. Limit keys not in this map are skipped (we surface only
+ * the consumer-facing quotas, not infrastructure-level limits).
+ */
+const HOST_LIMIT_LABELS: Readonly<Record<string, string>> = {
+    max_accommodations: 'Alojamientos',
+    max_photos_per_accommodation: 'Fotos / alojamiento',
+    max_active_promotions: 'Promos activas',
+    max_properties: 'Propiedades',
+    max_staff_accounts: 'Cuentas staff'
+};
+
+/**
+ * Curated mapping from `EntitlementKey` to a short Spanish label for the HOST
+ * card B feature chips. Order matches the visual order in the card so highly-
+ * valued features (statistics, promotions, branding) appear first. Keys NOT
+ * in this map are not surfaced on the card — they would clutter the chip row
+ * with infrastructure-level entitlements the host doesn't care about.
+ */
+const HOST_ENTITLEMENT_LABELS: ReadonlyArray<readonly [string, string]> = [
+    ['featured_listing', 'Listado destacado'],
+    ['view_advanced_stats', 'Estadísticas avanzadas'],
+    ['create_promotions', 'Crear promociones'],
+    ['can_use_rich_description', 'Descripción enriquecida'],
+    ['can_embed_video', 'Videos en publicación'],
+    ['can_use_calendar', 'Calendario'],
+    ['can_sync_external_calendar', 'Sync calendario externo'],
+    ['can_contact_whatsapp_direct', 'WhatsApp directo'],
+    ['has_verification_badge', 'Badge verificación'],
+    ['respond_reviews', 'Responder reseñas'],
+    ['priority_support', 'Soporte prioritario'],
+    ['dedicated_manager', 'Account manager'],
+    ['custom_branding', 'Branding propio'],
+    ['white_label', 'Marca blanca'],
+    ['social_media_integration', 'Integración redes'],
+    ['multi_property_management', 'Multi-propiedad'],
+    ['consolidated_analytics', 'Analítica consolidada'],
+    ['api_access', 'Acceso API']
+];
 
 /** Shape of GET /api/v1/admin/conversations list response. */
 interface ConversationListApiResponse {
@@ -324,9 +404,9 @@ registerDataSource('host.billing.plan', (ctx) => ({
         // Uses the higher-level `/me/subscription` route which returns
         // `{ subscription: null }` instead of 503 when the billing client is
         // unavailable, AND carries a richer shape (planName, prettified status,
-        // monthly price). Usage is best-effort — fall through to a null bar
-        // when the qzpay-hono usage route 503s.
-        const [subResult, usageResult] = await Promise.all([
+        // monthly price). Usage + entitlements are best-effort — fall through
+        // when the qzpay-hono routes 503.
+        const [subResult, usageResult, entResult] = await Promise.all([
             fetchApi<UserSubscriptionApiResponse>({
                 path: '/api/v1/protected/users/me/subscription'
             }),
@@ -337,11 +417,27 @@ registerDataSource('host.billing.plan', (ctx) => ({
                     }),
                 [503],
                 null
+            ),
+            swallowExpected(
+                () =>
+                    fetchApi<EntitlementsApiResponse>({
+                        path: '/api/v1/protected/users/me/entitlements'
+                    }),
+                [503],
+                null
             )
         ]);
 
         const subscription = subResult.data.data?.subscription ?? null;
-        const usage = usageResult?.data.data ?? null;
+        const usageSummary = usageResult?.data.data ?? null;
+        const entitlementsData = entResult?.data.data ?? null;
+
+        // Build a {limitKey → currentUsage} index from the usage breakdown so
+        // each tile can look up its own usage in O(1).
+        const usageByLimit: Record<string, number> = {};
+        for (const row of usageSummary?.limits ?? []) {
+            usageByLimit[row.limitKey] = row.currentUsage;
+        }
 
         // No active subscription anywhere — render the contextual empty state
         // ("Todavía no tenés un plan…") via the widget.
@@ -364,17 +460,9 @@ registerDataSource('host.billing.plan', (ctx) => ({
             }
         }
 
-        // Usage sub-block — `used / limit alojamientos` bar (HOST card B
-        // redesign). Skipped when billing/usage is unavailable so the bar
-        // never lies about quota.
-        const usageBlock =
-            usage?.accommodationsUsed !== undefined && usage?.accommodationsLimit !== undefined
-                ? {
-                      used: usage.accommodationsUsed,
-                      limit: usage.accommodationsLimit,
-                      label: 'alojamientos'
-                  }
-                : undefined;
+        // The legacy `usage` sub-block (big bar) is no longer emitted — the
+        // per-tile bars below subsume it. Resolver keeps the field undefined.
+        const usageBlock = undefined;
 
         // Trial subscriptions surface their countdown ("Quedan N días"); active
         // ones surface the next-charge date instead. Cancelled / expired plans
@@ -388,12 +476,61 @@ registerDataSource('host.billing.plan', (ctx) => ({
                 ? (subscription.currentPeriodEnd ?? undefined)
                 : undefined;
 
+        // Plan quotas (HOST card B redesign) — surface only the curated set so
+        // we don't dump every internal limit key on the card. Each tile shows
+        // the limit key's short label + numeric cap + (when available)
+        // current usage from the per-limit usage breakdown.
+        const limitMap = entitlementsData?.limits ?? {};
+        const limitTiles: Array<{
+            key: string;
+            label: string;
+            value: number;
+            used?: number;
+        }> = [];
+        for (const [key, label] of Object.entries(HOST_LIMIT_LABELS)) {
+            const value = limitMap[key];
+            if (typeof value !== 'number') continue;
+            const tile: { key: string; label: string; value: number; used?: number } = {
+                key,
+                label,
+                value
+            };
+            if (typeof usageByLimit[key] === 'number') {
+                tile.used = usageByLimit[key];
+            }
+            limitTiles.push(tile);
+        }
+
+        // Feature chips (HOST card B redesign) — for each curated entitlement
+        // key, surface a chip iff the host's active entitlement set contains
+        // it. Preserves the curated ORDER so the most valuable features
+        // (stats, promotions, branding) read first.
+        const enabledEntitlements = new Set(entitlementsData?.entitlements ?? []);
+        const featureChips: Array<{ key: string; label: string }> = [];
+        for (const [key, label] of HOST_ENTITLEMENT_LABELS) {
+            if (enabledEntitlements.has(key)) {
+                featureChips.push({ key, label });
+            }
+        }
+
+        // Upgrade CTA — prefer the canonical URL emitted by the billing
+        // module (`upgradeUrl` on the usage summary); fall back to
+        // VITE_SITE_URL + `/es/suscriptores/planes` so admin (a different
+        // origin) still links to the public pricing page when billing is
+        // unavailable.
+        const siteUrl = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '');
+        const upgradeHref =
+            usageSummary?.upgradeUrl ?? (siteUrl ? `${siteUrl}/es/suscriptores/planes` : undefined);
+
         return {
             status,
             label: subscription.planName,
             usage: usageBlock,
             nextChargeDate,
-            trialEndsAt
+            trialEndsAt,
+            limitTiles: limitTiles.length > 0 ? limitTiles : undefined,
+            featureChips: featureChips.length > 0 ? featureChips : undefined,
+            upgradeHref
         };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
@@ -620,6 +757,16 @@ registerDataSource('host.stats.ratings', (ctx) => ({
                 badge: f.count
             }));
 
+        // Extra response stats already in the same payload — surface them so
+        // the host can see context for the response-rate tile (a 50% rate
+        // over 200 inquiries reads very differently from 50% over 4).
+        const avgResponseHours =
+            typeof responseStats?.averageResponseTimeHours === 'number'
+                ? Math.round(responseStats.averageResponseTimeHours * 10) / 10
+                : null;
+        const totalInquiries =
+            typeof responseStats?.totalInquiries === 'number' ? responseStats.totalInquiries : 0;
+
         return {
             kpis: [
                 {
@@ -648,6 +795,29 @@ registerDataSource('host.stats.ratings', (ctx) => ({
                     accent: 'sky',
                     icon: 'chat',
                     unitSuffix: '%'
+                },
+                {
+                    key: 'response-time',
+                    label: {
+                        es: 'Tiempo de respuesta',
+                        en: 'Response time',
+                        pt: 'Tempo de resposta'
+                    },
+                    value: avgResponseHours ?? 0,
+                    accent: 'teal',
+                    icon: 'clock',
+                    unitSuffix: ' h'
+                },
+                {
+                    key: 'inquiries-total',
+                    label: {
+                        es: 'Consultas recibidas',
+                        en: 'Inquiries received',
+                        pt: 'Consultas recebidas'
+                    },
+                    value: totalInquiries,
+                    accent: 'accent',
+                    icon: 'chat'
                 }
             ],
             companionLabel: companionItems.length > 0 ? 'Más favoritos' : undefined,
@@ -764,6 +934,170 @@ registerDataSource('host.profile.current', (ctx) => ({
                 emailVerified: user.emailVerified ?? false
             }
         ];
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD H — Próximos pasos: actionable suggestions composed client-side
+// ============================================================================
+
+/**
+ * One suggestion row surfaced on HOST card H. Each row maps to a single
+ * actionable item the host can do RIGHT NOW (respond inquiry, complete a
+ * listing, react to a bad review, etc.).
+ */
+interface SuggestionItem {
+    /** Stable row id for React. */
+    readonly id: string;
+    /** Sort weight (lower = more urgent). */
+    readonly priority: number;
+    /** Card-facing label. */
+    readonly label: string;
+    /** Optional secondary text. */
+    readonly meta?: string;
+    /** Internal route the row navigates to. */
+    readonly href: string;
+}
+
+/**
+ * HOST card H: "Próximos pasos" — a curated, priority-sorted list of
+ * actionable items the host should tackle next.
+ *
+ * Sources composed in parallel:
+ *  1. Subscription endpoint    → "Tu plan vence el dd MMM" when ≤ 7 days.
+ *  2. Reviews list             → negative reviews (≤3⭐) flagged for reply.
+ *  3. Conversations pending    → inquiries older than 24h.
+ *  4. Accommodation entities   → listings with completeness < 80%.
+ *
+ * Each source feeds rows tagged with a priority weight; lower weight = higher
+ * urgency. After concatenation we sort + slice to the top 5 so the card never
+ * overwhelms the host.
+ *
+ * Source ID: `'host.suggestions.list'`
+ * Scope: `'own'` — all underlying queries are owner-scoped.
+ */
+registerDataSource('host.suggestions.list', (ctx) => ({
+    queryKey: buildDashboardQueryKey('host.suggestions.list', ctx),
+    queryFn: async () => {
+        const params = ownerParams(ctx, { pageSize: '20' });
+        const convoParams = ownerParams(ctx, {
+            conversationStatus: 'PENDING_OWNER',
+            pageSize: '20',
+            sort: 'updatedAt:desc'
+        });
+        const reviewParams = ownerParams(ctx, { pageSize: '20', sort: 'createdAt:desc' });
+
+        // Fan-out fetches. Reviews / subscription / accommodations / convos
+        // all degrade gracefully — a single failed source must not blank the
+        // card; the remaining suggestions still surface.
+        const [accommodationsResult, conversationsResult, reviewsResult, subResult] =
+            await Promise.all([
+                fetchApi<AccommodationFullApiResponse>({
+                    path: `/api/v1/admin/accommodations?${params}`
+                }).catch(() => null),
+                fetchApi<ConversationListApiResponse>({
+                    path: `/api/v1/admin/conversations?${convoParams}`
+                }).catch(() => null),
+                swallowExpected(
+                    () =>
+                        fetchApi<ReviewListApiResponse>({
+                            path: `/api/v1/admin/reviews?${reviewParams}`
+                        }),
+                    [404],
+                    null
+                ),
+                fetchApi<UserSubscriptionApiResponse>({
+                    path: '/api/v1/protected/users/me/subscription'
+                }).catch(() => null)
+            ]);
+
+        const suggestions: SuggestionItem[] = [];
+        const nowMs = Date.now();
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+        // 1. Subscription expiring soon (priority 10 — highest).
+        const subscription = subResult?.data.data?.subscription ?? null;
+        if (subscription?.currentPeriodEnd && subscription.status === 'active') {
+            const expiry = new Date(subscription.currentPeriodEnd).getTime();
+            const daysLeft = Math.ceil((expiry - nowMs) / ONE_DAY_MS);
+            if (daysLeft > 0 && expiry - nowMs <= SEVEN_DAYS_MS) {
+                suggestions.push({
+                    id: 'sub-expiry',
+                    priority: 10,
+                    label:
+                        daysLeft === 1
+                            ? 'Tu plan vence mañana'
+                            : `Tu plan vence en ${daysLeft} días`,
+                    meta: 'Renovalo para que tus alojamientos no se pausen.',
+                    href: '/billing/subscriptions'
+                });
+            }
+        }
+
+        // 2. Negative reviews (≤ 3★) — priority 20. Reputation damage compounds
+        //    every day they sit unanswered.
+        const reviews = reviewsResult?.data.data?.data ?? [];
+        for (const review of reviews) {
+            if (review.rating <= 3) {
+                suggestions.push({
+                    id: `review-${review.id}`,
+                    priority: 20,
+                    label: `Reseña baja (${review.rating}★) sin responder`,
+                    meta: review.comment ? review.comment.slice(0, 60) : undefined,
+                    href: `/reviews/${review.id}`
+                });
+            }
+        }
+
+        // 3. Inquiries older than 24h — priority 30.
+        const conversations = conversationsResult?.data.data?.data ?? [];
+        for (const convo of conversations) {
+            if (!convo.updatedAt) continue;
+            const ageMs = nowMs - new Date(convo.updatedAt).getTime();
+            if (ageMs > ONE_DAY_MS) {
+                const hours = Math.floor(ageMs / (60 * 60 * 1000));
+                suggestions.push({
+                    id: `convo-${convo.id}`,
+                    priority: 30,
+                    label: `Respondé a ${convo.guestName ?? 'consulta pendiente'}`,
+                    meta: `${hours} h sin respuesta`,
+                    href: `/consultas/${convo.id}`
+                });
+            }
+        }
+
+        // 4. Accommodations with completeness < 80% — priority 40. Lazy import
+        //    of the same compute function the ChecklistWidget uses so the
+        //    suggestion stays in sync with what the card D status reflects.
+        const accommodations = accommodationsResult?.data.data?.data ?? [];
+        for (const acc of accommodations) {
+            const items = computeAccommodationHealth(acc);
+            const done = items.filter((i) => i.done).length;
+            const total = items.length;
+            const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+            if (pct < 80) {
+                suggestions.push({
+                    id: `acc-${acc.id}`,
+                    priority: 40,
+                    label: `Completá "${acc.name}"`,
+                    meta: `${pct}% listo — ${total - done} datos faltantes`,
+                    href: `/accommodations/${acc.id}/edit`
+                });
+            }
+        }
+
+        // Sort by priority ascending, cap at 5 so the card stays scannable.
+        return suggestions
+            .sort((a, b) => a.priority - b.priority)
+            .slice(0, 5)
+            .map((s) => ({
+                id: s.id,
+                label: s.label,
+                meta: s.meta,
+                href: s.href
+            }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

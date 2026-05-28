@@ -266,7 +266,9 @@ export interface ChecklistWidgetProps {
  * @param entity - The accommodation to inspect.
  * @returns Ordered list of checklist items.
  */
-function computeAccommodationHealth(entity: AccommodationEntity): ReadonlyArray<ChecklistItem> {
+export function computeAccommodationHealth(
+    entity: AccommodationEntity
+): ReadonlyArray<ChecklistItem> {
     return [
         {
             key: 'photos',
