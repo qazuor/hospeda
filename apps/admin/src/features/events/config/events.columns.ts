@@ -7,6 +7,7 @@ import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/typ
 import { BadgeColor, ColumnType, EntityType, ListOrientation } from '@/components/table/DataTable';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
+import { EventCategoryBadge } from '../components/EventCategoryBadge';
 import { useUpdateEventMutation } from '../hooks/useEventQuery';
 import type { Event } from '../schemas/events.schemas';
 
@@ -91,49 +92,8 @@ export const createEventsColumns = (t: ColumnTFunction): readonly ColumnConfig<E
         header: t('admin-entities.columns.category'),
         accessorKey: 'category',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'CULTURE',
-                label: t('admin-entities.types.event.culture'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'SPORTS',
-                label: t('admin-entities.types.event.sports'),
-                color: BadgeColor.ORANGE
-            },
-            {
-                value: 'FESTIVAL',
-                label: t('admin-entities.types.event.festival'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'WORKSHOP',
-                label: t('admin-entities.types.event.workshop'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'MUSIC',
-                label: t('admin-entities.types.event.music'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'GASTRONOMY',
-                label: t('admin-entities.types.event.gastronomy'),
-                color: BadgeColor.PINK
-            },
-            {
-                value: 'NATURE',
-                label: t('admin-entities.types.event.nature'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'OTHER',
-                label: t('admin-entities.types.event.other'),
-                color: BadgeColor.GRAY
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(EventCategoryBadge, { row })
     },
     {
         id: 'organizer',

@@ -52,6 +52,7 @@ import {
     surfaces,
     warning
 } from '../tokens/colors.js';
+import { eventCategoryTokens } from '../tokens/event-categories.js';
 import { layoutChrome, layoutContainer } from '../tokens/layout.js';
 import { webDuration, webEasing } from '../tokens/motion.js';
 import { radiusBase, radiusOrganic, radiusScale, radiusSemantic } from '../tokens/radius.js';
@@ -311,5 +312,9 @@ export const webLight: Theme = {
     // (the palette primitives are not overridden in dark), so the dark themes
     // inherit these via the cascade.
     // ========================================================================
-    ...accommodationTypeTokens
+    ...accommodationTypeTokens,
+    // Per-event-category tokens (same source constant as admin), each
+    // referencing an existing base palette's shade-500 primitive so a category
+    // renders with the SAME hue in both apps across light and dark.
+    ...eventCategoryTokens
 };

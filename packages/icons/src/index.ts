@@ -38,6 +38,21 @@ export type {
 // truth shared by apps/web and apps/admin.
 export { getAttractionIcon } from './domain/attraction-icon';
 
+// Event-category → icon + color tokens. Single source of truth shared by
+// apps/web and apps/admin.
+export {
+    EVENT_CATEGORY_FALLBACK_VISUAL,
+    EVENT_CATEGORY_VISUALS,
+    getEventCategoryColorScheme,
+    getEventCategoryIcon,
+    getEventCategoryVisual
+} from './domain/event-category';
+export type {
+    EventCategoryColorScheme,
+    EventCategoryColorVariant,
+    EventCategoryVisual
+} from './domain/event-category';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';
