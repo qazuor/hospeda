@@ -1,5 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
+import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -161,7 +162,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
-                entitlementKey: 'can-embed-video', // Requires premium plan
+                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO, // Requires premium plan
                 typeConfig: {}
             },
             // URLs de videos externos (YouTube, Vimeo, etc.)
@@ -192,7 +193,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
-                entitlementKey: 'can-embed-video', // Requires premium plan
+                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO, // Requires premium plan
                 typeConfig: {}
             },
             // Tour virtual 360°

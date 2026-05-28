@@ -526,7 +526,10 @@
         "titleDefault": "Premium Feature",
         "description": "This feature is available on higher plans. Upgrade your plan to access this section.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "This feature is available on higher plans"
+        "fieldPremiumDescription": "This feature is available on higher plans",
+        "richDescriptionNudge": "Your plan does not include rich descriptions. You can edit the description as plain text.",
+        "videoNudge": "Video embedding is available on higher plans.",
+        "upgradeLink": "Upgrade plan"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limit reached",

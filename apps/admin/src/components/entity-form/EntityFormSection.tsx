@@ -36,9 +36,10 @@ export interface FieldMediaHandlers {
 import { GridLayout } from '@/components/entity-form/layouts';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
+import { LimitGate } from '@qazuor/qzpay-react';
 import * as React from 'react';
 
 /**
@@ -431,31 +432,18 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             const fieldContent = renderFieldComponent();
 
-            // Wrap with entitlement or limit gate if needed
+            // Wrap with entitlement or limit gate if needed.
+            // PlanEntitlementGate reads from GET /api/v1/protected/users/me/entitlements
+            // so it does not need a customerId from QZPayContext.
             if (field.entitlementKey) {
                 return (
                     <div key={field.id}>
-                        <EntitlementGate
+                        <PlanEntitlementGate
                             entitlementKey={field.entitlementKey}
-                            fallback={
-                                <div className="space-y-2">
-                                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
-                                        <p className="font-medium text-foreground text-sm">
-                                            {t('admin-entities.entitlementGate.fieldPremium', {
-                                                field: field.label || field.id
-                                            })}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {t(
-                                                'admin-entities.entitlementGate.fieldPremiumDescription'
-                                            )}
-                                        </p>
-                                    </div>
-                                </div>
-                            }
+                            fieldLabel={field.label || field.id}
                         >
                             {fieldContent}
-                        </EntitlementGate>
+                        </PlanEntitlementGate>
                     </div>
                 );
             }

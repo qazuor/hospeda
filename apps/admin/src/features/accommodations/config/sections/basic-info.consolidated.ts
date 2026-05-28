@@ -1,5 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
+import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -90,7 +91,7 @@ export const createBasicInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
             },
-            entitlementKey: 'custom-branding', // T-G-007: Gate rich description
+            entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION, // T-G-007: Gate rich description
             typeConfig: {
                 minRows: 6,
                 maxLength: 5000

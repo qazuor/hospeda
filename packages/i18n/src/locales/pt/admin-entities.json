@@ -526,7 +526,10 @@
         "titleDefault": "Recurso Premium",
         "description": "Este recurso está disponível em planos superiores. Atualize seu plano para acessar esta seção.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "Este recurso está disponível em planos superiores"
+        "fieldPremiumDescription": "Este recurso está disponível em planos superiores",
+        "richDescriptionNudge": "Seu plano não inclui descrições enriquecidas. Você pode editar a descrição como texto simples.",
+        "videoNudge": "A incorporação de vídeos está disponível em planos superiores.",
+        "upgradeLink": "Atualizar plano"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limite atingido",
