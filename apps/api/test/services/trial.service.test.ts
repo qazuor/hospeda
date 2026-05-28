@@ -313,6 +313,106 @@ describe('TrialService', () => {
             expect(result.daysRemaining).toBe(0);
             expect(result.planSlug).toBeNull();
         });
+
+        it('should return safe defaults when no subscription exists (never had a trial)', async () => {
+            // Arrange
+            const customerId = 'customer-never-trial';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — never-had-trial path
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(false);
+            expect(result.startedAt).toBeNull();
+            expect(result.expiresAt).toBeNull();
+            expect(result.daysRemaining).toBe(0);
+            expect(result.planSlug).toBeNull();
+        });
+
+        it('should return isExpired:true with timestamps when trial was canceled without converting', async () => {
+            // Arrange — canceled sub with trial_end set: trial expired without conversion.
+            const customerId = 'customer-expired-canceled';
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - 20); // started 20 days ago
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 6); // ended 6 days ago
+
+            const canceledTrialSub = {
+                id: 'sub-canceled-trial',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'canceled' as const,
+                trialStart: trialStart.toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+
+            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                canceledTrialSub
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — expired-canceled path
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(true);
+            expect(result.daysRemaining).toBe(0);
+            expect(result.startedAt).toBe(trialStart.toISOString());
+            expect(result.expiresAt).toBe(trialEnd.toISOString());
+            expect(result.planSlug).toBe('owner-basico');
+        });
+
+        it('should NOT surface isExpired:true when trial converted to active paid plan', async () => {
+            // Arrange — user converted trial to paid: canceled trialing sub + new active sub.
+            // The new active sub has no trialEnd (it is a paid plan, not a trial).
+            const customerId = 'customer-converted';
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - 10);
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 2);
+
+            const canceledTrialSub = {
+                id: 'sub-old-trial',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'canceled',
+                trialStart: trialStart.toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+
+            const activePayingSub = {
+                id: 'sub-active-paid',
+                customerId,
+                planId: 'plan-owner-pro',
+                status: 'active',
+                trialStart: null,
+                trialEnd: null
+            };
+
+            const mockPlan = { id: 'plan-owner-pro', name: 'owner-pro' };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                canceledTrialSub,
+                activePayingSub
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+            // Act — active paid sub should be found first; expired fallback must NOT trigger.
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — current active plan is returned, not the old expired trial
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(false);
+            expect(result.planSlug).toBe('owner-pro');
+        });
     });
 
     describe('checkTrialExpiry', () => {
