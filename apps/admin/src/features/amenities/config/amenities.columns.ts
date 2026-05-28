@@ -1,4 +1,5 @@
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import { IconNameCell } from '@/components/entity-list/IconNameCell';
 import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
 import {
     type InlineStateOption,
@@ -10,6 +11,7 @@ import { EditIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
+import { AmenityTypeBadge } from '../components/AmenityTypeBadge';
 import { useDeleteAmenityMutation, useUpdateAmenityMutation } from '../hooks/useAmenityQuery';
 import type { Amenity } from '../schemas/amenities.schemas';
 
@@ -56,39 +58,8 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.type'),
         accessorKey: 'type',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'BASIC',
-                label: t('admin-entities.types.amenity.basic'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'COMFORT',
-                label: t('admin-entities.types.amenity.comfort'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'LUXURY',
-                label: t('admin-entities.types.amenity.luxury'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'TECHNOLOGY',
-                label: t('admin-entities.types.amenity.technology'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'RECREATION',
-                label: t('admin-entities.types.amenity.recreation'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'BUSINESS',
-                label: t('admin-entities.types.amenity.business'),
-                color: BadgeColor.ORANGE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AmenityTypeBadge, { row })
     },
     {
         id: 'description',
@@ -102,7 +73,8 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.icon'),
         accessorKey: 'icon',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(IconNameCell, { iconName: row.icon })
     },
     {
         id: 'isBuiltin',
