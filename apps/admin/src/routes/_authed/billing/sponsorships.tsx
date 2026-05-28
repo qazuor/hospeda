@@ -5,6 +5,7 @@
  */
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -13,6 +14,7 @@ import { SponsorshipPackagesTab } from '@/features/sponsorships/components/Spons
 import { SponsorshipsTab } from '@/features/sponsorships/components/SponsorshipsTab';
 
 export const Route = createFileRoute('/_authed/billing/sponsorships')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingSponsorshipsPage
 });
 

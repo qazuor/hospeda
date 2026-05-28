@@ -20,6 +20,7 @@ import {
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
@@ -27,6 +28,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/settings')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingSettingsPage
 });
 

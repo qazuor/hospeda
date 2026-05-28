@@ -20,10 +20,12 @@ import {
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
 import { getPlanBySlug } from '@/features/billing-subscriptions/utils';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/subscriptions')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingSubscriptionsPage
 });
 
