@@ -1,7 +1,7 @@
 import { OwnTagManager } from '@/components/tags/OwnTagManager';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/etiquetas')({
+export const Route = createFileRoute('/_authed/account/tags')({
     component: MyTagsPage
 });
 

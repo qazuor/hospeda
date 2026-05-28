@@ -934,7 +934,7 @@
             }
         }
     },
-    "datos": {
+    "data": {
         "title": "My data",
         "comingSoon": {
             "title": "You'll soon be able to manage your data from here",

@@ -13,7 +13,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { ChevronRightIcon, LockIcon, ShieldIcon } from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/seguridad/')({
+export const Route = createFileRoute('/_authed/account/security/')({
     component: SecurityLandingPage
 });
 
@@ -64,7 +64,7 @@ function SecurityLandingPage() {
                     </CardHeader>
                     <CardContent>
                         <Link
-                            to="/mi-cuenta/seguridad/cambiar-password"
+                            to="/account/security/change-password"
                             className="flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
                         >
                             <div className="flex items-center gap-3">

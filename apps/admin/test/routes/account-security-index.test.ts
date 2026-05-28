@@ -11,17 +11,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const landingSrc = readFileSync(
-    resolve(__dirname, '../../src/routes/_authed/mi-cuenta/seguridad/index.tsx'),
+    resolve(__dirname, '../../src/routes/_authed/account/security/index.tsx'),
     'utf8'
 );
 
-describe('mi-cuenta/seguridad/index.tsx (T-016)', () => {
+describe('account/security/index.tsx (T-016)', () => {
     it('registers the new route path', () => {
-        expect(landingSrc).toContain("createFileRoute('/_authed/mi-cuenta/seguridad/')");
+        expect(landingSrc).toContain("createFileRoute('/_authed/account/security/')");
     });
 
     it('links to the password change page at its new location', () => {
-        expect(landingSrc).toContain('to="/mi-cuenta/seguridad/cambiar-password"');
+        expect(landingSrc).toContain('to="/account/security/change-password"');
     });
 
     it('renders the available actions section', () => {

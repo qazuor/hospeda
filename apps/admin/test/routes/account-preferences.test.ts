@@ -11,14 +11,14 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const preferenciasSrc = readFileSync(
-    resolve(__dirname, '../../src/routes/_authed/mi-cuenta/preferencias.tsx'),
+    resolve(__dirname, '../../src/routes/_authed/account/preferences.tsx'),
     'utf8'
 );
 
-describe('mi-cuenta/preferencias.tsx (T-013)', () => {
+describe('account/preferences.tsx (T-013)', () => {
     describe('route wiring', () => {
         it('registers the new route path', () => {
-            expect(preferenciasSrc).toContain("createFileRoute('/_authed/mi-cuenta/preferencias')");
+            expect(preferenciasSrc).toContain("createFileRoute('/_authed/account/preferences')");
         });
 
         it('uses the existing useUpdateUserSettings mutation hook', () => {

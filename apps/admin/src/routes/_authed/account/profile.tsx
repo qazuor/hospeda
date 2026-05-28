@@ -29,7 +29,7 @@ import { type ProfileEditInput, ProfileEditSchema, type UserProtected } from '@r
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/perfil')({
+export const Route = createFileRoute('/_authed/account/profile')({
     component: MyProfilePage
 });
 

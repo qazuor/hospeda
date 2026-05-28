@@ -10,13 +10,13 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const profileSrc = readFileSync(
-    resolve(__dirname, '../../src/routes/_authed/mi-cuenta/perfil.tsx'),
+    resolve(__dirname, '../../src/routes/_authed/account/profile.tsx'),
     'utf8'
 );
 
 const hookSrc = readFileSync(resolve(__dirname, '../../src/hooks/use-user-profile.ts'), 'utf8');
 
-describe('mi-cuenta/perfil.tsx (editable profile, T-055)', () => {
+describe('account/profile.tsx (editable profile, T-055)', () => {
     describe('imports + schema wiring', () => {
         it('imports ProfileEditSchema from @repo/schemas', () => {
             expect(profileSrc).toContain("from '@repo/schemas'");

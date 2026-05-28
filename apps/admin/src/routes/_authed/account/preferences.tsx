@@ -27,7 +27,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 type TranslateFn = (key: TranslationKey, params?: Record<string, unknown>) => string;
 
-export const Route = createFileRoute('/_authed/mi-cuenta/preferencias')({
+export const Route = createFileRoute('/_authed/account/preferences')({
     component: MyPreferencesPage
 });
 

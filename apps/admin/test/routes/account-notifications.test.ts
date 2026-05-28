@@ -15,17 +15,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const notificacionesSrc = readFileSync(
-    resolve(__dirname, '../../src/routes/_authed/mi-cuenta/notificaciones.tsx'),
+    resolve(__dirname, '../../src/routes/_authed/account/notifications.tsx'),
     'utf8'
 );
 
 const hookSrc = readFileSync(resolve(__dirname, '../../src/hooks/use-user-profile.ts'), 'utf8');
 
-describe('mi-cuenta/notificaciones.tsx (T-014)', () => {
+describe('account/notifications.tsx (T-014)', () => {
     describe('route wiring', () => {
         it('registers the new route path', () => {
             expect(notificacionesSrc).toContain(
-                "createFileRoute('/_authed/mi-cuenta/notificaciones')"
+                "createFileRoute('/_authed/account/notifications')"
             );
         });
 

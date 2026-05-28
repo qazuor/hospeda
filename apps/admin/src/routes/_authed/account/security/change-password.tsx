@@ -28,7 +28,7 @@ import {
     mapApiErrorToTranslationKey
 } from '@/features/user-profile/components/password-validation';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/seguridad/cambiar-password')({
+export const Route = createFileRoute('/_authed/account/security/change-password')({
     component: ChangePasswordPage
 });
 

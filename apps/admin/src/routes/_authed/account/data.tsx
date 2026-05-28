@@ -13,24 +13,24 @@ import { useTranslations } from '@/hooks/use-translations';
 import { MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/datos')({
+export const Route = createFileRoute('/_authed/account/data')({
     component: MyDataPage
 });
 
 function MyDataPage() {
     const { t } = useTranslations();
-    const supportEmail = t('admin-pages.datos.supportContact.email');
+    const supportEmail = t('admin-pages.data.supportContact.email');
 
     return (
-        <MainPageLayout title={t('admin-pages.datos.title')}>
+        <MainPageLayout title={t('admin-pages.data.title')}>
             <div className="mx-auto max-w-3xl space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-lg">
-                            {t('admin-pages.datos.comingSoon.title')}
+                            {t('admin-pages.data.comingSoon.title')}
                         </CardTitle>
                         <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.datos.comingSoon.description')}
+                            {t('admin-pages.data.comingSoon.description')}
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -38,7 +38,7 @@ function MyDataPage() {
                             <MailIcon className="h-5 w-5 text-muted-foreground" />
                             <p className="text-sm">
                                 <span className="text-muted-foreground">
-                                    {t('admin-pages.datos.supportContact.label')}
+                                    {t('admin-pages.data.supportContact.label')}
                                 </span>{' '}
                                 <a
                                     href={`mailto:${supportEmail}`}

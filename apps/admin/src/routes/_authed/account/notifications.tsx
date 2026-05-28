@@ -24,7 +24,7 @@ import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
 
-export const Route = createFileRoute('/_authed/mi-cuenta/notificaciones')({
+export const Route = createFileRoute('/_authed/account/notifications')({
     component: MyNotificationsPage
 });
 
