@@ -9,6 +9,7 @@ import { EditIcon, getUserRoleIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
+import { AuthProviderBadge } from '../components/AuthProviderBadge';
 import { ImpersonateButton } from '../components/ImpersonateButton';
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
@@ -181,34 +182,8 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         header: t('admin-entities.columns.authProvider'),
         accessorKey: 'authProvider',
         enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'LOCAL',
-                label: t('admin-entities.types.authProvider.local'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'GOOGLE',
-                label: t('admin-entities.types.authProvider.google'),
-                color: BadgeColor.RED
-            },
-            {
-                value: 'FACEBOOK',
-                label: t('admin-entities.types.authProvider.facebook'),
-                color: BadgeColor.INDIGO
-            },
-            {
-                value: 'GITHUB',
-                label: t('admin-entities.types.authProvider.github'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'BETTER_AUTH',
-                label: t('admin-entities.types.authProvider.betterAuth'),
-                color: BadgeColor.SLATE
-            }
-        ]
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(AuthProviderBadge, { row })
     },
     {
         id: 'email',
