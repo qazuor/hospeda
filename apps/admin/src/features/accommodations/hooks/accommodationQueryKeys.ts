@@ -117,7 +117,7 @@ export interface AccommodationListFilters {
     };
     /** Pagination */
     page?: number;
-    limit?: number;
+    pageSize?: number;
     /** Sorting */
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
