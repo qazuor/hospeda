@@ -44,6 +44,7 @@
  */
 
 import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
+import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
     type OKLCH,
     accent,
@@ -173,5 +174,8 @@ export const adminLight: Theme = {
     ...postCategoryTokens,
     // Per-user-role tokens (same source constant as web), each referencing an
     // existing base palette per the prior badge colors.
-    ...userRoleTokens
+    ...userRoleTokens,
+    // Per-auth-provider tokens (same source constant as web). Brand-aligned
+    // palette per provider; the SSOT in @repo/icons consumes these.
+    ...authProviderTokens
 };

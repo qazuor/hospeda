@@ -32,6 +32,7 @@
  */
 
 import { accommodationTypeTokens } from '../tokens/accommodation-types.js';
+import { authProviderTokens } from '../tokens/auth-providers.js';
 import {
     type OKLCH,
     accent,
@@ -323,5 +324,7 @@ export const webLight: Theme = {
     // accommodation-type ones; declared once and shared with admin.
     ...postCategoryTokens,
     // Per-user-role tokens — same layered model; declared once and shared with admin.
-    ...userRoleTokens
+    ...userRoleTokens,
+    // Per-auth-provider tokens — same layered model; declared once and shared with admin.
+    ...authProviderTokens
 };

@@ -83,6 +83,21 @@ export type {
     UserRoleVisual
 } from './domain/user-role';
 
+// Auth-provider → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    AUTH_PROVIDER_FALLBACK_VISUAL,
+    AUTH_PROVIDER_VISUALS,
+    getAuthProviderColorScheme,
+    getAuthProviderIcon,
+    getAuthProviderVisual
+} from './domain/auth-provider';
+export type {
+    AuthProviderColorScheme,
+    AuthProviderColorVariant,
+    AuthProviderVisual
+} from './domain/auth-provider';
+
 // Export payment brand icons
 export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
 export { MasterCardIcon } from './icons/payment/MasterCardIcon';
@@ -464,6 +479,7 @@ export { PowerIcon } from './icons/system/PowerIcon';
 export { PowerOffIcon } from './icons/system/PowerOffIcon';
 export { ReceiptIcon } from './icons/system/ReceiptIcon';
 export { ShieldAlertIcon } from './icons/system/ShieldAlertIcon';
+export { LockIcon } from './icons/system/LockIcon';
 export { ShieldIcon } from './icons/system/ShieldIcon';
 export { SunIcon } from './icons/system/SunIcon';
 export { ShoppingCartIcon } from './icons/system/ShoppingCartIcon';
@@ -502,6 +518,8 @@ export { UnavailableIcon } from './icons/booking/UnavailableIcon';
 
 // Export social icons
 export { FacebookIcon } from './icons/social/FacebookIcon';
+export { GithubIcon } from './icons/social/GithubIcon';
+export { GoogleIcon } from './icons/social/GoogleIcon';
 export { YoutubeIcon } from './icons/social/YoutubeIcon';
 export { InstagramIcon } from './icons/social/InstagramIcon';
 export { WebIcon } from './icons/social/WebIcon';
