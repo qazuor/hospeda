@@ -138,10 +138,14 @@ export enum PermissionEnum {
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
     AMENITY_UPDATE = 'amenity.update', // Allows updating an amenity in the catalog.
     AMENITY_DELETE = 'amenity.delete', // Allows deleting an amenity from the catalog.
+    AMENITY_FEATURED_TOGGLE = 'amenity.featured.toggle', // Allows toggling featured status of an amenity.
+    AMENITY_LIFECYCLE_CHANGE = 'amenity.lifecycle.change', // Allows changing amenity lifecycle state.
     FEATURE_VIEW = 'feature.view', // Allows viewing feature information.
     FEATURE_CREATE = 'feature.create', // Allows creating a new feature in the catalog.
     FEATURE_UPDATE = 'feature.update', // Allows updating a feature in the catalog.
     FEATURE_DELETE = 'feature.delete', // Allows deleting a feature from the catalog.
+    FEATURE_FEATURED_TOGGLE = 'feature.featured.toggle', // Allows toggling featured status of a feature.
+    FEATURE_LIFECYCLE_CHANGE = 'feature.lifecycle.change', // Allows changing feature lifecycle state.
 
     // DESTINATION: Permissions related to destinations (cities, regions, etc.)
     DESTINATION_CREATE = 'destination.create', // Allows creating a new destination.
@@ -473,6 +477,7 @@ export enum PermissionEnum {
     ATTRACTION_DELETE = 'attraction.delete', // Allows deleting an attraction (soft delete).
     ATTRACTION_VIEW = 'attraction.view', // Allows viewing attraction information.
     ATTRACTION_RESTORE = 'attraction.restore', // Allows restoring a deleted attraction.
+    ATTRACTION_LIFECYCLE_CHANGE = 'attraction.lifecycle.change', // Allows changing attraction lifecycle state.
     ATTRACTION_HARD_DELETE = 'attraction.hardDelete', // Allows permanently deleting an attraction.
 
     // CLIENT_ACCESS_RIGHT: Permissions related to client access rights management

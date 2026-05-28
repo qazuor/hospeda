@@ -58,9 +58,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
         PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.AMENITY_FEATURED_TOGGLE,
+        PermissionEnum.AMENITY_LIFECYCLE_CHANGE,
         PermissionEnum.FEATURE_CREATE,
         PermissionEnum.FEATURE_UPDATE,
         PermissionEnum.FEATURE_DELETE,
+        PermissionEnum.FEATURE_FEATURED_TOGGLE,
+        PermissionEnum.FEATURE_LIFECYCLE_CHANGE,
 
         // DESTINATION: All permissions
         PermissionEnum.DESTINATION_CREATE,
@@ -83,6 +87,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_VIEW_DRAFT,
         PermissionEnum.DESTINATION_VIEW_ALL,
         PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
+        PermissionEnum.ATTRACTION_LIFECYCLE_CHANGE,
 
         // EVENT: All permissions
         PermissionEnum.EVENT_CREATE,
@@ -352,9 +357,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
         PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.AMENITY_FEATURED_TOGGLE,
+        PermissionEnum.AMENITY_LIFECYCLE_CHANGE,
         PermissionEnum.FEATURE_CREATE,
         PermissionEnum.FEATURE_UPDATE,
         PermissionEnum.FEATURE_DELETE,
+        PermissionEnum.FEATURE_FEATURED_TOGGLE,
+        PermissionEnum.FEATURE_LIFECYCLE_CHANGE,
 
         // DESTINATION: Most permissions (no hard delete)
         PermissionEnum.DESTINATION_CREATE,
@@ -376,6 +385,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_VIEW_DRAFT,
         PermissionEnum.DESTINATION_VIEW_ALL,
         PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
+        PermissionEnum.ATTRACTION_LIFECYCLE_CHANGE,
 
         // EVENT: Most permissions (no hard delete)
         PermissionEnum.EVENT_CREATE,
