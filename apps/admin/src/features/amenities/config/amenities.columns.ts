@@ -5,6 +5,7 @@ import {
     type InlineStateOption,
     InlineStateSelectCell
 } from '@/components/entity-list/InlineStateSelectCell';
+import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { EditIcon } from '@repo/icons';
@@ -104,7 +105,8 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.weight'),
         accessorKey: 'displayWeight',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(WeightBarCell, { value: row.displayWeight })
     },
     {
         id: 'accommodationCount',
