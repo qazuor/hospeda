@@ -101,12 +101,14 @@ export function PurchasedAddonDetailsDialog({
                         </h3>
                         <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                             <div className="grid gap-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        {t('admin-billing.addons.detailsDialog.addonNameLabel')}
-                                    </span>
-                                    <span className="font-medium">{addon.addonName}</span>
-                                </div>
+                                {addon.addonName && (
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            {t('admin-billing.addons.detailsDialog.addonNameLabel')}
+                                        </span>
+                                        <span className="font-medium">{addon.addonName}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">
                                         {t('admin-billing.addons.detailsDialog.addonSlugLabel')}
@@ -130,14 +132,16 @@ export function PurchasedAddonDetailsDialog({
                         </h3>
                         <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                             <div className="grid gap-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                        {t('admin-billing.addons.detailsDialog.priceLabel')}
-                                    </span>
-                                    <span className="font-semibold">
-                                        {formatCentsToArs({ cents: addon.priceArs, locale })}
-                                    </span>
-                                </div>
+                                {addon.priceArs != null && (
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            {t('admin-billing.addons.detailsDialog.priceLabel')}
+                                        </span>
+                                        <span className="font-semibold">
+                                            {formatCentsToArs({ cents: addon.priceArs, locale })}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">
                                         {t('admin-billing.addons.detailsDialog.purchasedAtLabel')}

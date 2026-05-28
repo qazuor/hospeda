@@ -60,7 +60,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
     })
 }));
 
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
@@ -198,7 +199,8 @@ describe('resolver → widget integration (shape contract)', () => {
     // =========================================================================
     // REGRESSION: admin.entities.counts → KpiWidget
     // BEFORE fix: returned Array<{name,count}> → kpi.value was undefined → crash
-    // AFTER fix:  returns {value:number, breakdown:Record} → renders cleanly
+    // AFTER fix:  returns {value:number, kpis:[{key,label,value,href}]} → GRID MODE
+    //             (SPEC-155 follow-up: show the 6 per-entity counts, not the sum)
     // =========================================================================
 
     describe('admin.entities.counts (card A) → KpiWidget', () => {
@@ -217,16 +219,38 @@ describe('resolver → widget integration (shape contract)', () => {
             expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
         });
 
-        it('AFTER fix: normalized {value, breakdown} shape renders KPI value', async () => {
-            // Simulate AFTER fix: resolver returns normalized KpiData
-            stubResolverWith({ value: 330, breakdown: { accommodations: 120, destinations: 45 } });
+        it('AFTER fix: normalized {value, kpis} shape renders the per-entity grid', async () => {
+            // Simulate AFTER fix: resolver returns multi-KPI grid data
+            stubResolverWith({
+                value: 165,
+                kpis: [
+                    {
+                        key: 'accommodations',
+                        label: { es: 'Alojamientos', en: 'Accommodations', pt: 'Alojamentos' },
+                        value: 120,
+                        href: '/accommodations'
+                    },
+                    {
+                        key: 'destinations',
+                        label: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
+                        value: 45,
+                        href: '/destinations'
+                    }
+                ]
+            });
             render(
                 <TestWrapper>
                     <KpiWidget widget={makeKpiWidget('admin.entities.counts')} />
                 </TestWrapper>
             );
-            const valueEl = await screen.findByTestId('kpi-value');
-            expect(valueEl).toHaveTextContent('330');
+            // Grid renders one tile per entity (NOT the single summed value).
+            const grid = await screen.findByTestId('kpi-grid');
+            expect(grid).toBeInTheDocument();
+            expect(screen.getAllByTestId('kpi-grid-item')).toHaveLength(2);
+            expect(screen.getByText('Alojamientos')).toBeInTheDocument();
+            expect(screen.getByText('120')).toBeInTheDocument();
+            // The summed single value must NOT be rendered in grid mode.
+            expect(screen.queryByTestId('kpi-value')).not.toBeInTheDocument();
         });
     });
 
@@ -541,7 +565,8 @@ describe('resolver → widget integration (shape contract)', () => {
                 </TestWrapper>
             );
             expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
-            expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+            // Card shell always present (title always visible)
+            expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
         });
 
         // Non-null values without `value` field → defensive guard → empty state, NOT crash
@@ -562,7 +587,8 @@ describe('resolver → widget integration (shape contract)', () => {
                 );
                 // Defensive guard: typeof kpi.value !== 'number' → empty state, not crash
                 expect(await screen.findByTestId('kpi-widget-empty')).toBeInTheDocument();
-                expect(screen.queryByTestId('kpi-widget')).not.toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('kpi-widget')).toBeInTheDocument();
             });
         }
     });
@@ -588,12 +614,9 @@ describe('resolver → widget integration (shape contract)', () => {
                         <ChartWidget widget={makeChartWidget('test.source')} />
                     </TestWrapper>
                 );
-                if (data == null) {
-                    expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
-                } else {
-                    expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
-                }
-                expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
+                expect(await screen.findByTestId('chart-widget-empty')).toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
             });
         }
     });
@@ -620,12 +643,9 @@ describe('resolver → widget integration (shape contract)', () => {
                         <StatusWidget widget={makeStatusWidget('test.source', variantMap)} />
                     </TestWrapper>
                 );
-                if (data == null) {
-                    expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
-                } else {
-                    expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
-                }
-                expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+                expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('status-widget')).toBeInTheDocument();
             });
         }
     });
@@ -650,7 +670,8 @@ describe('resolver → widget integration (shape contract)', () => {
                     </TestWrapper>
                 );
                 expect(await screen.findByTestId('list-widget-empty')).toBeInTheDocument();
-                expect(screen.queryByTestId('list-widget')).not.toBeInTheDocument();
+                // Card shell always present (title always visible)
+                expect(screen.getByTestId('list-widget')).toBeInTheDocument();
             });
         }
     });

@@ -59,7 +59,14 @@ import {
     XAxis,
     YAxis
 } from 'recharts';
-import { WidgetEmpty, WidgetError, WidgetSkeleton, WidgetUnavailable } from './widget-states';
+import { accentVars } from '../dashboard-accents';
+import {
+    WidgetCard,
+    WidgetEmptyBody,
+    WidgetErrorBody,
+    WidgetSkeletonBody,
+    WidgetUnavailableBody
+} from './widget-states';
 
 // ============================================================================
 // CHART DATA SHAPES
@@ -108,13 +115,16 @@ export interface ChartData {
 /**
  * Supported chart render modes for ChartWidget.
  *
- * - `'line'`  → LineChart with a smooth Line series.
- * - `'bar'`   → BarChart with rounded Bar columns.
- * - `'area'`  → AreaChart with a filled Area series.
+ * - `'line'`     → LineChart with a smooth Line series.
+ * - `'bar'`      → BarChart with rounded Bar columns.
+ * - `'area'`     → AreaChart with a filled Area series.
+ * - `'ranking'`  → custom horizontal-bar list (no recharts): one row per
+ *                  series item with label, proportional bar, and value count
+ *                  on the right. Used for compact role/category breakdowns.
  *
  * When omitted from `widget.config.chartType`, the renderer defaults to `'bar'`.
  */
-export type ChartType = 'line' | 'bar' | 'area';
+export type ChartType = 'line' | 'bar' | 'area' | 'ranking';
 
 // ============================================================================
 // WIDGET-SPECIFIC CONFIG SHAPE
@@ -133,6 +143,10 @@ export interface ChartWidgetConfig {
      * Defaults to `'bar'` when omitted.
      */
     readonly chartType?: ChartType;
+    /** Accent palette name for the card header chip + bar tint. */
+    readonly accent?: string;
+    /** Dashboard icon name for the card header chip. */
+    readonly icon?: string;
 }
 
 // ============================================================================
@@ -176,13 +190,78 @@ interface ChartRendererProps {
     readonly chartType: ChartType;
     readonly data: readonly ChartPoint[];
     readonly label: string;
+    /** Accent palette name forwarded by the widget — tints `'ranking'` bars. */
+    readonly accent?: string;
+}
+
+/**
+ * Ranking renderer — custom horizontal bars (no recharts). Each row shows the
+ * label (left), a proportional bar filling the available track, and the value
+ * on the right. The bar is tinted with the widget's accent palette so the
+ * ranking reads as part of the per-card color family.
+ */
+interface RankingBarsProps {
+    readonly data: readonly ChartPoint[];
+    readonly accent?: string;
+}
+
+function RankingBars({ data, accent }: RankingBarsProps) {
+    const vars = accentVars(accent);
+    const max = data.reduce((m, p) => (p.value > m ? p.value : m), 0);
+
+    return (
+        <ul
+            className="flex flex-col gap-2.5"
+            data-testid="chart-ranking"
+        >
+            {data.map((point) => {
+                const pct = max > 0 ? Math.max((point.value / max) * 100, 2) : 0;
+                return (
+                    <li
+                        key={point.label}
+                        className="grid grid-cols-[6rem_1fr_auto] items-center gap-3"
+                    >
+                        <span className="truncate font-medium text-foreground/80 text-xs">
+                            {point.label}
+                        </span>
+                        <span className="relative h-2 overflow-hidden rounded-full bg-muted/60">
+                            <span
+                                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+                                style={{
+                                    width: `${pct}%`,
+                                    backgroundColor: vars.solid
+                                }}
+                            />
+                        </span>
+                        <span
+                            className="min-w-[2.5rem] text-right font-semibold text-foreground text-sm tabular-nums"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                        >
+                            {point.value.toLocaleString('es-AR')}
+                        </span>
+                    </li>
+                );
+            })}
+        </ul>
+    );
 }
 
 /**
  * Renders the appropriate Recharts chart for the given `chartType`.
  * All three variants share the same data format and ChartContainer wrapper.
  */
-function ChartRenderer({ chartType, data, label }: ChartRendererProps) {
+function ChartRenderer({ chartType, data, label, accent }: ChartRendererProps) {
+    // Ranking mode — bypass recharts entirely and render compact horizontal
+    // bars. Used for short categorical lists (e.g. users by role).
+    if (chartType === 'ranking') {
+        return (
+            <RankingBars
+                data={data}
+                accent={accent}
+            />
+        );
+    }
+
     // Recharts expects plain mutable objects; the readonly cast is safe here.
     const rechartsData = data as ChartPoint[];
 
@@ -360,35 +439,82 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     // Derive display label from the widget's i18n label (admin locale = 'es').
     const displayLabel = widget.label.es;
 
+    // Chart-type badge rendered in the header of every state.
+    const chartTypeBadge = (
+        <span
+            className="text-muted-foreground/60 text-xs"
+            data-testid="chart-type-badge"
+            aria-label={`Chart type: ${chartType}`}
+        >
+            {chartType}
+        </span>
+    );
+
     // -- 4. Unavailable (source not registered) ------------------------------
     if (!found) {
         return (
-            <WidgetUnavailable
-                variant="chart"
+            <WidgetCard
                 label={displayLabel}
-            />
+                variant="chart"
+                dataTestId="chart-widget"
+                accent={config.accent}
+                icon={config.icon}
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetUnavailableBody variant="chart" />
+            </WidgetCard>
         );
     }
 
     // -- 5. Loading ----------------------------------------------------------
     if (isLoading) {
-        return <WidgetSkeleton variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                accent={config.accent}
+                icon={config.icon}
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetSkeletonBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Error ------------------------------------------------------------
     if (error) {
         return (
-            <WidgetError
-                variant="chart"
+            <WidgetCard
                 label={displayLabel}
-                onRetry={() => void refetch()}
-            />
+                variant="chart"
+                dataTestId="chart-widget"
+                accent={config.accent}
+                icon={config.icon}
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetErrorBody
+                    variant="chart"
+                    onRetry={() => void refetch()}
+                />
+            </WidgetCard>
         );
     }
 
     // -- 7. Empty (null / undefined data) ------------------------------------
     if (data == null) {
-        return <WidgetEmpty variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                accent={config.accent}
+                icon={config.icon}
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetEmptyBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     // -- 8. Data — narrow to ChartData shape ---------------------------------
@@ -404,38 +530,36 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
         !Array.isArray(chartData.series) ||
         chartData.series.length === 0
     ) {
-        return <WidgetEmpty variant="chart" />;
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="chart"
+                dataTestId="chart-widget"
+                accent={config.accent}
+                icon={config.icon}
+                headerExtra={chartTypeBadge}
+            >
+                <WidgetEmptyBody variant="chart" />
+            </WidgetCard>
+        );
     }
 
     return (
-        <div
-            className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-shadow hover:shadow-sm"
-            data-testid="chart-widget"
-            aria-label={displayLabel}
+        <WidgetCard
+            label={displayLabel}
+            variant="chart"
+            dataTestId="chart-widget"
+            accent={config.accent}
+            icon={config.icon}
+            headerExtra={chartTypeBadge}
         >
-            {/* Header: label + chart type badge */}
-            <div className="flex items-center justify-between">
-                <span
-                    className="text-muted-foreground text-sm"
-                    data-testid="chart-label"
-                >
-                    {displayLabel}
-                </span>
-                <span
-                    className="text-muted-foreground/60 text-xs"
-                    data-testid="chart-type-badge"
-                    aria-label={`Chart type: ${chartType}`}
-                >
-                    {chartType}
-                </span>
-            </div>
-
-            {/* Chart area — real Recharts chart */}
+            {/* Chart area — Recharts chart (line/bar/area) or custom RankingBars */}
             <ChartRenderer
                 chartType={chartType}
                 data={chartData.series}
                 label={displayLabel}
+                accent={config.accent}
             />
-        </div>
+        </WidgetCard>
     );
 }

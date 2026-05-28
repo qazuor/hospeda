@@ -8,7 +8,7 @@
  * @module services/addon.admin
  */
 
-import { getAddonBySlug } from '@repo/billing';
+import { ALL_ADDONS, getAddonBySlug } from '@repo/billing';
 import {
     type DrizzleClient,
     billingAddonPurchases,
@@ -52,6 +52,10 @@ export interface CustomerAddonRow {
     subscriptionId: string | null;
     addonSlug: string;
     addonId: string | null;
+    /** Human-readable name from the add-on catalog (null if slug not in catalog) */
+    addonName: string | null;
+    /** Price in ARS centavos from the add-on catalog (null if slug not in catalog) */
+    priceArs: number | null;
     status: string;
     purchasedAt: string;
     expiresAt: string | null;
@@ -190,26 +194,34 @@ export class AdminAddonService {
                 'Admin retrieved customer add-on purchases'
             );
 
-            const data: CustomerAddonRow[] = results.map((row) => ({
-                id: row.id,
-                customerId: row.customerId,
-                customerEmail: row.customerEmail,
-                customerName: row.customerName ?? null,
-                subscriptionId: row.subscriptionId ?? null,
-                addonSlug: row.addonSlug,
-                addonId: row.addonId ?? null,
-                status: row.status,
-                purchasedAt: row.purchasedAt.toISOString(),
-                expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
-                canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
-                deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
-                paymentId: row.paymentId ?? null,
-                limitAdjustments: row.limitAdjustments ?? null,
-                entitlementAdjustments: row.entitlementAdjustments ?? null,
-                metadata: row.metadata ?? null,
-                createdAt: row.createdAt.toISOString(),
-                updatedAt: row.updatedAt.toISOString()
-            }));
+            // Build catalog Map once per request — O(1) lookup per row
+            const catalogBySlug = new Map(ALL_ADDONS.map((a) => [a.slug, a]));
+
+            const data: CustomerAddonRow[] = results.map((row) => {
+                const catalog = catalogBySlug.get(row.addonSlug) ?? null;
+                return {
+                    id: row.id,
+                    customerId: row.customerId,
+                    customerEmail: row.customerEmail,
+                    customerName: row.customerName ?? null,
+                    subscriptionId: row.subscriptionId ?? null,
+                    addonSlug: row.addonSlug,
+                    addonId: row.addonId ?? null,
+                    addonName: catalog?.name ?? null,
+                    priceArs: catalog?.priceArs ?? null,
+                    status: row.status,
+                    purchasedAt: row.purchasedAt.toISOString(),
+                    expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
+                    canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
+                    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
+                    paymentId: row.paymentId ?? null,
+                    limitAdjustments: row.limitAdjustments ?? null,
+                    entitlementAdjustments: row.entitlementAdjustments ?? null,
+                    metadata: row.metadata ?? null,
+                    createdAt: row.createdAt.toISOString(),
+                    updatedAt: row.updatedAt.toISOString()
+                };
+            });
 
             return {
                 success: true,
@@ -528,6 +540,8 @@ export class AdminAddonService {
                 };
             }
 
+            const catalog = getAddonBySlug(row.addonSlug) ?? null;
+
             return {
                 success: true,
                 data: {
@@ -538,6 +552,8 @@ export class AdminAddonService {
                     subscriptionId: row.subscriptionId ?? null,
                     addonSlug: row.addonSlug,
                     addonId: row.addonId ?? null,
+                    addonName: catalog?.name ?? null,
+                    priceArs: catalog?.priceArs ?? null,
                     status: row.status,
                     purchasedAt: row.purchasedAt.toISOString(),
                     expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,

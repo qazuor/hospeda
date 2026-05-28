@@ -165,7 +165,7 @@ When access is blocked due to expired trial:
     "expiresAt": "2024-01-15T00:00:00.000Z",
     "daysRemaining": 0
   },
-  "upgradeUrl": "/billing/plans"
+  "upgradeAudience": "host"
 }
 ```
 

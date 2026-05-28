@@ -54,7 +54,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 // Mock icon components so tests don't depend on Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
@@ -617,7 +618,10 @@ describe('ChecklistWidget', () => {
         );
 
         expect(screen.getByTestId('checklist-widget-empty')).toBeInTheDocument();
-        expect(screen.queryByTestId('checklist-widget')).not.toBeInTheDocument();
+        // Card shell is always present even when empty
+        expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('checklist-label')).toHaveTextContent('Estado del alojamiento');
     });
 
     // ── Resolver mode states ───────────────────────────────────────────────
@@ -647,7 +651,10 @@ describe('ChecklistWidget', () => {
         );
 
         expect(screen.getByTestId('checklist-widget-unavailable')).toBeInTheDocument();
-        expect(screen.queryByTestId('checklist-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
+        // Title is always visible
+        expect(screen.getByTestId('checklist-label')).toHaveTextContent('Estado del alojamiento');
     });
 
     it('renders the skeleton while the resolver query is loading', () => {
@@ -674,7 +681,10 @@ describe('ChecklistWidget', () => {
         );
 
         expect(screen.getByTestId('checklist-widget-skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('checklist-widget')).not.toBeInTheDocument();
+        // Card shell is always present while loading
+        expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
+        // Title is always visible while loading
+        expect(screen.getByTestId('checklist-label')).toHaveTextContent('Estado del alojamiento');
     });
 
     it('renders the error state with a retry button when the resolver query fails', async () => {
@@ -698,7 +708,10 @@ describe('ChecklistWidget', () => {
 
         const errorEl = await screen.findByTestId('checklist-widget-error');
         expect(errorEl).toBeInTheDocument();
-        expect(screen.queryByTestId('checklist-widget')).not.toBeInTheDocument();
+        // Card shell is always present on error
+        expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
+        // Title is always visible on error
+        expect(screen.getByTestId('checklist-label')).toHaveTextContent('Estado del alojamiento');
     });
 
     it('exposes a retry button inside the error state', async () => {
@@ -745,6 +758,8 @@ describe('ChecklistWidget', () => {
         );
 
         expect(await screen.findByTestId('checklist-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('checklist-label')).toHaveTextContent('Estado del alojamiento');
     });
 
     it('renders the checklist when resolver returns an array of entities', async () => {

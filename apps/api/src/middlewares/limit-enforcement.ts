@@ -32,6 +32,54 @@ import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
 
+/** Audience that should be directed to upgrade when a limit is reached. */
+type UpgradeAudience = 'tourist' | 'host';
+
+/**
+ * Maps a limit key to the audience that should be directed to upgrade.
+ *
+ * - `max_favorites` is a tourist-tier limit.
+ * - All other supported limit keys are host-tier limits.
+ */
+const LIMIT_KEY_AUDIENCE: Record<string, UpgradeAudience> = {
+    [LimitKey.MAX_FAVORITES]: 'tourist',
+    [LimitKey.MAX_ACCOMMODATIONS]: 'host',
+    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 'host',
+    [LimitKey.MAX_ACTIVE_PROMOTIONS]: 'host',
+    [LimitKey.MAX_PROPERTIES]: 'host',
+    [LimitKey.MAX_STAFF_ACCOUNTS]: 'host'
+};
+
+/**
+ * Builds the structured `details` object for a LIMIT_REACHED ServiceError.
+ *
+ * Includes `upgradeAudience` (either `'tourist'` or `'host'`) so consumers
+ * can map to their own upgrade routes without relying on a hard-coded URL.
+ *
+ * @param limitKey - The limit that was reached.
+ * @param currentCount - The current usage count.
+ * @param maxAllowed - The maximum count allowed by the plan.
+ * @param usagePercent - Usage as a percentage of maxAllowed.
+ * @returns Structured details object for a LIMIT_REACHED error.
+ */
+export function buildLimitReachedDetails(input: {
+    limitKey: LimitKey | string;
+    currentCount: number;
+    maxAllowed: number;
+    usagePercent: number;
+}): {
+    limitKey: LimitKey | string;
+    currentCount: number;
+    maxAllowed: number;
+    usagePercent: number;
+    upgradeAudience: UpgradeAudience;
+} {
+    const { limitKey, currentCount, maxAllowed, usagePercent } = input;
+    const upgradeAudience: UpgradeAudience =
+        (LIMIT_KEY_AUDIENCE[limitKey as string] as UpgradeAudience | undefined) ?? 'host';
+    return { limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience };
+}
+
 /**
  * Enforces accommodation limit before creation
  *
@@ -113,13 +161,12 @@ export function enforceAccommodationLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Accommodation limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_ACCOMMODATIONS,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 
@@ -240,13 +287,12 @@ export function enforcePhotoLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Photo limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 
@@ -349,13 +395,12 @@ export function enforcePromotionLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Promotion limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 
@@ -462,13 +507,12 @@ export function enforceFavoritesLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Favorites limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_FAVORITES,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 
@@ -577,13 +621,12 @@ export function enforcePropertiesLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Properties limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_PROPERTIES,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 
@@ -684,13 +727,12 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     limitCheck.upgradeMessage ?? 'Staff accounts limit reached',
-                    {
+                    buildLimitReachedDetails({
                         limitKey: LimitKey.MAX_STAFF_ACCOUNTS,
                         currentCount: limitCheck.currentCount,
                         maxAllowed: limitCheck.maxAllowed,
-                        usagePercent,
-                        upgradeUrl: '/billing/plans'
-                    }
+                        usagePercent
+                    })
                 );
             }
 

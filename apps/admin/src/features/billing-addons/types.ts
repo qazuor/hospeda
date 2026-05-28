@@ -56,12 +56,16 @@ export interface PurchasedAddon {
     customerEmail: string;
     customerName: string | null;
     addonSlug: string;
-    addonName: string;
+    /** Human-readable name, looked up from the catalog. Optional: the list
+     *  endpoint currently returns only the slug (SPEC-143 F-ADMIN-ADDONS-LIST). */
+    addonName?: string;
     status: 'active' | 'expired' | 'canceled';
     purchasedAt: string;
     expiresAt: string | null;
     paymentId: string | null;
-    priceArs: number;
+    /** Price in ARS cents, from the catalog. Optional: not returned by the
+     *  list endpoint yet (would require a catalog lookup server-side). */
+    priceArs?: number;
 }
 
 export interface PurchasedAddonFilters {

@@ -70,6 +70,10 @@ export const CustomerAddonResponseSchema = z.object({
     subscriptionId: z.string().uuid().nullable(),
     addonSlug: z.string(),
     addonId: z.string().uuid().nullable(),
+    /** Human-readable catalog name (null when slug not found in catalog) */
+    addonName: z.string().nullable().optional(),
+    /** Catalog price in ARS centavos (null when slug not found in catalog) */
+    priceArs: z.number().int().nullable().optional(),
     status: z.enum(ADDON_PURCHASE_RESPONSE_STATUSES),
     purchasedAt: z.string().datetime(),
     expiresAt: z.string().datetime().nullable(),

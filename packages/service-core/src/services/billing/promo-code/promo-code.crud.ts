@@ -48,11 +48,14 @@ export function mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode 
         value: dbPromoCode.value,
         active: dbPromoCode.active ?? false,
         expiresAt: dbPromoCode.expiresAt?.toISOString(),
+        validFrom: dbPromoCode.startsAt?.toISOString(),
         maxUses: dbPromoCode.maxUses ?? undefined,
+        maxUsesPerUser: dbPromoCode.maxUsesPerUser ?? undefined,
         timesRedeemed: dbPromoCode.usedCount ?? 0,
         metadata: (dbPromoCode.config as Record<string, unknown>) ?? undefined,
         validPlans: dbPromoCode.validPlans ?? undefined,
         newCustomersOnly: dbPromoCode.newCustomersOnly ?? false,
+        isStackable: dbPromoCode.combinable ?? false,
         createdAt: dbPromoCode.createdAt.toISOString(),
         updatedAt: dbPromoCode.createdAt.toISOString() // QZPay schema doesn't have updatedAt
     };
@@ -119,10 +122,14 @@ export async function createPromoCode(
                     value: input.discountValue,
                     config: Object.keys(config).length > 0 ? config : null,
                     maxUses: input.maxUses ?? null,
+                    // max_uses_per_user is NOT NULL (default 1); omit when unset
+                    maxUsesPerUser: input.maxUsesPerUser,
                     usedCount: 0,
                     validPlans: input.planRestrictions ?? null,
                     newCustomersOnly: input.firstPurchaseOnly ?? false,
+                    combinable: input.isStackable ?? false,
                     active: input.isActive ?? true,
+                    startsAt: input.validFrom ?? null,
                     expiresAt: input.expiryDate ?? null,
                     livemode
                 })

@@ -7,6 +7,33 @@
  * module extracts them into a single shared location so changes propagate to
  * all renderers at once and there is no duplicated source.
  *
+ * ## WidgetCard shell
+ *
+ * `WidgetCard` is the canonical card container. It renders the card border,
+ * background, padding, and — crucially — the visible title header in ALL
+ * states (loading, error, empty, unavailable, data). Renderers compose it as:
+ *
+ * ```tsx
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   {isLoading ? <WidgetSkeletonBody variant="kpi" /> : <ActualData />}
+ * </WidgetCard>
+ * ```
+ *
+ * The `headerExtra` prop allows renderers to inject additional content (e.g.
+ * the chart-type badge) into the header row alongside the title.
+ *
+ * ## Body-only state components
+ *
+ * `WidgetSkeletonBody`, `WidgetErrorBody`, `WidgetEmptyBody`, and
+ * `WidgetUnavailableBody` render only the state content (no card wrapper, no
+ * title). They are intended for use inside `WidgetCard`.
+ *
+ * ## Legacy full-card state components (kept for backward compatibility)
+ *
+ * `WidgetSkeleton`, `WidgetError`, `WidgetEmpty`, and `WidgetUnavailable`
+ * continue to export so the existing widget-states tests pass unchanged. They
+ * are thin wrappers that compose `WidgetCard` + the matching body component.
+ *
  * ## data-testid convention
  *
  * All state components accept a `variant` string that is interpolated into
@@ -23,16 +50,16 @@
  *
  * ## Skeleton shapes
  *
- * `WidgetSkeleton` accepts a `variant` that selects the appropriate inner
+ * `WidgetSkeletonBody` accepts a `variant` that selects the appropriate inner
  * placeholder shape for each widget type:
  *
  * | variant      | Shape |
  * |-------------|-------|
- * | `kpi`        | Label line + large value + small delta line |
- * | `list`       | Header + 4 two-line list rows |
- * | `chart`      | Header + 7 variable-height bars + 7 label ticks |
- * | `checklist`  | Header + progress hint + 5 icon-label rows |
- * | `status`     | Label line + pill badge + description line |
+ * | `kpi`        | Large value + small delta line |
+ * | `list`       | 4 two-line list rows |
+ * | `chart`      | 7 variable-height bars + 7 label ticks |
+ * | `checklist`  | Progress hint + 5 icon-label rows |
+ * | `status`     | Pill badge + description line |
  *
  * @module widget-states
  * @see apps/admin/src/components/dashboards/widgets/KpiWidget.tsx
@@ -43,6 +70,8 @@
  */
 
 import { AlertTriangleIcon } from '@repo/icons';
+import type { ReactNode } from 'react';
+import { accentVars, resolveDashboardIcon } from '../dashboard-accents';
 
 // ============================================================================
 // VARIANT TYPE
@@ -69,48 +98,185 @@ interface WidgetStateBaseProps {
 }
 
 // ============================================================================
-// SKELETON INNER SHAPES
+// WIDGET CARD SHELL
 // ============================================================================
 
-/** KPI skeleton inner: label + large value + small delta row. */
+/**
+ * Props for {@link WidgetCard}.
+ */
+export interface WidgetCardProps {
+    /**
+     * Widget display label — always rendered as a visible title in the header,
+     * regardless of the current state (loading / error / empty / data).
+     */
+    readonly label: string;
+    /**
+     * Widget type variant — used to derive the outer `data-testid`
+     * (`{variant}-widget-card`). Renderers override this via `dataTestId`.
+     */
+    readonly variant: WidgetVariant;
+    /**
+     * Explicit `data-testid` for the root card element.
+     * When omitted, falls back to `{variant}-widget-card`.
+     */
+    readonly dataTestId?: string;
+    /**
+     * Accessible label for the entire card.
+     * When omitted, falls back to `label`.
+     */
+    readonly ariaLabel?: string;
+    /**
+     * Optional extra content rendered in the header row to the right of the
+     * title (e.g. a chart-type badge or a range selector).
+     */
+    readonly headerExtra?: ReactNode;
+    /**
+     * Optional accent palette name (SPEC-155 redesign). Tints the icon chip.
+     * Resolved via {@link accentVars}; defaults to river when omitted/unknown.
+     */
+    readonly accent?: string;
+    /**
+     * Optional `@repo/icons` component name (e.g. `'BuildingsIcon'`) rendered
+     * inside the accent chip to the left of the title. Resolved via
+     * `resolveIcon`; when absent or unresolved, no chip is shown.
+     */
+    readonly icon?: string;
+    /** State content to render below the header. */
+    readonly children: ReactNode;
+}
+
+/**
+ * Shared card shell for all dashboard widget renderers.
+ *
+ * Guarantees that the widget title (`label`) is ALWAYS visible — in loading,
+ * error, empty, unavailable, AND data states — so users always know which
+ * card they are looking at.
+ *
+ * Renderers should compose this as:
+ *
+ * ```tsx
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   {isLoading
+ *     ? <WidgetSkeletonBody variant="kpi" />
+ *     : <ActualKpiContent ... />}
+ * </WidgetCard>
+ * ```
+ *
+ * @example
+ * ```tsx
+ * <WidgetCard label="Total alojamientos" variant="kpi" dataTestId="kpi-widget">
+ *   <WidgetSkeletonBody variant="kpi" />
+ * </WidgetCard>
+ * ```
+ */
+export function WidgetCard({
+    label,
+    variant,
+    dataTestId,
+    ariaLabel,
+    headerExtra,
+    accent,
+    icon,
+    children
+}: WidgetCardProps) {
+    const testId = dataTestId ?? `${variant}-widget-card`;
+    const vars = accentVars(accent);
+    const Icon = resolveDashboardIcon(icon);
+
+    return (
+        <div
+            className="group hover:-translate-y-0.5 relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_-8px_rgba(15,23,42,0.08)] ring-1 ring-border/30 transition-all duration-300 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_32px_-12px_rgba(15,23,42,0.12)] hover:ring-border/50"
+            data-testid={testId}
+            aria-label={ariaLabel ?? label}
+        >
+            {/* Subtle accent rail on the top edge — only when the card has an accent */}
+            {(accent || Icon) && (
+                <span
+                    className="-translate-x-1/2 pointer-events-none absolute top-0 left-1/2 h-1 w-16 rounded-b-full opacity-70 transition-all duration-300 group-hover:w-24 group-hover:opacity-100"
+                    style={{ backgroundColor: vars.solid }}
+                    aria-hidden="true"
+                />
+            )}
+
+            {/* Header: icon chip + title (always visible) + optional action */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
+                    {Icon && (
+                        <span
+                            className="relative flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-inset"
+                            style={{
+                                backgroundColor: vars.chip,
+                                color: vars.fg,
+                                // biome-ignore lint/style/useNamingConvention: CSS var
+                                ['--tw-ring-color' as string]: vars.solid
+                            }}
+                            aria-hidden="true"
+                        >
+                            <Icon
+                                size={20}
+                                weight="duotone"
+                                color={vars.fg}
+                                duotoneColor={vars.solid}
+                            />
+                        </span>
+                    )}
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                        <span
+                            className="truncate font-semibold text-[0.92rem] text-foreground tracking-tight"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                            data-testid={`${variant}-label`}
+                        >
+                            {label}
+                        </span>
+                    </div>
+                </div>
+                {headerExtra}
+            </div>
+
+            {/* State or data content */}
+            {children}
+        </div>
+    );
+}
+
+// ============================================================================
+// SKELETON INNER SHAPES (body-only — header lives in WidgetCard)
+// ============================================================================
+
+/** KPI skeleton body: large value + small delta row. */
 function KpiSkeletonInner() {
     return (
         <>
-            <div className="mb-3 h-4 w-24 rounded bg-muted" />
             <div className="h-9 w-20 rounded bg-muted" />
             <div className="mt-2 h-4 w-16 rounded bg-muted" />
         </>
     );
 }
 
-/** List skeleton inner: header + 4 two-line rows. */
+/** List skeleton body: 4 two-line rows. */
 function ListSkeletonInner() {
     return (
-        <>
-            <div className="mb-3 h-4 w-32 rounded bg-muted" />
-            <ul className="space-y-2">
-                {(['s1', 's2', 's3', 's4'] as const).map((skeletonId) => (
-                    <li
-                        key={skeletonId}
-                        className="flex items-center justify-between"
-                    >
-                        <div className="space-y-1">
-                            <div className="h-3.5 w-40 rounded bg-muted" />
-                            <div className="h-3 w-24 rounded bg-muted" />
-                        </div>
-                        <div className="h-3 w-10 rounded bg-muted" />
-                    </li>
-                ))}
-            </ul>
-        </>
+        <ul className="space-y-2">
+            {(['s1', 's2', 's3', 's4'] as const).map((skeletonId) => (
+                <li
+                    key={skeletonId}
+                    className="flex items-center justify-between"
+                >
+                    <div className="space-y-1">
+                        <div className="h-3.5 w-40 rounded bg-muted" />
+                        <div className="h-3 w-24 rounded bg-muted" />
+                    </div>
+                    <div className="h-3 w-10 rounded bg-muted" />
+                </li>
+            ))}
+        </ul>
     );
 }
 
-/** Chart skeleton inner: header + 7 variable-height bars + tick labels. */
+/** Chart skeleton body: 7 variable-height bars + tick labels. */
 function ChartSkeletonInner() {
     return (
         <>
-            <div className="mb-3 h-4 w-32 rounded bg-muted" />
             <div className="flex h-24 items-end gap-1">
                 {[40, 60, 45, 80, 55, 70, 50].map((pct, i) => (
                     <div
@@ -133,11 +299,10 @@ function ChartSkeletonInner() {
     );
 }
 
-/** Checklist skeleton inner: header + progress hint + 5 icon-label rows. */
+/** Checklist skeleton body: progress hint + 5 icon-label rows. */
 function ChecklistSkeletonInner() {
     return (
         <>
-            <div className="mb-4 h-4 w-32 rounded bg-muted" />
             <div className="mb-3 h-3 w-24 rounded bg-muted" />
             <div className="flex flex-col gap-2">
                 {(['c1', 'c2', 'c3', 'c4', 'c5'] as const).map((skeletonId) => (
@@ -154,11 +319,10 @@ function ChecklistSkeletonInner() {
     );
 }
 
-/** Status skeleton inner: label + pill badge + description line. */
+/** Status skeleton body: pill badge + description line. */
 function StatusSkeletonInner() {
     return (
         <>
-            <div className="mb-3 h-4 w-24 rounded bg-muted" />
             <div className="h-6 w-20 rounded-full bg-muted" />
             <div className="mt-2 h-3 w-32 rounded bg-muted" />
         </>
@@ -166,35 +330,34 @@ function StatusSkeletonInner() {
 }
 
 // ============================================================================
-// WIDGET SKELETON
+// WIDGET SKELETON BODY (use inside WidgetCard)
 // ============================================================================
 
 /**
- * Props for {@link WidgetSkeleton}.
+ * Props for {@link WidgetSkeletonBody}.
  */
-export interface WidgetSkeletonProps extends WidgetStateBaseProps {}
+export interface WidgetSkeletonBodyProps extends WidgetStateBaseProps {}
 
 /**
- * Loading skeleton for a dashboard widget card.
+ * Body-only loading skeleton for use INSIDE a {@link WidgetCard}.
  *
- * Renders the pulse animation container common to all variants and delegates
- * the inner shape to the per-variant sub-component so each widget type gets
- * an appropriate placeholder that matches its real content density.
+ * Renders only the pulse-animated content area (no card wrapper, no title).
+ * Use this with `WidgetCard` so the title stays visible while loading.
  *
- * The `data-testid` is `{variant}-widget-skeleton` to preserve backward
- * compatibility with existing per-renderer tests.
+ * The wrapper has `data-testid="{variant}-widget-skeleton"` to maintain
+ * backward compatibility with per-renderer tests.
  *
  * @example
  * ```tsx
- * <WidgetSkeleton variant="kpi" />
- * <WidgetSkeleton variant="list" />
- * <WidgetSkeleton variant="chart" />
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   <WidgetSkeletonBody variant="kpi" />
+ * </WidgetCard>
  * ```
  */
-export function WidgetSkeleton({ variant }: WidgetSkeletonProps) {
+export function WidgetSkeletonBody({ variant }: WidgetSkeletonBodyProps) {
     return (
         <div
-            className="animate-pulse rounded-lg border bg-card p-4"
+            className="animate-pulse"
             data-testid={`${variant}-widget-skeleton`}
             aria-busy="true"
             aria-label="Loading"
@@ -209,7 +372,102 @@ export function WidgetSkeleton({ variant }: WidgetSkeletonProps) {
 }
 
 // ============================================================================
-// WIDGET ERROR
+// WIDGET SKELETON (legacy full-card — kept for widget-states.test.tsx compat)
+// ============================================================================
+
+/**
+ * Props for {@link WidgetSkeleton}.
+ */
+export interface WidgetSkeletonProps extends WidgetStateBaseProps {}
+
+/**
+ * Loading skeleton for a dashboard widget card.
+ *
+ * @deprecated Prefer composing {@link WidgetCard} + {@link WidgetSkeletonBody}
+ * so the widget title remains visible while loading. This full-card variant
+ * is kept for backward compatibility with widget-states tests.
+ *
+ * The `data-testid` is `{variant}-widget-skeleton` to preserve backward
+ * compatibility with existing per-renderer tests.
+ *
+ * @example
+ * ```tsx
+ * <WidgetSkeleton variant="kpi" />
+ * ```
+ */
+export function WidgetSkeleton({ variant }: WidgetSkeletonProps) {
+    return (
+        <div
+            className="animate-pulse rounded-lg border bg-card p-4"
+            data-testid={`${variant}-widget-skeleton`}
+            aria-busy="true"
+            aria-label="Loading"
+        >
+            {/* Header placeholder — matches original per-variant counts so widget-states tests pass */}
+            <div className="mb-3 h-4 w-24 rounded bg-muted" />
+            {variant === 'kpi' && <KpiSkeletonInner />}
+            {variant === 'list' && <ListSkeletonInner />}
+            {variant === 'chart' && <ChartSkeletonInner />}
+            {variant === 'checklist' && <ChecklistSkeletonInner />}
+            {variant === 'status' && <StatusSkeletonInner />}
+        </div>
+    );
+}
+
+// ============================================================================
+// WIDGET ERROR BODY (use inside WidgetCard)
+// ============================================================================
+
+/**
+ * Props for {@link WidgetErrorBody}.
+ */
+export interface WidgetErrorBodyProps extends WidgetStateBaseProps {
+    /** Callback invoked when the user clicks "Reintentar". */
+    readonly onRetry: () => void;
+}
+
+/**
+ * Body-only error state for use INSIDE a {@link WidgetCard}.
+ *
+ * Renders the alert icon, message, and retry button. The surrounding card
+ * and title are provided by `WidgetCard` so they remain visible on error.
+ *
+ * The wrapper has `data-testid="{variant}-widget-error"` and `role="alert"`.
+ *
+ * @example
+ * ```tsx
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   <WidgetErrorBody variant="kpi" onRetry={() => void refetch()} />
+ * </WidgetCard>
+ * ```
+ */
+export function WidgetErrorBody({ variant, onRetry }: WidgetErrorBodyProps) {
+    return (
+        <div
+            className="flex flex-col items-center justify-center gap-3 py-2"
+            data-testid={`${variant}-widget-error`}
+            role="alert"
+        >
+            <div className="text-destructive">
+                <AlertTriangleIcon
+                    className="h-5 w-5"
+                    aria-hidden="true"
+                />
+            </div>
+            <p className="text-muted-foreground text-xs">Error al cargar datos</p>
+            <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
+            >
+                Reintentar
+            </button>
+        </div>
+    );
+}
+
+// ============================================================================
+// WIDGET ERROR (legacy full-card — kept for widget-states.test.tsx compat)
 // ============================================================================
 
 /**
@@ -224,6 +482,10 @@ export interface WidgetErrorProps extends WidgetStateBaseProps {
 
 /**
  * Error state for a widget that failed to fetch its data.
+ *
+ * @deprecated Prefer composing {@link WidgetCard} + {@link WidgetErrorBody}
+ * so the widget title remains visible on error. This full-card variant is kept
+ * for backward compatibility with widget-states tests.
  *
  * Renders an alert card with an `AlertTriangleIcon`, a message, and a retry
  * button. The `data-testid` is `{variant}-widget-error`.
@@ -260,7 +522,48 @@ export function WidgetError({ variant, onRetry, label }: WidgetErrorProps) {
 }
 
 // ============================================================================
-// WIDGET EMPTY
+// WIDGET EMPTY BODY (use inside WidgetCard)
+// ============================================================================
+
+/**
+ * Props for {@link WidgetEmptyBody}.
+ */
+export interface WidgetEmptyBodyProps extends WidgetStateBaseProps {
+    /**
+     * Optional text to display inside the empty state.
+     * Defaults to `"—"` when not provided.
+     */
+    readonly text?: string;
+}
+
+/**
+ * Body-only empty state for use INSIDE a {@link WidgetCard}.
+ *
+ * Renders only the "no data" message. The surrounding card and title are
+ * provided by `WidgetCard` so they remain visible when empty.
+ *
+ * The wrapper has `data-testid="{variant}-widget-empty"`.
+ *
+ * @example
+ * ```tsx
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   <WidgetEmptyBody variant="kpi" />
+ * </WidgetCard>
+ * ```
+ */
+export function WidgetEmptyBody({ variant, text = '—' }: WidgetEmptyBodyProps) {
+    return (
+        <div
+            className="flex items-center justify-center py-2 text-muted-foreground"
+            data-testid={`${variant}-widget-empty`}
+        >
+            <span className="text-sm">{text}</span>
+        </div>
+    );
+}
+
+// ============================================================================
+// WIDGET EMPTY (legacy full-card — kept for widget-states.test.tsx compat)
 // ============================================================================
 
 /**
@@ -278,13 +581,16 @@ export interface WidgetEmptyProps extends WidgetStateBaseProps {
 /**
  * Empty state for a widget that resolved but returned no data.
  *
+ * @deprecated Prefer composing {@link WidgetCard} + {@link WidgetEmptyBody}
+ * so the widget title remains visible when empty. This full-card variant is
+ * kept for backward compatibility with widget-states tests.
+ *
  * The `data-testid` is `{variant}-widget-empty`.
  *
  * @example
  * ```tsx
  * <WidgetEmpty variant="kpi" />
  * <WidgetEmpty variant="list" text="Sin datos" />
- * <WidgetEmpty variant="checklist" text="Sin datos disponibles" />
  * ```
  */
 export function WidgetEmpty({ variant, text = '—' }: WidgetEmptyProps) {
@@ -299,7 +605,42 @@ export function WidgetEmpty({ variant, text = '—' }: WidgetEmptyProps) {
 }
 
 // ============================================================================
-// WIDGET UNAVAILABLE
+// WIDGET UNAVAILABLE BODY (use inside WidgetCard)
+// ============================================================================
+
+/**
+ * Props for {@link WidgetUnavailableBody}.
+ */
+export interface WidgetUnavailableBodyProps extends WidgetStateBaseProps {}
+
+/**
+ * Body-only unavailable state for use INSIDE a {@link WidgetCard}.
+ *
+ * Renders only the "Sin fuente de datos" message. The surrounding card and
+ * title are provided by `WidgetCard` so users know which source is missing.
+ *
+ * The wrapper has `data-testid="{variant}-widget-unavailable"`.
+ *
+ * @example
+ * ```tsx
+ * <WidgetCard label={displayLabel} variant="kpi" dataTestId="kpi-widget">
+ *   <WidgetUnavailableBody variant="kpi" />
+ * </WidgetCard>
+ * ```
+ */
+export function WidgetUnavailableBody({ variant }: WidgetUnavailableBodyProps) {
+    return (
+        <div
+            className="flex items-center justify-center py-2 text-muted-foreground"
+            data-testid={`${variant}-widget-unavailable`}
+        >
+            <span className="text-xs">Sin fuente de datos</span>
+        </div>
+    );
+}
+
+// ============================================================================
+// WIDGET UNAVAILABLE (legacy full-card — kept for widget-states.test.tsx compat)
 // ============================================================================
 
 /**
@@ -312,6 +653,10 @@ export interface WidgetUnavailableProps extends WidgetStateBaseProps {
 
 /**
  * Fallback when the source ID is not registered in the resolver registry.
+ *
+ * @deprecated Prefer composing {@link WidgetCard} + {@link WidgetUnavailableBody}
+ * so the widget title remains visible when unavailable. This full-card variant
+ * is kept for backward compatibility with widget-states tests.
  *
  * The `data-testid` is `{variant}-widget-unavailable`.
  *

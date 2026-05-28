@@ -533,11 +533,17 @@
         "titleDefault": "Función Premium",
         "description": "Esta funcionalidad está disponible en planes superiores. Actualiza tu plan para acceder a esta sección.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores"
+        "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores",
+        "richDescriptionNudge": "Tu plan no incluye descripciones enriquecidas. Podés editar la descripción como texto plano.",
+        "videoNudge": "La incorporación de videos está disponible en planes superiores.",
+        "upgradeLink": "Actualizar plan"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Límite alcanzado",
-        "description": "Has alcanzado el límite de tu plan actual"
+        "description": "Has alcanzado el límite de tu plan actual",
+        "titleDefault": "Llegaste al límite de tu plan",
+        "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
+        "upgradeLink": "Ver mi suscripción"
     },
     "ownerPromotions": {
         "columns": {

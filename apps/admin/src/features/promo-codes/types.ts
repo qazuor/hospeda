@@ -4,37 +4,40 @@
 export type DiscountType = 'percentage' | 'fixed';
 
 /**
- * Promo code status
+ * Promo code status (derived client-side from active + expiry)
  */
 export type PromoCodeStatus = 'active' | 'expired' | 'inactive';
 
 /**
- * Plan category for promo code restrictions
- */
-export type PlanCategory = 'owner' | 'complex' | 'tourist';
-
-/**
- * Promo code data structure
+ * Promo code data structure.
+ *
+ * Mirrors the API response DTO (`PromoCodeResponseSchema` / the service's
+ * `mapDbToPromoCode`). `status` is derived client-side. `description` and
+ * `minAmount` are unpacked from the response `metadata` object by the hook.
  */
 export interface PromoCode {
     readonly id: string;
     readonly code: string;
-    readonly description: string;
     readonly type: DiscountType;
-    readonly discountValue: number;
+    /** Discount value: percentage (1-100) or fixed amount in cents */
+    readonly value: number;
+    readonly description: string;
+    readonly active: boolean;
+    /** ISO date the code stops being valid (null = no expiry) */
+    readonly expiresAt: string | null;
+    /** ISO date the code starts being valid (null = immediately) */
+    readonly validFrom: string | null;
     readonly maxUses: number | null;
     readonly maxUsesPerUser: number | null;
-    readonly usedCount: number;
-    readonly validFrom: Date;
-    readonly validUntil: Date | null;
-    readonly applicablePlans: ReadonlyArray<PlanCategory>;
+    readonly timesRedeemed: number;
+    /** Plan IDs this code is restricted to (empty = all plans) */
+    readonly validPlans: readonly string[];
+    readonly newCustomersOnly: boolean;
     readonly isStackable: boolean;
-    readonly isActive: boolean;
-    readonly requiresFirstPurchase: boolean;
-    readonly minimumAmount: number | null;
+    /** Minimum order amount in cents required to use the code (null = none) */
+    readonly minAmount: number | null;
     readonly status: PromoCodeStatus;
-    readonly createdAt?: Date;
-    readonly updatedAt?: Date;
+    readonly createdAt?: string;
 }
 
 /**
@@ -49,27 +52,37 @@ export interface PromoCodeFilters {
 }
 
 /**
- * Create promo code payload
+ * Create promo code payload — matches the API request contract
+ * (`CreatePromoCodeSchema` in @repo/schemas). The form holds nullable fields
+ * for controlled inputs; the hook strips empties before sending.
  */
 export interface CreatePromoCodePayload {
     code: string;
     description: string;
-    type: DiscountType;
+    discountType: DiscountType;
     discountValue: number;
     maxUses: number | null;
     maxUsesPerUser: number | null;
-    validFrom: Date;
-    validUntil: Date | null;
-    applicablePlans: PlanCategory[];
+    /** ISO date (or null) the code starts being valid */
+    validFrom: string | null;
+    /** ISO date (or null) the code expires */
+    expiryDate: string | null;
+    /** Plan IDs this code is restricted to (empty = all plans) */
+    planRestrictions: string[];
     isStackable: boolean;
     isActive: boolean;
-    requiresFirstPurchase: boolean;
-    minimumAmount: number | null;
+    firstPurchaseOnly: boolean;
+    minAmount: number | null;
 }
 
 /**
- * Update promo code payload
+ * Update promo code payload. Only mutable fields are accepted by the API
+ * (`UpdatePromoCodeSchema`): description, expiryDate, maxUses, isActive.
  */
-export interface UpdatePromoCodePayload extends Partial<CreatePromoCodePayload> {
+export interface UpdatePromoCodePayload {
     id: string;
+    description?: string;
+    expiryDate?: string | null;
+    maxUses?: number | null;
+    isActive?: boolean;
 }

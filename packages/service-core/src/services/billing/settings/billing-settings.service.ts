@@ -74,6 +74,16 @@ const DEFAULT_SETTINGS: BillingSettings = {
 /** Key used for the global settings row in billing_settings table */
 const SETTINGS_KEY = 'global';
 
+/**
+ * Sentinel UUID used as the `entityId` of the global billing-settings audit-log
+ * entries. `billing_audit_logs.entity_id` is a NOT NULL UUID column, but global
+ * settings are not tied to any entity. Writing the literal string `'global'`
+ * threw `invalid input syntax for type uuid` and rolled back every settings
+ * save/reset (SPEC-143 smoke F-ADMIN-SETTINGS-WRITE). The all-zeros UUID is the
+ * conventional sentinel for "no specific entity".
+ */
+const SETTINGS_AUDIT_ENTITY_ID = '00000000-0000-0000-0000-000000000000';
+
 /** Module-level singleton instance */
 let instance: BillingSettingsService | null = null;
 
@@ -202,7 +212,7 @@ export class BillingSettingsService {
             await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_update',
                 entityType: 'settings',
-                entityId: 'global',
+                entityId: SETTINGS_AUDIT_ENTITY_ID,
                 actorId: actorId || null,
                 actorType: actorId ? 'admin' : 'system',
                 changes: updatedSettings as unknown,
@@ -257,7 +267,7 @@ export class BillingSettingsService {
             await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_reset',
                 entityType: 'settings',
-                entityId: 'global',
+                entityId: SETTINGS_AUDIT_ENTITY_ID,
                 actorId: actorId || null,
                 actorType: actorId ? 'admin' : 'system',
                 changes: DEFAULT_SETTINGS as unknown,

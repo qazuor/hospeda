@@ -49,7 +49,8 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 // Mock icons so tests don't depend on Phosphor bundle.
-vi.mock('@repo/icons', () => ({
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
     AlertTriangleIcon: ({ className }: { className?: string }) => (
         <svg
             data-testid="alert-triangle-icon"
@@ -162,7 +163,10 @@ describe('StatusWidget', () => {
         );
 
         expect(screen.getByTestId('status-widget-unavailable')).toBeInTheDocument();
-        expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+        // Card shell is always present
+        expect(screen.getByTestId('status-widget')).toBeInTheDocument();
+        // Title is always visible
+        expect(screen.getByTestId('status-label')).toHaveTextContent('Estado del sistema');
     });
 
     // ── Loading state ──────────────────────────────────────────────────────
@@ -184,7 +188,10 @@ describe('StatusWidget', () => {
         );
 
         expect(screen.getByTestId('status-widget-skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+        // Card shell is always present while loading
+        expect(screen.getByTestId('status-widget')).toBeInTheDocument();
+        // Title is always visible while loading
+        expect(screen.getByTestId('status-label')).toHaveTextContent('Estado del sistema');
     });
 
     // ── Error state ────────────────────────────────────────────────────────
@@ -203,7 +210,10 @@ describe('StatusWidget', () => {
 
         const errorEl = await screen.findByTestId('status-widget-error');
         expect(errorEl).toBeInTheDocument();
-        expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+        // Card shell is always present on error
+        expect(screen.getByTestId('status-widget')).toBeInTheDocument();
+        // Title is always visible on error
+        expect(screen.getByTestId('status-label')).toHaveTextContent('Estado del sistema');
     });
 
     it('exposes a retry button inside the error state; clicking it does not throw', async () => {
@@ -238,6 +248,8 @@ describe('StatusWidget', () => {
         );
 
         expect(await screen.findByTestId('status-widget-empty')).toBeInTheDocument();
+        // Title is always visible when empty
+        expect(screen.getByTestId('status-label')).toHaveTextContent('Estado del sistema');
     });
 
     // ── Data — label ──────────────────────────────────────────────────────
