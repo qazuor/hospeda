@@ -203,7 +203,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         id: 'accommodationCount',
         header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationsCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
         startVisibleOnGrid: true
@@ -212,7 +212,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         id: 'eventsCount',
         header: t('admin-entities.columns.eventsCount'),
         accessorKey: 'eventsCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
         startVisibleOnGrid: true
@@ -221,7 +221,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         id: 'postsCount',
         header: t('admin-entities.columns.postsCount'),
         accessorKey: 'postsCount',
-        enableSorting: true,
+        enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
         startVisibleOnGrid: true
