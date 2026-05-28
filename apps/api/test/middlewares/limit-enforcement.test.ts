@@ -563,7 +563,7 @@ describe('Limit Enforcement Middleware', () => {
                             limitKey: LimitKey.MAX_ACCOMMODATIONS,
                             currentCount: 5,
                             maxAllowed: 5,
-                            upgradeUrl: '/billing/plans'
+                            upgradeAudience: 'host'
                         }
                     }
                 });
@@ -930,7 +930,7 @@ describe('Limit Enforcement Middleware', () => {
                     limitKey: LimitKey.MAX_ACCOMMODATIONS,
                     currentCount: expect.any(Number),
                     maxAllowed: expect.any(Number),
-                    upgradeUrl: '/billing/plans'
+                    upgradeAudience: 'host'
                 });
             }
         });

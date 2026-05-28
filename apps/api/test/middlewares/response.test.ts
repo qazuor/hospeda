@@ -223,7 +223,7 @@ describe('Response Middleware', () => {
                         currentCount: 1,
                         maxAllowed: 1,
                         usagePercent: 100,
-                        upgradeUrl: '/billing/plans'
+                        upgradeAudience: 'host'
                     }
                 );
             });
@@ -245,7 +245,7 @@ describe('Response Middleware', () => {
                 currentCount: 1,
                 maxAllowed: 1,
                 usagePercent: 100,
-                upgradeUrl: '/billing/plans'
+                upgradeAudience: 'host'
             });
         });
 
