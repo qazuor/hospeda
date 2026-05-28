@@ -1008,6 +1008,116 @@ registerDataSource('host.stats.conversations-monthly', (ctx) => ({
 }));
 
 // ============================================================================
+// CARD J — Comparativo de mercado (per accommodation)
+// ============================================================================
+
+/**
+ * Shape of GET /api/v1/protected/accommodations/my/market-comparison.
+ *
+ * One entry per accommodation owned by the host with the listing's own
+ * rating + review count alongside the destination averages (nullable when
+ * the host is the only listing in the destination with reviews).
+ *
+ * (Price comparison was considered but skipped — `accommodations.price` is
+ * stored as JSONB so it can't be averaged with a straight SQL `AVG`. The
+ * card currently surfaces rating + reviews; price is a phase-2 follow-up.)
+ */
+interface HostMarketComparisonApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly comparisons: ReadonlyArray<{
+            readonly accommodationId: string;
+            readonly accommodationName: string;
+            readonly destinationId: string;
+            readonly destinationName: string | null;
+            readonly yourRating: number | null;
+            readonly yourReviews: number;
+            readonly destinationAvgRating: number | null;
+            readonly destinationReviewsTotal: number;
+        }>;
+    };
+}
+
+/**
+ * Builds the meta string a single accommodation row shows on card J.
+ * Format: `{destinationName} · ★ {you} vs {dest} · {reviews} reseñas`
+ * with sensible fallbacks for missing data (rating averages are nullable
+ * when no listings in the destination have reviews yet).
+ */
+function formatMarketMeta(row: {
+    yourRating: number | null;
+    yourReviews: number;
+    destinationAvgRating: number | null;
+}): string {
+    const fragments: string[] = [];
+    if (row.yourRating !== null) {
+        fragments.push(
+            row.destinationAvgRating !== null
+                ? `★ ${row.yourRating.toFixed(1)} vs ${row.destinationAvgRating.toFixed(1)}`
+                : `★ ${row.yourRating.toFixed(1)}`
+        );
+    }
+    if (row.yourReviews > 0) {
+        fragments.push(`${row.yourReviews} reseñas`);
+    }
+    return fragments.join(' · ');
+}
+
+/**
+ * Verdict computed from a single comparison row — drives a status pill on
+ * each list item ("Mejor" / "Igual" / "Peor" / "Sin datos"). Rating-driven
+ * (the strongest trust signal for vacation rentals); we widen the "Igual"
+ * band to ±0.2 to absorb noise on hosts with few reviews.
+ */
+function computeMarketVerdict(row: {
+    yourRating: number | null;
+    destinationAvgRating: number | null;
+}): {
+    label: string;
+    variant: 'success' | 'warning' | 'destructive' | 'neutral';
+} {
+    if (row.destinationAvgRating === null || row.yourRating === null) {
+        return { label: 'Sin datos', variant: 'neutral' };
+    }
+    const delta = row.yourRating - row.destinationAvgRating;
+    if (delta >= 0.2) return { label: 'Mejor', variant: 'success' };
+    if (delta <= -0.2) return { label: 'Peor', variant: 'destructive' };
+    return { label: 'Igual', variant: 'warning' };
+}
+
+/**
+ * HOST card J: per-accommodation market comparison.
+ *
+ * Source ID: `'host.stats.market-comparison'`
+ * Scope: `'own'` — the endpoint is implicitly user-scoped.
+ * Endpoint: GET /api/v1/protected/accommodations/my/market-comparison
+ */
+registerDataSource('host.stats.market-comparison', (ctx) => ({
+    queryKey: buildDashboardQueryKey('host.stats.market-comparison', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<HostMarketComparisonApiResponse>({
+            path: '/api/v1/protected/accommodations/my/market-comparison'
+        });
+        const comparisons = result.data.data?.comparisons ?? [];
+
+        // Normalise to ListItem[] expected by ListWidget. Each item has the
+        // accommodation name as label, destination + comparison meta as
+        // sub-line, and a status badge encoding the verdict.
+        return comparisons.map((row) => {
+            const verdict = computeMarketVerdict(row);
+            return {
+                id: row.accommodationId,
+                label: row.accommodationName,
+                meta: `${row.destinationName ?? 'Sin destino'} · ${formatMarketMeta(row)}`,
+                href: `/accommodations/${row.accommodationId}`,
+                statusBadge: { label: verdict.label, variant: verdict.variant }
+            };
+        });
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
 // CARD H — Próximos pasos: actionable suggestions composed client-side
 // ============================================================================
 

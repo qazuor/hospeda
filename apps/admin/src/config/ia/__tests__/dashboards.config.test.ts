@@ -62,6 +62,7 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'host.stats.response-rate',
     'host.stats.ratings',
     'host.stats.conversations-monthly',
+    'host.stats.market-comparison',
     'host.suggestions.list',
 
     // T-019 EDITOR (editor.ts)
@@ -158,8 +159,8 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
     // ── 2. Card counts ────────────────────────────────────────────────────────
 
     describe('Card counts', () => {
-        it('hostDashboard has exactly 9 widgets', () => {
-            expect(dashboards.hostDashboard.widgets).toHaveLength(9);
+        it('hostDashboard has exactly 10 widgets', () => {
+            expect(dashboards.hostDashboard.widgets).toHaveLength(10);
         });
 
         it('editorDashboard has exactly 8 widgets', () => {

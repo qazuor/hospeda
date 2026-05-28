@@ -2060,4 +2060,51 @@ export class AccommodationService extends BaseCrudService<
             ctx?.tx
         );
     }
+
+    /**
+     * Per-accommodation market comparison for the HOST card J redesign.
+     *
+     * Delegates to {@link AccommodationModel.getMarketComparisonByOwnerId} —
+     * the SQL builds the destination averages on the fly so the dashboard
+     * does not need a materialised aggregate table.
+     *
+     * Permission gating: requires `ACCOMMODATION_VIEW_OWN` (the same right
+     * the host's own accommodation list uses). `ownerId` is always derived
+     * from `actor.id` so the host cannot peek at another host's market data.
+     */
+    public async getHostMarketComparison(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<
+        ServiceOutput<
+            ReadonlyArray<{
+                readonly accommodationId: string;
+                readonly accommodationName: string;
+                readonly destinationId: string;
+                readonly destinationName: string | null;
+                readonly yourRating: number | null;
+                readonly yourReviews: number;
+                readonly destinationAvgRating: number | null;
+                readonly destinationReviewsTotal: number;
+            }>
+        >
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getHostMarketComparison',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (
+                    !validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_VIEW)
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ACCOMMODATION_LISTING_VIEW required for market comparison'
+                    );
+                }
+                return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);
+            }
+        });
+    }
 }

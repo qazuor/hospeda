@@ -40,11 +40,11 @@
 import type { DashboardInput } from './schema';
 
 // ============================================================================
-// hostDashboard — "Mi negocio" — 9 cards A–I
+// hostDashboard — "Mi negocio" — 10 cards A–J
 // ============================================================================
 
 /**
- * Dashboard for the HOST role — 9-card "Mi negocio" view.
+ * Dashboard for the HOST role — 10-card "Mi negocio" view.
  *
  * Card set (SPEC-155 §3 / 03c HOST section):
  *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
@@ -58,7 +58,7 @@ import type { DashboardInput } from './schema';
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 9
+ * dashboards.hostDashboard.widgets.length; // 10
  * ```
  */
 const hostDashboard: DashboardInput = {
@@ -361,6 +361,34 @@ const hostDashboard: DashboardInput = {
                 emptyDescription:
                     'Cuando empieces a recibir consultas, vas a ver la tendencia mensual acá.',
                 errorText: 'No pudimos cargar la tendencia',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card J — Comparativo de mercado
+        // Per-accommodation comparison: your rating + price vs the destination
+        // average (computed across every other active accommodation in the same
+        // destination). One row per listing; the host can scan their portfolio
+        // and spot listings that are punching above or below market.
+        {
+            id: 'host-card-j',
+            type: 'list',
+            label: {
+                es: 'Comparativo de mercado',
+                en: 'Market comparison',
+                pt: 'Comparativo de mercado'
+            },
+            scope: 'own',
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.market-comparison',
+                accent: 'cyan',
+                icon: 'compass',
+                maxItems: 5,
+                emptyText: 'Sin datos para comparar todavía',
+                emptyDescription:
+                    'Publicá un alojamiento y volvé acá para ver cómo te comparás con el destino.',
+                errorText: 'No pudimos cargar el comparativo',
                 errorDescription: 'Probá actualizar el panel.'
             }
         }
@@ -905,7 +933,7 @@ const superAdminDashboard: DashboardInput = {
  * The renderer looks up the active dashboard from this registry.
  *
  * Named source objects (SPEC-155 AC-4):
- * - `hostDashboard`          — HOST role (9 cards)
+ * - `hostDashboard`          — HOST role (10 cards)
  * - `editorDashboard`        — EDITOR role (8 cards)
  * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
  * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)
