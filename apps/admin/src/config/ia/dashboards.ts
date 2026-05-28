@@ -307,6 +307,34 @@ const hostDashboard: DashboardInput = {
             }
         },
 
+        // Card I — Tendencia mensual
+        // Bar chart with the host's monthly inquiry count for the last 6 months.
+        // Source: host.stats.conversations-monthly (gap-filled server-side).
+        {
+            id: 'host-card-i',
+            type: 'chart',
+            label: {
+                es: 'Consultas por mes',
+                en: 'Inquiries per month',
+                pt: 'Consultas por mês'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — 6-bucket bars stay legible at 2 cols and
+            // pair cleanly with the suggestions + market-comparison rows below.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.conversations-monthly',
+                chartType: 'bar',
+                accent: 'sky',
+                icon: 'chart',
+                emptyText: 'Aún no hay consultas',
+                emptyDescription:
+                    'Cuando empieces a recibir consultas, vas a ver la tendencia mensual acá.',
+                errorText: 'No pudimos cargar la tendencia',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
         // Card H — Próximos pasos
         // Priority-sorted list of actionable items composed from the same
         // sources that feed cards B/C/D/E (subscription, conversations,
@@ -321,9 +349,9 @@ const hostDashboard: DashboardInput = {
                 pt: 'Próximos passos'
             },
             scope: 'own',
-            // Bento: wide (2×1) — actionable rows are short; 3×1 left a lot
-            // of empty horizontal space.
-            gridSpan: { cols: 2 },
+            // Bento: narrow (1×1) — actionable rows are short, so a single
+            // column is enough; shares the row with card J (market comparison).
+            gridSpan: { cols: 1 },
             config: {
                 source: 'host.suggestions.list',
                 accent: 'warning',
@@ -342,34 +370,6 @@ const hostDashboard: DashboardInput = {
             }
         },
 
-        // Card I — Tendencia mensual
-        // Bar chart with the host's monthly inquiry count for the last 6 months.
-        // Source: host.stats.conversations-monthly (gap-filled server-side).
-        {
-            id: 'host-card-i',
-            type: 'chart',
-            label: {
-                es: 'Consultas por mes',
-                en: 'Inquiries per month',
-                pt: 'Consultas por mês'
-            },
-            scope: 'own',
-            // Bento: full hero (3×1) — a 6-bucket time-series + month labels
-            // need maximum horizontal room to stay legible.
-            gridSpan: { cols: 3 },
-            config: {
-                source: 'host.stats.conversations-monthly',
-                chartType: 'bar',
-                accent: 'sky',
-                icon: 'chart',
-                emptyText: 'Aún no hay consultas',
-                emptyDescription:
-                    'Cuando empieces a recibir consultas, vas a ver la tendencia mensual acá.',
-                errorText: 'No pudimos cargar la tendencia',
-                errorDescription: 'Probá actualizar el panel.'
-            }
-        },
-
         // Card J — Comparativo de mercado
         // Per-accommodation comparison: your rating + price vs the destination
         // average (computed across every other active accommodation in the same
@@ -384,9 +384,9 @@ const hostDashboard: DashboardInput = {
                 pt: 'Comparativo de mercado'
             },
             scope: 'own',
-            // Bento: full hero (3×1) — per-row meta lines + CTA need horizontal
-            // room; the comparison reads as a small table of N accommodations.
-            gridSpan: { cols: 3 },
+            // Bento: wide (2×1) — per-row meta lines + CTA fit comfortably at
+            // 2 cols; shares the row with card H (suggestions) to its left.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.stats.market-comparison',
                 accent: 'cyan',
