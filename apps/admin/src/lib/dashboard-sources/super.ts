@@ -46,29 +46,39 @@ import {
 
 /**
  * Shape of the billing metrics API response.
- * Matches GET /api/v1/admin/billing/metrics (qzpay-hono route).
+ * Matches GET /api/v1/admin/billing/metrics.
  * Requires `BILLING_METRICS_VIEW` permission (SUPER_ADMIN-only per 03c).
+ *
+ * The headline figures are nested under `data.overview` (NOT flat on `data`);
+ * reading them flat returned `undefined` → the card rendered 0 regardless of
+ * real data (SPEC-155 follow-up).
  */
 interface BillingMetricsApiResponse {
     readonly success: boolean;
     readonly data?: {
-        /** Total active paid subscriptions on the platform. */
-        readonly activeSubscriptions?: number;
-        /** Monthly Recurring Revenue in centavos (integer). */
-        readonly mrr?: number;
-        /** Annual Recurring Revenue in centavos (integer). */
-        readonly arr?: number;
-        /** Average Revenue Per User in centavos (integer). */
-        readonly arpu?: number;
-        /** Churn rate as a decimal (0–1). */
-        readonly churnRate?: number;
+        readonly overview?: {
+            /** Active paid subscriptions on the platform. */
+            readonly activeSubscriptions?: number;
+            /** Subscriptions currently in a trial period. */
+            readonly trialingSubscriptions?: number;
+            /** Monthly Recurring Revenue in centavos (integer). */
+            readonly mrr?: number;
+            /** Average Revenue Per User in centavos (integer). */
+            readonly arpu?: number;
+            /** Churn rate as a decimal (0–1). */
+            readonly churnRate?: number;
+            /** Total customers (paying or not). */
+            readonly totalCustomers?: number;
+            /** Total revenue to date in centavos (integer). */
+            readonly totalRevenue?: number;
+        };
         /** Revenue by month for the trailing 12 months. */
-        readonly monthlyRevenue?: ReadonlyArray<{
+        readonly revenueTimeSeries?: ReadonlyArray<{
             readonly month: string;
             readonly revenue: number;
         }>;
         /** Subscription counts broken down by plan tier. */
-        readonly subscriptionBreakdown?: Record<string, number>;
+        readonly subscriptionBreakdown?: ReadonlyArray<unknown>;
     };
 }
 
@@ -99,17 +109,14 @@ registerDataSource('super.billing.stats', (ctx) => ({
         const result = await fetchApi<BillingMetricsApiResponse>({
             path: '/api/v1/admin/billing/metrics'
         });
-        const data = result.data.data;
-        if (!data) return null;
+        const overview = result.data.data?.overview;
+        if (!overview) return null;
 
         // Normalize to KpiData shape expected by KpiWidget.
-        // Primary value: active subscriptions count.
-        // MRR is surfaced as unitPrefix/unitSuffix for context.
-        const mrrPesos = data.mrr !== undefined ? Math.round(data.mrr / 100) : undefined;
+        // Primary value: active paid subscriptions count.
         return {
-            value: data.activeSubscriptions ?? 0,
-            unitSuffix: 'suscripciones',
-            ...(mrrPesos !== undefined ? { mrr: mrrPesos } : {})
+            value: overview.activeSubscriptions ?? 0,
+            unitSuffix: 'suscripciones'
         };
     },
     staleTime: DASHBOARD_STALE_TIME_MS

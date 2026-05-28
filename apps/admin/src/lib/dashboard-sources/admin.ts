@@ -11,10 +11,10 @@
  *
  * | Source ID                          | Card | Scope | Endpoint(s) |
  * |------------------------------------|------|-------|-------------|
- * | `admin.accommodations.latest`      | B    | all   | GET /api/v1/admin/accommodations?sort=published_desc&pageSize=5 |
+ * | `admin.accommodations.latest`      | B    | all   | GET /api/v1/admin/accommodations?sort=createdAt:desc&pageSize=5 |
  * | `admin.editorial.summary`          | C    | all   | GET /api/v1/admin/events (featured upcoming) + posts (drafts + month) + events (drafts) |
- * | `admin.crons.list`                 | D    | all   | GET /api/v1/admin/cron-jobs (cron-admin endpoint) |
- * | `admin.system.health`              | E    | all   | GET /api/v1/health + db/live/ready sub-endpoints |
+ * | `admin.crons.list`                 | D    | all   | GET /api/v1/admin/cron (cron-admin endpoint) |
+ * | `admin.system.health`              | E    | all   | GET /api/v1/admin/system/health |
  * | `admin.moderation.pending`         | F    | all   | GET /api/v1/admin/moderation/pending-count |
  *
  * NOTE: `admin.entities.counts` (Card A) and `admin.users.stats` (Card G) are
@@ -46,11 +46,17 @@ import {
 // RESPONSE TYPE SHAPES
 // ============================================================================
 
-/** Minimal admin list response wrapper. */
+/**
+ * Minimal admin list response wrapper.
+ *
+ * The admin list endpoints return `{ success, data: { items, pagination } }`
+ * (the rows live under `data.items`, NOT `data.data`). This was the source of
+ * the empty-list bug on cards B and C (SPEC-155 follow-up).
+ */
 interface AdminListApiResponse<T = unknown> {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<T>;
+        readonly items?: ReadonlyArray<T>;
         readonly pagination?: { readonly total?: number };
     };
 }
@@ -89,7 +95,7 @@ interface CronJobItem {
     readonly lastRun?: string;
 }
 
-/** Shape of GET /api/v1/admin/cron-jobs response. */
+/** Shape of GET /api/v1/admin/cron response. */
 interface CronJobsApiResponse {
     readonly success: boolean;
     readonly data?: {
@@ -99,23 +105,39 @@ interface CronJobsApiResponse {
     };
 }
 
-/** Shape of health check endpoints (db/live/ready). */
-interface HealthApiResponse {
-    readonly status: string;
-    readonly db?: string;
-    readonly redis?: string;
+/**
+ * Shape of GET /api/v1/admin/system/health (admin envelope).
+ *
+ * `status` already arrives rolled-up as `up | degraded | down` (matching the
+ * widget's variantMap), so no client-side normalization is needed.
+ */
+interface SystemHealthApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly status?: 'up' | 'degraded' | 'down';
+        readonly db?: string;
+        readonly redis?: string;
+    };
 }
 
-/** Shape of GET /api/v1/admin/moderation/pending-count response. */
+/**
+ * Shape of GET /api/v1/admin/moderation/pending-count response.
+ *
+ * `total` is at the top of `data`; the per-entity counts are nested under
+ * `data.byEntity` (NOT flat on `data`). Reading them flat left the breakdown
+ * at all-zeros (SPEC-155 follow-up).
+ */
 interface ModerationPendingCountApiResponse {
     readonly success: boolean;
     readonly data?: {
         readonly total?: number;
-        readonly accommodations?: number;
-        readonly destinations?: number;
-        readonly posts?: number;
-        readonly events?: number;
-        readonly reviews?: number;
+        readonly byEntity?: {
+            readonly accommodations?: number;
+            readonly destinations?: number;
+            readonly posts?: number;
+            readonly events?: number;
+            readonly reviews?: number;
+        };
     };
 }
 
@@ -143,21 +165,23 @@ function nowIso(): string {
  *
  * Source ID: `'admin.accommodations.latest'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/accommodations?sort=published_desc&pageSize=5
+ * Endpoint: GET /api/v1/admin/accommodations?sort=createdAt:desc&pageSize=5
  */
 registerDataSource('admin.accommodations.latest', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.accommodations.latest', ctx),
     queryFn: async () => {
+        // Sort format is `field:asc|desc` (NOT `field_desc`); `publishedAt` is not
+        // a sortable field on this endpoint, so use `createdAt:desc` (most recent).
         const result = await fetchApi<AdminListApiResponse<AccommodationItem>>({
-            path: '/api/v1/admin/accommodations?sort=published_desc&pageSize=5'
+            path: '/api/v1/admin/accommodations?sort=createdAt:desc&pageSize=5'
         });
-        const items = result.data.data?.data ?? [];
+        const items = result.data.data?.items ?? [];
         // Normalize to ListItem shape expected by ListWidget.
         return items.map((item) => ({
             id: item.id,
             label: item.name,
             meta: item.status,
-            href: `/catalogo/alojamientos/${item.id}`
+            href: `/accommodations/${item.id}`
         }));
     },
     staleTime: DASHBOARD_STALE_TIME_MS
@@ -182,7 +206,7 @@ registerDataSource('admin.accommodations.latest', (ctx) => ({
  * Scope: `'all'`
  * Endpoints (parallel):
  *   - GET /api/v1/admin/events?isFeatured=true&startDateAfter={now}&pageSize=5
- *   - GET /api/v1/admin/posts?status=DRAFT&sort=updated_at_desc&pageSize=5
+ *   - GET /api/v1/admin/posts?status=DRAFT&sort=updatedAt:desc&pageSize=5
  *   - GET /api/v1/admin/events?status=DRAFT&pageSize=5
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
  */
@@ -198,7 +222,8 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
                     path: `/api/v1/admin/events?isFeatured=true&startDateAfter=${encodeURIComponent(now)}&pageSize=5`
                 }),
                 fetchApi<AdminListApiResponse<PostItem>>({
-                    path: '/api/v1/admin/posts?status=DRAFT&sort=updated_at_desc&pageSize=5'
+                    // Sort format is `field:asc|desc` (NOT `field_desc`).
+                    path: '/api/v1/admin/posts?status=DRAFT&sort=updatedAt:desc&pageSize=5'
                 }),
                 fetchApi<AdminListApiResponse<EventItem>>({
                     path: '/api/v1/admin/events?status=DRAFT&pageSize=5'
@@ -208,9 +233,9 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
                 })
             ]);
 
-        const featuredEvents = featuredEventsResult.data.data?.data ?? [];
-        const draftPosts = draftPostsResult.data.data?.data ?? [];
-        const draftEvents = draftEventsResult.data.data?.data ?? [];
+        const featuredEvents = featuredEventsResult.data.data?.items ?? [];
+        const draftPosts = draftPostsResult.data.data?.items ?? [];
+        const draftEvents = draftEventsResult.data.data?.items ?? [];
         const postsThisMonth = postsThisMonthResult.data.data?.pagination?.total ?? 0;
 
         // Normalize to ListItem[] shape expected by ListWidget.
@@ -220,19 +245,19 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
                 id: e.id,
                 label: e.title,
                 meta: `Evento destacado${e.startDate ? ` · ${new Date(e.startDate).toLocaleDateString('es-AR')}` : ''}`,
-                href: `/catalogo/eventos/${e.id}`
+                href: `/events/${e.id}`
             })),
             ...draftPosts.slice(0, 2).map((p) => ({
                 id: p.id,
                 label: p.title,
                 meta: `Post borrador${p.updatedAt ? ` · ${new Date(p.updatedAt).toLocaleDateString('es-AR')}` : ''}`,
-                href: `/contenido/posts/${p.id}`
+                href: `/posts/${p.id}`
             })),
             ...draftEvents.slice(0, 1).map((e) => ({
                 id: e.id,
                 label: e.title,
                 meta: 'Evento borrador',
-                href: `/catalogo/eventos/${e.id}`
+                href: `/events/${e.id}`
             }))
         ];
 
@@ -258,13 +283,13 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
  *
  * Source ID: `'admin.crons.list'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/cron-jobs
+ * Endpoint: GET /api/v1/admin/cron
  */
 registerDataSource('admin.crons.list', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.crons.list', ctx),
     queryFn: async () => {
         const result = await fetchApi<CronJobsApiResponse>({
-            path: '/api/v1/admin/cron-jobs'
+            path: '/api/v1/admin/cron'
         });
         const jobs = result.data.data?.jobs ?? [];
 
@@ -284,33 +309,35 @@ registerDataSource('admin.crons.list', (ctx) => ({
 // ============================================================================
 
 /**
- * ADMIN card E: system health (db/redis/api status).
+ * ADMIN card E: system health (db/redis status).
  *
- * Maintenance-mode flag is folded into this source once confirmed readable
- * (currently 🟡 — ADMIN-E open item). The health endpoints are always-available
- * so the query has a shorter stale time (30 s) for faster freshness feedback.
+ * Uses the dedicated admin endpoint (under /api/v1/admin/* so CORS + auth
+ * apply) rather than the root /health, which has no CORS headers and is
+ * blocked by the browser on the cross-origin, credentialed admin fetch.
+ * Shorter stale time (30 s) for faster freshness feedback.
  *
  * Source ID: `'admin.system.health'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/health (+ sub-endpoints if available)
+ * Endpoint: GET /api/v1/admin/system/health
  */
 registerDataSource('admin.system.health', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.system.health', ctx),
     queryFn: async () => {
-        const result = await fetchApi<HealthApiResponse>({
-            path: '/api/v1/health'
+        const result = await fetchApi<SystemHealthApiResponse>({
+            path: '/api/v1/admin/system/health'
         });
-        const rawStatus = result.data.status;
-        const db = result.data.db ?? 'unknown';
-        const redis = result.data.redis ?? 'unknown';
+        const data = result.data.data;
+        if (!data) return null;
 
         // Normalize to StatusData shape expected by StatusWidget.
-        // The health endpoint may return 'ok', 'degraded', 'down', or other values.
-        // Map 'ok' → 'up' (the variantMap in dashboards.ts uses 'up'/'degraded'/'down').
-        const normalizedStatus = rawStatus === 'ok' ? 'up' : (rawStatus ?? 'unknown');
+        // `status` already arrives rolled-up as 'up' | 'degraded' | 'down'
+        // (matches the variantMap in dashboards.ts), so no remap is needed.
+        const status = data.status ?? 'unknown';
+        const db = data.db ?? 'unknown';
+        const redis = data.redis ?? 'unknown';
         const description = `DB: ${db} · Redis: ${redis}`;
 
-        return { status: normalizedStatus, description };
+        return { status, description };
     },
     // Shorter stale time for health checks — 30 s gives more up-to-date feedback.
     staleTime: 30_000
@@ -342,15 +369,16 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
         if (!data) return null;
 
         // Normalize to KpiData shape expected by KpiWidget.
-        // `total` is the primary KPI value; breakdown fields are extra context.
+        // `total` is the primary KPI value; per-entity counts live in `byEntity`.
+        const byEntity = data.byEntity ?? {};
         return {
             value: data.total ?? 0,
             breakdown: {
-                accommodations: data.accommodations ?? 0,
-                destinations: data.destinations ?? 0,
-                posts: data.posts ?? 0,
-                events: data.events ?? 0,
-                reviews: data.reviews ?? 0
+                accommodations: byEntity.accommodations ?? 0,
+                destinations: byEntity.destinations ?? 0,
+                posts: byEntity.posts ?? 0,
+                events: byEntity.events ?? 0,
+                reviews: byEntity.reviews ?? 0
             }
         };
     },
