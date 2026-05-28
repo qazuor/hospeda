@@ -1,12 +1,39 @@
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
+import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
+import { WhatsAppLinkCell } from '@/components/entity-list/WhatsAppLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { EditIcon } from '@repo/icons';
 import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
-import { useDeleteEventOrganizerMutation } from '../hooks/useEventOrganizerQuery';
+import {
+    useDeleteEventOrganizerMutation,
+    useUpdateEventOrganizerMutation
+} from '../hooks/useEventOrganizerQuery';
 import type { EventOrganizer } from '../schemas/event-organizers.schemas';
+
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: LifecycleStatusEnum.DRAFT,
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: LifecycleStatusEnum.ACTIVE,
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: LifecycleStatusEnum.ARCHIVED,
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
 
 /**
  * Creates column configuration for event organizers list
@@ -40,7 +67,11 @@ export const createEventOrganizersColumns = (
             header: t('admin-entities.columns.email'),
             accessorKey: 'contactInfo.personalEmail',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(MailLinkCell, {
+                    email: row.contactInfo?.personalEmail ?? row.contactInfo?.workEmail
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
@@ -49,7 +80,9 @@ export const createEventOrganizersColumns = (
             header: t('admin-entities.columns.phone'),
             accessorKey: 'contactInfo.mobilePhone',
             enableSorting: false,
-            columnType: ColumnType.STRING,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(WhatsAppLinkCell, { phone: row.contactInfo?.mobilePhone }),
             startVisibleOnTable: false,
             startVisibleOnGrid: false
         },
@@ -98,24 +131,21 @@ export const createEventOrganizersColumns = (
             header: t('admin-entities.columns.status'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: LifecycleStatusEnum.ACTIVE,
-                    label: t('admin-entities.states.lifecycle.active'),
-                    color: BadgeColor.SUCCESS
-                },
-                {
-                    value: LifecycleStatusEnum.DRAFT,
-                    label: t('admin-entities.states.lifecycle.draft'),
-                    color: BadgeColor.WARNING
-                },
-                {
-                    value: LifecycleStatusEnum.ARCHIVED,
-                    label: t('admin-entities.states.lifecycle.archived'),
-                    color: BadgeColor.SECONDARY
-                }
-            ],
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell<Partial<EventOrganizer>>, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.eventOrganizer.singular',
+                    field: 'lifecycleState',
+                    currentValue: row.lifecycleState,
+                    successMessageKey: 'admin-entities.messages.stateChanged',
+                    options: LIFECYCLE_OPTIONS(t),
+                    permission: PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
+                    useUpdateMutation: useUpdateEventOrganizerMutation,
+                    confirmValues: ['ARCHIVED'],
+                    confirmCopyKey: 'archive'
+                }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
