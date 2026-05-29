@@ -9,6 +9,11 @@
  *   succeeds (the whole point of the lookup tier); an actor without admin access is FORBIDDEN.
  * - DRAFT-inclusivity: the method delegates to the model's searchWithRelations, which only
  *   excludes soft-deleted rows (never publication state), so DRAFT entities are returned.
+ *
+ * SPEC-169 T-025 (AC-7) — this file is the PAYLOAD half of AC-7: an EDITOR-equivalent actor
+ * holding only ACCESS_PANEL_ADMIN (no _VIEW_ALL) gets a { id, label, slug, type, destination }
+ * projection with DRAFT rows included. The ROUTE half (EDITOR reaches /options without 403/404)
+ * lives in apps/api/test/routes/<entity>/admin/options.test.ts.
  */
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

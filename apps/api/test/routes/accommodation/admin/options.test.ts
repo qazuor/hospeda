@@ -10,6 +10,12 @@
  * NOTE: the service is MOCKED in route tests (see test/setup.ts), so the real
  * checkCanFindOptions does not run here — this file's job is the route GATE. Payload shape
  * (id/label/slug/type/destination) and DRAFT-inclusivity are covered by the service unit test.
+ *
+ * SPEC-169 T-025 (AC-7) — the "accepts an ACCESS_PANEL_ADMIN-only editor" case below IS the
+ * AC-7 coverage for the ROUTE half (an EDITOR with neither ACCOMMODATION_VIEW_ALL nor
+ * DESTINATION_VIEW_ALL reaches /options without a 403/404). The PAYLOAD half of AC-7 (response
+ * is only { id, label, slug }[+type+destination for accommodation], DRAFT included) is asserted
+ * against the real service in packages/service-core/test/services/<entity>/find-options.test.ts.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

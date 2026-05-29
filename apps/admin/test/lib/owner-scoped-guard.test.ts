@@ -3,6 +3,13 @@
  *
  * SPEC-169 T-022 — covers all four D5 branches without spinning up
  * TanStack Router or mocking `redirect()`.
+ *
+ * SPEC-169 T-024 (AC-3) — this suite IS the AC-3 route-guard coverage: an
+ * owner-scoped HOST hitting `/accommodations` is redirected to
+ * `/me/accommodations` (see "returns /me/accommodations for a HOST..."), while
+ * a staff actor holding VIEW_ALL is allowed through (see "returns null when
+ * actor has VIEW_ALL"). No separate guard test file is needed — the redirect
+ * decision is a pure function and is tested here in isolation.
  */
 
 import { PermissionEnum } from '@repo/schemas';
