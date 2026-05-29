@@ -2,7 +2,6 @@ import { useEntityFormContext } from '@/components/entity-form/context/EntityFor
 import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
 import { EntitlementKey } from '@repo/billing';
 import { useStore } from '@tanstack/react-form';
 import * as React from 'react';
@@ -38,7 +37,6 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     compact = false
 }: AccommodationQualityScoreProps) {
     const { form } = useEntityFormContext();
-    const shouldGate = useShouldShowEntitlementGates();
     const { has, isLoading: entitlementsLoading } = useMyEntitlements();
 
     // The engine is pure so recomputation is cheap (~10 signals per pass).
@@ -47,12 +45,11 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 
-    // Per spec §4.7: staff (non-HOST) skip gating entirely — they have no
-    // plan in the billing sense, so surfacing "Mejorar plan" at them is
-    // misleading. Treat every feature as unlocked. While entitlements are
-    // loading we fail-open too, matching the gate components' behavior.
-    const hasVideoGalleryFeature =
-        !shouldGate || entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
+    // Feature availability comes straight from the entitlements resolver
+    // (SPEC-171): staff receive every entitlement (`has` → true) so they are
+    // never gated, HOSTs depend on their plan. While entitlements are loading
+    // we fail-open to avoid flashing the gated state.
+    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
 
     const signals = React.useMemo(
         () => createAccommodationSignals({ hasVideoGalleryFeature }),

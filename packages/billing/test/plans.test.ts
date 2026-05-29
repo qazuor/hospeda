@@ -6,8 +6,11 @@ import {
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
     getDefaultPlan,
-    getPlanBySlug
+    getPlanBySlug,
+    getUnlimitedEntitlements
 } from '../src/config/plans.config.js';
+import { EntitlementKey } from '../src/types/entitlement.types.js';
+import { LimitKey } from '../src/types/plan.types.js';
 
 describe('Plan Configuration', () => {
     describe('ALL_PLANS', () => {
@@ -121,6 +124,49 @@ describe('Plan Configuration', () => {
             );
             expect(propertiesLimit).toBeDefined();
             expect(propertiesLimit?.value).toBeGreaterThan(0);
+        });
+    });
+
+    describe('getUnlimitedEntitlements (SPEC-171)', () => {
+        it('should grant every EntitlementKey', () => {
+            const { entitlements } = getUnlimitedEntitlements();
+            const allKeys = Object.values(EntitlementKey);
+
+            expect(entitlements).toHaveLength(allKeys.length);
+            for (const key of allKeys) {
+                expect(entitlements).toContain(key);
+            }
+        });
+
+        it('should include every LimitKey set to the unlimited sentinel (-1)', () => {
+            const { limits } = getUnlimitedEntitlements();
+            const allLimitKeys = Object.values(LimitKey);
+
+            expect(limits).toHaveLength(allLimitKeys.length);
+            for (const key of allLimitKeys) {
+                const found = limits.find((l) => l.key === key);
+                expect(found).toBeDefined();
+                expect(found?.value).toBe(-1);
+            }
+        });
+
+        it('should produce limit definitions with metadata (name + description)', () => {
+            const { limits } = getUnlimitedEntitlements();
+            for (const def of limits) {
+                expect(typeof def.name).toBe('string');
+                expect(def.name).toBeTruthy();
+                expect(typeof def.description).toBe('string');
+                expect(def.description).toBeTruthy();
+            }
+        });
+
+        it('should materialize into Set + Map the same way as getDefaultEntitlements', () => {
+            const { entitlements, limits } = getUnlimitedEntitlements();
+            const entitlementSet = new Set(entitlements);
+            const limitMap = new Map(limits.map((l) => [l.key, l.value]));
+
+            expect(entitlementSet.has(EntitlementKey.WHITE_LABEL)).toBe(true);
+            expect(limitMap.get(LimitKey.MAX_ACCOMMODATIONS)).toBe(-1);
         });
     });
 });

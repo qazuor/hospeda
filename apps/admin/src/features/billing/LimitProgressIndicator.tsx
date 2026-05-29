@@ -1,5 +1,4 @@
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import type { LimitKey } from '@repo/billing';
@@ -24,10 +23,12 @@ export interface LimitProgressIndicatorProps {
  * "límite cuantitativo... aviso con barra de progreso del límite + CTA
  * de upgrade, junto al recurso que limita").
  *
- * The component renders ONLY for HOST users whose plan exposes a finite
- * limit for the given key. Staff bypass the indicator because they have
- * no plan in the billing sense (`useShouldShowEntitlementGates` returns
- * false for them — see that helper for the rationale).
+ * The component renders ONLY when the resolved limit for the given key is a
+ * finite positive number. Staff bypass the indicator because the entitlements
+ * resolver returns the unlimited sentinel (`-1`) for them (SPEC-171), and any
+ * actor whose plan does not expose this limit reads as unlimited too — both
+ * collapse into the `maxAllowed === -1 → null` branch below. No role check is
+ * needed here: the motor is the single source of truth.
  *
  * Authoritative enforcement of the limit happens server-side (e.g.
  * `enforcePhotoLimit` on `POST /api/v1/admin/media/upload`); this UI is a
@@ -58,18 +59,16 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
     className
 }: LimitProgressIndicatorProps) {
     const { t } = useTranslations();
-    const shouldGate = useShouldShowEntitlementGates();
     const { limit, isLoading, error } = useMyEntitlements();
 
-    // Staff / unauthenticated → nothing to show.
-    if (!shouldGate) return null;
     // While loading or on error we keep silent rather than flashing — the
     // alternative (a placeholder bar) is noisier than just waiting.
     if (isLoading || error) return null;
 
     const maxAllowed = limit(limitKey);
-    // Unlimited or unknown → no indicator (matches the gate components'
-    // fail-open semantics for the same conditions).
+    // Unlimited or unknown → no indicator. Staff (resolver returns -1 per
+    // SPEC-171) and actors whose plan does not expose this limit (hook
+    // defaults missing keys to -1) both land here. Fail-open by design.
     if (maxAllowed === undefined || maxAllowed === -1) return null;
     if (maxAllowed === 0) return null;
 
