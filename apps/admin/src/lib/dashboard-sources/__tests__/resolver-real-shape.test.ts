@@ -258,22 +258,26 @@ describe('resolver real-shape contract', () => {
                 id: 'dunning',
                 label: 'Reintentos de cobro',
                 group: 'Facturación',
-                meta: 'A las 06:00', // compact one-line: the human schedule
                 statusBadge: { variant: 'success' }
             });
+            // Compact one-line meta carries last + next run.
+            expect(result[0]?.meta).toContain('Últ:');
+            expect(result[0]?.meta).toContain('Próx:');
             expect(mockFetchApi).toHaveBeenCalledWith(
                 expect.objectContaining({ path: '/api/v1/admin/cron' })
             );
         });
 
-        it('marks jobs without a recorded run as neutral', async () => {
+        it('shows "Sin corridas" for jobs without a recorded run (neutral)', async () => {
             mockCronJobs([job({ name: 'never-ran', lastRun: null, nextRunAt: null })]);
 
             const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
+                meta: string;
                 statusBadge: { label: string; variant: string };
             }>;
 
             expect(result[0]?.statusBadge).toMatchObject({ variant: 'neutral' });
+            expect(result[0]?.meta).toBe('Sin corridas');
         });
 
         it('orders by category, then failing-first within a category', async () => {

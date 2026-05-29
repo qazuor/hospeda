@@ -8,8 +8,16 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { CRON_CATEGORY_LABELS, CRON_CATEGORY_ORDER } from '@/lib/cron-presentation';
-import { ActivityIcon, AlertCircleIcon, ClockIcon, LoaderIcon } from '@repo/icons';
+import {
+    ActivityIcon,
+    AlertCircleIcon,
+    ChevronDownIcon,
+    ChevronRightIcon,
+    ClockIcon,
+    LoaderIcon
+} from '@repo/icons';
 import type { CronJobAdmin } from '@repo/schemas';
+import { useState } from 'react';
 import { useCronJobsQuery } from '../hooks';
 import { CronJobCard } from './CronJobCard';
 
@@ -30,9 +38,18 @@ function sortJobs(jobs: CronJobAdmin[]): CronJobAdmin[] {
     });
 }
 
+/** Count of jobs whose last run failed or timed out. */
+function failureCount(jobs: CronJobAdmin[]): number {
+    return jobs.filter((j) => j.lastRun?.status === 'failed' || j.lastRun?.status === 'timeout')
+        .length;
+}
+
 export function CronJobsPanel() {
     const { t } = useTranslations();
     const { data, isLoading, error, isRefetching } = useCronJobsQuery();
+    // Per-category collapse overrides. Default-open behaviour (computed from
+    // failures) applies until the user explicitly toggles a category.
+    const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
 
     if (isLoading) {
         return (
@@ -140,35 +157,60 @@ export function CronJobsPanel() {
                 </div>
             )}
 
-            {/* Category groups */}
+            {/* Category groups — each a collapsible bordered panel. Categories
+                with failures start expanded; the rest start collapsed (until
+                the user toggles them). */}
             {activeCategories.map((category) => {
                 const jobs = sortJobs(byCategory.get(category) ?? []);
                 const label = CRON_CATEGORY_LABELS[category];
+                const failures = failureCount(jobs);
+                const isOpen = openOverrides[category] ?? failures > 0;
+                const toggle = () => setOpenOverrides((prev) => ({ ...prev, [category]: !isOpen }));
 
                 return (
-                    <section
+                    <Card
                         key={category}
                         aria-label={label}
+                        className="overflow-hidden"
                     >
-                        {/* Section header */}
-                        <div className="mb-3 flex items-center gap-2">
+                        {/* Collapsible header */}
+                        <button
+                            type="button"
+                            onClick={toggle}
+                            aria-expanded={isOpen}
+                            className="flex w-full items-center gap-2 border-b bg-muted/40 px-4 py-3 text-left transition-colors hover:bg-muted/70"
+                        >
+                            {isOpen ? (
+                                <ChevronDownIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            ) : (
+                                <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
                             <h2 className="font-semibold text-base text-foreground">{label}</h2>
                             <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
                                 {jobs.length}
                             </span>
-                            <div className="h-px flex-1 bg-border" />
-                        </div>
+                            {failures > 0 && (
+                                <span className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive text-xs">
+                                    <AlertCircleIcon className="h-3 w-3" />
+                                    {failures}
+                                </span>
+                            )}
+                        </button>
 
-                        {/* Job cards grid */}
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {jobs.map((job) => (
-                                <CronJobCard
-                                    key={job.name}
-                                    job={job}
-                                />
-                            ))}
-                        </div>
-                    </section>
+                        {/* Job cards grid — only when expanded */}
+                        {isOpen && (
+                            <CardContent className="pt-4">
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    {jobs.map((job) => (
+                                        <CronJobCard
+                                            key={job.name}
+                                            job={job}
+                                        />
+                                    ))}
+                                </div>
+                            </CardContent>
+                        )}
+                    </Card>
                 );
             })}
 

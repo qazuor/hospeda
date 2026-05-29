@@ -35,7 +35,11 @@
  */
 
 import { fetchApi } from '@/lib/api/client';
-import { CRON_CATEGORY_LABELS, cronCategoryRank } from '@/lib/cron-presentation';
+import {
+    CRON_CATEGORY_LABELS,
+    cronCategoryRank,
+    formatCronDateTime
+} from '@/lib/cron-presentation';
 import {
     DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
@@ -436,15 +440,22 @@ registerDataSource('admin.crons.list', (ctx) => ({
         });
 
         // Compact one-line-per-job rendering for the dashboard card: friendly
-        // name + status badge + human schedule. The full last/next-run detail
-        // lives on the platform crons page (linked from the card title).
-        return jobs.map((job) => ({
-            id: job.name,
-            label: job.displayName,
-            group: CRON_CATEGORY_LABELS[job.category],
-            meta: job.scheduleHuman,
-            statusBadge: cronRunStatusBadge(job.lastRun?.status)
-        }));
+        // name + status badge, plus a single meta line with last + next run.
+        return jobs.map((job) => {
+            const lastText = job.lastRun
+                ? `Últ: ${formatCronDateTime(job.lastRun.finishedAt)}`
+                : 'Sin corridas';
+            const nextRun = formatCronDateTime(job.nextRunAt);
+            const meta = nextRun ? `${lastText} · Próx: ${nextRun}` : lastText;
+
+            return {
+                id: job.name,
+                label: job.displayName,
+                group: CRON_CATEGORY_LABELS[job.category],
+                meta,
+                statusBadge: cronRunStatusBadge(job.lastRun?.status)
+            };
+        });
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
