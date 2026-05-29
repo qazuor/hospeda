@@ -612,7 +612,7 @@ const comercialSidebar: SidebarInput = {
                     id: 'webhook-events',
                     label: { es: 'Webhook events', en: 'Webhook events', pt: 'Webhook events' },
                     icon: 'WebhookIcon',
-                    route: '/billing/webhook-events',
+                    route: '/platform/ops/webhooks',
                     permissions: ['BILLING_READ_ALL'],
                     onMissing: 'hide'
                 },

@@ -38,7 +38,7 @@ import {
     getTypeLabel
 } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 
-export const Route = createFileRoute('/_authed/billing/webhook-events')({
+export const Route = createFileRoute('/_authed/platform/ops/webhooks')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
     component: WebhookEventsPage
 });

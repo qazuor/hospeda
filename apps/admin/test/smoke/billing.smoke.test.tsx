@@ -340,8 +340,8 @@ import { Route as PromoCodesRoute } from '@/routes/_authed/billing/promo-codes';
 import { Route as SettingsRoute } from '@/routes/_authed/billing/settings';
 import { Route as SponsorshipsRoute } from '@/routes/_authed/billing/sponsorships';
 import { Route as SubscriptionsRoute } from '@/routes/_authed/billing/subscriptions';
-import { Route as WebhookEventsRoute } from '@/routes/_authed/billing/webhook-events';
 import { Route as CronRoute } from '@/routes/_authed/platform/ops/cron';
+import { Route as WebhookEventsRoute } from '@/routes/_authed/platform/ops/webhooks';
 
 // ---------------------------------------------------------------------------
 // Smoke tests
