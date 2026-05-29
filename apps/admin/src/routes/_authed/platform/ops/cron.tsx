@@ -10,7 +10,7 @@ import { requireBillingAccess } from '@/lib/billing-access';
 import { ClockIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/billing/cron')({
+export const Route = createFileRoute('/_authed/platform/ops/cron')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
     component: CronJobsPage
 });

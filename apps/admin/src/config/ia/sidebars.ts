@@ -621,7 +621,7 @@ const comercialSidebar: SidebarInput = {
                     id: 'billing-cron',
                     label: { es: 'Cron de billing', en: 'Billing cron', pt: 'Cron de billing' },
                     icon: 'ClockIcon',
-                    route: '/billing/cron',
+                    route: '/platform/ops/cron',
                     permissions: ['BILLING_READ_ALL'],
                     onMissing: 'hide'
                 }

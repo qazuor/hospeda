@@ -329,7 +329,6 @@ vi.mock('@/features/billing-webhook-events/components/WebhookEventDetailDialog',
 // ---------------------------------------------------------------------------
 
 import { Route as AddonsRoute } from '@/routes/_authed/billing/addons';
-import { Route as CronRoute } from '@/routes/_authed/billing/cron';
 import { Route as ExchangeRatesRoute } from '@/routes/_authed/billing/exchange-rates';
 import { Route as InvoicesRoute } from '@/routes/_authed/billing/invoices';
 import { Route as MetricsRoute } from '@/routes/_authed/billing/metrics';
@@ -342,6 +341,7 @@ import { Route as SettingsRoute } from '@/routes/_authed/billing/settings';
 import { Route as SponsorshipsRoute } from '@/routes/_authed/billing/sponsorships';
 import { Route as SubscriptionsRoute } from '@/routes/_authed/billing/subscriptions';
 import { Route as WebhookEventsRoute } from '@/routes/_authed/billing/webhook-events';
+import { Route as CronRoute } from '@/routes/_authed/platform/ops/cron';
 
 // ---------------------------------------------------------------------------
 // Smoke tests
