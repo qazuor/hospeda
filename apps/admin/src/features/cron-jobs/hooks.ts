@@ -2,7 +2,7 @@ import { fetchApi } from '@/lib/api/client';
 /**
  * Cron Jobs Feature Hooks
  *
- * TanStack Query hooks for cron job management
+ * TanStack Query hooks for cron job management (SPEC-161 enriched shape).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CronJobsListResponse, TriggerCronJobResponse } from './types';
@@ -19,7 +19,7 @@ export const cronJobQueryKeys = {
 };
 
 /**
- * Fetch all registered cron jobs
+ * Fetch all registered cron jobs (enriched CronJobAdmin shape).
  */
 async function fetchCronJobs(): Promise<CronJobsListResponse> {
     const result = await fetchApi<{ success: boolean; data: CronJobsListResponse }>({
@@ -29,7 +29,7 @@ async function fetchCronJobs(): Promise<CronJobsListResponse> {
 }
 
 /**
- * Trigger a cron job manually
+ * Trigger a cron job manually.
  */
 async function triggerCronJob({
     jobName,
@@ -51,7 +51,7 @@ async function triggerCronJob({
 }
 
 /**
- * Hook to fetch all cron jobs
+ * Hook to fetch all cron jobs (enriched list with category / lastRun / nextRunAt).
  */
 export const useCronJobsQuery = () => {
     return useQuery({
@@ -64,7 +64,7 @@ export const useCronJobsQuery = () => {
 };
 
 /**
- * Hook to trigger a cron job manually
+ * Hook to trigger a cron job manually.
  */
 export const useTriggerCronJobMutation = () => {
     const queryClient = useQueryClient();
@@ -72,7 +72,7 @@ export const useTriggerCronJobMutation = () => {
     return useMutation({
         mutationFn: triggerCronJob,
         onSuccess: () => {
-            // Invalidate jobs list to refresh status
+            // Invalidate jobs list to refresh lastRun status
             queryClient.invalidateQueries({ queryKey: cronJobQueryKeys.cronJobs.list() });
         }
     });

@@ -619,7 +619,11 @@ const comercialSidebar: SidebarInput = {
                 {
                     type: 'link',
                     id: 'billing-cron',
-                    label: { es: 'Cron de billing', en: 'Billing cron', pt: 'Cron de billing' },
+                    label: {
+                        es: 'Tareas programadas',
+                        en: 'Scheduled tasks',
+                        pt: 'Tarefas agendadas'
+                    },
                     icon: 'ClockIcon',
                     route: '/platform/ops/cron',
                     permissions: ['BILLING_READ_ALL'],

@@ -52,7 +52,7 @@ import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -77,6 +77,13 @@ export type ListItemBadgeVariant = 'success' | 'warning' | 'destructive' | 'neut
 export interface ListItem {
     /** Unique identifier for the item — used in action href interpolation. */
     readonly id?: string;
+    /**
+     * Optional group label. When consecutive items share a `group`, the list
+     * renders a section header above the first item of each group. Items must
+     * already be ordered by group (the widget does not re-sort). Omit on all
+     * items for a flat, ungrouped list (backward-compatible default).
+     */
+    readonly group?: string;
     /**
      * Primary display text. Required. Accepts a plain string or a tri-locale
      * {@link I18nLabel} object (resolved to the `es` locale at render time).
@@ -533,8 +540,10 @@ export function ListWidget({ widget }: ListWidgetProps) {
                     const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
                     const labelText = resolveLabelText(item.label);
                     const actionLabelText = resolveLabelText(actionCfg?.label);
+                    // Section header: rendered before the first item of each group.
+                    const showGroupHeader = item.group && item.group !== items[index - 1]?.group;
 
-                    return (
+                    const row = (
                         <li
                             key={itemKey}
                             className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
@@ -696,6 +705,21 @@ export function ListWidget({ widget }: ListWidgetProps) {
                             </div>
                         </li>
                     );
+
+                    if (showGroupHeader) {
+                        return (
+                            <Fragment key={`group-${item.group}`}>
+                                <li
+                                    className="pt-3 pb-1 font-semibold text-[0.65rem] text-muted-foreground uppercase tracking-wide first:pt-0"
+                                    data-testid="list-group-header"
+                                >
+                                    {item.group}
+                                </li>
+                                {row}
+                            </Fragment>
+                        );
+                    }
+                    return row;
                 })}
             </ul>
         </WidgetCard>

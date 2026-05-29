@@ -1,16 +1,15 @@
 /**
  * Cron Jobs Feature Module
  *
- * Barrel exports for cron job management functionality
+ * Barrel exports for cron job management functionality (SPEC-161 enriched shape).
  */
 
-// Types
+// Types (CronJobAdmin + CronJobsAdminList come from @repo/schemas via types.ts)
 export type {
-    CronJob,
+    CronJobAdmin,
     CronJobResult,
+    CronJobsAdminList,
     CronJobsListResponse,
-    CronJobStatus,
-    CronJobWithState,
     TriggerCronJobError,
     TriggerCronJobResponse
 } from './types';

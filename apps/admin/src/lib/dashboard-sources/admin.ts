@@ -36,10 +36,16 @@
 
 import { fetchApi } from '@/lib/api/client';
 import {
+    CRON_CATEGORY_LABELS,
+    cronCategoryRank,
+    formatCronDateTime
+} from '@/lib/cron-presentation';
+import {
     DASHBOARD_STALE_TIME_MS,
     buildDashboardQueryKey,
     registerDataSource
 } from '@/lib/dashboard-sources';
+import type { CronCategory } from '@repo/schemas';
 
 // ============================================================================
 // RESPONSE TYPE SHAPES
@@ -121,39 +127,29 @@ interface PostItem {
     readonly updatedAt?: string;
 }
 
-/** Shape of a cron-job item from the cron-admin endpoint. */
-interface CronJobItem {
-    readonly id: string;
+/** Enriched cron-job item from GET /api/v1/admin/cron (SPEC-161). */
+interface CronJobApiItem {
     readonly name: string;
+    readonly displayName: string;
+    readonly category: CronCategory;
+    readonly description: string;
+    readonly schedule: string;
+    readonly scheduleHuman: string;
     readonly enabled: boolean;
-    readonly schedule?: string;
-    readonly lastRun?: string;
+    readonly nextRunAt: string | null;
+    readonly lastRun: {
+        readonly status: 'success' | 'failed' | 'timeout';
+        readonly finishedAt: string;
+    } | null;
 }
 
-/** Shape of GET /api/v1/admin/cron response. */
+/** Shape of GET /api/v1/admin/cron response (enriched). */
 interface CronJobsApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly jobs?: ReadonlyArray<CronJobItem>;
-        readonly total?: number;
-        readonly enabled?: number;
-    };
-}
-
-/** Shape of a cron run from the run-history summary (SPEC-161). */
-interface CronRunSummaryItem {
-    readonly jobName: string;
-    readonly status: 'success' | 'failed' | 'timeout';
-    readonly finishedAt?: string;
-}
-
-/** Shape of GET /api/v1/admin/cron/runs/summary response (SPEC-161). */
-interface CronRunSummaryApiResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly lastRuns?: ReadonlyArray<CronRunSummaryItem>;
-        readonly recentFailures?: ReadonlyArray<CronRunSummaryItem>;
-        readonly failingJobsCount?: number;
+        readonly jobs?: ReadonlyArray<CronJobApiItem>;
+        readonly totalJobs?: number;
+        readonly enabledJobs?: number;
     };
 }
 
@@ -398,64 +394,68 @@ const cronRunStatusBadge = (
 } => {
     switch (status) {
         case 'success':
-            return { label: 'Última: OK', variant: 'success' };
+            return { label: 'OK', variant: 'success' };
         case 'failed':
-            return { label: 'Última: falló', variant: 'destructive' };
+            return { label: 'Falló', variant: 'destructive' };
         case 'timeout':
-            return { label: 'Última: timeout', variant: 'warning' };
+            return { label: 'Timeout', variant: 'warning' };
         default:
-            return { label: 'Sin ejecuciones', variant: 'neutral' };
+            return { label: 'Sin correr', variant: 'neutral' };
     }
 };
 
+/** Within a category, surface problems first: failed → timeout → no-run → success. */
+const cronStatusRank = (status?: 'success' | 'failed' | 'timeout'): number => {
+    if (status === 'failed') return 0;
+    if (status === 'timeout') return 1;
+    if (status === undefined) return 2;
+    return 3;
+};
+
 /**
- * ADMIN card D: cron job list enriched with each job's last-run status.
+ * ADMIN card D: cron jobs grouped by category, each with friendly name, a
+ * human-readable schedule, last-run status, and last/next run times.
  *
- * Fetches the registered jobs (GET /api/v1/admin/cron) and the run-history
- * summary (GET /api/v1/admin/cron/runs/summary, SPEC-161) in parallel, then
- * tags every job with the status of its most recent run. This powers the
- * "crons fallidos / última corrida" view that SPEC-155 left as a deferred slot.
+ * Consumes the enriched GET /api/v1/admin/cron (SPEC-161), which already carries
+ * displayName, category, scheduleHuman, nextRunAt and lastRun per job — so a
+ * single fetch powers the whole card. Items are ordered by category (for the
+ * group headers) then by status (failing first).
  *
  * Source ID: `'admin.crons.list'`
  * Scope: `'all'`
- * Endpoints: GET /api/v1/admin/cron + GET /api/v1/admin/cron/runs/summary
+ * Endpoint: GET /api/v1/admin/cron
  */
 registerDataSource('admin.crons.list', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.crons.list', ctx),
     queryFn: async () => {
-        const [jobsResult, summaryResult] = await Promise.all([
-            fetchApi<CronJobsApiResponse>({ path: '/api/v1/admin/cron' }),
-            fetchApi<CronRunSummaryApiResponse>({
-                path: '/api/v1/admin/cron/runs/summary'
-            })
-        ]);
+        const result = await fetchApi<CronJobsApiResponse>({ path: '/api/v1/admin/cron' });
+        const jobs = [...(result.data.data?.jobs ?? [])];
 
-        const jobs = jobsResult.data.data?.jobs ?? [];
-        const lastRuns = summaryResult.data.data?.lastRuns ?? [];
-        const lastRunByJob = new Map(lastRuns.map((run) => [run.jobName, run]));
+        jobs.sort((a, b) => {
+            const byCat = cronCategoryRank(a.category) - cronCategoryRank(b.category);
+            if (byCat !== 0) return byCat;
+            const byStatus = cronStatusRank(a.lastRun?.status) - cronStatusRank(b.lastRun?.status);
+            if (byStatus !== 0) return byStatus;
+            return a.displayName.localeCompare(b.displayName);
+        });
 
-        // Surface problems first: failed → timeout → no-runs → success.
-        const sortRank = (status?: 'success' | 'failed' | 'timeout'): number => {
-            if (status === 'failed') return 0;
-            if (status === 'timeout') return 1;
-            if (status === undefined) return 2;
-            return 3;
-        };
+        return jobs.map((job) => {
+            const lastRunAt = job.lastRun ? formatCronDateTime(job.lastRun.finishedAt) : null;
+            const nextRunAt = formatCronDateTime(job.nextRunAt);
+            const metaLines: Array<{ key: string; content: string }> = [
+                { key: 'sched', content: job.scheduleHuman },
+                { key: 'last', content: lastRunAt ? `Última: ${lastRunAt}` : 'Sin corridas aún' }
+            ];
+            if (nextRunAt) metaLines.push({ key: 'next', content: `Próxima: ${nextRunAt}` });
 
-        return jobs
-            .map((job) => {
-                const lastRun = lastRunByJob.get(job.name);
-                return {
-                    id: job.id,
-                    label: job.name,
-                    meta: job.schedule ?? undefined,
-                    badge: job.enabled ? 'activo' : 'inactivo',
-                    statusBadge: cronRunStatusBadge(lastRun?.status),
-                    sortRank: sortRank(lastRun?.status)
-                };
-            })
-            .sort((a, b) => a.sortRank - b.sortRank)
-            .map(({ sortRank: _sortRank, ...item }) => item);
+            return {
+                id: job.name,
+                label: job.displayName,
+                group: CRON_CATEGORY_LABELS[job.category],
+                metaLines,
+                statusBadge: cronRunStatusBadge(job.lastRun?.status)
+            };
+        });
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

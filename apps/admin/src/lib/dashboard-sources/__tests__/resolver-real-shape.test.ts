@@ -214,85 +214,98 @@ describe('resolver real-shape contract', () => {
 
     // ── Card D — admin.crons.list ───────────────────────────────────────────
     describe('admin.crons.list (card D)', () => {
-        /** Mocks the jobs list + run-history summary by URL (SPEC-161). */
-        const mockCronEndpoints = (
-            jobs: ReadonlyArray<Record<string, unknown>>,
-            lastRuns: ReadonlyArray<Record<string, unknown>>
-        ) => {
-            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
-                if (path.includes('/cron/runs/summary')) {
-                    return envelope({
-                        success: true,
-                        data: { lastRuns, recentFailures: [], failingJobsCount: 0 }
-                    });
-                }
-                return envelope({
+        /** Mocks the enriched GET /api/v1/admin/cron response (SPEC-161). */
+        const mockCronJobs = (jobs: ReadonlyArray<Record<string, unknown>>) => {
+            mockFetchApi.mockResolvedValue(
+                envelope({
                     success: true,
                     data: { jobs, enabledJobs: jobs.length, totalJobs: jobs.length }
-                });
-            });
+                })
+            );
         };
 
-        it('fetches jobs + run summary and tags each job with its last-run status', async () => {
-            mockCronEndpoints(
-                [{ id: 'c1', name: 'dunning', enabled: true, schedule: '0 6 * * *' }],
-                [{ jobName: 'dunning', status: 'success', finishedAt: '2026-05-29T06:00:00Z' }]
-            );
+        const job = (over: Record<string, unknown>) => ({
+            name: 'dunning',
+            displayName: 'Reintentos de cobro',
+            category: 'billing',
+            description: 'desc',
+            schedule: '0 6 * * *',
+            scheduleHuman: 'A las 06:00',
+            enabled: true,
+            nextRunAt: '2026-05-30T06:00:00Z',
+            lastRun: null,
+            ...over
+        });
+
+        it('maps each job to friendly name, category group, status badge and meta lines', async () => {
+            mockCronJobs([
+                job({
+                    name: 'dunning',
+                    lastRun: { status: 'success', finishedAt: '2026-05-29T06:00:00Z' }
+                })
+            ]);
 
             const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
                 id: string;
                 label: string;
-                badge: string;
+                group: string;
                 statusBadge: { label: string; variant: string };
+                metaLines: ReadonlyArray<{ key: string; content: string }>;
             }>;
 
             expect(result).toHaveLength(1);
             expect(result[0]).toMatchObject({
-                id: 'c1',
-                label: 'dunning',
-                badge: 'activo',
+                id: 'dunning',
+                label: 'Reintentos de cobro',
+                group: 'Facturación',
                 statusBadge: { variant: 'success' }
             });
+            const keys = result[0]?.metaLines.map((l) => l.key);
+            expect(keys).toEqual(['sched', 'last', 'next']);
             expect(mockFetchApi).toHaveBeenCalledWith(
                 expect.objectContaining({ path: '/api/v1/admin/cron' })
             );
-            expect(mockFetchApi).toHaveBeenCalledWith(
-                expect.objectContaining({ path: '/api/v1/admin/cron/runs/summary' })
-            );
         });
 
-        it('marks jobs without a recorded run as "Sin ejecuciones" (neutral)', async () => {
-            mockCronEndpoints(
-                [{ id: 'c2', name: 'never-ran', enabled: true, schedule: '0 0 * * *' }],
-                []
-            );
+        it('marks jobs without a recorded run as neutral with "Sin corridas aún"', async () => {
+            mockCronJobs([job({ name: 'never-ran', lastRun: null, nextRunAt: null })]);
 
             const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
                 statusBadge: { label: string; variant: string };
+                metaLines: ReadonlyArray<{ key: string; content: string }>;
             }>;
 
             expect(result[0]?.statusBadge).toMatchObject({ variant: 'neutral' });
+            expect(result[0]?.metaLines.find((l) => l.key === 'last')?.content).toBe(
+                'Sin corridas aún'
+            );
+            // nextRunAt null → no "next" line.
+            expect(result[0]?.metaLines.find((l) => l.key === 'next')).toBeUndefined();
         });
 
-        it('orders failing jobs first (failed → timeout → no-run → success)', async () => {
-            mockCronEndpoints(
-                [
-                    { id: 'a', name: 'ok-job', enabled: true, schedule: '* * * * *' },
-                    { id: 'b', name: 'failed-job', enabled: true, schedule: '* * * * *' },
-                    { id: 'c', name: 'timeout-job', enabled: true, schedule: '* * * * *' }
-                ],
-                [
-                    { jobName: 'ok-job', status: 'success' },
-                    { jobName: 'failed-job', status: 'failed' },
-                    { jobName: 'timeout-job', status: 'timeout' }
-                ]
-            );
+        it('orders by category, then failing-first within a category', async () => {
+            mockCronJobs([
+                job({
+                    name: 'sys-ok',
+                    category: 'system',
+                    lastRun: { status: 'success', finishedAt: '2026-05-29T00:00:00Z' }
+                }),
+                job({
+                    name: 'bill-ok',
+                    category: 'billing',
+                    lastRun: { status: 'success', finishedAt: '2026-05-29T00:00:00Z' }
+                }),
+                job({
+                    name: 'bill-failed',
+                    category: 'billing',
+                    lastRun: { status: 'failed', finishedAt: '2026-05-29T00:00:00Z' }
+                })
+            ]);
 
-            const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
-                label: string;
-            }>;
+            const result = (await runSource('admin.crons.list')) as ReadonlyArray<{ id: string }>;
 
-            expect(result.map((r) => r.label)).toEqual(['failed-job', 'timeout-job', 'ok-job']);
+            // billing before system; within billing, failed before success.
+            expect(result.map((r) => r.id)).toEqual(['bill-failed', 'bill-ok', 'sys-ok']);
         });
     });
 
