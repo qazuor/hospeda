@@ -465,6 +465,22 @@ export function getAdminHandlers() {
         ),
 
         // Permissions (read-only, non-paginated)
-        http.get(`${API_BASE}/admin/permissions`, () => HttpResponse.json(mockSuccessResponse([])))
+        http.get(`${API_BASE}/admin/permissions`, () => HttpResponse.json(mockSuccessResponse([]))),
+
+        // Platform settings (SPEC-156 PR-3 — keys: seo.defaults, maintenance.mode, announcements.global)
+        http.get(`${API_BASE}/admin/platform-settings/:key`, () =>
+            HttpResponse.json(mockSuccessResponse(null))
+        ),
+        http.patch(`${API_BASE}/admin/platform-settings/:key`, async ({ request, params }) => {
+            const body = (await request.json().catch(() => ({}))) as { value?: unknown };
+            return HttpResponse.json(
+                mockSuccessResponse({
+                    key: String(params.key),
+                    value: body.value ?? null,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: '00000000-0000-0000-0000-000000000000'
+                })
+            );
+        })
     ];
 }
