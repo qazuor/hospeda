@@ -85,6 +85,11 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Email guests with conversation access tokens nearing expiry.'
     },
     {
+        name: 'cron-run-purge',
+        schedule: '0 4 * * *',
+        description: 'Purge old cron run history (60-day success / 180-day failure retention).'
+    },
+    {
         name: 'dunning',
         schedule: '0 6 * * *',
         description: 'Retry past-due billing payments and notify customers.'

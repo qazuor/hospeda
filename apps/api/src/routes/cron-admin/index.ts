@@ -15,12 +15,14 @@
 import { PermissionEnum } from '@repo/schemas';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
 import type { CronJobContext, CronJobResult } from '../../cron/types';
 import type { AppBindings } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
+import { cronRunSummaryRoute, getCronRunByIdRoute, listCronRunsRoute } from './runs';
 
 // ─── Response Schemas ────────────────────────────────────────────────────────
 
@@ -147,7 +149,21 @@ export const triggerCronJobHandler = async (
         }, timeoutMs);
     });
 
-    const result: CronJobResult = await Promise.race([job.handler(jobContext), timeoutPromise]);
+    let result: CronJobResult;
+    try {
+        result = await Promise.race([job.handler(jobContext), timeoutPromise]);
+    } catch (error) {
+        // Fire-and-forget: record the failure/timeout, then preserve the HTTP error.
+        await recordCronRun({
+            jobName,
+            executionMode: 'manual',
+            dryRun,
+            startedAt,
+            finishedAt: new Date(),
+            error
+        });
+        throw error;
+    }
 
     const durationMs = Date.now() - startTime;
 
@@ -158,6 +174,16 @@ export const triggerCronJobHandler = async (
         errors: result.errors,
         durationMs,
         dryRun
+    });
+
+    // Fire-and-forget: record the successful (or success:false) outcome.
+    await recordCronRun({
+        jobName,
+        executionMode: 'manual',
+        dryRun,
+        startedAt,
+        finishedAt: new Date(),
+        result
     });
 
     return {
@@ -218,6 +244,11 @@ const triggerCronJobRoute = createAdminRoute({
 const app = createRouter();
 
 app.route('/', listCronJobsRoute);
+// Run-history reads (SPEC-161). `/runs/summary` is registered before `/runs/{id}`
+// so the literal segment is not captured as an id param.
+app.route('/', listCronRunsRoute);
+app.route('/', cronRunSummaryRoute);
+app.route('/', getCronRunByIdRoute);
 app.route('/', triggerCronJobRoute);
 
 export { app as adminCronRoutes };
