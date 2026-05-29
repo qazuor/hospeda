@@ -612,7 +612,7 @@ const comercialSidebar: SidebarInput = {
                     id: 'webhook-events',
                     label: { es: 'Webhook events', en: 'Webhook events', pt: 'Webhook events' },
                     icon: 'WebhookIcon',
-                    route: '/billing/webhook-events',
+                    route: '/platform/ops/webhooks',
                     permissions: ['BILLING_READ_ALL'],
                     onMissing: 'hide'
                 },
@@ -621,7 +621,7 @@ const comercialSidebar: SidebarInput = {
                     id: 'billing-cron',
                     label: { es: 'Cron de billing', en: 'Billing cron', pt: 'Cron de billing' },
                     icon: 'ClockIcon',
-                    route: '/billing/cron',
+                    route: '/platform/ops/cron',
                     permissions: ['BILLING_READ_ALL'],
                     onMissing: 'hide'
                 }
@@ -680,7 +680,7 @@ const plataformaSidebar: SidebarInput = {
                     id: 'seo',
                     label: { es: 'SEO defaults', en: 'SEO defaults', pt: 'SEO padrão' },
                     icon: 'SearchIcon',
-                    route: '/settings/seo',
+                    route: '/platform/configuration/seo',
                     permissions: ['SEO_MANAGE']
                 },
                 {
@@ -692,7 +692,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Configuração crítica'
                     },
                     icon: 'ShieldAlertIcon',
-                    route: '/settings/critical',
+                    route: '/platform/critical',
                     // SUPER_ADMIN-only: gate on a permission ADMIN does NOT hold
                     // (ADMIN has ACCESS_PANEL_ADMIN, so that gate would never hide it).
                     // SYSTEM_MAINTENANCE_MODE is SUPER-exclusive in ROLE_PERMISSIONS.
@@ -720,7 +720,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Revalidação ISR'
                     },
                     icon: 'RefreshIcon',
-                    route: '/revalidation',
+                    route: '/platform/cache/revalidation',
                     permissions: [
                         'REVALIDATION_TRIGGER',
                         'REVALIDATION_CONFIG_VIEW',
@@ -745,7 +745,7 @@ const plataformaSidebar: SidebarInput = {
                     id: 'system-tags',
                     label: { es: 'Tags de sistema', en: 'System tags', pt: 'Tags do sistema' },
                     icon: 'TagIcon',
-                    route: '/tags/system',
+                    route: '/platform/tags/system',
                     permissions: ['TAG_SYSTEM_VIEW']
                 },
                 {
@@ -757,7 +757,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Etiquetas internas'
                     },
                     icon: 'TagIcon',
-                    route: '/tags/internal',
+                    route: '/platform/tags/internal',
                     permissions: ['TAG_INTERNAL_VIEW']
                 },
                 {
@@ -771,6 +771,35 @@ const plataformaSidebar: SidebarInput = {
                     icon: 'TagsIcon',
                     route: '/tags/user-moderation',
                     permissions: ['TAG_VIEW_ALL_USER_TAGS']
+                }
+            ]
+        },
+        { type: 'separator', id: 'sep-email' },
+        // ── Email / notificaciones ────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'email-infrastructure',
+            label: {
+                es: 'Infraestructura de email',
+                en: 'Email infrastructure',
+                pt: 'Infraestrutura de email'
+            },
+            icon: 'MailIcon',
+            defaultOpen: false,
+            permissions: ['BILLING_READ_ALL'],
+            onMissing: 'hide',
+            items: [
+                {
+                    type: 'link',
+                    id: 'email-logs',
+                    label: {
+                        es: 'Historial de envíos',
+                        en: 'Delivery history',
+                        pt: 'Histórico de envios'
+                    },
+                    icon: 'MailIcon',
+                    route: '/platform/email/logs',
+                    permissions: ['BILLING_READ_ALL']
                 }
             ]
         },
@@ -861,7 +890,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'mi-perfil',
             label: { es: 'Mi perfil', en: 'My profile', pt: 'Meu perfil' },
             icon: 'UserIcon',
-            route: '/me/profile',
+            route: '/account/profile',
             exact: true,
             permissions: ['USER_VIEW_PROFILE']
         },
@@ -870,7 +899,16 @@ const miCuentaSidebar: SidebarInput = {
             id: 'preferencias',
             label: { es: 'Preferencias', en: 'Preferences', pt: 'Preferências' },
             icon: 'SettingsIcon',
-            route: '/me/settings',
+            route: '/account/preferences',
+            exact: true,
+            permissions: ['USER_SETTINGS_UPDATE']
+        },
+        {
+            type: 'link',
+            id: 'notificaciones',
+            label: { es: 'Notificaciones', en: 'Notifications', pt: 'Notificações' },
+            icon: 'BellIcon',
+            route: '/account/notifications',
             exact: true,
             permissions: ['USER_SETTINGS_UPDATE']
         },
@@ -879,7 +917,15 @@ const miCuentaSidebar: SidebarInput = {
             id: 'seguridad',
             label: { es: 'Seguridad', en: 'Security', pt: 'Segurança' },
             icon: 'ShieldIcon',
-            route: '/me/change-password',
+            route: '/account/security',
+            permissions: ['ACCESS_PANEL_ADMIN']
+        },
+        {
+            type: 'link',
+            id: 'mis-datos',
+            label: { es: 'Mis datos', en: 'My data', pt: 'Meus dados' },
+            icon: 'FileTextIcon',
+            route: '/account/data',
             exact: true,
             permissions: ['ACCESS_PANEL_ADMIN']
         },
@@ -888,7 +934,7 @@ const miCuentaSidebar: SidebarInput = {
             id: 'mis-tags',
             label: { es: 'Mis tags', en: 'My tags', pt: 'Minhas tags' },
             icon: 'TagsIcon',
-            route: '/me/tags',
+            route: '/account/tags',
             exact: true,
             permissions: ['TAG_USER_VIEW_OWN']
         }

@@ -219,7 +219,7 @@ export const createActions: Record<string, CreateAction> = {
     newSystemTag: {
         id: 'newSystemTag',
         label: { es: 'Nuevo tag de sistema', en: 'New system tag', pt: 'Novo tag de sistema' },
-        route: '/tags/system/new',
+        route: '/platform/tags/system/new',
         icon: 'TagIcon',
         permissions: ['TAG_SYSTEM_CREATE']
     },
@@ -231,7 +231,7 @@ export const createActions: Record<string, CreateAction> = {
     newInternalTag: {
         id: 'newInternalTag',
         label: { es: 'Nuevo tag interno', en: 'New internal tag', pt: 'Novo tag interno' },
-        route: '/tags/internal/new',
+        route: '/platform/tags/internal/new',
         icon: 'TagIcon',
         permissions: ['TAG_INTERNAL_CREATE']
     }

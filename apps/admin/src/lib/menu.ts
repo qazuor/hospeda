@@ -198,12 +198,12 @@ export const menuTree: readonly MenuItem[] = [
                     },
                     {
                         titleKey: 'admin-menu.admin.systemTags',
-                        to: '/tags/system',
+                        to: '/platform/tags/system',
                         permission: PermissionEnum.TAG_SYSTEM_VIEW
                     },
                     {
                         titleKey: 'admin-menu.admin.internalTags',
-                        to: '/tags/internal',
+                        to: '/platform/tags/internal',
                         permission: PermissionEnum.TAG_INTERNAL_VIEW
                     },
                     {
@@ -215,17 +215,17 @@ export const menuTree: readonly MenuItem[] = [
             },
             {
                 titleKey: 'admin-menu.admin.seo',
-                to: '/settings/seo',
+                to: '/platform/configuration/seo',
                 permission: PermissionEnum.SEO_MANAGE
             },
             {
                 titleKey: 'admin-menu.admin.portalSettings',
-                to: '/settings/critical',
+                to: '/platform/critical',
                 permission: PermissionEnum.SETTINGS_MANAGE
             },
             {
                 titleKey: 'admin-menu.admin.revalidation',
-                to: '/revalidation',
+                to: '/platform/cache/revalidation',
                 permission: PermissionEnum.REVALIDATION_CONFIG_VIEW
             }
         ]

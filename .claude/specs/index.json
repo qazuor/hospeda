@@ -1571,6 +1571,16 @@
             "discoveredDuring": "Admin panel redesign planning session 2026-05-22 — Phase 1 audit revealed settings scattered across 3 routes with mixed storage (API + localStorage). Ops vs Configuration split (IA doc §15) needs page relocations + small localStorage→API migration for SEO + Critical + announcements editor. Plus HOST Mi facturación landing (A3 plan per 04b-mi-facturacion-verification.md): usage widget + deep links to web.",
             "dependsOn": ["SPEC-154"],
             "firstAllocatedViaEngramProtocol": true,
+            "prStrategy": "4-prs-in-order",
+            "prsCompleted": [
+                {
+                    "pr": "#1298",
+                    "title": "platform_settings infrastructure (PR-1 of 4)",
+                    "mergedAt": "2026-05-28T19:16:46Z",
+                    "mergeCommit": "d10b74be0e9c0af10c194a6548d8d227b2b07a1e",
+                    "tasksClosed": "T-001..T-010 + T-PR1-QG (11/44)"
+                }
+            ],
             "tags": [
                 "admin",
                 "settings",
