@@ -132,32 +132,38 @@ function nowIso(): string {
 // ============================================================================
 
 /**
- * EDITOR card A: posts published this month (KPI) + pending drafts companion.
+ * EDITOR card A: posts mini-grid (Este mes / Total publicados / Borradores)
+ * + recent drafts as companion list.
  *
- * Returns a `KpiData` shape with both `value` (KPI hero) and
- * `companionItems`/`companionLabel` so the KpiWidget renders the drafts
- * list directly under the counter — same pattern HOST card A uses.
+ * Multi-KPI tile pattern (same shape HOST card A uses) so every number on
+ * the card has an explicit label, instead of a single counter floating
+ * without context.
  *
  * Source ID: `'editor.posts.published-this-month'`
  * Scope: `'all'`
  * Endpoints (parallel):
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=1
  *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
  */
 registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
     queryFn: async () => {
         const monthStart = currentMonthStart();
-        const [publishedResult, draftsResult] = await Promise.all([
+        const [thisMonthResult, totalPublishedResult, draftsResult] = await Promise.all([
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
+            }),
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
             }),
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc'
             })
         ]);
 
-        const publishedThisMonth = publishedResult.data.data?.pagination?.total ?? 0;
+        const thisMonth = thisMonthResult.data.data?.pagination?.total ?? 0;
+        const totalPublished = totalPublishedResult.data.data?.pagination?.total ?? 0;
         const draftItems = draftsResult.data.data?.items ?? [];
         const draftTotal = draftsResult.data.data?.pagination?.total ?? 0;
 
@@ -168,8 +174,33 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
         }));
 
         return {
-            value: publishedThisMonth,
-            companionLabel: draftTotal > 0 ? `${draftTotal} borradores sin publicar` : undefined,
+            kpis: [
+                {
+                    key: 'thisMonth',
+                    label: { es: 'Este mes', en: 'This month', pt: 'Este mês' },
+                    value: thisMonth,
+                    accent: 'success',
+                    icon: 'article',
+                    href: '/contenido/posts?status=ACTIVE'
+                },
+                {
+                    key: 'totalPublished',
+                    label: { es: 'Total', en: 'Total', pt: 'Total' },
+                    value: totalPublished,
+                    accent: 'river',
+                    icon: 'activity',
+                    href: '/contenido/posts?status=ACTIVE'
+                },
+                {
+                    key: 'drafts',
+                    label: { es: 'Borradores', en: 'Drafts', pt: 'Rascunhos' },
+                    value: draftTotal,
+                    accent: 'warning',
+                    icon: 'clock',
+                    href: '/contenido/posts?status=DRAFT'
+                }
+            ],
+            companionLabel: draftTotal > 0 ? 'Borradores recientes' : undefined,
             companionItems
         };
     },
@@ -259,37 +290,77 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card C: newsletter subscriber count + breakdown by content preference.
+ * EDITOR card C: newsletter subscribers mini-grid
+ * (Activos / En verificación / Dados de baja).
+ *
+ * Multi-KPI tile pattern: every number on the card carries an explicit
+ * label instead of a single counter floating without context. Open rate
+ * is PHASE 2 (no email-open tracking today, SPEC-160).
  *
  * Requires `NEWSLETTER_SUBSCRIBER_VIEW` permission (granted to EDITOR per 03c).
- * The `by-preference` breakdown calls the new aggregation endpoint added in
- * Phase 1 (GET /api/v1/admin/newsletter/subscribers/by-preference).
- *
- * Note: open rate is PHASE 2 (no email-open tracking today).
  *
  * Source ID: `'editor.newsletter.subscribers'`
  * Scope: `'all'`
- * Endpoints:
+ * Endpoints (parallel, all use `subscriberStatus` — the admin schema renames
+ * `status` to avoid shadowing the base LifecycleStatusEnum filter):
  *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1
- *   - GET /api/v1/admin/newsletter/subscribers/by-preference
- *
- * Note: filter param is `subscriberStatus` (not `status`) — the admin search
- * schema renames it to avoid shadowing the base `LifecycleStatusEnum` filter.
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=pending_verification&pageSize=1
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=unsubscribed&pageSize=1
  */
 registerDataSource('editor.newsletter.subscribers', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.subscribers', ctx),
     queryFn: async () => {
-        // Only the subscriber count is needed for KpiWidget.
-        // The by-preference breakdown is useful for a future chart/table widget
-        // but is not consumed by KpiWidget, so we skip that fetch here.
-        const countResult = await fetchApi<AdminListApiResponse>({
-            path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1'
-        });
+        const [activeResult, pendingResult, unsubscribedResult] = await Promise.all([
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=pending_verification&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=unsubscribed&pageSize=1'
+            })
+        ]);
 
-        const activeCount = countResult.data.data?.pagination?.total ?? 0;
+        const active = activeResult.data.data?.pagination?.total ?? 0;
+        const pending = pendingResult.data.data?.pagination?.total ?? 0;
+        const unsubscribed = unsubscribedResult.data.data?.pagination?.total ?? 0;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: activeCount };
+        // Tile labels keep their full descriptive form; KpiWidget tiles in a
+        // 1×1 card visually truncate but expose the complete text via a
+        // native `title` tooltip on hover.
+        return {
+            kpis: [
+                {
+                    key: 'active',
+                    label: { es: 'Activos', en: 'Active', pt: 'Ativos' },
+                    value: active,
+                    accent: 'success',
+                    icon: 'users',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=active'
+                },
+                {
+                    key: 'pending',
+                    label: {
+                        es: 'En verificación',
+                        en: 'Pending verification',
+                        pt: 'Em verificação'
+                    },
+                    value: pending,
+                    accent: 'warning',
+                    icon: 'clock',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=pending_verification'
+                },
+                {
+                    key: 'unsubscribed',
+                    label: { es: 'Dados de baja', en: 'Unsubscribed', pt: 'Cancelados' },
+                    value: unsubscribed,
+                    accent: 'sand',
+                    icon: 'user',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=unsubscribed'
+                }
+            ]
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

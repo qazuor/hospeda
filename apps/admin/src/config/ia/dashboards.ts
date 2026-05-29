@@ -487,23 +487,23 @@ const editorDashboard: DashboardInput = {
                 pt: 'Assinantes Newsletter'
             },
             scope: 'all',
-            // Bento: compact (1×1) — single counter; pairs with card A on the row.
+            // Bento: compact (1×1) — multi-KPI tiles stack at this width.
+            //
+            // NOTE: a `deferredSlots: [{ phaseSpec: 'SPEC-160' }]` for "tasa
+            // de apertura" was dropped here because the KpiWidget renders
+            // deferred slots INSIDE the multi-KPI grid when `kpis[]` is
+            // present, producing a phantom 4th tile labelled with the phase
+            // id (see same gotcha on card F). Re-add when the widget exposes
+            // a separate deferred section beneath the grid.
             config: {
                 source: 'editor.newsletter.subscribers',
                 accent: 'sky',
                 icon: 'users',
-                emptyText: 'Sin suscriptores activos',
+                emptyText: 'Sin suscriptores',
                 emptyDescription:
-                    'Cuando los lectores se sumen a la newsletter, vas a ver el total acá.',
+                    'Cuando los lectores se sumen a la newsletter, vas a ver el desglose acá.',
                 errorText: 'No pudimos cargar los suscriptores',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-160',
-                        description:
-                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email.'
-                    }
-                ]
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 

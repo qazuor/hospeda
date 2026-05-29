@@ -335,12 +335,16 @@ function KpiGridTile({ item }: KpiGridTileProps) {
         </>
     );
 
+    // `title` provides the native browser tooltip when the visible label
+    // truncates (3-tile grids in 1×1 cards have narrow tile widths and the
+    // label CSS allows shrink). Hovering the tile surfaces the full text.
     return item.href ? (
         <a
             href={item.href}
             className="hover:-translate-y-0.5 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40 transition-all duration-200 hover:shadow-sm hover:ring-border/60"
             data-testid="kpi-grid-item"
             aria-label={`${itemLabel}: ${itemValue}`}
+            title={itemLabel}
         >
             {body}
         </a>
@@ -348,6 +352,7 @@ function KpiGridTile({ item }: KpiGridTileProps) {
         <div
             className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40"
             data-testid="kpi-grid-item"
+            title={itemLabel}
         >
             {body}
         </div>

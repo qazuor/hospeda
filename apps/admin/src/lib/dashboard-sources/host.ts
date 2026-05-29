@@ -58,7 +58,7 @@ import { ApiError } from '@/lib/errors';
 interface AccommodationListApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<{
+        readonly items?: ReadonlyArray<{
             readonly id: string;
             readonly name: string;
             readonly status: string;
@@ -185,7 +185,7 @@ const HOST_ENTITLEMENT_LABELS: ReadonlyArray<readonly [string, string]> = [
 interface ConversationListApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<{
+        readonly items?: ReadonlyArray<{
             readonly id: string;
             readonly guestName?: string;
             readonly updatedAt?: string;
@@ -198,7 +198,7 @@ interface ConversationListApiResponse {
 interface ReviewListApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<{
+        readonly items?: ReadonlyArray<{
             readonly id: string;
             readonly rating: number;
             readonly comment?: string;
@@ -314,7 +314,7 @@ registerDataSource('host.accommodations.count', (ctx) => ({
 
         const total = totalResult.data.data?.pagination?.total ?? 0;
         const draftTotal = draftsResult.data.data?.pagination?.total ?? 0;
-        const draftItems = draftsResult.data.data?.data ?? [];
+        const draftItems = draftsResult.data.data?.items ?? [];
         const active = Math.max(0, total - draftTotal);
 
         // Companion list — first 5 drafts with edit links.
@@ -374,7 +374,7 @@ registerDataSource('host.accommodations.drafts', (ctx) => ({
         const result = await fetchApi<AccommodationListApiResponse>({
             path: `/api/v1/admin/accommodations?${params}`
         });
-        const items = result.data.data?.data ?? [];
+        const items = result.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget (companion list).
         return items.map((item) => ({
             id: item.id,
@@ -578,7 +578,7 @@ registerDataSource('host.conversations.pending', (ctx) => ({
         ]);
 
         const pendingCount = countResult.data.data?.pagination?.total ?? 0;
-        const rawItems = listResult.data.data?.data ?? [];
+        const rawItems = listResult.data.data?.items ?? [];
 
         // Normalize to ListItem[] shape expected by ListWidget.
         // The widget is type 'list' — return a flat array of items.
@@ -621,7 +621,7 @@ registerDataSource('host.reviews.latest', (ctx) => ({
             [404],
             null
         );
-        const reviews = result?.data.data?.data ?? [];
+        const reviews = result?.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget.
         return reviews.map((review) => ({
             id: review.id,
@@ -726,7 +726,7 @@ registerDataSource('host.stats.ratings', (ctx) => ({
             )
         ]);
 
-        const listings = listingsResult.data.data?.data ?? [];
+        const listings = listingsResult.data.data?.items ?? [];
         const totalReviews = listings.reduce((sum, l) => sum + (l.reviewsCount ?? 0), 0);
 
         // Weighted average rating across listings (only those with ≥1 review).
@@ -843,7 +843,7 @@ registerDataSource('host.stats.ratings', (ctx) => ({
 interface AccommodationFullApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<{
+        readonly items?: ReadonlyArray<{
             readonly id: string;
             readonly name: string;
             readonly photos?: ReadonlyArray<unknown>;
@@ -876,7 +876,7 @@ registerDataSource('host.accommodations.entities', (ctx) => ({
         const result = await fetchApi<AccommodationFullApiResponse>({
             path: `/api/v1/admin/accommodations?${params}`
         });
-        return result.data.data?.data ?? [];
+        return result.data.data?.items ?? [];
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -1203,7 +1203,7 @@ registerDataSource('host.suggestions.list', (ctx) => ({
 
         // 2. Negative reviews (≤ 3★) — priority 20. Reputation damage compounds
         //    every day they sit unanswered.
-        const reviews = reviewsResult?.data.data?.data ?? [];
+        const reviews = reviewsResult?.data.data?.items ?? [];
         for (const review of reviews) {
             if (review.rating <= 3) {
                 suggestions.push({
@@ -1217,7 +1217,7 @@ registerDataSource('host.suggestions.list', (ctx) => ({
         }
 
         // 3. Inquiries older than 24h — priority 30.
-        const conversations = conversationsResult?.data.data?.data ?? [];
+        const conversations = conversationsResult?.data.data?.items ?? [];
         for (const convo of conversations) {
             if (!convo.updatedAt) continue;
             const ageMs = nowMs - new Date(convo.updatedAt).getTime();
@@ -1236,7 +1236,7 @@ registerDataSource('host.suggestions.list', (ctx) => ({
         // 4. Accommodations with completeness < 80% — priority 40. Lazy import
         //    of the same compute function the ChecklistWidget uses so the
         //    suggestion stays in sync with what the card D status reflects.
-        const accommodations = accommodationsResult?.data.data?.data ?? [];
+        const accommodations = accommodationsResult?.data.data?.items ?? [];
         for (const acc of accommodations) {
             const items = computeAccommodationHealth(acc);
             const done = items.filter((i) => i.done).length;
