@@ -96,3 +96,33 @@ Document each manual run here so reviewers can see the smoke was actually execut
 | Date (ISO) | Executor | PR / commit | Result | Notes |
 |---|---|---|---|---|
 | 2026-05-29 | _pending_ | PR-4 (`#TBD`) | _pending_ | Initial PR-4 staging smoke. |
+| 2026-05-29 | claude-via-playwright (local against `hospeda_test`) | PR #1302 (merged to staging) | NOTES — 2 P1 bugs found | See "Post-merge local smoke notes" section below. |
+
+---
+
+## Post-merge local smoke notes (2026-05-29)
+
+Local re-run of the checklist against `hospeda_test` DB on dev ports 4500/4600/4700 with seeded SUPER_ADMIN, ADMIN, HOST (`host-pro`), and EDITOR. Findings flagged here are independent of PR-4 (they exist on `staging` regardless) and should be opened as separate follow-up issues before promoting `staging` to `main`.
+
+### ✅ Working as documented
+
+- **SUPER_ADMIN tour** — all 16 routes under `/account/*` and `/platform/*` return 200 with the expected `h1`. Lists: `/account/profile` → "Mi Perfil", `/account/preferences` → "Mi Configuración", `/account/notifications` → "Mi Configuración", `/account/security` → "Seguridad", `/account/data` → "Mis datos", `/account/tags` → "Mis Tags Personales", `/account/billing` → "Mi facturación", `/platform/critical` → "Configuración - Portal (Crítico)", `/platform/configuration/seo` → "Configuración - SEO", `/platform/cache/revalidation` → "Revalidación ISR", `/platform/ops/cron` → "Tareas Programadas", `/platform/ops/webhooks` → "Eventos Webhook", `/platform/email/logs` → "Registro de Notificaciones", `/platform/tags/internal` → "Etiquetas internas", `/platform/tags/system` → "Etiquetas de sistema". `/platform/critical/announcements` returned 200 with no `h1` element (uses an `h2` for the list title — cosmetic).
+- **HOST tour** — `/account/billing` rendered the full surface (sections: Mi plan, Uso de mi plan, Acciones) for `host-pro@local.test` (plan `owner-pro` seeded). `/account/profile` and `/account/tags` rendered OK.
+- **Cross-app announcement creation** — `/platform/critical/announcements/new` form accepted text in es/en/pt + `info` variant + dismissible checkbox; on submit it redirected to `/platform/critical/announcements` and the new item was visible in the list. The public API `GET /api/v1/public/announcements` returned the active announcement immediately after creation.
+- **EDITOR negative cases** — `editor@local.test` was redirected to `/auth/forbidden` for both `/account/billing` (missing `billing.view.own`) and `/platform/critical/announcements` (missing `system.maintenanceMode.write`). Both gates work as designed.
+- **DB permission grants** — `role_permission` table confirms `system.maintenanceMode` and `system.maintenanceMode.write` are SUPER_ADMIN-only; `billing.view.own` + `subscription.view.own` are granted to every authenticated role except EDITOR. Seed is correct.
+
+### 🚨 P1 — `/platform/critical` page gate is missing (security)
+
+`HOST` and `ADMIN` both reach `/platform/critical` and see the full SUPER_ADMIN page (`h1: "Configuración - Portal (Crítico)"`), instead of being redirected to `/auth/forbidden`. The DB grants for `system.maintenanceMode` are correct (SUPER_ADMIN-only), so the regression is at the TanStack Start route guard layer: `/platform/critical/index.tsx` (and likely siblings under `/platform/critical/*` except `/announcements`) is missing the `beforeLoad` permission check that `/announcements` evidently has. Recommend opening a follow-up branch that adds the `system.maintenanceMode` guard to every `_authed/platform/critical/*` route file, and adds a regression test that hits each one with an ADMIN actor expecting a 302 to `/auth/forbidden`. **This must be fixed before promoting `staging` to `main`** since today a non-superadmin can read (and potentially toggle) global maintenance flags.
+
+### 🚨 P1 — `GlobalAnnouncements.astro` field-name mismatch (banner never renders on web)
+
+`apps/web/src/components/GlobalAnnouncements.astro:35` reads `response.success` to gate the data array, but `ApiResult<T>` (defined in `apps/web/src/lib/api/types.ts:55-58`) exposes the discriminator as `ok`, not `success`. As a result the SSR ternary always falls into `[]`, so no banner is ever rendered on web — the API returns the active announcements, the SSR fetch succeeds, but the component silently treats it as failure. Repro: create any active announcement from `/platform/critical/announcements/new`, then `curl http://localhost:4700/es/` and grep for `global-announcement` — zero matches. Fix is a 1-line change: `response.success ? ... : []` → `response.ok ? ... : []`. The same component should also drop the now-dead `success` import path if any. Tests under `apps/web/test/components/GlobalAnnouncements.test.ts` likely mock the response with `{ success: true, data }` so they pass — those mocks need to be aligned to `{ ok: true, data }` too, otherwise the regression will sneak back in. **This too must be fixed before promoting `staging` to `main`** since the banner is the only visible payoff of PR-4 on the public site.
+
+### ⚠️ Notes / non-blocking observations
+
+- **Better Auth change-password flow** — Login as `superadmin@hospeda.com` redirected to `/auth/change-password` on first sign-in because the seeded user has `setPasswordPrompted: false`. Even after `UPDATE users SET set_password_prompted = true`, the existing session keeps the old snapshot, so a full sign-out + re-login is required to clear the redirect. Documented for future smoke runs — recommend either (a) flipping `setPasswordPrompted: true` in the SUPER_ADMIN seed, or (b) updating this checklist to mention the one-time password change requirement.
+- **Admin SSR hydration warning** — `/auth/signin` consistently logs a React hydration mismatch in the dev console (the SSR-rendered "loader" markup differs from the client-rendered form). Functionally harmless (the form ends up interactive after the client reconcile) but adds dev-console noise; consider gating the loader inside a `useHasMounted()` so the SSR pass renders the form directly.
+- **Banner cookie-dismiss flow + i18n fallback + endsAt date filter** — Could NOT be tested because the banner never renders (see P1 above). These remain unverified locally and should be re-checked once the `GlobalAnnouncements` fix is in.
+- **API `HOSPEDA_REDIS_URL`** — `apps/api/.env.local` ships with `redis://localhost:6379` while the local docker compose maps Redis to `:6381`. `API_CACHE_ENABLED=false` so the API boots fine, but if anyone enables cache locally the connection will fail. Worth a one-liner fix in `.env.local` (or in `apps/api/.env.example` if there is one).
