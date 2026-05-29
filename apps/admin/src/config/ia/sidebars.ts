@@ -774,6 +774,35 @@ const plataformaSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-email' },
+        // ── Email / notificaciones ────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'email-infrastructure',
+            label: {
+                es: 'Infraestructura de email',
+                en: 'Email infrastructure',
+                pt: 'Infraestrutura de email'
+            },
+            icon: 'MailIcon',
+            defaultOpen: false,
+            permissions: ['BILLING_READ_ALL'],
+            onMissing: 'hide',
+            items: [
+                {
+                    type: 'link',
+                    id: 'email-logs',
+                    label: {
+                        es: 'Historial de envíos',
+                        en: 'Delivery history',
+                        pt: 'Histórico de envios'
+                    },
+                    icon: 'MailIcon',
+                    route: '/platform/email/logs',
+                    permissions: ['BILLING_READ_ALL']
+                }
+            ]
+        },
         { type: 'separator', id: 'sep-audit' },
         // ── Auditoría — SUPER_ADMIN only (onMissing: 'hide') ─────────────
         {
@@ -876,10 +905,27 @@ const miCuentaSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'notificaciones',
+            label: { es: 'Notificaciones', en: 'Notifications', pt: 'Notificações' },
+            icon: 'BellIcon',
+            route: '/account/notifications',
+            exact: true,
+            permissions: ['USER_SETTINGS_UPDATE']
+        },
+        {
+            type: 'link',
             id: 'seguridad',
             label: { es: 'Seguridad', en: 'Security', pt: 'Segurança' },
             icon: 'ShieldIcon',
-            route: '/account/security/change-password',
+            route: '/account/security',
+            permissions: ['ACCESS_PANEL_ADMIN']
+        },
+        {
+            type: 'link',
+            id: 'mis-datos',
+            label: { es: 'Mis datos', en: 'My data', pt: 'Meus dados' },
+            icon: 'FileTextIcon',
+            route: '/account/data',
             exact: true,
             permissions: ['ACCESS_PANEL_ADMIN']
         },
