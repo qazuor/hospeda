@@ -1,43 +1,31 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
-import { EntitlementKey, LimitKey } from '@repo/billing';
+import { LimitKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
- * Configuración consolidada para la sección Gallery de accommodation
+ * Configuración consolidada para la sección Gallery de accommodation.
  *
- * @param _t - Función de traducción (no usada por ahora)
- * @returns Configuración consolidada de la sección gallery
+ * Section config kept tight to what the backend actually persists in
+ * `BaseMediaFields` (`@repo/schemas/common/media.schema`):
+ *   media.featuredImage  → { url, caption, description, moderationState }
+ *   media.gallery        → array<same image shape>
+ *   media.videos         → array<{ url, caption, description, moderationState }>
+ *
+ * Earlier this section also declared `imageCategories`, `videos` (FILE),
+ * `externalVideoUrls`, `videoTypes`, `virtualTourUrl`, `documents`,
+ * `gallerySettings`, and `imageMetadata`. NONE of those map to backend
+ * fields — Zod strips them from PATCH bodies — so they were placeholder UI
+ * that did nothing on save. Removed during the view/edit redesign.
+ *
+ * A proper video-gallery field for `media.videos` (URL + caption/description
+ * per item, mirroring the image gallery) is tracked as a follow-up spec.
  */
 export const createGalleryConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => {
-    // TODO: Opciones para el tipo de imagen (para uso futuro)
-    // const imageTypeOptions: SelectOption[] = [
-    //     { value: 'main', label: 'Imagen Principal' },
-    //     { value: 'exterior', label: 'Vista Exterior' },
-    //     { value: 'interior', label: 'Vista Interior' },
-    //     { value: 'room', label: 'Habitación' },
-    //     { value: 'bathroom', label: 'Baño' },
-    //     { value: 'kitchen', label: 'Cocina' },
-    //     { value: 'amenity', label: 'Amenity' },
-    //     { value: 'common_area', label: 'Área Común' },
-    //     { value: 'view', label: 'Vista desde el Alojamiento' },
-    //     { value: 'other', label: 'Otro' }
-    // ];
-
-    // TODO: Opciones para el tipo de video (para uso futuro)
-    // const videoTypeOptions: SelectOption[] = [
-    //     { value: 'tour', label: 'Tour Virtual' },
-    //     { value: 'promotional', label: 'Video Promocional' },
-    //     { value: 'testimonial', label: 'Testimonio' },
-    //     { value: 'amenity_showcase', label: 'Showcase de Amenities' },
-    //     { value: 'location', label: 'Ubicación y Entorno' },
-    //     { value: 'other', label: 'Otro' }
-    // ];
-
     return {
         id: 'gallery',
         title: 'Galería Multimedia',
@@ -110,9 +98,15 @@ export const createGalleryConsolidatedSection = (
             // above — see that field's comment for the full explanation. The
             // `galleryFieldHandlers` map key in `$id_.edit.tsx` and `new.tsx`
             // must match this id so the upload handler is wired correctly.
+            // Re-enabled in Phase 4-B: EntityFormSection no longer wraps the
+            // field in PlanLimitGate (which used to hide it at the cap). It
+            // now renders a LimitProgressIndicator above the field for HOST
+            // users only — staff (admin/superadmin) is bypassed via
+            // useShouldShowEntitlementGates, so the false-positive that
+            // disabled this previously is gone. Server-side enforcePhotoLimit
+            // on POST /api/v1/admin/media/upload remains authoritative.
             {
                 id: 'media.gallery',
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                 type: FieldTypeEnum.GALLERY,
                 required: false,
                 modes: ['view', 'edit', 'create'],
@@ -123,6 +117,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
+                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: ENTITY_GALLERY_CAPS.accommodation,
@@ -132,128 +127,6 @@ export const createGalleryConsolidatedSection = (
                     maxHeight: 1080,
                     sortable: true
                 }
-            },
-            // Categorización de imágenes
-            {
-                id: 'imageCategories',
-                type: FieldTypeEnum.JSON,
-                required: false,
-                modes: ['edit', 'create'], // Solo en edición
-                label: 'Categorías de Imágenes',
-                description: 'Asigna categorías a cada imagen para mejor organización',
-                placeholder: '{"image1.jpg": "exterior", "image2.jpg": "room"}',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                typeConfig: {}
-            },
-            // Videos - T-G-006: Gate video upload (premium feature)
-            {
-                id: 'videos',
-                type: FieldTypeEnum.FILE,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Videos',
-                description: 'Videos del alojamiento (máximo 3 videos)',
-                placeholder: 'Selecciona videos...',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO, // Requires premium plan
-                typeConfig: {}
-            },
-            // URLs de videos externos (YouTube, Vimeo, etc.)
-            {
-                id: 'externalVideoUrls',
-                type: FieldTypeEnum.JSON,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Videos Externos',
-                description: 'URLs de videos en YouTube, Vimeo u otras plataformas',
-                placeholder: '["https://youtube.com/watch?v=...", "https://vimeo.com/..."]',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                typeConfig: {}
-            },
-            // Tipo de videos - T-G-006: Gate video types (premium feature)
-            {
-                id: 'videoTypes',
-                type: FieldTypeEnum.JSON,
-                required: false,
-                modes: ['edit', 'create'], // Solo en edición
-                label: 'Tipos de Videos',
-                description: 'Categoriza cada video según su propósito',
-                placeholder: '{"video1.mp4": "tour", "https://youtube.com/...": "promotional"}',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO, // Requires premium plan
-                typeConfig: {}
-            },
-            // Tour virtual 360°
-            {
-                id: 'virtualTourUrl',
-                type: FieldTypeEnum.URL,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Tour Virtual 360°',
-                description: 'URL del tour virtual interactivo (Matterport, etc.)',
-                placeholder: 'https://my.matterport.com/show/?m=...',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                typeConfig: {}
-            },
-            // Documentos adicionales (planos, certificados, etc.)
-            {
-                id: 'documents',
-                type: FieldTypeEnum.FILE,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Documentos',
-                description: 'Planos, certificados, folletos u otros documentos',
-                placeholder: 'Selecciona documentos...',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                typeConfig: {}
-            },
-            // Configuración de galería
-            {
-                id: 'gallerySettings',
-                type: FieldTypeEnum.JSON,
-                required: false,
-                modes: ['edit', 'create'], // Solo en edición
-                label: 'Configuración de Galería',
-                description: 'Configuraciones adicionales para la presentación de la galería',
-                placeholder: '{"showCaptions": true, "autoplay": false, "transitionSpeed": 500}',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
-                },
-                typeConfig: {}
-            },
-            // Metadatos de imágenes (EXIF, geolocalización, etc.)
-            {
-                id: 'imageMetadata',
-                type: FieldTypeEnum.JSON,
-                required: false,
-                modes: ['view'], // Solo lectura - se genera automáticamente
-                label: 'Metadatos de Imágenes',
-                description: 'Información técnica extraída automáticamente de las imágenes',
-                placeholder: 'Se genera automáticamente...',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: []
-                },
-                typeConfig: {}
             }
         ]
     };

@@ -497,6 +497,9 @@
             "uploadedAlt": "Uploaded image",
             "altTextLabel": "Alt Text",
             "altTextPlaceholder": "Describe the image for accessibility",
+            "altTextRequiredHint": "Required for accessibility",
+            "replaceLabel": "Replace image",
+            "lightboxOpenLabel": "Open image in full size",
             "captionLabel": "Caption",
             "captionPlaceholder": "Image caption",
             "descriptionLabel": "Description",
@@ -528,10 +531,39 @@
             "invalidType": "Invalid file type.",
             "fallbackAriaLabel": "User initials"
         },
+        "coordinates": {
+            "latLabel": "Latitude",
+            "lngLabel": "Longitude",
+            "privacyNotice": "Enter the exact address and mark the precise point on the map. Don't worry: the public site never shows the exact location, only an approximate area around 300 meters around the point you provide.",
+            "mapLoading": "Loading map...",
+            "emptyHint": "Click on the map or enter coordinates to locate the accommodation",
+            "activationHint": "Click to enable zoom",
+            "clearLabel": "Clear coordinates",
+            "geocodingForwardLabel": "Locate on map",
+            "geocodingReverseLabel": "Fill address",
+            "geocodingForwardFound": "Point located at: {address}",
+            "geocodingForwardStreetOnly": "Street found but exact number unavailable. Drag the pin to fine-tune. ({address})",
+            "geocodingForwardNotFound": "Address not found. Try adding more details (city, number).",
+            "geocodingReverseFilled": "Address found: {address}",
+            "geocodingReverseKept": "The address matches what you already entered ({address}).",
+            "geocodingReverseNotFound": "No address could be resolved for this point.",
+            "geocodingNetworkError": "Could not reach the geocoding service. Try again.",
+            "reverseDialogTitle": "Load address",
+            "reverseDialogIntro": "We found: {address}",
+            "reverseDialogChangesHeading": "We will load:",
+            "reverseDialogStreetLabel": "Street",
+            "reverseDialogNumberLabel": "Number",
+            "reverseDialogNoChanges": "Street and number are already filled. Nothing will be changed.",
+            "reverseDialogEmptyValue": "(clear field)",
+            "reverseDialogConfirm": "Load address",
+            "reverseDialogCancel": "Cancel"
+        },
         "gallery": {
             "imageAlt": "Gallery image {index}",
             "captionPlaceholder": "Caption",
             "altTextPlaceholder": "Alt text",
+            "descriptionPlaceholder": "Detailed description",
+            "altTextRequiredHint": "Required for accessibility",
             "uploadAriaLabel": "Upload images",
             "uploading": "Uploading...",
             "uploadingProgress": "Uploading {size}...",
@@ -569,7 +601,9 @@
         "description": "You have reached the limit of your current plan",
         "titleDefault": "You reached your plan limit",
         "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
-        "upgradeLink": "View my subscription"
+        "upgradeLink": "View my subscription",
+        "belowLimit": "{max} - {current} slots left on your current plan.",
+        "atLimit": "You've hit your plan's limit. Upgrade to add more."
     },
     "selects": {
         "destination": {
@@ -589,5 +623,46 @@
         "booleanYes": "Yes",
         "booleanNo": "No",
         "emptyValue": "—"
+    },
+    "qualityScore": {
+        "triggerLabel": "Quality",
+        "triggerAriaLabel": "Listing quality: {score} out of 100. Open breakdown.",
+        "popoverHeading": "Listing quality",
+        "popoverHint": "Improve these to make your listing convert better.",
+        "groups": {
+            "done": "Done",
+            "pending": "Room to improve",
+            "premium": "Take it further"
+        },
+        "emptyDone": "You haven't completed any goal yet.",
+        "emptyPending": "All quality goals met! Your listing is at its peak.",
+        "premiumDescription": "Premium plan features to amplify your listing.",
+        "premiumCta": "Upgrade plan",
+        "goToSection": "Go to section",
+        "signals": {
+            "featuredImage": { "label": "Featured image uploaded" },
+            "galleryPhotos": {
+                "label": "At least {target} gallery photos",
+                "hint": "{current} of {target} uploaded"
+            },
+            "photosAlt": {
+                "label": "Alt text on every photo",
+                "hint": "{missing} photo(s) without alt text"
+            },
+            "description": {
+                "label": "Detailed description",
+                "hint": "{current} of {target} characters"
+            },
+            "summary": { "label": "Short summary" },
+            "locationPin": { "label": "Location pinned on the map" },
+            "contact": { "label": "At least one contact channel" },
+            "services": {
+                "label": "Services filled",
+                "hint": "{current} of {target} ticked"
+            },
+            "price": { "label": "Price set" },
+            "videoGallery": { "label": "Video gallery" },
+            "virtualTour": { "label": "360° virtual tour" }
+        }
     }
 }

@@ -306,8 +306,12 @@ describe('adminUserStatsRoute handler — SPEC-155 T-012', () => {
             mockGetActorFromContext.mockReturnValue(actorWithoutPermissions);
             // Simulate service throwing FORBIDDEN
             const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
             mockGetAdminStats.mockRejectedValue(
-                new ServiceError('FORBIDDEN', 'Permission denied: USER_READ_ALL required')
+                new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Permission denied: USER_READ_ALL required'
+                )
             );
 
             const handler = getStatsHandler();

@@ -473,6 +473,9 @@
             "uploadedAlt": "Imagen subida",
             "altTextLabel": "Texto alternativo",
             "altTextPlaceholder": "Describe la imagen para accesibilidad",
+            "altTextRequiredHint": "Requerido para accesibilidad",
+            "replaceLabel": "Reemplazar imagen",
+            "lightboxOpenLabel": "Ver imagen en grande",
             "captionLabel": "Leyenda",
             "captionPlaceholder": "Leyenda de la imagen",
             "descriptionLabel": "Descripción",
@@ -504,10 +507,39 @@
             "invalidType": "Tipo de archivo no válido.",
             "fallbackAriaLabel": "Iniciales del usuario"
         },
+        "coordinates": {
+            "latLabel": "Latitud",
+            "lngLabel": "Longitud",
+            "privacyNotice": "Cargá la dirección exacta y marcá el punto preciso en el mapa. No te preocupes: en la web pública no se muestra la ubicación exacta, solo un área aproximada de unos 300 metros alrededor del punto que cargues.",
+            "mapLoading": "Cargando mapa...",
+            "emptyHint": "Hacé click en el mapa o ingresá las coordenadas para ubicar el alojamiento",
+            "activationHint": "Hacé click para activar el zoom",
+            "clearLabel": "Quitar coordenadas",
+            "geocodingForwardLabel": "Ubicar en el mapa",
+            "geocodingReverseLabel": "Obtener dirección",
+            "geocodingForwardFound": "Punto ubicado en: {address}",
+            "geocodingForwardStreetOnly": "Encontré la calle pero no la altura exacta. Arrastrá el pin para ajustarlo. ({address})",
+            "geocodingForwardNotFound": "No se encontró la dirección. Probá agregar más datos (ciudad, número).",
+            "geocodingReverseFilled": "Dirección obtenida: {address}",
+            "geocodingReverseKept": "La dirección coincide con la que ya cargaste ({address}).",
+            "geocodingReverseNotFound": "No se pudo obtener una dirección para este punto.",
+            "geocodingNetworkError": "No pudimos contactar al servicio de geocoding. Probá de nuevo.",
+            "reverseDialogTitle": "Cargar dirección",
+            "reverseDialogIntro": "Encontramos: {address}",
+            "reverseDialogChangesHeading": "Se va a cargar:",
+            "reverseDialogStreetLabel": "Calle",
+            "reverseDialogNumberLabel": "Número",
+            "reverseDialogNoChanges": "Ya tenés cargados los campos de calle y número. No se va a modificar nada.",
+            "reverseDialogEmptyValue": "(vaciar campo)",
+            "reverseDialogConfirm": "Cargar dirección",
+            "reverseDialogCancel": "Cancelar"
+        },
         "gallery": {
             "imageAlt": "Imagen de galería {index}",
             "captionPlaceholder": "Leyenda",
             "altTextPlaceholder": "Texto alternativo",
+            "descriptionPlaceholder": "Descripción detallada",
+            "altTextRequiredHint": "Requerido para accesibilidad",
             "uploadAriaLabel": "Subir imágenes",
             "uploading": "Subiendo...",
             "uploadingProgress": "Subiendo {size}...",
@@ -543,7 +575,9 @@
         "description": "Has alcanzado el límite de tu plan actual",
         "titleDefault": "Llegaste al límite de tu plan",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
-        "upgradeLink": "Ver mi suscripción"
+        "upgradeLink": "Ver mi suscripción",
+        "belowLimit": "Te quedan {max} - {current} disponibles en tu plan.",
+        "atLimit": "Llegaste al máximo permitido por tu plan. Para sumar más, mejorá el plan."
     },
     "ownerPromotions": {
         "columns": {
@@ -589,5 +623,46 @@
         "booleanYes": "Sí",
         "booleanNo": "No",
         "emptyValue": "—"
+    },
+    "qualityScore": {
+        "triggerLabel": "Calidad",
+        "triggerAriaLabel": "Calidad del anuncio: {score} de 100. Abrir desglose.",
+        "popoverHeading": "Calidad de tu anuncio",
+        "popoverHint": "Mejorá estos puntos para que tu anuncio convierta más.",
+        "groups": {
+            "done": "Cumplido",
+            "pending": "Para mejorar",
+            "premium": "Llevalo más lejos"
+        },
+        "emptyDone": "Todavía no completaste ningún objetivo.",
+        "emptyPending": "¡Cumpliste todo lo que suma! Tu anuncio está al máximo.",
+        "premiumDescription": "Funciones del plan premium para potenciar tu anuncio.",
+        "premiumCta": "Mejorar plan",
+        "goToSection": "Ir a la sección",
+        "signals": {
+            "featuredImage": { "label": "Imagen principal cargada" },
+            "galleryPhotos": {
+                "label": "Al menos {target} fotos en la galería",
+                "hint": "{current} de {target} cargadas"
+            },
+            "photosAlt": {
+                "label": "Texto alternativo en todas las fotos",
+                "hint": "{missing} foto(s) sin texto alternativo"
+            },
+            "description": {
+                "label": "Descripción detallada",
+                "hint": "{current} de {target} caracteres"
+            },
+            "summary": { "label": "Resumen corto" },
+            "locationPin": { "label": "Ubicación marcada en el mapa" },
+            "contact": { "label": "Al menos un canal de contacto" },
+            "services": {
+                "label": "Servicios cargados",
+                "hint": "{current} de {target} marcados"
+            },
+            "price": { "label": "Precio cargado" },
+            "videoGallery": { "label": "Galería con videos" },
+            "virtualTour": { "label": "Tour virtual 360°" }
+        }
     }
 }

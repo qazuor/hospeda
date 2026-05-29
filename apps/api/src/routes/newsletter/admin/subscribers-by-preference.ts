@@ -69,7 +69,7 @@ export const adminSubscribersByPreferenceRoute = createAdminRoute({
         const result = await newsletterService().getStatsByPreference(actor);
 
         if (result.error) {
-            apiLogger.error('getStatsByPreference failed', result.error);
+            apiLogger.error(result.error, 'getStatsByPreference failed');
             throw new ServiceError(result.error.code, result.error.message);
         }
 
