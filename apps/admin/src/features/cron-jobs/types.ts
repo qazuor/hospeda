@@ -1,34 +1,22 @@
 /**
  * Cron Jobs Feature Types
  *
- * Type definitions for cron job management in the admin panel
+ * Type definitions for cron job management in the admin panel.
+ * The enriched CronJobAdmin shape comes from @repo/schemas (SPEC-161).
  */
 
-/**
- * Cron job definition from the API
- */
-export interface CronJob {
-    /** Unique name for the job (used in API endpoints) */
-    name: string;
-    /** Human-readable description of what the job does */
-    description: string;
-    /** Cron schedule expression (e.g., "0 0 * * *" for daily at midnight) */
-    schedule: string;
-    /** Whether the job is enabled (disabled jobs won't be scheduled) */
-    enabled: boolean;
-}
+// Re-export the canonical types from schemas so all feature code
+// references a single source of truth.
+export type { CronJobAdmin, CronJobsAdminList } from '@repo/schemas';
 
 /**
- * Response from GET /api/v1/cron
+ * Alias for the list response — kept for backward compatibility with
+ * existing usages of `CronJobsListResponse` inside this feature.
  */
-export interface CronJobsListResponse {
-    jobs: CronJob[];
-    totalJobs: number;
-    enabledJobs: number;
-}
+export type { CronJobsAdminList as CronJobsListResponse } from '@repo/schemas';
 
 /**
- * Cron job execution result
+ * Cron job execution result returned by POST /api/v1/admin/cron/:jobName
  */
 export interface CronJobResult {
     /** Whether the job completed successfully */
@@ -52,15 +40,16 @@ export interface CronJobResult {
 }
 
 /**
- * Response from POST /api/v1/cron/:jobName
+ * Response from POST /api/v1/admin/cron/:jobName
+ *
+ * NOTE: the API wraps the result directly (not under a nested `.data`);
+ * the `fetchApi` helper unwraps the outer `{ success, data }` envelope,
+ * so the mutation receives this shape directly.
  */
-export interface TriggerCronJobResponse {
-    success: boolean;
-    data: CronJobResult;
-}
+export type TriggerCronJobResponse = CronJobResult;
 
 /**
- * Error response from POST /api/v1/cron/:jobName
+ * Error response from POST /api/v1/admin/cron/:jobName
  */
 export interface TriggerCronJobError {
     success: false;
@@ -73,17 +62,4 @@ export interface TriggerCronJobError {
         dryRun: boolean;
         durationMs: number;
     };
-}
-
-/**
- * Cron job execution status (for UI display)
- */
-export type CronJobStatus = 'idle' | 'running' | 'success' | 'error';
-
-/**
- * Cron job with execution state (for UI)
- */
-export interface CronJobWithState extends CronJob {
-    status: CronJobStatus;
-    lastResult?: CronJobResult;
 }

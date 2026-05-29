@@ -73,6 +73,7 @@
             "statusActive": "Active",
             "statusDisabled": "Disabled",
             "scheduleLabel": "Schedule:",
+            "scheduleRawLabel": "Cron expr.:",
             "dryRunLabel": "Dry Run mode",
             "dryRunHint": "Run without making real changes",
             "runButton": "Run now",
@@ -85,7 +86,14 @@
             "modeLabel": "Mode:",
             "modeDryRun": "Test",
             "modeReal": "Real",
-            "runErrorTitle": "Error running task"
+            "runErrorTitle": "Error running task",
+            "lastRunLabel": "Last run:",
+            "nextRunLabel": "Next run:",
+            "neverRun": "No runs",
+            "noNextRun": "—",
+            "lastRunSuccess": "OK",
+            "lastRunFailed": "Failed",
+            "lastRunTimeout": "Timeout"
         },
         "schedules": {
             "daily": "Daily at midnight",
