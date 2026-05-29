@@ -1,7 +1,7 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedEntityConfig } from '../types/consolidated-config.types';
 
 /**
@@ -105,18 +105,22 @@ export const createAccommodationMinimalCreateConfig = (
                                   id: 'ownerId',
                                   type: FieldTypeEnum.USER_SELECT,
                                   required: true,
-                                  modes: ['create'],
+                                  modes: ['create' as const],
                                   label: t('fields.accommodation.ownerId.label'),
                                   placeholder: t('fields.accommodation.ownerId.placeholder'),
-                                  // Only staff create on behalf of someone else; restrict the
-                                  // picker to actual hosts so we don't accidentally attribute
-                                  // a property to another staff member.
+                                  // Owner picker shows the standard user search. Staff are
+                                  // expected to pick a host; the backend will reject the
+                                  // create if the selected user isn't allowed to own.
+                                  // NOTE: roleFilter was tempting here but the admin users
+                                  // API rejects `roles=HOST` as "Invalid pagination
+                                  // parameters" today — bringing this back is a separate
+                                  // backend ticket. Initial load 400 was noisier than the
+                                  // mild UX cost of an unfiltered picker.
                                   typeConfig: {
                                       searchMode: 'server' as const,
                                       minCharToSearch: 2,
                                       showAvatar: true,
-                                      clearable: false,
-                                      roleFilter: [RoleEnum.HOST as string]
+                                      clearable: false
                                   }
                               }
                           ]
