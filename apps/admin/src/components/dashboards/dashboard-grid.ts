@@ -90,14 +90,16 @@ const MD_LG_ROW_SPAN: Record<1 | 2, string> = {
  * ```
  */
 export function gridSpanClasses(span?: GridSpan): string {
-    if (!span) return '';
-    const cols = span.cols ?? 1;
-    const rows = span.rows ?? 1;
+    const cols = span?.cols ?? 1;
+    const rows = span?.rows ?? 1;
     const parts: string[] = [];
-    if (cols !== 1) {
-        parts.push(MD_COL_SPAN[cols]);
-        parts.push(LG_COL_SPAN[cols]);
-    }
+    // ALWAYS emit a col-span class. Before SPEC-155 the helper omitted classes
+    // for cols=1 because the grid was 3-cols and "no class" meant 1/3 = ⅓.
+    // The grid is now 6-cols (so we can express halves), so "no class" means
+    // 1/6 ≈ 16%. We must explicitly map cols=1 → lg:col-span-2 to keep the ⅓
+    // default. Same logic at md (grid is 2-cols there).
+    parts.push(MD_COL_SPAN[cols]);
+    parts.push(LG_COL_SPAN[cols]);
     if (rows !== 1) {
         parts.push(MD_LG_ROW_SPAN[rows]);
     }

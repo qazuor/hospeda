@@ -436,13 +436,18 @@ const hostDashboard: DashboardInput = {
  *   I  — Últimos posts                 (list,                          source: editor.posts.latest)
  *   J  — Acciones                      (list,                          source: editor.shortcuts)
  *
- * Bento layout (3-col grid, rendered in array order):
- *   Row 1: A (1×1)  + B (2×1)
- *   Row 2: I (2×1)  + J (1×1)
- *   Row 3: C (3×1 full)
- *   Row 4: F (2×1)  + D (1×1)
- *   Row 5: E (2×1)  + H (1×1)
- *   Row 6: G1 (half) + G2 (half) — Salud posts | Salud eventos
+ * Bento layout (6-col grid lg, rendered in array order):
+ *   Row 1: A (⅓) + B (⅔)     — Stats publicaciones | Eventos próximos
+ *   Row 2: J (⅓) + I (⅔)     — Acciones            | Últimos posts
+ *   Row 3: D (⅓) + F (⅔)     — Campañas recientes  | Stats eventos (6 tiles)
+ *   Row 4: E (½) + C (½)     — Distribución        | Suscriptores Newsletter
+ *   Row 5: G1 (½) + G2 (½)   — Salud posts          | Salud eventos
+ *   Row 6: H (full)          — Comentarios (deferred banner)
+ *
+ * Pattern: rows 1–3 are ⅓+⅔ to pair a compact metric/list card with a
+ * content-rich hero. Rows 4–5 are ½+½ for equal-weight pairs. Row 6 is a
+ * full-width banner to host the comments placeholder without leaving a
+ * lopsided gap on any other row.
  *
  * @example
  * ```ts
@@ -452,10 +457,13 @@ const hostDashboard: DashboardInput = {
  */
 const editorDashboard: DashboardInput = {
     widgets: [
-        // Card A — Estadísticas publicaciones  (Row 1, left)
+        // -- Row 1: Estadísticas publicaciones (⅓) + Eventos próximos (⅔) --
+        // Posts compact KPI alongside the events hero list: same row balances
+        // a number-card and a content-card with similar visual weight.
+
+        // Card A — Estadísticas publicaciones (Row 1 left, ⅓)
         // 3-tile grid (Este mes / Total / Borradores) + top 5 by engagement
         // companion list. Deferred "Vistas" tile renders BELOW the grid.
-        // source: editor.posts.published-this-month
         {
             id: 'editor-card-a',
             type: 'kpi',
@@ -465,7 +473,7 @@ const editorDashboard: DashboardInput = {
                 pt: 'Estatísticas publicações'
             },
             scope: 'all',
-            // Bento: compact (1×1) — short tile labels + companion list of 5 rows.
+            // Bento: compact (1 = ⅓) — short tile labels + companion list.
             config: {
                 source: 'editor.posts.published-this-month',
                 accent: 'success',
@@ -486,10 +494,9 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card B — Eventos
+        // Card B — Eventos próximos (Row 1 right, ⅔)
         // upcoming events list (top 5 by date.start asc, client-sorted from
         // a 20-row buffer since admin events doesn't expose a startDate sort).
-        // source: editor.events.upcoming
         {
             id: 'editor-card-b',
             type: 'list',
@@ -499,8 +506,6 @@ const editorDashboard: DashboardInput = {
                 pt: 'Próximos eventos'
             },
             scope: 'all',
-            // Bento: wide (2×1) — 5 rows with date + "destacado" badge fit
-            // comfortably without truncating event names.
             gridSpan: { cols: 2 },
             config: {
                 source: 'editor.events.upcoming',
@@ -514,10 +519,35 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card I — Últimos posts (Row 2 left)
-        // top 5 published posts by publishedAt:desc — paired with card B on
-        // the previous row so the editor scans the freshest content on both
-        // publish surfaces in two glances.
+        // -- Row 2: Acciones (⅓) + Últimos posts (⅔) --
+        // Compact actions card next to the latest-posts hero list.
+
+        // Card J — Acciones (Row 2 left, ⅓)
+        // editorial quick-action shortcuts as ListWidget items.
+        {
+            id: 'editor-card-j',
+            type: 'list',
+            label: {
+                es: 'Acciones',
+                en: 'Quick actions',
+                pt: 'Ações'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.shortcuts',
+                accent: 'accent',
+                icon: 'compass',
+                maxItems: 4,
+                emptyText: 'No hay acciones disponibles',
+                emptyDescription: 'Las acciones rápidas van a aparecer acá.',
+                errorText: 'No pudimos cargar las acciones',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card I — Últimos posts (Row 2 right, ⅔)
+        // top 5 published posts by publishedAt:desc — mirrors card B on the
+        // previous row so the editor scans freshest content of both surfaces.
         {
             id: 'editor-card-i',
             type: 'list',
@@ -527,7 +557,6 @@ const editorDashboard: DashboardInput = {
                 pt: 'Últimos posts'
             },
             scope: 'all',
-            // Bento: wide (2×1) — 5 rows with title + date + optional badge.
             gridSpan: { cols: 2 },
             config: {
                 source: 'editor.posts.latest',
@@ -541,71 +570,35 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card J — Acciones (Row 2 right)
-        // editorial quick-action shortcuts as ListWidget items.
+        // -- Row 3: Campañas (⅓) + Estadísticas eventos (⅔) --
+        // Compact campaigns list next to the 6-tile event stats hero.
+
+        // Card D — Campañas recientes (Row 3 left, ⅓)
         {
-            id: 'editor-card-j',
+            id: 'editor-card-d',
             type: 'list',
             label: {
-                es: 'Acciones',
-                en: 'Quick actions',
-                pt: 'Ações'
+                es: 'Campañas recientes',
+                en: 'Recent campaigns',
+                pt: 'Campanhas recentes'
             },
             scope: 'all',
-            // Bento: compact (1×1) — 4 short rows with label + meta.
             config: {
-                source: 'editor.shortcuts',
-                accent: 'accent',
-                icon: 'compass',
-                maxItems: 4,
-                emptyText: 'No hay acciones disponibles',
-                emptyDescription: 'Las acciones rápidas van a aparecer acá.',
-                errorText: 'No pudimos cargar las acciones',
+                source: 'editor.newsletter.campaigns',
+                accent: 'purple',
+                icon: 'activity',
+                maxItems: 3,
+                emptyText: 'Aún no hay campañas',
+                emptyDescription: 'Cuando crees tu primera campaña vas a verla acá con su estado.',
+                errorText: 'No pudimos cargar las campañas',
                 errorDescription: 'Probá actualizar el panel.'
             }
         },
 
-        // Card C — Suscriptores Newsletter (Row 3, full width)
-        // 3-tile mini-grid (Activos / En verificación / Dados de baja).
-        // Sits below the posts + events rows per editorial flow request:
-        // posts/eventos arriba, audiencia debajo.
-        // source: editor.newsletter.subscribers
-        {
-            id: 'editor-card-c',
-            type: 'kpi',
-            label: {
-                es: 'Suscriptores Newsletter',
-                en: 'Newsletter subscribers',
-                pt: 'Assinantes Newsletter'
-            },
-            scope: 'all',
-            // Bento: full row (3×1) — 3 status tiles + room for the deferred
-            // "Tasa de apertura" placeholder section below.
-            gridSpan: { cols: 3 },
-            config: {
-                source: 'editor.newsletter.subscribers',
-                accent: 'sky',
-                icon: 'users',
-                emptyText: 'Sin suscriptores',
-                emptyDescription:
-                    'Cuando los lectores se sumen a la newsletter, vas a ver el desglose acá.',
-                errorText: 'No pudimos cargar los suscriptores',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-160',
-                        label: 'Tasa de apertura',
-                        description:
-                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email (SPEC-160).'
-                    }
-                ]
-            }
-        },
-
-        // Card F — Estadísticas eventos (Row 4 left)
+        // Card F — Estadísticas eventos (Row 3 right, ⅔)
         // 6-tile mini-grid: 3 counters (Total / Próximos / Destacados) +
-        // 3 content-health proxies (Sin imagen / Sin location / Sin organizer).
-        // source: editor.events.stats
+        // 3 content-health proxies (Sin imagen / Sin ubicación / Sin organizer)
+        // + 2 deferred placeholder tiles (Vistas, Favoritos) below the grid.
         {
             id: 'editor-card-f',
             type: 'kpi',
@@ -615,8 +608,6 @@ const editorDashboard: DashboardInput = {
                 pt: 'Estatísticas eventos'
             },
             scope: 'all',
-            // Bento: wide (2×1) — 6 tiles in a 2-row grid need horizontal room
-            // and the placeholder Vistas + Favoritos section below adds height.
             gridSpan: { cols: 2 },
             config: {
                 source: 'editor.events.stats',
@@ -643,32 +634,12 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card D — Campañas recientes (Row 4 right)
-        {
-            id: 'editor-card-d',
-            type: 'list',
-            label: {
-                es: 'Campañas recientes',
-                en: 'Recent campaigns',
-                pt: 'Campanhas recentes'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.newsletter.campaigns',
-                accent: 'purple',
-                icon: 'activity',
-                maxItems: 3,
-                emptyText: 'Aún no hay campañas',
-                emptyDescription: 'Cuando crees tu primera campaña vas a verla acá con su estado.',
-                errorText: 'No pudimos cargar las campañas',
-                errorDescription: 'Probá actualizar el panel.'
-            }
-        },
+        // -- Row 4: Distribución (½) + Suscriptores Newsletter (½) --
+        // Two half-width metric cards. Suscriptores no longer needs a full
+        // row — paired with the chart it reads as a single "audience snapshot".
 
-        // Card E — Estadísticas blog (Row 5 left)
+        // Card E — Distribución de publicaciones (Row 4 left, ½)
         // status distribution bar chart (Publicados / Borradores / Archivados).
-        // Replaced the previous monthly-trend variant which collapsed visually
-        // when posts clustered in a single month.
         {
             id: 'editor-card-e',
             type: 'chart',
@@ -678,8 +649,7 @@ const editorDashboard: DashboardInput = {
                 pt: 'Distribuição de publicações'
             },
             scope: 'all',
-            // Bento: wide (2×1) — 3 bar columns at a comfortable width.
-            gridSpan: { cols: 2 },
+            gridSpan: { cols: 'half' },
             config: {
                 source: 'editor.posts.stats',
                 chartType: 'bar',
@@ -699,25 +669,36 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card H — Comentarios (Row 5 right)
-        // DeferredWidget — recent comments endpoint pending SPEC-165.
+        // Card C — Suscriptores Newsletter (Row 4 right, ½)
+        // 3-tile mini-grid (Activos / En verificación / Dados de baja)
+        // + deferred "Tasa de apertura" placeholder below the grid.
         {
-            id: 'editor-card-h',
-            type: 'callout',
+            id: 'editor-card-c',
+            type: 'kpi',
             label: {
-                es: 'Comentarios',
-                en: 'Comments',
-                pt: 'Comentários'
+                es: 'Suscriptores Newsletter',
+                en: 'Newsletter subscribers',
+                pt: 'Assinantes Newsletter'
             },
             scope: 'all',
-            onMissing: 'hide',
+            gridSpan: { cols: 'half' },
             config: {
-                deferred: true,
-                phaseSpec: 'SPEC-165',
-                accent: 'warning',
-                icon: 'chat',
-                description:
-                    'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
+                source: 'editor.newsletter.subscribers',
+                accent: 'sky',
+                icon: 'users',
+                emptyText: 'Sin suscriptores',
+                emptyDescription:
+                    'Cuando los lectores se sumen a la newsletter, vas a ver el desglose acá.',
+                errorText: 'No pudimos cargar los suscriptores',
+                errorDescription: 'Probá actualizar el panel.',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-160',
+                        label: 'Tasa de apertura',
+                        description:
+                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email (SPEC-160).'
+                    }
+                ]
             }
         },
 
@@ -749,7 +730,7 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card G2 — Salud del contenido · Eventos (Row 6 right, half width)
+        // Card G2 — Salud del contenido · Eventos (Row 5 right, half width)
         // Per-event grouped health, same shape as the posts variant.
         {
             id: 'editor-card-g-events',
@@ -771,6 +752,31 @@ const editorDashboard: DashboardInput = {
                 emptyDescription: 'Ningún evento tiene observaciones pendientes.',
                 errorText: 'No pudimos evaluar la salud de los eventos',
                 errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card H — Comentarios (Row 6, full width banner)
+        // DeferredWidget — recent comments endpoint pending SPEC-165.
+        // Sits at the bottom as a full-width banner so the placeholder
+        // doesn't leave a lopsided half on any other row.
+        {
+            id: 'editor-card-h',
+            type: 'callout',
+            label: {
+                es: 'Comentarios',
+                en: 'Comments',
+                pt: 'Comentários'
+            },
+            scope: 'all',
+            onMissing: 'hide',
+            gridSpan: { cols: 3 },
+            config: {
+                deferred: true,
+                phaseSpec: 'SPEC-165',
+                accent: 'warning',
+                icon: 'chat',
+                description:
+                    'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
             }
         }
     ]
