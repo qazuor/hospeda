@@ -213,3 +213,27 @@ Not exercised in this pass: usage bar threshold tones (≥80% warning, ≥95% da
 - `es` locale fallback when `text.en`/`text.pt` are empty — blocked by Zod schema rejecting empty strings; covered by `pickAnnouncementText` unit tests.
 - Usage bar tone thresholds in `/account/billing` (≥80%, ≥95%) — covered by component unit tests; not exercised live.
 - Sidebar Ops sub-group presence for SUPER_ADMIN — visual presence implied by direct-URL render of `/platform/ops/{cron,webhooks}` returning 200; the sidebar query just didn't pick the nested anchors.
+
+### Follow-up fix shipped (2026-05-29, same session) — PR #1306 commit 3/3
+
+The "ADMIN gets `/auth/forbidden` on `/platform/ops/{cron,webhooks}` + `/platform/email/logs`" finding above was promoted to a fix and pushed to PR #1306 as the third commit (`fix(admin): gate /platform/{ops,email} pages on ACCESS_API_ADMIN instead of billing`). Summary of what changed:
+
+- New helper `apps/admin/src/lib/admin-api-access.ts` exposes `requireAdminApiAccess(context)` that asserts `PermissionEnum.ACCESS_API_ADMIN` (granted to SUPER_ADMIN/ADMIN/CLIENT_MANAGER/EDITOR; denied to HOST/USER/SPONSOR).
+- The three route files (`/platform/ops/cron.tsx`, `/platform/ops/webhooks.tsx`, `/platform/email/logs.tsx`) swap the imported guard from `requireBillingAccess` (`BILLING_READ_ALL`, SUPER_ADMIN-only) to `requireAdminApiAccess`.
+- `apps/admin/test/spec-156/permission-gates.test.ts` grows from 5 → 8 audited routes and gains a `viaHelper` indirection: when a route delegates to a helper, the assertions read the helper source for the `PermissionEnum.*` reference and the `/auth/forbidden` redirect, plus an extra `it()` checks the route imports + invokes the helper. Test count: 13 → 22, all green.
+
+#### Retest (post-fix #3)
+
+- **`host-pro@local.test`** → `/auth/forbidden` on all three routes ✅ (no `ACCESS_API_ADMIN` grant, gate works).
+- **`admin@hospeda.com`** → renders the three pages with the expected `h1`:
+  - `/platform/ops/cron` → "Tareas Programadas"
+  - `/platform/ops/webhooks` → "Eventos Webhook"
+  - `/platform/email/logs` → "Registro de Notificaciones"
+- **`superadmin@hospeda.com`** → still works (already had `ACCESS_API_ADMIN` and the previous tour confirmed all three render).
+- `pnpm typecheck` on `apps/admin` → green.
+- `pnpm exec vitest run test/spec-156/permission-gates.test.ts` → 22/22 pass.
+
+#### Still out of scope (separate follow-up PR needed)
+
+- `/platform/configuration/seo` and `/platform/tags/system` render fully for HOST — no `beforeLoad` guard at all on the route file. Lower severity than the wrong-guard issue (these pages don't expose the maintenance toggle), but they should also receive `requireAdminApiAccess` (or a tag-specific permission) + an audit row.
+- `/platform/cache/revalidation` and `/platform/tags/internal` show a brief "Cargando…" then client-side redirect to `/dashboard` for HOST. Inconsistent forbidden UX; should be normalized to a redirect to `/auth/forbidden` like the rest of the gated routes.
