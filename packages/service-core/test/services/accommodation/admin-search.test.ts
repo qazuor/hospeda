@@ -357,5 +357,19 @@ describe('AccommodationService: _executeAdminSearch override', () => {
             );
             expect(getWhereArg().ownerId).toBe('target-owner');
         });
+
+        // AC-5 / REQ-4 regression guard: /me/accommodations reuses the admin list with
+        // ownerId=self. A VIEW_OWN host requesting its own id keeps seeing its own rows (the
+        // forced scope agrees with the requested self id) — it must NOT 403 after VIEW_ALL removal.
+        it('AC-5: VIEW_OWN host with ownerId=self still sees its own rows (/me/accommodations)', async () => {
+            await callExecuteAdminSearch(
+                service,
+                buildDefaultParams({
+                    actor: viewOwnActor,
+                    entityFilters: { ownerId: 'host-1' }
+                })
+            );
+            expect(getWhereArg().ownerId).toBe('host-1');
+        });
     });
 });
