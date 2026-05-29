@@ -1572,7 +1572,12 @@
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
             "type": "refactor",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
+            "completedAt": "2026-05-29T08:19:27Z",
+            "completionRef": "PR #1308 (f7180a1c02) — last of 7 PRs",
+            "archived": true,
+            "archivedAt": "2026-05-29T08:19:27Z",
+            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298 infra, #1300 relocations, #1301 migration, #1302 PR-4). Post-merge per-role smoke (#1305 sign-off) surfaced 3 P1 fixes resolved in #1306 (GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap) and #1308 (4 remaining /platform/* routes gated on requireAdminApiAccess; audit grown to 12 routes / 34 tests). Staging→main promotion pending operator decision.",
             "path": "SPEC-156-admin-settings-reorganization",
             "created": "2026-05-22T00:00:00Z",
             "startedAt": "2026-05-28T05:15:00Z",
@@ -1604,6 +1609,34 @@
                     "mergedAt": "2026-05-29T02:34:39Z",
                     "mergeCommit": "637e2700fd14df80a78041e6a3d75c8a2a0ad47e",
                     "tasksClosed": "T-028..T-031 (4 tasks; 30/44 total)"
+                },
+                {
+                    "pr": "#1302",
+                    "title": "Mi facturación + Anuncios editor + web display (PR-4 of 4)",
+                    "mergedAt": "2026-05-29T03:48:21Z",
+                    "mergeCommit": "55a0bf8a70",
+                    "tasksClosed": "T-033..T-043 + all QGs (14 tasks; 44/44 total)"
+                },
+                {
+                    "pr": "#1305",
+                    "title": "post-PR-4 per-role smoke sign-off + retest results (chore)",
+                    "mergedAt": "2026-05-29T07:33:34Z",
+                    "mergeCommit": "451d8c9750",
+                    "tasksClosed": "n/a (sign-off doc only)"
+                },
+                {
+                    "pr": "#1306",
+                    "title": "P1 fixes: GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap",
+                    "mergedAt": "2026-05-29T07:33:49Z",
+                    "mergeCommit": "6c60de56c6",
+                    "tasksClosed": "follow-up to smoke; not in original 44-task roster"
+                },
+                {
+                    "pr": "#1308",
+                    "title": "Followup guards on remaining 4 /platform/* routes + audit at 12/12",
+                    "mergedAt": "2026-05-29T08:19:27Z",
+                    "mergeCommit": "f7180a1c02",
+                    "tasksClosed": "follow-up to smoke; not in original 44-task roster"
                 }
             ],
             "tags": [
