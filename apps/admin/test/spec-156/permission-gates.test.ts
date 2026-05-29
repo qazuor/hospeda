@@ -23,6 +23,18 @@ interface GatedPage {
     readonly file: string;
     readonly mustReferencePermissions: ReadonlyArray<string>;
     readonly notes?: string;
+    /**
+     * When the route delegates to a shared guard helper (instead of inlining
+     * the `beforeLoad` check), set `viaHelper` to the helper module path so
+     * the test reads the helper source for the permission + redirect
+     * assertions, and additionally asserts the route file imports + uses the
+     * helper.
+     */
+    readonly viaHelper?: {
+        readonly importPath: string;
+        readonly functionName: string;
+        readonly file: string;
+    };
 }
 
 const ADMIN_SRC_ROOT = '../../src/routes/_authed';
@@ -62,10 +74,49 @@ const CRITICAL_PAGES: ReadonlyArray<GatedPage> = [
     }
 ];
 
+/**
+ * Pages that gate on the generic admin-API helper (`requireAdminApiAccess`),
+ * which checks `ACCESS_API_ADMIN`. These are ops / email infrastructure
+ * pages — non-billing routes that previously reused `requireBillingAccess`
+ * by mistake and over-restricted to SUPER_ADMIN. See post-PR-4 smoke
+ * sign-off (PR #1305) for the discovery context.
+ *
+ * The roster MUST reference `ACCESS_API_ADMIN` so any future swap to a
+ * different (or more restrictive) helper trips this audit before review.
+ */
+const ADMIN_API_HELPER = {
+    importPath: '@/lib/admin-api-access',
+    functionName: 'requireAdminApiAccess',
+    file: '../../src/lib/admin-api-access.ts'
+} as const;
+
+const ADMIN_API_PAGES: ReadonlyArray<GatedPage> = [
+    {
+        label: '/platform/ops/cron — cron jobs list',
+        file: `${ADMIN_SRC_ROOT}/platform/ops/cron.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        notes: 'Used to gate on BILLING_READ_ALL by mistake; swapped to the admin-api helper so ADMIN can reach it per checklist.',
+        viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/ops/webhooks — webhook deliveries',
+        file: `${ADMIN_SRC_ROOT}/platform/ops/webhooks.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/email/logs — email/notification history',
+        file: `${ADMIN_SRC_ROOT}/platform/email/logs.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        viaHelper: ADMIN_API_HELPER
+    }
+];
+
 const ALL_GATED_PAGES: ReadonlyArray<GatedPage> = [
     ...ACCOUNT_PAGES,
     ...ANNOUNCEMENTS_PAGES,
-    ...CRITICAL_PAGES
+    ...CRITICAL_PAGES,
+    ...ADMIN_API_PAGES
 ];
 
 function loadPageSource(file: string): string {
@@ -74,24 +125,43 @@ function loadPageSource(file: string): string {
 
 describe('SPEC-156 permission gate audit (T-043)', () => {
     describe.each(ALL_GATED_PAGES)('$label', (page) => {
-        const src = loadPageSource(page.file);
+        const routeSrc = loadPageSource(page.file);
+        // When a helper gates the route, the permission + redirect assertions
+        // run against the helper source. The route file is still asserted to
+        // import and invoke the helper so the indirection cannot silently
+        // detach.
+        const guardSrc = page.viaHelper ? loadPageSource(page.viaHelper.file) : routeSrc;
 
         it.each(page.mustReferencePermissions)(
-            'references PermissionEnum.%s in the route module',
+            'references PermissionEnum.%s in the gating module',
             (permission) => {
                 expect(
-                    src.includes(`PermissionEnum.${permission}`),
-                    `Expected ${page.file} to reference PermissionEnum.${permission}. ${page.notes ?? ''}`
+                    guardSrc.includes(`PermissionEnum.${permission}`),
+                    `Expected ${page.viaHelper ? page.viaHelper.file : page.file} to reference PermissionEnum.${permission}. ${page.notes ?? ''}`
                 ).toBe(true);
             }
         );
 
         it('redirects unauthorized actors to /auth/forbidden', () => {
             expect(
-                src.includes("throw redirect({ to: '/auth/forbidden' })"),
-                `Expected ${page.file} to redirect to /auth/forbidden when the perm check fails.`
+                guardSrc.includes("throw redirect({ to: '/auth/forbidden' })"),
+                `Expected ${page.viaHelper ? page.viaHelper.file : page.file} to redirect to /auth/forbidden when the perm check fails.`
             ).toBe(true);
         });
+
+        if (page.viaHelper) {
+            const { importPath, functionName } = page.viaHelper;
+            it(`imports and invokes ${functionName} from ${importPath}`, () => {
+                expect(
+                    routeSrc.includes(`from '${importPath}'`),
+                    `Expected ${page.file} to import from ${importPath}.`
+                ).toBe(true);
+                expect(
+                    routeSrc.includes(`${functionName}(context)`),
+                    `Expected ${page.file} to call ${functionName}(context) inside beforeLoad.`
+                ).toBe(true);
+            });
+        }
     });
 
     describe('AC-23 — Mi facturación requires BOTH new perms together', () => {
@@ -110,7 +180,7 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         it('audits all SPEC-156 PR-4 routes that introduce new beforeLoad gates', () => {
             // Defensive checksum so any future task adds itself to the
             // ALL_GATED_PAGES roster instead of silently being skipped.
-            expect(ALL_GATED_PAGES.length).toBe(5);
+            expect(ALL_GATED_PAGES.length).toBe(8);
         });
     });
 });
