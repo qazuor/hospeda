@@ -3,6 +3,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@rep
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkCanAdminList,
+    checkCanAdminView,
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
@@ -304,10 +305,10 @@ describe('Accommodation Permissions', () => {
     });
 
     describe('checkCanAdminList', () => {
-        it('should throw FORBIDDEN when actor lacks ACCOMMODATION_VIEW_ALL permission', () => {
+        it('should throw FORBIDDEN when actor lacks both VIEW_ALL and VIEW_OWN', () => {
             expectForbidden(
                 () => checkCanAdminList(createActor([])),
-                'ACCOMMODATION_VIEW_ALL required for admin list'
+                'ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin list'
             );
         });
 
@@ -315,6 +316,56 @@ describe('Accommodation Permissions', () => {
             expect(() =>
                 checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL]))
             ).not.toThrow();
+        });
+
+        // SPEC-169 §5.2: VIEW_OWN authorizes the admin-list path (server forces owner scope).
+        it('should allow when actor has only ACCOMMODATION_VIEW_OWN permission', () => {
+            expect(() =>
+                checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN]))
+            ).not.toThrow();
+        });
+    });
+
+    describe('checkCanAdminView (SPEC-169)', () => {
+        const expectErrorCode = (fn: () => void, code: ServiceErrorCode) => {
+            let thrown: unknown;
+            try {
+                fn();
+            } catch (err) {
+                thrown = err;
+            }
+            expect(thrown).toBeInstanceOf(ServiceError);
+            expect((thrown as ServiceError).code).toBe(code);
+        };
+
+        it('VIEW_ALL actor can view ANY accommodation, incl. another owner PUBLIC one (AC-4)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PUBLIC);
+            expect(() => checkCanAdminView(actor, others)).not.toThrow();
+        });
+
+        it('VIEW_OWN actor can view their OWN accommodation (AC-8)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const own = withOwner(mockUserId, VisibilityEnum.PRIVATE);
+            expect(() => checkCanAdminView(actor, own)).not.toThrow();
+        });
+
+        it('VIEW_OWN actor gets NOT_FOUND on another owner PUBLIC accommodation (AC-9)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PUBLIC);
+            expectErrorCode(() => checkCanAdminView(actor, others), ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('VIEW_OWN actor gets NOT_FOUND on another owner PRIVATE accommodation (AC-9)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PRIVATE);
+            expectErrorCode(() => checkCanAdminView(actor, others), ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('actor with neither VIEW_ALL nor VIEW_OWN gets FORBIDDEN', () => {
+            const actor = createActor([], mockUserId);
+            const own = withOwner(mockUserId, VisibilityEnum.PRIVATE);
+            expectErrorCode(() => checkCanAdminView(actor, own), ServiceErrorCode.FORBIDDEN);
         });
     });
 });

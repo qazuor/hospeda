@@ -1,13 +1,57 @@
+/**
+ * User entity select utilities.
+ *
+ * SPEC-169 T-020: All list-based functions migrated from /api/v1/admin/users
+ * (requires USER_READ_ALL) to /api/v1/admin/users/options (requires
+ * ACCESS_PANEL_ADMIN only).
+ *
+ * /options response shape: { items: [{ id, label, slug }] }
+ * label = displayName ?? email (D4 addendum — owner-approved PII tradeoff).
+ *
+ * loadUsersByIds is NOT migrated — it calls /api/v1/admin/users/batch which is
+ * a POST that fetches specific records by ID. That route is unaffected by the
+ * broad-grant removal (it resolves specific known IDs, not a list scan).
+ */
+
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 
 /**
- * Search users by query string with optional filters
+ * Minimal user item returned by the /options endpoint.
+ */
+interface UserOptionItem {
+    readonly id: string;
+    readonly label: string;
+    readonly slug: string;
+}
+
+/**
+ * Standard response envelope from the /options endpoint.
+ */
+interface OptionsResponse {
+    readonly data: {
+        readonly items: UserOptionItem[];
+    };
+}
+
+/**
+ * Map a /options item to a SelectOption.
+ * label = displayName ?? email (D4 addendum).
+ */
+const toSelectOption = (item: UserOptionItem): SelectOption => ({
+    value: item.id,
+    label: item.label,
+    description: item.slug || undefined
+});
+
+/**
+ * Search users by query string via the /options lightweight endpoint.
+ * Requires ACCESS_PANEL_ADMIN (no USER_READ_ALL needed).
  */
 export const searchUsers = async (
     query: string,
-    options?: {
+    _options?: {
         roleFilter?: string[];
         statusFilter?: string[];
     }
@@ -15,51 +59,16 @@ export const searchUsers = async (
     if (!query.trim()) return [];
 
     try {
-        let path = `/api/v1/admin/users?search=${encodeURIComponent(query)}&pageSize=20`;
-
-        if (options?.roleFilter && options.roleFilter.length > 0) {
-            path += `&roles=${options.roleFilter.join(',')}`;
-        }
-
-        if (options?.statusFilter && options.statusFilter.length > 0) {
-            path += `&status=${options.statusFilter.join(',')}`;
-        }
-
-        const response = await fetchApi<{
-            success: boolean;
-            data: {
-                items: Array<{
-                    id: string;
-                    displayName?: string;
-                    firstName?: string;
-                    lastName?: string;
-                    email?: string;
-                }>;
-            };
-        }>({
-            path,
+        const response = await fetchApi<OptionsResponse>({
+            path: `/api/v1/admin/users/options?q=${encodeURIComponent(query)}&limit=20`,
             method: 'GET'
         });
 
-        // The API returns: { data: { success: true, data: { items: [...] } } }
-        const items = response.data?.data?.items || [];
-
-        if (!items || items.length === 0) return [];
-
-        const results = items.map((user) => ({
-            value: user.id,
-            label:
-                user.displayName ||
-                `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                user.email ||
-                user.id,
-            description: user.email
-        }));
-
-        return results;
+        const items = response.data?.data?.items ?? [];
+        return items.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error searching users:',
+            'Error searching users (options):',
             error instanceof Error ? error.message : String(error)
         );
         return [];
@@ -67,7 +76,10 @@ export const searchUsers = async (
 };
 
 /**
- * Load users by IDs
+ * Load users by IDs.
+ *
+ * Uses /api/v1/admin/users/batch (POST { ids, fields }) — this is a targeted
+ * lookup of specific known IDs, not a broad list scan. Unchanged by SPEC-169.
  */
 export const loadUsersByIds = async (ids: string[]): Promise<SelectOption[]> => {
     if (ids.length === 0) return [];
@@ -110,52 +122,24 @@ export const loadUsersByIds = async (ids: string[]): Promise<SelectOption[]> => 
 };
 
 /**
- * Load initial users (first 10) for server-side search when no query is provided
+ * Load initial users (first 10) via the /options endpoint.
+ * Requires ACCESS_PANEL_ADMIN (no USER_READ_ALL needed).
  */
-export const loadInitialUsers = async (options?: {
+export const loadInitialUsers = async (_options?: {
     roleFilter?: string[];
     statusFilter?: string[];
 }): Promise<SelectOption[]> => {
     try {
-        let path = '/api/v1/admin/users?pageSize=10';
-
-        if (options?.roleFilter && options.roleFilter.length > 0) {
-            path += `&roles=${options.roleFilter.join(',')}`;
-        }
-
-        if (options?.statusFilter && options.statusFilter.length > 0) {
-            path += `&status=${options.statusFilter.join(',')}`;
-        }
-
-        const response = await fetchApi<{
-            data: {
-                items: Array<{
-                    id: string;
-                    displayName?: string;
-                    firstName?: string;
-                    lastName?: string;
-                    email?: string;
-                }>;
-            };
-        }>({
-            path,
+        const response = await fetchApi<OptionsResponse>({
+            path: '/api/v1/admin/users/options?limit=10',
             method: 'GET'
         });
 
-        if (!response.data.data?.items) return [];
-
-        return response.data.data.items.map((user) => ({
-            value: user.id,
-            label:
-                user.displayName ||
-                `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                user.email ||
-                user.id,
-            description: user.email
-        }));
+        const items = response.data?.data?.items ?? [];
+        return items.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error loading initial users:',
+            'Error loading initial users (options):',
             error instanceof Error ? error.message : String(error)
         );
         return [];
@@ -163,54 +147,27 @@ export const loadInitialUsers = async (options?: {
 };
 
 /**
- * Load all users (for client-side search) - Not recommended for large datasets
+ * Load all users via the /options endpoint.
+ *
+ * @deprecated Prefer loadInitialUsers + searchUsers for large datasets.
  */
-export const loadAllUsers = async (options?: {
+export const loadAllUsers = async (_options?: {
     roleFilter?: string[];
     statusFilter?: string[];
 }): Promise<SelectOption[]> => {
     adminLogger.warn('loadAllUsers called - not recommended for large user datasets');
 
     try {
-        let path = '/api/v1/admin/users?pageSize=1000';
-
-        if (options?.roleFilter && options.roleFilter.length > 0) {
-            path += `&roles=${options.roleFilter.join(',')}`;
-        }
-
-        if (options?.statusFilter && options.statusFilter.length > 0) {
-            path += `&status=${options.statusFilter.join(',')}`;
-        }
-
-        const response = await fetchApi<{
-            data: {
-                items: Array<{
-                    id: string;
-                    displayName?: string;
-                    firstName?: string;
-                    lastName?: string;
-                    email?: string;
-                }>;
-            };
-        }>({
-            path,
+        const response = await fetchApi<OptionsResponse>({
+            path: '/api/v1/admin/users/options?limit=1000',
             method: 'GET'
         });
 
-        if (!response.data.data?.items) return [];
-
-        return response.data.data.items.map((user) => ({
-            value: user.id,
-            label:
-                user.displayName ||
-                `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-                user.email ||
-                user.id,
-            description: user.email
-        }));
+        const items = response.data?.data?.items ?? [];
+        return items.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error loading all users:',
+            'Error loading all users (options):',
             error instanceof Error ? error.message : String(error)
         );
         return [];

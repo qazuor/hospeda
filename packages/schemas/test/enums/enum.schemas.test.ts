@@ -4,6 +4,7 @@ import {
     AccommodationTypeEnumSchema,
     LifecycleStatusEnumSchema,
     ModerationStatusEnumSchema,
+    PermissionEnum,
     PermissionEnumSchema,
     PostCategoryEnumSchema,
     PreferredContactEnumSchema,
@@ -114,6 +115,7 @@ describe('Enum Schemas', () => {
                 'accommodation.create',
                 'accommodation.update.any',
                 'accommodation.delete.any',
+                'accommodation.viewOwn', // SPEC-169
                 'post.create',
                 'post.update',
                 'post.delete',
@@ -148,6 +150,20 @@ describe('Enum Schemas', () => {
             for (const permission of invalidPermissions) {
                 expect(() => PermissionEnumSchema.parse(permission)).toThrow(ZodError);
             }
+        });
+
+        // SPEC-169: owner-scoped view permission tier.
+        it('should expose ACCOMMODATION_VIEW_OWN mapped to "accommodation.viewOwn"', () => {
+            expect(PermissionEnum.ACCOMMODATION_VIEW_OWN).toBe('accommodation.viewOwn');
+            expect(() =>
+                PermissionEnumSchema.parse(PermissionEnum.ACCOMMODATION_VIEW_OWN)
+            ).not.toThrow();
+        });
+
+        it('should keep ACCOMMODATION_VIEW_ALL distinct from ACCOMMODATION_VIEW_OWN', () => {
+            expect(PermissionEnum.ACCOMMODATION_VIEW_OWN).not.toBe(
+                PermissionEnum.ACCOMMODATION_VIEW_ALL
+            );
         });
     });
 

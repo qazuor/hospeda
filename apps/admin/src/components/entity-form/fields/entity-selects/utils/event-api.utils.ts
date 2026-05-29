@@ -1,18 +1,20 @@
-import { createSelectUtils } from './create-select-utils';
+/**
+ * Event entity select utilities.
+ *
+ * SPEC-169 T-021: Migrated from /api/v1/admin/events (requires EVENT_VIEW_ALL
+ * or similar staff permission) to /api/v1/admin/events/options (requires
+ * ACCESS_PANEL_ADMIN only).
+ *
+ * /options response shape: { items: [{ id, label, slug }] }
+ */
 
-interface EventItem {
-    id: string;
-    name?: string;
-    title?: string;
-    summary?: string;
-}
+import { createOptionsSelectUtils } from './create-select-utils';
 
-const utils = createSelectUtils<EventItem>({
-    endpoint: '/api/v1/admin/events',
-    buildLabel: (item) => item.name || item.title || item.id,
-    buildDescription: (item) => item.summary,
+const utils = createOptionsSelectUtils({
+    optionsEndpoint: '/api/v1/admin/events/options',
     batchEndpoint: '/api/v1/admin/events/batch',
     batchFields: ['id', 'name', 'title', 'summary'],
+    baseEndpoint: '/api/v1/admin/events',
     entityName: 'events'
 });
 

@@ -8,7 +8,9 @@ import { summaryTracker } from '../utils/summaryTracker.js';
  * Type-safe role permission assignments
  * Each role is mapped to an array of permissions it should have
  */
-const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
+// Exported for the SPEC-169 role-permission audit regression test (AC-6), which asserts no
+// non-staff role holds a broad view grant outside the documented allow-list.
+export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     [RoleEnum.SUPER_ADMIN]: [
         // ACCOMMODATION: All permissions
         PermissionEnum.ACCOMMODATION_CREATE,
@@ -582,6 +584,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF
     ],
 
+    // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
+    // ACCOMMODATION_VIEW_PRIVATE, DESTINATION_VIEW_ALL, DESTINATION_VIEW_PRIVATE) are intentionally
+    // NOT tightened in SPEC-169. The role is currently unused, so owner-scoping it now would be
+    // untestable churn. These grants are explicitly allow-listed in the AC-6 audit test
+    // (packages/seed/test/role-permission-audit.test.ts) and tracked in
+    // .claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
+    // activated (likely alongside the per-user permission panel, SPEC-170).
     [RoleEnum.CLIENT_MANAGER]: [
         // USER: Client management permissions
         PermissionEnum.USER_READ_ALL,
@@ -640,6 +649,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
+        // SPEC-169 §3 verdict (KEEP — legitimate editorial visibility, see the POST_VIEW_* note below).
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
         // EDITOR runs the editorial dashboard which lists every event
@@ -657,6 +667,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
+        // SPEC-169 §3 verdict (KEEP — confirmed legitimate, not a leak): EDITOR sees ALL editorial
+        // content (posts + events, including private) by design — that is the editorial role. A
+        // SUPER_ADMIN can narrow this for a specific user via direct per-user permission overrides
+        // (the user-permissions model already supports it; managing it from the admin UI is SPEC-170).
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
         PermissionEnum.POST_VIEW_ALL,
@@ -729,13 +743,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     [RoleEnum.HOST]: [
-        // ACCOMMODATION: Own accommodations only
+        // ACCOMMODATION: own accommodations only (SPEC-169: VIEW_OWN forces server-side owner
+        // scoping on adminList + getById; VIEW_ALL removed — it was a cross-tenant read leak that
+        // let a HOST list and open every accommodation via the admin endpoints reused by
+        // /me/accommodations).
         PermissionEnum.ACCOMMODATION_CREATE,
         PermissionEnum.ACCOMMODATION_UPDATE_OWN,
         PermissionEnum.ACCOMMODATION_DELETE_OWN,
         PermissionEnum.ACCOMMODATION_RESTORE_OWN,
         PermissionEnum.ACCOMMODATION_PUBLISH,
-        PermissionEnum.ACCOMMODATION_VIEW_ALL,
+        PermissionEnum.ACCOMMODATION_VIEW_OWN,
         PermissionEnum.ACCOMMODATION_TAGS_MANAGE,
         PermissionEnum.ACCOMMODATION_FEATURES_EDIT,
         PermissionEnum.ACCOMMODATION_AMENITIES_EDIT,

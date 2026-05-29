@@ -9,6 +9,7 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    EntityOptionsItem,
     Event,
     EventByAuthorInput,
     EventByCategoryInput,
@@ -41,6 +42,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
@@ -51,6 +53,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
+import { checkCanFindOptions } from '../../utils';
 import {
     buildEventDateConditions,
     buildEventPriceConditions,
@@ -125,6 +128,63 @@ export class EventService extends BaseCrudService<
         this.model = ctx.model ?? new EventModel();
         this.adminSearchSchema = EventAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * WITHOUT requiring a broad `EVENT_VIEW_ALL`-style grant. Gating is admin-panel access
+     * only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows,
+     * never publication state) so relations can target unpublished events.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of event options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const searchCondition =
+                    trimmedQ && trimmedQ.length > 0
+                        ? buildSearchCondition(trimmedQ, ['name'], this.model.getTable())
+                        : undefined;
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    searchCondition ? [searchCondition] : undefined,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     /**

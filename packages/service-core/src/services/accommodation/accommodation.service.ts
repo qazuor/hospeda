@@ -41,6 +41,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
     type AccommodationSearchResult,
@@ -101,7 +102,9 @@ import {
 } from './accommodation.normalizers';
 import {
     checkCanAdminList,
+    checkCanAdminView,
     checkCanCreate,
+    checkCanFindOptions,
     checkCanHardDelete,
     checkCanList,
     checkCanRestore,
@@ -481,7 +484,22 @@ export class AccommodationService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<AccommodationEntityFilters>
     ): Promise<PaginatedListOutput<Accommodation>> {
-        const { entityFilters, ...rest } = params;
+        // SPEC-169 §5.2: forced owner-scoping. An actor holding ONLY
+        // ACCOMMODATION_VIEW_OWN (not VIEW_ALL) is physically unable to widen the query —
+        // the server OVERWRITES any client-supplied ownerId with the actor's own id, closing
+        // the "drop the filter and get everything" bypass. Staff (VIEW_ALL) list unscoped.
+        // The owner column is 'ownerId' per the shared ownership descriptor (§5.6).
+        const ownerScoped =
+            !hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) &&
+            hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_OWN);
+        const scopedParams: AdminSearchExecuteParams<AccommodationEntityFilters> = ownerScoped
+            ? {
+                  ...params,
+                  entityFilters: { ...params.entityFilters, ownerId: params.actor.id }
+              }
+            : params;
+
+        const { entityFilters, ...rest } = scopedParams;
         const { minPrice, maxPrice, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
@@ -505,6 +523,111 @@ export class AccommodationService extends BaseCrudService<
             ...result,
             items: projectAccommodationCityDestinationList(result.items)
         };
+    }
+
+    /**
+     * Retrieves an accommodation by id for the ADMIN detail endpoint (SPEC-169 §2.1/§5.2).
+     *
+     * Unlike the generic {@link getById} (which applies `_canView`/`checkCanView` and therefore
+     * grants access to ANY `PUBLIC` record), this uses {@link checkCanAdminView}: an actor with
+     * `ACCOMMODATION_VIEW_ALL` sees any record; an actor with only `ACCOMMODATION_VIEW_OWN` sees
+     * ONLY their own (others — including PUBLIC — resolve to `NOT_FOUND`, decision D2). The same
+     * relation loading and read projections as `getById` are applied via `_afterGetByField`.
+     *
+     * @param actor - The actor performing the action.
+     * @param id - The accommodation id.
+     * @param ctx - Optional service context (transaction, hook state).
+     * @returns A `ServiceOutput` with the accommodation, or a `ServiceError`.
+     */
+    public async adminGetById(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation | null>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: `adminGetById(id=${id})`,
+            input: { actor, id },
+            schema: z.object({ id: z.string() }),
+            ctx: resolvedCtx,
+            execute: async ({ id: validatedId }, validatedActor, execCtx) => {
+                const relations = this.getDefaultGetByIdRelations();
+                const where = { id: validatedId } as Record<string, unknown>;
+                const entity = relations
+                    ? await this.model.findOneWithRelations(where, relations, execCtx?.tx)
+                    : await this.model.findOne(where, execCtx?.tx);
+
+                if (!entity) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+
+                checkCanAdminView(validatedActor, entity as Accommodation);
+
+                return this._afterGetByField(entity as Accommodation, validatedActor, execCtx);
+            }
+        });
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug, type, destination }` items for populating admin
+     * relation selectors WITHOUT requiring a broad `ACCOMMODATION_VIEW_ALL` grant. Gating is
+     * admin-panel access only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate. This deliberately bypasses the heavy
+     * `checkCanAdminList` (VIEW_ALL/VIEW_OWN) used by {@link adminList}.
+     *
+     * Results are DRAFT-inclusive (the model's `searchWithRelations` only excludes soft-deleted
+     * rows, never publication state) so relations can target unpublished accommodations.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of accommodation options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: AccommodationOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const { items } = await this.model.searchWithRelations(
+                    {
+                        q: validatedInput.q,
+                        page: 1,
+                        pageSize: validatedInput.limit
+                    } as AccommodationSearchInput,
+                    execCtx?.tx
+                );
+
+                const options: AccommodationOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug,
+                    type: item.type,
+                    destination: item.destination
+                        ? {
+                              id: item.destination.id,
+                              name: item.destination.name,
+                              slug: item.destination.slug
+                          }
+                        : null
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     // --- Lifecycle Hooks ---
@@ -1841,6 +1964,46 @@ export class AccommodationService extends BaseCrudService<
                 }
                 await this._canView(actor, accommodation);
                 // FAQs are already loaded via the relation
+                // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
+                const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as AccommodationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Retrieves an accommodation's FAQs for the ADMIN sub-tab (SPEC-169 §2.1).
+     *
+     * Same data as {@link getFaqs} but gated with {@link checkCanAdminView} instead of the
+     * generic `_canView`: a `VIEW_OWN`-only HOST sees the FAQs of THEIR OWN accommodation, and
+     * an accommodation owned by someone else (even PUBLIC) resolves to `NOT_FOUND` (decision D2).
+     * `getFaqs` is kept unchanged for the protected/public-facing path, which legitimately
+     * exposes FAQs of any viewable accommodation.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - The FAQ list input (accommodationId).
+     * @param ctx - Optional service context.
+     * @returns A `ServiceOutput` with the FAQ list, or a `ServiceError`.
+     */
+    public async adminGetFaqs(
+        actor: Actor,
+        data: AccommodationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetFaqs',
+            input: { ...data, actor },
+            schema: AccommodationFaqListInputSchema,
+            execute: async (validated, validatedActor) => {
+                const accommodation = await this.model.findWithRelations(
+                    { id: validated.accommodationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                checkCanAdminView(validatedActor, accommodation as Accommodation);
                 // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
                 const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as AccommodationFaq[] };

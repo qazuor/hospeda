@@ -2,11 +2,7 @@
  * Admin accommodation list endpoint
  * Returns all accommodations with full admin access
  */
-import {
-    AccommodationAdminSchema,
-    AccommodationAdminSearchSchema,
-    PermissionEnum
-} from '@repo/schemas';
+import { AccommodationAdminSchema, AccommodationAdminSearchSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -17,16 +13,21 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/accommodations
- * List all accommodations - Admin endpoint
- * Admin permissions allow viewing all accommodations via service-level checks
+ * List accommodations - Admin endpoint.
+ *
+ * SPEC-169 §5.2: the entity-specific permission (ACCOMMODATION_VIEW_ALL OR
+ * ACCOMMODATION_VIEW_OWN) is enforced in the service (`_canAdminList` → `checkCanAdminList`),
+ * which ALSO forces owner-scoping (`ownerId = actor.id`) for VIEW_OWN-only actors. The route
+ * gate therefore only requires admin access (verified by the admin authorization middleware):
+ * declaring VIEW_ALL here would impose AND-semantics on the permission list and 403 a
+ * legitimate VIEW_OWN host. The OR decision lives in the service, the single source of truth.
  */
 export const adminListAccommodationsRoute = createAdminListRoute({
     method: 'get',
     path: '/',
-    summary: 'List all accommodations (admin)',
-    description: 'Returns a paginated list of all accommodations with full admin details',
+    summary: 'List accommodations (admin)',
+    description: 'Returns a paginated list of accommodations with full admin details',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
     requestQuery: AccommodationAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: AccommodationAdminSchema,
     handler: async (ctx, _params, _body, query) => {

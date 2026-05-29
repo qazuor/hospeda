@@ -1,7 +1,7 @@
 import { UserModel, accounts, eq, getDb, safeIlike, users as userTable } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
-import type { EntityFilters, User, UserAdminStats } from '@repo/schemas';
+import type { EntityFilters, EntityOptionsItem, User, UserAdminStats } from '@repo/schemas';
 import {
     type CompleteProfileBody,
     CompleteProfileBodySchema,
@@ -46,7 +46,7 @@ import type {
 } from '../../types';
 import { ServiceError, listOptionsSchema } from '../../types';
 import { serviceLogger } from '../../utils';
-import { hasPermission } from '../../utils/permission';
+import { checkCanFindOptions, hasPermission } from '../../utils/permission';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -125,6 +125,69 @@ export class UserService extends BaseCrudService<
         this.model = model ?? new UserModel();
         this.adminSearchSchema = UserAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * (e.g. an accommodation owner picker) WITHOUT requiring the broad `USER_READ_ALL` grant
+     * normally needed to list users. Gating is admin-panel access only (see
+     * {@link checkCanFindOptions}); the route mirrors this with an `ACCESS_PANEL_ADMIN`-only
+     * middleware gate.
+     *
+     * `label` is the user's `displayName`, which is NULLABLE (SPEC-169 §12 flag: see T-018
+     * report). It falls back to the (always-present) `email` so the selector never shows an
+     * empty label. `slug` is the always-present unique user slug. The search term matches
+     * `displayName` and `email`.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows) so
+     * relations can target users in any lifecycle state.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of user options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const additionalConditions: SQL[] =
+                    trimmedQ && trimmedQ.length > 0
+                        ? [safeIlike(userTable.displayName, trimmedQ)]
+                        : [];
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    additionalConditions,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.displayName ?? item.email,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     /**

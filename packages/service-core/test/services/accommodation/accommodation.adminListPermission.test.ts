@@ -50,7 +50,7 @@ describe('AccommodationService._canAdminList()', () => {
         );
     });
 
-    it('rejects actor with admin access but without ACCOMMODATION_VIEW_ALL', async () => {
+    it('rejects actor with admin access but without VIEW_ALL or VIEW_OWN', async () => {
         const actor = new ActorFactoryBuilder()
             .withId('admin-no-entity-1')
             .withPermissions([PermissionEnum.ACCESS_PANEL_ADMIN])
@@ -61,9 +61,25 @@ describe('AccommodationService._canAdminList()', () => {
         ).rejects.toThrow(
             expect.objectContaining({
                 code: ServiceErrorCode.FORBIDDEN,
-                message: 'Permission denied: ACCOMMODATION_VIEW_ALL required for admin list'
+                message:
+                    'Permission denied: ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin list'
             })
         );
+    });
+
+    // SPEC-169 §5.2: VIEW_OWN is now a valid admin-list permission (owner-scoped).
+    it('allows actor with admin access AND ACCOMMODATION_VIEW_OWN', async () => {
+        const actor = new ActorFactoryBuilder()
+            .withId('host-with-view-own-1')
+            .withPermissions([
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCOMMODATION_VIEW_OWN
+            ])
+            .build();
+
+        await expect(
+            (service as unknown as CanAdminListAccessor)._canAdminList(actor)
+        ).resolves.toBeUndefined();
     });
 
     it('allows actor with admin access AND ACCOMMODATION_VIEW_ALL', async () => {

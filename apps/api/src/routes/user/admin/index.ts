@@ -9,6 +9,7 @@ import { adminDeleteUserRoute } from './delete';
 import { adminGetUserByIdRoute } from './getById';
 import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
+import { adminUserOptionsRoute } from './options';
 import { adminPatchUserRoute } from './patch';
 import { adminRestoreUserRoute } from './restore';
 import { adminUserStatsRoute } from './stats';
@@ -23,6 +24,10 @@ app.route('/', adminListUsersRoute);
 // NOTE: registered before /:id routes to prevent the param segment from
 // matching the literal string "stats".
 app.route('/', adminUserStatsRoute);
+
+// GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
+// Registered before /:id so Hono does not resolve "options" as a UUID param
+app.route('/', adminUserOptionsRoute);
 
 // POST / - Create user
 app.route('/', adminCreateUserRoute);

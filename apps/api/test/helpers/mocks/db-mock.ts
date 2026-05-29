@@ -49,6 +49,54 @@ export const billingNotificationLogsCols = {
  * vi.mock('@repo/db', () => createDbMock());
  * ```
  */
+/**
+ * Generic no-op model stub (SPEC-169 harness fix). Used for every @repo/db model that a
+ * route's service instantiates at module scope but that does not need bespoke behavior in
+ * route-level tests. Having all models present lets `initApp()` build the full app so route
+ * tests can collect; tests that need real data mock the specific model/service themselves.
+ */
+class GenericMockModel {
+    async findById(_id: string) {
+        return null;
+    }
+    async findOne(_filters: unknown) {
+        return null;
+    }
+    async findAll(_filters?: unknown) {
+        return { items: [], total: 0 };
+    }
+    async findAllWithRelations(_relations: unknown, _where?: unknown) {
+        return { items: [], total: 0 };
+    }
+    async create(_data: unknown) {
+        return { id: 'generic_mock_id', createdAt: new Date() };
+    }
+    async update(_id: string, _data: unknown) {
+        return { id: _id, updatedAt: new Date() };
+    }
+    async softDelete(_id: string) {
+        return { id: _id, deletedAt: new Date() };
+    }
+    async restore(_id: string) {
+        return { id: _id, deletedAt: null };
+    }
+    async hardDelete(_id: string) {
+        return { id: _id };
+    }
+    async delete(_id: string) {
+        return { id: _id, deletedAt: new Date() };
+    }
+    async count(_filters?: unknown) {
+        return 0;
+    }
+    getTable() {
+        return {};
+    }
+    getTableName() {
+        return 'generic_mock_table';
+    }
+}
+
 export function createDbMock() {
     return {
         // Database client
@@ -453,6 +501,81 @@ export function createDbMock() {
             value: 'value',
             updatedAt: 'updated_at',
             updatedBy: 'updated_by'
-        }
+        },
+
+        // SPEC-155 conversation models — instantiated at module scope by
+        // ConversationService when conversation routes load. Minimal CRUD stubs so
+        // initApp() can build the app for route-level tests (SPEC-169 harness fix).
+        ConversationModel: class MockConversationModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findOne(_filters: unknown) {
+                return null;
+            }
+            async create(_data: unknown) {
+                return { id: 'conversation_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+        },
+        MessageModel: class MockMessageModel {
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown) {
+                return { id: 'message_mock_id', createdAt: new Date() };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+        },
+
+        // SPEC-169 harness fix: remaining @repo/db models that are instantiated at module
+        // scope when their routes load. They need no bespoke behavior for route-level tests,
+        // so they share the GenericMockModel no-op stub. Keeping every model present lets
+        // initApp() build the whole app (previously initApp threw on the first missing model,
+        // so NO route test could collect).
+        AccessTokenModel: GenericMockModel,
+        AccommodationFaqModel: GenericMockModel,
+        AccommodationIaDataModel: GenericMockModel,
+        AccommodationReviewModel: GenericMockModel,
+        AmenityModel: GenericMockModel,
+        AttractionModel: GenericMockModel,
+        BillingAddonPurchaseModel: GenericMockModel,
+        BillingDunningAttemptModel: GenericMockModel,
+        BillingNotificationLogModel: GenericMockModel,
+        BillingSettingsModel: GenericMockModel,
+        BillingSubscriptionEventModel: GenericMockModel,
+        DestinationFaqModel: GenericMockModel,
+        DestinationReviewModel: GenericMockModel,
+        EventLocationModel: GenericMockModel,
+        EventModel: GenericMockModel,
+        EventOrganizerModel: GenericMockModel,
+        ExchangeRateConfigModel: GenericMockModel,
+        FeatureModel: GenericMockModel,
+        NotificationScheduleModel: GenericMockModel,
+        OwnerPromotionModel: GenericMockModel,
+        PostModel: GenericMockModel,
+        PostSponsorModel: GenericMockModel,
+        PostSponsorshipModel: GenericMockModel,
+        RAccommodationAmenityModel: GenericMockModel,
+        RAccommodationFeatureModel: GenericMockModel,
+        RDestinationAttractionModel: GenericMockModel,
+        RevalidationConfigModel: GenericMockModel,
+        RevalidationLogModel: GenericMockModel,
+        SponsorshipLevelModel: GenericMockModel,
+        SponsorshipModel: GenericMockModel,
+        SponsorshipPackageModel: GenericMockModel
     };
 }

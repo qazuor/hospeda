@@ -13,6 +13,7 @@ import { adminGetDestinationChildrenRoute } from './getChildren';
 import { adminGetDestinationDescendantsRoute } from './getDescendants';
 import { adminHardDeleteDestinationRoute } from './hardDelete';
 import { adminListDestinationsRoute } from './list';
+import { adminDestinationOptionsRoute } from './options';
 import { adminPatchDestinationRoute } from './patch';
 import { adminRestoreDestinationRoute } from './restore';
 import { adminUpdateDestinationRoute } from './update';
@@ -32,6 +33,10 @@ app.route('/', adminBatchDestinationsRoute);
 // Review admin routes (list, getById, update, delete, restore, hardDelete)
 // Registered before /{id} routes to prevent "reviews" matching as a UUID param
 app.route('/reviews', adminDestinationReviewRoutes);
+
+// GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
+// Registered before /:id so Hono does not resolve "options" as a UUID param
+app.route('/', adminDestinationOptionsRoute);
 
 // GET /:id - Get by ID
 app.route('/', adminGetDestinationByIdRoute);

@@ -19,6 +19,9 @@ export {
 // Admin search
 export * from './admin-search.schema.js';
 
+// Relation-selector lookup options (SPEC-169 §5.5)
+export * from './entity-options.schema.js';
+
 // Schemas
 export * from './admin.schema.js';
 export * from './audit.schema.js';

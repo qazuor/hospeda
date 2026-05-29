@@ -11,6 +11,10 @@
  * Mock UserService - always returns an admin user with all permissions.
  */
 export class UserService {
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async getById(_actor: unknown, userId: string) {
         return {
             data: {
