@@ -146,3 +146,70 @@ Both P1s above were fixed in PR #1306 (`fix/SPEC-156-pr4-platform-critical-and-b
 ### Out-of-scope follow-ups surfaced during this run
 
 - Four sibling admin routes lack the same per-route `beforeLoad` guard — `/platform/configuration/seo`, `/platform/cache/revalidation`, `/platform/tags/internal`, `/platform/tags/system`. Same class of bug as `/platform/critical` but lower severity (none expose the maintenance toggle). Sidebar `onMissing: 'hide'` hides the nav link for non-permission roles, but direct URL navigation still loads the page. Recommend a separate PR that adds the guard to each + extends the permission-gate audit accordingly. Tracked at the end of PR #1306's body under "Out of scope".
+
+### Coverage extension (2026-05-29, post-fix smoke)
+
+After the two fix commits in PR #1306 landed, the remaining checklist surface was covered against the same `hospeda_test` setup. Results below extend the smoke beyond the original "SUPER_ADMIN tour + cross-app announcement + EDITOR negative" scope.
+
+#### Section A — HOST `/account/*` tour (completion)
+
+| Route | HOST result | Notes |
+|---|---|---|
+| `/account/preferences` | ✅ `h1: Mi Configuración` | Page renders, theme/language controls present. |
+| `/account/notifications` | ✅ `h1: Mi Configuración` (shared layout / tab) | — |
+| `/account/security` | ✅ `h1: Seguridad` | Lists "Cambiar contraseña" link + 16 "Próximamente" stub matches in the main region. |
+| `/account/data` | ✅ `h1: Mis datos` | `mailto:soporte@hospeda.com.ar` link present. |
+
+#### Section B — `/account/billing` deep-dive for HOST (`host-pro@local.test`, plan `owner-pro`)
+
+| Section | Result |
+|---|---|
+| Sections rendered | "Mi facturación", "Mi plan", "Uso de mi plan", "Acciones" ✅ |
+| Manage subscription deep-link | `href = http://localhost:4700/es/mi-cuenta/suscripcion`, `target = _blank`, text "Gestionar mi suscripción" ✅ |
+| Plan card | Renders empty/error fallback when no billing rows are loaded — copy: "No pudimos cargar tu suscripción…" — consistent with PR-1 fallback behavior. |
+
+Not exercised in this pass: usage bar threshold tones (≥80% warning, ≥95% danger) — would require mutating the seeded plan's `currentUsage` values; the rendering paths are covered by component unit tests, leaving this for a focused QA pass on staging if the threshold UX needs verification under real data.
+
+#### Section C — HOST `/platform/*` tour (mostly forbidden)
+
+| Route | HOST | Notes |
+|---|---|---|
+| `/platform/critical` | ✅ `/auth/forbidden` | Fix shipped in PR #1306. |
+| `/platform/critical/announcements` | ✅ `/auth/forbidden` | T-038 guard works. |
+| `/platform/ops/cron` | ✅ `/auth/forbidden` | `requireBillingAccess` (BILLING_READ_ALL) — see ADMIN issue below. |
+| `/platform/ops/webhooks` | ✅ `/auth/forbidden` | Same guard. |
+| `/platform/email/logs` | ✅ `/auth/forbidden` | Same guard. |
+| `/platform/configuration/seo` | ❌ renders `Configuración - SEO` for HOST | OOS bug (already documented above). |
+| `/platform/tags/system` | ❌ renders `Etiquetas de sistema` for HOST | OOS bug — same class. |
+| `/platform/cache/revalidation` | ⚠️ shows "Cargando…" then client-side redirects to `/dashboard` | Partial guard — UI does not crash but no `/auth/forbidden` either. Worth a small fix to surface a consistent forbidden experience. |
+| `/platform/tags/internal` | ⚠️ shows "Cargando…" then client-side redirects to `/dashboard` | Same pattern as `/cache/revalidation`. |
+
+#### Section C — ADMIN `/platform/*` tour (visible per spec, but several blocked)
+
+| Route | ADMIN | Notes |
+|---|---|---|
+| `/platform/configuration/seo` | ✅ visible | — |
+| `/platform/cache/revalidation` | ✅ visible | — |
+| `/platform/tags/internal` | ✅ visible | — |
+| `/platform/tags/system` | ✅ visible | — |
+| `/platform/ops/cron` | 🚨 `/auth/forbidden` | Route uses `requireBillingAccess` (`PermissionEnum.BILLING_READ_ALL`, SUPER_ADMIN-only per `role_permission`). ADMIN gets forbidden even though the checklist says they should see it. Mismatch is at the guard layer — `apps/admin/src/lib/billing-access.ts` was reused for routes that are not billing. |
+| `/platform/ops/webhooks` | 🚨 `/auth/forbidden` | Same root cause. |
+| `/platform/email/logs` | 🚨 `/auth/forbidden` | Same root cause. |
+
+> **New finding (medium)**: `/platform/ops/{cron,webhooks}` and `/platform/email/logs` all gate on `requireBillingAccess` → `PermissionEnum.BILLING_READ_ALL`, which is granted to SUPER_ADMIN only. The checklist documents these as visible for ADMIN+. Recommend either (a) introducing dedicated permissions (`OPS_READ`, `EMAIL_LOGS_VIEW`) and granting them to ADMIN, or (b) swapping the guard to a permission both roles share. Either way, the audit in `apps/admin/test/spec-156/permission-gates.test.ts` should be extended to lock the chosen permission per route. Lower severity than the `/platform/critical` issue because the ADMIN gap is a wrong-default (over-restrictive) rather than a security hole, but it still blocks the documented ADMIN workflow.
+
+#### Section E — cross-cutting UI
+
+| Item | Result |
+|---|---|
+| Sidebar "Mi cuenta" group | 7 entries in exact spec order: Mi perfil → Preferencias → Notificaciones → Seguridad → Mis datos → Mi facturación → Mis tags ✅ |
+| Topbar avatar dropdown (HOST) | "Mi cuenta" + dropdown icon links route to `/account/profile` and `/account/preferences` ✅ |
+| Sidebar "Plataforma" group (SUPER_ADMIN) | 6 links captured: SEO defaults, Configuración crítica, Revalidación ISR, Tags de sistema, Etiquetas internas, **Historial de envíos** (`/platform/email/logs`) ✅ — confirms the new email-infrastructure entry shipped. |
+| Sidebar entries for `/platform/ops/{cron,webhooks}` | Not surfaced by the same query; they live in a nested Ops sub-group not captured by `[data-sidebar] a[href^="/platform/"]`. Visually present per SUPER_ADMIN tour (both routes return 200 with correct h1). |
+
+#### Outstanding (low priority, not blocking promotion)
+
+- `endsAt` date-filter live re-verification on web (covered by unit tests).
+- `es` locale fallback when `text.en`/`text.pt` are empty — blocked by Zod schema rejecting empty strings; covered by `pickAnnouncementText` unit tests.
+- Usage bar tone thresholds in `/account/billing` (≥80%, ≥95%) — covered by component unit tests; not exercised live.
+- Sidebar Ops sub-group presence for SUPER_ADMIN — visual presence implied by direct-URL render of `/platform/ops/{cron,webhooks}` returning 200; the sidebar query just didn't pick the nested anchors.
