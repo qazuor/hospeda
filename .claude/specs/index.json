@@ -1579,6 +1579,13 @@
                     "mergedAt": "2026-05-28T19:16:46Z",
                     "mergeCommit": "d10b74be0e9c0af10c194a6548d8d227b2b07a1e",
                     "tasksClosed": "T-001..T-010 + T-PR1-QG (11/44)"
+                },
+                {
+                    "pr": "#1300",
+                    "title": "page relocations to /account/* + /platform/* (PR-2 of 4)",
+                    "mergedAt": "2026-05-29T01:51:32Z",
+                    "mergeCommit": "c57965c59d9cc023781dff9822233ccd42ed9ca8",
+                    "tasksClosed": "T-012..T-026 (15 tasks; 26/44 total)"
                 }
             ],
             "tags": [
