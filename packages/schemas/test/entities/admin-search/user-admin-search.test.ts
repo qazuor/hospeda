@@ -209,6 +209,70 @@ describe('UserAdminSearchSchema', () => {
         });
     });
 
+    describe('roles filter (multi-value, comma-separated)', () => {
+        it('should accept a single role and produce a single-element array', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({ roles: 'HOST' });
+
+            // Assert
+            expect(result.roles).toEqual(['HOST']);
+        });
+
+        it('should accept multiple roles and produce an array in input order', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({ roles: 'HOST,EDITOR,ADMIN' });
+
+            // Assert
+            expect(result.roles).toEqual(['HOST', 'EDITOR', 'ADMIN']);
+        });
+
+        it('should strip empty entries from trailing or repeated commas', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({ roles: 'HOST,,EDITOR,' });
+
+            // Assert
+            expect(result.roles).toEqual(['HOST', 'EDITOR']);
+        });
+
+        it('should reject when any entry is not a valid role', () => {
+            // Arrange & Act & Assert
+            expect(() => UserAdminSearchSchema.parse({ roles: 'HOST,SUPERUSER' })).toThrow(
+                ZodError
+            );
+        });
+
+        it('should reject lowercase entries', () => {
+            // Arrange & Act & Assert
+            expect(() => UserAdminSearchSchema.parse({ roles: 'host' })).toThrow(ZodError);
+        });
+
+        it('should accept an empty string and produce an empty array', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({ roles: '' });
+
+            // Assert
+            // The service layer treats empty array as "no filter" (skips the WHERE clause)
+            expect(result.roles).toEqual([]);
+        });
+
+        it('should be optional and remain undefined when omitted', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({});
+
+            // Assert
+            expect(result.roles).toBeUndefined();
+        });
+
+        it('should coexist with the single-value `role` filter', () => {
+            // Arrange & Act
+            const result = UserAdminSearchSchema.parse({ role: 'ADMIN', roles: 'HOST,EDITOR' });
+
+            // Assert
+            expect(result.role).toBe('ADMIN');
+            expect(result.roles).toEqual(['HOST', 'EDITOR']);
+        });
+    });
+
     describe('email filter', () => {
         it('should accept a valid email string', () => {
             // Arrange & Act

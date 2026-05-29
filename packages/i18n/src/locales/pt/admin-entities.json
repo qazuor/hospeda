@@ -636,6 +636,11 @@
         "booleanNo": "Não",
         "emptyValue": "—"
     },
+    "premiumBlock": {
+        "title": "Funções disponíveis em planos superiores",
+        "description": "Estas funções se desbloqueiam ao atualizar seu plano.",
+        "cta": "Atualizar plano"
+    },
     "qualityScore": {
         "triggerLabel": "Qualidade",
         "triggerAriaLabel": "Qualidade do anúncio: {score} de 100. Abrir detalhes.",
