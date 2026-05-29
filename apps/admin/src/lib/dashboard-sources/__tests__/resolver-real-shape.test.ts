@@ -237,7 +237,7 @@ describe('resolver real-shape contract', () => {
             ...over
         });
 
-        it('maps each job to friendly name, category group, status badge and meta lines', async () => {
+        it('maps each job to friendly name, category group, status badge and compact meta', async () => {
             mockCronJobs([
                 job({
                     name: 'dunning',
@@ -249,8 +249,8 @@ describe('resolver real-shape contract', () => {
                 id: string;
                 label: string;
                 group: string;
+                meta: string;
                 statusBadge: { label: string; variant: string };
-                metaLines: ReadonlyArray<{ key: string; content: string }>;
             }>;
 
             expect(result).toHaveLength(1);
@@ -258,29 +258,22 @@ describe('resolver real-shape contract', () => {
                 id: 'dunning',
                 label: 'Reintentos de cobro',
                 group: 'Facturación',
+                meta: 'A las 06:00', // compact one-line: the human schedule
                 statusBadge: { variant: 'success' }
             });
-            const keys = result[0]?.metaLines.map((l) => l.key);
-            expect(keys).toEqual(['sched', 'last', 'next']);
             expect(mockFetchApi).toHaveBeenCalledWith(
                 expect.objectContaining({ path: '/api/v1/admin/cron' })
             );
         });
 
-        it('marks jobs without a recorded run as neutral with "Sin corridas aún"', async () => {
+        it('marks jobs without a recorded run as neutral', async () => {
             mockCronJobs([job({ name: 'never-ran', lastRun: null, nextRunAt: null })]);
 
             const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
                 statusBadge: { label: string; variant: string };
-                metaLines: ReadonlyArray<{ key: string; content: string }>;
             }>;
 
             expect(result[0]?.statusBadge).toMatchObject({ variant: 'neutral' });
-            expect(result[0]?.metaLines.find((l) => l.key === 'last')?.content).toBe(
-                'Sin corridas aún'
-            );
-            // nextRunAt null → no "next" line.
-            expect(result[0]?.metaLines.find((l) => l.key === 'next')).toBeUndefined();
         });
 
         it('orders by category, then failing-first within a category', async () => {
