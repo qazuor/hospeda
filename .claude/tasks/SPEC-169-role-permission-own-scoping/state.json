@@ -292,8 +292,8 @@
         {
             "id": "T-009",
             "title": "Update accommodation admin getById route + service to use _canAdminView",
-            "description": "Update apps/api/src/routes/accommodation/admin/getById.ts requiredPermissions to OR-accept VIEW_OWN, and wire the path to invoke _canAdminView (not generic _canView). Approach (dedicated adminGetById vs augment _canView) decided at a §12 checkpoint. Verify sub-tab routes share the path.",
-            "status": "pending",
+            "description": "DONE. §12 approach checkpoint resolved by owner: Option 1 (dedicated adminGetById). Added AccommodationService.adminGetById (fetch + checkCanAdminView + _afterGetByField projections) and getById.ts route now calls it with VIEW_ALL removed from the gate (admin-access-only). SUB-TAB GAP (owner-approved Option 1): getFaqs route also required VIEW_ALL → would 403 a HOST's own FAQs (breaks AC-8). Added AccommodationService.adminGetFaqs (checkCanAdminView, leaves generic getFaqs intact for protected/public path which getFaqs is also used by) and getFaqs.ts route now calls it, VIEW_ALL removed. batch left staff-only intentionally (HOST does no bulk ops). Tests: accommodation.adminGetById.test.ts 7/7 (AC-4/8/9 for getById+getFaqs: own ok, others PUBLIC→NOT_FOUND, staff any), route getById.test.ts 5/5 (gate accepts VIEW_OWN for detail+faqs). service-core typecheck clean; my files absent from the preexisting API typecheck baseline-red (feedback/newsletter/conversation, ajeno).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-010", "T-016"],
@@ -317,11 +317,11 @@
             ],
             "tags": ["api", "backend", "accommodation", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T06:50:00.000Z",
+                "completed": "2026-05-29T07:20:00.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.3
     }
