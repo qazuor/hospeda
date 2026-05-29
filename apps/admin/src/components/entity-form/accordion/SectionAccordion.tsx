@@ -107,15 +107,23 @@ export function SectionAccordion({ children, defaultOpenIds, className }: Sectio
                 next.add(id);
                 return next;
             });
-            // Defer scroll until the panel actually mounts.
+            // Double-RAF defers scroll until React has committed the open
+            // state AND the browser has laid out the now-expanded panel.
+            // We use `behavior: 'instant'` because smooth scroll's animation
+            // races mid-flight against layout shifts from the panel mounting
+            // and ignores `scroll-margin-top` in that window — the section
+            // title would land tucked under the sticky header. Instant honors
+            // the scroll-margin and feels snappy on the popover trigger.
             requestAnimationFrame(() => {
-                const el = document.querySelector(`[data-testid="accordion-section-${id}"]`);
-                if (el && 'scrollIntoView' in el) {
-                    (el as HTMLElement).scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+                requestAnimationFrame(() => {
+                    const el = document.querySelector(`[data-testid="accordion-section-${id}"]`);
+                    if (el && 'scrollIntoView' in el) {
+                        (el as HTMLElement).scrollIntoView({
+                            behavior: 'instant',
+                            block: 'start'
+                        });
+                    }
+                });
             });
         }, [])
     );
@@ -255,6 +263,11 @@ export const SectionAccordionItem = React.memo(function SectionAccordionItemComp
         <div
             className={cn(
                 'overflow-hidden rounded-lg border border-border bg-card shadow-sm',
+                // scroll-mt offsets the sticky page header (top-14) so that
+                // programmatic scrollIntoView (from QualityScore "go to
+                // section") leaves the section title visible instead of
+                // tucked under the chrome.
+                'scroll-mt-20',
                 className
             )}
             data-testid={`accordion-section-${id}`}
