@@ -83,6 +83,7 @@ export enum PermissionEnum {
     ACCOMMODATION_PUBLISH = 'accommodation.publish', // Allows publishing or unpublishing an accommodation.
     ACCOMMODATION_REVIEW_MODERATE = 'accommodation.review.moderate', // Allows moderating accommodation reviews.
     ACCOMMODATION_VIEW_ALL = 'accommodation.viewAll', // Allows viewing all accommodations (including private).
+    ACCOMMODATION_VIEW_OWN = 'accommodation.viewOwn', // SPEC-169: Allows viewing/listing only OWN accommodations; the server forces owner scoping. Strictly weaker than ACCOMMODATION_VIEW_ALL (never exposes other owners' rows or others' PRIVATE records).
     ACCOMMODATION_VIEW_PRIVATE = 'accommodation.view.private', // Allows viewing private accommodations.
     ACCOMMODATION_VIEW_DRAFT = 'accommodation.view.draft', // Allows viewing draft accommodations.
     ACCOMMODATION_LOCATION_EXACT_VIEW = 'accommodation.location.exact.view', // Allows viewing exact coordinates and full address (privacy-sensitive). Public/anonymous users get approximated location only.
