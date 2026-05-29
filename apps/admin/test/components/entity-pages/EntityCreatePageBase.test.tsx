@@ -1,3 +1,4 @@
+import { LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { EntityCreatePageBase } from '@/components/entity-pages/EntityCreatePageBase';
 import { render, screen } from '@testing-library/react';
@@ -93,6 +94,7 @@ function makeConsolidatedConfig() {
             {
                 id: 'basic-info',
                 title: 'Datos básicos',
+                layout: LayoutTypeEnum.GRID,
                 modes: ['create' as const],
                 fields: []
             }

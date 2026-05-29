@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createPostConsolidatedConfig } from '@/features/posts/config';
 import { useCreatePostMutation } from '@/features/posts/hooks/usePostQuery';
@@ -43,7 +43,7 @@ function PostCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.POST_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={PostCreateInputSchema}
                 createConsolidatedConfig={() => createPostConsolidatedConfig(t)}
