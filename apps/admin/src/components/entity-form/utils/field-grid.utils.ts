@@ -24,6 +24,7 @@ export function getFieldColSpanClass(type: FieldTypeEnum): 'col-span-2' | 'col-s
         FieldTypeEnum.RICH_TEXT,
         FieldTypeEnum.COORDINATES,
         FieldTypeEnum.GALLERY,
+        FieldTypeEnum.VIDEO_GALLERY,
         FieldTypeEnum.IMAGE,
         FieldTypeEnum.FILE,
         FieldTypeEnum.JSON

@@ -557,6 +557,18 @@
                 "onDragEnd": "Imagen soltada en posición {position}.",
                 "onDragCancel": "Movimiento cancelado. Imagen devuelta a posición {position}."
             }
+        },
+        "videoGallery": {
+            "add": "Agregar video",
+            "remove": "Quitar video",
+            "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+            "captionPlaceholder": "Título corto del video (opcional)",
+            "descriptionPlaceholder": "Descripción del contenido del video (opcional)",
+            "empty": "Todavía no hay videos. Pegá una URL de YouTube o Vimeo para agregar.",
+            "emptyView": "Sin videos cargados.",
+            "invalidUrl": "Pegá una URL completa (http o https).",
+            "duplicateUrl": "Ese video ya está en la galería.",
+            "externalProvider": "Externo"
         }
     },
     "entitlementGate": {

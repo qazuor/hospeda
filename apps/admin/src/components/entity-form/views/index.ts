@@ -31,6 +31,9 @@ export type { ImageViewFieldProps } from './ImageViewField';
 export { GalleryViewField } from './GalleryViewField';
 export type { GalleryViewFieldProps } from './GalleryViewField';
 
+export { VideoGalleryViewField } from './VideoGalleryViewField';
+export type { VideoGalleryViewFieldProps } from './VideoGalleryViewField';
+
 // TODO: Implement additional view field types
 // export { NumberViewField } from './NumberViewField';
 // export type { NumberViewFieldProps } from './NumberViewField';

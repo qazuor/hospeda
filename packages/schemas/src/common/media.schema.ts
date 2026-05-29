@@ -45,6 +45,17 @@ export const ImageSchema = z.object({
         .max(300, { message: 'zodError.common.media.image.description.max' })
         .optional(),
     /**
+     * Accessible alt text for screen readers and `<img alt>` attribute. The
+     * admin `ImageField` populates this on upload (from the filename) and
+     * exposes an editable input so authors can override it. Kept short and
+     * meaningful; falls back to caption / accommodation name when missing.
+     */
+    alt: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.alt.min' })
+        .max(200, { message: 'zodError.common.media.image.alt.max' })
+        .optional(),
+    /**
      * Cloudinary `public_id` for the uploaded asset (e.g. `hospeda/dev/x`).
      * Optional because historic payloads pre-SPEC-078 and external URLs
      * (Unsplash, Pexels) do not carry a Cloudinary identifier.
@@ -112,6 +123,11 @@ export const BaseMediaFields = {
                         .min(10, { message: 'zodError.common.media.image.description.min' })
                         .max(300, { message: 'zodError.common.media.image.description.max' })
                         .optional(),
+                    alt: z
+                        .string()
+                        .min(1, { message: 'zodError.common.media.image.alt.min' })
+                        .max(200, { message: 'zodError.common.media.image.alt.max' })
+                        .optional(),
                     moderationState: ModerationStatusEnumSchema
                 })
                 .optional(),
@@ -128,6 +144,11 @@ export const BaseMediaFields = {
                             .string()
                             .min(10, { message: 'zodError.common.media.image.description.min' })
                             .max(300, { message: 'zodError.common.media.image.description.max' })
+                            .optional(),
+                        alt: z
+                            .string()
+                            .min(1, { message: 'zodError.common.media.image.alt.min' })
+                            .max(200, { message: 'zodError.common.media.image.alt.max' })
                             .optional(),
                         moderationState: ModerationStatusEnumSchema
                     })

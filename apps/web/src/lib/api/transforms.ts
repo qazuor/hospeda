@@ -595,12 +595,39 @@ export function toAccommodationDetailPageProps({
         featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
+            const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
+            // Normalize videos to `{ url, caption?, description? }`. Accepts both
+            // the schema shape (objects) and legacy bare-URL strings so older
+            // accommodation records keep rendering. `moderationState` from the
+            // schema is intentionally dropped — public reads don't surface it.
+            const videos = (rawVideos ?? [])
+                .map((entry) => {
+                    if (typeof entry === 'string') {
+                        return entry.length > 0 ? { url: entry } : null;
+                    }
+                    if (entry && typeof entry === 'object') {
+                        const v = entry as Record<string, unknown>;
+                        const url = typeof v.url === 'string' ? v.url : '';
+                        if (!url) return null;
+                        return {
+                            url,
+                            caption: typeof v.caption === 'string' ? v.caption : undefined,
+                            description:
+                                typeof v.description === 'string' ? v.description : undefined
+                        };
+                    }
+                    return null;
+                })
+                .filter(
+                    (entry): entry is { url: string; caption?: string; description?: string } =>
+                        entry !== null
+                );
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
                 // HeroGallery + fotos can surface them (GAP-078-136).
                 galleryItems,
-                videos: mediaObj?.videos ?? []
+                videos
             };
         })(),
         location: {
