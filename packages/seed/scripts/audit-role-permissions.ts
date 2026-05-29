@@ -1,7 +1,14 @@
 /**
  * SPEC-169 Task 1 (T-001) — Pass A: Role × Permission READ audit.
  *
- * One-off audit script. READ-ONLY. Does NOT modify any seed/schema/service.
+ * READ-ONLY audit script. Does NOT modify any seed/schema/service.
+ *
+ * KEPT ON PURPOSE (SPEC-169 T-030, owner-approved): although the permanent
+ * regression net is the AC-6 test (`packages/seed/test/role-permission-audit.test.ts`),
+ * this script is retained as a re-runnable dev tool for ad-hoc audits whenever
+ * roles/permissions change (e.g. activating CLIENT_MANAGER, or the SPEC-170
+ * per-user permission panel). Re-run it after any edit to `rolePermissions.seed.ts`
+ * to eyeball the broad-grant matrix per role.
  *
  * Parses the live role->permissions map (`ROLE_PERMISSIONS`) directly from the
  * source of truth `packages/seed/src/required/rolePermissions.seed.ts` and

@@ -584,6 +584,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF
     ],
 
+    // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
+    // ACCOMMODATION_VIEW_PRIVATE, DESTINATION_VIEW_ALL, DESTINATION_VIEW_PRIVATE) are intentionally
+    // NOT tightened in SPEC-169. The role is currently unused, so owner-scoping it now would be
+    // untestable churn. These grants are explicitly allow-listed in the AC-6 audit test
+    // (packages/seed/test/role-permission-audit.test.ts) and tracked in
+    // .claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
+    // activated (likely alongside the per-user permission panel, SPEC-170).
     [RoleEnum.CLIENT_MANAGER]: [
         // USER: Client management permissions
         PermissionEnum.USER_READ_ALL,
