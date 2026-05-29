@@ -10,7 +10,7 @@ import type { Tag } from '@repo/schemas';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-export const Route = createFileRoute('/_authed/tags/system/')({
+export const Route = createFileRoute('/_authed/platform/tags/system/')({
     component: SystemTagsListPage,
     errorComponent: createErrorComponent('SystemTags'),
     pendingComponent: createPendingComponent()
@@ -93,7 +93,7 @@ function SystemTagsListPage() {
                         <h1 className="font-bold text-2xl">Etiquetas de sistema</h1>
                     </div>
                     <Button asChild>
-                        <Link to="/tags/system/new">+ Nueva etiqueta de sistema</Link>
+                        <Link to="/platform/tags/system/new">+ Nueva etiqueta de sistema</Link>
                     </Button>
                 </div>
 
@@ -152,7 +152,7 @@ function SystemTagsListPage() {
                             variant="outline"
                             asChild
                         >
-                            <Link to="/tags/system/new">Crear primera etiqueta</Link>
+                            <Link to="/platform/tags/system/new">Crear primera etiqueta</Link>
                         </Button>
                     </div>
                 )}
@@ -179,7 +179,7 @@ function SystemTagsListPage() {
                                     >
                                         <td className="px-4 py-3 font-medium">
                                             <Link
-                                                to="/tags/system/$id/edit"
+                                                to="/platform/tags/system/$id/edit"
                                                 params={{ id: tag.id }}
                                                 className="text-primary underline-offset-2 hover:underline"
                                             >
@@ -205,7 +205,7 @@ function SystemTagsListPage() {
                                                     asChild
                                                 >
                                                     <Link
-                                                        to="/tags/system/$id/edit"
+                                                        to="/platform/tags/system/$id/edit"
                                                         params={{ id: tag.id }}
                                                     >
                                                         Editar

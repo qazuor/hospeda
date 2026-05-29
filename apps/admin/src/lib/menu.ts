@@ -198,12 +198,12 @@ export const menuTree: readonly MenuItem[] = [
                     },
                     {
                         titleKey: 'admin-menu.admin.systemTags',
-                        to: '/tags/system',
+                        to: '/platform/tags/system',
                         permission: PermissionEnum.TAG_SYSTEM_VIEW
                     },
                     {
                         titleKey: 'admin-menu.admin.internalTags',
-                        to: '/tags/internal',
+                        to: '/platform/tags/internal',
                         permission: PermissionEnum.TAG_INTERNAL_VIEW
                     },
                     {

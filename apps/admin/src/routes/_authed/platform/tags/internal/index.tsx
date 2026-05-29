@@ -14,7 +14,7 @@ import type { Tag } from '@repo/schemas';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-export const Route = createFileRoute('/_authed/tags/internal/')({
+export const Route = createFileRoute('/_authed/platform/tags/internal/')({
     component: InternalTagsListPage,
     errorComponent: createErrorComponent('InternalTags'),
     pendingComponent: createPendingComponent()
@@ -98,7 +98,7 @@ function InternalTagsListPage() {
                         <h1 className="font-bold text-2xl">Etiquetas internas</h1>
                     </div>
                     <Button asChild>
-                        <Link to="/tags/internal/new">+ Nueva etiqueta interna</Link>
+                        <Link to="/platform/tags/internal/new">+ Nueva etiqueta interna</Link>
                     </Button>
                 </div>
 
@@ -157,7 +157,7 @@ function InternalTagsListPage() {
                             variant="outline"
                             asChild
                         >
-                            <Link to="/tags/internal/new">Crear primera etiqueta</Link>
+                            <Link to="/platform/tags/internal/new">Crear primera etiqueta</Link>
                         </Button>
                     </div>
                 )}
@@ -184,7 +184,7 @@ function InternalTagsListPage() {
                                     >
                                         <td className="px-4 py-3 font-medium">
                                             <Link
-                                                to="/tags/internal/$id/edit"
+                                                to="/platform/tags/internal/$id/edit"
                                                 params={{ id: tag.id }}
                                                 className="text-primary underline-offset-2 hover:underline"
                                             >
@@ -210,7 +210,7 @@ function InternalTagsListPage() {
                                                     asChild
                                                 >
                                                     <Link
-                                                        to="/tags/internal/$id/edit"
+                                                        to="/platform/tags/internal/$id/edit"
                                                         params={{ id: tag.id }}
                                                     >
                                                         Editar

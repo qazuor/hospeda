@@ -6,7 +6,7 @@ import { PermissionEnum } from '@repo/schemas';
 import type { TagUpdateInput } from '@repo/schemas';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/tags/internal/$id_/edit')({
+export const Route = createFileRoute('/_authed/platform/tags/internal/$id_/edit')({
     component: InternalTagEditPage,
     loader: async ({ params }) => ({ tagId: params.id }),
     errorComponent: createErrorComponent('InternalTag'),
@@ -36,7 +36,7 @@ function InternalTagEditPage() {
 
     async function handleSubmit(values: TagUpdateInput) {
         await updateMutation.mutateAsync(values);
-        navigate({ to: '/tags/internal' });
+        navigate({ to: '/platform/tags/internal' });
     }
 
     return (
@@ -50,7 +50,7 @@ function InternalTagEditPage() {
                     <ol className="flex items-center gap-1">
                         <li>
                             <Link
-                                to="/tags/internal"
+                                to="/platform/tags/internal"
                                 className="hover:underline"
                             >
                                 Etiquetas internas

@@ -745,7 +745,7 @@ const plataformaSidebar: SidebarInput = {
                     id: 'system-tags',
                     label: { es: 'Tags de sistema', en: 'System tags', pt: 'Tags do sistema' },
                     icon: 'TagIcon',
-                    route: '/tags/system',
+                    route: '/platform/tags/system',
                     permissions: ['TAG_SYSTEM_VIEW']
                 },
                 {
@@ -757,7 +757,7 @@ const plataformaSidebar: SidebarInput = {
                         pt: 'Etiquetas internas'
                     },
                     icon: 'TagIcon',
-                    route: '/tags/internal',
+                    route: '/platform/tags/internal',
                     permissions: ['TAG_INTERNAL_VIEW']
                 },
                 {

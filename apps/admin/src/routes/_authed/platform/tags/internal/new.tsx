@@ -1,42 +1,43 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { AdminTagForm } from '@/components/tags/AdminTagForm';
-import { useCreateSystemTag } from '@/hooks/use-system-tags';
+import { useCreateInternalTag } from '@/hooks/use-internal-tags';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { PermissionEnum } from '@repo/schemas';
 import type { TagCreateInput } from '@repo/schemas';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/tags/system/new')({
-    component: SystemTagNewPage,
-    errorComponent: createErrorComponent('SystemTag'),
+export const Route = createFileRoute('/_authed/platform/tags/internal/new')({
+    component: InternalTagNewPage,
+    errorComponent: createErrorComponent('InternalTag'),
     pendingComponent: createPendingComponent()
 });
 
 /**
- * SYSTEM tag create page.
+ * INTERNAL tag create page.
  *
- * Renders the shared `AdminTagForm` in "create" mode with `tagType="SYSTEM"`.
- * The form does NOT expose a slug, ownerId, or type field — all are injected
- * automatically by the hook per D-002.
+ * Renders the shared `AdminTagForm` in "create" mode with `tagType="INTERNAL"`.
+ * The form does NOT expose slug, ownerId, or type — all injected by the hook.
  *
- * On success navigates back to the SYSTEM tag list.
+ * INTERNAL tags are only visible in admin contexts per D-006/D-007.
  *
- * Gate: requires `TAG_SYSTEM_CREATE` permission.
+ * On success navigates back to the INTERNAL tag list.
+ *
+ * Gate: requires `TAG_INTERNAL_CREATE` permission.
  *
  * @see SPEC-086 Phase 7 / T-030
- * @see D-002, D-012
+ * @see D-002, D-006, D-007
  */
-function SystemTagNewPage() {
+function InternalTagNewPage() {
     const navigate = useNavigate();
-    const createMutation = useCreateSystemTag();
+    const createMutation = useCreateInternalTag();
 
     async function handleSubmit(values: Omit<TagCreateInput, 'type' | 'ownerId'>) {
         await createMutation.mutateAsync(values);
-        navigate({ to: '/tags/system' });
+        navigate({ to: '/platform/tags/internal' });
     }
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.TAG_SYSTEM_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.TAG_INTERNAL_CREATE]}>
             <div className="mx-auto max-w-2xl space-y-6 p-6">
                 {/* Breadcrumbs */}
                 <nav
@@ -46,10 +47,10 @@ function SystemTagNewPage() {
                     <ol className="flex items-center gap-1">
                         <li>
                             <Link
-                                to="/tags/system"
+                                to="/platform/tags/internal"
                                 className="hover:underline"
                             >
-                                Etiquetas de sistema
+                                Etiquetas internas
                             </Link>
                         </li>
                         <li aria-hidden="true">/</li>
@@ -58,10 +59,11 @@ function SystemTagNewPage() {
                 </nav>
 
                 <div>
-                    <h1 className="font-bold text-2xl">Nueva etiqueta de sistema</h1>
+                    <h1 className="font-bold text-2xl">Nueva etiqueta interna</h1>
                     <p className="mt-1 text-muted-foreground text-sm">
-                        Las etiquetas de sistema están disponibles para todos los usuarios
-                        autenticados y pueden asignarse a cualquier entidad.
+                        Las etiquetas internas son visibles únicamente para administradores. No se
+                        muestran a usuarios regulares y permiten organizar entidades con criterios
+                        de gestión interna.
                     </p>
                 </div>
 
@@ -76,7 +78,7 @@ function SystemTagNewPage() {
 
                 <AdminTagForm
                     mode="create"
-                    tagType="SYSTEM"
+                    tagType="INTERNAL"
                     onSubmit={handleSubmit}
                     isSubmitting={createMutation.isPending}
                 />

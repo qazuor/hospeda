@@ -6,7 +6,7 @@ import { PermissionEnum } from '@repo/schemas';
 import type { TagUpdateInput } from '@repo/schemas';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/tags/system/$id_/edit')({
+export const Route = createFileRoute('/_authed/platform/tags/system/$id_/edit')({
     component: SystemTagEditPage,
     loader: async ({ params }) => ({ tagId: params.id }),
     errorComponent: createErrorComponent('SystemTag'),
@@ -35,7 +35,7 @@ function SystemTagEditPage() {
 
     async function handleSubmit(values: TagUpdateInput) {
         await updateMutation.mutateAsync(values);
-        navigate({ to: '/tags/system' });
+        navigate({ to: '/platform/tags/system' });
     }
 
     return (
@@ -49,7 +49,7 @@ function SystemTagEditPage() {
                     <ol className="flex items-center gap-1">
                         <li>
                             <Link
-                                to="/tags/system"
+                                to="/platform/tags/system"
                                 className="hover:underline"
                             >
                                 Etiquetas de sistema
