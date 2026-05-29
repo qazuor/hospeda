@@ -42,17 +42,17 @@ describe('account/billing.tsx (T-033)', () => {
         });
     });
 
-    describe('section placeholders (handed off to T-034/T-036/T-037)', () => {
-        it('renders a subscription section heading', () => {
-            expect(billingSrc).toContain("'admin-pages.billing.subscription.title'");
+    describe('wired sections (T-034 / T-036 / T-037)', () => {
+        it('mounts the SubscriptionSummarySection (T-034)', () => {
+            expect(billingSrc).toContain('SubscriptionSummarySection');
         });
 
-        it('renders a usage section heading', () => {
-            expect(billingSrc).toContain("'admin-pages.billing.usage.title'");
+        it('mounts the PlanUsageSection (T-036)', () => {
+            expect(billingSrc).toContain('PlanUsageSection');
         });
 
-        it('renders an actions section heading', () => {
-            expect(billingSrc).toContain("'admin-pages.billing.actions.title'");
+        it('mounts the BillingActionsSection (T-037)', () => {
+            expect(billingSrc).toContain('BillingActionsSection');
         });
     });
 });

@@ -2,11 +2,11 @@
  * Mi facturación landing page (SPEC-156 PR-4 T-033).
  *
  * Per spec §3 IN.New admin pages, this is the HOST-facing entry point to
- * subscription + usage + payment-related actions. The page hosts three
+ * subscription + usage + payment-related actions. The page renders three
  * sections delivered by sibling tasks:
  *
  *   - SubscriptionSummarySection (T-034)
- *   - PlanUsageSection (T-036)
+ *   - PlanUsageSection (T-036) — uses the UsageProgressBar primitive (T-035)
  *   - BillingActionsSection (T-037)
  *
  * Permission gate (AC-23): the route is only accessible to actors who hold
@@ -16,8 +16,10 @@
  * receive either permission.
  */
 
+import { BillingActionsSection } from '@/components/billing/BillingActionsSection';
+import { PlanUsageSection } from '@/components/billing/PlanUsageSection';
+import { SubscriptionSummarySection } from '@/components/billing/SubscriptionSummarySection';
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
@@ -52,59 +54,9 @@ function BillingLandingPage() {
                     <p className="text-muted-foreground">{t('admin-pages.billing.subtitle')}</p>
                 </div>
 
-                {/*
-                  Sections land in their own tasks:
-                    Section 1 — T-034 SubscriptionSummarySection
-                    Section 2 — T-036 PlanUsageSection (uses T-035 UsageProgressBar)
-                    Section 3 — T-037 BillingActionsSection
-                */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">
-                            {t('admin-pages.billing.subscription.title')}
-                        </CardTitle>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.billing.subscription.subtitle')}
-                        </p>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-common.comingSoon.description')}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">
-                            {t('admin-pages.billing.usage.title')}
-                        </CardTitle>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.billing.usage.subtitle')}
-                        </p>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-common.comingSoon.description')}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">
-                            {t('admin-pages.billing.actions.title')}
-                        </CardTitle>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.billing.actions.subtitle')}
-                        </p>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-common.comingSoon.description')}
-                        </p>
-                    </CardContent>
-                </Card>
+                <SubscriptionSummarySection />
+                <PlanUsageSection />
+                <BillingActionsSection />
             </div>
         </MainPageLayout>
     );
