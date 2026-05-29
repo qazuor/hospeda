@@ -295,4 +295,67 @@ describe('AccommodationService: _executeAdminSearch override', () => {
             expect(result).toEqual(expected);
         });
     });
+
+    // --- SPEC-169 §5.2: forced owner-scoping ---
+
+    describe('forced owner-scoping (SPEC-169 §5.2)', () => {
+        const viewOwnActor = {
+            id: 'host-1',
+            role: RoleEnum.HOST,
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
+        };
+        const viewAllActor = {
+            id: 'admin-9',
+            role: RoleEnum.ADMIN,
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
+        };
+
+        const getWhereArg = (): Record<string, unknown> => {
+            const [, whereArg] = asMock(mockModel.findAllWithRelations).mock.calls[0] as [
+                unknown,
+                Record<string, unknown>,
+                unknown,
+                unknown
+            ];
+            return whereArg;
+        };
+
+        it('AC-1: VIEW_OWN actor without ownerId gets ownerId forced to actor.id', async () => {
+            await callExecuteAdminSearch(
+                service,
+                buildDefaultParams({ actor: viewOwnActor, entityFilters: {} })
+            );
+            expect(getWhereArg().ownerId).toBe('host-1');
+        });
+
+        it('AC-2: VIEW_OWN actor cannot widen scope — a forged ownerId is overwritten', async () => {
+            await callExecuteAdminSearch(
+                service,
+                buildDefaultParams({
+                    actor: viewOwnActor,
+                    entityFilters: { ownerId: 'someone-else' }
+                })
+            );
+            expect(getWhereArg().ownerId).toBe('host-1');
+        });
+
+        it('AC-4: VIEW_ALL actor lists unscoped — no ownerId is forced', async () => {
+            await callExecuteAdminSearch(
+                service,
+                buildDefaultParams({ actor: viewAllActor, entityFilters: {} })
+            );
+            expect(getWhereArg().ownerId).toBeUndefined();
+        });
+
+        it('AC-4: VIEW_ALL actor keeps an explicit client ownerId filter (staff may filter)', async () => {
+            await callExecuteAdminSearch(
+                service,
+                buildDefaultParams({
+                    actor: viewAllActor,
+                    entityFilters: { ownerId: 'target-owner' }
+                })
+            );
+            expect(getWhereArg().ownerId).toBe('target-owner');
+        });
+    });
 });

@@ -175,17 +175,24 @@ export function checkCanList(_actor: Actor): void {
 
 /**
  * Checks if the actor has permission to use admin list for accommodations.
- * Requires ACCOMMODATION_VIEW_ALL permission in addition to admin access
- * (admin access is verified by the base class default).
+ *
+ * SPEC-169 §5.2: accepts EITHER `ACCOMMODATION_VIEW_ALL` (staff — unscoped listing) OR
+ * `ACCOMMODATION_VIEW_OWN` (owner-scoped). The scoping decision (forcing `ownerId = actor.id`
+ * for a VIEW_OWN-only actor) lives in the service's `_executeAdminSearch`, not here — this
+ * gate only authorizes access to the admin list path. Admin access itself is verified by the
+ * base class default (`super._canAdminList`).
  *
  * @param actor - The user or system performing the action.
- * @throws {ServiceError} If the actor lacks ACCOMMODATION_VIEW_ALL permission.
+ * @throws {ServiceError} If the actor lacks both VIEW_ALL and VIEW_OWN.
  */
 export function checkCanAdminList(actor: Actor): void {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+    if (
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_OWN)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied: ACCOMMODATION_VIEW_ALL required for admin list'
+            'Permission denied: ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin list'
         );
     }
 }

@@ -481,7 +481,22 @@ export class AccommodationService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<AccommodationEntityFilters>
     ): Promise<PaginatedListOutput<Accommodation>> {
-        const { entityFilters, ...rest } = params;
+        // SPEC-169 §5.2: forced owner-scoping. An actor holding ONLY
+        // ACCOMMODATION_VIEW_OWN (not VIEW_ALL) is physically unable to widen the query —
+        // the server OVERWRITES any client-supplied ownerId with the actor's own id, closing
+        // the "drop the filter and get everything" bypass. Staff (VIEW_ALL) list unscoped.
+        // The owner column is 'ownerId' per the shared ownership descriptor (§5.6).
+        const ownerScoped =
+            !hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) &&
+            hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_OWN);
+        const scopedParams: AdminSearchExecuteParams<AccommodationEntityFilters> = ownerScoped
+            ? {
+                  ...params,
+                  entityFilters: { ...params.entityFilters, ownerId: params.actor.id }
+              }
+            : params;
+
+        const { entityFilters, ...rest } = scopedParams;
         const { minPrice, maxPrice, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];

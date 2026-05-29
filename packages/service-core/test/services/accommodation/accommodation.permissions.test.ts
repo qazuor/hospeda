@@ -305,16 +305,23 @@ describe('Accommodation Permissions', () => {
     });
 
     describe('checkCanAdminList', () => {
-        it('should throw FORBIDDEN when actor lacks ACCOMMODATION_VIEW_ALL permission', () => {
+        it('should throw FORBIDDEN when actor lacks both VIEW_ALL and VIEW_OWN', () => {
             expectForbidden(
                 () => checkCanAdminList(createActor([])),
-                'ACCOMMODATION_VIEW_ALL required for admin list'
+                'ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin list'
             );
         });
 
         it('should allow when actor has ACCOMMODATION_VIEW_ALL permission', () => {
             expect(() =>
                 checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL]))
+            ).not.toThrow();
+        });
+
+        // SPEC-169 §5.2: VIEW_OWN authorizes the admin-list path (server forces owner scope).
+        it('should allow when actor has only ACCOMMODATION_VIEW_OWN permission', () => {
+            expect(() =>
+                checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN]))
             ).not.toThrow();
         });
     });
