@@ -371,14 +371,16 @@ function KpiGridTile({ item }: KpiGridTileProps) {
 interface DeferredKpiTileProps {
     readonly phaseSpec: string;
     readonly label?: string;
+    readonly description?: string;
 }
 
-function DeferredKpiTile({ phaseSpec, label }: DeferredKpiTileProps) {
+function DeferredKpiTile({ phaseSpec, label, description }: DeferredKpiTileProps) {
     return (
         <div
             className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 ring-1 ring-border/20"
             data-testid="kpi-grid-deferred-tile"
             aria-label={`${label ?? 'Próximamente'} (${phaseSpec})`}
+            title={description ?? label ?? `Disponible en ${phaseSpec}`}
         >
             <span
                 className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/60 font-semibold text-[0.65rem] text-muted-foreground uppercase tracking-wider"
@@ -626,14 +628,31 @@ export function KpiWidget({ widget }: KpiWidgetProps) {
                             item={item}
                         />
                     ))}
-                    {deferred.map((slot) => (
-                        <DeferredKpiTile
-                            key={slot.phaseSpec}
-                            phaseSpec={slot.phaseSpec}
-                            label={slot.label}
-                        />
-                    ))}
                 </div>
+                {/* Deferred slots render BELOW the grid in their own section
+                    so they don't look like live KPI tiles. Previously they
+                    were appended INSIDE the grid which produced a phantom
+                    extra tile labelled with the phase number. */}
+                {deferred.length > 0 && (
+                    <div
+                        className="mt-4 border-border/40 border-t pt-3"
+                        data-testid="kpi-deferred-section"
+                    >
+                        <p className="mb-2 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
+                            Próximamente
+                        </p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {deferred.map((slot) => (
+                                <DeferredKpiTile
+                                    key={slot.phaseSpec}
+                                    phaseSpec={slot.phaseSpec}
+                                    label={slot.label}
+                                    description={slot.description}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
                 {kpi.companionItems && kpi.companionItems.length > 0 && (
                     <KpiCompanionList
                         label={kpi.companionLabel}

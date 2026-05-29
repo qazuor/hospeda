@@ -82,7 +82,9 @@ interface PostItem {
 
 /**
  * Shape of an event item in admin list responses.
- * The event entity stores its start/end inside a JSONB `date` object, not flat columns.
+ * The event entity stores its start/end inside a JSONB `date` object and its
+ * media inside a JSONB `media` object — neither is exposed as a flat column.
+ * Location and organizer FKs are nullable.
  */
 interface EventItem {
     readonly id: string;
@@ -90,9 +92,10 @@ interface EventItem {
     readonly status?: string;
     readonly isFeatured?: boolean;
     readonly date?: { readonly start?: string; readonly end?: string };
+    readonly media?: { readonly featuredImage?: { readonly url?: string } | null };
     readonly featuredImage?: string;
-    readonly locationId?: string;
-    readonly organizerId?: string;
+    readonly locationId?: string | null;
+    readonly organizerId?: string | null;
     readonly description?: string;
 }
 
@@ -102,15 +105,6 @@ interface CampaignItem {
     readonly subject: string;
     readonly status: string;
     readonly scheduledAt?: string;
-}
-
-/** Shape of GET /api/v1/admin/posts/trend response. */
-interface PostsTrendApiResponse {
-    readonly success: boolean;
-    readonly data?: ReadonlyArray<{
-        readonly month: string;
-        readonly count: number;
-    }>;
 }
 
 // ============================================================================
@@ -134,43 +128,63 @@ function nowIso(): string {
 
 /**
  * EDITOR card A: posts mini-grid (Este mes / Total publicados / Borradores)
- * + recent drafts as companion list.
+ * + top 5 posts by engagement as companion list.
  *
  * Multi-KPI tile pattern (same shape HOST card A uses) so every number on
- * the card has an explicit label, instead of a single counter floating
- * without context.
+ * the card has an explicit label. The companion list ranks by an engagement
+ * score (likes + comments + shares) — all three fields already live on the
+ * post entity so no aggregation endpoint is required.
  *
  * Source ID: `'editor.posts.published-this-month'`
  * Scope: `'all'`
  * Endpoints (parallel):
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
  *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=1
- *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
+ *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=1
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=50 (engagement pool)
  */
 registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
     queryFn: async () => {
         const monthStart = currentMonthStart();
-        const [thisMonthResult, totalPublishedResult, draftsResult] = await Promise.all([
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
-            }),
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
-            }),
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc'
-            })
-        ]);
+        const [thisMonthResult, totalPublishedResult, draftsResult, engagementPoolResult] =
+            await Promise.all([
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=DRAFT&pageSize=1'
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=ACTIVE&pageSize=50'
+                })
+            ]);
 
         const thisMonth = thisMonthResult.data.data?.pagination?.total ?? 0;
         const totalPublished = totalPublishedResult.data.data?.pagination?.total ?? 0;
-        const draftItems = draftsResult.data.data?.items ?? [];
         const draftTotal = draftsResult.data.data?.pagination?.total ?? 0;
 
-        const companionItems = draftItems.map((post) => ({
+        // Top 5 posts by engagement score (likes + comments + shares).
+        // Aproximated client-side from a 50-row pool to avoid a new backend
+        // aggregation endpoint; a dedicated `/admin/posts/top-engagement` is
+        // a follow-up SPEC if the pool ever exceeds 50 active posts.
+        const pool = engagementPoolResult.data.data?.items ?? [];
+        const ranked = [...pool]
+            .map((post) => ({
+                post,
+                score: (post.likes ?? 0) + (post.comments ?? 0) + (post.shares ?? 0)
+            }))
+            .filter((entry) => entry.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+
+        const companionItems = ranked.map(({ post, score }) => ({
             key: post.id,
             label: post.title,
+            meta: `${score} interacciones · ${post.likes ?? 0} ♥ ${post.comments ?? 0} 💬 ${post.shares ?? 0} ↗`,
             href: `/contenido/posts/${post.id}`
         }));
 
@@ -201,7 +215,7 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
                     href: '/contenido/posts?status=DRAFT'
                 }
             ],
-            companionLabel: draftTotal > 0 ? 'Borradores recientes' : undefined,
+            companionLabel: companionItems.length > 0 ? 'Top 5 por engagement' : undefined,
             companionItems
         };
     },
@@ -427,7 +441,7 @@ registerDataSource('editor.newsletter.campaigns', (ctx) => ({
 registerDataSource('editor.posts.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.stats', ctx),
     queryFn: async () => {
-        const [activeResult, draftResult, archivedResult, trendResult] = await Promise.all([
+        const [activeResult, draftResult, archivedResult] = await Promise.all([
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
             }),
@@ -436,30 +450,17 @@ registerDataSource('editor.posts.stats', (ctx) => ({
             }),
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: '/api/v1/admin/posts?status=ARCHIVED&pageSize=1'
-            }),
-            fetchApi<PostsTrendApiResponse>({
-                path: '/api/v1/admin/posts/trend'
             })
         ]);
 
-        const monthlyTrend = trendResult.data.data ?? [];
-
-        // Normalize to ChartData shape expected by ChartWidget.
-        // Use the monthly trend as the chart series (posts published per month).
-        // Fall back to status-distribution bar chart when trend is empty.
-        if (monthlyTrend.length > 0) {
-            return {
-                series: monthlyTrend.map((point) => ({
-                    label: point.month,
-                    value: point.count
-                }))
-            };
-        }
-
-        // Fallback: status distribution as a bar chart
+        // Status distribution bar chart — three buckets (Publicados / Borradores
+        // / Archivados). Replaces the previous monthly-trend variant which
+        // collapsed to two visible Y-ticks when posts clustered in one month
+        // and didn't tell the editor anything actionable at a glance.
         const active = activeResult.data.data?.pagination?.total ?? 0;
         const draft = draftResult.data.data?.pagination?.total ?? 0;
         const archived = archivedResult.data.data?.pagination?.total ?? 0;
+
         return {
             series: [
                 { label: 'Publicados', value: active },
@@ -476,25 +477,35 @@ registerDataSource('editor.posts.stats', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card F: events stats as a 3-tile mini grid (Total / Próximos / Destacados).
+ * EDITOR card F: events stats as a 6-tile mini grid.
  *
- * Three parallel count queries; the KpiWidget renders a multi-KPI grid when
- * `kpis[]` is provided (same shape HOST card A uses for "Total/Activos/Borradores").
+ * Row 1 of tiles: Total / Próximos / Destacados — overview counters.
+ * Row 2 of tiles: Sin imagen / Sin location / Sin organizer — content
+ * health proxies aggregated server-side via 3 count queries. Helps the
+ * editor spot what to fix without having to scan the events list.
  *
- * Views per event are PHASE 2 (cross-entity view tracking not built).
+ * Views per event and per-event favorites are PHASE 2 (cross-entity
+ * view tracking — SPEC-159 — plus a new SPEC for event favorites).
  *
  * Source ID: `'editor.events.stats'`
  * Scope: `'all'`
- * Endpoints (parallel):
+ * Endpoints (4 parallel):
  *   - GET /api/v1/admin/events?pageSize=1                              (total)
  *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=1         (upcoming)
  *   - GET /api/v1/admin/events?isFeatured=true&pageSize=1              (featured)
+ *   - GET /api/v1/admin/events?pageSize=100                            (pool for client-side missing-* counts)
  */
 registerDataSource('editor.events.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.stats', ctx),
     queryFn: async () => {
         const now = nowIso();
-        const [totalResult, upcomingResult, featuredResult] = await Promise.all([
+        // The admin events search schema doesn't expose `hasFeaturedImage`,
+        // `hasLocation`, `hasOrganizer` filters yet, so the missing-* counts
+        // are computed client-side from a 100-row pool (the AdminSearchBase
+        // pageSize cap). A dedicated `/admin/events/health-stats` endpoint
+        // is a follow-up SPEC if the catalog ever exceeds 100 events and
+        // the approximation stops being acceptable.
+        const [totalResult, upcomingResult, featuredResult, poolResult] = await Promise.all([
             fetchApi<AdminListApiResponse<EventItem>>({
                 path: '/api/v1/admin/events?pageSize=1'
             }),
@@ -503,12 +514,19 @@ registerDataSource('editor.events.stats', (ctx) => ({
             }),
             fetchApi<AdminListApiResponse<EventItem>>({
                 path: '/api/v1/admin/events?isFeatured=true&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?pageSize=100'
             })
         ]);
 
         const total = totalResult.data.data?.pagination?.total ?? 0;
         const upcoming = upcomingResult.data.data?.pagination?.total ?? 0;
         const featured = featuredResult.data.data?.pagination?.total ?? 0;
+        const pool = poolResult.data.data?.items ?? [];
+        const missingImage = pool.filter((e) => !e.media?.featuredImage?.url).length;
+        const missingLocation = pool.filter((e) => !e.locationId).length;
+        const missingOrganizer = pool.filter((e) => !e.organizerId).length;
 
         return {
             kpis: [
@@ -535,6 +553,38 @@ registerDataSource('editor.events.stats', (ctx) => ({
                     accent: 'warning',
                     icon: 'star',
                     href: '/catalogo/eventos?isFeatured=true'
+                },
+                {
+                    key: 'missingImage',
+                    label: { es: 'Sin imagen', en: 'Missing image', pt: 'Sem imagem' },
+                    value: missingImage,
+                    accent: 'danger',
+                    icon: 'shield',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'missingLocation',
+                    label: {
+                        es: 'Sin ubicación',
+                        en: 'Missing location',
+                        pt: 'Sem localização'
+                    },
+                    value: missingLocation,
+                    accent: 'danger',
+                    icon: 'compass',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'missingOrganizer',
+                    label: {
+                        es: 'Sin organizador',
+                        en: 'Missing organizer',
+                        pt: 'Sem organizador'
+                    },
+                    value: missingOrganizer,
+                    accent: 'danger',
+                    icon: 'user',
+                    href: '/catalogo/eventos'
                 }
             ]
         };
@@ -676,9 +726,9 @@ registerDataSource('editor.content.health', (ctx) => ({
         const eventEntities = events.map((e) => ({
             id: e.id,
             title: e.name,
-            featuredImage: e.featuredImage,
-            locationId: e.locationId,
-            organizerId: e.organizerId,
+            featuredImage: e.media?.featuredImage?.url ?? undefined,
+            locationId: e.locationId ?? undefined,
+            organizerId: e.organizerId ?? undefined,
             description: e.description
         }));
 
