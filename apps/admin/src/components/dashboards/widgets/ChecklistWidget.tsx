@@ -1003,7 +1003,8 @@ interface EntityHealthListBodyProps {
 function EntityHealthListBody({ data, displayLabel, accent, icon }: EntityHealthListBodyProps) {
     const PREVIEW_LIMIT = 10;
     const preview = data.entities.slice(0, PREVIEW_LIMIT);
-    const remaining = Math.max(0, data.entities.length - PREVIEW_LIMIT);
+    const rest = data.entities.slice(PREVIEW_LIMIT);
+    const remaining = rest.length;
     const completenessAvg =
         data.entities.length === 0
             ? 100
@@ -1053,7 +1054,7 @@ function EntityHealthListBody({ data, displayLabel, accent, icon }: EntityHealth
                             className="inline-flex items-center gap-1.5 self-start rounded-md text-primary text-sm hover:underline"
                             data-testid="entity-health-view-all"
                         >
-                            Ver todas ({data.entities.length})
+                            Ver los {remaining} restantes
                             <ArrowRightIcon
                                 size={14}
                                 weight="duotone"
@@ -1063,14 +1064,17 @@ function EntityHealthListBody({ data, displayLabel, accent, icon }: EntityHealth
                     <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>
-                                {displayLabel} ({data.entities.length})
+                                {displayLabel} — {remaining} restantes
                             </DialogTitle>
                         </DialogHeader>
+                        <p className="text-muted-foreground text-xs">
+                            Los primeros {PREVIEW_LIMIT} ya están visibles en el panel.
+                        </p>
                         <div
                             className="space-y-2"
                             data-testid="entity-health-dialog-rows"
                         >
-                            {data.entities.map((entry) => (
+                            {rest.map((entry) => (
                                 <EntityHealthRow
                                     key={entry.id}
                                     entry={entry}

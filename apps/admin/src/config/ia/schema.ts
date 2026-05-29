@@ -595,7 +595,7 @@ export type WidgetType = z.infer<typeof WidgetTypeSchema>;
  * ```
  */
 export const GridSpanSchema = z.object({
-    cols: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+    cols: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal('half')]).optional(),
     rows: z.union([z.literal(1), z.literal(2)]).optional()
 });
 

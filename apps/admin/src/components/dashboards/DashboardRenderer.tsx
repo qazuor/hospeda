@@ -223,7 +223,7 @@ function DashboardGrid({ dashboard, userRole }: DashboardGridProps) {
             data-testid="dashboard-renderer"
         >
             {/* Widget grid — each widget fires its useQuery independently */}
-            <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-flow-dense lg:grid-cols-3">
+            <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-flow-dense lg:grid-cols-6">
                 {dashboard.widgets.map((widget) => {
                     const spanClasses = gridSpanClasses(widget.gridSpan);
                     const wrapperClass = spanClasses ? `h-full ${spanClasses}` : 'h-full';

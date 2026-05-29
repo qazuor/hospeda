@@ -442,8 +442,7 @@ const hostDashboard: DashboardInput = {
  *   Row 3: C (3×1 full)
  *   Row 4: F (2×1)  + D (1×1)
  *   Row 5: E (2×1)  + H (1×1)
- *   Row 6: G1 (3×1 full) — Salud posts
- *   Row 7: G2 (3×1 full) — Salud eventos
+ *   Row 6: G1 (half) + G2 (half) — Salud posts | Salud eventos
  *
  * @example
  * ```ts
@@ -722,10 +721,11 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card G1 — Salud del contenido · Posts (Row 6, full width)
+        // Card G1 — Salud del contenido · Posts (Row 6 left, half width)
         // Per-post grouped health (one row per post with completeness %,
         // missing-field chips, View/Edit actions). The widget shows top 10
-        // worst-rated inline and exposes the rest via a "Ver todas" dialog.
+        // worst-rated inline and exposes the rest via a "Ver los X restantes"
+        // dialog.
         {
             id: 'editor-card-g-posts',
             type: 'checklist',
@@ -735,7 +735,8 @@ const editorDashboard: DashboardInput = {
                 pt: 'Saúde do conteúdo · Posts'
             },
             scope: 'all',
-            gridSpan: { cols: 3 },
+            // Bento: half-width — pairs side-by-side with G2 on the same row.
+            gridSpan: { cols: 'half' },
             config: {
                 source: 'editor.content.health.posts',
                 checkset: 'content-health',
@@ -748,7 +749,7 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card G2 — Salud del contenido · Eventos (Row 7, full width)
+        // Card G2 — Salud del contenido · Eventos (Row 6 right, half width)
         // Per-event grouped health, same shape as the posts variant.
         {
             id: 'editor-card-g-events',
@@ -759,7 +760,8 @@ const editorDashboard: DashboardInput = {
                 pt: 'Saúde do conteúdo · Eventos'
             },
             scope: 'all',
-            gridSpan: { cols: 3 },
+            // Bento: half-width — pairs with G1 on the same row.
+            gridSpan: { cols: 'half' },
             config: {
                 source: 'editor.content.health.events',
                 checkset: 'content-health',

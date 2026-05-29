@@ -8,8 +8,12 @@
  *
  * - **mobile** (`grid-cols-1`): every widget collapses to 1×1. Spans are ignored.
  * - **md** (`grid-cols-2`): `cols` is capped at 2 so a 3-col hero degrades to 2.
+ *   `'half'` also degrades to `md:col-span-1` so two halves still tile cleanly.
  *   Row spans (1 / 2) are preserved.
- * - **lg** (`grid-cols-3`): full span applied as configured.
+ * - **lg** (`grid-cols-6`): six-column grid so we can express thirds (cols=1, 2,
+ *   3 → 2/6, 4/6, 6/6) AND halves (`'half'` → 3/6) without breaking any
+ *   existing layout. The 6-col base preserves the previous "thirds" semantics
+ *   that pre-existing configs already rely on.
  *
  * ## Why lookup tables (not interpolated class names)
  *
@@ -22,24 +26,33 @@
 
 import type { GridSpan } from '@/config/ia/schema';
 
+type ColsValue = 1 | 2 | 3 | 'half';
+
 /**
  * Tailwind `md:col-span-*` lookup table.
  *
  * The md grid has 2 columns; a configured `cols: 3` degrades to `md:col-span-2`.
+ * `'half'` degrades to a single column so two halves stack as 1+1 = 2.
  */
-const MD_COL_SPAN: Record<1 | 2 | 3, string> = {
+const MD_COL_SPAN: Record<ColsValue, string> = {
     1: 'md:col-span-1',
     2: 'md:col-span-2',
-    3: 'md:col-span-2'
+    3: 'md:col-span-2',
+    half: 'md:col-span-1'
 };
 
 /**
- * Tailwind `lg:col-span-*` lookup table for the 3-column lg grid.
+ * Tailwind `lg:col-span-*` lookup table for the 6-column lg grid.
+ *
+ * Existing `cols: 1 | 2 | 3` map to thirds (2/6, 4/6, 6/6) so all configs
+ * shipped before the 6-col migration keep the layout they had. The new
+ * `'half'` value maps to 3/6 so two siblings tile as 50/50 within a row.
  */
-const LG_COL_SPAN: Record<1 | 2 | 3, string> = {
-    1: 'lg:col-span-1',
-    2: 'lg:col-span-2',
-    3: 'lg:col-span-3'
+const LG_COL_SPAN: Record<ColsValue, string> = {
+    1: 'lg:col-span-2',
+    2: 'lg:col-span-4',
+    3: 'lg:col-span-6',
+    half: 'lg:col-span-3'
 };
 
 /**
@@ -64,10 +77,13 @@ const MD_LG_ROW_SPAN: Record<1 | 2, string> = {
  * @example
  * ```ts
  * gridSpanClasses({ cols: 3 });
- * // → 'md:col-span-2 lg:col-span-3'
+ * // → 'md:col-span-2 lg:col-span-6'
+ *
+ * gridSpanClasses({ cols: 'half' });
+ * // → 'md:col-span-1 lg:col-span-3'
  *
  * gridSpanClasses({ cols: 2, rows: 2 });
- * // → 'md:col-span-2 lg:col-span-2 md:row-span-2 lg:row-span-2'
+ * // → 'md:col-span-2 lg:col-span-4 md:row-span-2 lg:row-span-2'
  *
  * gridSpanClasses();
  * // → ''
