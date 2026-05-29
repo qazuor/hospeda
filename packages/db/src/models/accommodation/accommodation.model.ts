@@ -12,6 +12,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
@@ -1023,6 +1024,142 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'findIdsByOwnerId', ctx, err);
             throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
+
+    /**
+     * Per-accommodation market comparison for the HOST card J redesign.
+     *
+     * For each of the owner's active accommodations, returns the listing's
+     * own rating + review count alongside the average rating + total
+     * review count of every other active accommodation in the same
+     * destination. The widget uses these pairs to draw a "you vs
+     * destination" indicator per row.
+     *
+     * (Price comparison was considered but skipped — `accommodations.price`
+     * is stored as JSONB with currency + modifier metadata, so aggregating
+     * across listings is not a straight `AVG()`. A future redesign can
+     * surface price once we expose a `base_amount_centavos` projection.)
+     *
+     * Returns an empty array immediately when the owner has zero
+     * accommodations.
+     *
+     * @param ownerId - The host's user id.
+     * @param tx - Optional Drizzle transaction client.
+     */
+    async getMarketComparisonByOwnerId(
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<
+        ReadonlyArray<{
+            readonly accommodationId: string;
+            readonly accommodationName: string;
+            readonly accommodationType: string;
+            readonly destinationId: string;
+            readonly destinationName: string | null;
+            readonly yourRating: number | null;
+            readonly yourReviews: number;
+            readonly destinationAvgRating: number | null;
+            readonly destinationReviewsTotal: number;
+            readonly yourPrice: number | null;
+            readonly destinationAvgPrice: number | null;
+        }>
+    > {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+
+        try {
+            // Correlated sub-queries for the destination averages.
+            // Average rating is computed only over listings with ≥1 review
+            // so the mean reflects actual signal, not noise.
+            const ratedListingsForDestination = sql<number | null>`
+                (
+                    SELECT AVG(a2.average_rating)::float
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                      AND a2.reviews_count > 0
+                )
+            `;
+            const reviewsTotalForDestination = sql<number | null>`
+                (
+                    SELECT SUM(a2.reviews_count)::int
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                )
+            `;
+            // Price is stored as JSONB { price: number, currency, ... }.
+            // We extract the numeric base price for the host's listing and
+            // for the destination average using the same JSONB cast the sort
+            // helpers in this file already use (see buildPriceOrderExpr).
+            // Price average is filtered by `type` so a "Casa quinta para 30"
+            // doesn't get compared against a "Monoambiente para 1".
+            const yourPrice = sql<number | null>`
+                (${accommodations.price}->>'price')::numeric
+            `;
+            const avgPriceForDestinationAndType = sql<number | null>`
+                (
+                    SELECT AVG((a2.price->>'price')::numeric)
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.type = ${accommodations.type}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                      AND (a2.price->>'price') IS NOT NULL
+                      AND (a2.price->>'price')::numeric > 0
+                )
+            `;
+
+            const rows = await db
+                .select({
+                    accommodationId: accommodations.id,
+                    accommodationName: accommodations.name,
+                    accommodationType: accommodations.type,
+                    destinationId: accommodations.destinationId,
+                    destinationName: destinations.name,
+                    yourRating: accommodations.averageRating,
+                    yourReviews: accommodations.reviewsCount,
+                    destinationAvgRating: ratedListingsForDestination,
+                    destinationReviewsTotal: reviewsTotalForDestination,
+                    yourPrice,
+                    destinationAvgPrice: avgPriceForDestinationAndType
+                })
+                .from(accommodations)
+                .leftJoin(destinations, eq(destinations.id, accommodations.destinationId))
+                .where(
+                    and(
+                        eq(accommodations.ownerId, ownerId),
+                        eq(accommodations.lifecycleState, 'ACTIVE'),
+                        isNull(accommodations.deletedAt)
+                    )
+                )
+                .orderBy(asc(accommodations.name))
+                .limit(20);
+
+            logQuery(this.entityName, 'getMarketComparisonByOwnerId', ctx, { count: rows.length });
+
+            return rows.map((row) => ({
+                accommodationId: row.accommodationId,
+                accommodationName: row.accommodationName,
+                accommodationType: row.accommodationType as string,
+                destinationId: row.destinationId,
+                destinationName: row.destinationName ?? null,
+                yourRating: row.yourRating !== null ? Number(row.yourRating) : null,
+                yourReviews: Number(row.yourReviews ?? 0),
+                destinationAvgRating:
+                    row.destinationAvgRating !== null ? Number(row.destinationAvgRating) : null,
+                destinationReviewsTotal: Number(row.destinationReviewsTotal ?? 0),
+                yourPrice: row.yourPrice !== null ? Number(row.yourPrice) : null,
+                destinationAvgPrice:
+                    row.destinationAvgPrice !== null ? Number(row.destinationAvgPrice) : null
+            }));
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'getMarketComparisonByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'getMarketComparisonByOwnerId', ctx, err.message);
         }
     }
 }

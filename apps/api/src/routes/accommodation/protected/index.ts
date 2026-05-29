@@ -15,6 +15,7 @@ import { protectedCreateAccommodationDraftRoute } from './createDraft';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
+import { hostMarketComparisonRoute } from './hostMarketComparison';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
@@ -36,6 +37,9 @@ const app = createRouter();
 // GET /my/favorites-breakdown - Per-accommodation bookmark count (SPEC-155 T-005)
 // Registered before GET / to avoid the list route matching the /my/* prefix.
 app.route('/', hostFavoritesBreakdownRoute);
+
+// GET /my/market-comparison - Per-accommodation market comparison (SPEC-155 card J)
+app.route('/', hostMarketComparisonRoute);
 
 // GET / - List own accommodations (no ownership check — filtered by actor.id in handler)
 app.route('/', protectedListOwnAccommodationsRoute);

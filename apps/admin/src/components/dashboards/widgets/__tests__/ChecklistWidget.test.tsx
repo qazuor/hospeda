@@ -293,7 +293,7 @@ describe('ChecklistWidget', () => {
             );
 
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '6/6 completado'
+                '6 de 6 completos'
             );
             expect(screen.getByTestId('checklist-completeness-pct')).toHaveTextContent('100%');
         });
@@ -315,7 +315,7 @@ describe('ChecklistWidget', () => {
             );
 
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '0/6 completado'
+                '0 de 6 completos'
             );
             expect(screen.getByTestId('checklist-completeness-pct')).toHaveTextContent('0%');
         });
@@ -422,7 +422,7 @@ describe('ChecklistWidget', () => {
 
             // First accommodation (fullAccommodation) should be selected by default.
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '6/6 completado'
+                '6 de 6 completos'
             );
         });
 
@@ -444,7 +444,7 @@ describe('ChecklistWidget', () => {
 
             // Initially showing full accommodation (6/6)
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '6/6 completado'
+                '6 de 6 completos'
             );
 
             // Open the selector and pick the partial accommodation
@@ -457,7 +457,7 @@ describe('ChecklistWidget', () => {
 
             // Should now show 0/6
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '0/6 completado'
+                '0 de 6 completos'
             );
         });
     });
@@ -482,7 +482,7 @@ describe('ChecklistWidget', () => {
             );
 
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '6/6 completado'
+                '6 de 6 completos'
             );
         });
 
@@ -503,7 +503,7 @@ describe('ChecklistWidget', () => {
             );
 
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '0/6 completado'
+                '0 de 6 completos'
             );
         });
 
@@ -550,7 +550,7 @@ describe('ChecklistWidget', () => {
 
             // 0/3 for the post with issues
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '0/3 completado'
+                '0 de 3 completos'
             );
         });
 
@@ -572,7 +572,7 @@ describe('ChecklistWidget', () => {
 
             // 1/4: featuredImage present, but locationId/organizerId/description missing
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '1/4 completado'
+                '1 de 4 completos'
             );
         });
 
@@ -594,7 +594,7 @@ describe('ChecklistWidget', () => {
 
             // 3 post items + 4 event items = 7 total; 0 post done + 1 event done = 1/7
             expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-                '1/7 completado'
+                '1 de 7 completos'
             );
         });
     });
@@ -783,7 +783,7 @@ describe('ChecklistWidget', () => {
 
         expect(await screen.findByTestId('checklist-widget')).toBeInTheDocument();
         expect(screen.getByTestId('checklist-completeness-fraction')).toHaveTextContent(
-            '6/6 completado'
+            '6 de 6 completos'
         );
     });
 });

@@ -642,6 +642,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
+        // EDITOR runs the editorial dashboard which lists every event
+        // (upcoming + featured + total). Without VIEW_ALL the admin list
+        // endpoint returns 403 and cards B / F render in error state.
+        PermissionEnum.EVENT_VIEW_ALL,
 
         // POST: Create, update, publish, manage
         PermissionEnum.POST_CREATE,

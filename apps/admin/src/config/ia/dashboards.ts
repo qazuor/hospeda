@@ -40,11 +40,11 @@
 import type { DashboardInput } from './schema';
 
 // ============================================================================
-// hostDashboard — "Mi negocio" — 7 cards A–G
+// hostDashboard — "Mi negocio" — 10 cards A–J
 // ============================================================================
 
 /**
- * Dashboard for the HOST role — 7-card "Mi negocio" view.
+ * Dashboard for the HOST role — 10-card "Mi negocio" view.
  *
  * Card set (SPEC-155 §3 / 03c HOST section):
  *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
@@ -58,7 +58,7 @@ import type { DashboardInput } from './schema';
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 7
+ * dashboards.hostDashboard.widgets.length; // 10
  * ```
  */
 const hostDashboard: DashboardInput = {
@@ -75,10 +75,18 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meus alojamentos'
             },
             scope: 'own',
+            // Bento: full hero — multi-KPI tiles + draft sub-list below benefit from full width.
+            gridSpan: { cols: 3 },
             config: {
                 source: 'host.accommodations.count',
                 // Companion draft list source — rendered below the KPI by the card renderer
-                companionSource: 'host.accommodations.drafts'
+                companionSource: 'host.accommodations.drafts',
+                accent: 'river',
+                icon: 'buildings',
+                emptyText: 'Todavía no tenés alojamientos',
+                emptyDescription: 'Cuando publiques tu primer alojamiento, vas a verlo acá.',
+                errorText: 'No pudimos cargar tus alojamientos',
+                errorDescription: 'Probá actualizar — si persiste, avisanos.'
             }
         },
 
@@ -97,15 +105,27 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu plano'
             },
             scope: 'own',
+            // Bento: wide (2×1) — plan name hero + 3 limit tiles + chips + CTA
+            // is dense content; a 1×1 felt cramped.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.billing.plan',
+                accent: 'success',
+                icon: 'billing',
                 variantMap: {
                     active: 'success',
                     expiring: 'warning',
                     expired: 'destructive',
                     cancelled: 'neutral',
-                    trial: 'warning'
-                }
+                    trial: 'warning',
+                    past_due: 'destructive',
+                    pending: 'warning',
+                    paused: 'warning'
+                },
+                emptyText: 'Todavía no tenés un plan activo',
+                emptyDescription: 'Activá un plan para publicar y administrar tus alojamientos.',
+                errorText: 'No pudimos cargar tu plan',
+                errorDescription: 'El servicio de facturación no está disponible ahora mismo.'
             }
         },
 
@@ -121,13 +141,21 @@ const hostDashboard: DashboardInput = {
                 pt: 'Consultas'
             },
             scope: 'own',
+            // Bento: compact (1×1) — header counter pill + 3 pending rows fit
+            // in a single column; the full counter stays visible regardless.
             config: {
                 source: 'host.conversations.pending',
-                maxItems: 5,
+                accent: 'sky',
+                icon: 'chat',
+                maxItems: 3,
                 actionPerItem: {
                     label: { es: 'Responder', en: 'Reply', pt: 'Responder' },
                     hrefTemplate: '/consultas/{id}'
-                }
+                },
+                emptyText: 'Sin consultas pendientes',
+                emptyDescription: 'Cuando un huésped te escriba, aparecerá acá para responder.',
+                errorText: 'No pudimos cargar tus consultas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
@@ -145,9 +173,26 @@ const hostDashboard: DashboardInput = {
                 pt: 'Estado do meu alojamento'
             },
             scope: 'own',
+            // Bento: compact (1×1) — checklist with completion bar + CTA.
             config: {
-                checkset: 'accommodation-health'
-                // No `source` — entities are loaded client-side from the page context.
+                checkset: 'accommodation-health',
+                // Resolves to full accommodation entities for the host (id +
+                // photos / description / amenities / price / lat-lng / contact).
+                source: 'host.accommodations.entities',
+                accent: 'warning',
+                icon: 'shield',
+                // CTA shown when completeness < 100%
+                cta: {
+                    label: {
+                        es: 'Editar alojamiento',
+                        en: 'Edit listing',
+                        pt: 'Editar alojamento'
+                    },
+                    hrefTemplate: '/accommodations/{id}/edit'
+                },
+                emptyText: 'Aún no tenés alojamientos',
+                emptyDescription: 'Creá uno y volvé acá para ver qué le falta a su ficha.',
+                errorText: 'No pudimos cargar el estado de tu alojamiento'
                 // The ChecklistWidget falls back to config.entities injected by the card renderer.
             }
         },
@@ -164,9 +209,19 @@ const hostDashboard: DashboardInput = {
                 pt: 'Avaliações'
             },
             scope: 'own',
+            // Bento: wide (2×1) — reviews list reads better with horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'host.reviews.latest',
-                maxItems: 5
+                accent: 'terracotta',
+                icon: 'star',
+                maxItems: 5,
+                // Render rating as visual stars (★★★★☆) instead of a plain number badge.
+                variant: 'stars',
+                emptyText: 'Todavía no recibiste reseñas',
+                emptyDescription: 'Cuando un huésped deje una opinión, vas a verla acá.',
+                errorText: 'No pudimos cargar tus reseñas',
+                errorDescription: 'Volvé a intentar en un momento.'
             }
         },
 
@@ -183,9 +238,28 @@ const hostDashboard: DashboardInput = {
                 pt: 'Meu perfil'
             },
             scope: 'own',
+            // Bento: tall (1×2) — fills the col-1 slot alongside the wide
+            // 2×1 cards on rows 4-5 so the grid never leaves col-3 holes.
+            gridSpan: { rows: 2 },
             config: {
-                checkset: 'host-profile-health'
-                // No `source` — computed from the loaded user object.
+                checkset: 'host-profile-health',
+                // Resolves to the current host's user record (name / avatar /
+                // bio / phone / socialLink / emailVerified).
+                source: 'host.profile.current',
+                accent: 'accent',
+                icon: 'user',
+                // CTA shown when completeness < 100%
+                cta: {
+                    label: {
+                        es: 'Completar perfil',
+                        en: 'Complete profile',
+                        pt: 'Completar perfil'
+                    },
+                    href: '/access/profile'
+                },
+                emptyText: 'Perfil no disponible',
+                emptyDescription: 'No pudimos leer los datos de tu perfil para evaluarlo.',
+                errorText: 'No pudimos leer tu perfil'
             }
         },
 
@@ -208,9 +282,13 @@ const hostDashboard: DashboardInput = {
                 pt: 'Estatísticas'
             },
             scope: 'own',
+            // Bento: wide (2×1) — multi-KPI tiles + breakdown list need horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 // Primary: average rating + total reviews (already persisted on accommodation)
                 source: 'host.stats.ratings',
+                accent: 'purple',
+                icon: 'chart',
                 // Companion sources for the card renderer to co-load
                 companionSources: ['host.stats.favorites', 'host.stats.response-rate'],
                 // Views slot is deferred — no backend yet (PostHog client-side only, no DB)
@@ -220,7 +298,119 @@ const hostDashboard: DashboardInput = {
                         description:
                             'Vistas únicas y totales por alojamiento (7/30 días) — disponible cuando se implemente el tracking de vistas.'
                     }
-                ]
+                ],
+                emptyText: 'Aún no tenemos estadísticas',
+                emptyDescription:
+                    'Las métricas van a aparecer a medida que tu alojamiento tenga actividad.',
+                errorText: 'No pudimos cargar tus estadísticas',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card I — Tendencia mensual
+        // Bar chart with the host's monthly inquiry count for the last 6 months.
+        // Source: host.stats.conversations-monthly (gap-filled server-side).
+        {
+            id: 'host-card-i',
+            type: 'chart',
+            label: {
+                es: 'Consultas por mes',
+                en: 'Inquiries per month',
+                pt: 'Consultas por mês'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — 6-bucket bars stay legible at 2 cols and
+            // pair cleanly with the suggestions + market-comparison rows below.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.conversations-monthly',
+                chartType: 'bar',
+                accent: 'sky',
+                icon: 'chart',
+                emptyText: 'Aún no hay consultas',
+                emptyDescription:
+                    'Cuando empieces a recibir consultas, vas a ver la tendencia mensual acá.',
+                errorText: 'No pudimos cargar la tendencia',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card H — Próximos pasos
+        // Priority-sorted list of actionable items composed from the same
+        // sources that feed cards B/C/D/E (subscription, conversations,
+        // reviews, accommodations). Each row is a concrete next step the
+        // host can tackle, with a CTA per item.
+        {
+            id: 'host-card-h',
+            type: 'list',
+            label: {
+                es: 'Próximos pasos',
+                en: 'Next steps',
+                pt: 'Próximos passos'
+            },
+            scope: 'own',
+            // Bento: narrow (1×1) — actionable rows are short, so a single
+            // column is enough; shares the row with card J (market comparison).
+            gridSpan: { cols: 1 },
+            config: {
+                source: 'host.suggestions.list',
+                accent: 'warning',
+                icon: 'compass',
+                maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Ir', en: 'Go', pt: 'Ir' }
+                    // hrefTemplate omitted — each suggestion row supplies its
+                    // own `href` and the ListWidget honors it directly.
+                },
+                emptyText: '¡Todo al día!',
+                emptyDescription:
+                    'No tenés pendientes urgentes. Cuando algo pida atención, lo verás acá.',
+                errorText: 'No pudimos cargar tus pendientes',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card J — Comparativo de mercado
+        // Per-accommodation comparison: your rating + price vs the destination
+        // average (computed across every other active accommodation in the same
+        // destination). One row per listing; the host can scan their portfolio
+        // and spot listings that are punching above or below market.
+        {
+            id: 'host-card-j',
+            type: 'list',
+            label: {
+                es: 'Comparativo de mercado',
+                en: 'Market comparison',
+                pt: 'Comparativo de mercado'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — per-row meta lines + CTA fit comfortably at
+            // 2 cols; shares the row with card H (suggestions) to its left.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.market-comparison',
+                accent: 'cyan',
+                icon: 'compass',
+                maxItems: 5,
+                actionPerItem: {
+                    label: { es: 'Ver alojamiento', en: 'View listing', pt: 'Ver alojamento' },
+                    hrefTemplate: '/accommodations/{id}'
+                },
+                additionalActionsPerItem: [
+                    {
+                        label: {
+                            es: 'Editar',
+                            en: 'Edit',
+                            pt: 'Editar'
+                        },
+                        hrefTemplate: '/accommodations/{id}/edit'
+                    }
+                ],
+                emptyText: 'Sin datos para comparar todavía',
+                emptyDescription:
+                    'Publicá un alojamiento y volvé acá para ver cómo te comparás con el destino.',
+                errorText: 'No pudimos cargar el comparativo',
+                errorDescription: 'Probá actualizar el panel.'
             }
         }
     ]
@@ -231,122 +421,244 @@ const hostDashboard: DashboardInput = {
 // ============================================================================
 
 /**
- * Dashboard for the EDITOR role — 8-card "La redacción" view.
+ * Dashboard for the EDITOR role — 11-card "La redacción" view.
  *
  * Card set (SPEC-155 §3 / 03c EDITOR section):
- *   A — Posts                     (kpi + list, sources: editor.posts.published-this-month + editor.posts.drafts)
- *   B — Eventos                   (list,       source: editor.events.upcoming)
- *   C — Suscriptores Newsletter   (kpi,        source: editor.newsletter.subscribers + DeferredWidget for open rate)
- *   D — Campañas Newsletter       (list,       source: editor.newsletter.campaigns)
- *   E — Estadísticas blog         (chart,      source: editor.posts.stats + DeferredWidget for views)
- *   F — Estadísticas eventos      (kpi,        source: editor.events.stats + DeferredWidget for views)
- *   G — Salud                     (checklist,  checkset: content-health)
- *   H — Comentarios               (callout,    DeferredWidget — backend pending SPEC-165)
+ *   A  — Estadísticas publicaciones   (kpi-grid+companion+deferred, source: editor.posts.published-this-month)
+ *   B  — Eventos próximos              (list,                          source: editor.events.upcoming)
+ *   C  — Suscriptores Newsletter       (kpi-grid+deferred,             source: editor.newsletter.subscribers)
+ *   D  — Campañas recientes            (list,                          source: editor.newsletter.campaigns)
+ *   E  — Distribución publicaciones    (chart+deferred,                source: editor.posts.stats)
+ *   F  — Estadísticas eventos          (kpi-grid+deferred,             source: editor.events.stats — 6 tiles)
+ *   G1 — Salud del contenido · Posts   (checklist grouped,             source: editor.content.health.posts)
+ *   G2 — Salud del contenido · Eventos (checklist grouped,             source: editor.content.health.events)
+ *   H  — Comentarios                   (callout deferred,              SPEC-165)
+ *   I  — Últimos posts                 (list,                          source: editor.posts.latest)
+ *   J  — Acciones                      (list,                          source: editor.shortcuts)
+ *
+ * Bento layout (6-col grid lg, rendered in array order):
+ *   Row 1: A (⅓) + B (⅔)     — Stats publicaciones | Eventos próximos
+ *   Row 2: J (⅓) + I (⅔)     — Acciones            | Últimos posts
+ *   Row 3: D (⅓) + F (⅔)     — Campañas recientes  | Stats eventos (6 tiles)
+ *   Row 4: E (½) + C (½)     — Distribución        | Suscriptores Newsletter
+ *   Row 5: G1 (½) + G2 (½)   — Salud posts          | Salud eventos
+ *   Row 6: H (full)          — Comentarios (deferred banner)
+ *
+ * Pattern: rows 1–3 are ⅓+⅔ to pair a compact metric/list card with a
+ * content-rich hero. Rows 4–5 are ½+½ for equal-weight pairs. Row 6 is a
+ * full-width banner to host the comments placeholder without leaving a
+ * lopsided gap on any other row.
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.editorDashboard.widgets.length; // 8
+ * dashboards.editorDashboard.widgets.length; // 11
  * ```
  */
 const editorDashboard: DashboardInput = {
     widgets: [
-        // Card A — Posts
-        // published this month (KPI) + pending drafts count + recent drafts (list)
-        // source: editor.posts.published-this-month (fetches both in parallel)
-        // companion: editor.posts.drafts (explicit draft list if renderer wants it separate)
+        // -- Row 1: Estadísticas publicaciones (⅓) + Eventos próximos (⅔) --
+        // Posts compact KPI alongside the events hero list: same row balances
+        // a number-card and a content-card with similar visual weight.
+
+        // Card A — Estadísticas publicaciones (Row 1 left, ⅓)
+        // 3-tile grid (Este mes / Total / Borradores) + top 5 by engagement
+        // companion list. Deferred "Vistas" tile renders BELOW the grid.
         {
             id: 'editor-card-a',
             type: 'kpi',
             label: {
-                es: 'Posts',
-                en: 'Posts',
-                pt: 'Posts'
+                es: 'Estadísticas publicaciones',
+                en: 'Post statistics',
+                pt: 'Estatísticas publicações'
             },
             scope: 'all',
+            // Bento: compact (1 = ⅓) — short tile labels + companion list.
             config: {
                 source: 'editor.posts.published-this-month',
-                companionSource: 'editor.posts.drafts'
-            }
-        },
-
-        // Card B — Eventos
-        // upcoming count + upcoming list (top 5) + featured upcoming list
-        // source: editor.events.upcoming (fetches count + list + featured in parallel)
-        {
-            id: 'editor-card-b',
-            type: 'list',
-            label: {
-                es: 'Eventos',
-                en: 'Events',
-                pt: 'Eventos'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.events.upcoming',
-                maxItems: 5
-            }
-        },
-
-        // Card C — Suscriptores Newsletter
-        // active count (KPI) + by content preference breakdown (OFFERS/EVENTS/GUIDES/PRODUCT_NEWS)
-        // source: editor.newsletter.subscribers (fetches both in parallel)
-        // DeferredWidget for open rate (SPEC-160 — email-open tracking not built yet)
-        {
-            id: 'editor-card-c',
-            type: 'kpi',
-            label: {
-                es: 'Suscriptores Newsletter',
-                en: 'Newsletter subscribers',
-                pt: 'Assinantes Newsletter'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.newsletter.subscribers',
+                accent: 'success',
+                icon: 'article',
+                emptyText: 'Aún no hay publicaciones',
+                emptyDescription:
+                    'Cuando publiques tu primer post, va a aparecer acá con sus métricas.',
+                errorText: 'No pudimos cargar las publicaciones',
+                errorDescription: 'Probá actualizar el panel.',
                 deferredSlots: [
                     {
-                        phaseSpec: 'SPEC-160',
+                        phaseSpec: 'SPEC-159',
+                        label: 'Vistas',
                         description:
-                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email.'
+                            'Vistas totales por post — disponible cuando se implemente el tracking de vistas (SPEC-159).'
                     }
                 ]
             }
         },
 
-        // Card D — Campañas Newsletter
-        // scheduled campaigns list (top 3)
-        // source: editor.newsletter.campaigns (NEWSLETTER_CAMPAIGN_VIEW permission)
+        // Card B — Eventos próximos (Row 1 right, ⅔)
+        // upcoming events list (top 5 by date.start asc, client-sorted from
+        // a 20-row buffer since admin events doesn't expose a startDate sort).
+        {
+            id: 'editor-card-b',
+            type: 'list',
+            label: {
+                es: 'Eventos próximos',
+                en: 'Upcoming events',
+                pt: 'Próximos eventos'
+            },
+            scope: 'all',
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'editor.events.upcoming',
+                accent: 'warning',
+                icon: 'calendar',
+                maxItems: 5,
+                emptyText: 'Sin eventos próximos',
+                emptyDescription: 'Cuando se publiquen nuevos eventos, los vas a ver acá.',
+                errorText: 'No pudimos cargar los eventos',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // -- Row 2: Acciones (⅓) + Últimos posts (⅔) --
+        // Compact actions card next to the latest-posts hero list.
+
+        // Card J — Acciones (Row 2 left, ⅓)
+        // editorial quick-action shortcuts as ListWidget items.
+        {
+            id: 'editor-card-j',
+            type: 'list',
+            label: {
+                es: 'Acciones',
+                en: 'Quick actions',
+                pt: 'Ações'
+            },
+            scope: 'all',
+            config: {
+                source: 'editor.shortcuts',
+                accent: 'accent',
+                icon: 'compass',
+                maxItems: 4,
+                emptyText: 'No hay acciones disponibles',
+                emptyDescription: 'Las acciones rápidas van a aparecer acá.',
+                errorText: 'No pudimos cargar las acciones',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card I — Últimos posts (Row 2 right, ⅔)
+        // top 5 published posts by publishedAt:desc — mirrors card B on the
+        // previous row so the editor scans freshest content of both surfaces.
+        {
+            id: 'editor-card-i',
+            type: 'list',
+            label: {
+                es: 'Últimos posts',
+                en: 'Latest posts',
+                pt: 'Últimos posts'
+            },
+            scope: 'all',
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'editor.posts.latest',
+                accent: 'success',
+                icon: 'article',
+                maxItems: 5,
+                emptyText: 'Sin posts publicados',
+                emptyDescription: 'Cuando publiques tu primer post, va a aparecer acá.',
+                errorText: 'No pudimos cargar los posts',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // -- Row 3: Campañas (⅓) + Estadísticas eventos (⅔) --
+        // Compact campaigns list next to the 6-tile event stats hero.
+
+        // Card D — Campañas recientes (Row 3 left, ⅓)
         {
             id: 'editor-card-d',
             type: 'list',
             label: {
-                es: 'Campañas Newsletter',
-                en: 'Newsletter campaigns',
-                pt: 'Campanhas Newsletter'
+                es: 'Campañas recientes',
+                en: 'Recent campaigns',
+                pt: 'Campanhas recentes'
             },
             scope: 'all',
             config: {
                 source: 'editor.newsletter.campaigns',
-                maxItems: 3
+                accent: 'purple',
+                icon: 'activity',
+                maxItems: 3,
+                emptyText: 'Aún no hay campañas',
+                emptyDescription: 'Cuando crees tu primera campaña vas a verla acá con su estado.',
+                errorText: 'No pudimos cargar las campañas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
-        // Card E — Estadísticas blog
-        // status distribution + popular posts + total published + posts-per-month trend
-        // source: editor.posts.stats (fetches all in parallel)
-        // DeferredWidget for views per post (SPEC-159 — cross-entity view tracking)
+        // Card F — Estadísticas eventos (Row 3 right, ⅔)
+        // 6-tile mini-grid: 3 counters (Total / Próximos / Destacados) +
+        // 3 content-health proxies (Sin imagen / Sin ubicación / Sin organizer)
+        // + 2 deferred placeholder tiles (Vistas, Favoritos) below the grid.
+        {
+            id: 'editor-card-f',
+            type: 'kpi',
+            label: {
+                es: 'Estadísticas eventos',
+                en: 'Event statistics',
+                pt: 'Estatísticas eventos'
+            },
+            scope: 'all',
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'editor.events.stats',
+                accent: 'cyan',
+                icon: 'calendar',
+                emptyText: 'Aún sin eventos',
+                emptyDescription: 'Cuando agregues el primer evento, vas a ver el total acá.',
+                errorText: 'No pudimos cargar las estadísticas',
+                errorDescription: 'Probá actualizar el panel.',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        label: 'Vistas',
+                        description:
+                            'Vistas por evento — disponible cuando se implemente el tracking de vistas (SPEC-159).'
+                    },
+                    {
+                        phaseSpec: 'SPEC-EVENT-FAV',
+                        label: 'Favoritos',
+                        description:
+                            'Eventos favoriteados — requiere agregar el contador de favoritos al schema event (nuevo SPEC).'
+                    }
+                ]
+            }
+        },
+
+        // -- Row 4: Distribución (½) + Suscriptores Newsletter (½) --
+        // Two half-width metric cards. Suscriptores no longer needs a full
+        // row — paired with the chart it reads as a single "audience snapshot".
+
+        // Card E — Distribución de publicaciones (Row 4 left, ½)
+        // status distribution bar chart (Publicados / Borradores / Archivados).
         {
             id: 'editor-card-e',
             type: 'chart',
             label: {
-                es: 'Estadísticas blog',
-                en: 'Blog statistics',
-                pt: 'Estatísticas blog'
+                es: 'Distribución de publicaciones',
+                en: 'Posts distribution',
+                pt: 'Distribuição de publicações'
             },
             scope: 'all',
+            gridSpan: { cols: 'half' },
             config: {
                 source: 'editor.posts.stats',
                 chartType: 'bar',
+                accent: 'river',
+                icon: 'chart',
+                emptyText: 'Aún sin estadísticas',
+                emptyDescription: 'Las métricas van apareciendo a medida que publiques contenido.',
+                errorText: 'No pudimos cargar las estadísticas',
+                errorDescription: 'Probá actualizar el panel.',
                 deferredSlots: [
                     {
                         phaseSpec: 'SPEC-159',
@@ -357,54 +669,96 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card F — Estadísticas eventos
-        // total events count
-        // source: editor.events.stats
-        // DeferredWidget for views per event (SPEC-159 — cross-entity view tracking)
+        // Card C — Suscriptores Newsletter (Row 4 right, ½)
+        // 3-tile mini-grid (Activos / En verificación / Dados de baja)
+        // + deferred "Tasa de apertura" placeholder below the grid.
         {
-            id: 'editor-card-f',
+            id: 'editor-card-c',
             type: 'kpi',
             label: {
-                es: 'Estadísticas eventos',
-                en: 'Event statistics',
-                pt: 'Estatísticas eventos'
+                es: 'Suscriptores Newsletter',
+                en: 'Newsletter subscribers',
+                pt: 'Assinantes Newsletter'
             },
             scope: 'all',
+            gridSpan: { cols: 'half' },
             config: {
-                source: 'editor.events.stats',
+                source: 'editor.newsletter.subscribers',
+                accent: 'sky',
+                icon: 'users',
+                emptyText: 'Sin suscriptores',
+                emptyDescription:
+                    'Cuando los lectores se sumen a la newsletter, vas a ver el desglose acá.',
+                errorText: 'No pudimos cargar los suscriptores',
+                errorDescription: 'Probá actualizar el panel.',
                 deferredSlots: [
                     {
-                        phaseSpec: 'SPEC-159',
+                        phaseSpec: 'SPEC-160',
+                        label: 'Tasa de apertura',
                         description:
-                            'Vistas por evento — disponible cuando se implemente el tracking de vistas.'
+                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email (SPEC-160).'
                     }
                 ]
             }
         },
 
-        // Card G — Salud
-        // content completeness checklist — computed client-side from loaded post/event lists
-        // checkset: 'content-health' → posts: missing featured image / tags / SEO;
-        //                               events: missing featured image / locationId / organizerId / description
+        // Card G1 — Salud del contenido · Posts (Row 6 left, half width)
+        // Per-post grouped health (one row per post with completeness %,
+        // missing-field chips, View/Edit actions). The widget shows top 10
+        // worst-rated inline and exposes the rest via a "Ver los X restantes"
+        // dialog.
         {
-            id: 'editor-card-g',
+            id: 'editor-card-g-posts',
             type: 'checklist',
             label: {
-                es: 'Salud',
-                en: 'Health',
-                pt: 'Saúde'
+                es: 'Salud del contenido · Posts',
+                en: 'Content health · Posts',
+                pt: 'Saúde do conteúdo · Posts'
             },
             scope: 'all',
+            // Bento: half-width — pairs side-by-side with G2 on the same row.
+            gridSpan: { cols: 'half' },
             config: {
-                checkset: 'content-health'
-                // No `source` — computed from loaded entity lists injected by the card renderer.
+                source: 'editor.content.health.posts',
+                checkset: 'content-health',
+                accent: 'success',
+                icon: 'article',
+                emptyText: '¡Todo en orden!',
+                emptyDescription: 'Ningún post tiene observaciones pendientes.',
+                errorText: 'No pudimos evaluar la salud de los posts',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
-        // Card H — Comentarios
-        // DeferredWidget — recent comments endpoint must be verified/built (SPEC-165)
-        // The whole card is deferred; `onMissing: 'hide'` keeps it invisible until the
-        // backend lands.
+        // Card G2 — Salud del contenido · Eventos (Row 5 right, half width)
+        // Per-event grouped health, same shape as the posts variant.
+        {
+            id: 'editor-card-g-events',
+            type: 'checklist',
+            label: {
+                es: 'Salud del contenido · Eventos',
+                en: 'Content health · Events',
+                pt: 'Saúde do conteúdo · Eventos'
+            },
+            scope: 'all',
+            // Bento: half-width — pairs with G1 on the same row.
+            gridSpan: { cols: 'half' },
+            config: {
+                source: 'editor.content.health.events',
+                checkset: 'content-health',
+                accent: 'cyan',
+                icon: 'calendar',
+                emptyText: '¡Todo en orden!',
+                emptyDescription: 'Ningún evento tiene observaciones pendientes.',
+                errorText: 'No pudimos evaluar la salud de los eventos',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card H — Comentarios (Row 6, full width banner)
+        // DeferredWidget — recent comments endpoint pending SPEC-165.
+        // Sits at the bottom as a full-width banner so the placeholder
+        // doesn't leave a lopsided half on any other row.
         {
             id: 'editor-card-h',
             type: 'callout',
@@ -415,9 +769,12 @@ const editorDashboard: DashboardInput = {
             },
             scope: 'all',
             onMissing: 'hide',
+            gridSpan: { cols: 3 },
             config: {
                 deferred: true,
                 phaseSpec: 'SPEC-165',
+                accent: 'warning',
+                icon: 'chat',
                 description:
                     'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
             }
@@ -465,6 +822,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Estatísticas de entidades'
             },
             scope: 'all',
+            // Bento: full-width hero — 6 horizontal KPI tiles benefit from max width.
+            gridSpan: { cols: 3 },
             config: { source: 'admin.entities.counts', accent: 'river', icon: 'chart' }
         },
 
@@ -480,6 +839,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Últimos alojamentos'
             },
             scope: 'all',
+            // Bento: tall (1×2) — vertical list of 5 needs height to breathe.
+            gridSpan: { rows: 2 },
             config: {
                 source: 'admin.accommodations.latest',
                 accent: 'river',
@@ -524,6 +885,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Crons'
             },
             scope: 'all',
+            // Bento: big square (2×2) — grouped list with categories + scrollable body.
+            gridSpan: { cols: 2, rows: 2 },
             config: {
                 source: 'admin.crons.list',
                 accent: 'teal',
@@ -553,6 +916,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Estado do sistema'
             },
             scope: 'all',
+            // Bento: wide (2×1) — 3 chips + 4 metric tiles row needs horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'admin.system.health',
                 accent: 'forest',
@@ -611,6 +976,8 @@ const adminBaseDashboard: DashboardInput = {
                 pt: 'Usuários'
             },
             scope: 'all',
+            // Bento: wide (2×1) — horizontal ranking bars need width to show role spread.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'admin.users.stats',
                 chartType: 'ranking',
@@ -703,6 +1070,8 @@ export const superAdminOnlySection: DashboardInput = {
             },
             scope: 'all',
             onMissing: 'hide',
+            // Bento: wide (2×1) — 5 KPIs + companion chart line need horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'super.billing.stats',
                 accent: 'success',
@@ -752,7 +1121,7 @@ const superAdminDashboard: DashboardInput = {
  * The renderer looks up the active dashboard from this registry.
  *
  * Named source objects (SPEC-155 AC-4):
- * - `hostDashboard`          — HOST role (7 cards)
+ * - `hostDashboard`          — HOST role (10 cards)
  * - `editorDashboard`        — EDITOR role (8 cards)
  * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
  * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)

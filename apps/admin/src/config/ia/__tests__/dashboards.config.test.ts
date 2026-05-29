@@ -53,12 +53,17 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     // T-018 HOST (host.ts)
     'host.accommodations.count',
     'host.accommodations.drafts',
+    'host.accommodations.entities',
     'host.billing.plan',
     'host.conversations.pending',
+    'host.profile.current',
     'host.reviews.latest',
     'host.stats.favorites',
     'host.stats.response-rate',
     'host.stats.ratings',
+    'host.stats.conversations-monthly',
+    'host.stats.market-comparison',
+    'host.suggestions.list',
 
     // T-019 EDITOR (editor.ts)
     'editor.posts.published-this-month',
@@ -68,6 +73,10 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'editor.newsletter.campaigns',
     'editor.posts.stats',
     'editor.events.stats',
+    'editor.posts.latest',
+    'editor.shortcuts',
+    'editor.content.health.posts',
+    'editor.content.health.events',
 
     // T-020 ADMIN (admin.ts)
     'admin.accommodations.latest',
@@ -154,12 +163,12 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
     // ── 2. Card counts ────────────────────────────────────────────────────────
 
     describe('Card counts', () => {
-        it('hostDashboard has exactly 7 widgets', () => {
-            expect(dashboards.hostDashboard.widgets).toHaveLength(7);
+        it('hostDashboard has exactly 10 widgets', () => {
+            expect(dashboards.hostDashboard.widgets).toHaveLength(10);
         });
 
-        it('editorDashboard has exactly 8 widgets', () => {
-            expect(dashboards.editorDashboard.widgets).toHaveLength(8);
+        it('editorDashboard has exactly 11 widgets', () => {
+            expect(dashboards.editorDashboard.widgets).toHaveLength(11);
         });
 
         it('adminBaseDashboard has exactly 7 widgets', () => {

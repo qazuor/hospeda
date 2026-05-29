@@ -18,6 +18,7 @@ import { createRouter } from '../../../utils/create-app';
 import { archiveProtectedConversationRoute } from './archive';
 import { initiateProtectedConversationRoute } from './initiate';
 import { listProtectedConversationsRoute } from './list';
+import { hostConversationMonthlyInquiriesRoute } from './monthly-inquiries';
 import { replyProtectedConversationRoute } from './reply';
 import { hostConversationResponseRateRoute } from './response-rate';
 import { threadProtectedConversationRoute } from './thread';
@@ -46,7 +47,12 @@ app.route('/', replyProtectedConversationRoute);
 // Archive toggle (PATCH /:id/archive)
 app.route('/', archiveProtectedConversationRoute);
 
-// Host response-rate KPIs (GET /me/response-rate) — SPEC-155 T-006
-app.route('/me', hostConversationResponseRateRoute);
+// Host response-rate KPIs (GET /me/response-rate) — SPEC-155 T-006.
+// The route file declares the full `/me/response-rate` path, so mount at
+// '/' to avoid the previously-broken double-prefix `/me/me/response-rate`.
+app.route('/', hostConversationResponseRateRoute);
+
+// Host monthly inquiry trend (GET /me/monthly-inquiries) — SPEC-155 card I
+app.route('/', hostConversationMonthlyInquiriesRoute);
 
 export { app as protectedConversationRoutes };
