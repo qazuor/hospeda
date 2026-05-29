@@ -1829,6 +1829,22 @@
             "archived": false,
             "tags": ["security", "permissions", "data-leak"],
             "note": "Spec written, doc-only PR #1299 to staging. Confirmed read-only data leak: HOST holds ACCOMMODATION_VIEW_ALL so it can list+view all accommodations via the admin endpoints reused by /me/accommodations (ownerId is only an optional filter). Design: new _VIEW_OWN permission tier + server-side forced owner-scoping on adminList AND getById (_canAdminView) + per-entity ownership resolver + lightweight /options lookup endpoints for relation selectors + beforeLoad front guard. Write/destructive ops verified ownership-safe for accommodation; audit extends across all owner-scoped entities incl UI-less routes. Decisions: EDITOR keep, CLIENT_MANAGER deferred, selectors=Option A. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized."
+        },
+        {
+            "specId": "SPEC-173",
+            "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-173-ai-core",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-173-ai-core",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-173-ai-core",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
+            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
         }
     ]
 }
