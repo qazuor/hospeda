@@ -589,14 +589,18 @@
         {
             "specId": "SPEC-169",
             "title": "Role Permission Audit + Owner-Scoped Data Access",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "32/32",
             "path": "SPEC-169-role-permission-own-scoping",
             "branch": "fix/SPEC-169-role-permission-own-scoping",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-169-role-permission-own-scoping",
             "base": "staging",
             "createdAt": "2026-05-28T00:00:00.000Z",
-            "note": "Atomized into 32 tasks (avg complexity 2.3, 6 phases) via task-from-spec. T-003 is a HARD owner-review GATE that blocks ALL implementation; §12 decision checkpoints embedded in T-004/005/006/008/009/010/017/018/020/021/022/030. Backbone: audit (read+write passes incl UI-less routes) → schema _VIEW_OWN → service forced owner-scoping on adminList + _canAdminView on getById + ownership resolver → seed (remove HOST VIEW_ALL, EDITOR rationale, CLIENT_MANAGER untouched) → /options lookup endpoints + selector migration → beforeLoad front guard → AC-1..AC-11 tests. Read-only data-leak fix (HOST holds ACCOMMODATION_VIEW_ALL). SS12: consult owner on ANY ambiguity."
+            "archived": true,
+            "archivedAt": "2026-05-29T17:49:53.000Z",
+            "completionRef": "PR #1320 (merge commit 557909a0acbf52769fcd4f5eb660a212daae8433) to staging",
+            "archiveNote": "Shipped 32/32. HOST accommodation read-leak closed (VIEW_ALL→VIEW_OWN + forced server-side owner-scoping + 404 anti-enum + /options tier + front guard + AC-6 systemic guard). Live e2e smoke passed. Merged via owner override over preexisting ajeno CI red (admin/lint/build, predates branch). SPEC-170 (per-user permission panel) spun off.",
+            "note": "Atomized into 32 tasks (avg complexity 2.3, 6 phases) via task-from-spec. T-003 owner-review GATE + §12 checkpoints. Backbone: audit → schema _VIEW_OWN → service forced owner-scoping on adminList + _canAdminView on getById + ownership resolver → seed (HOST VIEW_ALL→VIEW_OWN, EDITOR rationale, CLIENT_MANAGER untouched) → /options endpoints + selector migration → beforeLoad guard → AC-1..AC-11 tests. Read-only data-leak fix."
         },
         {
             "specId": "SPEC-170",
