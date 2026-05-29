@@ -503,16 +503,18 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card D — Campañas Newsletter
-        // scheduled campaigns list (top 3)
+        // Card D — Campañas recientes
+        // top 3 most recent campaigns by created_desc (any status). The MVP
+        // campaign enum has no SCHEDULED state, so "recent activity" is the
+        // useful framing; each row's badge surfaces the per-campaign status.
         // source: editor.newsletter.campaigns (NEWSLETTER_CAMPAIGN_VIEW permission)
         {
             id: 'editor-card-d',
             type: 'list',
             label: {
-                es: 'Campañas Newsletter',
-                en: 'Newsletter campaigns',
-                pt: 'Campanhas Newsletter'
+                es: 'Campañas recientes',
+                en: 'Recent campaigns',
+                pt: 'Campanhas recentes'
             },
             scope: 'all',
             config: {

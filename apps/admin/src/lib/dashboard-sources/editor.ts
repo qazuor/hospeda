@@ -11,10 +11,10 @@
  * | Source ID                              | Card | Scope | Endpoint(s) |
  * |----------------------------------------|------|-------|-------------|
  * | `editor.posts.published-this-month`    | A    | all   | GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1 |
- * | `editor.posts.drafts`                  | A    | all   | GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc |
- * | `editor.events.upcoming`               | B    | all   | GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc + featured |
- * | `editor.newsletter.subscribers`        | C    | all   | GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1 + GET /api/v1/admin/newsletter/subscribers/by-preference |
- * | `editor.newsletter.campaigns`          | D    | all   | GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3 |
+ * | `editor.posts.drafts`                  | A    | all   | GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc |
+ * | `editor.events.upcoming`               | B    | all   | GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=startDate:asc + featured |
+ * | `editor.newsletter.subscribers`        | C    | all   | GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1 + GET /api/v1/admin/newsletter/subscribers/by-preference |
+ * | `editor.newsletter.campaigns`          | D    | all   | GET /api/v1/admin/newsletter/campaigns?pageSize=3 (sort defaults to createdAt:desc) |
  * | `editor.posts.stats`                   | E    | all   | GET /api/v1/admin/posts (status distribution) + popular + count + trend |
  * | `editor.events.stats`                  | F    | all   | GET /api/v1/admin/events?pageSize=1 (total) |
  *
@@ -47,11 +47,18 @@ import {
 // RESPONSE TYPE SHAPES
 // ============================================================================
 
-/** Minimal admin list response wrapper used for pagination totals. */
+/**
+ * Minimal admin list response wrapper.
+ *
+ * The Hono admin list factory wraps responses as
+ * `{ success, data: { items, pagination }, metadata }`. After `fetchApi`
+ * adds its own `{ data, status }` envelope, the path to the array is
+ * `result.data.data.items` and the total is `result.data.data.pagination.total`.
+ */
 interface AdminListApiResponse<T = unknown> {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<T>;
+        readonly items?: ReadonlyArray<T>;
         readonly pagination?: { readonly total?: number };
     };
 }
@@ -62,6 +69,8 @@ interface PostItem {
     readonly title: string;
     readonly status: string;
     readonly createdAt?: string;
+    readonly updatedAt?: string;
+    readonly publishedAt?: string | null;
     readonly likes?: number;
     readonly comments?: number;
     readonly shares?: number;
@@ -70,13 +79,16 @@ interface PostItem {
     readonly seoTitle?: string;
 }
 
-/** Shape of an event item in admin list responses. */
+/**
+ * Shape of an event item in admin list responses.
+ * The event entity stores its start/end inside a JSONB `date` object, not flat columns.
+ */
 interface EventItem {
     readonly id: string;
-    readonly title: string;
-    readonly status: string;
+    readonly name: string;
+    readonly status?: string;
     readonly isFeatured?: boolean;
-    readonly startDate?: string;
+    readonly date?: { readonly start?: string; readonly end?: string };
     readonly featuredImage?: string;
     readonly locationId?: string;
     readonly organizerId?: string;
@@ -126,7 +138,7 @@ function nowIso(): string {
  * Scope: `'all'`
  * Endpoints:
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
- *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc
+ *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
  */
 registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
@@ -153,20 +165,21 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
  *
  * Source ID: `'editor.posts.drafts'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc
+ * Endpoint: GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
  */
 registerDataSource('editor.posts.drafts', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.drafts', ctx),
     queryFn: async () => {
         const result = await fetchApi<AdminListApiResponse<PostItem>>({
-            path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc'
+            path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc'
         });
-        const items = result.data.data?.data ?? [];
+        const items = result.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget (companion source).
+        // Sort key is `updatedAt:desc`, so meta shows "last edited" rather than created.
         return items.map((post) => ({
             id: post.id,
             label: post.title,
-            meta: post.createdAt ? new Date(post.createdAt).toLocaleDateString('es-AR') : undefined,
+            meta: post.updatedAt ? new Date(post.updatedAt).toLocaleDateString('es-AR') : undefined,
             href: `/contenido/posts/${post.id}`
         }));
     },
@@ -178,34 +191,43 @@ registerDataSource('editor.posts.drafts', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card B: upcoming events count, list, and featured upcoming list.
+ * EDITOR card B: upcoming events list (top 5 by start date asc).
+ *
+ * The admin events list does NOT accept `sort=startDate:*` (it's a JSONB
+ * `date.start` field, not a column — only the public route exposes the
+ * synthetic sort). We page a 20-row buffer with `startDateAfter={now}` to
+ * cap the candidate set, then sort + slice client-side.
  *
  * Source ID: `'editor.events.upcoming'`
  * Scope: `'all'`
- * Endpoints:
- *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=1
- *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc
- *   - GET /api/v1/admin/events?isFeatured=true&startDateAfter={now}&pageSize=5
+ * Endpoint: GET /api/v1/admin/events?startDateAfter={now}&pageSize=20
  */
 registerDataSource('editor.events.upcoming', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.upcoming', ctx),
     queryFn: async () => {
         const now = nowIso();
-        // Only the upcoming list is needed for the ListWidget.
-        // Count and featured queries are dropped from this resolver; if a future
-        // multi-stat card needs them, add a separate dedicated source.
         const listResult = await fetchApi<AdminListApiResponse<EventItem>>({
-            path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=5&sort=start_date_asc`
+            path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=20`
         });
 
-        const upcomingItems = listResult.data.data?.data ?? [];
+        const upcomingItems = listResult.data.data?.items ?? [];
+
+        // Client-side sort by start date ascending; events without a date land last.
+        const sorted = [...upcomingItems].sort((a, b) => {
+            const aStart = a.date?.start;
+            const bStart = b.date?.start;
+            if (!aStart && !bStart) return 0;
+            if (!aStart) return 1;
+            if (!bStart) return -1;
+            return aStart.localeCompare(bStart);
+        });
 
         // Normalize to ListItem[] shape expected by ListWidget.
-        return upcomingItems.map((event) => ({
+        return sorted.slice(0, 5).map((event) => ({
             id: event.id,
-            label: event.title,
-            meta: event.startDate
-                ? new Date(event.startDate).toLocaleDateString('es-AR')
+            label: event.name,
+            meta: event.date?.start
+                ? new Date(event.date.start).toLocaleDateString('es-AR')
                 : undefined,
             badge: event.isFeatured ? 'destacado' : undefined,
             href: `/catalogo/eventos/${event.id}`
@@ -230,8 +252,11 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
  * Source ID: `'editor.newsletter.subscribers'`
  * Scope: `'all'`
  * Endpoints:
- *   - GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1
  *   - GET /api/v1/admin/newsletter/subscribers/by-preference
+ *
+ * Note: filter param is `subscriberStatus` (not `status`) — the admin search
+ * schema renames it to avoid shadowing the base `LifecycleStatusEnum` filter.
  */
 registerDataSource('editor.newsletter.subscribers', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.subscribers', ctx),
@@ -240,7 +265,7 @@ registerDataSource('editor.newsletter.subscribers', (ctx) => ({
         // The by-preference breakdown is useful for a future chart/table widget
         // but is not consumed by KpiWidget, so we skip that fetch here.
         const countResult = await fetchApi<AdminListApiResponse>({
-            path: '/api/v1/admin/newsletter/subscribers?status=active&pageSize=1'
+            path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1'
         });
 
         const activeCount = countResult.data.data?.pagination?.total ?? 0;
@@ -252,25 +277,31 @@ registerDataSource('editor.newsletter.subscribers', (ctx) => ({
 }));
 
 // ============================================================================
-// CARD D — Campañas Newsletter: scheduled campaigns
+// CARD D — Campañas Newsletter: recent campaigns
 // ============================================================================
 
 /**
- * EDITOR card D: upcoming scheduled newsletter campaigns.
+ * EDITOR card D: most recent newsletter campaigns regardless of status.
+ *
+ * The campaign status enum is `DRAFT | SENDING | SENT | CANCELLED` — there
+ * is no `SCHEDULED` state in MVP (scheduled sends are V2). Showing the latest
+ * activity by created_desc is more useful day-to-day than filtering by a
+ * single status; the row badge surfaces the per-campaign status.
  *
  * Requires `NEWSLETTER_CAMPAIGN_VIEW` permission (granted to EDITOR per 03c).
  *
  * Source ID: `'editor.newsletter.campaigns'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3
+ * Endpoint: GET /api/v1/admin/newsletter/campaigns?pageSize=3
+ * (sort defaults to `createdAt:desc` per AdminSearchBaseSchema)
  */
 registerDataSource('editor.newsletter.campaigns', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.campaigns', ctx),
     queryFn: async () => {
         const result = await fetchApi<AdminListApiResponse<CampaignItem>>({
-            path: '/api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3'
+            path: '/api/v1/admin/newsletter/campaigns?pageSize=3'
         });
-        const campaigns = result.data.data?.data ?? [];
+        const campaigns = result.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget.
         return campaigns.map((campaign) => ({
             id: campaign.id,
