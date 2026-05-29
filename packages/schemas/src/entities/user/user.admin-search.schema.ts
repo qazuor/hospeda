@@ -22,8 +22,21 @@ import { RoleEnumSchema } from '../../enums/index.js';
  * ```
  */
 export const UserAdminSearchSchema = AdminSearchBaseSchema.extend({
-    /** Filter by user role */
+    /** Filter by user role (single value, kept for backwards compatibility) */
     role: RoleEnumSchema.optional().describe('Filter by user role'),
+    /**
+     * Filter by multiple user roles (comma-separated list).
+     *
+     * Accepts the wire format `roles=HOST,EDITOR`. Each entry is validated
+     * against `RoleEnumSchema`; an invalid entry rejects the entire request.
+     * Coexists with `role`; if both are present, the resolver intersects them.
+     */
+    roles: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .pipe(z.array(RoleEnumSchema))
+        .optional()
+        .describe('Filter by multiple user roles (comma-separated list)'),
     /** Filter by email (partial match) */
     email: z.string().optional().describe('Filter by email (partial match)'),
     /** Filter by auth provider */
