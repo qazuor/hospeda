@@ -464,7 +464,6 @@ const editorDashboard: DashboardInput = {
             gridSpan: { cols: 2 },
             config: {
                 source: 'editor.posts.published-this-month',
-                companionSource: 'editor.posts.drafts',
                 accent: 'success',
                 icon: 'article',
                 emptyText: 'Aún no publicaste posts este mes',
@@ -537,9 +536,15 @@ const editorDashboard: DashboardInput = {
         },
 
         // Card F — Estadísticas eventos
-        // total events count
+        // 3-tile mini grid (Total / Próximos / Destacados) via resolver kpis[]
         // source: editor.events.stats
-        // DeferredWidget for views per event (SPEC-159 — cross-entity view tracking)
+        //
+        // NOTE: a `deferredSlots: [{ phaseSpec: 'SPEC-159' }]` for "vistas
+        // por evento" was dropped from this config because KpiWidget renders
+        // deferred slots INSIDE the multi-KPI grid when `kpis[]` is present,
+        // producing a phantom 4th tile labelled with the phase id and a
+        // value derived from the phase number. Re-add once the widget
+        // supports a separate deferred section beneath the grid.
         {
             id: 'editor-card-f',
             type: 'kpi',
@@ -549,7 +554,7 @@ const editorDashboard: DashboardInput = {
                 pt: 'Estatísticas eventos'
             },
             scope: 'all',
-            // Bento: compact (1×1) — single counter; pairs with card B on the row.
+            // Bento: compact (1×1) — multi-KPI tiles stack at this width.
             config: {
                 source: 'editor.events.stats',
                 accent: 'cyan',
@@ -557,14 +562,7 @@ const editorDashboard: DashboardInput = {
                 emptyText: 'Aún sin eventos',
                 emptyDescription: 'Cuando agregues el primer evento, vas a ver el total acá.',
                 errorText: 'No pudimos cargar las estadísticas',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        description:
-                            'Vistas por evento — disponible cuando se implemente el tracking de vistas.'
-                    }
-                ]
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 

@@ -132,11 +132,15 @@ function nowIso(): string {
 // ============================================================================
 
 /**
- * EDITOR card A: posts published this month (count) and pending drafts (list).
+ * EDITOR card A: posts published this month (KPI) + pending drafts companion.
+ *
+ * Returns a `KpiData` shape with both `value` (KPI hero) and
+ * `companionItems`/`companionLabel` so the KpiWidget renders the drafts
+ * list directly under the counter — same pattern HOST card A uses.
  *
  * Source ID: `'editor.posts.published-this-month'`
  * Scope: `'all'`
- * Endpoints:
+ * Endpoints (parallel):
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
  *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
  */
@@ -144,16 +148,30 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
     queryFn: async () => {
         const monthStart = currentMonthStart();
-        // Only the published count is needed — drafts are loaded by the companion
-        // source `editor.posts.drafts` which ListWidget uses separately.
-        const publishedResult = await fetchApi<AdminListApiResponse<PostItem>>({
-            path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
-        });
+        const [publishedResult, draftsResult] = await Promise.all([
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
+            }),
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc'
+            })
+        ]);
 
         const publishedThisMonth = publishedResult.data.data?.pagination?.total ?? 0;
+        const draftItems = draftsResult.data.data?.items ?? [];
+        const draftTotal = draftsResult.data.data?.pagination?.total ?? 0;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: publishedThisMonth };
+        const companionItems = draftItems.map((post) => ({
+            key: post.id,
+            label: post.title,
+            href: `/contenido/posts/${post.id}`
+        }));
+
+        return {
+            value: publishedThisMonth,
+            companionLabel: draftTotal > 0 ? `${draftTotal} borradores sin publicar` : undefined,
+            companionItems
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -386,23 +404,68 @@ registerDataSource('editor.posts.stats', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card F: total events count.
+ * EDITOR card F: events stats as a 3-tile mini grid (Total / Próximos / Destacados).
+ *
+ * Three parallel count queries; the KpiWidget renders a multi-KPI grid when
+ * `kpis[]` is provided (same shape HOST card A uses for "Total/Activos/Borradores").
  *
  * Views per event are PHASE 2 (cross-entity view tracking not built).
  *
  * Source ID: `'editor.events.stats'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/events?pageSize=1
+ * Endpoints (parallel):
+ *   - GET /api/v1/admin/events?pageSize=1                              (total)
+ *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=1         (upcoming)
+ *   - GET /api/v1/admin/events?isFeatured=true&pageSize=1              (featured)
  */
 registerDataSource('editor.events.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.stats', ctx),
     queryFn: async () => {
-        const result = await fetchApi<AdminListApiResponse<EventItem>>({
-            path: '/api/v1/admin/events?pageSize=1'
-        });
-        const totalEvents = result.data.data?.pagination?.total ?? 0;
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: totalEvents };
+        const now = nowIso();
+        const [totalResult, upcomingResult, featuredResult] = await Promise.all([
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=1`
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?isFeatured=true&pageSize=1'
+            })
+        ]);
+
+        const total = totalResult.data.data?.pagination?.total ?? 0;
+        const upcoming = upcomingResult.data.data?.pagination?.total ?? 0;
+        const featured = featuredResult.data.data?.pagination?.total ?? 0;
+
+        return {
+            kpis: [
+                {
+                    key: 'total',
+                    label: { es: 'Total', en: 'Total', pt: 'Total' },
+                    value: total,
+                    accent: 'cyan',
+                    icon: 'calendar',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'upcoming',
+                    label: { es: 'Próximos', en: 'Upcoming', pt: 'Próximos' },
+                    value: upcoming,
+                    accent: 'success',
+                    icon: 'clock',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'featured',
+                    label: { es: 'Destacados', en: 'Featured', pt: 'Destaques' },
+                    value: featured,
+                    accent: 'warning',
+                    icon: 'star',
+                    href: '/catalogo/eventos?isFeatured=true'
+                }
+            ]
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
