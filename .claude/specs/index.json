@@ -1795,6 +1795,21 @@
             "archived": false,
             "tags": ["security", "permissions", "data-leak"],
             "note": "Spec written, doc-only PR #1299 to staging. Confirmed read-only data leak: HOST holds ACCOMMODATION_VIEW_ALL so it can list+view all accommodations via the admin endpoints reused by /me/accommodations (ownerId is only an optional filter). Design: new _VIEW_OWN permission tier + server-side forced owner-scoping on adminList AND getById (_canAdminView) + per-entity ownership resolver + lightweight /options lookup endpoints for relation selectors + beforeLoad front guard. Write/destructive ops verified ownership-safe for accommodation; audit extends across all owner-scoped entities incl UI-less routes. Decisions: EDITOR keep, CLIENT_MANAGER deferred, selectors=Option A. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized."
+        },
+        {
+            "specId": "SPEC-170",
+            "title": "Per-User Granular Permission Management Panel",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-170-user-permission-management",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-170-user-permission-management",
+            "base": "staging",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["permissions", "admin", "rbac", "frontend"],
+            "note": "Spun off from SPEC-169 decision D7. Backend for per-user permission overrides ALREADY EXISTS (user_permission table + PermissionService.assign/revoke + actor.middleware merges role+overrides). Missing = admin UI (the /access/users/:id/permissions 'Direct Permission Overrides' card is a half-finished stub) + grant/revoke API endpoints + categorized permission picker over the ~270-permission catalog. Mostly a UI build on a complete backend. Includes a COMMENTED posts section: posts use author-fallback model (not _OWN/_ANY), so 'manage my own posts' (edit/delete/publish) already works via author fallback, 'manage all posts' is grantable (POST_RESTORE/HARD_DELETE), but 'restore/hard-delete only my own' needs a deferred _OWN model change (Q4). 6 open questions for owner (gating, deny-overrides, picker UX, posts _OWN, publish behavior, audit log). Draft — NOT atomized, implementation not started."
         }
     ]
 }
