@@ -945,6 +945,63 @@
             "email": "soporte@hospeda.com.ar"
         }
     },
+    "announcements": {
+        "title": "Anuncios globales",
+        "subtitle": "Mensajes que se muestran en la web para todos los visitantes",
+        "list": {
+            "loading": "Cargando anuncios…",
+            "error": "No pudimos cargar los anuncios. Intentá de nuevo.",
+            "empty": {
+                "title": "Todavía no hay anuncios",
+                "description": "Cuando publiques uno aparecerá acá y en el sitio."
+            },
+            "newAnnouncement": "Nuevo anuncio",
+            "editAction": "Editar",
+            "deleteAction": "Eliminar",
+            "deleteConfirm": "¿Eliminar este anuncio? No se puede deshacer.",
+            "deleteError": "No pudimos eliminar el anuncio. Intentá de nuevo.",
+            "deleteSuccess": "Anuncio eliminado"
+        },
+        "variant": {
+            "info": "Informativo",
+            "warning": "Advertencia",
+            "danger": "Crítico"
+        },
+        "dismissible": {
+            "yes": "El visitante puede cerrarlo",
+            "no": "Visible siempre"
+        },
+        "window": {
+            "alwaysOn": "Activo siempre",
+            "startsAt": "Desde {{date}}",
+            "endsAt": "Hasta {{date}}",
+            "between": "Del {{from}} al {{to}}"
+        },
+        "form": {
+            "createTitle": "Crear anuncio",
+            "createSubtitle": "Definí el mensaje, su variante y la ventana de publicación",
+            "editTitle": "Editar anuncio",
+            "editSubtitle": "Actualizá los datos del anuncio",
+            "textLabel": {
+                "es": "Texto (Español)",
+                "en": "Texto (Inglés)",
+                "pt": "Texto (Portugués)"
+            },
+            "textPlaceholder": "Escribí el mensaje del anuncio…",
+            "variantLabel": "Variante",
+            "dismissibleLabel": "Permitir que se cierre",
+            "dismissibleHint": "El visitante podrá ocultarlo después de leerlo.",
+            "startsAtLabel": "Empieza el (opcional)",
+            "endsAtLabel": "Termina el (opcional)",
+            "submitCreate": "Crear anuncio",
+            "submitEdit": "Guardar cambios",
+            "saving": "Guardando…",
+            "cancel": "Cancelar",
+            "errorGeneric": "No pudimos guardar el anuncio. Revisá los campos e intentá de nuevo.",
+            "errorRequiredText": "El texto es obligatorio en los 3 idiomas",
+            "errorEndBeforeStart": "La fecha de fin debe ser posterior a la de inicio"
+        }
+    },
     "billing": {
         "title": "Mi facturación",
         "subtitle": "Revisá tu plan, uso y opciones de pago",

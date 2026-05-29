@@ -945,6 +945,63 @@
             "email": "soporte@hospeda.com.ar"
         }
     },
+    "announcements": {
+        "title": "Comunicados globais",
+        "subtitle": "Mensagens exibidas no site para todos os visitantes",
+        "list": {
+            "loading": "Carregando comunicados…",
+            "error": "Não foi possível carregar os comunicados. Tente novamente.",
+            "empty": {
+                "title": "Ainda não há comunicados",
+                "description": "Quando você publicar um ele aparecerá aqui e no site."
+            },
+            "newAnnouncement": "Novo comunicado",
+            "editAction": "Editar",
+            "deleteAction": "Excluir",
+            "deleteConfirm": "Excluir este comunicado? Esta ação não pode ser desfeita.",
+            "deleteError": "Não foi possível excluir o comunicado. Tente novamente.",
+            "deleteSuccess": "Comunicado excluído"
+        },
+        "variant": {
+            "info": "Informativo",
+            "warning": "Aviso",
+            "danger": "Crítico"
+        },
+        "dismissible": {
+            "yes": "O visitante pode fechá-lo",
+            "no": "Sempre visível"
+        },
+        "window": {
+            "alwaysOn": "Sempre ativo",
+            "startsAt": "A partir de {{date}}",
+            "endsAt": "Até {{date}}",
+            "between": "De {{from}} a {{to}}"
+        },
+        "form": {
+            "createTitle": "Criar comunicado",
+            "createSubtitle": "Defina a mensagem, sua variante e a janela de publicação",
+            "editTitle": "Editar comunicado",
+            "editSubtitle": "Atualize os dados do comunicado",
+            "textLabel": {
+                "es": "Texto (Espanhol)",
+                "en": "Texto (Inglês)",
+                "pt": "Texto (Português)"
+            },
+            "textPlaceholder": "Escreva a mensagem do comunicado…",
+            "variantLabel": "Variante",
+            "dismissibleLabel": "Permitir fechar",
+            "dismissibleHint": "O visitante poderá ocultá-lo após a leitura.",
+            "startsAtLabel": "Começa em (opcional)",
+            "endsAtLabel": "Termina em (opcional)",
+            "submitCreate": "Criar comunicado",
+            "submitEdit": "Salvar alterações",
+            "saving": "Salvando…",
+            "cancel": "Cancelar",
+            "errorGeneric": "Não foi possível salvar o comunicado. Revise os campos e tente novamente.",
+            "errorRequiredText": "O texto é obrigatório nos 3 idiomas",
+            "errorEndBeforeStart": "A data de término deve ser posterior à de início"
+        }
+    },
     "billing": {
         "title": "Meu faturamento",
         "subtitle": "Revise seu plano, uso e opções de pagamento",

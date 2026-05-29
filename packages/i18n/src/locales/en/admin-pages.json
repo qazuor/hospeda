@@ -945,6 +945,63 @@
             "email": "soporte@hospeda.com.ar"
         }
     },
+    "announcements": {
+        "title": "Global announcements",
+        "subtitle": "Messages shown on the website to every visitor",
+        "list": {
+            "loading": "Loading announcements…",
+            "error": "We couldn't load the announcements. Please try again.",
+            "empty": {
+                "title": "There are no announcements yet",
+                "description": "When you publish one it will appear here and on the website."
+            },
+            "newAnnouncement": "New announcement",
+            "editAction": "Edit",
+            "deleteAction": "Delete",
+            "deleteConfirm": "Delete this announcement? This cannot be undone.",
+            "deleteError": "We couldn't delete the announcement. Please try again.",
+            "deleteSuccess": "Announcement deleted"
+        },
+        "variant": {
+            "info": "Informational",
+            "warning": "Warning",
+            "danger": "Critical"
+        },
+        "dismissible": {
+            "yes": "Visitor can dismiss",
+            "no": "Always visible"
+        },
+        "window": {
+            "alwaysOn": "Always on",
+            "startsAt": "From {{date}}",
+            "endsAt": "Until {{date}}",
+            "between": "{{from}} to {{to}}"
+        },
+        "form": {
+            "createTitle": "Create announcement",
+            "createSubtitle": "Set the message, its variant and the publication window",
+            "editTitle": "Edit announcement",
+            "editSubtitle": "Update the announcement details",
+            "textLabel": {
+                "es": "Text (Spanish)",
+                "en": "Text (English)",
+                "pt": "Text (Portuguese)"
+            },
+            "textPlaceholder": "Write the announcement message…",
+            "variantLabel": "Variant",
+            "dismissibleLabel": "Allow dismissal",
+            "dismissibleHint": "The visitor will be able to hide it after reading.",
+            "startsAtLabel": "Starts on (optional)",
+            "endsAtLabel": "Ends on (optional)",
+            "submitCreate": "Create announcement",
+            "submitEdit": "Save changes",
+            "saving": "Saving…",
+            "cancel": "Cancel",
+            "errorGeneric": "We couldn't save the announcement. Check the fields and try again.",
+            "errorRequiredText": "Text is required in all 3 languages",
+            "errorEndBeforeStart": "End date must be after the start date"
+        }
+    },
     "billing": {
         "title": "My billing",
         "subtitle": "Review your plan, usage and payment options",
