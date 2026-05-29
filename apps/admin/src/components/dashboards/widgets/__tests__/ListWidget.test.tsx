@@ -613,4 +613,149 @@ describe('ListWidget', () => {
             expect(label).toHaveTextContent('Hola');
         });
     });
+
+    // ── inlineMeta (SPEC-161 cron card D) ──────────────────────────────────
+
+    describe('inlineMeta', () => {
+        it('renders inlineMeta inline next to the label on line 1', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions([
+                    { id: '1', label: 'Purga de runs', inlineMeta: 'cada hora' }
+                ])
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            const inlineMeta = await screen.findByTestId('list-item-inline-meta');
+            expect(inlineMeta).toHaveTextContent('cada hora');
+        });
+
+        it('omits inlineMeta when the field is absent', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions([{ id: '1', label: 'Sin schedule' }])
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-item-label');
+            expect(screen.queryByTestId('list-item-inline-meta')).not.toBeInTheDocument();
+        });
+    });
+
+    // ── Collapsible groups (SPEC-161 cron card D) ──────────────────────────
+
+    describe('collapsibleGroups', () => {
+        /** Two categories, one of which has a failed + a timeout row. */
+        const GROUPED_ITEMS = [
+            {
+                id: 'a',
+                label: 'Job A',
+                group: 'Sistema',
+                statusBadge: { label: 'Falló', variant: 'destructive' as const }
+            },
+            {
+                id: 'b',
+                label: 'Job B',
+                group: 'Sistema',
+                statusBadge: { label: 'Timeout', variant: 'warning' as const }
+            },
+            {
+                id: 'c',
+                label: 'Job C',
+                group: 'Sistema',
+                statusBadge: { label: 'OK', variant: 'success' as const }
+            },
+            {
+                id: 'd',
+                label: 'Job D',
+                group: 'Facturación',
+                statusBadge: { label: 'OK', variant: 'success' as const }
+            }
+        ];
+
+        function makeCollapsibleWidget() {
+            return makeWidget({
+                config: { source: 'admin.crons.list', collapsibleGroups: true }
+            });
+        }
+
+        it('renders one collapsible panel per group with all panels collapsed by default', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(GROUPED_ITEMS)
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeCollapsibleWidget()} />
+                </TestWrapper>
+            );
+
+            const toggles = await screen.findAllByTestId('list-group-toggle');
+            expect(toggles).toHaveLength(2);
+            // Collapsed by default: no item rows are visible.
+            expect(screen.queryByTestId('list-item')).not.toBeInTheDocument();
+            // Each toggle reports collapsed via aria-expanded.
+            for (const toggle of toggles) {
+                expect(toggle).toHaveAttribute('aria-expanded', 'false');
+            }
+        });
+
+        it('shows the item count and a failure badge per group header', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(GROUPED_ITEMS)
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeCollapsibleWidget()} />
+                </TestWrapper>
+            );
+
+            // Counts: Sistema (3), Facturación (1) — rendered as a soft pill (number only).
+            const counts = await screen.findAllByTestId('list-group-count');
+            expect(counts.map((c) => c.textContent)).toEqual(['3', '1']);
+
+            // Failure badge: only Sistema (failed + timeout = 2); Facturación has none.
+            const failureBadges = screen.getAllByTestId('list-group-failure-badge');
+            expect(failureBadges).toHaveLength(1);
+            expect(failureBadges[0]).toHaveTextContent('2');
+        });
+
+        it('expands a group on click and collapses it again on a second click', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(GROUPED_ITEMS)
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeCollapsibleWidget()} />
+                </TestWrapper>
+            );
+
+            const [sistemaToggle] = await screen.findAllByTestId('list-group-toggle');
+
+            // Expand Sistema → its 3 rows become visible.
+            fireEvent.click(sistemaToggle);
+            expect(sistemaToggle).toHaveAttribute('aria-expanded', 'true');
+            expect(screen.getAllByTestId('list-item')).toHaveLength(3);
+
+            // Collapse again → rows hidden.
+            fireEvent.click(sistemaToggle);
+            expect(sistemaToggle).toHaveAttribute('aria-expanded', 'false');
+            expect(screen.queryByTestId('list-item')).not.toBeInTheDocument();
+        });
+    });
 });

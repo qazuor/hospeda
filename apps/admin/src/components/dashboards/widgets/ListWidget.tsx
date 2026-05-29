@@ -51,8 +51,9 @@
 import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
+import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -91,6 +92,14 @@ export interface ListItem {
     readonly label: string | I18nLabel;
     /** Secondary text rendered below the label (subtitle, date, status…). */
     readonly meta?: string;
+    /**
+     * Optional muted text rendered inline on the SAME line as the label
+     * (between the label and the status badge). Used to surface a compact
+     * secondary descriptor without consuming a second line — e.g. cron card D
+     * shows the human-readable schedule ("cada hora") next to the job name.
+     * Truncates independently of the label so the name keeps priority.
+     */
+    readonly inlineMeta?: string;
     /**
      * Multi-line meta. When set, each entry renders as its own muted line
      * below the label so a row can carry hierarchical context (e.g. host
@@ -182,6 +191,18 @@ export interface ListWidgetConfig {
      * "Ver" + "Editar" on the host card J market comparison).
      */
     readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
+    /**
+     * When true, group sections (driven by `item.group`) render as collapsible
+     * panels instead of static headers. Each panel header shows the group name,
+     * the item count, and a failure badge (`⚠ N`) counting non-successful rows
+     * (status badge variant `destructive` or `warning`). All panels start
+     * COLLAPSED. Opt-in — when absent, groups render as the legacy static
+     * headers (backward-compatible). Used by cron card D (SPEC-161 UX).
+     *
+     * Requires items to already be ordered by group (the widget does not
+     * re-sort) — same contract as the static-header rendering.
+     */
+    readonly collapsibleGroups?: boolean;
     /** Accent palette name for the card header chip (SPEC-155 redesign). */
     readonly accent?: string;
     /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
@@ -364,6 +385,356 @@ function PendingCountHeaderPill({ count }: { readonly count: number }) {
 }
 
 // ============================================================================
+// ITEM ROW
+// ============================================================================
+
+/**
+ * Renders a single list row. Extracted so both the flat (static-header) and the
+ * collapsible-group rendering paths share the exact same row markup.
+ *
+ * The `index` is the item's position in the (already-sliced) source array — it
+ * drives the `{id}` href interpolation fallback, so it must be stable across
+ * both rendering modes.
+ */
+function ItemRow({
+    item,
+    index,
+    actionCfg,
+    variant,
+    additionalActionsPerItem
+}: {
+    readonly item: ListItem;
+    readonly index: number;
+    readonly actionCfg?: ListWidgetActionConfig;
+    readonly variant: 'default' | 'stars' | 'pending-count';
+    readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
+}) {
+    const itemKey = item.id ?? String(index);
+    const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
+    const labelText = resolveLabelText(item.label);
+    const actionLabelText = resolveLabelText(actionCfg?.label);
+
+    return (
+        <li
+            className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+            data-testid="list-item"
+        >
+            {/* Left: label (with inline meta + status badge) + meta + owner */}
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                    <p
+                        className="truncate font-medium text-foreground text-sm"
+                        data-testid="list-item-label"
+                        title={labelText || undefined}
+                    >
+                        {labelText || '—'}
+                    </p>
+                    {item.inlineMeta && (
+                        <span
+                            className="shrink truncate text-muted-foreground text-xs"
+                            data-testid="list-item-inline-meta"
+                            title={item.inlineMeta}
+                        >
+                            {item.inlineMeta}
+                        </span>
+                    )}
+                    {item.statusBadge && (
+                        <span
+                            className={cn(
+                                'shrink-0 rounded-full px-2 py-0.5 font-semibold text-[0.65rem] uppercase tracking-wide ring-1 ring-inset',
+                                STATUS_BADGE_CLASSES[item.statusBadge.variant]
+                            )}
+                            data-testid="list-item-status-badge"
+                        >
+                            {item.statusBadge.label}
+                        </span>
+                    )}
+                </div>
+                {item.metaLines && item.metaLines.length > 0 ? (
+                    <div
+                        className="mt-0.5 space-y-0.5"
+                        data-testid="list-item-meta-lines"
+                    >
+                        {item.metaLines.map((line) => (
+                            <div
+                                key={`${itemKey}-meta-${line.key}`}
+                                className="truncate text-muted-foreground text-xs"
+                            >
+                                {line.content}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    item.meta && (
+                        <p
+                            className="truncate text-muted-foreground text-xs"
+                            data-testid="list-item-meta"
+                        >
+                            {item.meta}
+                        </p>
+                    )
+                )}
+                {item.ownerName && (
+                    <p
+                        className="mt-0.5 truncate text-muted-foreground text-xs"
+                        data-testid="list-item-owner"
+                    >
+                        <span className="opacity-70">por </span>
+                        {item.ownerHref ? (
+                            <a
+                                href={item.ownerHref}
+                                className="font-medium text-foreground/80 hover:underline"
+                                data-testid="list-item-owner-link"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {item.ownerName}
+                            </a>
+                        ) : (
+                            <span className="font-medium text-foreground/80">{item.ownerName}</span>
+                        )}
+                    </p>
+                )}
+            </div>
+
+            {/* Right: badge + optional action */}
+            <div className="flex shrink-0 items-center gap-2">
+                {variant === 'stars' && item.badge !== undefined
+                    ? (() => {
+                          const r = coerceRating(item.badge);
+                          if (r === null) return null;
+                          return (
+                              <StarRating
+                                  rating={r}
+                                  ariaLabel={`Rating ${r.toFixed(1)} de 5`}
+                              />
+                          );
+                      })()
+                    : item.badge !== undefined && (
+                          <span
+                              className={cn(
+                                  'rounded-full px-2 py-0.5 font-medium text-xs',
+                                  'bg-muted text-muted-foreground'
+                              )}
+                              data-testid="list-item-badge"
+                          >
+                              {item.badge}
+                          </span>
+                      )}
+
+                {actionCfg && href && (
+                    <a
+                        href={href}
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                        data-testid="list-item-action-link"
+                        aria-label={`${actionLabelText}: ${labelText}`}
+                    >
+                        {actionLabelText}
+                    </a>
+                )}
+
+                {actionCfg && !href && (
+                    <button
+                        type="button"
+                        className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                        data-testid="list-item-action-button"
+                        aria-label={`${actionLabelText}: ${labelText}`}
+                    >
+                        {actionLabelText}
+                    </button>
+                )}
+
+                {/* Secondary actions — render each entry from
+                    `config.additionalActionsPerItem` after the primary CTA. */}
+                {(additionalActionsPerItem ?? []).map((extraAction) => {
+                    const extraHref = resolveItemHref(item, index, extraAction);
+                    const extraLabelText = resolveLabelText(extraAction.label);
+                    const extraKey = `${itemKey}-extra-${extraLabelText}`;
+                    if (extraHref) {
+                        return (
+                            <a
+                                key={extraKey}
+                                href={extraHref}
+                                className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                                data-testid="list-item-action-extra-link"
+                                aria-label={`${extraLabelText}: ${labelText}`}
+                            >
+                                {extraLabelText}
+                            </a>
+                        );
+                    }
+                    return (
+                        <button
+                            key={extraKey}
+                            type="button"
+                            className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
+                            data-testid="list-item-action-extra-button"
+                            aria-label={`${extraLabelText}: ${labelText}`}
+                        >
+                            {extraLabelText}
+                        </button>
+                    );
+                })}
+            </div>
+        </li>
+    );
+}
+
+// ============================================================================
+// COLLAPSIBLE GROUPS
+// ============================================================================
+
+/** A group of consecutive items sharing the same `group` label. */
+interface ItemGroup {
+    readonly group: string;
+    /** Items paired with their original index in the sliced source array. */
+    readonly entries: ReadonlyArray<{ readonly item: ListItem; readonly index: number }>;
+    /** Count of rows with a non-successful status (destructive or warning). */
+    readonly failureCount: number;
+}
+
+/**
+ * Groups items by their `group` label, preserving source order (no re-sort).
+ * Items without a `group` are bucketed under an empty-string key. Each group
+ * carries a `failureCount` derived from the per-row status badge variant so the
+ * collapsible header can surface problems without expanding.
+ */
+function buildItemGroups(items: ReadonlyArray<ListItem>): ReadonlyArray<ItemGroup> {
+    const order: string[] = [];
+    const buckets = new Map<string, Array<{ item: ListItem; index: number }>>();
+
+    items.forEach((item, index) => {
+        const key = item.group ?? '';
+        if (!buckets.has(key)) {
+            buckets.set(key, []);
+            order.push(key);
+        }
+        buckets.get(key)?.push({ item, index });
+    });
+
+    return order.map((group) => {
+        const entries = buckets.get(group) ?? [];
+        const failureCount = entries.filter(
+            ({ item }) =>
+                item.statusBadge?.variant === 'destructive' ||
+                item.statusBadge?.variant === 'warning'
+        ).length;
+        return { group, entries, failureCount };
+    });
+}
+
+/**
+ * Renders the list as collapsible group panels (SPEC-161 cron card D).
+ *
+ * All panels start collapsed; clicking a header toggles its open state. Each
+ * header shows the group name, the item count, and a `⚠ N` failure badge when
+ * any row in the group is non-successful.
+ */
+function CollapsibleGroupList({
+    items,
+    actionCfg,
+    variant,
+    additionalActionsPerItem
+}: {
+    readonly items: ReadonlyArray<ListItem>;
+    readonly actionCfg?: ListWidgetActionConfig;
+    readonly variant: 'default' | 'stars' | 'pending-count';
+    readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
+}) {
+    const groups = buildItemGroups(items);
+    // Open-panel state keyed by group label. Empty set ⇒ all collapsed (default).
+    const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
+
+    const toggle = (group: string) => {
+        setOpenGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(group)) next.delete(group);
+            else next.add(group);
+            return next;
+        });
+    };
+
+    return (
+        <div
+            className="space-y-3"
+            data-testid="list-collapsible-groups"
+        >
+            {groups.map(({ group, entries, failureCount }) => {
+                const isOpen = openGroups.has(group);
+                const panelId = `cron-group-${group}`;
+                return (
+                    <div
+                        key={group || '__ungrouped'}
+                        data-testid="list-group-panel"
+                    >
+                        <button
+                            type="button"
+                            onClick={() => toggle(group)}
+                            aria-expanded={isOpen}
+                            aria-controls={panelId}
+                            className={cn(
+                                'flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors',
+                                // Open panels connect to their item list below — flatten
+                                // the bottom corners; collapsed panels stay fully rounded.
+                                isOpen
+                                    ? 'rounded-t-md bg-muted'
+                                    : 'rounded-md bg-muted/50 hover:bg-muted'
+                            )}
+                            data-testid="list-group-toggle"
+                        >
+                            {isOpen ? (
+                                <ChevronDownIcon className="size-3.5 shrink-0 text-foreground/70" />
+                            ) : (
+                                <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                            )}
+                            <span className="font-semibold text-foreground text-xs uppercase tracking-wide">
+                                {group}
+                            </span>
+                            <span
+                                className="rounded-full bg-background px-1.5 py-0.5 font-medium text-[0.65rem] text-muted-foreground tabular-nums"
+                                data-testid="list-group-count"
+                            >
+                                {entries.length}
+                            </span>
+                            {failureCount > 0 && (
+                                <span
+                                    className="ml-auto inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-semibold text-[0.65rem] text-destructive tabular-nums ring-1 ring-destructive/20 ring-inset"
+                                    data-testid="list-group-failure-badge"
+                                    aria-label={`${failureCount} con fallas`}
+                                >
+                                    <AlertTriangleIcon
+                                        className="size-3"
+                                        aria-hidden="true"
+                                    />
+                                    {failureCount}
+                                </span>
+                            )}
+                        </button>
+                        {isOpen && (
+                            <ul
+                                id={panelId}
+                                className="divide-y divide-border rounded-b-md bg-muted/30 px-3 py-1"
+                                data-testid="list-group-items"
+                            >
+                                {entries.map(({ item, index }) => (
+                                    <ItemRow
+                                        key={item.id ?? String(index)}
+                                        item={item}
+                                        index={index}
+                                        actionCfg={actionCfg}
+                                        variant={variant}
+                                        additionalActionsPerItem={additionalActionsPerItem}
+                                    />
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -530,198 +901,54 @@ export function ListWidget({ widget }: ListWidgetProps) {
             icon={config.icon}
             headerExtra={headerExtra}
         >
-            {/* Item list */}
-            <ul
-                className="divide-y divide-border"
-                data-testid="list-items"
-            >
-                {items.map((item, index) => {
-                    const itemKey = item.id ?? String(index);
-                    const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
-                    const labelText = resolveLabelText(item.label);
-                    const actionLabelText = resolveLabelText(actionCfg?.label);
-                    // Section header: rendered before the first item of each group.
-                    const showGroupHeader = item.group && item.group !== items[index - 1]?.group;
+            {/* Collapsible-group mode (opt-in via config.collapsibleGroups). */}
+            {config.collapsibleGroups ? (
+                <CollapsibleGroupList
+                    items={items}
+                    actionCfg={actionCfg}
+                    variant={variant}
+                    additionalActionsPerItem={config.additionalActionsPerItem}
+                />
+            ) : (
+                /* Flat list with optional static group headers (legacy default). */
+                <ul
+                    className="divide-y divide-border"
+                    data-testid="list-items"
+                >
+                    {items.map((item, index) => {
+                        const itemKey = item.id ?? String(index);
+                        // Section header: rendered before the first item of each group.
+                        const showGroupHeader =
+                            item.group && item.group !== items[index - 1]?.group;
 
-                    const row = (
-                        <li
-                            key={itemKey}
-                            className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                            data-testid="list-item"
-                        >
-                            {/* Left: label (with inline status badge) + meta + owner */}
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                    <p
-                                        className="truncate font-medium text-foreground text-sm"
-                                        data-testid="list-item-label"
-                                    >
-                                        {labelText || '—'}
-                                    </p>
-                                    {item.statusBadge && (
-                                        <span
-                                            className={cn(
-                                                'shrink-0 rounded-full px-2 py-0.5 font-semibold text-[0.65rem] uppercase tracking-wide ring-1 ring-inset',
-                                                STATUS_BADGE_CLASSES[item.statusBadge.variant]
-                                            )}
-                                            data-testid="list-item-status-badge"
-                                        >
-                                            {item.statusBadge.label}
-                                        </span>
-                                    )}
-                                </div>
-                                {item.metaLines && item.metaLines.length > 0 ? (
-                                    <div
-                                        className="mt-0.5 space-y-0.5"
-                                        data-testid="list-item-meta-lines"
-                                    >
-                                        {item.metaLines.map((line) => (
-                                            <div
-                                                key={`${itemKey}-meta-${line.key}`}
-                                                className="truncate text-muted-foreground text-xs"
-                                            >
-                                                {line.content}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    item.meta && (
-                                        <p
-                                            className="truncate text-muted-foreground text-xs"
-                                            data-testid="list-item-meta"
-                                        >
-                                            {item.meta}
-                                        </p>
-                                    )
-                                )}
-                                {item.ownerName && (
-                                    <p
-                                        className="mt-0.5 truncate text-muted-foreground text-xs"
-                                        data-testid="list-item-owner"
-                                    >
-                                        <span className="opacity-70">por </span>
-                                        {item.ownerHref ? (
-                                            <a
-                                                href={item.ownerHref}
-                                                className="font-medium text-foreground/80 hover:underline"
-                                                data-testid="list-item-owner-link"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                {item.ownerName}
-                                            </a>
-                                        ) : (
-                                            <span className="font-medium text-foreground/80">
-                                                {item.ownerName}
-                                            </span>
-                                        )}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Right: badge + optional action */}
-                            <div className="flex shrink-0 items-center gap-2">
-                                {variant === 'stars' && item.badge !== undefined
-                                    ? (() => {
-                                          const r = coerceRating(item.badge);
-                                          if (r === null) return null;
-                                          return (
-                                              <StarRating
-                                                  rating={r}
-                                                  ariaLabel={`Rating ${r.toFixed(1)} de 5`}
-                                              />
-                                          );
-                                      })()
-                                    : item.badge !== undefined && (
-                                          <span
-                                              className={cn(
-                                                  'rounded-full px-2 py-0.5 font-medium text-xs',
-                                                  'bg-muted text-muted-foreground'
-                                              )}
-                                              data-testid="list-item-badge"
-                                          >
-                                              {item.badge}
-                                          </span>
-                                      )}
-
-                                {actionCfg && href && (
-                                    <a
-                                        href={href}
-                                        className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
-                                        data-testid="list-item-action-link"
-                                        aria-label={`${actionLabelText}: ${labelText}`}
-                                    >
-                                        {actionLabelText}
-                                    </a>
-                                )}
-
-                                {actionCfg && !href && (
-                                    <button
-                                        type="button"
-                                        className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
-                                        data-testid="list-item-action-button"
-                                        aria-label={`${actionLabelText}: ${labelText}`}
-                                    >
-                                        {actionLabelText}
-                                    </button>
-                                )}
-
-                                {/* Secondary actions — render each entry from
-                                    `config.additionalActionsPerItem` after the
-                                    primary CTA. Each uses the same per-id href
-                                    interpolation rules so callers don't have to
-                                    duplicate the resolution logic. */}
-                                {(config.additionalActionsPerItem ?? []).map((extraAction) => {
-                                    const extraHref = resolveItemHref(item, index, extraAction);
-                                    const extraLabelText = resolveLabelText(extraAction.label);
-                                    // Stable per-row key derived from the action label so
-                                    // React reconciliation is deterministic (the label
-                                    // doubles as the action identity in practice).
-                                    const extraKey = `${itemKey}-extra-${extraLabelText}`;
-                                    if (extraHref) {
-                                        return (
-                                            <a
-                                                key={extraKey}
-                                                href={extraHref}
-                                                className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
-                                                data-testid="list-item-action-extra-link"
-                                                aria-label={`${extraLabelText}: ${labelText}`}
-                                            >
-                                                {extraLabelText}
-                                            </a>
-                                        );
-                                    }
-                                    return (
-                                        <button
-                                            key={extraKey}
-                                            type="button"
-                                            className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
-                                            data-testid="list-item-action-extra-button"
-                                            aria-label={`${extraLabelText}: ${labelText}`}
-                                        >
-                                            {extraLabelText}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </li>
-                    );
-
-                    if (showGroupHeader) {
-                        return (
-                            <Fragment key={`group-${item.group}`}>
-                                <li
-                                    className="pt-3 pb-1 font-semibold text-[0.65rem] text-muted-foreground uppercase tracking-wide first:pt-0"
-                                    data-testid="list-group-header"
-                                >
-                                    {item.group}
-                                </li>
-                                {row}
-                            </Fragment>
+                        const row = (
+                            <ItemRow
+                                key={itemKey}
+                                item={item}
+                                index={index}
+                                actionCfg={actionCfg}
+                                variant={variant}
+                                additionalActionsPerItem={config.additionalActionsPerItem}
+                            />
                         );
-                    }
-                    return row;
-                })}
-            </ul>
+
+                        if (showGroupHeader) {
+                            return (
+                                <Fragment key={`group-${item.group}`}>
+                                    <li
+                                        className="pt-3 pb-1 font-semibold text-[0.65rem] text-muted-foreground uppercase tracking-wide first:pt-0"
+                                        data-testid="list-group-header"
+                                    >
+                                        {item.group}
+                                    </li>
+                                    {row}
+                                </Fragment>
+                            );
+                        }
+                        return row;
+                    })}
+                </ul>
+            )}
         </WidgetCard>
     );
 }

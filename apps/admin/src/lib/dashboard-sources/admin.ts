@@ -439,8 +439,9 @@ registerDataSource('admin.crons.list', (ctx) => ({
             return a.displayName.localeCompare(b.displayName);
         });
 
-        // Compact one-line-per-job rendering for the dashboard card: friendly
-        // name + status badge, plus a single meta line with last + next run.
+        // Two-line-per-job rendering for the dashboard card:
+        //  - line 1 (ItemRow label row): friendly name + schedule (inlineMeta) + status
+        //  - line 2 (meta): last run + next run datetimes
         return jobs.map((job) => {
             const lastText = job.lastRun
                 ? `Últ: ${formatCronDateTime(job.lastRun.finishedAt)}`
@@ -452,6 +453,8 @@ registerDataSource('admin.crons.list', (ctx) => ({
                 id: job.name,
                 label: job.displayName,
                 group: CRON_CATEGORY_LABELS[job.category],
+                // "Cada cuánto corre" — shown muted next to the name on line 1.
+                inlineMeta: job.scheduleHuman,
                 meta,
                 statusBadge: cronRunStatusBadge(job.lastRun?.status)
             };
