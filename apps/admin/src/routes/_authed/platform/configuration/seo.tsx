@@ -5,65 +5,66 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    legacyAdapters,
+    usePlatformSetting,
+    useUpdatePlatformSetting
+} from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
+import { type SeoDefaultsValue, SeoDefaultsValueSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/configuration/seo')({
     component: SeoSettingsPage
 });
 
-const SEO_SETTINGS_KEY = 'hospeda-admin-seo-settings';
-
-type SeoSettings = {
-    titleTemplate: string;
-    defaultDescription: string;
-    defaultOgImage: string;
-};
-
-const DEFAULT_SETTINGS: SeoSettings = {
-    titleTemplate: '{page} | Hospeda',
-    defaultDescription:
+const DEFAULT_SETTINGS: SeoDefaultsValue = {
+    metaTitleTemplate: '{page} | Hospeda',
+    metaDescriptionDefault:
         'Descubre alojamientos, destinos y eventos en la región del Litoral argentino',
-    defaultOgImage: ''
+    ogImageDefault: 'https://hospeda.com.ar/og-default.png'
 };
-
-function getSeoSettings(): SeoSettings {
-    try {
-        const stored = localStorage.getItem(SEO_SETTINGS_KEY);
-        return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
-    } catch {
-        return DEFAULT_SETTINGS;
-    }
-}
-
-function saveSeoSettings(settings: SeoSettings): void {
-    try {
-        localStorage.setItem(SEO_SETTINGS_KEY, JSON.stringify(settings));
-    } catch {
-        // Silently fail if localStorage is not available
-    }
-}
 
 function SeoSettingsPage() {
     const { t } = useTranslations();
-    const [settings, setSettings] = useState<SeoSettings>(DEFAULT_SETTINGS);
-    const [isSaved, setIsSaved] = useState(false);
+    const [settings, setSettings] = useState<SeoDefaultsValue>(DEFAULT_SETTINGS);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
+    const seoQuery = usePlatformSetting({
+        key: 'seo.defaults',
+        legacyAdapter: legacyAdapters.seoDefaults
+    });
+    const seoMutation = useUpdatePlatformSetting({
+        key: 'seo.defaults',
+        legacyAdapter: legacyAdapters.seoDefaults
+    });
+
+    // Seed the form once with whichever value the query resolves: API row
+    // wins; legacy localStorage value is the fallback; defaults if neither.
     useEffect(() => {
-        setSettings(getSeoSettings());
-    }, []);
+        if (!seoQuery.data) return;
+        const incoming = seoQuery.data.row?.value ?? seoQuery.data.legacyValue ?? DEFAULT_SETTINGS;
+        setSettings(incoming);
+    }, [seoQuery.data]);
 
-    const handleChange = useCallback((field: keyof SeoSettings, value: string) => {
+    const handleChange = (field: keyof SeoDefaultsValue, value: string): void => {
         setSettings((prev) => ({ ...prev, [field]: value }));
-        setIsSaved(false);
-    }, []);
+        if (validationError !== null) setValidationError(null);
+        if (seoMutation.isSuccess) seoMutation.reset();
+    };
 
-    const handleSave = useCallback(() => {
-        saveSeoSettings(settings);
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 3000);
-    }, [settings]);
+    const handleSave = (): void => {
+        const parsed = SeoDefaultsValueSchema.safeParse(settings);
+        if (!parsed.success) {
+            setValidationError(parsed.error.issues[0]?.message ?? 'Validation error');
+            return;
+        }
+        seoMutation.mutate(parsed.data);
+    };
+
+    const isSaved = seoMutation.isSuccess;
+    const isSaving = seoMutation.isPending;
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.settingsSeo">
@@ -83,16 +84,17 @@ function SeoSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="titleTemplate">
+                            <Label htmlFor="metaTitleTemplate">
                                 {t('admin-pages.systemSettings.seo.titleTemplate')}
                             </Label>
                             <Input
-                                id="titleTemplate"
-                                value={settings.titleTemplate}
-                                onChange={(e) => handleChange('titleTemplate', e.target.value)}
+                                id="metaTitleTemplate"
+                                value={settings.metaTitleTemplate}
+                                onChange={(e) => handleChange('metaTitleTemplate', e.target.value)}
                                 placeholder={t(
                                     'admin-pages.systemSettings.seo.titleTemplatePlaceholder'
                                 )}
+                                disabled={isSaving}
                             />
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.systemSettings.seo.titleTemplateHint')}
@@ -100,17 +102,20 @@ function SeoSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="defaultDescription">
+                            <Label htmlFor="metaDescriptionDefault">
                                 {t('admin-pages.systemSettings.seo.defaultDescription')}
                             </Label>
                             <Textarea
-                                id="defaultDescription"
-                                value={settings.defaultDescription}
-                                onChange={(e) => handleChange('defaultDescription', e.target.value)}
+                                id="metaDescriptionDefault"
+                                value={settings.metaDescriptionDefault}
+                                onChange={(e) =>
+                                    handleChange('metaDescriptionDefault', e.target.value)
+                                }
                                 placeholder={t(
                                     'admin-pages.systemSettings.seo.defaultDescriptionPlaceholder'
                                 )}
                                 rows={3}
+                                disabled={isSaving}
                             />
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.systemSettings.seo.defaultDescriptionHint')}
@@ -118,17 +123,18 @@ function SeoSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="defaultOgImage">
+                            <Label htmlFor="ogImageDefault">
                                 {t('admin-pages.systemSettings.seo.defaultOgImage')}
                             </Label>
                             <Input
-                                id="defaultOgImage"
-                                value={settings.defaultOgImage}
-                                onChange={(e) => handleChange('defaultOgImage', e.target.value)}
+                                id="ogImageDefault"
+                                value={settings.ogImageDefault}
+                                onChange={(e) => handleChange('ogImageDefault', e.target.value)}
                                 placeholder={t(
                                     'admin-pages.systemSettings.seo.defaultOgImagePlaceholder'
                                 )}
                                 type="url"
+                                disabled={isSaving}
                             />
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-pages.systemSettings.seo.defaultOgImageHint')}
@@ -172,15 +178,32 @@ function SeoSettingsPage() {
                     </CardContent>
                 </Card>
 
-                <div className="flex items-center justify-between">
-                    <p className="text-muted-foreground text-sm">
-                        {t('admin-pages.systemSettings.seo.apiNote')}
-                    </p>
-                    <Button onClick={handleSave}>
-                        {isSaved
-                            ? t('admin-pages.systemSettings.seo.saved')
-                            : t('admin-pages.systemSettings.seo.save')}
-                    </Button>
+                <div className="flex flex-col items-end gap-2">
+                    <div className="flex w-full items-center justify-between">
+                        <p className="text-muted-foreground text-sm">
+                            {t('admin-pages.systemSettings.seo.apiNote')}
+                        </p>
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving
+                                ? t('admin-pages.systemSettings.seo.save')
+                                : isSaved
+                                  ? t('admin-pages.systemSettings.seo.saved')
+                                  : t('admin-pages.systemSettings.seo.save')}
+                        </Button>
+                    </div>
+                    {validationError && (
+                        <p className="text-destructive text-xs">{validationError}</p>
+                    )}
+                    {seoMutation.isError && (
+                        <p className="text-destructive text-xs">
+                            {seoMutation.error instanceof Error
+                                ? seoMutation.error.message
+                                : String(seoMutation.error)}
+                        </p>
+                    )}
                 </div>
             </div>
         </SidebarPageLayout>
