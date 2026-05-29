@@ -368,7 +368,17 @@ export function EntityPageHeader({
             {/* ----------------------------------------------------------------
                 Sticky header
             ---------------------------------------------------------------- */}
+            {/*
+                `<header>` only becomes a banner landmark implicitly when it
+                is a direct child of `<body>`. Nested inside the route tree it
+                does not — set the role explicitly so the landmark is
+                consistent across the admin app (accessibility + tests like
+                `getByRole('banner')`). The biome rule treats header as
+                already interactive, but it is not — the role is correct.
+            */}
+            {/* biome-ignore lint/a11y/noInteractiveElementToNoninteractiveRole: explicit banner role needed because <header> nested below body has no implicit landmark role */}
             <header
+                role="banner"
                 className={cn(
                     // Positioning — sticks under the chrome row (h-14 = 56px). The chrome's
                     // 12px wave svg sits at z-40 on top of this header (z-30), so the entity
