@@ -124,5 +124,25 @@ Local re-run of the checklist against `hospeda_test` DB on dev ports 4500/4600/4
 
 - **Better Auth change-password flow** — Login as `superadmin@hospeda.com` redirected to `/auth/change-password` on first sign-in because the seeded user has `setPasswordPrompted: false`. Even after `UPDATE users SET set_password_prompted = true`, the existing session keeps the old snapshot, so a full sign-out + re-login is required to clear the redirect. Documented for future smoke runs — recommend either (a) flipping `setPasswordPrompted: true` in the SUPER_ADMIN seed, or (b) updating this checklist to mention the one-time password change requirement.
 - **Admin SSR hydration warning** — `/auth/signin` consistently logs a React hydration mismatch in the dev console (the SSR-rendered "loader" markup differs from the client-rendered form). Functionally harmless (the form ends up interactive after the client reconcile) but adds dev-console noise; consider gating the loader inside a `useHasMounted()` so the SSR pass renders the form directly.
-- **Banner cookie-dismiss flow + i18n fallback + endsAt date filter** — Could NOT be tested because the banner never renders (see P1 above). These remain unverified locally and should be re-checked once the `GlobalAnnouncements` fix is in.
 - **API `HOSPEDA_REDIS_URL`** — `apps/api/.env.local` ships with `redis://localhost:6379` while the local docker compose maps Redis to `:6381`. `API_CACHE_ENABLED=false` so the API boots fine, but if anyone enables cache locally the connection will fail. Worth a one-liner fix in `.env.local` (or in `apps/api/.env.example` if there is one).
+
+### Retest after fixes (2026-05-29, same session)
+
+Both P1s above were fixed in PR #1306 (`fix/SPEC-156-pr4-platform-critical-and-banner`, two atomic commits on top of `staging`). Local retest against the same `hospeda_test` setup:
+
+- **`/platform/critical` gate** — verified for all three roles:
+  - HOST (`host-pro@local.test`) → `/auth/forbidden` ✅
+  - ADMIN (`admin@hospeda.com`) → `/auth/forbidden` ✅
+  - SUPER_ADMIN (`superadmin@hospeda.com`) → renders the maintenance + announcements + cache cards as before ✅
+  - Permission-gate audit (`apps/admin/test/spec-156/permission-gates.test.ts`) now lists `/platform/critical` with `SYSTEM_MAINTENANCE_MODE` and rejects regressions; 13/13 tests pass.
+- **`GlobalAnnouncements` banner** — verified via Playwright + raw HTML:
+  - Banner renders on `/es/alojamientos/` (`<div class="global-announcement global-announcement--info" data-announcement-id="…">…Smoke PR-4 — SPEC-156 sign-off…</div>`) ✅
+  - Locale switching: `/es/` and `/en/` render `text.es` / `text.en`; `/pt/` renders `text.pt` (verified with a distinct PT copy) ✅
+  - Dismiss flow: clicking × sets the `hospeda_ann_dismissed` cookie to the item id; on reload the inline client script keeps the banner in DOM but `display: none` (verified via `getComputedStyle`) ✅
+  - Source-based test suite (`apps/web/test/components/GlobalAnnouncements.test.ts`) now asserts the component reads `response.ok` and explicitly NOT `response.success`; 31/31 tests pass.
+- **`endsAt` date filter on web** — not re-verified live (DB manipulation + API cache restart cycle was expensive). The filter logic is covered by `apps/web/test/lib/announcements.test.ts`; the live check can be repeated during the staging→main promotion smoke.
+- **Locale fallback to `es` when other translations are missing** — not re-verified live because the API rejects items with empty translation strings (Zod schema validation in `AnnouncementsValueSchema` rejects `text.en = ""`). The fallback in `pickAnnouncementText` is covered by unit tests. If the schema later relaxes empty strings, this should be re-tested live.
+
+### Out-of-scope follow-ups surfaced during this run
+
+- Four sibling admin routes lack the same per-route `beforeLoad` guard — `/platform/configuration/seo`, `/platform/cache/revalidation`, `/platform/tags/internal`, `/platform/tags/system`. Same class of bug as `/platform/critical` but lower severity (none expose the maintenance toggle). Sidebar `onMissing: 'hide'` hides the nav link for non-permission roles, but direct URL navigation still loads the page. Recommend a separate PR that adds the guard to each + extends the permission-gate audit accordingly. Tracked at the end of PR #1306's body under "Out of scope".
