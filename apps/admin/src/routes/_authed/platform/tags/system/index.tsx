@@ -3,6 +3,7 @@ import { AdminTagDeleteDialog } from '@/components/tags/AdminTagDeleteDialog';
 import { PostTagColorBadge } from '@/components/tags/PostTagColorBadge';
 import { Button } from '@/components/ui/button';
 import { useDeleteSystemTag, useSystemTagImpact, useSystemTagsList } from '@/hooks/use-system-tags';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { DeleteIcon, TagsIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
@@ -11,6 +12,7 @@ import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/tags/system/')({
+    beforeLoad: ({ context }) => requireAdminApiAccess(context),
     component: SystemTagsListPage,
     errorComponent: createErrorComponent('SystemTags'),
     pendingComponent: createPendingComponent()
