@@ -426,3 +426,39 @@ export function getDefaultEntitlements(): Pick<PlanDefinition, 'entitlements' | 
         limits: TOURIST_FREE_PLAN.limits
     };
 }
+
+/**
+ * Returns an "unlimited" entitlement set: every {@link EntitlementKey} granted
+ * and every {@link LimitKey} set to the unlimited sentinel (`-1`) (SPEC-171).
+ *
+ * This is NOT a plan. It is the entitlement shape granted to platform staff
+ * (e.g. `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `CLIENT_MANAGER`) who operate the
+ * admin panel without a billing customer/subscription. Treating "no plan" as
+ * "no entitlements" for staff is wrong — they manage content on behalf of the
+ * platform, so the resolver grants them everything instead of forcing the
+ * frontend to special-case roles. See {@link getDefaultEntitlements} for the
+ * regular no-subscription fallback.
+ *
+ * Derived from the enums via `Object.values`, so any new entitlement or limit
+ * key is included automatically (no drift). The caller decides WHO receives
+ * this set; this function is role-agnostic.
+ *
+ * Returned as the raw plan shape (`EntitlementKey[]` + `LimitDefinition[]`),
+ * matching {@link getDefaultEntitlements} so callers materialize both the same
+ * way.
+ *
+ * Pure: reads only the static enums + in-memory limit metadata.
+ *
+ * @example
+ * ```ts
+ * const { entitlements, limits } = getUnlimitedEntitlements();
+ * const entitlementSet = new Set(entitlements);
+ * const limitMap = new Map(limits.map((l) => [l.key, l.value]));
+ * ```
+ */
+export function getUnlimitedEntitlements(): Pick<PlanDefinition, 'entitlements' | 'limits'> {
+    return {
+        entitlements: Object.values(EntitlementKey),
+        limits: Object.values(LimitKey).map((key) => limit(key, -1))
+    };
+}

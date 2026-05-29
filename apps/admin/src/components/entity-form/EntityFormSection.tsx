@@ -45,7 +45,6 @@ import type { SectionConfig } from '@/components/entity-form/types/section-confi
 import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 import { PremiumBlock, type PremiumBlockItem } from '@/features/billing/PremiumBlock';
 import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
-import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
@@ -108,21 +107,20 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         const title = config.title;
         const description = config.description;
 
-        // Premium-feature classification (spec §4.7 sabor 1): only HOST users
-        // without the entitlement see a feature as "premium". Staff bypass
-        // entirely; HOSTS with the entitlement get the regular field. The
-        // hook calls live here so they run unconditionally per the Rules of
-        // Hooks; the bypass is decided per-field below.
-        const shouldGateFeatures = useShouldShowEntitlementGates();
+        // Premium-feature classification (spec §4.7 sabor 1): a field is
+        // "premium-locked" only when the actor lacks the entitlement. The
+        // resolver is the single source of truth (SPEC-171): staff receive
+        // every entitlement so `hasEntitlement` → true and nothing locks;
+        // HOSTs depend on their plan. We fail-open while loading to avoid
+        // flashing the locked state.
         const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements();
         const isFieldPremiumLocked = React.useCallback(
             (entitlementKey: string | undefined): boolean => {
                 if (!entitlementKey) return false;
-                if (!shouldGateFeatures) return false;
                 if (entitlementsLoading) return false;
                 return !hasEntitlement(entitlementKey);
             },
-            [shouldGateFeatures, hasEntitlement, entitlementsLoading]
+            [hasEntitlement, entitlementsLoading]
         );
 
         // Check section permissions

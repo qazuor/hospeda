@@ -1911,11 +1911,14 @@
             "title": "Entitlements service returns unlimited (-1) for staff without plan",
             "type": "chore",
             "complexity": "low",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-171-entitlements-staff-unlimited",
+            "branch": "spec/SPEC-171-entitlements-staff-unlimited",
             "created": "2026-05-29T00:00:00.000Z",
+            "completedAt": "2026-05-29T19:54:03.000Z",
+            "completionRef": "PR #1324 (merge commit 897b43427599215208c9c46f50965d5357aed56a)",
             "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
+            "archived": true,
             "extractedFrom": "SPEC-154",
             "tags": ["billing", "entitlements", "tech-debt", "admin"],
             "note": "Spun off from SPEC-154 PR #1303 Phase 4-A. Frontend shim useShouldShowEntitlementGates in apps/admin checks actor.role to bypass entitlement gates for staff because the backend resolver treats 'no plan' as 'no entitlements'. Move the bypass server-side so motor returns -1 (unlimited) for SUPER_ADMIN/EDITOR sin plan and the frontend shim is deletable. Preferred timing: BEFORE SPEC-154 Phase 6 (propagation) to avoid multiplying the shim. Tasks not yet atomized."
@@ -1942,10 +1945,12 @@
             "status": "draft",
             "path": "SPEC-174-admin-welcome-tour",
             "created": "2026-05-29T00:00:00.000Z",
-            "firstAllocatedViaEngramProtocol": false,
+            "branch": "spec/SPEC-174-admin-welcome-tour",
+            "base": "staging",
+            "firstAllocatedViaEngramProtocol": true,
             "archived": false,
             "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
-            "note": "BACKFILLED 2026-05-29 during SPEC-175 allocation. spec.md existed in filesystem + git but was never registered in this index nor in the engram last-number (stuck at 173). Created in another session. Sibling of SPEC-175 (admin-whats-new): both write to UserSettings.onboarding JSONB (174 = onboarding.adminTours, 175 = onboarding.whatsNew) via dedicated protected-tier PATCH endpoints with server-side merge. Tasks not yet atomized."
+            "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15."
         },
         {
             "specId": "SPEC-175",

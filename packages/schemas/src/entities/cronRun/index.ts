@@ -1,5 +1,6 @@
 // Core entity schemas
 export * from './cronRun.schema.js';
+export * from './cronJob.schema.js';
 
 // CRUD operations
 export * from './cronRun.crud.schema.js';

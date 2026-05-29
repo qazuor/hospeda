@@ -889,7 +889,10 @@ const adminBaseDashboard: DashboardInput = {
             config: {
                 source: 'admin.crons.list',
                 accent: 'teal',
-                icon: 'clock'
+                icon: 'clock',
+                // Categories render as collapsible panels (all collapsed by
+                // default) with a per-category failure badge (SPEC-161 UX).
+                collapsibleGroups: true
             }
         },
 

@@ -73,6 +73,7 @@
             "statusActive": "Ativo",
             "statusDisabled": "Desabilitado",
             "scheduleLabel": "Programação:",
+            "scheduleRawLabel": "Expr. cron:",
             "dryRunLabel": "Modo Dry Run",
             "dryRunHint": "Executar sem fazer alterações reais",
             "runButton": "Executar agora",
@@ -85,7 +86,14 @@
             "modeLabel": "Modo:",
             "modeDryRun": "Teste",
             "modeReal": "Real",
-            "runErrorTitle": "Erro ao executar tarefa"
+            "runErrorTitle": "Erro ao executar tarefa",
+            "lastRunLabel": "Última execução:",
+            "nextRunLabel": "Próxima execução:",
+            "neverRun": "Sem execuções",
+            "noNextRun": "—",
+            "lastRunSuccess": "OK",
+            "lastRunFailed": "Falhou",
+            "lastRunTimeout": "Timeout"
         },
         "schedules": {
             "daily": "Diariamente à meia-noite",
