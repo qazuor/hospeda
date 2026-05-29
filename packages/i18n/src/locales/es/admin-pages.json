@@ -904,5 +904,45 @@
                 "special": "Al menos un carácter especial (!@#$%^&*...)"
             }
         }
+    },
+    "security": {
+        "title": "Seguridad",
+        "available": {
+            "title": "Acciones disponibles",
+            "subtitle": "Lo que podés gestionar hoy"
+        },
+        "changePassword": {
+            "title": "Cambiar contraseña",
+            "subtitle": "Actualizá tu contraseña para mantener tu cuenta segura"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Autenticación en dos factores",
+                "subtitle": "Una capa extra de seguridad al iniciar sesión"
+            },
+            "activeSessions": {
+                "title": "Sesiones activas",
+                "subtitle": "Mirá y cerrá las sesiones abiertas en otros dispositivos"
+            },
+            "loginHistory": {
+                "title": "Historial de inicios de sesión",
+                "subtitle": "Registro de accesos recientes a tu cuenta"
+            },
+            "changeEmail": {
+                "title": "Cambiar email",
+                "subtitle": "Actualizá la dirección asociada a tu cuenta"
+            }
+        }
+    },
+    "data": {
+        "title": "Mis datos",
+        "comingSoon": {
+            "title": "Pronto vas a poder gestionar tus datos desde acá",
+            "description": "Estamos preparando la sección para exportar tu información, pausar tu cuenta y solicitar la eliminación de tus datos según las normativas vigentes."
+        },
+        "supportContact": {
+            "label": "Por ahora, escribinos a:",
+            "email": "soporte@hospeda.com.ar"
+        }
     }
 }

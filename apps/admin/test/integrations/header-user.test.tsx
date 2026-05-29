@@ -197,7 +197,7 @@ describe('HeaderUser', () => {
         await user.click(screen.getByRole('button', { name: 'User menu' }));
         await user.click(screen.getByText('Profile'));
 
-        expect(mockNavigate).toHaveBeenCalledWith({ to: '/me/profile' });
+        expect(mockNavigate).toHaveBeenCalledWith({ to: '/account/profile' });
     });
 
     it('should navigate to settings on Settings click', async () => {
@@ -207,6 +207,6 @@ describe('HeaderUser', () => {
         await user.click(screen.getByRole('button', { name: 'User menu' }));
         await user.click(screen.getByText('Settings'));
 
-        expect(mockNavigate).toHaveBeenCalledWith({ to: '/me/settings' });
+        expect(mockNavigate).toHaveBeenCalledWith({ to: '/account/preferences' });
     });
 });

@@ -112,8 +112,8 @@ export const sections: Record<string, Section> = {
         id: 'plataforma',
         label: { es: 'Plataforma', en: 'Platform', pt: 'Plataforma' },
         icon: 'SettingsIcon',
-        route: '/settings/seo',
-        defaultRoute: '/settings/seo',
+        route: '/platform/configuration/seo',
+        defaultRoute: '/platform/configuration/seo',
         sidebar: 'plataformaSidebar'
     },
 
@@ -145,8 +145,8 @@ export const sections: Record<string, Section> = {
         id: 'miCuenta',
         label: { es: 'Mi cuenta', en: 'My account', pt: 'Minha conta' },
         icon: 'UserIcon',
-        route: '/me/profile',
-        defaultRoute: '/me/profile',
+        route: '/account/profile',
+        defaultRoute: '/account/profile',
         sidebar: 'miCuentaSidebar'
     },
 

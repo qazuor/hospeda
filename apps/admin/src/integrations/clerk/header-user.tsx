@@ -108,7 +108,7 @@ export function HeaderUser() {
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
-                                router.navigate({ to: '/me/profile' });
+                                router.navigate({ to: '/account/profile' });
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >
@@ -118,7 +118,7 @@ export function HeaderUser() {
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
-                                router.navigate({ to: '/me/settings' });
+                                router.navigate({ to: '/account/preferences' });
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >

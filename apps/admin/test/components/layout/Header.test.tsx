@@ -303,7 +303,7 @@ describe('Header', () => {
             const profileLink = screen.getByRole('link', {
                 name: 'admin-common.aria.profile'
             });
-            expect(profileLink).toHaveAttribute('href', '/me/profile');
+            expect(profileLink).toHaveAttribute('href', '/account/profile');
         });
 
         it('should render settings link to /me/settings', () => {
@@ -312,7 +312,7 @@ describe('Header', () => {
             const settingsLink = screen.getByRole('link', {
                 name: 'admin-common.aria.settings'
             });
-            expect(settingsLink).toHaveAttribute('href', '/me/settings');
+            expect(settingsLink).toHaveAttribute('href', '/account/preferences');
         });
     });
 

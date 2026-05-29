@@ -904,5 +904,45 @@
                 "special": "At least one special character (!@#$%^&*...)"
             }
         }
+    },
+    "security": {
+        "title": "Security",
+        "available": {
+            "title": "Available actions",
+            "subtitle": "What you can manage today"
+        },
+        "changePassword": {
+            "title": "Change password",
+            "subtitle": "Update your password to keep your account secure"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Two-factor authentication",
+                "subtitle": "An extra layer of security at sign-in"
+            },
+            "activeSessions": {
+                "title": "Active sessions",
+                "subtitle": "View and close sessions open on other devices"
+            },
+            "loginHistory": {
+                "title": "Login history",
+                "subtitle": "Record of recent access to your account"
+            },
+            "changeEmail": {
+                "title": "Change email",
+                "subtitle": "Update the address associated with your account"
+            }
+        }
+    },
+    "data": {
+        "title": "My data",
+        "comingSoon": {
+            "title": "You'll soon be able to manage your data from here",
+            "description": "We're preparing the section to export your information, pause your account, and request data deletion in accordance with current regulations."
+        },
+        "supportContact": {
+            "label": "In the meantime, write to us at:",
+            "email": "soporte@hospeda.com.ar"
+        }
     }
 }

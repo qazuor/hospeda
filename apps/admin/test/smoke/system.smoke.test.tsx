@@ -50,7 +50,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 // Import route modules AFTER mocks are set up
 import { Route as NotificationsRoute } from '@/routes/_authed/notifications';
-import { Route as RevalidationRoute } from '@/routes/_authed/revalidation/index';
+import { Route as RevalidationRoute } from '@/routes/_authed/platform/cache/revalidation/index';
 
 describe('System smoke tests', () => {
     it('renders notifications page without crashing', async () => {
