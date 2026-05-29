@@ -566,8 +566,8 @@
         {
             "id": "T-019",
             "title": "Verify AccommodationAdminSearchSchema accepts ownerId as optional filter",
-            "description": "Confirm packages/schemas/src/entities/accommodation/accommodation.admin-search.schema.ts keeps ownerId optional after service forced-scope changes (service forces value regardless). Fix-if-broken only.",
-            "status": "pending",
+            "description": "DONE (verified, no change needed). AccommodationAdminSearchSchema.ownerId is already `.string().uuid().optional()` (lines 40-44). Functionally exercised by T-007 (admin-search.test.ts passes ownerId in entityFilters) and covered by the existing group-a.admin-search.schema.test.ts. The service forces the value regardless, so the optional client field is correct.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-010"],
             "blocks": ["T-023"],
@@ -580,18 +580,18 @@
             ],
             "tags": ["schema", "backend", "accommodation"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T09:15:00.000Z",
+                "completed": "2026-05-29T09:18:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Migrate OwnerSelect to /options endpoint",
-            "description": "apps/admin/src/components/selects/OwnerSelect.tsx: call the approved /options endpoint instead of the heavy /admin/users list. Adapt transformer to { id, label, slug }. The exact /options target confirmed at T-003.",
-            "status": "pending",
+            "description": "DONE. OwnerSelect.tsx now calls /api/v1/admin/users/options; transformer adapted to { id, label, slug } (label = displayName ?? email per D4 addendum); heavyweight fields dropped; queryKey → ['users','options']. user-api.utils searchUsers/loadInitialUsers/loadAllUsers migrated (loadUsersByIds keeps /batch by-id). admin typecheck clean.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-023", "T-025"],
@@ -616,8 +616,8 @@
         {
             "id": "T-021",
             "title": "Migrate DestinationSelect, entity-select fields, generic entity-search to /options",
-            "description": "Update DestinationSelect.tsx, entity-search.utils.ts, and entity-select fields under entity-form/fields/entity-selects/ to use /options endpoints instead of heavy admin list. Full selector list confirmed at T-003.",
-            "status": "pending",
+            "description": "DONE. Migrated to /options: DestinationSelect.tsx + entity-select utils (user/destination/accommodation/event/event-organizer/event-location-api.utils via new createOptionsSelectUtils factory) + entity-search.utils.ts (dead /search fallback → /options, dual-shape normalizer). loadXByIds keep /batch. OQ1: post-sponsorship-api.utils left pointing at the unmounted /admin/post-sponsorships with a SPEC-169/OQ1 comment (out of scope; secure when mounted). UX flag (owner-approved): DestinationSelect label = name only, no (region,country) — accepted regression. admin typecheck clean.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-017", "T-018"],
             "blocks": ["T-023", "T-025"],
@@ -645,8 +645,8 @@
         {
             "id": "T-022",
             "title": "Add beforeLoad owner-scope guard on /accommodations admin route(s)",
-            "description": "Extract pure decideOwnerScopedGuard to apps/admin/src/lib/owner-scoped-guard.ts (actor holds VIEW_OWN but NOT VIEW_ALL → redirect to /me/accommodations). Add beforeLoad to /_authed/accommodations/index.tsx (+ detail/edit/new per T-003). Guard must NOT apply to /me/accommodations.",
-            "status": "pending",
+            "description": "DONE. Pure decideOwnerScopedRedirect in apps/admin/src/lib/owner-scoped-guard.ts: returns '/me/accommodations' when permissions include ACCOMMODATION_VIEW_OWN and NOT VIEW_ALL, else null (VIEW_ALL wins; neither → null). Wired into /_authed/accommodations/index.tsx beforeLoad (throw redirect) reading context auth like conversations/index.tsx; validateSearch reflected to keep search params. D5: ONLY the list route (detail/edit/new covered server-side). /me/accommodations confirmed to exist (no redirect loop). Test owner-scoped-guard.test.ts 6/6. admin typecheck clean.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-010"],
             "blocks": ["T-023", "T-024"],
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 14,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.3
     }
