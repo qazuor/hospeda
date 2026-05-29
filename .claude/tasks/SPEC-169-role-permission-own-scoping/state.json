@@ -231,8 +231,8 @@
         {
             "id": "T-007",
             "title": "Implement forced owner-scoping in adminList for accommodation (VIEW_OWN path)",
-            "description": "Update checkCanAdminList (accept VIEW_OWN) + _canAdminList/_executeAdminSearch in AccommodationService to FORCE ownerId = actor.id when actor holds only VIEW_OWN, overriding any client ownerId. VIEW_ALL → unscoped; neither → FORBIDDEN.",
-            "status": "pending",
+            "description": "DONE. checkCanAdminList now accepts VIEW_ALL OR VIEW_OWN (new error msg). _executeAdminSearch override in AccommodationService FORCES entityFilters.ownerId = actor.id for a VIEW_OWN-only actor (overwrites any client/forged ownerId); VIEW_ALL lists unscoped; neither → FORBIDDEN (checkCanAdminList). No hookState stash needed — actor is available in _executeAdminSearch params. Tests: admin-search.test.ts +4 forced-scope cases (AC-1/AC-2 forced, AC-4 unscoped + staff explicit filter), adminListPermission +VIEW_OWN-allowed + updated msg, permissions.test +VIEW_OWN-allowed + updated msg. Full accommodation folder 312/312 pass; typecheck clean.",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003", "T-004", "T-005"],
             "blocks": ["T-008", "T-009", "T-012", "T-016"],
@@ -253,11 +253,11 @@
             ],
             "tags": ["service-core", "backend", "accommodation", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T05:05:00.000Z",
+                "completed": "2026-05-29T05:30:00.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.3
     }
