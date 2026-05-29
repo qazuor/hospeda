@@ -617,7 +617,7 @@
             "id": "T-028",
             "title": "Create localStorage→API migration helper utility",
             "description": "Per-browser one-shot migration helper (tech-analysis D4).\n\nFiles:\n- `apps/admin/src/utils/settings-migration.ts` (NEW)\n- `apps/admin/src/routes/__root.tsx` (or root layout — invoke helper on first authenticated load)\n\nLogic:\n1. Check cookie `_settings_migrated`. If `true`, no-op (return immediately).\n2. For each migration key (`seo`, `critical-maintenance`, `critical-announcements`):\n   - Read localStorage value.\n   - If absent → skip.\n   - GET `/api/v1/admin/platform-settings/<api-key>`. If server has value → skip (don't overwrite).\n   - If server null and localStorage has value → PATCH server with localStorage value.\n3. On success: set cookie `_settings_migrated=true; max-age=63072000; path=/`.\n4. On any HTTP error: do NOT set cookie, do NOT clear localStorage (preserve user data per spec §7 risk mitigation). Log error to console + report to logger.\n\nAdd TODO comment: 'remove ~30 days post-deploy via spec-156 follow-up task'.\n\nTests:\n- Cookie present → no-op.\n- localStorage absent + server null → no-op.\n- localStorage present + server null → PATCH called + cookie set.\n- localStorage present + server has value → no PATCH, cookie set.\n- PATCH fails (mock 500) → no cookie set, no localStorage clear.\n\nAC: AC-16.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-PR1-QG"],
             "blocks": ["T-029", "T-030", "T-PR3-QG"],
@@ -632,14 +632,14 @@
             "timestamps": {
                 "created": "2026-05-28T05:30:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-29T02:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Rewrite /plataforma/critical data source: localStorage → API",
             "description": "Replace the data layer of the critical settings page (relocated in T-019) with TanStack Query against the new admin endpoints.\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/critical/index.tsx` (REWRITE data source)\n\nChanges:\n- Replace `localStorage.getItem('MAINTENANCE_KEY')` reads with `useQuery({ queryKey: ['platform-settings', 'maintenance.mode'], queryFn: () => fetchPlatformSetting('maintenance.mode') })`.\n- Replace localStorage writes with `useMutation` calling `PATCH /api/v1/admin/platform-settings/maintenance.mode`.\n- Same pattern for announcements display (preserved as read-only here; editor is in T-033/T-034).\n- Permission gate: page guarded by `MAINTENANCE_MODE_WRITE` per AC-25.\n\nTests:\n- Page loads value from server.\n- Toggle update calls PATCH endpoint and reflects in UI.\n- 403 handling: non-SUPER_ADMIN gets denied.\n\nAC: AC-14.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-019", "T-028", "T-009", "T-PR2-QG"],
             "blocks": ["T-PR3-QG"],
@@ -654,14 +654,14 @@
             "timestamps": {
                 "created": "2026-05-28T05:30:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-29T02:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Rewrite /plataforma/configuracion/seo data source: localStorage → API",
             "description": "Replace the data layer of the SEO settings page (relocated in T-020) with TanStack Query against the new admin endpoints. Auto-revalidation happens server-side in `PlatformSettingsService` (T-004).\n\nFiles:\n- `apps/admin/src/routes/_authed/plataforma/configuracion/seo.tsx` (REWRITE data source)\n\nChanges:\n- TanStack Query for read.\n- Mutation PATCH `/api/v1/admin/platform-settings/seo.defaults`.\n- Success toast acknowledges auto-revalidation (e.g., 'Cambios guardados — caché del sitio público invalidada automáticamente').\n- Optional fallback note: 'Si las páginas no se actualizan, podés revalidar manualmente en /plataforma/cache/revalidacion'.\n\nTests:\n- Page loads SEO defaults from server.\n- Save calls PATCH endpoint.\n- Verify (mock) that PATCH success triggers revalidation in service layer (covered by T-031).\n\nAC: AC-15.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020", "T-028", "T-009", "T-PR2-QG"],
             "blocks": ["T-031", "T-PR3-QG"],
@@ -676,14 +676,14 @@
             "timestamps": {
                 "created": "2026-05-28T05:30:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-29T02:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Integration test: SEO PATCH triggers auto-revalidation",
             "description": "End-to-end integration test verifying the auto-revalidation wiring across PlatformSettingsService + revalidationService.\n\nFiles:\n- `apps/api/test/routes/admin/platform-settings.integration.test.ts` (NEW or extend existing)\n\nScenario:\n1. PATCH `/api/v1/admin/platform-settings/seo.defaults` with valid body and SUPER_ADMIN session.\n2. Assert: revalidation log table has a new entry for `entityType='post'` and `path='/'` within the test transaction window.\n\nAlternative if revalidation service is async (queue-based): spy on the service call rather than checking the log table.\n\nTests:\n- Happy path: PATCH → revalidation triggered.\n- Non-SEO key (e.g., maintenance.mode): PATCH does NOT trigger revalidation.\n- Revalidation failure: SEO PATCH still returns 200 (revalidation is best-effort, not blocking).\n\nAC: AC-15.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-030"],
             "blocks": ["T-PR3-QG"],
@@ -698,7 +698,7 @@
             "timestamps": {
                 "created": "2026-05-28T05:30:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-05-29T02:00:00.000Z"
             }
         },
         {

@@ -505,7 +505,7 @@
             "specId": "SPEC-156",
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
             "status": "in-progress",
-            "progress": "26/44",
+            "progress": "30/44",
             "path": "SPEC-156-admin-settings-reorganization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-156-admin-settings-reorganization",
             "branch": "spec/SPEC-156-admin-settings-reorganization",
