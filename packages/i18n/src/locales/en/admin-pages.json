@@ -944,5 +944,45 @@
             "label": "In the meantime, write to us at:",
             "email": "soporte@hospeda.com.ar"
         }
+    },
+    "billing": {
+        "title": "My billing",
+        "subtitle": "Review your plan, usage and payment options",
+        "subscription": {
+            "title": "My plan",
+            "subtitle": "Status and validity of your subscription",
+            "status": {
+                "active": "Active",
+                "trialing": "Trial",
+                "past_due": "Past due",
+                "canceled": "Canceled",
+                "incomplete": "Incomplete",
+                "incomplete_expired": "Incomplete (expired)",
+                "unknown": "Unknown"
+            },
+            "currentPeriodEnd": "Expires on {{date}}",
+            "noActive": {
+                "title": "You don't have an active subscription",
+                "description": "Subscription details will appear here once you sign up for a plan."
+            },
+            "errorLoading": "We couldn't load your subscription. Please try again in a few minutes."
+        },
+        "usage": {
+            "title": "Plan usage",
+            "subtitle": "How much you've used against your current plan limits",
+            "accommodations": "Published accommodations",
+            "unitOfLimit": "{{used}} of {{limit}}",
+            "unlimited": "Unlimited",
+            "noActive": "Subscribe to a plan to see your usage.",
+            "errorLoading": "We couldn't load your usage. Please try again in a few minutes."
+        },
+        "actions": {
+            "title": "Actions",
+            "subtitle": "Manage your subscription and download invoices",
+            "manageSubscription": "Manage my subscription",
+            "manageSubscriptionHint": "We'll take you to hospeda.com.ar to change your plan or payment method.",
+            "downloadLatestInvoice": "Download latest invoice",
+            "noLatestInvoice": "You don't have any invoices available to download yet."
+        }
     }
 }

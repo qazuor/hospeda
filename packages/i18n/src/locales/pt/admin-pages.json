@@ -944,5 +944,45 @@
             "label": "Por enquanto, escreva-nos para:",
             "email": "soporte@hospeda.com.ar"
         }
+    },
+    "billing": {
+        "title": "Meu faturamento",
+        "subtitle": "Revise seu plano, uso e opções de pagamento",
+        "subscription": {
+            "title": "Meu plano",
+            "subtitle": "Status e validade da sua assinatura",
+            "status": {
+                "active": "Ativa",
+                "trialing": "Período de teste",
+                "past_due": "Pagamento atrasado",
+                "canceled": "Cancelada",
+                "incomplete": "Incompleta",
+                "incomplete_expired": "Incompleta (expirada)",
+                "unknown": "Sem status"
+            },
+            "currentPeriodEnd": "Vence em {{date}}",
+            "noActive": {
+                "title": "Você não tem uma assinatura ativa",
+                "description": "Os detalhes aparecerão aqui assim que você contratar um plano."
+            },
+            "errorLoading": "Não foi possível carregar sua assinatura. Tente novamente em alguns minutos."
+        },
+        "usage": {
+            "title": "Uso do meu plano",
+            "subtitle": "Quanto você consumiu dos limites do seu plano atual",
+            "accommodations": "Acomodações publicadas",
+            "unitOfLimit": "{{used}} de {{limit}}",
+            "unlimited": "Sem limite",
+            "noActive": "Contrate um plano para visualizar seu uso.",
+            "errorLoading": "Não foi possível carregar o uso. Tente novamente em alguns minutos."
+        },
+        "actions": {
+            "title": "Ações",
+            "subtitle": "Gerencie sua assinatura e baixe suas faturas",
+            "manageSubscription": "Gerenciar minha assinatura",
+            "manageSubscriptionHint": "Vamos te levar para hospeda.com.ar para alterar seu plano ou método de pagamento.",
+            "downloadLatestInvoice": "Baixar última fatura",
+            "noLatestInvoice": "Você ainda não tem faturas disponíveis para baixar."
+        }
     }
 }

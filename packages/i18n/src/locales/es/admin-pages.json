@@ -944,5 +944,45 @@
             "label": "Por ahora, escribinos a:",
             "email": "soporte@hospeda.com.ar"
         }
+    },
+    "billing": {
+        "title": "Mi facturación",
+        "subtitle": "Revisá tu plan, uso y opciones de pago",
+        "subscription": {
+            "title": "Mi plan",
+            "subtitle": "Estado y vigencia de tu suscripción",
+            "status": {
+                "active": "Activa",
+                "trialing": "Período de prueba",
+                "past_due": "Pago atrasado",
+                "canceled": "Cancelada",
+                "incomplete": "Incompleta",
+                "incomplete_expired": "Incompleta (expirada)",
+                "unknown": "Sin estado"
+            },
+            "currentPeriodEnd": "Vence el {{date}}",
+            "noActive": {
+                "title": "No tenés una suscripción activa",
+                "description": "Cuando contrates un plan, los detalles aparecerán acá."
+            },
+            "errorLoading": "No pudimos cargar tu suscripción. Intentá de nuevo en unos minutos."
+        },
+        "usage": {
+            "title": "Uso de mi plan",
+            "subtitle": "Cuánto consumiste sobre los límites de tu plan vigente",
+            "accommodations": "Alojamientos publicados",
+            "unitOfLimit": "{{used}} de {{limit}}",
+            "unlimited": "Sin límite",
+            "noActive": "Suscribite a un plan para ver tu uso.",
+            "errorLoading": "No pudimos cargar el uso. Intentá de nuevo en unos minutos."
+        },
+        "actions": {
+            "title": "Acciones",
+            "subtitle": "Gestioná tu suscripción y descargá tus facturas",
+            "manageSubscription": "Gestionar mi suscripción",
+            "manageSubscriptionHint": "Te llevamos a hospeda.com.ar para cambiar tu plan o método de pago.",
+            "downloadLatestInvoice": "Descargar última factura",
+            "noLatestInvoice": "Todavía no tenés facturas disponibles para descargar."
+        }
     }
 }
