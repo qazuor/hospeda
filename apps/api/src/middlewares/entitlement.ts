@@ -420,6 +420,26 @@ async function loadEntitlements(
  */
 export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
     return async (c, next) => {
+        // Platform staff bypass (SPEC-171). Staff roles (SUPER_ADMIN, ADMIN,
+        // EDITOR, CLIENT_MANAGER) operate the admin panel without a billing
+        // customer/subscription. Grant them the unlimited entitlement set FIRST —
+        // before the billingEnabled check, the customer lookup, and the
+        // customer-keyed cache. It runs before billingEnabled because the spec
+        // requires staff to "see everything enabled, no gating" unconditionally:
+        // now that the frontend trusts the resolver (the role-aware shim is
+        // gone), returning empty for staff when billing is disabled would gate
+        // their premium fields. Running before the cache keeps role-dependent
+        // payloads out of the customer-keyed cache (no cross-role leak).
+        const staffActor = c.get('actor');
+        if (isStaffBypassRole(staffActor?.role as RoleEnum | undefined)) {
+            const unlimited = buildStaffUnlimitedResult();
+            c.set('userEntitlements', unlimited.entitlements);
+            c.set('userLimits', unlimited.limits);
+            c.set('billingLoadFailed', false);
+            await next();
+            return;
+        }
+
         // Check if billing is enabled
         const billingEnabled = c.get('billingEnabled');
 
@@ -427,22 +447,6 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             // Billing not enabled - set empty entitlements
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('userLimits', new Map<LimitKey, number>());
-            c.set('billingLoadFailed', false);
-            await next();
-            return;
-        }
-
-        // Platform staff bypass (SPEC-171). Staff roles (SUPER_ADMIN, ADMIN,
-        // EDITOR, CLIENT_MANAGER) operate the admin panel without a billing
-        // customer/subscription. Grant them the unlimited entitlement set here,
-        // BEFORE touching the customer lookup or the customer-keyed cache. This
-        // keeps role-dependent payloads out of the customer cache (no cross-role
-        // leak) and means the frontend no longer needs to special-case staff.
-        const staffActor = c.get('actor');
-        if (isStaffBypassRole(staffActor?.role as RoleEnum | undefined)) {
-            const unlimited = buildStaffUnlimitedResult();
-            c.set('userEntitlements', unlimited.entitlements);
-            c.set('userLimits', unlimited.limits);
             c.set('billingLoadFailed', false);
             await next();
             return;

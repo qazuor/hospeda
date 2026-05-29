@@ -303,6 +303,33 @@ describe('entitlementMiddleware', () => {
             });
         }
 
+        it('should grant unlimited to staff even when billing is DISABLED (guard runs before billingEnabled)', async () => {
+            // Staff must see everything enabled unconditionally — the frontend
+            // trusts the resolver now, so an empty payload here would gate the
+            // staff's premium fields. The guard runs before the billingEnabled
+            // short-circuit precisely to cover billing-off environments.
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                c.set('actor', {
+                    id: 'staff-no-billing',
+                    role: RoleEnum.SUPER_ADMIN,
+                    permissions: [],
+                    email: 'super@example.com'
+                } as unknown as InjectedActor);
+                return next();
+            });
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.entitlements).toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+        });
+
         it('should grant unlimited to staff WITHOUT ever calling billing (short-circuits before customer/cache)', async () => {
             // Even with a customer id present, the staff guard must short-circuit
             // before the customer lookup — so the customer-keyed cache never sees
