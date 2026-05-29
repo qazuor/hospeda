@@ -129,7 +129,7 @@ export const SortableGalleryItem = ({
                                 alt={altText}
                                 loading="lazy"
                                 decoding="async"
-                                className="block aspect-[4/3] w-full object-cover"
+                                className="block aspect-[3/2] w-full object-cover"
                             />
                         </button>
                     </DialogTrigger>
@@ -199,7 +199,7 @@ export const SortableGalleryItem = ({
                 )}
             </div>
 
-            <div className="space-y-2 p-2.5">
+            <div className="space-y-1.5 p-2">
                 <div>
                     <Label
                         htmlFor={`gallery-${image.id}-caption`}
