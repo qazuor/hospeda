@@ -47,6 +47,7 @@ export enum FieldTypeEnum {
     AMENITY_SELECT = 'AMENITY_SELECT',
     TAG_SELECT = 'TAG_SELECT',
     RICH_TEXT = 'RICH_TEXT',
+    COORDINATES = 'COORDINATES',
     PHONE = 'PHONE',
     EMAIL = 'EMAIL',
     URL = 'URL',

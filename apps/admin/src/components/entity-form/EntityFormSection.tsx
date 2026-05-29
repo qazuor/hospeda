@@ -2,6 +2,7 @@ import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums'
 import {
     AccommodationSelectField,
     CheckboxField,
+    CoordinatesField,
     CurrencyField,
     // Specific entity select fields
     DestinationSelectField,
@@ -19,6 +20,7 @@ import {
     TextareaField,
     UserSelectField
 } from '@/components/entity-form/fields';
+import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
@@ -297,6 +299,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             <RichTextField
                                 {...fieldProps}
                                 value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.COORDINATES:
+                        return (
+                            <CoordinatesField
+                                {...fieldProps}
+                                value={fieldValue as CoordinatesValue | undefined}
                             />
                         );
 

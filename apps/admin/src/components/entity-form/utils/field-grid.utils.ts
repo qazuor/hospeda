@@ -22,6 +22,7 @@ export function getFieldColSpanClass(type: FieldTypeEnum): 'col-span-2' | 'col-s
     const fullWidthTypes: ReadonlySet<FieldTypeEnum> = new Set([
         FieldTypeEnum.TEXTAREA,
         FieldTypeEnum.RICH_TEXT,
+        FieldTypeEnum.COORDINATES,
         FieldTypeEnum.GALLERY,
         FieldTypeEnum.IMAGE,
         FieldTypeEnum.FILE,

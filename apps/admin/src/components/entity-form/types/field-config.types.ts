@@ -76,6 +76,7 @@ export type FieldTypeConfig =
     | EntitySelectFieldConfig
     | CurrencyFieldConfig
     | RichTextFieldConfig
+    | CoordinatesFieldConfig
     | ImageFieldConfig
     | GalleryFieldConfig
     | NumberFieldConfig
@@ -170,6 +171,67 @@ export type RichTextFieldConfig = {
     minLength?: number;
     placeholder?: string;
     placeholderKey?: string; // i18n key
+};
+
+/**
+ * Coordinates field specific configuration.
+ *
+ * The COORDINATES field renders a draggable Leaflet marker over OSM tiles
+ * plus inline lat/long inputs. Value shape mirrors
+ * `@repo/schemas#CoordinatesSchema`: `{ lat: string, long: string }`
+ * (strings so values round-trip cleanly through the JSONB column).
+ */
+export type CoordinatesFieldConfig = {
+    type: 'COORDINATES';
+    /**
+     * Map zoom when the field renders an existing point. Default 15.
+     */
+    defaultZoom?: number;
+    /**
+     * Map zoom when the field is empty and falls back to the default centre.
+     * Default 12 (broader view to invite the user to drop a pin).
+     */
+    fallbackZoom?: number;
+    /**
+     * Hard-coded fallback centre when no value and no destination context
+     * is provided. Defaults to Concepción del Uruguay
+     * (lat -32.4825, long -58.2372).
+     */
+    fallbackCenter?: { lat: number; lng: number };
+    /**
+     * Optional tile URL — overrides the OSM default. Useful if we swap
+     * provider later without changing the field.
+     */
+    tileUrl?: string;
+    /** Optional tile attribution text. */
+    tileAttribution?: string;
+    /**
+     * Sibling field ids that participate in geocoding. When provided the
+     * field renders two buttons:
+     *  - "Locate from address" reads `street` (+ optional `number`,
+     *    `cityContext`) from the form state, forward-geocodes via Nominatim
+     *    and updates the coordinates.
+     *  - "Fill address from map" reverse-geocodes the current coordinates
+     *    and writes the resolved `street` / `number` back into the sibling
+     *    fields when they are empty.
+     *
+     * All ids are dot-notation paths (e.g. `location.street`). Omit to
+     * hide the geocoding controls entirely.
+     */
+    addressFields?: {
+        street?: string;
+        number?: string;
+        /**
+         * Optional read-only field id whose value seeds the forward-geocode
+         * query with city context (e.g. the projected `cityDestination.name`).
+         */
+        cityContext?: string;
+    };
+    /**
+     * Two-letter country codes to scope Nominatim forward search.
+     * Defaults to `['ar']` for the Hospeda Argentina use case.
+     */
+    geocodingCountryCodes?: string[];
 };
 
 /**

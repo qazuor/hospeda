@@ -1,4 +1,6 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { CoordinatesField } from '@/components/entity-form/fields/CoordinatesField';
+import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
@@ -341,6 +343,17 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         <RichTextViewField
                             {...baseFieldProps}
                             value={fieldValue as string}
+                        />
+                    );
+
+                case FieldTypeEnum.COORDINATES:
+                    // View mode reuses the editable component with disabled=true so
+                    // the user still sees the map + pin at the right location.
+                    return wrap(
+                        <CoordinatesField
+                            {...baseFieldProps}
+                            value={fieldValue as CoordinatesValue | undefined}
+                            disabled
                         />
                     );
 

@@ -11,6 +11,7 @@ describe('getFieldColSpanClass', () => {
         const fullWidthTypes: FieldTypeEnum[] = [
             FieldTypeEnum.TEXTAREA,
             FieldTypeEnum.RICH_TEXT,
+            FieldTypeEnum.COORDINATES,
             FieldTypeEnum.GALLERY,
             FieldTypeEnum.IMAGE,
             FieldTypeEnum.FILE,
