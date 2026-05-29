@@ -575,7 +575,9 @@
         "description": "Has alcanzado el límite de tu plan actual",
         "titleDefault": "Llegaste al límite de tu plan",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
-        "upgradeLink": "Ver mi suscripción"
+        "upgradeLink": "Ver mi suscripción",
+        "belowLimit": "Te quedan {max} - {current} disponibles en tu plan.",
+        "atLimit": "Llegaste al máximo permitido por tu plan. Para sumar más, mejorá el plan."
     },
     "ownerPromotions": {
         "columns": {

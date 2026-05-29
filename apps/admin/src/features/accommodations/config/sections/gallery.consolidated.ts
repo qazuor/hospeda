@@ -1,5 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
+import { LimitKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -97,14 +98,13 @@ export const createGalleryConsolidatedSection = (
             // above — see that field's comment for the full explanation. The
             // `galleryFieldHandlers` map key in `$id_.edit.tsx` and `new.tsx`
             // must match this id so the upload handler is wired correctly.
-            // limitKey: MAX_PHOTOS_PER_ACCOMMODATION temporarily disabled —
-            // `useMyEntitlements` returns `0` for users without a billing plan
-            // (e.g. admin/superadmin), so PlanLimitGate replaced the whole
-            // field with the "límite alcanzado" fallback even when there were
-            // photos to show. Server-side `enforcePhotoLimit` on
-            // POST /api/v1/admin/media/upload remains the authoritative guard.
-            // Re-enable once the entitlements service returns "unlimited"
-            // (`-1`) for staff roles (tracked as a follow-up entitlements spec).
+            // Re-enabled in Phase 4-B: EntityFormSection no longer wraps the
+            // field in PlanLimitGate (which used to hide it at the cap). It
+            // now renders a LimitProgressIndicator above the field for HOST
+            // users only — staff (admin/superadmin) is bypassed via
+            // useShouldShowEntitlementGates, so the false-positive that
+            // disabled this previously is gone. Server-side enforcePhotoLimit
+            // on POST /api/v1/admin/media/upload remains authoritative.
             {
                 id: 'media.gallery',
                 type: FieldTypeEnum.GALLERY,
@@ -117,6 +117,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
+                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: ENTITY_GALLERY_CAPS.accommodation,

@@ -38,8 +38,8 @@ export interface FieldMediaHandlers {
     onDelete?: (publicId: string) => Promise<void>;
 }
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
-import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
@@ -477,32 +477,24 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 // - Other field types should not set limitKey; default to 0.
                 const currentFieldCount = Array.isArray(rawFieldValue) ? rawFieldValue.length : 0;
 
+                // Spec §4.7 sabor 2: show a soft progress indicator ABOVE the
+                // resource ("junto al recurso que limita"), not as a replacement
+                // for it. The previous PlanLimitGate wrapped the field and hid
+                // it entirely at the cap, which surprised hosts and conflicted
+                // with the spec. Server-side enforcement (e.g. enforcePhotoLimit
+                // on POST /admin/media/upload) remains authoritative; this
+                // indicator is the proactive UX signal.
                 return (
                     <div
                         key={field.id}
-                        className={colSpanClass}
+                        className={cn(colSpanClass, 'space-y-2')}
                     >
-                        <PlanLimitGate
+                        <LimitProgressIndicator
                             limitKey={field.limitKey}
                             currentCount={currentFieldCount}
-                            fieldLabel={field.label || field.id}
-                            fallback={
-                                <div className="space-y-2">
-                                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
-                                        <p className="font-medium text-foreground text-sm">
-                                            {t('admin-entities.limitGate.fieldLimitReached', {
-                                                field: field.label || field.id
-                                            })}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {t('admin-entities.limitGate.description')}
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                        >
-                            {fieldContent}
-                        </PlanLimitGate>
+                            resourceLabel={field.label || field.id}
+                        />
+                        {fieldContent}
                     </div>
                 );
             }

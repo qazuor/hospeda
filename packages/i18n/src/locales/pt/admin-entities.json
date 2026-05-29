@@ -601,7 +601,9 @@
         "description": "Você atingiu o limite do seu plano atual",
         "titleDefault": "Atingiste o limite do teu plano",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Atualiza o teu plano para teres mais.",
-        "upgradeLink": "Ver minha assinatura"
+        "upgradeLink": "Ver minha assinatura",
+        "belowLimit": "Te restam {max} - {current} disponíveis no seu plano.",
+        "atLimit": "Você atingiu o limite do seu plano. Para adicionar mais, atualize o plano."
     },
     "selects": {
         "destination": {
