@@ -67,6 +67,21 @@ When `loadEntitlements()` runs on login, the active subscription drives `userLim
 
 Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
 
+## Role Permission Gotchas
+
+### Why HOST has `TAG_SYSTEM_VIEW`
+
+Looks like privilege escalation at first glance — it is not. HOST holds `TAG_SYSTEM_VIEW`
+intentionally per SPEC-086 D-017 so the **tag picker in accommodation edit forms** can
+list SYSTEM tags as selectable options. The grant is read-only inside the picker; HOST
+cannot create / update / delete SYSTEM tags.
+
+Admin pages at `/platform/tags/system` are gated independently on `ACCESS_API_ADMIN`
+(per SPEC-156 locked decisions), so this grant does not bleed into admin surfaces.
+
+**Do not remove `TAG_SYSTEM_VIEW` from the HOST role block in `rolePermissions.seed.ts`**
+without coordinating with whatever replaces the tag picker.
+
 ## Package Structure
 
 ```
