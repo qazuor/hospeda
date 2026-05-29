@@ -624,6 +624,11 @@
         "booleanNo": "No",
         "emptyValue": "—"
     },
+    "premiumBlock": {
+        "title": "Funciones disponibles en planes superiores",
+        "description": "Estas funciones se desbloquean al mejorar tu plan.",
+        "cta": "Mejorar plan"
+    },
     "qualityScore": {
         "triggerLabel": "Calidad",
         "triggerAriaLabel": "Calidad del anuncio: {score} de 100. Abrir desglose.",
