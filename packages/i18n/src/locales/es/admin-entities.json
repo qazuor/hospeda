@@ -621,5 +621,46 @@
         "booleanYes": "Sí",
         "booleanNo": "No",
         "emptyValue": "—"
+    },
+    "qualityScore": {
+        "triggerLabel": "Calidad",
+        "triggerAriaLabel": "Calidad del anuncio: {score} de 100. Abrir desglose.",
+        "popoverHeading": "Calidad de tu anuncio",
+        "popoverHint": "Mejorá estos puntos para que tu anuncio convierta más.",
+        "groups": {
+            "done": "Cumplido",
+            "pending": "Para mejorar",
+            "premium": "Llevalo más lejos"
+        },
+        "emptyDone": "Todavía no completaste ningún objetivo.",
+        "emptyPending": "¡Cumpliste todo lo que suma! Tu anuncio está al máximo.",
+        "premiumDescription": "Funciones del plan premium para potenciar tu anuncio.",
+        "premiumCta": "Mejorar plan",
+        "goToSection": "Ir a la sección",
+        "signals": {
+            "featuredImage": { "label": "Imagen principal cargada" },
+            "galleryPhotos": {
+                "label": "Al menos {target} fotos en la galería",
+                "hint": "{current} de {target} cargadas"
+            },
+            "photosAlt": {
+                "label": "Texto alternativo en todas las fotos",
+                "hint": "{missing} foto(s) sin texto alternativo"
+            },
+            "description": {
+                "label": "Descripción detallada",
+                "hint": "{current} de {target} caracteres"
+            },
+            "summary": { "label": "Resumen corto" },
+            "locationPin": { "label": "Ubicación marcada en el mapa" },
+            "contact": { "label": "Al menos un canal de contacto" },
+            "services": {
+                "label": "Servicios cargados",
+                "hint": "{current} de {target} marcados"
+            },
+            "price": { "label": "Precio cargado" },
+            "videoGallery": { "label": "Galería con videos" },
+            "virtualTour": { "label": "Tour virtual 360°" }
+        }
     }
 }

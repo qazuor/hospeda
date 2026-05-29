@@ -290,40 +290,9 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             {/* Accessible sr-only h1 — always present, even during loading */}
             <h1 className="sr-only">{pageTitleText}</h1>
 
-            {/* ---- Sticky hybrid header ---- */}
-            <EntityPageHeader
-                mode={mode}
-                title={pageTitleText}
-                subtitle={headerSubtitle}
-                badges={headerBadges}
-                media={headerMedia}
-                qualityScore={qualityScore}
-                viewActions={
-                    mode === 'view'
-                        ? {
-                              onBack: () => window.history.back(),
-                              onEdit: canEdit ? goToEdit : () => undefined
-                          }
-                        : undefined
-                }
-                editActions={
-                    mode === 'edit'
-                        ? {
-                              onCancel: goToView,
-                              // Actual save is triggered by form submit;
-                              // the button calls handleSave indirectly via the
-                              // EntityFormProvider's save() which is wired in
-                              // EntityEditContent. Dirty state is unknown here
-                              // (it lives in the form context); left as `false`
-                              // until a lifting mechanism is added.
-                              isDirty: false,
-                              isSaving: updateMutation.isLoading
-                          }
-                        : undefined
-                }
-            />
-
-            {/* ---- Form provider + children (accordion sections) ---- */}
+            {/* ---- Form provider wraps header + children so widgets inside the
+                  header (notably QualityScore) can subscribe to live form state
+                  via useEntityFormContext. ---- */}
             <EntityErrorBoundary>
                 <Suspense
                     fallback={
@@ -340,6 +309,39 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                         onSave={handleSave}
                         zodSchema={zodSchema}
                     >
+                        {/* ---- Sticky hybrid header ---- */}
+                        <EntityPageHeader
+                            mode={mode}
+                            title={pageTitleText}
+                            subtitle={headerSubtitle}
+                            badges={headerBadges}
+                            media={headerMedia}
+                            qualityScore={qualityScore}
+                            viewActions={
+                                mode === 'view'
+                                    ? {
+                                          onBack: () => window.history.back(),
+                                          onEdit: canEdit ? goToEdit : () => undefined
+                                      }
+                                    : undefined
+                            }
+                            editActions={
+                                mode === 'edit'
+                                    ? {
+                                          onCancel: goToView,
+                                          // Actual save is triggered by form submit;
+                                          // the button calls handleSave indirectly via the
+                                          // EntityFormProvider's save() which is wired in
+                                          // EntityEditContent. Dirty state is unknown here
+                                          // (it lives in the form context); left as `false`
+                                          // until a lifting mechanism is added.
+                                          isDirty: false,
+                                          isSaving: updateMutation.isLoading
+                                      }
+                                    : undefined
+                            }
+                        />
+
                         {children}
                     </EntityFormProvider>
                 </Suspense>

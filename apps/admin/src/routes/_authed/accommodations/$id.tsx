@@ -1,6 +1,7 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
+import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -44,6 +45,7 @@ function AccommodationViewPage() {
             headerMedia={headerProps.media}
             headerSubtitle={headerProps.subtitle}
             headerBadges={headerProps.badges}
+            qualityScore={<AccommodationQualityScore />}
         >
             <EntityViewContent
                 entityType="accommodation"

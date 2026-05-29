@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { ChevronRightIcon } from '@repo/icons';
 import * as React from 'react';
+import { useSectionOpenListener } from './section-navigation';
 
 // ---------------------------------------------------------------------------
 // Context
@@ -93,6 +94,30 @@ export function SectionAccordion({ children, defaultOpenIds, className }: Sectio
     const value = React.useMemo(
         () => ({ openSections, toggleSection }),
         [openSections, toggleSection]
+    );
+
+    // Cross-tree navigation: respond to `openSection(id)` calls from siblings
+    // (e.g. the QualityScore popover in the page header). We open the section
+    // if it's closed and scroll its panel into view after the layout settles.
+    useSectionOpenListener(
+        React.useCallback((id: string) => {
+            setOpenSections((prev) => {
+                if (prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.add(id);
+                return next;
+            });
+            // Defer scroll until the panel actually mounts.
+            requestAnimationFrame(() => {
+                const el = document.querySelector(`[data-testid="accordion-section-${id}"]`);
+                if (el && 'scrollIntoView' in el) {
+                    (el as HTMLElement).scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        }, [])
     );
 
     return (
