@@ -2,7 +2,7 @@ import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { checkGenericPermission, hasPermission } from '../../utils';
+import { checkGenericPermission, getOwnershipDescriptor, hasPermission } from '../../utils';
 
 /**
  * Checks if a given actor is the owner of a resource.
@@ -188,4 +188,40 @@ export function checkCanAdminList(actor: Actor): void {
             'Permission denied: ACCOMMODATION_VIEW_ALL required for admin list'
         );
     }
+}
+
+/**
+ * Checks if an actor may view the ADMIN detail of an accommodation (SPEC-169 §2.1/§5.2).
+ *
+ * This is intentionally NOT the generic {@link checkCanView}: that one grants access to
+ * any `PUBLIC` record, which on the admin detail endpoint would leak admin-grade fields
+ * of another owner's public listing to a `VIEW_OWN`-only actor. The admin detail check is
+ * strictly:
+ * - `ACCOMMODATION_VIEW_ALL` → staff: any record.
+ * - `ACCOMMODATION_VIEW_OWN` → only the actor's own record; otherwise `NOT_FOUND`
+ *   (decision D2: do not leak the existence of other owners' records, including PUBLIC ones).
+ * - neither → `FORBIDDEN` (the admin route gate normally blocks this first).
+ *
+ * Ownership is resolved through the shared per-entity ownership descriptor (§5.6) so the
+ * "who owns it" rule stays defined exactly once and cannot drift from the list-scoping path.
+ *
+ * @param actor The actor performing the action.
+ * @param entity The accommodation being viewed.
+ * @throws {ServiceError} NOT_FOUND for a non-owned record under VIEW_OWN; FORBIDDEN otherwise.
+ */
+export function checkCanAdminView(actor: Actor, entity: Accommodation): void {
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+        return;
+    }
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_OWN)) {
+        const descriptor = getOwnershipDescriptor('accommodation');
+        if (descriptor?.isOwner(actor, entity)) {
+            return;
+        }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Permission denied: ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin view'
+    );
 }

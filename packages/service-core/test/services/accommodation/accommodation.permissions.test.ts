@@ -3,6 +3,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@rep
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkCanAdminList,
+    checkCanAdminView,
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
@@ -315,6 +316,49 @@ describe('Accommodation Permissions', () => {
             expect(() =>
                 checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL]))
             ).not.toThrow();
+        });
+    });
+
+    describe('checkCanAdminView (SPEC-169)', () => {
+        const expectErrorCode = (fn: () => void, code: ServiceErrorCode) => {
+            let thrown: unknown;
+            try {
+                fn();
+            } catch (err) {
+                thrown = err;
+            }
+            expect(thrown).toBeInstanceOf(ServiceError);
+            expect((thrown as ServiceError).code).toBe(code);
+        };
+
+        it('VIEW_ALL actor can view ANY accommodation, incl. another owner PUBLIC one (AC-4)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PUBLIC);
+            expect(() => checkCanAdminView(actor, others)).not.toThrow();
+        });
+
+        it('VIEW_OWN actor can view their OWN accommodation (AC-8)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const own = withOwner(mockUserId, VisibilityEnum.PRIVATE);
+            expect(() => checkCanAdminView(actor, own)).not.toThrow();
+        });
+
+        it('VIEW_OWN actor gets NOT_FOUND on another owner PUBLIC accommodation (AC-9)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PUBLIC);
+            expectErrorCode(() => checkCanAdminView(actor, others), ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('VIEW_OWN actor gets NOT_FOUND on another owner PRIVATE accommodation (AC-9)', () => {
+            const actor = createActor([PermissionEnum.ACCOMMODATION_VIEW_OWN], mockUserId);
+            const others = withOwner(otherUserId, VisibilityEnum.PRIVATE);
+            expectErrorCode(() => checkCanAdminView(actor, others), ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('actor with neither VIEW_ALL nor VIEW_OWN gets FORBIDDEN', () => {
+            const actor = createActor([], mockUserId);
+            const own = withOwner(mockUserId, VisibilityEnum.PRIVATE);
+            expectErrorCode(() => checkCanAdminView(actor, own), ServiceErrorCode.FORBIDDEN);
         });
     });
 });
