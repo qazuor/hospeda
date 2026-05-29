@@ -615,19 +615,6 @@ const comercialSidebar: SidebarInput = {
                     route: '/platform/ops/webhooks',
                     permissions: ['BILLING_READ_ALL'],
                     onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'billing-cron',
-                    label: {
-                        es: 'Tareas programadas',
-                        en: 'Scheduled tasks',
-                        pt: 'Tarefas agendadas'
-                    },
-                    icon: 'ClockIcon',
-                    route: '/platform/ops/cron',
-                    permissions: ['BILLING_READ_ALL'],
-                    onMissing: 'hide'
                 }
             ]
         },
@@ -804,6 +791,36 @@ const plataformaSidebar: SidebarInput = {
                     icon: 'MailIcon',
                     route: '/platform/email/logs',
                     permissions: ['BILLING_READ_ALL']
+                }
+            ]
+        },
+        { type: 'separator', id: 'sep-system-ops' },
+        // ── Operaciones del sistema ───────────────────────────────────────
+        {
+            type: 'group',
+            id: 'system-ops',
+            label: {
+                es: 'Operaciones del sistema',
+                en: 'System operations',
+                pt: 'Operações do sistema'
+            },
+            icon: 'ClockIcon',
+            defaultOpen: false,
+            permissions: ['SYSTEM_MAINTENANCE_MODE'],
+            onMissing: 'hide',
+            items: [
+                {
+                    type: 'link',
+                    id: 'platform-cron',
+                    label: {
+                        es: 'Tareas programadas',
+                        en: 'Scheduled tasks',
+                        pt: 'Tarefas agendadas'
+                    },
+                    icon: 'ClockIcon',
+                    route: '/platform/ops/cron',
+                    permissions: ['SYSTEM_MAINTENANCE_MODE'],
+                    onMissing: 'hide'
                 }
             ]
         },

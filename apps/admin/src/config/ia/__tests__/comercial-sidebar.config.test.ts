@@ -92,15 +92,24 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
         ).toHaveLength(0);
     });
 
-    // ── 3. billing-cron re-gated to BILLING_READ_ALL ──────────────────────────
+    // ── 3. cron moved out of comercial into the platform sidebar (SPEC-161 UX) ──
 
-    it('billing-cron gates on BILLING_READ_ALL (not ACCESS_PANEL_ADMIN) (AC-7)', () => {
+    it('cron is no longer in comercial and lives in platform gated on SYSTEM_MAINTENANCE_MODE', () => {
         if (!comercialItems) throw new Error('comercialSidebar items not found');
-        const allItems = collectPermissionedItems(comercialItems);
-        const billingCron = allItems.find((item) => item.id === 'billing-cron');
-        expect(billingCron, 'billing-cron item not found in comercialSidebar').toBeDefined();
-        expect(billingCron?.permissions).toContain('BILLING_READ_ALL');
-        expect(billingCron?.permissions).not.toContain('ACCESS_PANEL_ADMIN');
+        // The scheduled-tasks page is global ops, not billing — it must not be in comercial.
+        const inComercial = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'billing-cron' || item.id === 'platform-cron'
+        );
+        expect(inComercial, 'cron link should no longer be in comercialSidebar').toBeUndefined();
+
+        // It now lives in the platform sidebar, gated on SYSTEM_MAINTENANCE_MODE.
+        const platformItems = sidebars.plataformaSidebar?.items as RawItem[] | undefined;
+        if (!platformItems) throw new Error('plataformaSidebar items not found');
+        const platformCron = collectPermissionedItems(platformItems).find(
+            (item) => item.id === 'platform-cron'
+        );
+        expect(platformCron, 'platform-cron not found in plataformaSidebar').toBeDefined();
+        expect(platformCron?.permissions).toContain('SYSTEM_MAINTENANCE_MODE');
     });
 
     // ── 4. billing-settings re-gated to BILLING_READ_ALL ─────────────────────
