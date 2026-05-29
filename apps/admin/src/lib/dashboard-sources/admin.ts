@@ -23,9 +23,8 @@
  *
  * ## No-source slots (deferred / needs new backend)
  *
- * - **Card D — cron failed/last-run**: 🔴 per-run result NOT persisted. Needs
- *   new backend (run-history storage + endpoint). DeferredWidget / `onMissing: 'hide'`
- *   in T-031.
+ * - **Card D — cron failed/last-run**: 🟢 wired (SPEC-161). `admin.crons.list`
+ *   now enriches each job with its last-run status from GET /admin/cron/runs/summary.
  * - **Card E — maintenance-mode flag**: 🟡 must confirm the flag is readable;
  *   folded into `admin.system.health` response once confirmed.
  *
@@ -138,6 +137,23 @@ interface CronJobsApiResponse {
         readonly jobs?: ReadonlyArray<CronJobItem>;
         readonly total?: number;
         readonly enabled?: number;
+    };
+}
+
+/** Shape of a cron run from the run-history summary (SPEC-161). */
+interface CronRunSummaryItem {
+    readonly jobName: string;
+    readonly status: 'success' | 'failed' | 'timeout';
+    readonly finishedAt?: string;
+}
+
+/** Shape of GET /api/v1/admin/cron/runs/summary response (SPEC-161). */
+interface CronRunSummaryApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly lastRuns?: ReadonlyArray<CronRunSummaryItem>;
+        readonly recentFailures?: ReadonlyArray<CronRunSummaryItem>;
+        readonly failingJobsCount?: number;
     };
 }
 
@@ -373,31 +389,73 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
 // CARD D — Crons: cron job list + enabled/total count
 // ============================================================================
 
+/** Maps a cron run status to a ListItem statusBadge (label + colour variant). */
+const cronRunStatusBadge = (
+    status?: 'success' | 'failed' | 'timeout'
+): {
+    readonly label: string;
+    readonly variant: 'success' | 'warning' | 'destructive' | 'neutral';
+} => {
+    switch (status) {
+        case 'success':
+            return { label: 'Última: OK', variant: 'success' };
+        case 'failed':
+            return { label: 'Última: falló', variant: 'destructive' };
+        case 'timeout':
+            return { label: 'Última: timeout', variant: 'warning' };
+        default:
+            return { label: 'Sin ejecuciones', variant: 'neutral' };
+    }
+};
+
 /**
- * ADMIN card D: cron job list with enabled/total summary.
+ * ADMIN card D: cron job list enriched with each job's last-run status.
  *
- * Per-run results (failed/last-run status) are NOT persisted — those slots are
- * 🔴 and require new backend. Only the list + enabled count are fetched here.
+ * Fetches the registered jobs (GET /api/v1/admin/cron) and the run-history
+ * summary (GET /api/v1/admin/cron/runs/summary, SPEC-161) in parallel, then
+ * tags every job with the status of its most recent run. This powers the
+ * "crons fallidos / última corrida" view that SPEC-155 left as a deferred slot.
  *
  * Source ID: `'admin.crons.list'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/cron
+ * Endpoints: GET /api/v1/admin/cron + GET /api/v1/admin/cron/runs/summary
  */
 registerDataSource('admin.crons.list', (ctx) => ({
     queryKey: buildDashboardQueryKey('admin.crons.list', ctx),
     queryFn: async () => {
-        const result = await fetchApi<CronJobsApiResponse>({
-            path: '/api/v1/admin/cron'
-        });
-        const jobs = result.data.data?.jobs ?? [];
+        const [jobsResult, summaryResult] = await Promise.all([
+            fetchApi<CronJobsApiResponse>({ path: '/api/v1/admin/cron' }),
+            fetchApi<CronRunSummaryApiResponse>({
+                path: '/api/v1/admin/cron/runs/summary'
+            })
+        ]);
 
-        // Normalize to ListItem[] shape expected by ListWidget.
-        return jobs.map((job) => ({
-            id: job.id,
-            label: job.name,
-            meta: job.schedule ?? undefined,
-            badge: job.enabled ? 'activo' : 'inactivo'
-        }));
+        const jobs = jobsResult.data.data?.jobs ?? [];
+        const lastRuns = summaryResult.data.data?.lastRuns ?? [];
+        const lastRunByJob = new Map(lastRuns.map((run) => [run.jobName, run]));
+
+        // Surface problems first: failed → timeout → no-runs → success.
+        const sortRank = (status?: 'success' | 'failed' | 'timeout'): number => {
+            if (status === 'failed') return 0;
+            if (status === 'timeout') return 1;
+            if (status === undefined) return 2;
+            return 3;
+        };
+
+        return jobs
+            .map((job) => {
+                const lastRun = lastRunByJob.get(job.name);
+                return {
+                    id: job.id,
+                    label: job.name,
+                    meta: job.schedule ?? undefined,
+                    badge: job.enabled ? 'activo' : 'inactivo',
+                    statusBadge: cronRunStatusBadge(lastRun?.status),
+                    sortRank: sortRank(lastRun?.status)
+                };
+            })
+            .sort((a, b) => a.sortRank - b.sortRank)
+            .map(({ sortRank: _sortRank, ...item }) => item);
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -545,9 +603,8 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
 // ============================================================================
 // NOTE — deferred / needs new backend
 // ============================================================================
-// Card D — cron failed/last-run: 🔴 per-run history NOT persisted. New backend
-//   (run-history table + endpoint) required before this can be registered.
-//   DeferredWidget handles this slot; T-031 sets onMissing: 'hide'.
+// Card D — cron failed/last-run: 🟢 wired (SPEC-161). admin.crons.list enriches
+//   each job with its last-run status from GET /admin/cron/runs/summary.
 //
 // Card E — maintenance-mode flag: 🟡 confirm the SYSTEM_MAINTENANCE_MODE flag
 //   is readable. Once confirmed, add it to the admin.system.health queryFn above.

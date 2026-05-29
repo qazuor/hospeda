@@ -214,29 +214,85 @@ describe('resolver real-shape contract', () => {
 
     // ── Card D — admin.crons.list ───────────────────────────────────────────
     describe('admin.crons.list (card D)', () => {
-        it('calls /api/v1/admin/cron and reads data.jobs', async () => {
-            mockFetchApi.mockResolvedValue(
-                envelope({
+        /** Mocks the jobs list + run-history summary by URL (SPEC-161). */
+        const mockCronEndpoints = (
+            jobs: ReadonlyArray<Record<string, unknown>>,
+            lastRuns: ReadonlyArray<Record<string, unknown>>
+        ) => {
+            mockFetchApi.mockImplementation(async ({ path }: { path: string }) => {
+                if (path.includes('/cron/runs/summary')) {
+                    return envelope({
+                        success: true,
+                        data: { lastRuns, recentFailures: [], failingJobsCount: 0 }
+                    });
+                }
+                return envelope({
                     success: true,
-                    data: {
-                        jobs: [{ id: 'c1', name: 'dunning', enabled: true, schedule: '0 0 * * *' }],
-                        enabledJobs: 1,
-                        totalJobs: 1
-                    }
-                })
+                    data: { jobs, enabledJobs: jobs.length, totalJobs: jobs.length }
+                });
+            });
+        };
+
+        it('fetches jobs + run summary and tags each job with its last-run status', async () => {
+            mockCronEndpoints(
+                [{ id: 'c1', name: 'dunning', enabled: true, schedule: '0 6 * * *' }],
+                [{ jobName: 'dunning', status: 'success', finishedAt: '2026-05-29T06:00:00Z' }]
             );
 
             const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
                 id: string;
                 label: string;
                 badge: string;
+                statusBadge: { label: string; variant: string };
             }>;
 
             expect(result).toHaveLength(1);
-            expect(result[0]).toMatchObject({ id: 'c1', label: 'dunning', badge: 'activo' });
+            expect(result[0]).toMatchObject({
+                id: 'c1',
+                label: 'dunning',
+                badge: 'activo',
+                statusBadge: { variant: 'success' }
+            });
             expect(mockFetchApi).toHaveBeenCalledWith(
                 expect.objectContaining({ path: '/api/v1/admin/cron' })
             );
+            expect(mockFetchApi).toHaveBeenCalledWith(
+                expect.objectContaining({ path: '/api/v1/admin/cron/runs/summary' })
+            );
+        });
+
+        it('marks jobs without a recorded run as "Sin ejecuciones" (neutral)', async () => {
+            mockCronEndpoints(
+                [{ id: 'c2', name: 'never-ran', enabled: true, schedule: '0 0 * * *' }],
+                []
+            );
+
+            const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
+                statusBadge: { label: string; variant: string };
+            }>;
+
+            expect(result[0]?.statusBadge).toMatchObject({ variant: 'neutral' });
+        });
+
+        it('orders failing jobs first (failed → timeout → no-run → success)', async () => {
+            mockCronEndpoints(
+                [
+                    { id: 'a', name: 'ok-job', enabled: true, schedule: '* * * * *' },
+                    { id: 'b', name: 'failed-job', enabled: true, schedule: '* * * * *' },
+                    { id: 'c', name: 'timeout-job', enabled: true, schedule: '* * * * *' }
+                ],
+                [
+                    { jobName: 'ok-job', status: 'success' },
+                    { jobName: 'failed-job', status: 'failed' },
+                    { jobName: 'timeout-job', status: 'timeout' }
+                ]
+            );
+
+            const result = (await runSource('admin.crons.list')) as ReadonlyArray<{
+                label: string;
+            }>;
+
+            expect(result.map((r) => r.label)).toEqual(['failed-job', 'timeout-job', 'ok-job']);
         });
     });
 

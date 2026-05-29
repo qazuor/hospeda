@@ -873,9 +873,8 @@ const adminBaseDashboard: DashboardInput = {
         },
 
         // Card D — Crons
-        // cron job list + enabled/total count
-        // source: admin.crons.list
-        // DeferredWidget for failed/last-run sub-slot (SPEC-161 — per-run history not persisted)
+        // cron job list + each job's last-run status (SPEC-161 run-history wired in)
+        // source: admin.crons.list (jobs + GET /admin/cron/runs/summary, enriched)
         {
             id: 'admin-card-d',
             type: 'list',
@@ -890,14 +889,7 @@ const adminBaseDashboard: DashboardInput = {
             config: {
                 source: 'admin.crons.list',
                 accent: 'teal',
-                icon: 'clock',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-161',
-                        description:
-                            'Historial de ejecuciones (fallos / última corrida) — disponible cuando se implemente el almacenamiento de resultados de cron.'
-                    }
-                ]
+                icon: 'clock'
             }
         },
 
