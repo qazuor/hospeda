@@ -1,6 +1,10 @@
 # SPEC-169: Role Permission Audit + Owner-Scoped Data Access
 
-## Progress: 0/32 tasks (0%)
+## Progress: 31/32 tasks (97%) — only T-023 (live e2e smoke, deferred) remains
+
+> This checklist below is NOT maintained per-task — the live source of truth is
+> `state.json` (full per-task status + notes) and `.claude/tasks/index.json`
+> (progress mirror). See those for current state.
 
 **Average Complexity:** 2.3/4 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-005 → T-006 → T-009 → T-010 → T-016 → T-026 → T-032 (11 steps)
