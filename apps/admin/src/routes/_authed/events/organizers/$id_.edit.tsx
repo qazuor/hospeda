@@ -34,7 +34,10 @@ function EventOrganizerEditPage() {
                     entityData={entityData}
                     zodSchema={EventOrganizerUpdateInputSchema}
                 >
-                    <EntityEditContent entityType="event-organizer" />
+                    <EntityEditContent
+                        entityType="event-organizer"
+                        flat
+                    />
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>
