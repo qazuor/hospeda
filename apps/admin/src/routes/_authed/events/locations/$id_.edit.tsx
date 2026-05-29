@@ -34,7 +34,10 @@ function EventLocationEditPage() {
                     entityData={entityData}
                     zodSchema={EventLocationUpdateInputSchema}
                 >
-                    <EntityEditContent entityType="event-location" />
+                    <EntityEditContent
+                        entityType="event-location"
+                        flat
+                    />
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>

@@ -42,6 +42,7 @@ function EventOrganizerViewPage() {
                     sections={entityData.sections}
                     entity={entityData.entity || {}}
                     userPermissions={entityData.userPermissions}
+                    flat
                 />
             </EntityPageBase>
         </div>

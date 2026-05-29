@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createAttractionConsolidatedConfig } from '@/features/attractions/config';
 import { useCreateAttractionMutation } from '@/features/attractions/hooks/useAttractionQuery';
@@ -41,7 +41,7 @@ function AttractionCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ATTRACTION_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={AttractionCreateInputSchema}
                 createConsolidatedConfig={() => createAttractionConsolidatedConfig(t)}

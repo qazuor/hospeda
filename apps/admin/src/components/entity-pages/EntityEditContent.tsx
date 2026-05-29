@@ -5,10 +5,12 @@ import {
     SectionAccordionItem
 } from '@/components/entity-form/accordion/SectionAccordion';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Badge } from '@/components/ui/badge';
 import { env } from '@/env';
 import { parseApiValidationErrors } from '@/lib/errors';
+import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 import { AlertCircleIcon } from '@repo/icons';
@@ -58,6 +60,13 @@ export interface EntityEditContentProps {
      * Typically `['states-moderation']` for staff users.
      */
     anchorSectionIds?: readonly string[];
+    /**
+     * When `true`, render each section as a separate always-open `Card`
+     * (no accordion, no collapsed summary). Used by simpler entities
+     * (catalogs and sub-entities — SPEC-154 Phase 6) where the accordion
+     * adds friction without paying for itself.
+     */
+    flat?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +141,8 @@ export const EntityEditContent = ({
     className,
     fieldHandlers,
     sectionSummarizers,
-    anchorSectionIds
+    anchorSectionIds,
+    flat = false
 }: EntityEditContentProps) => {
     const {
         values,
@@ -237,6 +247,30 @@ export const EntityEditContent = ({
         }
     }, [save, addToast, t, setErrors, orderedSections]);
 
+    /**
+     * Shared per-section body builder — same logic for accordion and flat modes.
+     */
+    const buildSectionBody = (section: SectionConfig, index: number): React.ReactNode => {
+        if (renderSection) return renderSection(section, index);
+
+        return (
+            <EntityFormSection
+                key={section.id || `section-${index}`}
+                config={section}
+                values={values}
+                errors={errors}
+                onFieldChange={setFieldValue}
+                onFieldBlur={(fieldId) => {
+                    adminLogger.log('Field blurred:', fieldId);
+                }}
+                disabled={isSaving}
+                entityData={values}
+                userPermissions={userPermissions}
+                fieldHandlers={fieldHandlers}
+            />
+        );
+    };
+
     return (
         <div className={`space-y-3 ${className ?? ''}`}>
             {/* Performance metrics (development only - hidden by default) */}
@@ -252,72 +286,73 @@ export const EntityEditContent = ({
                     handleSave();
                 }}
             >
-                <SectionAccordion
-                    key={accordionKey}
-                    defaultOpenIds={defaultOpenIds as string[]}
-                >
-                    {orderedSections.map((section, index) => {
-                        const errorCount = sectionErrorMap.get(section.id) ?? 0;
+                {flat ? (
+                    <div className={cn('space-y-4')}>
+                        {orderedSections.map((section, index) => {
+                            const errorCount = sectionErrorMap.get(section.id) ?? 0;
+                            const errorBadge =
+                                errorCount > 0 ? (
+                                    <SectionErrorBadge count={errorCount} />
+                                ) : undefined;
 
-                        // Collapsed summary uses current form values
-                        const collapsedSummary = computeSectionSummary({
-                            values: values ?? {},
-                            section,
-                            customFn: sectionSummarizers?.[section.id]
-                        });
-
-                        // Error badge shown in the header when the section has errors
-                        const errorBadge =
-                            errorCount > 0 ? <SectionErrorBadge count={errorCount} /> : undefined;
-
-                        // Combine config badge + error badge
-                        const headerBadge =
-                            section.badge || errorBadge ? (
-                                <span className="flex items-center gap-1">
-                                    {section.badge}
-                                    {errorBadge}
-                                </span>
-                            ) : undefined;
-
-                        // Section body content
-                        let sectionBody: React.ReactNode;
-
-                        if (renderSection) {
-                            sectionBody = renderSection(section, index);
-                        } else {
-                            sectionBody = (
-                                <EntityFormSection
-                                    key={section.id || `section-${index}`}
-                                    config={section}
-                                    values={values}
-                                    errors={errors}
-                                    onFieldChange={setFieldValue}
-                                    onFieldBlur={(fieldId) => {
-                                        adminLogger.log('Field blurred:', fieldId);
-                                    }}
-                                    disabled={isSaving}
-                                    entityData={values}
-                                    userPermissions={userPermissions}
-                                    fieldHandlers={fieldHandlers}
-                                />
+                            return (
+                                <Card key={section.id || `section-${index}`}>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            {section.title ?? section.id}
+                                            {section.badge}
+                                            {errorBadge}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>{buildSectionBody(section, index)}</CardContent>
+                                </Card>
                             );
-                        }
+                        })}
+                    </div>
+                ) : (
+                    <SectionAccordion
+                        key={accordionKey}
+                        defaultOpenIds={defaultOpenIds as string[]}
+                    >
+                        {orderedSections.map((section, index) => {
+                            const errorCount = sectionErrorMap.get(section.id) ?? 0;
 
-                        return (
-                            <SectionAccordionItem
-                                key={section.id || `section-${index}`}
-                                id={section.id}
-                                title={section.title ?? section.id}
-                                icon={section.icon}
-                                badge={headerBadge}
-                                collapsedSummary={collapsedSummary}
-                                defaultCollapsed={index !== 0}
-                            >
-                                {sectionBody}
-                            </SectionAccordionItem>
-                        );
-                    })}
-                </SectionAccordion>
+                            // Collapsed summary uses current form values
+                            const collapsedSummary = computeSectionSummary({
+                                values: values ?? {},
+                                section,
+                                customFn: sectionSummarizers?.[section.id]
+                            });
+
+                            const errorBadge =
+                                errorCount > 0 ? (
+                                    <SectionErrorBadge count={errorCount} />
+                                ) : undefined;
+
+                            const headerBadge =
+                                section.badge || errorBadge ? (
+                                    <span className="flex items-center gap-1">
+                                        {section.badge}
+                                        {errorBadge}
+                                    </span>
+                                ) : undefined;
+
+                            return (
+                                <SectionAccordionItem
+                                    key={section.id || `section-${index}`}
+                                    id={section.id}
+                                    title={section.title ?? section.id}
+                                    icon={section.icon}
+                                    badge={headerBadge}
+                                    collapsedSummary={collapsedSummary}
+                                    defaultCollapsed={index !== 0}
+                                >
+                                    {buildSectionBody(section, index)}
+                                </SectionAccordionItem>
+                            );
+                        })}
+                    </SectionAccordion>
+                )}
             </form>
         </div>
     );
