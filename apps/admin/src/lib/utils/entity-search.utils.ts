@@ -90,8 +90,15 @@ export type EntitySearchItem = {
 };
 
 /**
- * Generic search function for entity selects
- * Creates a search function that can be used in EntitySelectField configs
+ * Generic search function for entity selects.
+ *
+ * SPEC-169 T-021: The fallback endpoint was previously
+ * `/api/v1/admin/<entity>/search` (which never existed — all requests 404ed).
+ * Migrated to `/api/v1/admin/<entity>/options` (ACCESS_PANEL_ADMIN-gated,
+ * shape: `{ items: [{ id, label, slug }] }`, DRAFT-inclusive).
+ *
+ * When `config.endpoint` is provided it is used as-is. The generic fallback
+ * now correctly resolves to `/options` instead of the dead `/search` path.
  *
  * @param config - Configuration for the search
  * @returns Function that performs entity search and returns SelectOptions
@@ -102,8 +109,9 @@ export const createEntitySearchFn = (config: EntitySearchConfig) => {
             return [];
         }
 
+        // SPEC-169: use /options instead of /search (which never existed).
         const endpoint =
-            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/search`;
+            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/options`;
 
         const params = new URLSearchParams({
             q: query,
@@ -123,11 +131,30 @@ export const createEntitySearchFn = (config: EntitySearchConfig) => {
 
         try {
             const response = await fetchApi({ path: `${endpoint}?${params}` });
-            const data = response.data as EntitySearchResponse;
+            // SPEC-169: /options returns { data: { items: [...] } }; legacy /search
+            // returned { data: [...], total, hasMore }. Normalise both shapes.
+            const raw = response.data as Record<string, unknown>;
+            let items: EntitySearchItem[];
 
-            return data.data.map((item) => ({
+            if (raw && typeof raw === 'object' && 'items' in raw && Array.isArray(raw.items)) {
+                // /options shape: { items: [...] }
+                items = raw.items as EntitySearchItem[];
+            } else if (raw && typeof raw === 'object' && 'data' in raw) {
+                const inner = raw.data as EntitySearchItem[] | { items?: EntitySearchItem[] };
+                if (Array.isArray(inner)) {
+                    items = inner;
+                } else if (inner && 'items' in inner && Array.isArray(inner.items)) {
+                    items = inner.items;
+                } else {
+                    items = [];
+                }
+            } else {
+                items = [];
+            }
+
+            return items.map((item) => ({
                 value: item.id,
-                label: item.name || item.title || item.label || `${config.entityType} ${item.id}`,
+                label: item.label || item.name || item.title || `${config.entityType} ${item.id}`,
                 description: item.description || item.summary,
                 metadata: {
                     ...item.metadata,
@@ -238,7 +265,10 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
 };
 
 /**
- * Advanced search function with pagination support
+ * Advanced search function with pagination support.
+ *
+ * SPEC-169 T-021: Fallback endpoint migrated from /search (non-existent) to
+ * /options (ACCESS_PANEL_ADMIN-gated, DRAFT-inclusive).
  *
  * @param config - Configuration for the search
  * @returns Function that performs paginated entity search
@@ -257,8 +287,9 @@ export const createPaginatedEntitySearchFn = (config: EntitySearchConfig) => {
             return { options: [], hasMore: false, total: 0 };
         }
 
+        // SPEC-169: use /options instead of /search (which never existed).
         const endpoint =
-            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/search`;
+            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/options`;
 
         const params = new URLSearchParams({
             q: query,
@@ -279,11 +310,34 @@ export const createPaginatedEntitySearchFn = (config: EntitySearchConfig) => {
 
         try {
             const response = await fetchApi({ path: `${endpoint}?${params}` });
-            const data = response.data as EntitySearchResponse;
+            // SPEC-169: normalise /options shape vs legacy /search shape.
+            const raw = response.data as Record<string, unknown>;
+            let items: EntitySearchItem[];
+            let hasMore = false;
+            let total = 0;
 
-            const options = data.data.map((item) => ({
+            if (raw && typeof raw === 'object' && 'items' in raw && Array.isArray(raw.items)) {
+                // /options shape: { items: [...] }
+                items = raw.items as EntitySearchItem[];
+                total = items.length;
+            } else if (raw && typeof raw === 'object' && 'data' in raw) {
+                const inner = raw.data as EntitySearchItem[] | EntitySearchResponse;
+                if (Array.isArray(inner)) {
+                    items = inner;
+                    total = items.length;
+                } else {
+                    const typed = inner as EntitySearchResponse;
+                    items = typed.data ?? [];
+                    hasMore = typed.hasMore ?? false;
+                    total = typed.total ?? items.length;
+                }
+            } else {
+                items = [];
+            }
+
+            const options = items.map((item) => ({
                 value: item.id,
-                label: item.name || item.title || item.label || `${config.entityType} ${item.id}`,
+                label: item.label || item.name || item.title || `${config.entityType} ${item.id}`,
                 description: item.description || item.summary,
                 metadata: {
                     ...item.metadata,
@@ -293,11 +347,7 @@ export const createPaginatedEntitySearchFn = (config: EntitySearchConfig) => {
                 }
             }));
 
-            return {
-                options,
-                hasMore: data.hasMore,
-                total: data.total
-            };
+            return { options, hasMore, total };
         } catch (error) {
             adminLogger.error(`Paginated entity search error for ${config.entityType}`, error);
             return { options: [], hasMore: false, total: 0 };
