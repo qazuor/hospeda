@@ -169,8 +169,8 @@
         {
             "id": "T-005",
             "title": "Define per-entity ownership resolver (ownerColumn + isOwner)",
-            "description": "Create packages/service-core/src/utils/ownership.ts with OwnershipDescriptor { ownerColumn, isOwner } and OWNERSHIP_REGISTRY (only entities granted _VIEW_OWN at T-003). Accommodation reference: ownerColumn 'ownerId', isOwner (actor, entity) => entity.ownerId === actor.id. Export getOwnershipDescriptor. Re-export from utils index.",
-            "status": "pending",
+            "description": "DONE. Created packages/service-core/src/utils/ownership.ts: OwnershipDescriptor { ownerColumn, isOwner } + ownedByColumn() helper + OWNERSHIP_REGISTRY (D3: accommodation only → ownerColumn 'ownerId') + getOwnershipDescriptor(). Re-exported from utils/index.ts. Test test/utils/ownership.test.ts 6/6 pass. @repo/service-core typecheck clean (after building @repo/billing dist to clear a preexisting worktree baseline-red unrelated to this change). §12 column-name checkpoint satisfied by D3 (accommodation=ownerId, confirmed by audit).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-006", "T-007"],
@@ -189,11 +189,11 @@
             ],
             "tags": ["service-core", "backend", "architecture"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T04:10:00.000Z",
+                "completed": "2026-05-29T04:25:00.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }
