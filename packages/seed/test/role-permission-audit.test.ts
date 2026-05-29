@@ -37,6 +37,7 @@ const ALLOWED_BROAD_GRANTS: Partial<Record<RoleEnum, readonly PermissionEnum[]>>
     [RoleEnum.EDITOR]: [
         PermissionEnum.POST_VIEW_ALL,
         PermissionEnum.POST_VIEW_PRIVATE,
+        PermissionEnum.EVENT_VIEW_ALL,
         PermissionEnum.EVENT_VIEW_PRIVATE
     ],
     // KNOWN DEBT (SPEC-169 §11 / §8 Q2): CLIENT_MANAGER is unused and deferred to a future spec —
