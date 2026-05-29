@@ -79,6 +79,7 @@ export type FieldTypeConfig =
     | CoordinatesFieldConfig
     | ImageFieldConfig
     | GalleryFieldConfig
+    | VideoGalleryFieldConfig
     | NumberFieldConfig
     | DateFieldConfig
     | TimeFieldConfig
@@ -258,6 +259,18 @@ export type GalleryFieldConfig = {
     maxWidth?: number;
     maxHeight?: number;
     sortable?: boolean;
+};
+
+/**
+ * Video gallery field specific configuration.
+ *
+ * URL-only multi-entry field that persists to `media.videos[]`. No file
+ * upload, no drag-and-drop reorder — videos are appended in input order.
+ */
+export type VideoGalleryFieldConfig = {
+    type: 'VIDEO_GALLERY';
+    /** Maximum number of video entries allowed. Soft cap (no UI block yet). */
+    maxVideos?: number;
 };
 
 /**

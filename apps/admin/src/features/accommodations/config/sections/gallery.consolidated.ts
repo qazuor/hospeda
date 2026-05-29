@@ -1,6 +1,6 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
-import { LimitKey } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -20,8 +20,10 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
  * fields — Zod strips them from PATCH bodies — so they were placeholder UI
  * that did nothing on save. Removed during the view/edit redesign.
  *
- * A proper video-gallery field for `media.videos` (URL + caption/description
- * per item, mirroring the image gallery) is tracked as a follow-up spec.
+ * `media.videos` is wired via the `VIDEO_GALLERY` field (URL + caption +
+ * description per entry). Gated by `EntitlementKey.CAN_EMBED_VIDEO` — for
+ * unlocked hosts the quality-score `video-gallery` signal flips from
+ * "pending" to "done" once at least one entry is added.
  */
 export const createGalleryConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
@@ -126,6 +128,28 @@ export const createGalleryConsolidatedSection = (
                     maxWidth: 1920,
                     maxHeight: 1080,
                     sortable: true
+                }
+            },
+            // Video gallery — gated by CAN_EMBED_VIDEO. Quality-score signal
+            // `video-gallery` (in features/accommodations/config/score-signals)
+            // reads this field and flips to "done" once the host adds at least
+            // one URL. Persists to `media.videos[]` (VideoSchema in
+            // @repo/schemas/common/media.schema).
+            {
+                id: 'media.videos',
+                type: FieldTypeEnum.VIDEO_GALLERY,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Galería de Videos',
+                description:
+                    'Sumá videos de YouTube o Vimeo para enriquecer la ficha del alojamiento',
+                permissions: {
+                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                    edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
+                },
+                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO,
+                typeConfig: {
+                    type: 'VIDEO_GALLERY'
                 }
             }
         ]

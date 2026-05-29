@@ -50,12 +50,12 @@ for (const entry of gallerySource) {
     description: entry.description
   });
 }
-for (const url of accommodation.media.videos.slice(0, Math.max(0, 3 - thumbItems.length))) {
-  const ytId = extractYoutubeId(url);
+for (const entry of accommodation.media.videos.slice(0, Math.max(0, 3 - thumbItems.length))) {
+  const ytId = extractYoutubeId(entry.url);
   thumbItems.push({
     type: 'video',
-    src: url,
-    thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : url,
+    src: entry.url,
+    thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : entry.url,
     thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined
   });
 }

@@ -24,6 +24,10 @@ import type { CoordinatesValue } from '@/components/entity-form/fields/Coordinat
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import {
+    type VideoEntry,
+    VideoGalleryField
+} from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 
@@ -348,6 +352,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
                     }
+
+                    case FieldTypeEnum.VIDEO_GALLERY:
+                        return (
+                            <VideoGalleryField
+                                {...fieldProps}
+                                value={fieldValue as VideoEntry[]}
+                            />
+                        );
 
                     case FieldTypeEnum.CHECKBOX:
                         return (

@@ -72,14 +72,16 @@ for (const entry of galleryEntries) {
 }
 
 // Videos
-for (const url of accommodation.media.videos) {
-    const ytId = extractYoutubeId(url);
+for (const entry of accommodation.media.videos) {
+    const ytId = extractYoutubeId(entry.url);
     galleryItems.push({
         type: 'video',
-        src: url,
+        src: entry.url,
         thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : accommodation.featuredImage,
         thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined,
-        alt: `${accommodation.name} - video`
+        alt: entry.caption ?? `${accommodation.name} - video`,
+        caption: entry.caption,
+        description: entry.description
     });
 }
 
