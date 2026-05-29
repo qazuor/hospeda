@@ -9,11 +9,19 @@ import {
 } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import type { AnnouncementsValue, MaintenanceModeValue } from '@repo/schemas';
+import type { AuthState } from '@/lib/auth-session';
+import { type AnnouncementsValue, type MaintenanceModeValue, PermissionEnum } from '@repo/schemas';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/critical/')({
+    beforeLoad: ({ context }) => {
+        const authState = context as unknown as AuthState;
+        const canView = authState.permissions?.includes(PermissionEnum.SYSTEM_MAINTENANCE_MODE);
+        if (!canView) {
+            throw redirect({ to: '/auth/forbidden' });
+        }
+    },
     component: CriticalSettingsPage
 });
 
@@ -45,8 +53,9 @@ function CriticalSettingsPage() {
     const isDev = import.meta.env.MODE === 'development';
 
     // Maintenance mode — read+write through the platform_settings API. The
-    // page is SUPER_ADMIN-gated upstream (sidebar onMissing: 'hide' on
-    // SYSTEM_MAINTENANCE_MODE), so we trust the server to authorize writes.
+    // page is SUPER_ADMIN-gated at the route level (beforeLoad checks
+    // SYSTEM_MAINTENANCE_MODE) and also via sidebar onMissing: 'hide' for
+    // the link, so the server only needs to enforce the write permission.
     const maintenanceQuery = usePlatformSetting({
         key: 'maintenance.mode',
         legacyAdapter: legacyAdapters.maintenanceMode

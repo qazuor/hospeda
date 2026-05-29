@@ -18,7 +18,7 @@ import {
     useWebhookEventsQuery
 } from '@/features/billing-webhook-events';
 import { useTranslations } from '@/hooks/use-translations';
-import { requireBillingAccess } from '@/lib/billing-access';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import { formatDateWithSeconds } from '@/lib/format-helpers';
 import {
     AlertCircleIcon,
@@ -39,7 +39,7 @@ import {
 } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 
 export const Route = createFileRoute('/_authed/platform/ops/webhooks')({
-    beforeLoad: ({ context }) => requireBillingAccess(context),
+    beforeLoad: ({ context }) => requireAdminApiAccess(context),
     component: WebhookEventsPage
 });
 
