@@ -245,6 +245,7 @@ vi.mock('@repo/icons', () => {
         ConfirmIcon: stub('ConfirmIcon'),
         ContentIcon: stub('ContentIcon'),
         CopyIcon: stub('CopyIcon'),
+        CrownIcon: stub('CrownIcon'),
         CouponsIcon: stub('CouponsIcon'),
         CreditCardIcon: stub('CreditCardIcon'),
         DashboardIcon: stub('DashboardIcon'),
