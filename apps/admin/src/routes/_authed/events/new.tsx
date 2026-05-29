@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createEventConsolidatedConfig } from '@/features/events/config';
 import { useCreateEventMutation } from '@/features/events/hooks/useEventQuery';
@@ -40,7 +40,7 @@ function EventCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.EVENT_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={EventCreateInputSchema}
                 createConsolidatedConfig={() => createEventConsolidatedConfig(t)}

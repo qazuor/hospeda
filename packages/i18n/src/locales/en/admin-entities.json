@@ -679,7 +679,11 @@
             },
             "price": { "label": "Price set" },
             "videoGallery": { "label": "Video gallery" },
-            "virtualTour": { "label": "360° virtual tour" }
+            "virtualTour": { "label": "360° virtual tour" },
+            "dates": { "label": "Event dates" },
+            "organizer": { "label": "Organizer assigned" },
+            "category": { "label": "Category selected" },
+            "location": { "label": "Event venue" }
         }
     }
 }
