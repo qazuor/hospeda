@@ -198,9 +198,9 @@
         },
         {
             "id": "T-006",
-            "title": "Implement _canAdminView on AccommodationService (VIEW_ALL OR VIEW_OWN+isOwner)",
-            "description": "Add checkCanAdminView in accommodation.permissions.ts + _canAdminView override in accommodation.service.ts. Logic: VIEW_ALL → any; VIEW_OWN → isOwner only else error; neither → FORBIDDEN. Must NOT reuse generic checkCanView (it allows any PUBLIC record). Error code (FORBIDDEN vs NOT_FOUND) confirmed at T-003.",
-            "status": "pending",
+            "title": "Implement checkCanAdminView (VIEW_ALL OR VIEW_OWN+isOwner) in accommodation.permissions",
+            "description": "DONE. Added checkCanAdminView in accommodation.permissions.ts (PURE fn). VIEW_ALL → any; VIEW_OWN → getOwnershipDescriptor('accommodation').isOwner else NOT_FOUND (D2, no existence leak); neither → FORBIDDEN. Does NOT reuse checkCanView (which allows any PUBLIC). Uses the T-005 resolver so isOwner stays single-sourced (§5.6). Tests: 5 cases in accommodation.permissions.test.ts (AC-4 VIEW_ALL any, AC-8 own, AC-9 other PUBLIC+PRIVATE → NOT_FOUND, neither → FORBIDDEN) — 34/34 file pass; typecheck clean. SERVICE method + getById route wiring deferred to T-009 (§12 approach checkpoint).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005"],
             "blocks": ["T-008", "T-009", "T-013"],
@@ -221,11 +221,11 @@
             ],
             "tags": ["service-core", "backend", "accommodation", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T04:35:00.000Z",
+                "completed": "2026-05-29T04:55:00.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.3
     }
