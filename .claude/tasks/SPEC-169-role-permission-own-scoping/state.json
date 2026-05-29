@@ -7,66 +7,131 @@
         {
             "id": "T-001",
             "title": "Create audit script — programmatic scan of role x permission matrix",
-            "description": "One-off TS script importing RoleEnum/PermissionEnum/ROLE_PERMISSIONS from packages/seed/src/required/rolePermissions.seed.ts; emit per-role table of every _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE grant (role | permission | category) as the 'read' audit baseline. File: scripts/audit-role-permissions.ts (one-off). Output is the primary input for the T-003 owner-review gate.",
-            "status": "pending",
+            "description": "One-off TS script importing RoleEnum/PermissionEnum/ROLE_PERMISSIONS from packages/seed/src/required/rolePermissions.seed.ts; emit per-role table of every _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE grant (role | permission | category) as the 'read' audit baseline. File: packages/seed/scripts/audit-role-permissions.ts. DONE: executed, seed matches spec §3 exactly (no discrepancy); only live cross-tenant READ leak = accommodation (HOST holds VIEW_ALL).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
                 { "title": "Import role-permissions map from seed file", "completed": false },
-                { "title": "Filter to _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE suffixes", "completed": false },
-                { "title": "Emit structured output (role | permission | category)", "completed": false },
+                {
+                    "title": "Filter to _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE suffixes",
+                    "completed": false
+                },
+                {
+                    "title": "Emit structured output (role | permission | category)",
+                    "completed": false
+                },
                 { "title": "Run and capture output as the read audit baseline", "completed": false }
             ],
             "tags": ["audit", "backend", "scripts"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:30:00.000Z",
+                "completed": "2026-05-29T02:55:00.000Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Create audit script — enumerate admin list/getById endpoints + write-enforcement matrix",
-            "description": "Walk apps/api/src/routes/*/admin/ to record entity | route | method | requiredPermissions | optional-owner-filter? Walk packages/service-core/src/services/*/ permission files to classify each write/destructive op (update/softDelete/hardDelete/restore/publish/visibility/featured/batch) as isOwner-enforced / permission-only / NA — INCLUDING UI-less routes (/{id}/hard, batch, restore). Output: endpoint table + write-enforcement matrix. Self-test: accommodation matrix must confirm the 7 ops in spec §2.2 as isOwner-enforced.",
-            "status": "pending",
+            "description": "Walk apps/api/src/routes/*/admin/ to record entity | route | method | requiredPermissions | optional-owner-filter? Walk packages/service-core/src/services/*/ permission files to classify each write/destructive op as isOwner / permission-only / staff-only / NA — INCLUDING UI-less routes (/{id}/hard, batch, restore). DONE (static analysis — worktree node_modules incomplete, tsx/vitest missing): accommodation is the ONLY non-staff-exploitable leak (list+getById). NO write-leaks for any _OWN role; accommodation matches §2.2. conversations/admin/list.ts already implements the §5.2 forced-scope pattern = reference impl. Selectors needing /options: users, destinations, accommodations, events. 5 open questions logged for owner.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-015"],
             "subtasks": [
-                { "title": "Enumerate admin list routes and requiredPermissions", "completed": false },
-                { "title": "Flag routes with optional ownerId-style query param", "completed": false },
-                { "title": "Enumerate write ops + their check function per owner-scoped entity", "completed": false },
-                { "title": "Classify each write op: isOwner / permission-only / no check", "completed": false },
-                { "title": "Emit endpoint table + write-enforcement matrix for owner review", "completed": false }
+                {
+                    "title": "Enumerate admin list routes and requiredPermissions",
+                    "completed": false
+                },
+                {
+                    "title": "Flag routes with optional ownerId-style query param",
+                    "completed": false
+                },
+                {
+                    "title": "Enumerate write ops + their check function per owner-scoped entity",
+                    "completed": false
+                },
+                {
+                    "title": "Classify each write op: isOwner / permission-only / no check",
+                    "completed": false
+                },
+                {
+                    "title": "Emit endpoint table + write-enforcement matrix for owner review",
+                    "completed": false
+                }
             ],
             "tags": ["audit", "backend", "scripts"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:30:00.000Z",
+                "completed": "2026-05-29T02:55:00.000Z"
+            }
         },
         {
             "id": "T-003",
             "title": "⛔ OWNER-REVIEW GATE (§12) — present audit outputs, receive explicit approval on ALL verdicts",
-            "description": "HARD GATE. Human-in-the-loop. Present T-001 (role×permission table) and T-002 (endpoint + write-enforcement matrix) to the owner. Obtain explicit approval for EVERY §12-governed decision before ANY implementation task starts. Record verbatim approvals in a decision log. CLIENT_MANAGER is NOT touched (§11/§8 Q2).",
-            "status": "pending",
+            "description": "HARD GATE. Human-in-the-loop. CLOSED 2026-05-29. All §12 decisions approved by owner — recorded in .claude/specs/SPEC-169-role-permission-own-scoping/decision-log.md. Key verdicts: D1 VIEW_OWN only accommodation; D2 404 NOT_FOUND for non-owned; D3 resolver accommodation-only; D4 /options for 6 entities (users/destinations/accommodations/events/event-organizers/event-locations, ACCESS_PANEL_ADMIN, accommodation payload +type+destination); D5 beforeLoad only on /accommodations list; D6 seed wording; D7 posts = document only (Option C), NOT touched. CLIENT_MANAGER untouched. Posts granular model deferred to new SPEC-170.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001", "T-002"],
-            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-010", "T-017", "T-018", "T-020", "T-021", "T-022"],
+            "blocks": [
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-010",
+                "T-017",
+                "T-018",
+                "T-020",
+                "T-021",
+                "T-022"
+            ],
             "subtasks": [
                 { "title": "Present T-001 role×permission matrix to owner", "completed": false },
-                { "title": "Present T-002 endpoint + write-enforcement matrix to owner", "completed": false },
-                { "title": "⛔ §12: approve which entities get _VIEW_OWN + exact permission names", "completed": false },
-                { "title": "⛔ §12: approve _canAdminView semantics for PRIVATE/RESTRICTED", "completed": false },
-                { "title": "⛔ §12: approve ownership resolver shape (§5.6) + which entities get a descriptor", "completed": false },
-                { "title": "⛔ §12: approve /options payload shape, gating, and which entities get one", "completed": false },
-                { "title": "⛔ §12: approve seed wording (HOST grant removal, EDITOR rationale comment)", "completed": false },
-                { "title": "⛔ §12: approve which admin routes get beforeLoad guard + redirect targets", "completed": false },
+                {
+                    "title": "Present T-002 endpoint + write-enforcement matrix to owner",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve which entities get _VIEW_OWN + exact permission names",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve _canAdminView semantics for PRIVATE/RESTRICTED",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve ownership resolver shape (§5.6) + which entities get a descriptor",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve /options payload shape, gating, and which entities get one",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve seed wording (HOST grant removal, EDITOR rationale comment)",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve which admin routes get beforeLoad guard + redirect targets",
+                    "completed": false
+                },
                 { "title": "Confirm CLIENT_MANAGER is NOT touched", "completed": false },
                 { "title": "Record all approvals in a decision log file", "completed": false }
             ],
             "tags": ["decision-gate", "audit"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:55:00.000Z",
+                "completed": "2026-05-29T03:30:00.000Z"
+            }
         },
         {
             "id": "T-004",
@@ -77,16 +142,29 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-006", "T-007", "T-008", "T-031"],
             "subtasks": [
-                { "title": "⛔ §12: confirm exact permission names from T-003 before adding", "completed": false },
-                { "title": "Add ACCOMMODATION_VIEW_OWN with value 'accommodation.viewOwn'", "completed": false },
+                {
+                    "title": "⛔ §12: confirm exact permission names from T-003 before adding",
+                    "completed": false
+                },
+                {
+                    "title": "Add ACCOMMODATION_VIEW_OWN with value 'accommodation.viewOwn'",
+                    "completed": false
+                },
                 { "title": "Add any other approved _VIEW_OWN permissions", "completed": false },
                 { "title": "Verify TypeScript compiles, no any", "completed": false },
-                { "title": "Extend permission.enum.test.ts asserting new values", "completed": false }
+                {
+                    "title": "Extend permission.enum.test.ts asserting new values",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "permissions", "backend"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -97,16 +175,26 @@
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
-                { "title": "⛔ §12: confirm ownership column names per entity from T-003 (authorId? createdById? ownerId?)", "completed": false },
+                {
+                    "title": "⛔ §12: confirm ownership column names per entity from T-003 (authorId? createdById? ownerId?)",
+                    "completed": false
+                },
                 { "title": "Define OwnershipDescriptor interface", "completed": false },
-                { "title": "Define OWNERSHIP_REGISTRY (only _VIEW_OWN entities)", "completed": false },
+                {
+                    "title": "Define OWNERSHIP_REGISTRY (only _VIEW_OWN entities)",
+                    "completed": false
+                },
                 { "title": "Implement getOwnershipDescriptor", "completed": false },
                 { "title": "Export from utils index", "completed": false }
             ],
             "tags": ["service-core", "backend", "architecture"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -117,15 +205,28 @@
             "blockedBy": ["T-003", "T-004", "T-005"],
             "blocks": ["T-008", "T-009", "T-013"],
             "subtasks": [
-                { "title": "⛔ §12: confirm error code (FORBIDDEN vs NOT_FOUND) from T-003", "completed": false },
-                { "title": "Export checkCanAdminView from accommodation.permissions.ts", "completed": false },
+                {
+                    "title": "⛔ §12: confirm error code (FORBIDDEN vs NOT_FOUND) from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Export checkCanAdminView from accommodation.permissions.ts",
+                    "completed": false
+                },
                 { "title": "Override _canAdminView in AccommodationService", "completed": false },
-                { "title": "Use getOwnershipDescriptor('accommodation').isOwner for VIEW_OWN branch", "completed": false }
+                {
+                    "title": "Use getOwnershipDescriptor('accommodation').isOwner for VIEW_OWN branch",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "backend", "accommodation", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -136,15 +237,28 @@
             "blockedBy": ["T-003", "T-004", "T-005"],
             "blocks": ["T-008", "T-009", "T-012", "T-016"],
             "subtasks": [
-                { "title": "Update checkCanAdminList to accept VIEW_ALL OR VIEW_OWN", "completed": false },
-                { "title": "In _canAdminList detect held permission and stash on context", "completed": false },
-                { "title": "In _executeAdminSearch force ownerId = actor.id for VIEW_OWN-only", "completed": false },
+                {
+                    "title": "Update checkCanAdminList to accept VIEW_ALL OR VIEW_OWN",
+                    "completed": false
+                },
+                {
+                    "title": "In _canAdminList detect held permission and stash on context",
+                    "completed": false
+                },
+                {
+                    "title": "In _executeAdminSearch force ownerId = actor.id for VIEW_OWN-only",
+                    "completed": false
+                },
                 { "title": "Confirm neither-perm path still throws FORBIDDEN", "completed": false }
             ],
             "tags": ["service-core", "backend", "accommodation", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -156,14 +270,24 @@
             "blocks": ["T-009"],
             "subtasks": [
                 { "title": "Read createAdminListRoute permission-check logic", "completed": false },
-                { "title": "⛔ §12: if factory is AND-only, present options before changing the factory", "completed": false },
-                { "title": "Update accommodation list route gate to allow VIEW_OWN", "completed": false },
+                {
+                    "title": "⛔ §12: if factory is AND-only, present options before changing the factory",
+                    "completed": false
+                },
+                {
+                    "title": "Update accommodation list route gate to allow VIEW_OWN",
+                    "completed": false
+                },
                 { "title": "Verify existing ADMIN actor tests still pass", "completed": false }
             ],
             "tags": ["api", "backend", "accommodation", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -174,15 +298,31 @@
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-010", "T-016"],
             "subtasks": [
-                { "title": "⛔ §12: confirm approach (dedicated adminGetById vs admin-context detection)", "completed": false },
-                { "title": "Update route requiredPermissions to OR-accept VIEW_OWN", "completed": false },
-                { "title": "Wire route to invoke _canAdminView (not _canView)", "completed": false },
-                { "title": "Verify sub-tab routes (faqs, amenities, gallery) use same path", "completed": false }
+                {
+                    "title": "⛔ §12: confirm approach (dedicated adminGetById vs admin-context detection)",
+                    "completed": false
+                },
+                {
+                    "title": "Update route requiredPermissions to OR-accept VIEW_OWN",
+                    "completed": false
+                },
+                {
+                    "title": "Wire route to invoke _canAdminView (not _canView)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify sub-tab routes (faqs, amenities, gallery) use same path",
+                    "completed": false
+                }
             ],
             "tags": ["api", "backend", "accommodation", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -193,7 +333,10 @@
             "blockedBy": ["T-003", "T-004", "T-009"],
             "blocks": ["T-011", "T-014", "T-015", "T-016", "T-022", "T-027", "T-028", "T-029"],
             "subtasks": [
-                { "title": "⛔ §12: confirm exact wording for HOST + EDITOR comments from T-003", "completed": false },
+                {
+                    "title": "⛔ §12: confirm exact wording for HOST + EDITOR comments from T-003",
+                    "completed": false
+                },
                 { "title": "Remove ACCOMMODATION_VIEW_ALL from HOST block", "completed": false },
                 { "title": "Add ACCOMMODATION_VIEW_OWN to HOST block", "completed": false },
                 { "title": "Add EDITOR rationale comment block", "completed": false },
@@ -203,7 +346,11 @@
             "tags": ["seed", "backend", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -215,14 +362,24 @@
             "blocks": ["T-026"],
             "subtasks": [
                 { "title": "Import ROLE_PERMISSIONS from seed", "completed": false },
-                { "title": "Define NON_STAFF_ROLES + PERMITTED_BROAD_GRANTS allow-list", "completed": false },
-                { "title": "Assert no broad grant outside allow-list per non-staff role", "completed": false },
+                {
+                    "title": "Define NON_STAFF_ROLES + PERMITTED_BROAD_GRANTS allow-list",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no broad grant outside allow-list per non-staff role",
+                    "completed": false
+                },
                 { "title": "Assert HOST has no ACCOMMODATION_VIEW_ALL", "completed": false }
             ],
             "tags": ["testing", "security", "regression"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -240,7 +397,11 @@
             "tags": ["testing", "service-core", "accommodation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -258,7 +419,11 @@
             "tags": ["testing", "service-core", "accommodation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -276,7 +441,11 @@
             "tags": ["testing", "security", "integration", "accommodation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -287,14 +456,24 @@
             "blockedBy": ["T-002", "T-010"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Import each owner-scoped entity's write permission fns", "completed": false },
-                { "title": "Assert VIEW_OWN-only actor on non-owned entity → FORBIDDEN", "completed": false },
+                {
+                    "title": "Import each owner-scoped entity's write permission fns",
+                    "completed": false
+                },
+                {
+                    "title": "Assert VIEW_OWN-only actor on non-owned entity → FORBIDDEN",
+                    "completed": false
+                },
                 { "title": "Cross-check against T-002 matrix", "completed": false }
             ],
             "tags": ["testing", "security", "audit"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -306,13 +485,23 @@
             "blocks": ["T-026"],
             "subtasks": [
                 { "title": "Assert ADMIN VIEW_ALL → no forced ownerId (AC-4)", "completed": false },
-                { "title": "Assert HOST VIEW_OWN + ownerId=self → 200 own rows (AC-5)", "completed": false },
-                { "title": "Assert HOST VIEW_OWN + no ownerId → 200 forced own (AC-5)", "completed": false }
+                {
+                    "title": "Assert HOST VIEW_OWN + ownerId=self → 200 own rows (AC-5)",
+                    "completed": false
+                },
+                {
+                    "title": "Assert HOST VIEW_OWN + no ownerId → 200 forced own (AC-5)",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "regression", "accommodation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -323,15 +512,28 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-018", "T-020", "T-021"],
             "subtasks": [
-                { "title": "⛔ §12: confirm payload shape/fields/DRAFT/gating from T-003", "completed": false },
-                { "title": "Create options.ts route + AccommodationOptionsQuerySchema", "completed": false },
-                { "title": "Return {id,label,slug} only — no admin/private/pricing/contact", "completed": false },
+                {
+                    "title": "⛔ §12: confirm payload shape/fields/DRAFT/gating from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Create options.ts route + AccommodationOptionsQuerySchema",
+                    "completed": false
+                },
+                {
+                    "title": "Return {id,label,slug} only — no admin/private/pricing/contact",
+                    "completed": false
+                },
                 { "title": "Register before /:id in index.ts", "completed": false }
             ],
             "tags": ["api", "backend", "accommodation", "lookup"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -342,14 +544,24 @@
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "⛔ §12: confirm which entities beyond accommodation get /options", "completed": false },
-                { "title": "Create destination options.ts + register before /:id", "completed": false },
+                {
+                    "title": "⛔ §12: confirm which entities beyond accommodation get /options",
+                    "completed": false
+                },
+                {
+                    "title": "Create destination options.ts + register before /:id",
+                    "completed": false
+                },
                 { "title": "Repeat for each additional approved entity", "completed": false }
             ],
             "tags": ["api", "backend", "destinations", "lookup"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -361,12 +573,19 @@
             "blocks": ["T-023"],
             "subtasks": [
                 { "title": "Verify ownerId?: string present", "completed": false },
-                { "title": "Assert safeParse({ ownerId }) and safeParse({}) both succeed", "completed": false }
+                {
+                    "title": "Assert safeParse({ ownerId }) and safeParse({}) both succeed",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "backend", "accommodation"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -377,7 +596,10 @@
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-023", "T-025"],
             "subtasks": [
-                { "title": "⛔ §12: confirm OwnerSelect /options target from T-003", "completed": false },
+                {
+                    "title": "⛔ §12: confirm OwnerSelect /options target from T-003",
+                    "completed": false
+                },
                 { "title": "Update API call URL to /options", "completed": false },
                 { "title": "Update response transformer for {id,label,slug}", "completed": false },
                 { "title": "Verify owners populate correctly in admin UI", "completed": false }
@@ -385,7 +607,11 @@
             "tags": ["admin-frontend", "selects", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -396,15 +622,25 @@
             "blockedBy": ["T-003", "T-017", "T-018"],
             "blocks": ["T-023", "T-025"],
             "subtasks": [
-                { "title": "⛔ §12: confirm complete selector list to migrate from T-003", "completed": false },
-                { "title": "Update DestinationSelect to /admin/destinations/options", "completed": false },
+                {
+                    "title": "⛔ §12: confirm complete selector list to migrate from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Update DestinationSelect to /admin/destinations/options",
+                    "completed": false
+                },
                 { "title": "Update entity-search.utils.ts to /options", "completed": false },
                 { "title": "Update entity-select fields to /options pattern", "completed": false }
             ],
             "tags": ["admin-frontend", "selects", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -415,16 +651,26 @@
             "blockedBy": ["T-003", "T-010"],
             "blocks": ["T-023", "T-024"],
             "subtasks": [
-                { "title": "⛔ §12: confirm which routes get the guard + redirect target from T-003", "completed": false },
+                {
+                    "title": "⛔ §12: confirm which routes get the guard + redirect target from T-003",
+                    "completed": false
+                },
                 { "title": "Create owner-scoped-guard.ts pure function", "completed": false },
                 { "title": "Add beforeLoad to accommodation list route", "completed": false },
                 { "title": "Add beforeLoad to detail/edit routes if approved", "completed": false },
-                { "title": "Ensure /me/accommodations never redirects (no loop)", "completed": false }
+                {
+                    "title": "Ensure /me/accommodations never redirects (no loop)",
+                    "completed": false
+                }
             ],
             "tags": ["admin-frontend", "routing", "security"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -435,15 +681,25 @@
             "blockedBy": ["T-019", "T-020", "T-021", "T-022"],
             "blocks": ["T-024", "T-025"],
             "subtasks": [
-                { "title": "Verify /me/accommodations list loads own accommodations", "completed": false },
+                {
+                    "title": "Verify /me/accommodations list loads own accommodations",
+                    "completed": false
+                },
                 { "title": "Verify accommodation detail/edit loads (not 403)", "completed": false },
                 { "title": "Verify HOST redirected from /accommodations", "completed": false },
-                { "title": "Verify no-ownerId admin list does not leak all rows", "completed": false }
+                {
+                    "title": "Verify no-ownerId admin list does not leak all rows",
+                    "completed": false
+                }
             ],
             "tags": ["integration", "regression", "accommodation"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -460,7 +716,11 @@
             "tags": ["testing", "frontend", "routing", "e2e"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -473,12 +733,19 @@
             "subtasks": [
                 { "title": "Assert EDITOR → accommodations/options 200", "completed": false },
                 { "title": "Assert EDITOR → destinations/options 200", "completed": false },
-                { "title": "Assert response only {id,label,slug}, DRAFT present", "completed": false }
+                {
+                    "title": "Assert response only {id,label,slug}, DRAFT present",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "api", "selectors"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -489,14 +756,21 @@
             "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-024", "T-025"],
             "blocks": ["T-027", "T-031", "T-032"],
             "subtasks": [
-                { "title": "Run pnpm test in service-core/schemas/seed/api/admin", "completed": false },
+                {
+                    "title": "Run pnpm test in service-core/schemas/seed/api/admin",
+                    "completed": false
+                },
                 { "title": "Fix fixture-update test failures", "completed": false },
                 { "title": "Flag genuine regressions for review", "completed": false }
             ],
             "tags": ["testing", "regression", "integration"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -514,7 +788,11 @@
             "tags": ["testing", "seed", "billing", "spec-143"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-028",
@@ -527,12 +805,19 @@
             "subtasks": [
                 { "title": "Write tier + enforcement semantics", "completed": false },
                 { "title": "Embed per-role verdict table from T-003", "completed": false },
-                { "title": "Document ownership resolver + /options + _canAdminView", "completed": false }
+                {
+                    "title": "Document ownership resolver + /options + _canAdminView",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "permissions", "security"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-029",
@@ -549,7 +834,11 @@
             "tags": ["docs", "debt", "client-manager"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-030",
@@ -566,7 +855,11 @@
             "tags": ["cleanup", "scripts"],
             "phase": "cleanup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-031",
@@ -583,7 +876,11 @@
             "tags": ["cleanup", "testing", "schema"],
             "phase": "cleanup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-032",
@@ -600,14 +897,18 @@
             "tags": ["cleanup", "quality"],
             "phase": "cleanup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 32,
-        "pending": 32,
+        "pending": 29,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.3
     }
