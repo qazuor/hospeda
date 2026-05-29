@@ -45,18 +45,16 @@ function countTruthyKeys(source: Record<string, unknown>, keys: readonly string[
 /**
  * Quality signals for accommodation (spec §4.9).
  *
- * Premium ones (last two) live behind the host's plan. We use the mock
- * entitlements helper to decide whether a signal renders as `premium`
- * (locked) or `pending`/`done` (unlocked). When real entitlements wire
- * up in Phase 4, the mock layer goes away — the signal config itself
- * doesn't need to change.
+ * Premium signals live behind the host's plan. The caller passes the
+ * resolved entitlement flag (from `useMyEntitlements` + the staff-bypass
+ * helper) so this config stays pure and trivially testable. When more
+ * premium signals come online (virtual tour, calendar sync, etc.) extend
+ * the input object rather than reaching into a hook from here.
  */
 export function createAccommodationSignals({
-    hasVideoGalleryFeature,
-    hasVirtualTourFeature
+    hasVideoGalleryFeature
 }: {
     readonly hasVideoGalleryFeature: boolean;
-    readonly hasVirtualTourFeature: boolean;
 }): readonly SignalConfig<Record<string, unknown>>[] {
     return [
         // ----------------------------------------------------------------
@@ -241,7 +239,11 @@ export function createAccommodationSignals({
             }
         },
         // ----------------------------------------------------------------
-        // Premium — video gallery (mock entitlement)
+        // Premium — video gallery (gated by EntitlementKey.CAN_EMBED_VIDEO).
+        // When the feature is unlocked the signal flips to a regular
+        // done/pending pair driven by `media.videos`. That field is not
+        // yet part of the form (SPEC-D aside) so the signal will stay
+        // pending for unlocked hosts until the videos block ships.
         // ----------------------------------------------------------------
         {
             id: 'video-gallery',
@@ -254,20 +256,6 @@ export function createAccommodationSignals({
                 return Array.isArray(videos) && videos.length > 0
                     ? { status: 'done' }
                     : { status: 'pending' };
-            }
-        },
-        // ----------------------------------------------------------------
-        // Premium — virtual tour (mock entitlement)
-        // ----------------------------------------------------------------
-        {
-            id: 'virtual-tour',
-            labelKey: 'admin-entities.qualityScore.signals.virtualTour.label',
-            weight: 0,
-            sectionId: 'gallery',
-            check: (entity) => {
-                if (!hasVirtualTourFeature) return { status: 'premium' };
-                const tour = readPath(entity, 'media.virtualTourUrl');
-                return isNonEmptyString(tour) ? { status: 'done' } : { status: 'pending' };
             }
         }
     ];

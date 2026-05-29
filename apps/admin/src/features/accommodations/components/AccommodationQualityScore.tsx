@@ -1,6 +1,9 @@
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
-import { computeScore, useMockEntitlements } from '@/components/quality-score';
+import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
+import { EntitlementKey } from '@repo/billing';
 import { useStore } from '@tanstack/react-form';
 import * as React from 'react';
 import { createAccommodationSignals } from '../config/score-signals';
@@ -35,21 +38,25 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     compact = false
 }: AccommodationQualityScoreProps) {
     const { form } = useEntityFormContext();
-    const entitlements = useMockEntitlements();
+    const shouldGate = useShouldShowEntitlementGates();
+    const { has, isLoading: entitlementsLoading } = useMyEntitlements();
 
-    // The engine is pure so recomputation is cheap (~11 signals per pass).
+    // The engine is pure so recomputation is cheap (~10 signals per pass).
     // Selecting `state.values` triggers a re-render only when the values
     // identity changes, which TanStack Form does after each mutation.
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 
+    // Per spec §4.7: staff (non-HOST) skip gating entirely — they have no
+    // plan in the billing sense, so surfacing "Mejorar plan" at them is
+    // misleading. Treat every feature as unlocked. While entitlements are
+    // loading we fail-open too, matching the gate components' behavior.
+    const hasVideoGalleryFeature =
+        !shouldGate || entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
+
     const signals = React.useMemo(
-        () =>
-            createAccommodationSignals({
-                hasVideoGalleryFeature: entitlements.hasVideoGalleryFeature,
-                hasVirtualTourFeature: entitlements.hasVirtualTourFeature
-            }),
-        [entitlements.hasVideoGalleryFeature, entitlements.hasVirtualTourFeature]
+        () => createAccommodationSignals({ hasVideoGalleryFeature }),
+        [hasVideoGalleryFeature]
     );
 
     const result = React.useMemo(() => computeScore(signals, values), [signals, values]);
