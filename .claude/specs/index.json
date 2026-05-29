@@ -1933,6 +1933,35 @@
             "extractedFrom": "SPEC-154",
             "tags": ["schemas", "database", "migration", "admin", "web", "breaking"],
             "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Owner chose Option B (migrate booleans → junction + drop legacy boolean columns, accepting that web reads break and must be migrated in lockstep). Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-174-admin-welcome-tour",
+            "created": "2026-05-29T00:00:00.000Z",
+            "firstAllocatedViaEngramProtocol": false,
+            "archived": false,
+            "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
+            "note": "BACKFILLED 2026-05-29 during SPEC-175 allocation. spec.md existed in filesystem + git but was never registered in this index nor in the engram last-number (stuck at 173). Created in another session. Sibling of SPEC-175 (admin-whats-new): both write to UserSettings.onboarding JSONB (174 = onboarding.adminTours, 175 = onboarding.whatsNew) via dedicated protected-tier PATCH endpoints with server-side merge. Tasks not yet atomized."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-175-admin-whats-new",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-175-admin-whats-new",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["admin", "onboarding", "whats-new", "release-notes", "config-driven", "i18n", "frontend", "api", "ux"],
+            "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
         }
     ]
 }
