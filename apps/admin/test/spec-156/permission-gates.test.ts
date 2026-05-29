@@ -53,7 +53,20 @@ const ANNOUNCEMENTS_PAGES: ReadonlyArray<GatedPage> = [
     }
 ];
 
-const ALL_GATED_PAGES: ReadonlyArray<GatedPage> = [...ACCOUNT_PAGES, ...ANNOUNCEMENTS_PAGES];
+const CRITICAL_PAGES: ReadonlyArray<GatedPage> = [
+    {
+        label: '/platform/critical — landing (post-PR-4 follow-up)',
+        file: `${ADMIN_SRC_ROOT}/platform/critical/index.tsx`,
+        mustReferencePermissions: ['SYSTEM_MAINTENANCE_MODE'],
+        notes: 'Sidebar onMissing:hide only hides the link; the route itself must beforeLoad-gate so direct URL access is blocked too.'
+    }
+];
+
+const ALL_GATED_PAGES: ReadonlyArray<GatedPage> = [
+    ...ACCOUNT_PAGES,
+    ...ANNOUNCEMENTS_PAGES,
+    ...CRITICAL_PAGES
+];
 
 function loadPageSource(file: string): string {
     return readFileSync(resolve(__dirname, file), 'utf8');
@@ -97,7 +110,7 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         it('audits all SPEC-156 PR-4 routes that introduce new beforeLoad gates', () => {
             // Defensive checksum so any future task adds itself to the
             // ALL_GATED_PAGES roster instead of silently being skipped.
-            expect(ALL_GATED_PAGES.length).toBe(4);
+            expect(ALL_GATED_PAGES.length).toBe(5);
         });
     });
 });
