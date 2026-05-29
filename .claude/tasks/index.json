@@ -502,6 +502,30 @@
             "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Shipped via PR #1287."
         },
         {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "status": "completed",
+            "progress": "1/2",
+            "path": "SPEC-107-beta-tester-docs-screenshots",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PR #1064 (Phase 0 only); Phase 1 deferred WONTFIX",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "Phase 0 (foundation: lightbox + structure) shipped via cd6a9eeee in PR #1064. Phase 1 (42 ALTA screenshots in 7 batches) deferred indefinitely — no follow-up spec planned. Closed as WONTFIX 2026-05-29."
+        },
+        {
+            "specId": "SPEC-140",
+            "title": "PostHog Cloud Analytics Stack (web + admin)",
+            "status": "completed",
+            "progress": "N/N",
+            "path": "SPEC-140-analytics-stack-posthog",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PRs #1127, #1146, #1151, #1157 (all merged to staging)",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "PostHog Cloud analytics fully shipped to staging across 4 PRs (web snippet + admin client + consent gating + CSP). Tasks index entry backfilled at close. Closed 2026-05-29."
+        },
+        {
             "specId": "SPEC-156",
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
             "status": "in-progress",

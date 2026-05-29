@@ -806,8 +806,13 @@
             "title": "Beta Tester Docs Screenshots Rollout",
             "type": "docs",
             "complexity": "medium",
-            "status": "draft",
-            "path": "SPEC-107-beta-tester-docs-screenshots"
+            "status": "completed",
+            "path": "SPEC-107-beta-tester-docs-screenshots",
+            "completed": "2026-05-29T00:00:00.000Z",
+            "completedNote": "Closed as WONTFIX/DEFERRED. Phase 0 (foundation: folder structure + lightbox in BetaDocLayout.astro + native <dialog>) shipped via commit cd6a9eeee (PR #1064). Phase 1 (42 ALTA screenshots in 7 batches) was never executed and is intentionally deferred indefinitely — no follow-up spec planned. Beta docs are usable without screenshots; if captures become a priority later, a new spec should be filed.",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "WONTFIX: Phase 0 foundation shipped via PR #1064; Phase 1 screenshots deferred indefinitely with no follow-up spec. Closed 2026-05-29."
         },
         {
             "specId": "SPEC-108",
@@ -1283,13 +1288,19 @@
             "title": "PostHog Cloud Analytics Stack (web + admin)",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-140-analytics-stack-posthog",
             "created": "2026-05-16T05:00:00Z",
             "rewrittenAt": "2026-05-17T23:50:00Z",
             "rewriteReason": "Switched tool choice from self-hosted Umami to PostHog Cloud free tier after user decision 2026-05-17. Expanded scope to include admin app + custom events from day one. Kept SPEC number; renamed slug.",
             "discoveredDuring": "2026-05-16 staging console audit (broken CF Web Analytics beacon)",
             "firstAllocatedViaEngramProtocol": true,
+            "completed": "2026-05-29T00:00:00.000Z",
+            "completedNote": "PostHog client wired in both web (PostHogScript.astro snippet in BaseLayout) and admin (PostHogProvider + posthog-client.ts). Consent gating via cookie-consent banner. CSP extended with us.i.posthog.com. Events instrumented: search, signup, admin login, accommodations. Test coverage present. Merged via PRs #1127 (initial), #1146 (PostHog Cloud), #1151 (snippet pattern fix), #1157 (admin integration + web fix). Operational note: Coolify env vars assumed set; manual CF Web Analytics disable in CF dashboard is operator action, not code.",
+            "completionRef": "PRs #1127, #1146, #1151, #1157 (all merged to staging)",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "PostHog Cloud analytics fully shipped to staging via 4 PRs. Spec docs retained; git history is source of truth. Closed 2026-05-29.",
             "tags": ["analytics", "posthog", "web", "admin", "monitoring", "privacy"]
         },
         {
