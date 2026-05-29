@@ -421,32 +421,34 @@ const hostDashboard: DashboardInput = {
 // ============================================================================
 
 /**
- * Dashboard for the EDITOR role — 10-card "La redacción" view.
+ * Dashboard for the EDITOR role — 11-card "La redacción" view.
  *
  * Card set (SPEC-155 §3 / 03c EDITOR section):
- *   A — Estadísticas publicaciones (kpi-grid+companion+deferred, source: editor.posts.published-this-month)
- *   B — Eventos próximos           (list,                          source: editor.events.upcoming)
- *   C — Suscriptores Newsletter    (kpi-grid+deferred,             source: editor.newsletter.subscribers)
- *   D — Campañas recientes         (list,                          source: editor.newsletter.campaigns)
- *   E — Distribución publicaciones (chart+deferred,                source: editor.posts.stats)
- *   F — Estadísticas eventos       (kpi-grid+deferred,             source: editor.events.stats — 6 tiles)
- *   G — Salud del contenido        (checklist,                     source: editor.content.health)
- *   H — Comentarios                (callout deferred,              SPEC-165)
- *   I — Últimos posts              (list,                          source: editor.posts.latest)
- *   J — Acciones                   (list,                          source: editor.shortcuts)
+ *   A  — Estadísticas publicaciones   (kpi-grid+companion+deferred, source: editor.posts.published-this-month)
+ *   B  — Eventos próximos              (list,                          source: editor.events.upcoming)
+ *   C  — Suscriptores Newsletter       (kpi-grid+deferred,             source: editor.newsletter.subscribers)
+ *   D  — Campañas recientes            (list,                          source: editor.newsletter.campaigns)
+ *   E  — Distribución publicaciones    (chart+deferred,                source: editor.posts.stats)
+ *   F  — Estadísticas eventos          (kpi-grid+deferred,             source: editor.events.stats — 6 tiles)
+ *   G1 — Salud del contenido · Posts   (checklist grouped,             source: editor.content.health.posts)
+ *   G2 — Salud del contenido · Eventos (checklist grouped,             source: editor.content.health.events)
+ *   H  — Comentarios                   (callout deferred,              SPEC-165)
+ *   I  — Últimos posts                 (list,                          source: editor.posts.latest)
+ *   J  — Acciones                      (list,                          source: editor.shortcuts)
  *
  * Bento layout (3-col grid, rendered in array order):
- *   Row 1: A (1×1) + B (2×1)
- *   Row 2: I (2×1) + J (1×1)
+ *   Row 1: A (1×1)  + B (2×1)
+ *   Row 2: I (2×1)  + J (1×1)
  *   Row 3: C (3×1 full)
- *   Row 4: F (2×1) + D (1×1)
- *   Row 5: E (2×1) + H (1×1)
- *   Row 6: G (3×1 full)
+ *   Row 4: F (2×1)  + D (1×1)
+ *   Row 5: E (2×1)  + H (1×1)
+ *   Row 6: G1 (3×1 full) — Salud posts
+ *   Row 7: G2 (3×1 full) — Salud eventos
  *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.editorDashboard.widgets.length; // 10
+ * dashboards.editorDashboard.widgets.length; // 11
  * ```
  */
 const editorDashboard: DashboardInput = {
@@ -720,31 +722,52 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card G — Salud del contenido (Row 6, full width)
-        // posts + events content-health checklist (missing image, SEO,
-        // organizer, description, etc). Full-width row so per-entity
-        // health items + per-entity grouping (T-SALUD-REFACTOR follow-up)
-        // have horizontal room.
+        // Card G1 — Salud del contenido · Posts (Row 6, full width)
+        // Per-post grouped health (one row per post with completeness %,
+        // missing-field chips, View/Edit actions). The widget shows top 10
+        // worst-rated inline and exposes the rest via a "Ver todas" dialog.
         {
-            id: 'editor-card-g',
+            id: 'editor-card-g-posts',
             type: 'checklist',
             label: {
-                es: 'Salud del contenido',
-                en: 'Content health',
-                pt: 'Saúde do conteúdo'
+                es: 'Salud del contenido · Posts',
+                en: 'Content health · Posts',
+                pt: 'Saúde do conteúdo · Posts'
             },
             scope: 'all',
-            // Bento: full row (3×1).
             gridSpan: { cols: 3 },
             config: {
-                source: 'editor.content.health',
+                source: 'editor.content.health.posts',
                 checkset: 'content-health',
                 accent: 'success',
-                icon: 'shield',
-                emptyText: 'Aún no podemos evaluar la salud',
-                emptyDescription:
-                    'Necesitamos contenido cargado (posts y eventos) para revisar lo que falta.',
-                errorText: 'No pudimos evaluar la salud del contenido',
+                icon: 'article',
+                emptyText: '¡Todo en orden!',
+                emptyDescription: 'Ningún post tiene observaciones pendientes.',
+                errorText: 'No pudimos evaluar la salud de los posts',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card G2 — Salud del contenido · Eventos (Row 7, full width)
+        // Per-event grouped health, same shape as the posts variant.
+        {
+            id: 'editor-card-g-events',
+            type: 'checklist',
+            label: {
+                es: 'Salud del contenido · Eventos',
+                en: 'Content health · Events',
+                pt: 'Saúde do conteúdo · Eventos'
+            },
+            scope: 'all',
+            gridSpan: { cols: 3 },
+            config: {
+                source: 'editor.content.health.events',
+                checkset: 'content-health',
+                accent: 'cyan',
+                icon: 'calendar',
+                emptyText: '¡Todo en orden!',
+                emptyDescription: 'Ningún evento tiene observaciones pendientes.',
+                errorText: 'No pudimos evaluar la salud de los eventos',
                 errorDescription: 'Probá actualizar el panel.'
             }
         }

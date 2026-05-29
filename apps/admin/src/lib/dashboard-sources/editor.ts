@@ -683,56 +683,109 @@ registerDataSource('editor.shortcuts', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card G: feeds the ChecklistWidget with a mixed list of recent
- * posts and events so it can compute the `content-health` checkset.
+ * EDITOR card G-posts: per-post content health, top 10 worst-rated.
  *
- * The widget's `computeItems` discriminator uses `'locationId' in entity`
- * to tell posts and events apart. We fetch 5 of each, mix into a single
- * array, and return it; the widget then iterates and produces health
- * items (missing featured image, missing SEO, missing organizer, etc).
+ * Returns the `EntityHealthListData` shape: one row per entity (NOT one row
+ * per missing field), each carrying its completeness percentage, the list
+ * of missing labels as chips, and View/Edit hrefs. Sorted ascending by
+ * completeness so the entries that need most love float to the top.
  *
- * Source ID: `'editor.content.health'`
+ * Source ID: `'editor.content.health.posts'`
  * Scope: `'all'`
- * Endpoints (parallel):
- *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc
- *   - GET /api/v1/admin/events?pageSize=5
+ * Endpoint: GET /api/v1/admin/posts?status=ACTIVE&pageSize=100 (pool)
  */
-registerDataSource('editor.content.health', (ctx) => ({
-    queryKey: buildDashboardQueryKey('editor.content.health', ctx),
+registerDataSource('editor.content.health.posts', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.content.health.posts', ctx),
     queryFn: async () => {
-        const [postsResult, eventsResult] = await Promise.all([
-            fetchApi<AdminListApiResponse<PostItem>>({
-                path: '/api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc'
-            }),
-            fetchApi<AdminListApiResponse<EventItem>>({
-                path: '/api/v1/admin/events?pageSize=5'
-            })
-        ]);
-        const posts = postsResult.data.data?.items ?? [];
-        const events = eventsResult.data.data?.items ?? [];
+        const result = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: '/api/v1/admin/posts?status=ACTIVE&pageSize=100'
+        });
+        const pool = result.data.data?.items ?? [];
 
-        // Normalize each into the ChecklistEntity shape the widget expects.
-        // Posts use `title`; events use `name` — the widget reads `entity.title`
-        // for both labels, so we alias `event.name` to `title` on the event
-        // entries. The `locationId` field is the discriminator that lets the
-        // widget pick the events branch of the check function.
-        const postEntities = posts.map((p) => ({
-            id: p.id,
-            title: p.title,
-            featuredImage: p.featuredImage,
-            tags: p.tags,
-            seoTitle: p.seoTitle
-        }));
-        const eventEntities = events.map((e) => ({
-            id: e.id,
-            title: e.name,
-            featuredImage: e.media?.featuredImage?.url ?? undefined,
-            locationId: e.locationId ?? undefined,
-            organizerId: e.organizerId ?? undefined,
-            description: e.description
-        }));
+        const evaluated = pool.map((post) => {
+            const missing: string[] = [];
+            if (!post.featuredImage) missing.push('Imagen destacada');
+            if (!post.tags || post.tags.length === 0) missing.push('Etiquetas');
+            if (!post.seoTitle) missing.push('Metadata SEO');
+            const totalChecks = 3;
+            const doneChecks = totalChecks - missing.length;
+            const completenessPct = Math.round((doneChecks / totalChecks) * 100);
+            return {
+                id: post.id,
+                title: post.title,
+                completenessPct,
+                doneChecks,
+                totalChecks,
+                missingItems: missing,
+                viewHref: `/contenido/posts/${post.id}`,
+                editHref: `/contenido/posts/${post.id}/edit`
+            };
+        });
 
-        return [...postEntities, ...eventEntities];
+        const withIssues = [...evaluated]
+            .filter((e) => e.missingItems.length > 0)
+            .sort((a, b) => a.completenessPct - b.completenessPct);
+
+        // Return the full sorted list — the widget shows the first 10
+        // inline and exposes the rest via a "Ver todas" dialog so we don't
+        // need a second round-trip when the user opens it.
+        return {
+            entities: withIssues,
+            total: withIssues.length,
+            poolSize: pool.length
+        };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+/**
+ * EDITOR card G-events: per-event content health, top 10 worst-rated.
+ * Same `EntityHealthListData` shape as the posts variant.
+ *
+ * Source ID: `'editor.content.health.events'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/events?pageSize=100 (pool)
+ */
+registerDataSource('editor.content.health.events', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.content.health.events', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminListApiResponse<EventItem>>({
+            path: '/api/v1/admin/events?pageSize=100'
+        });
+        const pool = result.data.data?.items ?? [];
+
+        const evaluated = pool.map((event) => {
+            const missing: string[] = [];
+            if (!event.media?.featuredImage?.url) missing.push('Imagen destacada');
+            if (!event.locationId) missing.push('Ubicación');
+            if (!event.organizerId) missing.push('Organizador');
+            if (!event.description || event.description.trim().length === 0) {
+                missing.push('Descripción');
+            }
+            const totalChecks = 4;
+            const doneChecks = totalChecks - missing.length;
+            const completenessPct = Math.round((doneChecks / totalChecks) * 100);
+            return {
+                id: event.id,
+                title: event.name,
+                completenessPct,
+                doneChecks,
+                totalChecks,
+                missingItems: missing,
+                viewHref: `/catalogo/eventos/${event.id}`,
+                editHref: `/catalogo/eventos/${event.id}/edit`
+            };
+        });
+
+        const withIssues = [...evaluated]
+            .filter((e) => e.missingItems.length > 0)
+            .sort((a, b) => a.completenessPct - b.completenessPct);
+
+        return {
+            entities: withIssues,
+            total: withIssues.length,
+            poolSize: pool.length
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));

@@ -56,10 +56,17 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui-wrapped';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from '@/components/ui/dialog';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon } from '@repo/icons';
+import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon, EditIcon, EyeIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { accentVars } from '../dashboard-accents';
@@ -854,6 +861,238 @@ function GenericChecklistBody({ checkset, entities, cta, accent }: GenericCheckl
  *   "entities": []
  * }
  * ```
+// ============================================================================
+// ENTITY-HEALTH GROUPED MODE (T-SALUD-REFACTOR)
+// ============================================================================
+
+/**
+ * A pre-evaluated content-health row for a single entity. Resolver-side
+ * (editor.content.health.posts / editor.content.health.events) computes the
+ * per-entity missing-field list, completeness percentage and href so the
+ * widget only has to render.
+ */
+export interface EntityHealthEntry {
+    readonly id: string;
+    readonly title: string;
+    readonly completenessPct: number;
+    readonly doneChecks: number;
+    readonly totalChecks: number;
+    readonly missingItems: ReadonlyArray<string>;
+    readonly viewHref?: string;
+    readonly editHref?: string;
+}
+
+/**
+ * Shape the resolver returns when it wants the grouped per-entity render
+ * instead of the legacy flat checklist. Detected by the widget via the
+ * presence of the `entities` field.
+ */
+export interface EntityHealthListData {
+    readonly entities: ReadonlyArray<EntityHealthEntry>;
+    readonly total: number;
+    readonly poolSize: number;
+}
+
+function isEntityHealthListData(value: unknown): value is EntityHealthListData {
+    if (value == null || typeof value !== 'object') return false;
+    const obj = value as { entities?: unknown };
+    return Array.isArray(obj.entities);
+}
+
+interface EntityHealthRowProps {
+    readonly entry: EntityHealthEntry;
+}
+
+function entryBarTone(pct: number): { bg: string; fg: string } {
+    if (pct >= 80) return { bg: 'bg-green-100', fg: 'text-green-700' };
+    if (pct >= 50) return { bg: 'bg-amber-100', fg: 'text-amber-700' };
+    return { bg: 'bg-rose-100', fg: 'text-rose-700' };
+}
+
+/** One row in the entity-health list — title, %, missing chips, action buttons. */
+function EntityHealthRow({ entry }: EntityHealthRowProps) {
+    const tone = entryBarTone(entry.completenessPct);
+    return (
+        <div
+            className="flex items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40"
+            data-testid="entity-health-row"
+        >
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                    <span
+                        className={cn(
+                            'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-semibold text-xs tabular-nums',
+                            tone.bg,
+                            tone.fg
+                        )}
+                        title={`${entry.doneChecks} de ${entry.totalChecks} checks completos`}
+                    >
+                        {entry.completenessPct}%
+                    </span>
+                    <span
+                        className="min-w-0 truncate font-medium text-foreground text-sm"
+                        title={entry.title}
+                    >
+                        {entry.title}
+                    </span>
+                </div>
+                <div
+                    className="flex flex-wrap gap-1.5"
+                    data-testid="entity-health-missing"
+                >
+                    {entry.missingItems.map((label) => (
+                        <span
+                            key={label}
+                            className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-rose-700 text-xs"
+                        >
+                            <AlertCircleIcon
+                                size={12}
+                                weight="duotone"
+                            />
+                            {label}
+                        </span>
+                    ))}
+                </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+                {entry.viewHref ? (
+                    <a
+                        href={entry.viewHref}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Ver"
+                        data-testid="entity-health-view"
+                    >
+                        <EyeIcon
+                            size={16}
+                            weight="duotone"
+                        />
+                    </a>
+                ) : null}
+                {entry.editHref ? (
+                    <a
+                        href={entry.editHref}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Editar"
+                        data-testid="entity-health-edit"
+                    >
+                        <EditIcon
+                            size={16}
+                            weight="duotone"
+                        />
+                    </a>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+interface EntityHealthListBodyProps {
+    readonly data: EntityHealthListData;
+    readonly displayLabel: string;
+    readonly accent?: string;
+    readonly icon?: string;
+}
+
+/**
+ * Renders the grouped per-entity content-health body: top 10 entities
+ * with most issues, each as one row carrying its %, missing-field chips
+ * and View/Edit action buttons. When there are more than 10 entities
+ * with issues a "Ver todas" button opens a Radix Dialog with the
+ * complete list.
+ */
+function EntityHealthListBody({ data, displayLabel, accent, icon }: EntityHealthListBodyProps) {
+    const PREVIEW_LIMIT = 10;
+    const preview = data.entities.slice(0, PREVIEW_LIMIT);
+    const remaining = Math.max(0, data.entities.length - PREVIEW_LIMIT);
+    const completenessAvg =
+        data.entities.length === 0
+            ? 100
+            : Math.round(
+                  data.entities.reduce((acc, e) => acc + e.completenessPct, 0) /
+                      data.entities.length
+              );
+    const tone = entryBarTone(completenessAvg);
+
+    return (
+        <div
+            className="space-y-3"
+            data-testid="entity-health-list-body"
+        >
+            <div className="flex items-baseline justify-between">
+                <p className="font-medium text-muted-foreground text-xs">
+                    <span className="font-semibold text-foreground tabular-nums">{data.total}</span>{' '}
+                    de <span className="tabular-nums">{data.poolSize}</span> con observaciones
+                </p>
+                <span
+                    className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs tabular-nums',
+                        tone.bg,
+                        tone.fg
+                    )}
+                    title="Promedio de salud en las entidades con issues"
+                >
+                    Promedio {completenessAvg}%
+                </span>
+            </div>
+            <div
+                className="space-y-2"
+                data-testid="entity-health-rows"
+            >
+                {preview.map((entry) => (
+                    <EntityHealthRow
+                        key={entry.id}
+                        entry={entry}
+                    />
+                ))}
+            </div>
+            {remaining > 0 ? (
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 self-start rounded-md text-primary text-sm hover:underline"
+                            data-testid="entity-health-view-all"
+                        >
+                            Ver todas ({data.entities.length})
+                            <ArrowRightIcon
+                                size={14}
+                                weight="duotone"
+                            />
+                        </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {displayLabel} ({data.entities.length})
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div
+                            className="space-y-2"
+                            data-testid="entity-health-dialog-rows"
+                        >
+                            {data.entities.map((entry) => (
+                                <EntityHealthRow
+                                    key={entry.id}
+                                    entry={entry}
+                                />
+                            ))}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            ) : null}
+            {/* accent/icon kept in props so the WidgetCard wrapper above
+                can paint the header consistently — read by the parent. */}
+            <span
+                className="sr-only"
+                data-accent={accent}
+                data-icon={icon}
+            />
+        </div>
+    );
+}
+
+/**
+ * Main ChecklistWidget renderer.
  *
  * @example
  * ```tsx
@@ -954,6 +1193,52 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                 </WidgetCard>
             );
         }
+    }
+
+    // -- 5b. Grouped-mode short-circuit (T-SALUD-REFACTOR) -------------------
+    // When the resolver returns the `EntityHealthListData` shape (object with
+    // an `entities` array) we bypass the legacy per-issue flat checklist and
+    // render the per-entity grouped body. Keeps the existing accommodation /
+    // host-profile chacklists untouched.
+    if (sourceId !== '' && fetchedData != null && isEntityHealthListData(fetchedData)) {
+        const grouped = fetchedData as EntityHealthListData;
+        if (grouped.entities.length === 0) {
+            return (
+                <WidgetCard
+                    label={displayLabel}
+                    variant="checklist"
+                    dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
+                >
+                    <WidgetEmptyBody
+                        variant="checklist"
+                        text={config.emptyText ?? '¡Todo en orden!'}
+                        description={
+                            config.emptyDescription ??
+                            'Ninguna entidad tiene observaciones pendientes.'
+                        }
+                        icon={icon}
+                    />
+                </WidgetCard>
+            );
+        }
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="checklist"
+                dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
+            >
+                <EntityHealthListBody
+                    data={grouped}
+                    displayLabel={displayLabel}
+                    accent={accent}
+                    icon={icon}
+                />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Resolve entity list -----------------------------------------------
