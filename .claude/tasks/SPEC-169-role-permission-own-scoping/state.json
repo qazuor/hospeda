@@ -506,8 +506,8 @@
         {
             "id": "T-017",
             "title": "Implement GET /api/v1/admin/accommodations/options lookup endpoint",
-            "description": "New options.ts route returning only { id, label, slug }, DRAFT-inclusive, ACCESS_PANEL_ADMIN-gated, empty array when no results. Register BEFORE /:id in the admin index to avoid routing conflicts. Query schema: q? string, limit? 1-100 default 20.",
-            "status": "pending",
+            "description": "DONE. GET /api/v1/admin/accommodations/options: createAdminRoute, NO requiredPermissions (admin-access gate), registered BEFORE /{id}. Shared EntityOptionsQuerySchema/EntityOptionsItemSchema/EntityOptionsListSchema in @repo/schemas/common/entity-options.schema.ts; accommodation.options.schema.ts extends with type+destination (D4/OQ3). Service AccommodationService.findOptions → checkCanFindOptions (ACCESS_PANEL_ADMIN/API_ADMIN) + model.searchWithRelations projected to {id,label,slug,type,destination}, DRAFT-inclusive. Tests: find-options.test.ts 7/7 + options route 3/3. schemas+service-core typecheck clean.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-018", "T-020", "T-021"],
@@ -528,18 +528,18 @@
             ],
             "tags": ["api", "backend", "accommodation", "lookup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T08:10:00.000Z",
+                "completed": "2026-05-29T08:30:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Implement /options for destination (+ any other approved entities)",
-            "description": "Apply the T-017 /options pattern to destination (GET /api/v1/admin/destinations/options) and any other entities approved at T-003 as relation targets. Register before /:id.",
-            "status": "pending",
+            "description": "DONE. Replicated /options to the 5 D4 entities: destinations, events, event-organizers, event-locations, users. checkCanFindOptions moved SHARED to service-core/utils/permission.ts (entity-agnostic, reused by all 5). Per-entity findOptions via model.findAll + buildSearchCondition/safeIlike, DRAFT-inclusive, projected to {id,label,slug}. Label fallbacks (owner-approved §12, see decision-log D4 addendum): users = displayName ?? email (PII tradeoff accepted); event-locations = placeName ?? slug. Tests: 6 service find-options files (34 total) + 6 route options files (18 total) green. schemas+service-core typecheck clean; new files absent from API baseline-red.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-021"],
@@ -556,11 +556,11 @@
             ],
             "tags": ["api", "backend", "destinations", "lookup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-29T02:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-29T08:30:00.000Z",
+                "completed": "2026-05-29T09:10:00.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 16,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.3
     }

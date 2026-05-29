@@ -35,6 +35,18 @@
 | OQ4 | dead `conversation.ownerId` admin-search param | **Out of scope.** Leave as-is. |
 | OQ5 | posts restore/hardDelete/publish asymmetry | Covered by D7 (document, don't fix). |
 
+## D4 addendum — /options label fallbacks (owner-approved 2026-05-29, during T-018)
+
+Two entities have a nullable display-name field; the `/options` `label` fallback was decided:
+- **users**: `label = displayName ?? email`. Owner accepted exposing email as the fallback even
+  though `/options` is `ACCESS_PANEL_ADMIN`-gated (editors included) — the PII tradeoff was raised
+  and accepted (OwnerSelect is staff-facing; identifiability chosen over hiding email).
+- **event-locations**: `label = placeName ?? slug` (slug is non-sensitive, identifiable).
+
+Also (T-018 impl decision, unambiguous): `checkCanFindOptions` was placed SHARED in
+`packages/service-core/src/utils/permission.ts` (entity-agnostic ACCESS_PANEL_ADMIN check), reused
+by all 5 new services. Accommodation keeps its local copy (T-017 scope); a follow-up may collapse it.
+
 ## Standing scope guards (do not violate without re-consulting owner)
 
 - **CLIENT_MANAGER is NOT touched** (§11 / §8 Q2). Deferred to a future spec; only a known-debt comment is added.
