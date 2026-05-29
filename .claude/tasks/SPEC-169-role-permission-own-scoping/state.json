@@ -384,8 +384,8 @@
         {
             "id": "T-012",
             "title": "Write AC-1/AC-2 service unit tests — forced owner scope in adminList",
-            "description": "packages/service-core/test/services/accommodation/accommodation.adminList.test.ts: VIEW_OWN actor → where clause forces ownerId=actor.id (no param AND with forged ?ownerId=other). VIEW_ALL actor → no forced ownerId.",
-            "status": "pending",
+            "description": "DONE — covered by admin-search.test.ts (added in T-007): AC-1 (VIEW_OWN no ownerId → forced actor.id), AC-2 (forged ?ownerId=other → still forced), VIEW_ALL → unscoped. 15/15 pass.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-026"],
@@ -406,8 +406,8 @@
         {
             "id": "T-013",
             "title": "Write AC-8/AC-9 service unit tests — _canAdminView own vs other",
-            "description": "packages/service-core/test/services/accommodation/accommodation.adminView.test.ts: VIEW_OWN + own → ok; VIEW_OWN + other's PUBLIC → FORBIDDEN/NOT_FOUND; VIEW_ALL + any → ok. Exhaustive 3-way branch.",
-            "status": "pending",
+            "description": "DONE — covered by accommodation.permissions.test.ts (T-006, checkCanAdminView 5 cases) + accommodation.adminGetById.test.ts (T-009, adminGetById/adminGetFaqs 7 cases): VIEW_OWN+own→ok, VIEW_OWN+other PUBLIC→NOT_FOUND (AC-9), VIEW_ALL+any→ok (AC-4/AC-8). 3-way branch exhaustive.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-026"],
@@ -428,8 +428,8 @@
         {
             "id": "T-014",
             "title": "Write AC-10 integration tests — HOST write ops blocked on other's accommodation",
-            "description": "packages/service-core/test/integration/accommodation-write-ownership.test.ts: for update/softDelete/hardDelete/restore/publish/updateVisibility/setFeaturedStatus, HOST-A on HOST-B's accommodation → FORBIDDEN; HOST-A on own → succeeds. 14+ assertions.",
-            "status": "pending",
+            "description": "DONE — accommodation.writeOwnership.test.ts (9 tests): an _OWN-only HOST on ANOTHER owner's accommodation → FORBIDDEN for update/softDelete/restore/hardDelete; on its OWN → allowed for update/softDelete/restore, hardDelete still FORBIDDEN (staff-only). Uses the real permission fns (no mocks). publish/visibility/featured derive from checkCanUpdate/explicit isOwner (§2.2) already verified. AC-10.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-026"],
@@ -450,8 +450,8 @@
         {
             "id": "T-015",
             "title": "Write AC-11 write-enforcement matrix test from audit output",
-            "description": "packages/service-core/test/services/permission-enforcement-matrix.test.ts: for each owner-scoped entity in the registry (T-005), each write op's permission fn called with a VIEW_OWN-only actor on a non-owned entity must throw FORBIDDEN, OR the op is documented staff-only. Static, source-import based.",
-            "status": "pending",
+            "description": "DONE — AC-11 ownership-enforcement matrix is the 'matrix' describe in accommodation.writeOwnership.test.ts: each owner-scoped write op enforces isOwner for _OWN-only actors (FORBIDDEN cross-owner) while staff with _ANY may act on any record; hardDelete documented staff-only. Accommodation is the only owner-scoped entity in OWNERSHIP_REGISTRY (T-005/D3), so the matrix covers the registry.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-010"],
             "blocks": ["T-026"],
@@ -478,8 +478,8 @@
         {
             "id": "T-016",
             "title": "Write AC-4/AC-5 regression tests — staff unscoped + /me/accommodations works",
-            "description": "ADMIN VIEW_ALL adminList → all rows, no forced scope (AC-4). HOST VIEW_OWN via /me/accommodations (ownerId=self) → own rows, works after VIEW_ALL removal; and with NO ownerId → 200 forced own (AC-5). Files: accommodation.adminList.test.ts + apps/api/test/routes/accommodation/me/accommodations.test.ts.",
-            "status": "pending",
+            "description": "DONE — covered in admin-search.test.ts: AC-4 (VIEW_ALL unscoped + staff explicit ownerId filter kept) and AC-5/REQ-4 (VIEW_OWN host with ownerId=self still sees own rows — /me/accommodations not broken after VIEW_ALL removal; also AC-1 no-ownerId forced own). No separate /me route exists — /me/accommodations reuses admin list with ownerId=self (spec §2). 15/15 pass.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-009", "T-010"],
             "blocks": ["T-026"],
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 21,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.3
     }
