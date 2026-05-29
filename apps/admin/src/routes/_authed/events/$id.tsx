@@ -7,6 +7,7 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
+import { EventQualityScore } from '@/features/events/components/EventQualityScore';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -35,6 +36,7 @@ function EventViewPage() {
                 entityId={id}
                 initialMode="view"
                 entityData={entityData}
+                qualityScore={({ isReduced }) => <EventQualityScore compact={isReduced} />}
             >
                 <EntityViewContent
                     entityType="event"
