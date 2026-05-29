@@ -96,3 +96,120 @@ Document each manual run here so reviewers can see the smoke was actually execut
 | Date (ISO) | Executor | PR / commit | Result | Notes |
 |---|---|---|---|---|
 | 2026-05-29 | _pending_ | PR-4 (`#TBD`) | _pending_ | Initial PR-4 staging smoke. |
+| 2026-05-29 | claude-via-playwright (local against `hospeda_test`) | PR #1302 (merged to staging) | NOTES — 2 P1 bugs found | See "Post-merge local smoke notes" section below. |
+
+---
+
+## Post-merge local smoke notes (2026-05-29)
+
+Local re-run of the checklist against `hospeda_test` DB on dev ports 4500/4600/4700 with seeded SUPER_ADMIN, ADMIN, HOST (`host-pro`), and EDITOR. Findings flagged here are independent of PR-4 (they exist on `staging` regardless) and should be opened as separate follow-up issues before promoting `staging` to `main`.
+
+### ✅ Working as documented
+
+- **SUPER_ADMIN tour** — all 16 routes under `/account/*` and `/platform/*` return 200 with the expected `h1`. Lists: `/account/profile` → "Mi Perfil", `/account/preferences` → "Mi Configuración", `/account/notifications` → "Mi Configuración", `/account/security` → "Seguridad", `/account/data` → "Mis datos", `/account/tags` → "Mis Tags Personales", `/account/billing` → "Mi facturación", `/platform/critical` → "Configuración - Portal (Crítico)", `/platform/configuration/seo` → "Configuración - SEO", `/platform/cache/revalidation` → "Revalidación ISR", `/platform/ops/cron` → "Tareas Programadas", `/platform/ops/webhooks` → "Eventos Webhook", `/platform/email/logs` → "Registro de Notificaciones", `/platform/tags/internal` → "Etiquetas internas", `/platform/tags/system` → "Etiquetas de sistema". `/platform/critical/announcements` returned 200 with no `h1` element (uses an `h2` for the list title — cosmetic).
+- **HOST tour** — `/account/billing` rendered the full surface (sections: Mi plan, Uso de mi plan, Acciones) for `host-pro@local.test` (plan `owner-pro` seeded). `/account/profile` and `/account/tags` rendered OK.
+- **Cross-app announcement creation** — `/platform/critical/announcements/new` form accepted text in es/en/pt + `info` variant + dismissible checkbox; on submit it redirected to `/platform/critical/announcements` and the new item was visible in the list. The public API `GET /api/v1/public/announcements` returned the active announcement immediately after creation.
+- **EDITOR negative cases** — `editor@local.test` was redirected to `/auth/forbidden` for both `/account/billing` (missing `billing.view.own`) and `/platform/critical/announcements` (missing `system.maintenanceMode.write`). Both gates work as designed.
+- **DB permission grants** — `role_permission` table confirms `system.maintenanceMode` and `system.maintenanceMode.write` are SUPER_ADMIN-only; `billing.view.own` + `subscription.view.own` are granted to every authenticated role except EDITOR. Seed is correct.
+
+### 🚨 P1 — `/platform/critical` page gate is missing (security)
+
+`HOST` and `ADMIN` both reach `/platform/critical` and see the full SUPER_ADMIN page (`h1: "Configuración - Portal (Crítico)"`), instead of being redirected to `/auth/forbidden`. The DB grants for `system.maintenanceMode` are correct (SUPER_ADMIN-only), so the regression is at the TanStack Start route guard layer: `/platform/critical/index.tsx` (and likely siblings under `/platform/critical/*` except `/announcements`) is missing the `beforeLoad` permission check that `/announcements` evidently has. Recommend opening a follow-up branch that adds the `system.maintenanceMode` guard to every `_authed/platform/critical/*` route file, and adds a regression test that hits each one with an ADMIN actor expecting a 302 to `/auth/forbidden`. **This must be fixed before promoting `staging` to `main`** since today a non-superadmin can read (and potentially toggle) global maintenance flags.
+
+### 🚨 P1 — `GlobalAnnouncements.astro` field-name mismatch (banner never renders on web)
+
+`apps/web/src/components/GlobalAnnouncements.astro:35` reads `response.success` to gate the data array, but `ApiResult<T>` (defined in `apps/web/src/lib/api/types.ts:55-58`) exposes the discriminator as `ok`, not `success`. As a result the SSR ternary always falls into `[]`, so no banner is ever rendered on web — the API returns the active announcements, the SSR fetch succeeds, but the component silently treats it as failure. Repro: create any active announcement from `/platform/critical/announcements/new`, then `curl http://localhost:4700/es/` and grep for `global-announcement` — zero matches. Fix is a 1-line change: `response.success ? ... : []` → `response.ok ? ... : []`. The same component should also drop the now-dead `success` import path if any. Tests under `apps/web/test/components/GlobalAnnouncements.test.ts` likely mock the response with `{ success: true, data }` so they pass — those mocks need to be aligned to `{ ok: true, data }` too, otherwise the regression will sneak back in. **This too must be fixed before promoting `staging` to `main`** since the banner is the only visible payoff of PR-4 on the public site.
+
+### ⚠️ Notes / non-blocking observations
+
+- **Better Auth change-password flow** — Login as `superadmin@hospeda.com` redirected to `/auth/change-password` on first sign-in because the seeded user has `setPasswordPrompted: false`. Even after `UPDATE users SET set_password_prompted = true`, the existing session keeps the old snapshot, so a full sign-out + re-login is required to clear the redirect. Documented for future smoke runs — recommend either (a) flipping `setPasswordPrompted: true` in the SUPER_ADMIN seed, or (b) updating this checklist to mention the one-time password change requirement.
+- **Admin SSR hydration warning** — `/auth/signin` consistently logs a React hydration mismatch in the dev console (the SSR-rendered "loader" markup differs from the client-rendered form). Functionally harmless (the form ends up interactive after the client reconcile) but adds dev-console noise; consider gating the loader inside a `useHasMounted()` so the SSR pass renders the form directly.
+- **API `HOSPEDA_REDIS_URL`** — `apps/api/.env.local` ships with `redis://localhost:6379` while the local docker compose maps Redis to `:6381`. `API_CACHE_ENABLED=false` so the API boots fine, but if anyone enables cache locally the connection will fail. Worth a one-liner fix in `.env.local` (or in `apps/api/.env.example` if there is one).
+
+### Retest after fixes (2026-05-29, same session)
+
+Both P1s above were fixed in PR #1306 (`fix/SPEC-156-pr4-platform-critical-and-banner`, two atomic commits on top of `staging`). Local retest against the same `hospeda_test` setup:
+
+- **`/platform/critical` gate** — verified for all three roles:
+  - HOST (`host-pro@local.test`) → `/auth/forbidden` ✅
+  - ADMIN (`admin@hospeda.com`) → `/auth/forbidden` ✅
+  - SUPER_ADMIN (`superadmin@hospeda.com`) → renders the maintenance + announcements + cache cards as before ✅
+  - Permission-gate audit (`apps/admin/test/spec-156/permission-gates.test.ts`) now lists `/platform/critical` with `SYSTEM_MAINTENANCE_MODE` and rejects regressions; 13/13 tests pass.
+- **`GlobalAnnouncements` banner** — verified via Playwright + raw HTML:
+  - Banner renders on `/es/alojamientos/` (`<div class="global-announcement global-announcement--info" data-announcement-id="…">…Smoke PR-4 — SPEC-156 sign-off…</div>`) ✅
+  - Locale switching: `/es/` and `/en/` render `text.es` / `text.en`; `/pt/` renders `text.pt` (verified with a distinct PT copy) ✅
+  - Dismiss flow: clicking × sets the `hospeda_ann_dismissed` cookie to the item id; on reload the inline client script keeps the banner in DOM but `display: none` (verified via `getComputedStyle`) ✅
+  - Source-based test suite (`apps/web/test/components/GlobalAnnouncements.test.ts`) now asserts the component reads `response.ok` and explicitly NOT `response.success`; 31/31 tests pass.
+- **`endsAt` date filter on web** — not re-verified live (DB manipulation + API cache restart cycle was expensive). The filter logic is covered by `apps/web/test/lib/announcements.test.ts`; the live check can be repeated during the staging→main promotion smoke.
+- **Locale fallback to `es` when other translations are missing** — not re-verified live because the API rejects items with empty translation strings (Zod schema validation in `AnnouncementsValueSchema` rejects `text.en = ""`). The fallback in `pickAnnouncementText` is covered by unit tests. If the schema later relaxes empty strings, this should be re-tested live.
+
+### Out-of-scope follow-ups surfaced during this run
+
+- Four sibling admin routes lack the same per-route `beforeLoad` guard — `/platform/configuration/seo`, `/platform/cache/revalidation`, `/platform/tags/internal`, `/platform/tags/system`. Same class of bug as `/platform/critical` but lower severity (none expose the maintenance toggle). Sidebar `onMissing: 'hide'` hides the nav link for non-permission roles, but direct URL navigation still loads the page. Recommend a separate PR that adds the guard to each + extends the permission-gate audit accordingly. Tracked at the end of PR #1306's body under "Out of scope".
+
+### Coverage extension (2026-05-29, post-fix smoke)
+
+After the two fix commits in PR #1306 landed, the remaining checklist surface was covered against the same `hospeda_test` setup. Results below extend the smoke beyond the original "SUPER_ADMIN tour + cross-app announcement + EDITOR negative" scope.
+
+#### Section A — HOST `/account/*` tour (completion)
+
+| Route | HOST result | Notes |
+|---|---|---|
+| `/account/preferences` | ✅ `h1: Mi Configuración` | Page renders, theme/language controls present. |
+| `/account/notifications` | ✅ `h1: Mi Configuración` (shared layout / tab) | — |
+| `/account/security` | ✅ `h1: Seguridad` | Lists "Cambiar contraseña" link + 16 "Próximamente" stub matches in the main region. |
+| `/account/data` | ✅ `h1: Mis datos` | `mailto:soporte@hospeda.com.ar` link present. |
+
+#### Section B — `/account/billing` deep-dive for HOST (`host-pro@local.test`, plan `owner-pro`)
+
+| Section | Result |
+|---|---|
+| Sections rendered | "Mi facturación", "Mi plan", "Uso de mi plan", "Acciones" ✅ |
+| Manage subscription deep-link | `href = http://localhost:4700/es/mi-cuenta/suscripcion`, `target = _blank`, text "Gestionar mi suscripción" ✅ |
+| Plan card | Renders empty/error fallback when no billing rows are loaded — copy: "No pudimos cargar tu suscripción…" — consistent with PR-1 fallback behavior. |
+
+Not exercised in this pass: usage bar threshold tones (≥80% warning, ≥95% danger) — would require mutating the seeded plan's `currentUsage` values; the rendering paths are covered by component unit tests, leaving this for a focused QA pass on staging if the threshold UX needs verification under real data.
+
+#### Section C — HOST `/platform/*` tour (mostly forbidden)
+
+| Route | HOST | Notes |
+|---|---|---|
+| `/platform/critical` | ✅ `/auth/forbidden` | Fix shipped in PR #1306. |
+| `/platform/critical/announcements` | ✅ `/auth/forbidden` | T-038 guard works. |
+| `/platform/ops/cron` | ✅ `/auth/forbidden` | `requireBillingAccess` (BILLING_READ_ALL) — see ADMIN issue below. |
+| `/platform/ops/webhooks` | ✅ `/auth/forbidden` | Same guard. |
+| `/platform/email/logs` | ✅ `/auth/forbidden` | Same guard. |
+| `/platform/configuration/seo` | ❌ renders `Configuración - SEO` for HOST | OOS bug (already documented above). |
+| `/platform/tags/system` | ❌ renders `Etiquetas de sistema` for HOST | OOS bug — same class. |
+| `/platform/cache/revalidation` | ⚠️ shows "Cargando…" then client-side redirects to `/dashboard` | Partial guard — UI does not crash but no `/auth/forbidden` either. Worth a small fix to surface a consistent forbidden experience. |
+| `/platform/tags/internal` | ⚠️ shows "Cargando…" then client-side redirects to `/dashboard` | Same pattern as `/cache/revalidation`. |
+
+#### Section C — ADMIN `/platform/*` tour (visible per spec, but several blocked)
+
+| Route | ADMIN | Notes |
+|---|---|---|
+| `/platform/configuration/seo` | ✅ visible | — |
+| `/platform/cache/revalidation` | ✅ visible | — |
+| `/platform/tags/internal` | ✅ visible | — |
+| `/platform/tags/system` | ✅ visible | — |
+| `/platform/ops/cron` | 🚨 `/auth/forbidden` | Route uses `requireBillingAccess` (`PermissionEnum.BILLING_READ_ALL`, SUPER_ADMIN-only per `role_permission`). ADMIN gets forbidden even though the checklist says they should see it. Mismatch is at the guard layer — `apps/admin/src/lib/billing-access.ts` was reused for routes that are not billing. |
+| `/platform/ops/webhooks` | 🚨 `/auth/forbidden` | Same root cause. |
+| `/platform/email/logs` | 🚨 `/auth/forbidden` | Same root cause. |
+
+> **New finding (medium)**: `/platform/ops/{cron,webhooks}` and `/platform/email/logs` all gate on `requireBillingAccess` → `PermissionEnum.BILLING_READ_ALL`, which is granted to SUPER_ADMIN only. The checklist documents these as visible for ADMIN+. Recommend either (a) introducing dedicated permissions (`OPS_READ`, `EMAIL_LOGS_VIEW`) and granting them to ADMIN, or (b) swapping the guard to a permission both roles share. Either way, the audit in `apps/admin/test/spec-156/permission-gates.test.ts` should be extended to lock the chosen permission per route. Lower severity than the `/platform/critical` issue because the ADMIN gap is a wrong-default (over-restrictive) rather than a security hole, but it still blocks the documented ADMIN workflow.
+
+#### Section E — cross-cutting UI
+
+| Item | Result |
+|---|---|
+| Sidebar "Mi cuenta" group | 7 entries in exact spec order: Mi perfil → Preferencias → Notificaciones → Seguridad → Mis datos → Mi facturación → Mis tags ✅ |
+| Topbar avatar dropdown (HOST) | "Mi cuenta" + dropdown icon links route to `/account/profile` and `/account/preferences` ✅ |
+| Sidebar "Plataforma" group (SUPER_ADMIN) | 6 links captured: SEO defaults, Configuración crítica, Revalidación ISR, Tags de sistema, Etiquetas internas, **Historial de envíos** (`/platform/email/logs`) ✅ — confirms the new email-infrastructure entry shipped. |
+| Sidebar entries for `/platform/ops/{cron,webhooks}` | Not surfaced by the same query; they live in a nested Ops sub-group not captured by `[data-sidebar] a[href^="/platform/"]`. Visually present per SUPER_ADMIN tour (both routes return 200 with correct h1). |
+
+#### Outstanding (low priority, not blocking promotion)
+
+- `endsAt` date-filter live re-verification on web (covered by unit tests).
+- `es` locale fallback when `text.en`/`text.pt` are empty — blocked by Zod schema rejecting empty strings; covered by `pickAnnouncementText` unit tests.
+- Usage bar tone thresholds in `/account/billing` (≥80%, ≥95%) — covered by component unit tests; not exercised live.
+- Sidebar Ops sub-group presence for SUPER_ADMIN — visual presence implied by direct-URL render of `/platform/ops/{cron,webhooks}` returning 200; the sidebar query just didn't pick the nested anchors.
