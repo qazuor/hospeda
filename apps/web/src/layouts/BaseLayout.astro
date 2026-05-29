@@ -21,6 +21,7 @@ import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
+import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
 import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
@@ -221,6 +222,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<NavigationProgress />
 		<SkipToContent locale={locale} />
 		<Header locale={locale} />
+		<GlobalAnnouncements locale={locale} />
 
 		<main id="main-content">
 			<slot />

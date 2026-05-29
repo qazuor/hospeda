@@ -1586,6 +1586,13 @@
                     "mergedAt": "2026-05-29T01:51:32Z",
                     "mergeCommit": "c57965c59d9cc023781dff9822233ccd42ed9ca8",
                     "tasksClosed": "T-012..T-026 (15 tasks; 26/44 total)"
+                },
+                {
+                    "pr": "#1301",
+                    "title": "platform_settings data layer migration (PR-3 of 4)",
+                    "mergedAt": "2026-05-29T02:34:39Z",
+                    "mergeCommit": "637e2700fd14df80a78041e6a3d75c8a2a0ad47e",
+                    "tasksClosed": "T-028..T-031 (4 tasks; 30/44 total)"
                 }
             ],
             "tags": [

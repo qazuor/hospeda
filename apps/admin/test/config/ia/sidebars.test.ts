@@ -287,9 +287,14 @@ describe('sidebars', () => {
     // HOST sidebars — T-039
     // -------------------------------------------------------------------------
 
-    describe('miCuentaSidebar (T-039 / SPEC-156 T-026)', () => {
-        it('should have exactly 6 items (profile, preferences, notifications, security, data, tags)', () => {
-            expect(sidebars.miCuentaSidebar.items).toHaveLength(6);
+    describe('miCuentaSidebar (T-039 / SPEC-156 T-026 + T-033)', () => {
+        it('should have exactly 7 items (profile, preferences, notifications, security, data, billing, tags)', () => {
+            expect(sidebars.miCuentaSidebar.items).toHaveLength(7);
+        });
+
+        it('should contain /account/billing link (SPEC-156 T-033)', () => {
+            const links = collectAllLinks(sidebars.miCuentaSidebar.items);
+            expect(links.map((l) => l.route)).toContain('/account/billing');
         });
 
         it('should parse against SidebarSchema', () => {
