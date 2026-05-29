@@ -931,6 +931,23 @@ const miCuentaSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'mi-facturacion',
+            label: {
+                es: 'Mi facturación',
+                en: 'My billing',
+                pt: 'Meu faturamento'
+            },
+            icon: 'CreditCardIcon',
+            route: '/account/billing',
+            exact: true,
+            // Per AC-23: BILLING_VIEW_OWN + SUBSCRIPTION_VIEW_OWN. The sidebar
+            // engine AND-evaluates `permissions`, so listing both hides the
+            // item from any actor missing either perm (e.g. EDITOR).
+            permissions: ['BILLING_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'mis-tags',
             label: { es: 'Mis tags', en: 'My tags', pt: 'Minhas tags' },
             icon: 'TagsIcon',

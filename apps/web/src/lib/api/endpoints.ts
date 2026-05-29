@@ -6,6 +6,7 @@ import type {
     AccommodationPublic,
     AccommodationSummary,
     AmenityPublic,
+    AnnouncementItem,
     DestinationPublic,
     EventPublic,
     EventSummary,
@@ -77,6 +78,21 @@ export const testimonialsApi = {
         pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<TestimonialItem>>> {
         return apiClient.getList({ path: `${BASE}/testimonials`, params });
+    }
+};
+
+// --- Global announcements (SPEC-156) ---
+
+/**
+ * Public global announcements API. Reads the currently-active items from
+ * the public, cacheable endpoint shipped in SPEC-156 PR-1 (T-010). The API
+ * filters by [startsAt, endsAt] server-side so this method returns a flat
+ * array — no pagination envelope.
+ */
+export const announcementsApi = {
+    /** List currently active global announcements (server-side date filtered). */
+    list(): Promise<ApiResult<ReadonlyArray<AnnouncementItem>>> {
+        return apiClient.get({ path: `${BASE}/announcements` });
     }
 };
 
