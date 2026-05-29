@@ -7,6 +7,7 @@ import {
     safeIlike
 } from '@repo/db';
 import type {
+    EntityOptionsItem,
     EventLocation,
     EventLocationCreateInput,
     EventLocationSearchInput,
@@ -21,6 +22,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type {
@@ -31,6 +33,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { checkCanFindOptions } from '../../utils';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
     checkCanAdminList,
@@ -106,6 +109,68 @@ export class EventLocationService extends BaseCrudService<
         this._destinationModel = new DestinationModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = EventLocationAdminSearchSchema;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * WITHOUT requiring a broad view grant. Gating is admin-panel access only (see
+     * {@link checkCanFindOptions}); the route mirrors this with an `ACCESS_PANEL_ADMIN`-only
+     * middleware gate.
+     *
+     * Event locations have NO dedicated `name` column — their display name is `placeName`
+     * (e.g. "Teatro Municipal"), which is NULLABLE (SPEC-169 §12 flag: see T-018 report).
+     * `label` therefore falls back to the (always-present) `slug` when `placeName` is null,
+     * so the selector never shows an empty label. The search term matches `placeName`.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows,
+     * never publication state) so relations can target unpublished locations.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of event location options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const additionalConditions: SQL[] =
+                    trimmedQ && trimmedQ.length > 0
+                        ? [safeIlike(eventLocations.placeName, trimmedQ)]
+                        : [];
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    additionalConditions,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.placeName ?? item.slug,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     /**

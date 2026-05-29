@@ -198,6 +198,35 @@ export function checkCanAdminList(actor: Actor): void {
 }
 
 /**
+ * Checks if an actor may use the lightweight relation-selector lookup (SPEC-169 §5.5 / D4).
+ *
+ * The `/options` endpoint exposes only public-grade identity fields (`id`, `label`, `slug`,
+ * plus `type` and `destination` for accommodation) and is therefore gated ONLY by admin-panel
+ * access — NOT by `ACCOMMODATION_VIEW_ALL` / `_VIEW_OWN`. This deliberately lets an EDITOR (or
+ * any admin-panel role) populate relation selectors without a broad view grant, which is the
+ * whole point of the lookup tier (it stops selectors from forcing `_VIEW_ALL`).
+ *
+ * This is defense-in-depth that mirrors the route-level admin-access gate: the HTTP route uses
+ * `createAdminRoute` with NO `requiredPermissions`, so the admin authorization middleware already
+ * requires `ACCESS_PANEL_ADMIN` OR `ACCESS_API_ADMIN`. Re-checking here keeps the service safe
+ * even if called outside the HTTP boundary.
+ *
+ * @param actor - The actor performing the lookup.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks admin-panel access.
+ */
+export function checkCanFindOptions(actor: Actor): void {
+    if (
+        !hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) &&
+        !hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: admin panel access required for options lookup'
+        );
+    }
+}
+
+/**
  * Checks if an actor may view the ADMIN detail of an accommodation (SPEC-169 §2.1/§5.2).
  *
  * This is intentionally NOT the generic {@link checkCanView}: that one grants access to

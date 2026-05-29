@@ -1,5 +1,6 @@
 import { EventOrganizerModel, eventOrganizers, safeIlike } from '@repo/db';
 import type {
+    EntityOptionsItem,
     EventOrganizer,
     EventOrganizerCreateInput,
     EventOrganizerListInput,
@@ -15,11 +16,18 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
-import type { Actor, PaginatedListOutput, ServiceConfig, ServiceContext } from '../../types';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
-import { hasPermission } from '../../utils';
+import { checkCanFindOptions, hasPermission } from '../../utils';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
@@ -66,6 +74,63 @@ export class EventOrganizerService extends BaseCrudService<
         this.model = model ?? new EventOrganizerModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = EventOrganizerAdminSearchSchema;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * WITHOUT requiring a broad view grant. Gating is admin-panel access only (see
+     * {@link checkCanFindOptions}); the route mirrors this with an `ACCESS_PANEL_ADMIN`-only
+     * middleware gate.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows,
+     * never publication state) so relations can target unpublished organizers.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of event organizer options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const additionalConditions: SQL[] =
+                    trimmedQ && trimmedQ.length > 0
+                        ? [safeIlike(eventOrganizers.name, trimmedQ)]
+                        : [];
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    additionalConditions,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     // --- Permission Hooks ---

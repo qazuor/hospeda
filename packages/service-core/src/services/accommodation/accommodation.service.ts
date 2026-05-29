@@ -41,6 +41,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
     type AccommodationSearchResult,
@@ -103,6 +104,7 @@ import {
     checkCanAdminList,
     checkCanAdminView,
     checkCanCreate,
+    checkCanFindOptions,
     checkCanHardDelete,
     checkCanList,
     checkCanRestore,
@@ -562,6 +564,68 @@ export class AccommodationService extends BaseCrudService<
                 checkCanAdminView(validatedActor, entity as Accommodation);
 
                 return this._afterGetByField(entity as Accommodation, validatedActor, execCtx);
+            }
+        });
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug, type, destination }` items for populating admin
+     * relation selectors WITHOUT requiring a broad `ACCOMMODATION_VIEW_ALL` grant. Gating is
+     * admin-panel access only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate. This deliberately bypasses the heavy
+     * `checkCanAdminList` (VIEW_ALL/VIEW_OWN) used by {@link adminList}.
+     *
+     * Results are DRAFT-inclusive (the model's `searchWithRelations` only excludes soft-deleted
+     * rows, never publication state) so relations can target unpublished accommodations.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of accommodation options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: AccommodationOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const { items } = await this.model.searchWithRelations(
+                    {
+                        q: validatedInput.q,
+                        page: 1,
+                        pageSize: validatedInput.limit
+                    } as AccommodationSearchInput,
+                    execCtx?.tx
+                );
+
+                const options: AccommodationOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug,
+                    type: item.type,
+                    destination: item.destination
+                        ? {
+                              id: item.destination.id,
+                              name: item.destination.name,
+                              slug: item.destination.slug
+                          }
+                        : null
+                }));
+
+                return { items: options };
             }
         });
     }
