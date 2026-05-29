@@ -248,6 +248,107 @@ describe('entitlementMiddleware', () => {
         });
     });
 
+    describe('platform staff bypass (SPEC-171)', () => {
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectStaff = (role: RoleEnum, opts: { customerId?: string | null } = {}) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', opts.customerId ?? null);
+                c.set('actor', {
+                    id: `staff-${role}`,
+                    role,
+                    permissions: [],
+                    email: `${role}@example.com`
+                } as unknown as InjectedActor);
+                return next();
+            });
+
+        const mountReporter = () => {
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+        };
+
+        const STAFF_ROLES = [
+            RoleEnum.SUPER_ADMIN,
+            RoleEnum.ADMIN,
+            RoleEnum.EDITOR,
+            RoleEnum.CLIENT_MANAGER
+        ] as const;
+
+        for (const role of STAFF_ROLES) {
+            it(`should grant unlimited entitlements to ${role} with no customer`, async () => {
+                injectStaff(role);
+                mountReporter();
+
+                const res = await app.request('/test');
+                const data = (await res.json()) as {
+                    readonly entitlements: readonly string[];
+                    readonly limits: Record<string, number>;
+                };
+
+                // Every entitlement key granted
+                expect(data.entitlements).toHaveLength(Object.values(EntitlementKey).length);
+                expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+                expect(data.entitlements).toContain(EntitlementKey.WHITE_LABEL);
+                expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+                // Every limit unlimited (-1)
+                expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+                expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(-1);
+                expect(data.limits[LimitKey.MAX_PROPERTIES]).toBe(-1);
+            });
+        }
+
+        it('should grant unlimited to staff WITHOUT ever calling billing (short-circuits before customer/cache)', async () => {
+            // Even with a customer id present, the staff guard must short-circuit
+            // before the customer lookup — so the customer-keyed cache never sees
+            // a role-dependent payload (no cross-role leak).
+            injectStaff(RoleEnum.SUPER_ADMIN, { customerId: 'test-customer-id' });
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+            expect(mockBilling.subscriptions.getByCustomerId).not.toHaveBeenCalled();
+        });
+
+        it('should NOT grant unlimited to a HOST actor (paying role keeps plan entitlements)', async () => {
+            injectStaff(RoleEnum.HOST);
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // HOST falls through to owner-basico draft defaults, NOT unlimited
+            expect(data.entitlements).not.toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+        });
+
+        it('should NOT grant unlimited to a regular USER actor', async () => {
+            injectStaff(RoleEnum.USER);
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+            };
+
+            // USER falls through to tourist-free, NOT unlimited
+            expect(data.entitlements).not.toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+    });
+
     describe('when user has active subscription', () => {
         beforeEach(() => {
             // Mock active subscription

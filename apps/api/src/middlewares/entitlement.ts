@@ -19,7 +19,8 @@ import {
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
-    getPlanBySlug
+    getPlanBySlug,
+    getUnlimitedEntitlements
 } from '@repo/billing';
 import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -194,6 +195,58 @@ function buildHostDraftDefaultsResult(): LoadEntitlementsResult {
     return {
         entitlements: new Set<EntitlementKey>(plan.entitlements as EntitlementKey[]),
         limits: new Map<LimitKey, number>(plan.limits.map((l) => [l.key as LimitKey, l.value])),
+        shouldCache: true
+    };
+}
+
+/**
+ * Platform staff roles that bypass billing entitlements entirely (SPEC-171).
+ *
+ * These roles operate the admin panel on behalf of the platform and have no
+ * billing customer/subscription. They are not "billing actors", so the
+ * resolver grants them the unlimited entitlement set instead of treating
+ * "no plan" as "no entitlements" (which would surface upsell gates at them).
+ *
+ * HOST is deliberately excluded: it is the only paying role and must keep
+ * seeing the real plan entitlements (and upsell gates when on a free tier).
+ * Non-staff, non-HOST roles (USER, GUEST, SPONSOR, SYSTEM) keep the
+ * tourist-free defaults.
+ */
+const STAFF_BILLING_BYPASS_ROLES: ReadonlySet<RoleEnum> = new Set([
+    RoleEnum.SUPER_ADMIN,
+    RoleEnum.ADMIN,
+    RoleEnum.EDITOR,
+    RoleEnum.CLIENT_MANAGER
+]);
+
+/**
+ * Whether the given role is platform staff that bypasses billing entitlements.
+ *
+ * @param role - The actor role to check (undefined → not staff).
+ * @returns `true` when the role is in {@link STAFF_BILLING_BYPASS_ROLES}.
+ */
+function isStaffBypassRole(role: RoleEnum | undefined): boolean {
+    return role !== undefined && STAFF_BILLING_BYPASS_ROLES.has(role);
+}
+
+/**
+ * Build the unlimited entitlement result for platform staff (SPEC-171).
+ *
+ * Every entitlement granted and every limit set to the unlimited sentinel
+ * (`-1`), sourced from {@link getUnlimitedEntitlements}. `shouldCache` is
+ * irrelevant here because the staff bypass short-circuits the middleware
+ * before the customer-keyed cache is ever touched, but it is set to `true`
+ * for shape consistency with the other builders.
+ *
+ * @returns A LoadEntitlementsResult granting everything.
+ */
+function buildStaffUnlimitedResult(): LoadEntitlementsResult {
+    const unlimited = getUnlimitedEntitlements();
+    return {
+        entitlements: new Set<EntitlementKey>(unlimited.entitlements),
+        limits: new Map<LimitKey, number>(
+            unlimited.limits.map((l) => [l.key as LimitKey, l.value])
+        ),
         shouldCache: true
     };
 }
@@ -374,6 +427,22 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             // Billing not enabled - set empty entitlements
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', false);
+            await next();
+            return;
+        }
+
+        // Platform staff bypass (SPEC-171). Staff roles (SUPER_ADMIN, ADMIN,
+        // EDITOR, CLIENT_MANAGER) operate the admin panel without a billing
+        // customer/subscription. Grant them the unlimited entitlement set here,
+        // BEFORE touching the customer lookup or the customer-keyed cache. This
+        // keeps role-dependent payloads out of the customer cache (no cross-role
+        // leak) and means the frontend no longer needs to special-case staff.
+        const staffActor = c.get('actor');
+        if (isStaffBypassRole(staffActor?.role as RoleEnum | undefined)) {
+            const unlimited = buildStaffUnlimitedResult();
+            c.set('userEntitlements', unlimited.entitlements);
+            c.set('userLimits', unlimited.limits);
             c.set('billingLoadFailed', false);
             await next();
             return;
