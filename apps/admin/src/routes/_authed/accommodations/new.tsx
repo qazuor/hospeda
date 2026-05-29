@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
@@ -80,7 +80,7 @@ function AccommodationCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={AccommodationCreateDraftHttpSchema}
                 createConsolidatedConfig={() =>
