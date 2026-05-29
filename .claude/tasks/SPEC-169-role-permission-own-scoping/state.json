@@ -1,0 +1,614 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-169",
+    "title": "Role Permission Audit + Owner-Scoped Data Access",
+    "created": "2026-05-29T02:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create audit script — programmatic scan of role x permission matrix",
+            "description": "One-off TS script importing RoleEnum/PermissionEnum/ROLE_PERMISSIONS from packages/seed/src/required/rolePermissions.seed.ts; emit per-role table of every _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE grant (role | permission | category) as the 'read' audit baseline. File: scripts/audit-role-permissions.ts (one-off). Output is the primary input for the T-003 owner-review gate.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Import role-permissions map from seed file", "completed": false },
+                { "title": "Filter to _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE suffixes", "completed": false },
+                { "title": "Emit structured output (role | permission | category)", "completed": false },
+                { "title": "Run and capture output as the read audit baseline", "completed": false }
+            ],
+            "tags": ["audit", "backend", "scripts"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Create audit script — enumerate admin list/getById endpoints + write-enforcement matrix",
+            "description": "Walk apps/api/src/routes/*/admin/ to record entity | route | method | requiredPermissions | optional-owner-filter? Walk packages/service-core/src/services/*/ permission files to classify each write/destructive op (update/softDelete/hardDelete/restore/publish/visibility/featured/batch) as isOwner-enforced / permission-only / NA — INCLUDING UI-less routes (/{id}/hard, batch, restore). Output: endpoint table + write-enforcement matrix. Self-test: accommodation matrix must confirm the 7 ops in spec §2.2 as isOwner-enforced.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-015"],
+            "subtasks": [
+                { "title": "Enumerate admin list routes and requiredPermissions", "completed": false },
+                { "title": "Flag routes with optional ownerId-style query param", "completed": false },
+                { "title": "Enumerate write ops + their check function per owner-scoped entity", "completed": false },
+                { "title": "Classify each write op: isOwner / permission-only / no check", "completed": false },
+                { "title": "Emit endpoint table + write-enforcement matrix for owner review", "completed": false }
+            ],
+            "tags": ["audit", "backend", "scripts"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "⛔ OWNER-REVIEW GATE (§12) — present audit outputs, receive explicit approval on ALL verdicts",
+            "description": "HARD GATE. Human-in-the-loop. Present T-001 (role×permission table) and T-002 (endpoint + write-enforcement matrix) to the owner. Obtain explicit approval for EVERY §12-governed decision before ANY implementation task starts. Record verbatim approvals in a decision log. CLIENT_MANAGER is NOT touched (§11/§8 Q2).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-010", "T-017", "T-018", "T-020", "T-021", "T-022"],
+            "subtasks": [
+                { "title": "Present T-001 role×permission matrix to owner", "completed": false },
+                { "title": "Present T-002 endpoint + write-enforcement matrix to owner", "completed": false },
+                { "title": "⛔ §12: approve which entities get _VIEW_OWN + exact permission names", "completed": false },
+                { "title": "⛔ §12: approve _canAdminView semantics for PRIVATE/RESTRICTED", "completed": false },
+                { "title": "⛔ §12: approve ownership resolver shape (§5.6) + which entities get a descriptor", "completed": false },
+                { "title": "⛔ §12: approve /options payload shape, gating, and which entities get one", "completed": false },
+                { "title": "⛔ §12: approve seed wording (HOST grant removal, EDITOR rationale comment)", "completed": false },
+                { "title": "⛔ §12: approve which admin routes get beforeLoad guard + redirect targets", "completed": false },
+                { "title": "Confirm CLIENT_MANAGER is NOT touched", "completed": false },
+                { "title": "Record all approvals in a decision log file", "completed": false }
+            ],
+            "tags": ["decision-gate", "audit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Add ACCOMMODATION_VIEW_OWN (and approved _VIEW_OWN perms) to PermissionEnum",
+            "description": "Add ACCOMMODATION_VIEW_OWN = 'accommodation.viewOwn' (and any other _VIEW_OWN entries approved at T-003) to packages/schemas/src/enums/permission.enum.ts, after ACCOMMODATION_VIEW_ALL. Extend enum test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006", "T-007", "T-008", "T-031"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm exact permission names from T-003 before adding", "completed": false },
+                { "title": "Add ACCOMMODATION_VIEW_OWN with value 'accommodation.viewOwn'", "completed": false },
+                { "title": "Add any other approved _VIEW_OWN permissions", "completed": false },
+                { "title": "Verify TypeScript compiles, no any", "completed": false },
+                { "title": "Extend permission.enum.test.ts asserting new values", "completed": false }
+            ],
+            "tags": ["schema", "permissions", "backend"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Define per-entity ownership resolver (ownerColumn + isOwner)",
+            "description": "Create packages/service-core/src/utils/ownership.ts with OwnershipDescriptor { ownerColumn, isOwner } and OWNERSHIP_REGISTRY (only entities granted _VIEW_OWN at T-003). Accommodation reference: ownerColumn 'ownerId', isOwner (actor, entity) => entity.ownerId === actor.id. Export getOwnershipDescriptor. Re-export from utils index.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm ownership column names per entity from T-003 (authorId? createdById? ownerId?)", "completed": false },
+                { "title": "Define OwnershipDescriptor interface", "completed": false },
+                { "title": "Define OWNERSHIP_REGISTRY (only _VIEW_OWN entities)", "completed": false },
+                { "title": "Implement getOwnershipDescriptor", "completed": false },
+                { "title": "Export from utils index", "completed": false }
+            ],
+            "tags": ["service-core", "backend", "architecture"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement _canAdminView on AccommodationService (VIEW_ALL OR VIEW_OWN+isOwner)",
+            "description": "Add checkCanAdminView in accommodation.permissions.ts + _canAdminView override in accommodation.service.ts. Logic: VIEW_ALL → any; VIEW_OWN → isOwner only else error; neither → FORBIDDEN. Must NOT reuse generic checkCanView (it allows any PUBLIC record). Error code (FORBIDDEN vs NOT_FOUND) confirmed at T-003.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-008", "T-009", "T-013"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm error code (FORBIDDEN vs NOT_FOUND) from T-003", "completed": false },
+                { "title": "Export checkCanAdminView from accommodation.permissions.ts", "completed": false },
+                { "title": "Override _canAdminView in AccommodationService", "completed": false },
+                { "title": "Use getOwnershipDescriptor('accommodation').isOwner for VIEW_OWN branch", "completed": false }
+            ],
+            "tags": ["service-core", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement forced owner-scoping in adminList for accommodation (VIEW_OWN path)",
+            "description": "Update checkCanAdminList (accept VIEW_OWN) + _canAdminList/_executeAdminSearch in AccommodationService to FORCE ownerId = actor.id when actor holds only VIEW_OWN, overriding any client ownerId. VIEW_ALL → unscoped; neither → FORBIDDEN.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-008", "T-009", "T-012", "T-016"],
+            "subtasks": [
+                { "title": "Update checkCanAdminList to accept VIEW_ALL OR VIEW_OWN", "completed": false },
+                { "title": "In _canAdminList detect held permission and stash on context", "completed": false },
+                { "title": "In _executeAdminSearch force ownerId = actor.id for VIEW_OWN-only", "completed": false },
+                { "title": "Confirm neither-perm path still throws FORBIDDEN", "completed": false }
+            ],
+            "tags": ["service-core", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Update accommodation adminList route gate to accept VIEW_ALL OR VIEW_OWN",
+            "description": "Update apps/api/src/routes/accommodation/admin/list.ts requiredPermissions to OR-accept VIEW_OWN. Inspect createAdminListRoute: if it only supports AND-semantics, present options at a §12 checkpoint before touching the factory (affects every admin route).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-006", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Read createAdminListRoute permission-check logic", "completed": false },
+                { "title": "⛔ §12: if factory is AND-only, present options before changing the factory", "completed": false },
+                { "title": "Update accommodation list route gate to allow VIEW_OWN", "completed": false },
+                { "title": "Verify existing ADMIN actor tests still pass", "completed": false }
+            ],
+            "tags": ["api", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Update accommodation admin getById route + service to use _canAdminView",
+            "description": "Update apps/api/src/routes/accommodation/admin/getById.ts requiredPermissions to OR-accept VIEW_OWN, and wire the path to invoke _canAdminView (not generic _canView). Approach (dedicated adminGetById vs augment _canView) decided at a §12 checkpoint. Verify sub-tab routes share the path.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-010", "T-016"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm approach (dedicated adminGetById vs admin-context detection)", "completed": false },
+                { "title": "Update route requiredPermissions to OR-accept VIEW_OWN", "completed": false },
+                { "title": "Wire route to invoke _canAdminView (not _canView)", "completed": false },
+                { "title": "Verify sub-tab routes (faqs, amenities, gallery) use same path", "completed": false }
+            ],
+            "tags": ["api", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed: remove HOST ACCOMMODATION_VIEW_ALL, add VIEW_OWN; document EDITOR rationale",
+            "description": "packages/seed/src/required/rolePermissions.seed.ts: remove ACCOMMODATION_VIEW_ALL from HOST, add ACCOMMODATION_VIEW_OWN, fix comment + add SPEC-169 rationale. Add rationale comment to EDITOR's POST_VIEW_ALL/POST_VIEW_PRIVATE/EVENT_VIEW_PRIVATE. DO NOT touch CLIENT_MANAGER. Verify pnpm db:fresh-dev applies cleanly.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004", "T-009"],
+            "blocks": ["T-011", "T-014", "T-015", "T-016", "T-022", "T-027", "T-028", "T-029"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm exact wording for HOST + EDITOR comments from T-003", "completed": false },
+                { "title": "Remove ACCOMMODATION_VIEW_ALL from HOST block", "completed": false },
+                { "title": "Add ACCOMMODATION_VIEW_OWN to HOST block", "completed": false },
+                { "title": "Add EDITOR rationale comment block", "completed": false },
+                { "title": "Do NOT touch CLIENT_MANAGER", "completed": false },
+                { "title": "Run pnpm db:fresh-dev to verify seed applies", "completed": false }
+            ],
+            "tags": ["seed", "backend", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Write AC-6 regression test — no unauthorized broad grants in non-staff roles",
+            "description": "packages/seed/test/role-permission-audit.test.ts: import ROLE_PERMISSIONS, assert no non-staff role holds _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE except the documented allow-list (EDITOR: POST_VIEW_ALL, POST_VIEW_PRIVATE, EVENT_VIEW_PRIVATE). Assert HOST lacks ACCOMMODATION_VIEW_ALL.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Import ROLE_PERMISSIONS from seed", "completed": false },
+                { "title": "Define NON_STAFF_ROLES + PERMITTED_BROAD_GRANTS allow-list", "completed": false },
+                { "title": "Assert no broad grant outside allow-list per non-staff role", "completed": false },
+                { "title": "Assert HOST has no ACCOMMODATION_VIEW_ALL", "completed": false }
+            ],
+            "tags": ["testing", "security", "regression"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Write AC-1/AC-2 service unit tests — forced owner scope in adminList",
+            "description": "packages/service-core/test/services/accommodation/accommodation.adminList.test.ts: VIEW_OWN actor → where clause forces ownerId=actor.id (no param AND with forged ?ownerId=other). VIEW_ALL actor → no forced ownerId.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Mock model with spy-tracked list", "completed": false },
+                { "title": "Verify forced ownerId insertion (AC-1, AC-2)", "completed": false },
+                { "title": "Verify unscoped path for VIEW_ALL (AC-4)", "completed": false }
+            ],
+            "tags": ["testing", "service-core", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Write AC-8/AC-9 service unit tests — _canAdminView own vs other",
+            "description": "packages/service-core/test/services/accommodation/accommodation.adminView.test.ts: VIEW_OWN + own → ok; VIEW_OWN + other's PUBLIC → FORBIDDEN/NOT_FOUND; VIEW_ALL + any → ok. Exhaustive 3-way branch.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert VIEW_OWN + own → no error (AC-8)", "completed": false },
+                { "title": "Assert VIEW_OWN + other's PUBLIC → error (AC-9)", "completed": false },
+                { "title": "Assert VIEW_ALL + any → no error (AC-4)", "completed": false }
+            ],
+            "tags": ["testing", "service-core", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Write AC-10 integration tests — HOST write ops blocked on other's accommodation",
+            "description": "packages/service-core/test/integration/accommodation-write-ownership.test.ts: for update/softDelete/hardDelete/restore/publish/updateVisibility/setFeaturedStatus, HOST-A on HOST-B's accommodation → FORBIDDEN; HOST-A on own → succeeds. 14+ assertions.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Seed two HOST actors + two accommodations", "completed": false },
+                { "title": "Assert each write op cross-owner → FORBIDDEN", "completed": false },
+                { "title": "Assert each write op same-owner → succeeds", "completed": false }
+            ],
+            "tags": ["testing", "security", "integration", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Write AC-11 write-enforcement matrix test from audit output",
+            "description": "packages/service-core/test/services/permission-enforcement-matrix.test.ts: for each owner-scoped entity in the registry (T-005), each write op's permission fn called with a VIEW_OWN-only actor on a non-owned entity must throw FORBIDDEN, OR the op is documented staff-only. Static, source-import based.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Import each owner-scoped entity's write permission fns", "completed": false },
+                { "title": "Assert VIEW_OWN-only actor on non-owned entity → FORBIDDEN", "completed": false },
+                { "title": "Cross-check against T-002 matrix", "completed": false }
+            ],
+            "tags": ["testing", "security", "audit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-016",
+            "title": "Write AC-4/AC-5 regression tests — staff unscoped + /me/accommodations works",
+            "description": "ADMIN VIEW_ALL adminList → all rows, no forced scope (AC-4). HOST VIEW_OWN via /me/accommodations (ownerId=self) → own rows, works after VIEW_ALL removal; and with NO ownerId → 200 forced own (AC-5). Files: accommodation.adminList.test.ts + apps/api/test/routes/accommodation/me/accommodations.test.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009", "T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert ADMIN VIEW_ALL → no forced ownerId (AC-4)", "completed": false },
+                { "title": "Assert HOST VIEW_OWN + ownerId=self → 200 own rows (AC-5)", "completed": false },
+                { "title": "Assert HOST VIEW_OWN + no ownerId → 200 forced own (AC-5)", "completed": false }
+            ],
+            "tags": ["testing", "regression", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement GET /api/v1/admin/accommodations/options lookup endpoint",
+            "description": "New options.ts route returning only { id, label, slug }, DRAFT-inclusive, ACCESS_PANEL_ADMIN-gated, empty array when no results. Register BEFORE /:id in the admin index to avoid routing conflicts. Query schema: q? string, limit? 1-100 default 20.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-018", "T-020", "T-021"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm payload shape/fields/DRAFT/gating from T-003", "completed": false },
+                { "title": "Create options.ts route + AccommodationOptionsQuerySchema", "completed": false },
+                { "title": "Return {id,label,slug} only — no admin/private/pricing/contact", "completed": false },
+                { "title": "Register before /:id in index.ts", "completed": false }
+            ],
+            "tags": ["api", "backend", "accommodation", "lookup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement /options for destination (+ any other approved entities)",
+            "description": "Apply the T-017 /options pattern to destination (GET /api/v1/admin/destinations/options) and any other entities approved at T-003 as relation targets. Register before /:id.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm which entities beyond accommodation get /options", "completed": false },
+                { "title": "Create destination options.ts + register before /:id", "completed": false },
+                { "title": "Repeat for each additional approved entity", "completed": false }
+            ],
+            "tags": ["api", "backend", "destinations", "lookup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-019",
+            "title": "Verify AccommodationAdminSearchSchema accepts ownerId as optional filter",
+            "description": "Confirm packages/schemas/src/entities/accommodation/accommodation.admin-search.schema.ts keeps ownerId optional after service forced-scope changes (service forces value regardless). Fix-if-broken only.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-010"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Verify ownerId?: string present", "completed": false },
+                { "title": "Assert safeParse({ ownerId }) and safeParse({}) both succeed", "completed": false }
+            ],
+            "tags": ["schema", "backend", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-020",
+            "title": "Migrate OwnerSelect to /options endpoint",
+            "description": "apps/admin/src/components/selects/OwnerSelect.tsx: call the approved /options endpoint instead of the heavy /admin/users list. Adapt transformer to { id, label, slug }. The exact /options target confirmed at T-003.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017"],
+            "blocks": ["T-023", "T-025"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm OwnerSelect /options target from T-003", "completed": false },
+                { "title": "Update API call URL to /options", "completed": false },
+                { "title": "Update response transformer for {id,label,slug}", "completed": false },
+                { "title": "Verify owners populate correctly in admin UI", "completed": false }
+            ],
+            "tags": ["admin-frontend", "selects", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-021",
+            "title": "Migrate DestinationSelect, entity-select fields, generic entity-search to /options",
+            "description": "Update DestinationSelect.tsx, entity-search.utils.ts, and entity-select fields under entity-form/fields/entity-selects/ to use /options endpoints instead of heavy admin list. Full selector list confirmed at T-003.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017", "T-018"],
+            "blocks": ["T-023", "T-025"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm complete selector list to migrate from T-003", "completed": false },
+                { "title": "Update DestinationSelect to /admin/destinations/options", "completed": false },
+                { "title": "Update entity-search.utils.ts to /options", "completed": false },
+                { "title": "Update entity-select fields to /options pattern", "completed": false }
+            ],
+            "tags": ["admin-frontend", "selects", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-022",
+            "title": "Add beforeLoad owner-scope guard on /accommodations admin route(s)",
+            "description": "Extract pure decideOwnerScopedGuard to apps/admin/src/lib/owner-scoped-guard.ts (actor holds VIEW_OWN but NOT VIEW_ALL → redirect to /me/accommodations). Add beforeLoad to /_authed/accommodations/index.tsx (+ detail/edit/new per T-003). Guard must NOT apply to /me/accommodations.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-010"],
+            "blocks": ["T-023", "T-024"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm which routes get the guard + redirect target from T-003", "completed": false },
+                { "title": "Create owner-scoped-guard.ts pure function", "completed": false },
+                { "title": "Add beforeLoad to accommodation list route", "completed": false },
+                { "title": "Add beforeLoad to detail/edit routes if approved", "completed": false },
+                { "title": "Ensure /me/accommodations never redirects (no loop)", "completed": false }
+            ],
+            "tags": ["admin-frontend", "routing", "security"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-023",
+            "title": "End-to-end verify /me/accommodations works after all changes",
+            "description": "With host-basico@local.test after pnpm db:fresh-dev: /me/accommodations loads own list; detail/edit loads (not 403); /accommodations redirects; GET /api/v1/admin/accommodations without ownerId does NOT return all rows. Verification, not new code.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020", "T-021", "T-022"],
+            "blocks": ["T-024", "T-025"],
+            "subtasks": [
+                { "title": "Verify /me/accommodations list loads own accommodations", "completed": false },
+                { "title": "Verify accommodation detail/edit loads (not 403)", "completed": false },
+                { "title": "Verify HOST redirected from /accommodations", "completed": false },
+                { "title": "Verify no-ownerId admin list does not leak all rows", "completed": false }
+            ],
+            "tags": ["integration", "regression", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-024",
+            "title": "Write AC-3 route-guard test — redirect HOST from /accommodations",
+            "description": "apps/admin/test/routes/accommodations.guard.test.ts: decideOwnerScopedGuard(hostState, '/accommodations') → redirect /me/accommodations; (adminState, '/accommodations') → allow.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-023"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert HOST → redirect decision", "completed": false },
+                { "title": "Assert ADMIN → allow decision", "completed": false }
+            ],
+            "tags": ["testing", "frontend", "routing", "e2e"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-025",
+            "title": "Write AC-7 integration test — selectors work for EDITOR with ACCESS_PANEL_ADMIN only",
+            "description": "EDITOR (no DESTINATION_VIEW_ALL/ACCOMMODATION_VIEW_ALL) → /admin/accommodations/options and /admin/destinations/options return 200 with only {id,label,slug}, DRAFT included. Files: options.integration tests in apps/api.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-021", "T-023"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert EDITOR → accommodations/options 200", "completed": false },
+                { "title": "Assert EDITOR → destinations/options 200", "completed": false },
+                { "title": "Assert response only {id,label,slug}, DRAFT present", "completed": false }
+            ],
+            "tags": ["testing", "api", "selectors"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-026",
+            "title": "Run full test suite and fix regressions from seed/permission changes",
+            "description": "pnpm test across service-core/schemas/seed/api/admin. Fix tests broken by HOST losing VIEW_ALL, new enum values, AND-only list gates. Classify each fix: fixture update vs assertion update vs genuine regression. Coverage ≥ 90%.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-024", "T-025"],
+            "blocks": ["T-027", "T-031", "T-032"],
+            "subtasks": [
+                { "title": "Run pnpm test in service-core/schemas/seed/api/admin", "completed": false },
+                { "title": "Fix fixture-update test failures", "completed": false },
+                { "title": "Flag genuine regressions for review", "completed": false }
+            ],
+            "tags": ["testing", "regression", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-027",
+            "title": "Update SPEC-143 test-user matrix fixtures for HOST permission change",
+            "description": "packages/seed/src/test-users/testUsers.seed.ts + service-core actor factories: update any HOST fixture/comment referencing ACCOMMODATION_VIEW_ALL (now VIEW_OWN). Verify pnpm db:fresh-dev + seed coverage pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Update test-user seed references if any", "completed": false },
+                { "title": "Update HOST actor factory defaults", "completed": false },
+                { "title": "Run pnpm db:fresh-dev + seed coverage", "completed": false }
+            ],
+            "tags": ["testing", "seed", "billing", "spec-143"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-028",
+            "title": "Document permission model + allow-list rationale (ADR)",
+            "description": "Record _VIEW_OWN/_VIEW_ALL tiers + enforcement, per-role verdict table (HOST VIEW_OWN; EDITOR legitimate; CLIENT_MANAGER deferred), ownership resolver (§5.6), /options pattern, _canAdminView vs _canView. New ADR or extend docs/security/permission-model.md.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Write tier + enforcement semantics", "completed": false },
+                { "title": "Embed per-role verdict table from T-003", "completed": false },
+                { "title": "Document ownership resolver + /options + _canAdminView", "completed": false }
+            ],
+            "tags": ["docs", "permissions", "security"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-029",
+            "title": "Add CLIENT_MANAGER known-debt comment + tracking note",
+            "description": "Add '// KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants not tightened — role unused, revisit when activated' before the CLIENT_MANAGER seed block. Brief tracking note in spec dir (debt-items.md).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Add debt comment on CLIENT_MANAGER seed block", "completed": false },
+                { "title": "Create debt-items.md tracking note", "completed": false }
+            ],
+            "tags": ["docs", "debt", "client-manager"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-030",
+            "title": "Remove (or keep, per owner) one-off audit scripts",
+            "description": "Audit scripts from T-001/T-002 served their purpose. Confirm at a §12 checkpoint whether to delete or keep as dev tools. Output preserved in T-003 decision record. Verify typecheck after deletion.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm delete vs keep scripts", "completed": false },
+                { "title": "Apply decision; verify typecheck", "completed": false }
+            ],
+            "tags": ["cleanup", "scripts"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-031",
+            "title": "Verify enum-consistency tests pass for new PermissionEnum values",
+            "description": "packages/db enum-consistency.test.ts: after adding _VIEW_OWN values, verify pass. If permission enum is replicated at DB level (Drizzle), add values + generate migration.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Run packages/db tests", "completed": false },
+                { "title": "If DB enum replicated, add values + migration", "completed": false }
+            ],
+            "tags": ["cleanup", "testing", "schema"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-032",
+            "title": "Final typecheck + lint pass across all affected packages",
+            "description": "pnpm typecheck in schemas/service-core/seed/db/api/admin + pnpm lint monorepo. Fix Biome gotchas (useDefaultParameterLast, noExplicitAny, useExhaustiveDependencies). Zero errors.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-026", "T-027", "T-028", "T-029", "T-030", "T-031"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "pnpm typecheck affected packages", "completed": false },
+                { "title": "pnpm lint monorepo + fix Biome issues", "completed": false }
+            ],
+            "tags": ["cleanup", "quality"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-05-29T02:00:00.000Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 32,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

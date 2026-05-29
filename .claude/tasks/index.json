@@ -561,13 +561,13 @@
             "specId": "SPEC-169",
             "title": "Role Permission Audit + Owner-Scoped Data Access",
             "status": "in-progress",
-            "progress": "0/0",
+            "progress": "0/32",
             "path": "SPEC-169-role-permission-own-scoping",
             "branch": "fix/SPEC-169-role-permission-own-scoping",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-169-role-permission-own-scoping",
             "base": "staging",
             "createdAt": "2026-05-28T00:00:00.000Z",
-            "note": "Spec-only phase (doc PR #1299 to staging). Not yet atomized: task-from-spec runs in the worktree post-merge. Read-only data leak fix (HOST holds ACCOMMODATION_VIEW_ALL) + full per-role audit + _VIEW_OWN owner-scoping on adminList & getById + /options selectors + front guard. SS12 decision protocol: consult owner on any ambiguity."
+            "note": "Atomized into 32 tasks (avg complexity 2.3, 6 phases) via task-from-spec. T-003 is a HARD owner-review GATE that blocks ALL implementation; §12 decision checkpoints embedded in T-004/005/006/008/009/010/017/018/020/021/022/030. Backbone: audit (read+write passes incl UI-less routes) → schema _VIEW_OWN → service forced owner-scoping on adminList + _canAdminView on getById + ownership resolver → seed (remove HOST VIEW_ALL, EDITOR rationale, CLIENT_MANAGER untouched) → /options lookup endpoints + selector migration → beforeLoad front guard → AC-1..AC-11 tests. Read-only data-leak fix (HOST holds ACCOMMODATION_VIEW_ALL). SS12: consult owner on ANY ambiguity."
         }
     ],
     "standalone": {
