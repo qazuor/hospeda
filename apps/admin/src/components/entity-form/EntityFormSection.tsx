@@ -24,6 +24,10 @@ import type { CoordinatesValue } from '@/components/entity-form/fields/Coordinat
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import {
+    type VideoEntry,
+    VideoGalleryField
+} from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 
@@ -39,7 +43,9 @@ export interface FieldMediaHandlers {
 }
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
-import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
+import { PremiumBlock, type PremiumBlockItem } from '@/features/billing/PremiumBlock';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
@@ -101,6 +107,23 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         // Use title and description directly from config (they are i18n keys)
         const title = config.title;
         const description = config.description;
+
+        // Premium-feature classification (spec §4.7 sabor 1): only HOST users
+        // without the entitlement see a feature as "premium". Staff bypass
+        // entirely; HOSTS with the entitlement get the regular field. The
+        // hook calls live here so they run unconditionally per the Rules of
+        // Hooks; the bypass is decided per-field below.
+        const shouldGateFeatures = useShouldShowEntitlementGates();
+        const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements();
+        const isFieldPremiumLocked = React.useCallback(
+            (entitlementKey: string | undefined): boolean => {
+                if (!entitlementKey) return false;
+                if (!shouldGateFeatures) return false;
+                if (entitlementsLoading) return false;
+                return !hasEntitlement(entitlementKey);
+            },
+            [shouldGateFeatures, hasEntitlement, entitlementsLoading]
+        );
 
         // Check section permissions
         const hasViewPermission = React.useMemo(() => {
@@ -330,6 +353,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                         );
                     }
 
+                    case FieldTypeEnum.VIDEO_GALLERY:
+                        return (
+                            <VideoGalleryField
+                                {...fieldProps}
+                                value={fieldValue as VideoEntry[]}
+                            />
+                        );
+
                     case FieldTypeEnum.CHECKBOX:
                         return (
                             <CheckboxField
@@ -452,23 +483,13 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             // Per spec §4.2: span comes from TYPE, not per-field micro-config.
             const colSpanClass = getFieldColSpanClass(field.type);
 
-            // Wrap with entitlement or limit gate if needed.
-            // PlanEntitlementGate reads from GET /api/v1/protected/users/me/entitlements
-            // so it does not need a customerId from QZPayContext.
-            if (field.entitlementKey) {
-                return (
-                    <div
-                        key={field.id}
-                        className={colSpanClass}
-                    >
-                        <PlanEntitlementGate
-                            entitlementKey={field.entitlementKey}
-                            fieldLabel={field.label || field.id}
-                        >
-                            {fieldContent}
-                        </PlanEntitlementGate>
-                    </div>
-                );
+            // Spec §4.7 sabor 1: premium-locked fields are NOT rendered in the
+            // grid — they are collected and surfaced together in a single
+            // PremiumBlock at the bottom of the section, far from editable
+            // fields. The collection happens below in the section render
+            // function; here we just signal "skip me" with `null`.
+            if (field.entitlementKey && isFieldPremiumLocked(field.entitlementKey)) {
+                return null;
             }
 
             if (field.limitKey) {
@@ -508,6 +529,21 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 </div>
             );
         };
+
+        // Collect the premium-locked fields for the bottom-of-section block
+        // (spec §4.7 sabor 1). Walk the visible-field list ONCE and split
+        // into render-as-is vs surface-as-premium.
+        const premiumItems = React.useMemo<readonly PremiumBlockItem[]>(() => {
+            return visibleFields
+                .filter((field) =>
+                    field.entitlementKey ? isFieldPremiumLocked(field.entitlementKey) : false
+                )
+                .map((field) => ({
+                    id: field.id,
+                    label: field.label || field.id,
+                    description: field.description
+                }));
+        }, [visibleFields, isFieldPremiumLocked]);
 
         // Render section content based on layout.
         //
@@ -558,6 +594,9 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
                 {/* Section Content */}
                 <div className={config.className}>{renderSectionContent()}</div>
+
+                {/* Premium upsell — grouped at the bottom so editable fields stay clean. */}
+                <PremiumBlock items={premiumItems} />
 
                 {/* Section Footer Info */}
                 {visibleFields.length === 0 && (

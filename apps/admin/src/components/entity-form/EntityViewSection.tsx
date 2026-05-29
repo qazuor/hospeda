@@ -4,6 +4,7 @@ import type { CoordinatesValue } from '@/components/entity-form/fields/Coordinat
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import {
     loadAccommodationsByIds,
     loadDestinationsByIds,
@@ -28,7 +29,8 @@ import {
     ImageViewField,
     RichTextViewField,
     SelectViewField,
-    TextViewField
+    TextViewField,
+    VideoGalleryViewField
 } from '@/components/entity-form/views';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
@@ -370,6 +372,14 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         <GalleryViewField
                             {...baseFieldProps}
                             value={fieldValue as GalleryImage[]}
+                        />
+                    );
+
+                case FieldTypeEnum.VIDEO_GALLERY:
+                    return wrap(
+                        <VideoGalleryViewField
+                            {...baseFieldProps}
+                            value={fieldValue as VideoEntry[]}
                         />
                     );
 

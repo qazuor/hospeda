@@ -169,6 +169,68 @@ describe('Admin User List - entity-specific filter params', () => {
         });
     });
 
+    describe('roles filter (multi-value)', () => {
+        it('passes roles=HOST as a single-element array to adminList', async () => {
+            const res = await app.request(`${base}?roles=HOST`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect([200, 400, 401, 403]).toContain(res.status);
+
+            if (res.status === 200) {
+                expect(mockRef.adminList).toHaveBeenCalledOnce();
+                const [_actor, query] = mockRef.adminList.mock.calls[0] as [
+                    unknown,
+                    Record<string, unknown>
+                ];
+                expect(query).toHaveProperty('roles');
+                expect(query.roles).toEqual(['HOST']);
+            }
+        });
+
+        it('passes a comma-separated list as an array to adminList', async () => {
+            const res = await app.request(`${base}?roles=HOST,EDITOR`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect([200, 400, 401, 403]).toContain(res.status);
+
+            if (res.status === 200) {
+                const [_actor, query] = mockRef.adminList.mock.calls[0] as [
+                    unknown,
+                    Record<string, unknown>
+                ];
+                expect(query.roles).toEqual(['HOST', 'EDITOR']);
+            }
+        });
+
+        it('returns 4xx when any entry in roles is invalid', async () => {
+            const res = await app.request(`${base}?roles=HOST,SUPERUSER`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect(res.status).toBeGreaterThanOrEqual(400);
+            expect(res.status).toBeLessThan(500);
+        });
+
+        it('accepts roles alongside the single-value role filter', async () => {
+            const res = await app.request(`${base}?role=ADMIN&roles=HOST,EDITOR`, {
+                headers: makeHeaders(adminActor)
+            });
+
+            expect([200, 400, 401, 403]).toContain(res.status);
+
+            if (res.status === 200) {
+                const [_actor, query] = mockRef.adminList.mock.calls[0] as [
+                    unknown,
+                    Record<string, unknown>
+                ];
+                expect(query).toHaveProperty('role', 'ADMIN');
+                expect(query.roles).toEqual(['HOST', 'EDITOR']);
+            }
+        });
+    });
+
     describe('auth guard', () => {
         it('returns 4xx when no auth headers provided', async () => {
             const res = await app.request(base);

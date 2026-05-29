@@ -567,7 +567,18 @@ export interface AccommodationDetailData {
             readonly caption?: string;
             readonly description?: string;
         }[];
-        readonly videos: readonly string[];
+        /**
+         * Video entries carrying the URL plus optional caption and description.
+         * Aligned with `@repo/schemas` `VideoSchema` (drops `moderationState`,
+         * which is irrelevant for the public read). The transform also accepts
+         * a legacy `string[]` payload (a bare URL) and normalizes each entry
+         * to `{ url }` so older accommodation records keep rendering.
+         */
+        readonly videos: readonly {
+            readonly url: string;
+            readonly caption?: string;
+            readonly description?: string;
+        }[];
     };
     readonly location: {
         readonly lat: number | null;

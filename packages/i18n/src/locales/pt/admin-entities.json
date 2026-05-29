@@ -582,6 +582,18 @@
                 "onDragCancel": "Movimento cancelado. Imagem retornou à posição {position}."
             }
         },
+        "videoGallery": {
+            "add": "Adicionar vídeo",
+            "remove": "Remover vídeo",
+            "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+            "captionPlaceholder": "Título curto do vídeo (opcional)",
+            "descriptionPlaceholder": "Descrição do conteúdo do vídeo (opcional)",
+            "empty": "Ainda não há vídeos. Cole uma URL do YouTube ou Vimeo para adicionar.",
+            "emptyView": "Sem vídeos carregados.",
+            "invalidUrl": "Cole uma URL completa (http ou https).",
+            "duplicateUrl": "Esse vídeo já está na galeria.",
+            "externalProvider": "Externo"
+        },
         "fileUploadNotImplemented": "Upload de arquivos ainda não implementado",
         "unknownFieldType": "Tipo de campo desconhecido: {type}"
     },
@@ -623,6 +635,11 @@
         "booleanYes": "Sim",
         "booleanNo": "Não",
         "emptyValue": "—"
+    },
+    "premiumBlock": {
+        "title": "Funções disponíveis em planos superiores",
+        "description": "Estas funções se desbloqueiam ao atualizar seu plano.",
+        "cta": "Atualizar plano"
     },
     "qualityScore": {
         "triggerLabel": "Qualidade",

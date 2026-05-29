@@ -241,9 +241,9 @@ export function createAccommodationSignals({
         // ----------------------------------------------------------------
         // Premium — video gallery (gated by EntitlementKey.CAN_EMBED_VIDEO).
         // When the feature is unlocked the signal flips to a regular
-        // done/pending pair driven by `media.videos`. That field is not
-        // yet part of the form (SPEC-D aside) so the signal will stay
-        // pending for unlocked hosts until the videos block ships.
+        // done/pending pair driven by `media.videos`. The field lives in
+        // `sections/gallery.consolidated.ts` (VIDEO_GALLERY type) so unlocked
+        // hosts can add YouTube/Vimeo URLs and watch this flip to "done".
         // ----------------------------------------------------------------
         {
             id: 'video-gallery',

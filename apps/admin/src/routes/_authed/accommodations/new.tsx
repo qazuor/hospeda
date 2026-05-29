@@ -1,10 +1,10 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent } from '@/components/ui-wrapped/Card';
-import { createAccommodationConsolidatedConfig } from '@/features/accommodations/config';
+import { createAccommodationMinimalCreateConfig } from '@/features/accommodations/config/accommodation-minimal-create.config';
 import { useCreateAccommodationMutation } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
 import { useAccommodationCount } from '@/features/billing/use-limit-counts';
@@ -14,7 +14,7 @@ import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { LimitKey } from '@repo/billing';
 import {
-    AccommodationCreateInputSchema,
+    AccommodationCreateDraftHttpSchema,
     AccommodationTypeEnum,
     PermissionEnum,
     RoleEnum
@@ -26,6 +26,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
  * bypass the per-actor plan-limit gate (SPEC-117 M-1). Plan limits apply
  * to the actual accommodation owners, not to admins creating entities for
  * them.
+ *
+ * Per spec §4.10, these same roles ALSO see the Propietario field on the
+ * minimal create form so they can assign the draft to the right host.
+ * Hosts creating their own draft skip the field — the backend resolves
+ * `ownerId` from the session.
  */
 const PLAN_LIMIT_BYPASS_ROLES: readonly RoleEnum[] = [
     RoleEnum.SUPER_ADMIN,
@@ -51,6 +56,8 @@ function AccommodationCreatePage() {
     const entityNamePlural = t('admin-entities.entities.accommodation.plural');
 
     const bypassesPlanLimit = PLAN_LIMIT_BYPASS_ROLES.includes(user?.role as RoleEnum);
+    // Owner picker is staff-only — hosts implicitly create their own drafts.
+    const includeOwnerField = bypassesPlanLimit;
 
     const createConfig: EntityCreateConfig = {
         entityType: 'accommodation',
@@ -65,20 +72,25 @@ function AccommodationCreatePage() {
         successToastTitle: 'Alojamiento creado',
         successToastMessage: 'El alojamiento se creó exitosamente',
         errorToastTitle: 'Error al crear el alojamiento',
-        errorMessage: 'No pudimos crear el alojamiento. Probá de nuevo.'
+        errorMessage: 'No pudimos crear el alojamiento. Probá de nuevo.',
+        // Spec §4.10: create mínimo → edit. The accordion + quality score
+        // on /edit guide the host through completing the listing.
+        afterCreateRedirectMode: 'edit'
     };
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
-                zodSchema={AccommodationCreateInputSchema}
+                zodSchema={AccommodationCreateDraftHttpSchema}
                 createConsolidatedConfig={() =>
-                    createAccommodationConsolidatedConfig(t, accommodationTypeOptions)
+                    createAccommodationMinimalCreateConfig(t, accommodationTypeOptions, {
+                        includeOwner: includeOwnerField
+                    })
                 }
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
-                configDeps={[t, accommodationTypeOptions]}
+                configDeps={[t, accommodationTypeOptions, includeOwnerField]}
                 formWrapper={(children) =>
                     bypassesPlanLimit ? (
                         <>{children}</>

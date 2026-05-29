@@ -50,6 +50,17 @@ export interface EntityCreateConfig {
     readonly errorToastTitle: string;
     /** Fallback error message */
     readonly errorMessage: string;
+    /**
+     * Where to land after a successful create.
+     *
+     * - `'view'` (default) — keep the legacy behaviour: navigate to
+     *   `${basePath}/${id}`.
+     * - `'edit'` — navigate to `${basePath}/${id}/edit`. Use this for the
+     *   "create mínimo → edit" flow (spec §4.10), where the create form
+     *   only collects the essentials and the accordion + quality score on
+     *   the edit page guide the rest.
+     */
+    readonly afterCreateRedirectMode?: 'view' | 'edit';
 }
 
 /**
@@ -189,7 +200,12 @@ export function EntityCreateContent({
             });
 
             const newId = (result as { id: string }).id;
-            onNavigate(`${config.basePath}/${newId}`);
+            const redirectMode = config.afterCreateRedirectMode ?? 'view';
+            const targetPath =
+                redirectMode === 'edit'
+                    ? `${config.basePath}/${newId}/edit`
+                    : `${config.basePath}/${newId}`;
+            onNavigate(targetPath);
         } catch (error) {
             adminLogger.error(`Failed to create ${config.entityType}`, error);
 

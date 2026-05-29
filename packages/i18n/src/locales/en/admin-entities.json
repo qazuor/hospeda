@@ -582,6 +582,18 @@
                 "onDragCancel": "Movement cancelled. Image returned to position {position}."
             }
         },
+        "videoGallery": {
+            "add": "Add video",
+            "remove": "Remove video",
+            "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+            "captionPlaceholder": "Short caption (optional)",
+            "descriptionPlaceholder": "Description of the video content (optional)",
+            "empty": "No videos yet. Paste a YouTube or Vimeo URL to add one.",
+            "emptyView": "No videos uploaded.",
+            "invalidUrl": "Paste a full URL (http or https).",
+            "duplicateUrl": "That video is already in the gallery.",
+            "externalProvider": "External"
+        },
         "fileUploadNotImplemented": "File upload not yet implemented",
         "unknownFieldType": "Unknown field type: {type}"
     },
@@ -623,6 +635,11 @@
         "booleanYes": "Yes",
         "booleanNo": "No",
         "emptyValue": "—"
+    },
+    "premiumBlock": {
+        "title": "Features available on higher plans",
+        "description": "These features unlock when you upgrade your plan.",
+        "cta": "Upgrade plan"
     },
     "qualityScore": {
         "triggerLabel": "Quality",

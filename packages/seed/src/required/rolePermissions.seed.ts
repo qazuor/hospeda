@@ -815,6 +815,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // TAG: Host scope per SPEC-086 (D-017) — manages own USER tags, can view
         // SYSTEM tags (apply but not manage), and assigns tags to own entities.
+        //
+        // NOTE — TAG_SYSTEM_VIEW is intentional for HOST. It enables the tag picker
+        // in accommodation edit forms to show SYSTEM tags as selectable options
+        // (read-only listing inside the picker, NOT admin write access). Admin pages
+        // at /platform/tags/system are gated separately on ACCESS_API_ADMIN per
+        // SPEC-156, so HOST holding TAG_SYSTEM_VIEW does NOT grant admin access.
+        // DO NOT remove this grant — it would break the accommodation tag picker.
         PermissionEnum.TAG_SYSTEM_VIEW,
         PermissionEnum.TAG_USER_CREATE,
         PermissionEnum.TAG_USER_UPDATE_OWN,

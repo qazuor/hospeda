@@ -49,6 +49,20 @@ Persist the outcome of each cron execution (status, started/finished timestamps,
 
 - SPEC-155 is the CONSUMER.
 
-## 6. Next steps
+## 6. Design decisions (locked 2026-05-29)
+
+Approved by owner before implementation:
+
+1. **Single hook point.** All 21 cron jobs go through the same `CronJobHandler → CronJobResult` contract. Recording is wired at the two real execution sites only — `apps/api/src/cron/bootstrap.ts` (scheduled runs) and `apps/api/src/routes/cron-admin/index.ts` (manual trigger) — NOT per job.
+2. **Fire-and-forget recording.** The run-history write is wrapped in try/catch. If the insert fails it is logged (logger + Sentry) but the job result is NOT altered. Observability must never tip over a cron.
+3. **Read scope: full navigable history.** Admin-tier endpoints:
+   - `GET /api/v1/admin/cron/runs` — paginated + filters (jobName, status, date range).
+   - `GET /api/v1/admin/cron/runs/{id}` — single run detail.
+   - `GET /api/v1/admin/cron/runs/summary` — last run per job + recent failures (feeds SPEC-155 card D).
+4. **Retention: differentiated purge.** A new purge cron deletes `success` runs older than **60 days** and `failed`/`timeout` runs older than **180 days**. With ~2,330 rows/day (subscription-poll alone = 62%), the table stabilizes around ~140k rows.
+5. **Append-only.** `cron_runs` is a log: NO soft-delete (no `deletedAt`); rows are hard-deleted only by the purge job.
+6. **Captured fields.** `jobName`, `status` (success|failed|timeout), `startedAt`, `finishedAt`, `durationMs`, `processed`, `errors`, `executionMode` (scheduled|manual), `dryRun`, `errorMessage`, `details` (jsonb), `createdAt`. Indexes: `(jobName, startedAt desc)` and `(status, createdAt desc)`.
+
+## 7. Next steps
 
 Needs task atomization. DB change (new table) → coordinate with the push-only migration policy + `apply-postgres-extras.sh` if any trigger is involved.

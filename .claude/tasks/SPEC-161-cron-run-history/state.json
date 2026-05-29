@@ -1,0 +1,118 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-161",
+    "title": "Cron Run History",
+    "created": "2026-05-29T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Drizzle schema cron_runs",
+            "description": "Create packages/db/src/schemas/cron/cron_run.dbschema.ts. Columns: id(uuid pk), jobName(varchar 100), status(varchar 20: success|failed|timeout), startedAt(tz), finishedAt(tz), durationMs(int), processed(int default 0), errors(int default 0), executionMode(varchar 20: scheduled|manual), dryRun(bool default false), errorMessage(text, truncated <=2000 chars by service), details(jsonb default {}), createdAt(tz default now). NO deletedAt (append-only). Indexes: (jobName, startedAt desc) and (status, createdAt desc). Add barrel export in packages/db/src/schemas/cron/index.ts and wire into packages/db/src/index.ts. Acceptance: typechecks, exported.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "tags": ["db", "schema", "phase-db"],
+            "phase": "db"
+        },
+        {
+            "id": "T-002",
+            "title": "CronRunModel",
+            "description": "Create packages/db/src/models/cron/cronRun.model.ts extending BaseModelImpl, entityName 'cron_runs', mirroring billingDunningAttempt.model.ts. Export singleton + barrel. Acceptance: typechecks, exported from @repo/db.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-005"],
+            "tags": ["db", "model", "phase-db"],
+            "phase": "db"
+        },
+        {
+            "id": "T-003",
+            "title": "Migration + db:push local",
+            "description": "Generate/apply the cron_runs table locally via db:push. Confirm table + indexes exist. No triggers/materialized views so apply-postgres-extras not required. Acceptance: table present in local DB, indexes created.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-010"],
+            "tags": ["db", "migration", "phase-db"],
+            "phase": "db"
+        },
+        {
+            "id": "T-004",
+            "title": "Zod schemas @repo/schemas cronRun",
+            "description": "Create packages/schemas/src/entities/cronRun/: cronRun.schema.ts (base type + status/executionMode enums), cronRun.crud.schema.ts (create input for recordRun), cronRun.query.schema.ts (filters jobName/status/date-range + pagination page+pageSize), cronRun.http.schema.ts (list/detail output + summary shape: last run per job + recent failures). Barrel index.ts + wire into entities barrel. Acceptance: typechecks, exported from @repo/schemas.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "tags": ["schemas", "phase-schemas"],
+            "phase": "schemas"
+        },
+        {
+            "id": "T-005",
+            "title": "CronRunService",
+            "description": "Create packages/service-core/src/services/cronRun/cronRun.service.ts extending BaseCrudService. Methods: recordRun() (insert, truncate errorMessage to 2000 chars overflow->details), listRuns() (paginated+filters), getById(), getSummary() (last run per job + recent failures for card D), purgeOld() (delete success>60d, failed/timeout>180d). Barrel + register. Acceptance: typechecks, exported.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-006", "T-007", "T-008", "T-009"],
+            "tags": ["service-core", "phase-service"],
+            "phase": "service"
+        },
+        {
+            "id": "T-006",
+            "title": "Permissions wiring",
+            "description": "Reuse PermissionEnum.SYSTEM_MAINTENANCE_MODE (same gate as existing cron-admin). Add permission hooks/stub in service permissions file. Acceptance: read endpoints gated by SYSTEM_MAINTENANCE_MODE.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"],
+            "tags": ["service-core", "permissions", "phase-service"],
+            "phase": "service"
+        },
+        {
+            "id": "T-007",
+            "title": "recordCronRun hook (fire-and-forget)",
+            "description": "Add helper recordCronRun() wrapped in try/catch (log via logger + Sentry on failure, NEVER alter job result). Wire into apps/api/src/cron/bootstrap.ts after runJobWithTimeout (~L111) with executionMode='scheduled', and into apps/api/src/routes/cron-admin/index.ts trigger handler (~L150) with executionMode='manual' + dryRun from query. Map success/failed/timeout from result + timeout path. Acceptance: a failing record insert does NOT change the job outcome.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "tags": ["api", "cron", "hook", "phase-hook"],
+            "phase": "hook"
+        },
+        {
+            "id": "T-008",
+            "title": "Admin read endpoints",
+            "description": "Add to apps/api/src/routes/cron-admin (or new cron-runs route): GET /admin/cron/runs (createAdminListRoute, paginated+filters), GET /admin/cron/runs/{id} (detail), GET /admin/cron/runs/summary (last run per job + recent failures). Mount in routes/index.ts. Gate with SYSTEM_MAINTENANCE_MODE. Acceptance: endpoints return typed responses, OpenAPI registered.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-010"],
+            "tags": ["api", "routes", "phase-api"],
+            "phase": "api"
+        },
+        {
+            "id": "T-009",
+            "title": "cron-run-purge job",
+            "description": "Create apps/api/src/cron/jobs/cron-run-purge.job.ts calling cronRunService.purgeOld(). Register in registry.ts + schedules.manifest.ts with schedule '0 4 * * *' (daily 4 AM), enabled true, sensible timeout. Acceptance: job listed in /admin/cron, manual trigger deletes per retention windows.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "tags": ["api", "cron", "retention", "phase-retention"],
+            "phase": "retention"
+        },
+        {
+            "id": "T-010",
+            "title": "Tests + quality gate",
+            "description": "Tests: model CRUD, service (recordRun truncation, getSummary shape, purgeOld windows), hook fire-and-forget (DB failure does not break job), endpoints (auth + filters + summary). AAA, target 90%. Run lint+typecheck+test green. Acceptance: all green, coverage >=90% on new code.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-007", "T-008", "T-009"],
+            "blocks": [],
+            "tags": ["tests", "quality-gate", "phase-tests"],
+            "phase": "tests"
+        }
+    ]
+}
