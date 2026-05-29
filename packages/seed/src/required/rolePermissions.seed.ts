@@ -8,7 +8,9 @@ import { summaryTracker } from '../utils/summaryTracker.js';
  * Type-safe role permission assignments
  * Each role is mapped to an array of permissions it should have
  */
-const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
+// Exported for the SPEC-169 role-permission audit regression test (AC-6), which asserts no
+// non-staff role holds a broad view grant outside the documented allow-list.
+export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     [RoleEnum.SUPER_ADMIN]: [
         // ACCOMMODATION: All permissions
         PermissionEnum.ACCOMMODATION_CREATE,
