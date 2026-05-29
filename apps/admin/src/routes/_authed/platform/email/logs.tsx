@@ -30,7 +30,7 @@ import {
     getTypeLabel
 } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
 
-export const Route = createFileRoute('/_authed/billing/notification-logs')({
+export const Route = createFileRoute('/_authed/platform/email/logs')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
     component: NotificationLogsPage
 });

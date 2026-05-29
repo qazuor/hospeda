@@ -332,7 +332,6 @@ import { Route as AddonsRoute } from '@/routes/_authed/billing/addons';
 import { Route as ExchangeRatesRoute } from '@/routes/_authed/billing/exchange-rates';
 import { Route as InvoicesRoute } from '@/routes/_authed/billing/invoices';
 import { Route as MetricsRoute } from '@/routes/_authed/billing/metrics';
-import { Route as NotificationLogsRoute } from '@/routes/_authed/billing/notification-logs';
 import { Route as OwnerPromotionsRoute } from '@/routes/_authed/billing/owner-promotions';
 import { Route as PaymentsRoute } from '@/routes/_authed/billing/payments';
 import { Route as PlansRoute } from '@/routes/_authed/billing/plans';
@@ -340,6 +339,7 @@ import { Route as PromoCodesRoute } from '@/routes/_authed/billing/promo-codes';
 import { Route as SettingsRoute } from '@/routes/_authed/billing/settings';
 import { Route as SponsorshipsRoute } from '@/routes/_authed/billing/sponsorships';
 import { Route as SubscriptionsRoute } from '@/routes/_authed/billing/subscriptions';
+import { Route as NotificationLogsRoute } from '@/routes/_authed/platform/email/logs';
 import { Route as CronRoute } from '@/routes/_authed/platform/ops/cron';
 import { Route as WebhookEventsRoute } from '@/routes/_authed/platform/ops/webhooks';
 
