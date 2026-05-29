@@ -12,6 +12,9 @@ export * from './accommodation.query.schema.js'; // List, Search, Summary, Stats
 // Admin search
 export * from './accommodation.admin-search.schema.js'; // Admin-specific search with extended filters
 
+// Relation-selector lookup options (SPEC-169 §5.5)
+export * from './accommodation.options.schema.js'; // Lightweight {id,label,slug,type,destination} options
+
 // HTTP operations
 export * from './accommodation.http.schema.js'; // HTTP-compatible schemas with query coercion
 
