@@ -71,6 +71,7 @@ interface PostItem {
     readonly createdAt?: string;
     readonly updatedAt?: string;
     readonly publishedAt?: string | null;
+    readonly isNews?: boolean;
     readonly likes?: number;
     readonly comments?: number;
     readonly shares?: number;
@@ -542,12 +543,153 @@ registerDataSource('editor.events.stats', (ctx) => ({
 }));
 
 // ============================================================================
-// NOTE — client-side-only and deferred slots (NO resolver registration)
+// CARD — Últimos posts (NEW): top 5 published posts, most recent first
 // ============================================================================
-// Card G ('editor.content.health'): client-side checklist computed from loaded
-//   post/event lists — checks for missing featured image, tags, SEO, location,
-//   organizer, description. No remote source needed; widget uses loaded entity data.
-//
+
+/**
+ * EDITOR card: recently published posts (top 5 by publishedAt desc).
+ *
+ * Paired with `editor.events.upcoming` (card B) to give the editor a quick
+ * read on the freshest content on both publish surfaces.
+ *
+ * Source ID: `'editor.posts.latest'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc
+ */
+registerDataSource('editor.posts.latest', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.posts.latest', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: '/api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc'
+        });
+        const items = result.data.data?.items ?? [];
+        return items.map((post) => ({
+            id: post.id,
+            label: post.title,
+            meta: post.publishedAt
+                ? new Date(post.publishedAt).toLocaleDateString('es-AR')
+                : post.updatedAt
+                  ? new Date(post.updatedAt).toLocaleDateString('es-AR')
+                  : undefined,
+            badge: post.isNews ? 'novedad' : undefined,
+            href: `/contenido/posts/${post.id}`
+        }));
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD — Acciones (NEW): static list of editorial quick actions
+// ============================================================================
+
+/**
+ * EDITOR card: editorial quick-action shortcuts.
+ *
+ * The shortcut widget type lives in the schema but has no implementation
+ * (only a deferred-placeholder fallback in tests). We model the actions
+ * as ListWidget items with `href`/`label`/`meta`, so the card uses an
+ * already-shipped renderer and clicking each row navigates to the
+ * matching create page.
+ *
+ * Source ID: `'editor.shortcuts'`
+ * Scope: `'all'`
+ * No network call — items are static.
+ */
+registerDataSource('editor.shortcuts', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.shortcuts', ctx),
+    queryFn: async () => {
+        return [
+            {
+                id: 'new-post',
+                label: 'Crear post',
+                meta: 'Nuevo artículo del blog',
+                href: '/contenido/posts/new'
+            },
+            {
+                id: 'new-event',
+                label: 'Crear evento',
+                meta: 'Próximo evento en agenda',
+                href: '/catalogo/eventos/new'
+            },
+            {
+                id: 'new-campaign',
+                label: 'Nueva campaña',
+                meta: 'Newsletter a suscriptores',
+                href: '/marketing/newsletter/campaigns/new'
+            },
+            {
+                id: 'media',
+                label: 'Gestionar media',
+                meta: 'Subir imágenes y videos',
+                href: '/contenido/media'
+            }
+        ];
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD G — Salud del contenido (FIXED): combined posts + events for checks
+// ============================================================================
+
+/**
+ * EDITOR card G: feeds the ChecklistWidget with a mixed list of recent
+ * posts and events so it can compute the `content-health` checkset.
+ *
+ * The widget's `computeItems` discriminator uses `'locationId' in entity`
+ * to tell posts and events apart. We fetch 5 of each, mix into a single
+ * array, and return it; the widget then iterates and produces health
+ * items (missing featured image, missing SEO, missing organizer, etc).
+ *
+ * Source ID: `'editor.content.health'`
+ * Scope: `'all'`
+ * Endpoints (parallel):
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc
+ *   - GET /api/v1/admin/events?pageSize=5
+ */
+registerDataSource('editor.content.health', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.content.health', ctx),
+    queryFn: async () => {
+        const [postsResult, eventsResult] = await Promise.all([
+            fetchApi<AdminListApiResponse<PostItem>>({
+                path: '/api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc'
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?pageSize=5'
+            })
+        ]);
+        const posts = postsResult.data.data?.items ?? [];
+        const events = eventsResult.data.data?.items ?? [];
+
+        // Normalize each into the ChecklistEntity shape the widget expects.
+        // Posts use `title`; events use `name` — the widget reads `entity.title`
+        // for both labels, so we alias `event.name` to `title` on the event
+        // entries. The `locationId` field is the discriminator that lets the
+        // widget pick the events branch of the check function.
+        const postEntities = posts.map((p) => ({
+            id: p.id,
+            title: p.title,
+            featuredImage: p.featuredImage,
+            tags: p.tags,
+            seoTitle: p.seoTitle
+        }));
+        const eventEntities = events.map((e) => ({
+            id: e.id,
+            title: e.name,
+            featuredImage: e.featuredImage,
+            locationId: e.locationId,
+            organizerId: e.organizerId,
+            description: e.description
+        }));
+
+        return [...postEntities, ...eventEntities];
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// NOTE — deferred slots (NO resolver registration)
+// ============================================================================
 // Card H ('editor.comments.recent'): 🟡 PENDING — comment-listing endpoint
 //   must be verified/built (EDITOR-Q1). Register here once the endpoint lands.
 //

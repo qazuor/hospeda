@@ -73,6 +73,9 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'editor.newsletter.campaigns',
     'editor.posts.stats',
     'editor.events.stats',
+    'editor.posts.latest',
+    'editor.shortcuts',
+    'editor.content.health',
 
     // T-020 ADMIN (admin.ts)
     'admin.accommodations.latest',
@@ -163,8 +166,8 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             expect(dashboards.hostDashboard.widgets).toHaveLength(10);
         });
 
-        it('editorDashboard has exactly 8 widgets', () => {
-            expect(dashboards.editorDashboard.widgets).toHaveLength(8);
+        it('editorDashboard has exactly 10 widgets', () => {
+            expect(dashboards.editorDashboard.widgets).toHaveLength(10);
         });
 
         it('adminBaseDashboard has exactly 7 widgets', () => {
