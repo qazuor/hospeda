@@ -806,8 +806,13 @@
             "title": "Beta Tester Docs Screenshots Rollout",
             "type": "docs",
             "complexity": "medium",
-            "status": "draft",
-            "path": "SPEC-107-beta-tester-docs-screenshots"
+            "status": "completed",
+            "path": "SPEC-107-beta-tester-docs-screenshots",
+            "completed": "2026-05-29T00:00:00.000Z",
+            "completedNote": "Closed as WONTFIX/DEFERRED. Phase 0 (foundation: folder structure + lightbox in BetaDocLayout.astro + native <dialog>) shipped via commit cd6a9eeee (PR #1064). Phase 1 (42 ALTA screenshots in 7 batches) was never executed and is intentionally deferred indefinitely — no follow-up spec planned. Beta docs are usable without screenshots; if captures become a priority later, a new spec should be filed.",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "WONTFIX: Phase 0 foundation shipped via PR #1064; Phase 1 screenshots deferred indefinitely with no follow-up spec. Closed 2026-05-29."
         },
         {
             "specId": "SPEC-108",
@@ -1283,13 +1288,19 @@
             "title": "PostHog Cloud Analytics Stack (web + admin)",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-140-analytics-stack-posthog",
             "created": "2026-05-16T05:00:00Z",
             "rewrittenAt": "2026-05-17T23:50:00Z",
             "rewriteReason": "Switched tool choice from self-hosted Umami to PostHog Cloud free tier after user decision 2026-05-17. Expanded scope to include admin app + custom events from day one. Kept SPEC number; renamed slug.",
             "discoveredDuring": "2026-05-16 staging console audit (broken CF Web Analytics beacon)",
             "firstAllocatedViaEngramProtocol": true,
+            "completed": "2026-05-29T00:00:00.000Z",
+            "completedNote": "PostHog client wired in both web (PostHogScript.astro snippet in BaseLayout) and admin (PostHogProvider + posthog-client.ts). Consent gating via cookie-consent banner. CSP extended with us.i.posthog.com. Events instrumented: search, signup, admin login, accommodations. Test coverage present. Merged via PRs #1127 (initial), #1146 (PostHog Cloud), #1151 (snippet pattern fix), #1157 (admin integration + web fix). Operational note: Coolify env vars assumed set; manual CF Web Analytics disable in CF dashboard is operator action, not code.",
+            "completionRef": "PRs #1127, #1146, #1151, #1157 (all merged to staging)",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "PostHog Cloud analytics fully shipped to staging via 4 PRs. Spec docs retained; git history is source of truth. Closed 2026-05-29.",
             "tags": ["analytics", "posthog", "web", "admin", "monitoring", "privacy"]
         },
         {
@@ -1561,7 +1572,12 @@
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
             "type": "refactor",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
+            "completedAt": "2026-05-29T08:19:27Z",
+            "completionRef": "PR #1308 (f7180a1c02) — last of 7 PRs",
+            "archived": true,
+            "archivedAt": "2026-05-29T08:19:27Z",
+            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298 infra, #1300 relocations, #1301 migration, #1302 PR-4). Post-merge per-role smoke (#1305 sign-off) surfaced 3 P1 fixes resolved in #1306 (GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap) and #1308 (4 remaining /platform/* routes gated on requireAdminApiAccess; audit grown to 12 routes / 34 tests). Smoke also surfaced TAG_SYSTEM_VIEW grant to HOST as a confusion source — confirmed by-design per SPEC-086 D-017 (tag picker in accommodation forms) and documented in #1315 (comment + packages/seed/CLAUDE.md). Staging→main promotion pending operator decision.",
             "path": "SPEC-156-admin-settings-reorganization",
             "created": "2026-05-22T00:00:00Z",
             "startedAt": "2026-05-28T05:15:00Z",
@@ -1571,6 +1587,65 @@
             "discoveredDuring": "Admin panel redesign planning session 2026-05-22 — Phase 1 audit revealed settings scattered across 3 routes with mixed storage (API + localStorage). Ops vs Configuration split (IA doc §15) needs page relocations + small localStorage→API migration for SEO + Critical + announcements editor. Plus HOST Mi facturación landing (A3 plan per 04b-mi-facturacion-verification.md): usage widget + deep links to web.",
             "dependsOn": ["SPEC-154"],
             "firstAllocatedViaEngramProtocol": true,
+            "prStrategy": "4-prs-in-order",
+            "prsCompleted": [
+                {
+                    "pr": "#1298",
+                    "title": "platform_settings infrastructure (PR-1 of 4)",
+                    "mergedAt": "2026-05-28T19:16:46Z",
+                    "mergeCommit": "d10b74be0e9c0af10c194a6548d8d227b2b07a1e",
+                    "tasksClosed": "T-001..T-010 + T-PR1-QG (11/44)"
+                },
+                {
+                    "pr": "#1300",
+                    "title": "page relocations to /account/* + /platform/* (PR-2 of 4)",
+                    "mergedAt": "2026-05-29T01:51:32Z",
+                    "mergeCommit": "c57965c59d9cc023781dff9822233ccd42ed9ca8",
+                    "tasksClosed": "T-012..T-026 (15 tasks; 26/44 total)"
+                },
+                {
+                    "pr": "#1301",
+                    "title": "platform_settings data layer migration (PR-3 of 4)",
+                    "mergedAt": "2026-05-29T02:34:39Z",
+                    "mergeCommit": "637e2700fd14df80a78041e6a3d75c8a2a0ad47e",
+                    "tasksClosed": "T-028..T-031 (4 tasks; 30/44 total)"
+                },
+                {
+                    "pr": "#1302",
+                    "title": "Mi facturación + Anuncios editor + web display (PR-4 of 4)",
+                    "mergedAt": "2026-05-29T03:48:21Z",
+                    "mergeCommit": "55a0bf8a70",
+                    "tasksClosed": "T-033..T-043 + all QGs (14 tasks; 44/44 total)"
+                },
+                {
+                    "pr": "#1305",
+                    "title": "post-PR-4 per-role smoke sign-off + retest results (chore)",
+                    "mergedAt": "2026-05-29T07:33:34Z",
+                    "mergeCommit": "451d8c9750",
+                    "tasksClosed": "n/a (sign-off doc only)"
+                },
+                {
+                    "pr": "#1306",
+                    "title": "P1 fixes: GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap",
+                    "mergedAt": "2026-05-29T07:33:49Z",
+                    "mergeCommit": "6c60de56c6",
+                    "tasksClosed": "follow-up to smoke; not in original 44-task roster"
+                },
+                {
+                    "pr": "#1308",
+                    "title": "Followup guards on remaining 4 /platform/* routes + audit at 12/12",
+                    "mergedAt": "2026-05-29T08:19:27Z",
+                    "mergeCommit": "f7180a1c02",
+                    "tasksClosed": "follow-up to smoke; not in original 44-task roster"
+                },
+                {
+                    "pr": "#1315",
+                    "title": "docs(seed): clarify HOST TAG_SYSTEM_VIEW grant is intentional (SPEC-086 D-017)",
+                    "mergedAt": "2026-05-29T16:55:05Z",
+                    "mergeCommit": "28de258aa82c0bf12188be34cc7e45bc35530bc1",
+                    "tasksClosed": "docs-only follow-up to smoke; not in original 44-task roster"
+                }
+            ],
             "tags": [
                 "admin",
                 "settings",
@@ -1689,8 +1764,10 @@
             "title": "Cron Run History",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-161-cron-run-history",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-161-cron-run-history",
+            "branch": "spec/SPEC-161-cron-run-history",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. ADMIN 'failed crons / last run' widget has nothing to read: cron-admin lists jobs + triggers but does not persist per-execution results.",
             "dependsOn": [],
@@ -1810,6 +1887,50 @@
             "archived": false,
             "tags": ["permissions", "admin", "rbac", "frontend"],
             "note": "Spun off from SPEC-169 decision D7. Backend for per-user permission overrides ALREADY EXISTS (user_permission table + PermissionService.assign/revoke + actor.middleware merges role+overrides). Missing = admin UI (the /access/users/:id/permissions 'Direct Permission Overrides' card is a half-finished stub) + grant/revoke API endpoints + categorized permission picker over the ~270-permission catalog. Mostly a UI build on a complete backend. Includes a COMMENTED posts section: posts use author-fallback model (not _OWN/_ANY), so 'manage my own posts' (edit/delete/publish) already works via author fallback, 'manage all posts' is grantable (POST_RESTORE/HARD_DELETE), but 'restore/hard-delete only my own' needs a deferred _OWN model change (Q4). 6 open questions for owner (gating, deny-overrides, picker UX, posts _OWN, publish behavior, audit log). Draft — NOT atomized, implementation not started."
+        },
+        {
+            "specId": "SPEC-173",
+            "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-173-ai-core",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-173-ai-core",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-173-ai-core",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
+            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
+        },
+        {
+            "specId": "SPEC-171",
+            "title": "Entitlements service returns unlimited (-1) for staff without plan",
+            "type": "chore",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-171-entitlements-staff-unlimited",
+            "created": "2026-05-29T00:00:00.000Z",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "extractedFrom": "SPEC-154",
+            "tags": ["billing", "entitlements", "tech-debt", "admin"],
+            "note": "Spun off from SPEC-154 PR #1303 Phase 4-A. Frontend shim useShouldShowEntitlementGates in apps/admin checks actor.role to bypass entitlement gates for staff because the backend resolver treats 'no plan' as 'no entitlements'. Move the bypass server-side so motor returns -1 (unlimited) for SUPER_ADMIN/EDITOR sin plan and the frontend shim is deletable. Preferred timing: BEFORE SPEC-154 Phase 6 (propagation) to avoid multiplying the shim. Tasks not yet atomized."
+        },
+        {
+            "specId": "SPEC-172",
+            "title": "Accommodation amenities & features — chips with junction tables (deprecate booleans)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-172-accommodation-amenities-features-chips",
+            "created": "2026-05-29T00:00:00.000Z",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "extractedFrom": "SPEC-154",
+            "tags": ["schemas", "database", "migration", "admin", "web", "breaking"],
+            "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Owner chose Option B (migrate booleans → junction + drop legacy boolean columns, accepting that web reads break and must be migrated in lockstep). Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized."
         }
     ]
 }

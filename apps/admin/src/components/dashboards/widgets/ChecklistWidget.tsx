@@ -56,12 +56,20 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui-wrapped';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from '@/components/ui/dialog';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
 import { cn } from '@/lib/utils';
-import { AlertCircleIcon, CheckCircleIcon } from '@repo/icons';
+import { AlertCircleIcon, ArrowRightIcon, CheckCircleIcon, EditIcon, EyeIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -204,6 +212,31 @@ export interface ChecklistWidgetConfig {
      * and no remote fetch is needed.
      */
     readonly entities?: ReadonlyArray<ChecklistEntity>;
+    /** Accent palette name for the card icon chip (SPEC-155 redesign). */
+    readonly accent?: string;
+    /** `@repo/icons` name for the card icon chip (SPEC-155 redesign). */
+    readonly icon?: string;
+    /**
+     * Optional call-to-action shown at the foot of the checklist when
+     * completeness is below 100%. Either `href` (fixed) or `hrefTemplate`
+     * (interpolated with `{id}` of the currently selected entity).
+     *
+     * SPEC-155 HOST redesign — surfaces "Editar alojamiento" on card D and
+     * "Completar perfil" on card F.
+     */
+    readonly cta?: {
+        readonly label: string | { es: string; en: string; pt: string };
+        readonly href?: string;
+        readonly hrefTemplate?: string;
+    };
+    /** Card-specific empty-state title. */
+    readonly emptyText?: string;
+    /** Card-specific empty-state description. */
+    readonly emptyDescription?: string;
+    /** Card-specific error-state title. */
+    readonly errorText?: string;
+    /** Card-specific error-state description. */
+    readonly errorDescription?: string;
 }
 
 // ============================================================================
@@ -240,7 +273,9 @@ export interface ChecklistWidgetProps {
  * @param entity - The accommodation to inspect.
  * @returns Ordered list of checklist items.
  */
-function computeAccommodationHealth(entity: AccommodationEntity): ReadonlyArray<ChecklistItem> {
+export function computeAccommodationHealth(
+    entity: AccommodationEntity
+): ReadonlyArray<ChecklistItem> {
     return [
         {
             key: 'photos',
@@ -296,7 +331,7 @@ function computeAccommodationHealth(entity: AccommodationEntity): ReadonlyArray<
  * @param entity - The host profile to inspect.
  * @returns Ordered list of checklist items.
  */
-function computeHostProfileHealth(entity: HostProfileEntity): ReadonlyArray<ChecklistItem> {
+export function computeHostProfileHealth(entity: HostProfileEntity): ReadonlyArray<ChecklistItem> {
     return [
         {
             key: 'name',
@@ -456,36 +491,52 @@ interface CompletenessBarProps {
 function CompletenessBar({ done, total }: CompletenessBarProps) {
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
-    const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-destructive';
+    // Threshold bands — premium tones over flat tailwind colors.
+    const barClass =
+        pct >= 80
+            ? 'bg-gradient-to-r from-green-400 to-green-500'
+            : pct >= 50
+              ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+              : 'bg-gradient-to-r from-rose-400 to-rose-500';
 
-    const textColor =
-        pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-destructive';
+    const pctColor = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-rose-600';
 
     return (
         <div
-            className="mb-3"
+            className="mb-4 space-y-1.5"
             data-testid="checklist-completeness"
         >
-            <div className="mb-1 flex items-center justify-between text-xs">
+            <div className="flex items-baseline justify-between">
                 <span
-                    className={cn('font-semibold', textColor)}
+                    className="font-medium text-muted-foreground text-xs"
                     data-testid="checklist-completeness-fraction"
                 >
-                    {done}/{total} completado
+                    <span className="font-semibold text-foreground tabular-nums">{done}</span>
+                    <span className="opacity-60"> de </span>
+                    <span className="tabular-nums">{total}</span>
+                    <span className="opacity-60"> completos</span>
                 </span>
                 <span
-                    className={cn('font-medium tabular-nums', textColor)}
+                    className={cn(
+                        'font-semibold text-lg tabular-nums leading-none tracking-tight',
+                        pctColor
+                    )}
+                    style={{ fontFamily: 'var(--font-heading)' }}
                     data-testid="checklist-completeness-pct"
                 >
-                    {pct}%
+                    {pct}
+                    <span className="ml-0.5 text-xs opacity-70">%</span>
                 </span>
             </div>
             {/* Track */}
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted/70 ring-1 ring-border/30 ring-inset">
                 {/* Fill */}
                 {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator, not keyboard-interactive */}
                 <div
-                    className={cn('h-full rounded-full transition-all duration-300', barColor)}
+                    className={cn(
+                        'h-full rounded-full shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)] transition-all duration-500 ease-out',
+                        barClass
+                    )}
                     style={{ width: `${pct}%` }}
                     data-testid="checklist-completeness-bar"
                     role="progressbar"
@@ -495,6 +546,80 @@ function CompletenessBar({ done, total }: CompletenessBarProps) {
                 />
             </div>
         </div>
+    );
+}
+
+// ============================================================================
+// SORT HELPER — pending up, done down
+// ============================================================================
+
+/**
+ * Sorts checklist items so that pending (incomplete) entries appear first.
+ * Within each group the original relative order is preserved (stable sort
+ * via tagged index pairs).
+ *
+ * Used by both checklist bodies so the user always sees the actionable rows
+ * at the top of the list.
+ */
+function sortPendingFirst(items: ReadonlyArray<ChecklistItem>): ReadonlyArray<ChecklistItem> {
+    return items
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => {
+            if (a.item.done === b.item.done) return a.index - b.index;
+            return a.item.done ? 1 : -1;
+        })
+        .map(({ item }) => item);
+}
+
+// ============================================================================
+// CHECKLIST CTA (foot button — shown when pct < 100%)
+// ============================================================================
+
+/**
+ * Renders the call-to-action button at the foot of the checklist.
+ *
+ * Resolves the label from a tri-locale object (uses `es` for V1 to match the
+ * other widgets) or a plain string. Resolves the href from `cta.href` (fixed)
+ * or interpolates `{id}` on `cta.hrefTemplate` when a selected entity id is
+ * available.
+ *
+ * Returns `null` when no CTA is configured, pct is already 100%, or the
+ * template requires an id that wasn't provided.
+ */
+interface ChecklistCtaProps {
+    readonly cta: NonNullable<ChecklistWidgetConfig['cta']> | undefined;
+    readonly pct: number;
+    readonly selectedEntityId?: string;
+    readonly accent?: string;
+}
+
+function ChecklistCta({ cta, pct, selectedEntityId, accent }: ChecklistCtaProps) {
+    if (!cta || pct >= 100) return null;
+
+    const label = typeof cta.label === 'string' ? cta.label : cta.label.es;
+
+    let href: string | undefined = cta.href;
+    if (!href && cta.hrefTemplate) {
+        if (!selectedEntityId) return null;
+        href = cta.hrefTemplate.replace('{id}', selectedEntityId);
+    }
+    if (!href) return null;
+
+    const vars = accentVars(accent);
+
+    return (
+        <a
+            href={href}
+            className="group/cta mt-auto inline-flex items-center gap-1 self-start font-medium text-xs transition-colors hover:underline hover:decoration-2 hover:underline-offset-4"
+            style={{ color: vars.fg }}
+            data-testid="checklist-cta"
+        >
+            <span>{label}</span>
+            <ArrowRightIcon
+                className="size-3.5 transition-transform duration-200 group-hover/cta:translate-x-0.5"
+                aria-hidden="true"
+            />
+        </a>
     );
 }
 
@@ -512,24 +637,42 @@ interface ChecklistRowProps {
 function ChecklistRow({ item }: ChecklistRowProps) {
     return (
         <div
-            className="flex items-center gap-2 py-1"
+            className={cn(
+                'flex items-center gap-3 py-1.5 transition-opacity',
+                item.done && 'opacity-60'
+            )}
             data-testid={`checklist-item-${item.key}`}
         >
             {item.done ? (
-                <CheckCircleIcon
-                    className="h-4 w-4 shrink-0 text-green-500"
+                <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full bg-green-500 shadow-[inset_0_-1px_0_rgba(0,0,0,0.06)] ring-2 ring-green-500/15"
                     aria-hidden="true"
                     data-testid={`checklist-icon-done-${item.key}`}
-                />
+                >
+                    <CheckCircleIcon
+                        weight="fill"
+                        className="size-3.5 text-white"
+                    />
+                </span>
             ) : (
-                <AlertCircleIcon
-                    className="h-4 w-4 shrink-0 text-amber-500"
+                <span
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-300/60"
                     aria-hidden="true"
                     data-testid={`checklist-icon-missing-${item.key}`}
-                />
+                >
+                    <AlertCircleIcon
+                        className="size-3.5 text-amber-500"
+                        weight="fill"
+                    />
+                </span>
             )}
             <span
-                className={cn('text-sm', item.done ? 'text-foreground' : 'text-muted-foreground')}
+                className={cn(
+                    'text-sm leading-snug',
+                    item.done
+                        ? 'text-muted-foreground line-through decoration-1 decoration-muted-foreground/30'
+                        : 'font-medium text-foreground'
+                )}
             >
                 {item.label}
             </span>
@@ -548,20 +691,30 @@ function ChecklistRow({ item }: ChecklistRowProps) {
  */
 interface AccommodationChecklistBodyProps {
     readonly accommodations: ReadonlyArray<AccommodationEntity>;
+    readonly cta?: ChecklistWidgetConfig['cta'];
+    readonly accent?: string;
 }
 
-function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBodyProps) {
+function AccommodationChecklistBody({
+    accommodations,
+    cta,
+    accent
+}: AccommodationChecklistBodyProps) {
     const [selectedId, setSelectedId] = useState<string>(accommodations[0]?.id ?? '');
 
     const selectedAccommodation =
         accommodations.find((a) => a.id === selectedId) ?? accommodations[0];
 
-    const items = selectedAccommodation ? computeAccommodationHealth(selectedAccommodation) : [];
+    const rawItems = selectedAccommodation ? computeAccommodationHealth(selectedAccommodation) : [];
+
+    // Pending entries always render first so the user sees the actionable rows up top.
+    const items = sortPendingFirst(rawItems);
 
     const doneCount = items.filter((i) => i.done).length;
+    const pct = items.length === 0 ? 0 : Math.round((doneCount / items.length) * 100);
 
     return (
-        <div>
+        <div className="flex h-full flex-col">
             {/* Selector — shown only when > 1 accommodation */}
             {accommodations.length > 1 && (
                 <div
@@ -609,6 +762,13 @@ function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBo
                     </li>
                 ))}
             </ul>
+
+            <ChecklistCta
+                cta={cta}
+                pct={pct}
+                selectedEntityId={selectedAccommodation?.id}
+                accent={accent}
+            />
         </div>
     );
 }
@@ -625,14 +785,29 @@ function AccommodationChecklistBody({ accommodations }: AccommodationChecklistBo
 interface GenericChecklistBodyProps {
     readonly checkset: ChecksetId;
     readonly entities: ReadonlyArray<ChecklistEntity>;
+    readonly cta?: ChecklistWidgetConfig['cta'];
+    readonly accent?: string;
 }
 
-function GenericChecklistBody({ checkset, entities }: GenericChecklistBodyProps) {
-    const items = entities.flatMap((entity, idx) => computeItems(checkset, entity, idx));
+function GenericChecklistBody({ checkset, entities, cta, accent }: GenericChecklistBodyProps) {
+    const rawItems = entities.flatMap((entity, idx) => computeItems(checkset, entity, idx));
+
+    // Pending entries always render first so the user sees the actionable rows up top.
+    const items = sortPendingFirst(rawItems);
+
     const doneCount = items.filter((i) => i.done).length;
+    const pct = items.length === 0 ? 0 : Math.round((doneCount / items.length) * 100);
+
+    // Generic body has no per-entity selector — `hrefTemplate` cannot be
+    // interpolated here. Pass the first entity's id as a best-effort, but the
+    // intended use for generic checksets is the fixed `cta.href` form.
+    const firstEntityId =
+        entities.length > 0 && typeof (entities[0] as { id?: unknown }).id === 'string'
+            ? (entities[0] as { id: string }).id
+            : undefined;
 
     return (
-        <div>
+        <div className="flex h-full flex-col">
             <CompletenessBar
                 done={doneCount}
                 total={items.length}
@@ -649,6 +824,13 @@ function GenericChecklistBody({ checkset, entities }: GenericChecklistBodyProps)
                     </li>
                 ))}
             </ul>
+
+            <ChecklistCta
+                cta={cta}
+                pct={pct}
+                selectedEntityId={firstEntityId}
+                accent={accent}
+            />
         </div>
     );
 }
@@ -679,6 +861,242 @@ function GenericChecklistBody({ checkset, entities }: GenericChecklistBodyProps)
  *   "entities": []
  * }
  * ```
+// ============================================================================
+// ENTITY-HEALTH GROUPED MODE (T-SALUD-REFACTOR)
+// ============================================================================
+
+/**
+ * A pre-evaluated content-health row for a single entity. Resolver-side
+ * (editor.content.health.posts / editor.content.health.events) computes the
+ * per-entity missing-field list, completeness percentage and href so the
+ * widget only has to render.
+ */
+export interface EntityHealthEntry {
+    readonly id: string;
+    readonly title: string;
+    readonly completenessPct: number;
+    readonly doneChecks: number;
+    readonly totalChecks: number;
+    readonly missingItems: ReadonlyArray<string>;
+    readonly viewHref?: string;
+    readonly editHref?: string;
+}
+
+/**
+ * Shape the resolver returns when it wants the grouped per-entity render
+ * instead of the legacy flat checklist. Detected by the widget via the
+ * presence of the `entities` field.
+ */
+export interface EntityHealthListData {
+    readonly entities: ReadonlyArray<EntityHealthEntry>;
+    readonly total: number;
+    readonly poolSize: number;
+}
+
+function isEntityHealthListData(value: unknown): value is EntityHealthListData {
+    if (value == null || typeof value !== 'object') return false;
+    const obj = value as { entities?: unknown };
+    return Array.isArray(obj.entities);
+}
+
+interface EntityHealthRowProps {
+    readonly entry: EntityHealthEntry;
+}
+
+function entryBarTone(pct: number): { bg: string; fg: string } {
+    if (pct >= 80) return { bg: 'bg-green-100', fg: 'text-green-700' };
+    if (pct >= 50) return { bg: 'bg-amber-100', fg: 'text-amber-700' };
+    return { bg: 'bg-rose-100', fg: 'text-rose-700' };
+}
+
+/** One row in the entity-health list — title, %, missing chips, action buttons. */
+function EntityHealthRow({ entry }: EntityHealthRowProps) {
+    const tone = entryBarTone(entry.completenessPct);
+    return (
+        <div
+            className="flex items-start gap-3 rounded-xl bg-card p-3 ring-1 ring-border/40"
+            data-testid="entity-health-row"
+        >
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                    <span
+                        className={cn(
+                            'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-semibold text-xs tabular-nums',
+                            tone.bg,
+                            tone.fg
+                        )}
+                        title={`${entry.doneChecks} de ${entry.totalChecks} checks completos`}
+                    >
+                        {entry.completenessPct}%
+                    </span>
+                    <span
+                        className="min-w-0 truncate font-medium text-foreground text-sm"
+                        title={entry.title}
+                    >
+                        {entry.title}
+                    </span>
+                </div>
+                <div
+                    className="flex flex-wrap gap-1.5"
+                    data-testid="entity-health-missing"
+                >
+                    {entry.missingItems.map((label) => (
+                        <span
+                            key={label}
+                            className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-rose-700 text-xs"
+                        >
+                            <AlertCircleIcon
+                                size={12}
+                                weight="duotone"
+                            />
+                            {label}
+                        </span>
+                    ))}
+                </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+                {entry.viewHref ? (
+                    <a
+                        href={entry.viewHref}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Ver"
+                        data-testid="entity-health-view"
+                    >
+                        <EyeIcon
+                            size={16}
+                            weight="duotone"
+                        />
+                    </a>
+                ) : null}
+                {entry.editHref ? (
+                    <a
+                        href={entry.editHref}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Editar"
+                        data-testid="entity-health-edit"
+                    >
+                        <EditIcon
+                            size={16}
+                            weight="duotone"
+                        />
+                    </a>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+interface EntityHealthListBodyProps {
+    readonly data: EntityHealthListData;
+    readonly displayLabel: string;
+    readonly accent?: string;
+    readonly icon?: string;
+}
+
+/**
+ * Renders the grouped per-entity content-health body: top 10 entities
+ * with most issues, each as one row carrying its %, missing-field chips
+ * and View/Edit action buttons. When there are more than 10 entities
+ * with issues a "Ver todas" button opens a Radix Dialog with the
+ * complete list.
+ */
+function EntityHealthListBody({ data, displayLabel, accent, icon }: EntityHealthListBodyProps) {
+    const PREVIEW_LIMIT = 10;
+    const preview = data.entities.slice(0, PREVIEW_LIMIT);
+    const rest = data.entities.slice(PREVIEW_LIMIT);
+    const remaining = rest.length;
+    const completenessAvg =
+        data.entities.length === 0
+            ? 100
+            : Math.round(
+                  data.entities.reduce((acc, e) => acc + e.completenessPct, 0) /
+                      data.entities.length
+              );
+    const tone = entryBarTone(completenessAvg);
+
+    return (
+        <div
+            className="space-y-3"
+            data-testid="entity-health-list-body"
+        >
+            <div className="flex items-baseline justify-between">
+                <p className="font-medium text-muted-foreground text-xs">
+                    <span className="font-semibold text-foreground tabular-nums">{data.total}</span>{' '}
+                    de <span className="tabular-nums">{data.poolSize}</span> con observaciones
+                </p>
+                <span
+                    className={cn(
+                        'inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs tabular-nums',
+                        tone.bg,
+                        tone.fg
+                    )}
+                    title="Promedio de salud en las entidades con issues"
+                >
+                    Promedio {completenessAvg}%
+                </span>
+            </div>
+            <div
+                className="space-y-2"
+                data-testid="entity-health-rows"
+            >
+                {preview.map((entry) => (
+                    <EntityHealthRow
+                        key={entry.id}
+                        entry={entry}
+                    />
+                ))}
+            </div>
+            {remaining > 0 ? (
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 self-start rounded-md text-primary text-sm hover:underline"
+                            data-testid="entity-health-view-all"
+                        >
+                            Ver los {remaining} restantes
+                            <ArrowRightIcon
+                                size={14}
+                                weight="duotone"
+                            />
+                        </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {displayLabel} — {remaining} restantes
+                            </DialogTitle>
+                        </DialogHeader>
+                        <p className="text-muted-foreground text-xs">
+                            Los primeros {PREVIEW_LIMIT} ya están visibles en el panel.
+                        </p>
+                        <div
+                            className="space-y-2"
+                            data-testid="entity-health-dialog-rows"
+                        >
+                            {rest.map((entry) => (
+                                <EntityHealthRow
+                                    key={entry.id}
+                                    entry={entry}
+                                />
+                            ))}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            ) : null}
+            {/* accent/icon kept in props so the WidgetCard wrapper above
+                can paint the header consistently — read by the parent. */}
+            <span
+                className="sr-only"
+                data-accent={accent}
+                data-icon={icon}
+            />
+        </div>
+    );
+}
+
+/**
+ * Main ChecklistWidget renderer.
  *
  * @example
  * ```tsx
@@ -691,6 +1109,9 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
     const checkset = config.checkset ?? 'accommodation-health';
     const sourceId = config.source ?? '';
     const configEntities = config.entities ?? null;
+    const accent = config.accent;
+    const icon = config.icon;
+    const cta = config.cta;
 
     // -- 2. Resolver (always call — hooks cannot be conditional) --------------
     const { resolveForScope } = useDashboardResolver();
@@ -719,6 +1140,8 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                 label={displayLabel}
                 variant="checklist"
                 dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
             >
                 <WidgetUnavailableBody variant="checklist" />
             </WidgetCard>
@@ -744,10 +1167,14 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                     label={displayLabel}
                     variant="checklist"
                     dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
                 >
                     <WidgetErrorBody
                         variant="checklist"
                         onRetry={() => void refetch()}
+                        text={config.errorText}
+                        description={config.errorDescription}
                     />
                 </WidgetCard>
             );
@@ -758,14 +1185,64 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                     label={displayLabel}
                     variant="checklist"
                     dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
                 >
                     <WidgetEmptyBody
                         variant="checklist"
-                        text="Sin datos disponibles"
+                        text={config.emptyText ?? 'Sin datos disponibles'}
+                        description={config.emptyDescription}
+                        icon={icon}
                     />
                 </WidgetCard>
             );
         }
+    }
+
+    // -- 5b. Grouped-mode short-circuit (T-SALUD-REFACTOR) -------------------
+    // When the resolver returns the `EntityHealthListData` shape (object with
+    // an `entities` array) we bypass the legacy per-issue flat checklist and
+    // render the per-entity grouped body. Keeps the existing accommodation /
+    // host-profile chacklists untouched.
+    if (sourceId !== '' && fetchedData != null && isEntityHealthListData(fetchedData)) {
+        const grouped = fetchedData as EntityHealthListData;
+        if (grouped.entities.length === 0) {
+            return (
+                <WidgetCard
+                    label={displayLabel}
+                    variant="checklist"
+                    dataTestId="checklist-widget"
+                    accent={accent}
+                    icon={icon}
+                >
+                    <WidgetEmptyBody
+                        variant="checklist"
+                        text={config.emptyText ?? '¡Todo en orden!'}
+                        description={
+                            config.emptyDescription ??
+                            'Ninguna entidad tiene observaciones pendientes.'
+                        }
+                        icon={icon}
+                    />
+                </WidgetCard>
+            );
+        }
+        return (
+            <WidgetCard
+                label={displayLabel}
+                variant="checklist"
+                dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
+            >
+                <EntityHealthListBody
+                    data={grouped}
+                    displayLabel={displayLabel}
+                    accent={accent}
+                    icon={icon}
+                />
+            </WidgetCard>
+        );
     }
 
     // -- 6. Resolve entity list -----------------------------------------------
@@ -789,10 +1266,14 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
                 label={displayLabel}
                 variant="checklist"
                 dataTestId="checklist-widget"
+                accent={accent}
+                icon={icon}
             >
                 <WidgetEmptyBody
                     variant="checklist"
-                    text="Sin datos disponibles"
+                    text={config.emptyText ?? 'Sin datos disponibles'}
+                    description={config.emptyDescription}
+                    icon={icon}
                 />
             </WidgetCard>
         );
@@ -809,11 +1290,15 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
             {checkset === 'accommodation-health' ? (
                 <AccommodationChecklistBody
                     accommodations={resolvedEntities as ReadonlyArray<AccommodationEntity>}
+                    cta={cta}
+                    accent={accent}
                 />
             ) : (
                 <GenericChecklistBody
                     checkset={checkset}
                     entities={resolvedEntities}
+                    cta={cta}
+                    accent={accent}
                 />
             )}
         </WidgetCard>

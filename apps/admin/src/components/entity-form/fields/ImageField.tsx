@@ -5,7 +5,8 @@ import type {
     FieldConfig,
     ImageFieldConfig
 } from '@/components/entity-form/types/field-config.types';
-import { Button, Input, Label } from '@/components/ui-wrapped';
+import { Input, Label } from '@/components/ui-wrapped';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
 import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
@@ -116,8 +117,9 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             'image/heif',
             'image/avif'
         ];
-        const maxWidth = imageConfig?.maxWidth;
-        const maxHeight = imageConfig?.maxHeight;
+        // Note: imageConfig.maxWidth / maxHeight are upload constraints
+        // enforced server-side (and via the file picker accept attribute);
+        // the preview size is capped to a fixed thumbnail width instead.
         const aspectRatio = imageConfig?.aspectRatio;
 
         // File input ref
@@ -323,16 +325,22 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
 
                 {/* Image Preview or Upload Area */}
                 {value?.url ? (
-                    <div className="space-y-3">
-                        {/* Image Preview */}
-                        <div className="relative inline-block">
+                    /* Two-column layout: preview on the left, metadata on the right.
+                       Mobile collapses to stacked. Action buttons live as an overlay
+                       on the image (replace + delete) so the layout stays tight. */
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                        {/* Preview + action overlay */}
+                        <div
+                            className={cn(
+                                'group relative w-full overflow-hidden rounded-lg border bg-muted',
+                                'sm:w-96 sm:flex-none'
+                            )}
+                        >
                             {previewUnavailable ? (
                                 <div
                                     data-testid="image-field-preview-unavailable"
                                     className={cn(
-                                        'flex h-48 w-48 flex-col items-center justify-center rounded-lg border border-dashed bg-muted p-4 text-center',
-                                        maxWidth && `max-w-[${maxWidth}px]`,
-                                        maxHeight && `max-h-[${maxHeight}px]`
+                                        'flex aspect-[16/9] flex-col items-center justify-center p-4 text-center'
                                     )}
                                 >
                                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
@@ -346,48 +354,114 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     ) : null}
                                 </div>
                             ) : (
-                                <img
-                                    src={value.url}
-                                    alt={value.alt || t('admin-entities.fields.image.uploadedAlt')}
-                                    data-testid="image-field-preview"
-                                    className={cn(
-                                        'h-auto max-w-full rounded-lg border',
-                                        // Respect prefers-reduced-motion: disable fade-in transition.
-                                        'motion-reduce:animate-none motion-reduce:transition-none',
-                                        maxWidth && `max-w-[${maxWidth}px]`,
-                                        maxHeight && `max-h-[${maxHeight}px]`,
-                                        aspectRatio && `aspect-[${aspectRatio.replace(':', '/')}]`,
-                                        'object-cover'
-                                    )}
-                                />
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <button
+                                            type="button"
+                                            aria-label={t(
+                                                'admin-entities.fields.image.lightboxOpenLabel'
+                                            )}
+                                            className="block w-full cursor-zoom-in"
+                                        >
+                                            <img
+                                                src={value.url}
+                                                alt={
+                                                    value.alt ||
+                                                    t('admin-entities.fields.image.uploadedAlt')
+                                                }
+                                                data-testid="image-field-preview"
+                                                className={cn(
+                                                    'block h-auto w-full object-cover',
+                                                    'motion-reduce:animate-none motion-reduce:transition-none',
+                                                    aspectRatio
+                                                        ? `aspect-[${aspectRatio.replace(':', '/')}]`
+                                                        : 'aspect-[16/9]'
+                                                )}
+                                            />
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent
+                                        className="max-w-[min(96vw,1400px)] border-0 bg-transparent p-0 shadow-none"
+                                        showCloseButton={false}
+                                    >
+                                        <DialogTitle className="sr-only">
+                                            {value.alt ||
+                                                t('admin-entities.fields.image.uploadedAlt')}
+                                        </DialogTitle>
+                                        <img
+                                            src={value.url}
+                                            alt={
+                                                value.alt ||
+                                                t('admin-entities.fields.image.uploadedAlt')
+                                            }
+                                            className="block max-h-[90vh] w-full rounded-md object-contain"
+                                        />
+                                    </DialogContent>
+                                </Dialog>
                             )}
 
-                            {/* Remove button — opens confirm dialog. */}
+                            {/* Action toolbar overlay — visible on hover/focus.
+                                "Replace" opens the file picker so the user can swap
+                                the image without first deleting it; "Delete" still
+                                routes through the confirm dialog (destructive). */}
                             {!disabled && (
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute top-2 right-2"
-                                    onClick={handleRemoveClick}
-                                    data-testid="image-field-remove"
-                                    aria-label={t(
-                                        'admin-entities.fields.image.deleteDialogConfirm'
+                                <div
+                                    className={cn(
+                                        'absolute top-2 right-2 flex items-center gap-1',
+                                        'opacity-0 transition-opacity duration-150',
+                                        'group-focus-within:opacity-100 group-hover:opacity-100',
+                                        'motion-reduce:transition-none'
                                     )}
                                 >
-                                    <CloseIcon className="h-4 w-4" />
-                                </Button>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        data-testid="image-field-replace"
+                                        aria-label={t('admin-entities.fields.image.replaceLabel')}
+                                        title={t('admin-entities.fields.image.replaceLabel')}
+                                        className={cn(
+                                            'inline-flex h-8 w-8 items-center justify-center rounded-md',
+                                            'bg-card/90 text-foreground shadow-sm backdrop-blur',
+                                            'hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                                        )}
+                                    >
+                                        <UploadIcon className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveClick}
+                                        data-testid="image-field-remove"
+                                        aria-label={t(
+                                            'admin-entities.fields.image.deleteDialogConfirm'
+                                        )}
+                                        title={t('admin-entities.fields.image.deleteDialogConfirm')}
+                                        className={cn(
+                                            'inline-flex h-8 w-8 items-center justify-center rounded-md',
+                                            'bg-card/90 text-destructive shadow-sm backdrop-blur',
+                                            'hover:bg-destructive hover:text-destructive-foreground',
+                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive'
+                                        )}
+                                    >
+                                        <CloseIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
                             )}
                         </div>
 
-                        {/* Image Metadata Fields */}
-                        <div className="space-y-2">
+                        {/* Metadata fields — fill the remaining space on desktop */}
+                        <div className="min-w-0 flex-1 space-y-2">
                             <div>
                                 <Label
                                     htmlFor={`${fieldId}-alt`}
                                     className="text-xs"
                                 >
-                                    {t('admin-entities.fields.image.altTextLabel')}
+                                    {t('admin-entities.fields.image.altTextLabel')}{' '}
+                                    <span
+                                        aria-hidden="true"
+                                        className="text-destructive"
+                                    >
+                                        *
+                                    </span>
                                 </Label>
                                 <Input
                                     id={`${fieldId}-alt`}
@@ -396,9 +470,20 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     placeholder={t(
                                         'admin-entities.fields.image.altTextPlaceholder'
                                     )}
+                                    aria-required="true"
+                                    aria-invalid={!value.alt || value.alt.trim() === ''}
                                     disabled={disabled}
-                                    className="text-sm"
+                                    className={cn(
+                                        'text-sm',
+                                        (!value.alt || value.alt.trim() === '') &&
+                                            'border-warning focus-visible:ring-warning'
+                                    )}
                                 />
+                                {(!value.alt || value.alt.trim() === '') && !disabled && (
+                                    <p className="mt-1 text-warning text-xs">
+                                        {t('admin-entities.fields.image.altTextRequiredHint')}
+                                    </p>
+                                )}
                             </div>
 
                             <div>

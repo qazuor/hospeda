@@ -16,6 +16,7 @@
 import * as Sentry from '@sentry/node';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
+import { recordCronRun } from './record-run';
 import { getEnabledCronJobs } from './registry';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
 
@@ -119,6 +120,15 @@ export const startCronScheduler = async (): Promise<void> => {
                         errors: result.errors,
                         durationMs: Date.now() - startTime
                     });
+                    // Fire-and-forget: never alters the job outcome.
+                    await recordCronRun({
+                        jobName: job.name,
+                        executionMode: 'scheduled',
+                        dryRun: false,
+                        startedAt: new Date(startTime),
+                        finishedAt: new Date(),
+                        result
+                    });
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                     apiLogger.error({
@@ -152,6 +162,16 @@ export const startCronScheduler = async (): Promise<void> => {
                             }
                         }
                     );
+
+                    // Fire-and-forget: record the failure/timeout outcome.
+                    await recordCronRun({
+                        jobName: job.name,
+                        executionMode: 'scheduled',
+                        dryRun: false,
+                        startedAt: new Date(startTime),
+                        finishedAt: new Date(),
+                        error
+                    });
                 }
             });
 

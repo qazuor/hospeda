@@ -287,9 +287,14 @@ describe('sidebars', () => {
     // HOST sidebars — T-039
     // -------------------------------------------------------------------------
 
-    describe('miCuentaSidebar (T-039)', () => {
-        it('should have exactly 4 items', () => {
-            expect(sidebars.miCuentaSidebar.items).toHaveLength(4);
+    describe('miCuentaSidebar (T-039 / SPEC-156 T-026 + T-033)', () => {
+        it('should have exactly 7 items (profile, preferences, notifications, security, data, billing, tags)', () => {
+            expect(sidebars.miCuentaSidebar.items).toHaveLength(7);
+        });
+
+        it('should contain /account/billing link (SPEC-156 T-033)', () => {
+            const links = collectAllLinks(sidebars.miCuentaSidebar.items);
+            expect(links.map((l) => l.route)).toContain('/account/billing');
         });
 
         it('should parse against SidebarSchema', () => {
@@ -300,24 +305,34 @@ describe('sidebars', () => {
             ).toBe(true);
         });
 
-        it('should contain /me/profile link', () => {
+        it('should contain /account/profile link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/profile');
+            expect(links.map((l) => l.route)).toContain('/account/profile');
         });
 
-        it('should contain /me/settings link', () => {
+        it('should contain /account/preferences link', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/settings');
+            expect(links.map((l) => l.route)).toContain('/account/preferences');
         });
 
-        it('should contain /me/change-password link', () => {
+        it('should contain /account/notifications link (SPEC-156 T-014)', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/change-password');
+            expect(links.map((l) => l.route)).toContain('/account/notifications');
         });
 
-        it('should contain /me/tags link', () => {
+        it('should link the security entry to the area landing (SPEC-156 T-016)', () => {
             const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/me/tags');
+            expect(links.map((l) => l.route)).toContain('/account/security');
+        });
+
+        it('should contain /account/data link (SPEC-156 T-017)', () => {
+            const links = collectAllLinks(sidebars.miCuentaSidebar.items);
+            expect(links.map((l) => l.route)).toContain('/account/data');
+        });
+
+        it('should contain /account/tags link', () => {
+            const links = collectAllLinks(sidebars.miCuentaSidebar.items);
+            expect(links.map((l) => l.route)).toContain('/account/tags');
         });
 
         it('should have all permission gates using real PermissionEnum keys', () => {

@@ -1,11 +1,11 @@
+import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     FieldConfig,
     TextareaFieldConfig
 } from '@/components/entity-form/types/field-config.types';
-import { Label, Textarea } from '@/components/ui-wrapped';
+import { Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-
 import * as React from 'react';
 
 /**
@@ -35,8 +35,11 @@ export interface TextareaFieldProps {
 }
 
 /**
- * TextareaField component for multi-line text input fields
- * Handles TEXTAREA field type from FieldConfig
+ * TextareaField component for multi-line text input fields.
+ *
+ * Uses the redesigned FieldWrapper (label-above, help icon, error, char counter)
+ * and reads maxLength from typeConfig for the inline char counter.
+ * Per spec §4.2 — char counter: max comes from typeConfig.maxLength, not hardcoded.
  */
 export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
     (
@@ -55,55 +58,40 @@ export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaField
         },
         ref
     ) => {
-        // Use direct translations from config
         const label = config.label;
         const description = config.description;
         const placeholder = config.placeholder;
-        const helper = config.help;
+
+        const fieldId = `field-${config.id}`;
+        const errorId = hasError ? `${fieldId}-error` : undefined;
+
+        // Get textarea-specific config for rows, resize, and maxLength
+        const textareaConfig =
+            config.type === FieldTypeEnum.TEXTAREA
+                ? (config.typeConfig as TextareaFieldConfig | undefined)
+                : undefined;
+        const minRows = textareaConfig?.minRows ?? 3;
+        const maxRows = textareaConfig?.maxRows;
+        const resize = textareaConfig?.resize !== false;
+        const maxLength = textareaConfig?.maxLength;
 
         const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
             onChange?.(e.target.value);
         };
 
-        const fieldId = `field-${config.id}`;
-        const errorId = hasError ? `${fieldId}-error` : undefined;
-        const descriptionId = description ? `${fieldId}-description` : undefined;
-        const helperId = helper ? `${fieldId}-helper` : undefined;
-
-        // Get textarea-specific config
-        const textareaConfig =
-            config.type === FieldTypeEnum.TEXTAREA
-                ? (config.typeConfig as TextareaFieldConfig)
-                : undefined;
-        const minRows = textareaConfig?.minRows || 3;
-        const maxRows = textareaConfig?.maxRows;
-        const resize = textareaConfig?.resize !== false;
-
         return (
-            <div className={cn('space-y-2', className)}>
-                {/* Label */}
-                {label && (
-                    <Label
-                        htmlFor={fieldId}
-                        className={cn(
-                            required && 'after:ml-0.5 after:text-destructive after:content-["*"]'
-                        )}
-                    >
-                        {label}
-                    </Label>
-                )}
-
-                {/* Description */}
-                {description && (
-                    <p
-                        id={descriptionId}
-                        className="text-muted-foreground text-sm"
-                    >
-                        {description}
-                    </p>
-                )}
-
-                {/* Textarea Field */}
+            <FieldWrapper
+                fieldId={fieldId}
+                label={label}
+                required={required}
+                description={description}
+                hasError={hasError}
+                errorMessage={errorMessage}
+                mode="edit"
+                charCount={maxLength !== undefined ? (value ?? '').length : undefined}
+                maxLength={maxLength}
+                className={className}
+            >
                 <Textarea
                     ref={ref}
                     id={fieldId}
@@ -122,30 +110,10 @@ export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaField
                         config.className
                     )}
                     aria-invalid={hasError}
-                    aria-describedby={cn(errorId, descriptionId, helperId).trim() || undefined}
+                    aria-describedby={errorId || undefined}
                     {...props}
                 />
-
-                {/* Helper Text */}
-                {helper && !hasError && (
-                    <p
-                        id={helperId}
-                        className="text-muted-foreground text-sm"
-                    >
-                        {helper}
-                    </p>
-                )}
-
-                {/* Error Message */}
-                {hasError && errorMessage && (
-                    <p
-                        id={errorId}
-                        className="text-destructive text-sm"
-                    >
-                        {errorMessage}
-                    </p>
-                )}
-            </div>
+            </FieldWrapper>
         );
     }
 );

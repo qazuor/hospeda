@@ -36,6 +36,9 @@ export type { CurrencyFieldProps, CurrencyValue } from './CurrencyField';
 export { RichTextField } from './RichTextField';
 export type { RichTextFeature, RichTextFieldProps } from './RichTextField';
 
+export { CoordinatesField } from './CoordinatesField';
+export type { CoordinatesFieldProps, CoordinatesValue } from './CoordinatesField';
+
 export { ImageField } from './ImageField';
 export type { ImageFieldProps, ImageValue } from './ImageField';
 

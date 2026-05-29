@@ -1,6 +1,6 @@
 import type { HostConversationResponseRate } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import type {
@@ -405,6 +405,65 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'getResponseRateByOwnerId', ctx, err);
             throw new DbError(this.entityName, 'getResponseRateByOwnerId', ctx, err.message);
+        }
+    }
+
+    /**
+     * Monthly inquiry counts for the host's own accommodations.
+     *
+     * Buckets conversations by their `createdAt` truncated to month and
+     * returns `{ month, count }` rows for the requested window. Months
+     * with zero conversations are NOT emitted by the SQL — the caller
+     * fills the gaps so the chart always has a continuous series.
+     *
+     * Returns an empty array immediately when the host has no own
+     * accommodations.
+     *
+     * @param ownerAccommodationIds - Accommodation IDs belonging to the host.
+     * @param months - How many months back to include (inclusive, defaults to 6).
+     * @param tx - Optional Drizzle transaction client.
+     */
+    async getMonthlyInquiriesByOwnerId(
+        ownerAccommodationIds: readonly string[],
+        months: number,
+        tx?: DrizzleClient
+    ): Promise<ReadonlyArray<{ readonly month: string; readonly count: number }>> {
+        if (ownerAccommodationIds.length === 0) {
+            return [];
+        }
+
+        const db = this.getClient(tx);
+        const ctx = { ownerAccommodationIds, months };
+
+        try {
+            const since = new Date();
+            since.setUTCDate(1);
+            since.setUTCHours(0, 0, 0, 0);
+            since.setUTCMonth(since.getUTCMonth() - (months - 1));
+
+            const rows = await db
+                .select({
+                    month: sql<string>`to_char(date_trunc('month', ${conversations.createdAt}), 'YYYY-MM')`,
+                    count: count(conversations.id)
+                })
+                .from(conversations)
+                .where(
+                    and(
+                        inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
+                        isNull(conversations.deletedAt),
+                        gte(conversations.createdAt, since)
+                    )
+                )
+                .groupBy(sql`date_trunc('month', ${conversations.createdAt})`)
+                .orderBy(sql`date_trunc('month', ${conversations.createdAt}) ASC`);
+
+            logQuery(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, { rows: rows.length });
+
+            return rows.map((r) => ({ month: r.month, count: Number(r.count) }));
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, err.message);
         }
     }
 }

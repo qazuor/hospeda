@@ -1,7 +1,10 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { CoordinatesField } from '@/components/entity-form/fields/CoordinatesField';
+import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import {
     loadAccommodationsByIds,
     loadDestinationsByIds,
@@ -11,13 +14,13 @@ import {
     loadPostSponsorshipsByIds,
     loadUsersByIds
 } from '@/components/entity-form/fields/entity-selects/utils';
-import { GridLayout } from '@/components/entity-form/layouts';
 import type {
     EntitySelectFieldConfig,
     SelectFieldConfig,
     SelectOption
 } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 import {
     BooleanViewField,
     CurrencyViewField,
@@ -26,7 +29,8 @@ import {
     ImageViewField,
     RichTextViewField,
     SelectViewField,
-    TextViewField
+    TextViewField,
+    VideoGalleryViewField
 } from '@/components/entity-form/views';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
@@ -234,27 +238,38 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 ? getNestedValue(values, field.id)
                 : values[field.id];
 
-            // Check if field is editable for edit-in-place
-            const isFieldEditable = React.useMemo(() => {
+            // Check if field is editable for edit-in-place (computed inline — no hook needed)
+            const isFieldEditable = (() => {
                 if (field.readonly) return false;
                 if (!hasEditPermission) return false;
-
                 if (field.permissions?.edit && field.permissions.edit.length > 0) {
-                    return field.permissions.edit.some((permission) =>
-                        userPermissions.includes(permission)
-                    );
+                    return field.permissions.edit.some((p) => userPermissions.includes(p));
                 }
-
                 return true;
-            }, [field.readonly, field.permissions, userPermissions]);
+            })();
 
-            // Common field props - value type will be cast per component
+            // Per spec §4.2 "ruido meta asimétrico":
+            //   View → label + value only (no description paragraph).
+            //   The description prop is intentionally NOT passed to view field components.
             const baseFieldProps = {
                 config: field,
                 className: field.className,
                 showLabel: mode !== 'compact',
-                showDescription: mode === 'detailed' || mode === 'card'
+                showDescription: false // VIEW: description suppressed per redesign spec §4.2
             };
+
+            // Derive col-span class from field type — same rule as edit mode (spec §4.2)
+            const colSpan = getFieldColSpanClass(field.type);
+
+            // Helper to wrap the rendered view component with the correct grid col-span
+            const wrap = (content: React.ReactNode) => (
+                <div
+                    key={field.id}
+                    className={colSpan}
+                >
+                    {content}
+                </div>
+            );
 
             // Render appropriate view component based on field type
             switch (field.type) {
@@ -266,9 +281,8 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 case FieldTypeEnum.DATE:
                 case FieldTypeEnum.TIME:
                 case FieldTypeEnum.PHONE:
-                    return (
+                    return wrap(
                         <TextViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as string}
                         />
@@ -276,9 +290,8 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
 
                 case FieldTypeEnum.SELECT:
                 case FieldTypeEnum.RADIO:
-                    return (
+                    return wrap(
                         <SelectViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as string}
                             options={
@@ -291,9 +304,8 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
 
                 case FieldTypeEnum.SWITCH:
                 case FieldTypeEnum.CHECKBOX:
-                    return (
+                    return wrap(
                         <BooleanViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as boolean}
                         />
@@ -311,9 +323,8 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 case FieldTypeEnum.FEATURE_SELECT:
                 case FieldTypeEnum.AMENITY_SELECT:
                 case FieldTypeEnum.TAG_SELECT:
-                    return (
+                    return wrap(
                         <EntitySelectViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as string}
                             options={entitySelectOptions[field.id] || []}
@@ -322,46 +333,60 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     );
 
                 case FieldTypeEnum.CURRENCY:
-                    return (
+                    return wrap(
                         <CurrencyViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as CurrencyValue}
                         />
                     );
 
                 case FieldTypeEnum.RICH_TEXT:
-                    return (
+                    return wrap(
                         <RichTextViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as string}
                         />
                     );
 
+                case FieldTypeEnum.COORDINATES:
+                    // View mode reuses the editable component with disabled=true so
+                    // the user still sees the map + pin at the right location.
+                    return wrap(
+                        <CoordinatesField
+                            {...baseFieldProps}
+                            value={fieldValue as CoordinatesValue | undefined}
+                            disabled
+                        />
+                    );
+
                 case FieldTypeEnum.IMAGE:
-                    return (
+                    return wrap(
                         <ImageViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as ImageValue}
                         />
                     );
 
                 case FieldTypeEnum.GALLERY:
-                    return (
+                    return wrap(
                         <GalleryViewField
-                            key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as GalleryImage[]}
                         />
                     );
 
+                case FieldTypeEnum.VIDEO_GALLERY:
+                    return wrap(
+                        <VideoGalleryViewField
+                            {...baseFieldProps}
+                            value={fieldValue as VideoEntry[]}
+                        />
+                    );
+
                 default:
-                    // Fallback for unknown field types
-                    return (
+                    // Fallback for unknown field types — still respects grid span via `wrap()`
+                    return wrap(
                         <div
-                            key={field.id}
                             className={cn(
                                 'space-y-1',
                                 mode === 'card' && 'rounded-lg border p-3',
@@ -403,14 +428,22 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
             }
         };
 
-        // Render section content based on layout
+        // Render section content based on layout.
+        //
+        // Per spec §4.2 — same grid rule as edit mode:
+        //   Default: 2-column grid + items-start (error messages on one field don't
+        //   push its grid neighbor down). Mobile → 1 column.
         const renderSectionContent = () => {
-            if (!config.layout) {
-                // Default: simple vertical layout
+            if (config.layout === 'TABS') {
+                // TABS layout: stacked (nested sections own their layout)
+                return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
+            }
+
+            if (mode === 'list' || mode === 'compact') {
+                // List/compact modes keep the original stacked layout for density
                 return (
                     <div
                         className={cn(
-                            mode === 'card' && 'space-y-4',
                             mode === 'list' && 'divide-y',
                             mode === 'compact' && 'space-y-2'
                         )}
@@ -420,25 +453,12 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 );
             }
 
-            switch (config.layout) {
-                case 'GRID':
-                    return (
-                        <GridLayout
-                            columns={2}
-                            gap="md"
-                            responsive={{ sm: 1, md: 2 }}
-                        >
-                            {visibleFields.map(renderViewField)}
-                        </GridLayout>
-                    );
-
-                case 'TABS':
-                    // TODO: Implement tabs layout for nested sections
-                    return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
-
-                default:
-                    return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
-            }
+            // Default (card/detailed): 2-column responsive grid with top alignment
+            return (
+                <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+                    {visibleFields.map(renderViewField)}
+                </div>
+            );
         };
 
         if (!isVisible) {

@@ -14,6 +14,7 @@ import {
     conversationNotificationJob,
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
+    cronRunPurgeJob,
     dunningJob,
     exchangeRateFetchJob,
     mediaOrphanCleanupJob,
@@ -54,7 +55,8 @@ export const cronJobs: CronJobDefinition[] = [
     trialPreEndNotifJob,
     abandonedPendingSubsJob,
     applyScheduledPlanChangesJob,
-    subscriptionPollJob
+    subscriptionPollJob,
+    cronRunPurgeJob
 ];
 
 /**

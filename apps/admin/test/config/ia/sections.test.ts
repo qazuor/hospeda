@@ -166,8 +166,8 @@ describe('sections', () => {
 
     describe('HOST sections (T-039)', () => {
         it('should have miCuenta pointing to /me/profile', () => {
-            expect(sections.miCuenta.route).toBe('/me/profile');
-            expect(sections.miCuenta.defaultRoute).toBe('/me/profile');
+            expect(sections.miCuenta.route).toBe('/account/profile');
+            expect(sections.miCuenta.defaultRoute).toBe('/account/profile');
         });
 
         it('should have misAlojamientos pointing to /me/accommodations', () => {

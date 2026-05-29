@@ -1002,6 +1002,10 @@
                     "min": "[EN] La descripción debe tener al menos {{min}} caracteres",
                     "required": "[EN] La descripción es obligatoria"
                 },
+                "alt": {
+                    "max": "[EN] El texto alternativo no puede superar los {{max}} caracteres",
+                    "min": "[EN] El texto alternativo debe tener al menos {{min}} caracteres"
+                },
                 "publicId": {
                     "min": "[EN] El public id debe tener al menos {{min}} caracteres"
                 },

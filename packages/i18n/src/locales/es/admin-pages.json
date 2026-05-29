@@ -904,5 +904,142 @@
                 "special": "Al menos un carácter especial (!@#$%^&*...)"
             }
         }
+    },
+    "security": {
+        "title": "Seguridad",
+        "available": {
+            "title": "Acciones disponibles",
+            "subtitle": "Lo que podés gestionar hoy"
+        },
+        "changePassword": {
+            "title": "Cambiar contraseña",
+            "subtitle": "Actualizá tu contraseña para mantener tu cuenta segura"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Autenticación en dos factores",
+                "subtitle": "Una capa extra de seguridad al iniciar sesión"
+            },
+            "activeSessions": {
+                "title": "Sesiones activas",
+                "subtitle": "Mirá y cerrá las sesiones abiertas en otros dispositivos"
+            },
+            "loginHistory": {
+                "title": "Historial de inicios de sesión",
+                "subtitle": "Registro de accesos recientes a tu cuenta"
+            },
+            "changeEmail": {
+                "title": "Cambiar email",
+                "subtitle": "Actualizá la dirección asociada a tu cuenta"
+            }
+        }
+    },
+    "data": {
+        "title": "Mis datos",
+        "comingSoon": {
+            "title": "Pronto vas a poder gestionar tus datos desde acá",
+            "description": "Estamos preparando la sección para exportar tu información, pausar tu cuenta y solicitar la eliminación de tus datos según las normativas vigentes."
+        },
+        "supportContact": {
+            "label": "Por ahora, escribinos a:",
+            "email": "soporte@hospeda.com.ar"
+        }
+    },
+    "announcements": {
+        "title": "Anuncios globales",
+        "subtitle": "Mensajes que se muestran en la web para todos los visitantes",
+        "list": {
+            "loading": "Cargando anuncios…",
+            "error": "No pudimos cargar los anuncios. Intentá de nuevo.",
+            "empty": {
+                "title": "Todavía no hay anuncios",
+                "description": "Cuando publiques uno aparecerá acá y en el sitio."
+            },
+            "newAnnouncement": "Nuevo anuncio",
+            "editAction": "Editar",
+            "deleteAction": "Eliminar",
+            "deleteConfirm": "¿Eliminar este anuncio? No se puede deshacer.",
+            "deleteError": "No pudimos eliminar el anuncio. Intentá de nuevo.",
+            "deleteSuccess": "Anuncio eliminado"
+        },
+        "variant": {
+            "info": "Informativo",
+            "warning": "Advertencia",
+            "danger": "Crítico"
+        },
+        "dismissible": {
+            "yes": "El visitante puede cerrarlo",
+            "no": "Visible siempre"
+        },
+        "window": {
+            "alwaysOn": "Activo siempre",
+            "startsAt": "Desde {{date}}",
+            "endsAt": "Hasta {{date}}",
+            "between": "Del {{from}} al {{to}}"
+        },
+        "form": {
+            "createTitle": "Crear anuncio",
+            "createSubtitle": "Definí el mensaje, su variante y la ventana de publicación",
+            "editTitle": "Editar anuncio",
+            "editSubtitle": "Actualizá los datos del anuncio",
+            "textLabel": {
+                "es": "Texto (Español)",
+                "en": "Texto (Inglés)",
+                "pt": "Texto (Portugués)"
+            },
+            "textPlaceholder": "Escribí el mensaje del anuncio…",
+            "variantLabel": "Variante",
+            "dismissibleLabel": "Permitir que se cierre",
+            "dismissibleHint": "El visitante podrá ocultarlo después de leerlo.",
+            "startsAtLabel": "Empieza el (opcional)",
+            "endsAtLabel": "Termina el (opcional)",
+            "submitCreate": "Crear anuncio",
+            "submitEdit": "Guardar cambios",
+            "saving": "Guardando…",
+            "cancel": "Cancelar",
+            "errorGeneric": "No pudimos guardar el anuncio. Revisá los campos e intentá de nuevo.",
+            "errorRequiredText": "El texto es obligatorio en los 3 idiomas",
+            "errorEndBeforeStart": "La fecha de fin debe ser posterior a la de inicio"
+        }
+    },
+    "billing": {
+        "title": "Mi facturación",
+        "subtitle": "Revisá tu plan, uso y opciones de pago",
+        "subscription": {
+            "title": "Mi plan",
+            "subtitle": "Estado y vigencia de tu suscripción",
+            "status": {
+                "active": "Activa",
+                "trialing": "Período de prueba",
+                "past_due": "Pago atrasado",
+                "canceled": "Cancelada",
+                "incomplete": "Incompleta",
+                "incomplete_expired": "Incompleta (expirada)",
+                "unknown": "Sin estado"
+            },
+            "currentPeriodEnd": "Vence el {{date}}",
+            "noActive": {
+                "title": "No tenés una suscripción activa",
+                "description": "Cuando contrates un plan, los detalles aparecerán acá."
+            },
+            "errorLoading": "No pudimos cargar tu suscripción. Intentá de nuevo en unos minutos."
+        },
+        "usage": {
+            "title": "Uso de mi plan",
+            "subtitle": "Cuánto consumiste sobre los límites de tu plan vigente",
+            "accommodations": "Alojamientos publicados",
+            "unitOfLimit": "{{used}} de {{limit}}",
+            "unlimited": "Sin límite",
+            "noActive": "Suscribite a un plan para ver tu uso.",
+            "errorLoading": "No pudimos cargar el uso. Intentá de nuevo en unos minutos."
+        },
+        "actions": {
+            "title": "Acciones",
+            "subtitle": "Gestioná tu suscripción y descargá tus facturas",
+            "manageSubscription": "Gestionar mi suscripción",
+            "manageSubscriptionHint": "Te llevamos a hospeda.com.ar para cambiar tu plan o método de pago.",
+            "downloadLatestInvoice": "Descargar última factura",
+            "noLatestInvoice": "Todavía no tenés facturas disponibles para descargar."
+        }
     }
 }

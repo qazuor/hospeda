@@ -1,5 +1,11 @@
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
-import { Input, Label } from '@/components/ui-wrapped';
+import { FieldAffix } from '@/components/entity-form/components/FieldAffix';
+import { FieldWrapper } from '@/components/entity-form/components/FieldWrapper';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    TextFieldConfig
+} from '@/components/entity-form/types/field-config.types';
+import { Input } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
@@ -38,8 +44,11 @@ export interface TextFieldProps {
 }
 
 /**
- * TextField component for text input fields
- * Handles TEXT field type from FieldConfig
+ * TextField component for text input fields.
+ *
+ * Uses the redesigned FieldWrapper (label-above, help icon, error, char counter)
+ * and FieldAffix for prefix/suffix from config.prefix / config.suffix.
+ * Per spec §4.2 — prefix/suffix come from FieldConfig, not hardcoded.
  */
 export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
     (
@@ -62,89 +71,73 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
         },
         ref
     ) => {
-        // Use direct translations from config
         const label = config.label;
         const description = config.description;
         const placeholder = config.placeholder;
-        const helper = config.help;
+
+        // Extract maxLength from typeConfig for char counter (TEXT fields only)
+        const textConfig =
+            config.type === FieldTypeEnum.TEXT
+                ? (config.typeConfig as TextFieldConfig | undefined)
+                : undefined;
+        const maxLength = textConfig?.maxLength;
+
+        const fieldId = `field-${config.id}`;
+        const errorId = hasError ? `${fieldId}-error` : undefined;
 
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             onChange?.(e.target.value);
         };
 
-        const fieldId = `field-${config.id}`;
-        const errorId = hasError ? `${fieldId}-error` : undefined;
-        const descriptionId = description ? `${fieldId}-description` : undefined;
-        const helperId = helper ? `${fieldId}-helper` : undefined;
+        const inputElement = (
+            <Input
+                ref={ref}
+                id={fieldId}
+                type={type}
+                min={min}
+                max={max}
+                step={step}
+                value={value}
+                onChange={handleChange}
+                onBlur={onBlur}
+                onFocus={onFocus}
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+                className={cn(
+                    hasError && 'border-destructive focus-visible:ring-destructive',
+                    config.className
+                )}
+                aria-invalid={hasError}
+                aria-describedby={errorId || undefined}
+                {...props}
+            />
+        );
 
         return (
-            <div className={cn('space-y-2', className)}>
-                {/* Label */}
-                {label && (
-                    <Label
-                        htmlFor={fieldId}
-                        className={cn(
-                            required && 'after:ml-0.5 after:text-destructive after:content-["*"]'
-                        )}
+            <FieldWrapper
+                fieldId={fieldId}
+                label={label}
+                required={required}
+                description={description}
+                hasError={hasError}
+                errorMessage={errorMessage}
+                mode="edit"
+                charCount={maxLength !== undefined ? (value ?? '').length : undefined}
+                maxLength={maxLength}
+                className={className}
+            >
+                {config.prefix || config.suffix ? (
+                    <FieldAffix
+                        prefix={config.prefix}
+                        suffix={config.suffix}
                     >
-                        {label}
-                    </Label>
+                        {inputElement}
+                    </FieldAffix>
+                ) : (
+                    inputElement
                 )}
-
-                {/* Description */}
-                {description && (
-                    <p
-                        id={descriptionId}
-                        className="text-muted-foreground text-sm"
-                    >
-                        {description}
-                    </p>
-                )}
-
-                {/* Input Field */}
-                <Input
-                    ref={ref}
-                    id={fieldId}
-                    type={type}
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={value}
-                    onChange={handleChange}
-                    onBlur={onBlur}
-                    onFocus={onFocus}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    required={required}
-                    className={cn(
-                        hasError && 'border-destructive focus-visible:ring-destructive',
-                        config.className
-                    )}
-                    aria-invalid={hasError}
-                    aria-describedby={cn(errorId, descriptionId, helperId).trim() || undefined}
-                    {...props}
-                />
-
-                {/* Helper Text */}
-                {helper && !hasError && (
-                    <p
-                        id={helperId}
-                        className="text-muted-foreground text-sm"
-                    >
-                        {helper}
-                    </p>
-                )}
-
-                {/* Error Message */}
-                {hasError && errorMessage && (
-                    <p
-                        id={errorId}
-                        className="text-destructive text-sm"
-                    >
-                        {errorMessage}
-                    </p>
-                )}
-            </div>
+            </FieldWrapper>
         );
     }
 );

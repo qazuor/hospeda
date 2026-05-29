@@ -502,10 +502,39 @@
             "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Shipped via PR #1287."
         },
         {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "status": "completed",
+            "progress": "1/2",
+            "path": "SPEC-107-beta-tester-docs-screenshots",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PR #1064 (Phase 0 only); Phase 1 deferred WONTFIX",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "Phase 0 (foundation: lightbox + structure) shipped via cd6a9eeee in PR #1064. Phase 1 (42 ALTA screenshots in 7 batches) deferred indefinitely — no follow-up spec planned. Closed as WONTFIX 2026-05-29."
+        },
+        {
+            "specId": "SPEC-140",
+            "title": "PostHog Cloud Analytics Stack (web + admin)",
+            "status": "completed",
+            "progress": "N/N",
+            "path": "SPEC-140-analytics-stack-posthog",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PRs #1127, #1146, #1151, #1157 (all merged to staging)",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "PostHog Cloud analytics fully shipped to staging across 4 PRs (web snippet + admin client + consent gating + CSP). Tasks index entry backfilled at close. Closed 2026-05-29."
+        },
+        {
             "specId": "SPEC-156",
             "title": "Admin Settings Reorganization — V1 Page Consolidation",
-            "status": "in-progress",
-            "progress": "10/44",
+            "status": "completed",
+            "progress": "44/44",
+            "completedAt": "2026-05-29T08:19:27Z",
+            "completionRef": "PR #1308 (f7180a1c02) — last of 7 PRs",
+            "archived": true,
+            "archivedAt": "2026-05-29T08:19:27Z",
+            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298, #1300, #1301, #1302). Post-merge smoke (#1305) + 2 P1 fix PRs (#1306, #1308) merged to staging.",
             "path": "SPEC-156-admin-settings-reorganization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-156-admin-settings-reorganization",
             "branch": "spec/SPEC-156-admin-settings-reorganization",
@@ -579,6 +608,18 @@
             "base": "staging",
             "createdAt": "2026-05-29T00:00:00.000Z",
             "note": "Draft spec.md written, NOT atomized. Spun off from SPEC-169 D7. Backend per-user permission overrides already exists (user_permission table + PermissionService + actor merge); missing = admin UI grant/revoke (stub at /access/users/:id/permissions) + API endpoints + categorized picker. Includes commented posts section (author-fallback model, _OWN deferred). 6 open questions for owner before implementation. No worktree yet."
+        },
+        {
+            "specId": "SPEC-161",
+            "title": "Cron Run History",
+            "status": "in-progress",
+            "progress": "0/10",
+            "path": "SPEC-161-cron-run-history",
+            "branch": "spec/SPEC-161-cron-run-history",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-161-cron-run-history",
+            "createdAt": "2026-05-29T00:00:00.000Z",
+            "note": "Backend-only. Persist per-cron-execution results (cron_runs table) + admin read endpoints (list/detail/summary) + differentiated purge cron (success>60d, failed/timeout>180d). Single hook at 2 execution sites (bootstrap + cron-admin trigger). Fire-and-forget recording. Enables SPEC-155 ADMIN card D."
         }
     ],
     "standalone": {

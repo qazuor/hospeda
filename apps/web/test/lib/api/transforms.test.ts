@@ -450,10 +450,55 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.reviewsCount).toBe(23);
         });
 
-        it('should map media images and videos', () => {
+        it('should map media images and normalize videos from legacy string array', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.media.images).toEqual(['/img/a.jpg', '/img/b.jpg']);
-            expect(result.media.videos).toEqual(['/vid/c.mp4']);
+            // Legacy payload (bare strings) normalizes to `{ url }` objects so
+            // consumers can read `entry.url` uniformly.
+            expect(result.media.videos).toEqual([{ url: '/vid/c.mp4' }]);
+        });
+
+        it('should map videos from the new object payload preserving caption + description', () => {
+            const item = {
+                ...makeFullItem(),
+                media: {
+                    images: [],
+                    videos: [
+                        {
+                            url: 'https://www.youtube.com/watch?v=abc',
+                            caption: 'Tour 360',
+                            description: 'Walk-through of the cabin',
+                            moderationState: 'APPROVED'
+                        }
+                    ]
+                }
+            };
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.videos).toEqual([
+                {
+                    url: 'https://www.youtube.com/watch?v=abc',
+                    caption: 'Tour 360',
+                    description: 'Walk-through of the cabin'
+                }
+            ]);
+        });
+
+        it('should drop entries without a URL when normalizing videos', () => {
+            const item = {
+                ...makeFullItem(),
+                media: {
+                    images: [],
+                    videos: [
+                        'https://www.youtube.com/watch?v=ok',
+                        '',
+                        { caption: 'no url here' },
+                        { url: 123 },
+                        null
+                    ]
+                }
+            };
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.videos).toEqual([{ url: 'https://www.youtube.com/watch?v=ok' }]);
         });
 
         it('should preserve caption and description in media.galleryItems (GAP-078-136)', () => {

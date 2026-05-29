@@ -318,8 +318,12 @@ describe('adminPostTrendRoute handler — SPEC-155 T-008', () => {
             mockGetActorFromContext.mockReturnValue(actorWithoutPermissions);
             // Simulate service throwing FORBIDDEN
             const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
             mockGetMonthlyTrend.mockRejectedValue(
-                new ServiceError('FORBIDDEN', 'Permission denied: POST_VIEW_ALL required')
+                new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Permission denied: POST_VIEW_ALL required'
+                )
             );
 
             const handler = getTrendHandler();

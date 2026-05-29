@@ -61,7 +61,7 @@ export const createBasicInfoConsolidatedSection = (
         },
         {
             id: 'description',
-            type: FieldTypeEnum.TEXTAREA,
+            type: FieldTypeEnum.RICH_TEXT,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: t('fields.accommodation.description.label'),
@@ -72,7 +72,6 @@ export const createBasicInfoConsolidatedSection = (
                 edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
             },
             typeConfig: {
-                minRows: 4,
                 maxLength: 2000
             }
         },

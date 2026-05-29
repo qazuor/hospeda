@@ -59,6 +59,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import '@/lib/dashboard-sources/index';
 import { RefreshIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { gridSpanClasses } from './dashboard-grid';
 import {
     ChartWidget,
     ChecklistWidget,
@@ -202,11 +203,18 @@ interface DashboardGridProps {
 }
 
 /**
- * Renders the responsive widget grid and the global refresh button.
+ * Renders the responsive bento widget grid and the global refresh button.
  *
- * Layout mirrors the existing `dashboard.lazy.tsx` card grid:
- * 1 column on mobile, 2 columns on md, 3 columns on lg. All widgets fire their
- * `useQuery` calls independently — TanStack Query parallelises them.
+ * Layout: 1 column on mobile, 2 columns on md, 3 columns on lg. Each widget
+ * may opt into a larger cell via `widget.gridSpan` (see {@link gridSpanClasses}).
+ * `grid-flow-dense` lets a later 1×1 widget back-fill a hole left by an earlier
+ * row-span-2 card so the grid stays tightly packed.
+ *
+ * `auto-rows-[minmax(220px,auto)]` gives every implicit row a sensible floor so
+ * a tall `row-span-2` card visibly doubles the height of a regular cell.
+ *
+ * All widgets fire their `useQuery` calls independently — TanStack Query
+ * parallelises them.
  */
 function DashboardGrid({ dashboard, userRole }: DashboardGridProps) {
     return (
@@ -215,13 +223,19 @@ function DashboardGrid({ dashboard, userRole }: DashboardGridProps) {
             data-testid="dashboard-renderer"
         >
             {/* Widget grid — each widget fires its useQuery independently */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {dashboard.widgets.map((widget) => (
-                    <WidgetDispatcher
-                        key={widget.id}
-                        widget={widget}
-                    />
-                ))}
+            <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-flow-dense lg:grid-cols-6">
+                {dashboard.widgets.map((widget) => {
+                    const spanClasses = gridSpanClasses(widget.gridSpan);
+                    const wrapperClass = spanClasses ? `h-full ${spanClasses}` : 'h-full';
+                    return (
+                        <div
+                            key={widget.id}
+                            className={wrapperClass}
+                        >
+                            <WidgetDispatcher widget={widget} />
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Global refresh button */}

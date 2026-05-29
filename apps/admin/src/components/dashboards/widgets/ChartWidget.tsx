@@ -280,8 +280,10 @@ function ChartRenderer({ chartType, data, label, accent }: ChartRendererProps) {
             tickLine={false}
             axisLine={false}
             tickMargin={4}
-            width={28}
+            width={32}
             tick={{ fontSize: 10 }}
+            tickCount={5}
+            allowDecimals={false}
         />
     );
 
@@ -439,10 +441,13 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     // Derive display label from the widget's i18n label (admin locale = 'es').
     const displayLabel = widget.label.es;
 
-    // Chart-type badge rendered in the header of every state.
+    // Chart-type marker — kept for accessibility / tests only. Previously
+    // rendered the raw chartType string in the header which looked like
+    // unexplained debug copy to users (e.g. "bar" floating to the right of
+    // the title). Now it is a screen-reader-only span.
     const chartTypeBadge = (
         <span
-            className="text-muted-foreground/60 text-xs"
+            className="sr-only"
             data-testid="chart-type-badge"
             aria-label={`Chart type: ${chartType}`}
         >

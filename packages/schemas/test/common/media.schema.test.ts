@@ -173,6 +173,31 @@ describe('media.schema', () => {
             expect(result.success).toBe(false);
         });
 
+        describe('alt — SPEC-154 a11y persistence', () => {
+            it('accepts an image without alt', () => {
+                const result = ImageSchema.safeParse(validImage);
+                expect(result.success).toBe(true);
+            });
+
+            it('accepts an image with a populated alt', () => {
+                const result = ImageSchema.safeParse({ ...validImage, alt: 'Vista al río' });
+                expect(result.success).toBe(true);
+                if (result.success) {
+                    expect(result.data.alt).toBe('Vista al río');
+                }
+            });
+
+            it('rejects an empty-string alt', () => {
+                const result = ImageSchema.safeParse({ ...validImage, alt: '' });
+                expect(result.success).toBe(false);
+            });
+
+            it('rejects an alt longer than 200 chars', () => {
+                const result = ImageSchema.safeParse({ ...validImage, alt: 'a'.repeat(201) });
+                expect(result.success).toBe(false);
+            });
+        });
+
         describe('publicId — GAP-078-196', () => {
             it('accepts an image without publicId', () => {
                 const result = ImageSchema.safeParse(validImage);
@@ -477,6 +502,64 @@ describe('media.schema', () => {
                 }
             });
             expect(result.success).toBe(false);
+        });
+
+        describe('alt — SPEC-154 a11y persistence', () => {
+            it('accepts a featuredImage with alt within bounds', () => {
+                const result = BaseMediaFields.media.safeParse({
+                    featuredImage: {
+                        url: 'https://example.com/a.jpg',
+                        moderationState: 'APPROVED',
+                        alt: 'Hosteria al borde del río Uruguay'
+                    }
+                });
+                expect(result.success).toBe(true);
+                if (result.success && result.data?.featuredImage) {
+                    expect((result.data.featuredImage as Record<string, unknown>).alt).toBe(
+                        'Hosteria al borde del río Uruguay'
+                    );
+                }
+            });
+
+            it('accepts a gallery item with alt', () => {
+                const result = BaseMediaFields.media.safeParse({
+                    gallery: [
+                        {
+                            url: 'https://example.com/g.jpg',
+                            moderationState: 'APPROVED',
+                            alt: 'Pileta vista de noche'
+                        }
+                    ]
+                });
+                expect(result.success).toBe(true);
+                if (result.success && result.data?.gallery?.[0]) {
+                    expect((result.data.gallery[0] as Record<string, unknown>).alt).toBe(
+                        'Pileta vista de noche'
+                    );
+                }
+            });
+
+            it('rejects a featuredImage with empty-string alt', () => {
+                const result = BaseMediaFields.media.safeParse({
+                    featuredImage: {
+                        url: 'https://example.com/a.jpg',
+                        moderationState: 'APPROVED',
+                        alt: ''
+                    }
+                });
+                expect(result.success).toBe(false);
+            });
+
+            it('rejects a featuredImage with alt longer than 200 chars', () => {
+                const result = BaseMediaFields.media.safeParse({
+                    featuredImage: {
+                        url: 'https://example.com/a.jpg',
+                        moderationState: 'APPROVED',
+                        alt: 'a'.repeat(201)
+                    }
+                });
+                expect(result.success).toBe(false);
+            });
         });
 
         it('does NOT carry the publicId / attribution extensions of the standalone ImageSchema', () => {

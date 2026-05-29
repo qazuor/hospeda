@@ -11,10 +11,10 @@
  * | Source ID                              | Card | Scope | Endpoint(s) |
  * |----------------------------------------|------|-------|-------------|
  * | `editor.posts.published-this-month`    | A    | all   | GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1 |
- * | `editor.posts.drafts`                  | A    | all   | GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc |
- * | `editor.events.upcoming`               | B    | all   | GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc + featured |
- * | `editor.newsletter.subscribers`        | C    | all   | GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1 + GET /api/v1/admin/newsletter/subscribers/by-preference |
- * | `editor.newsletter.campaigns`          | D    | all   | GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3 |
+ * | `editor.posts.drafts`                  | A    | all   | GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc |
+ * | `editor.events.upcoming`               | B    | all   | GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=startDate:asc + featured |
+ * | `editor.newsletter.subscribers`        | C    | all   | GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1 + GET /api/v1/admin/newsletter/subscribers/by-preference |
+ * | `editor.newsletter.campaigns`          | D    | all   | GET /api/v1/admin/newsletter/campaigns?pageSize=3 (sort defaults to createdAt:desc) |
  * | `editor.posts.stats`                   | E    | all   | GET /api/v1/admin/posts (status distribution) + popular + count + trend |
  * | `editor.events.stats`                  | F    | all   | GET /api/v1/admin/events?pageSize=1 (total) |
  *
@@ -47,11 +47,18 @@ import {
 // RESPONSE TYPE SHAPES
 // ============================================================================
 
-/** Minimal admin list response wrapper used for pagination totals. */
+/**
+ * Minimal admin list response wrapper.
+ *
+ * The Hono admin list factory wraps responses as
+ * `{ success, data: { items, pagination }, metadata }`. After `fetchApi`
+ * adds its own `{ data, status }` envelope, the path to the array is
+ * `result.data.data.items` and the total is `result.data.data.pagination.total`.
+ */
 interface AdminListApiResponse<T = unknown> {
     readonly success: boolean;
     readonly data?: {
-        readonly data?: ReadonlyArray<T>;
+        readonly items?: ReadonlyArray<T>;
         readonly pagination?: { readonly total?: number };
     };
 }
@@ -62,6 +69,9 @@ interface PostItem {
     readonly title: string;
     readonly status: string;
     readonly createdAt?: string;
+    readonly updatedAt?: string;
+    readonly publishedAt?: string | null;
+    readonly isNews?: boolean;
     readonly likes?: number;
     readonly comments?: number;
     readonly shares?: number;
@@ -70,16 +80,22 @@ interface PostItem {
     readonly seoTitle?: string;
 }
 
-/** Shape of an event item in admin list responses. */
+/**
+ * Shape of an event item in admin list responses.
+ * The event entity stores its start/end inside a JSONB `date` object and its
+ * media inside a JSONB `media` object — neither is exposed as a flat column.
+ * Location and organizer FKs are nullable.
+ */
 interface EventItem {
     readonly id: string;
-    readonly title: string;
-    readonly status: string;
+    readonly name: string;
+    readonly status?: string;
     readonly isFeatured?: boolean;
-    readonly startDate?: string;
+    readonly date?: { readonly start?: string; readonly end?: string };
+    readonly media?: { readonly featuredImage?: { readonly url?: string } | null };
     readonly featuredImage?: string;
-    readonly locationId?: string;
-    readonly organizerId?: string;
+    readonly locationId?: string | null;
+    readonly organizerId?: string | null;
     readonly description?: string;
 }
 
@@ -89,15 +105,6 @@ interface CampaignItem {
     readonly subject: string;
     readonly status: string;
     readonly scheduledAt?: string;
-}
-
-/** Shape of GET /api/v1/admin/posts/trend response. */
-interface PostsTrendApiResponse {
-    readonly success: boolean;
-    readonly data?: ReadonlyArray<{
-        readonly month: string;
-        readonly count: number;
-    }>;
 }
 
 // ============================================================================
@@ -120,28 +127,97 @@ function nowIso(): string {
 // ============================================================================
 
 /**
- * EDITOR card A: posts published this month (count) and pending drafts (list).
+ * EDITOR card A: posts mini-grid (Este mes / Total publicados / Borradores)
+ * + top 5 posts by engagement as companion list.
+ *
+ * Multi-KPI tile pattern (same shape HOST card A uses) so every number on
+ * the card has an explicit label. The companion list ranks by an engagement
+ * score (likes + comments + shares) — all three fields already live on the
+ * post entity so no aggregation endpoint is required.
  *
  * Source ID: `'editor.posts.published-this-month'`
  * Scope: `'all'`
- * Endpoints:
+ * Endpoints (parallel):
  *   - GET /api/v1/admin/posts?status=ACTIVE&createdAfter={month-start}&pageSize=1
- *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=1
+ *   - GET /api/v1/admin/posts?status=DRAFT&pageSize=1
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=50 (engagement pool)
  */
 registerDataSource('editor.posts.published-this-month', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.published-this-month', ctx),
     queryFn: async () => {
         const monthStart = currentMonthStart();
-        // Only the published count is needed — drafts are loaded by the companion
-        // source `editor.posts.drafts` which ListWidget uses separately.
-        const publishedResult = await fetchApi<AdminListApiResponse<PostItem>>({
-            path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
-        });
+        const [thisMonthResult, totalPublishedResult, draftsResult, engagementPoolResult] =
+            await Promise.all([
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: `/api/v1/admin/posts?status=ACTIVE&createdAfter=${encodeURIComponent(monthStart)}&pageSize=1`
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=DRAFT&pageSize=1'
+                }),
+                fetchApi<AdminListApiResponse<PostItem>>({
+                    path: '/api/v1/admin/posts?status=ACTIVE&pageSize=50'
+                })
+            ]);
 
-        const publishedThisMonth = publishedResult.data.data?.pagination?.total ?? 0;
+        const thisMonth = thisMonthResult.data.data?.pagination?.total ?? 0;
+        const totalPublished = totalPublishedResult.data.data?.pagination?.total ?? 0;
+        const draftTotal = draftsResult.data.data?.pagination?.total ?? 0;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: publishedThisMonth };
+        // Top 5 posts by engagement score (likes + comments + shares).
+        // Aproximated client-side from a 50-row pool to avoid a new backend
+        // aggregation endpoint; a dedicated `/admin/posts/top-engagement` is
+        // a follow-up SPEC if the pool ever exceeds 50 active posts.
+        const pool = engagementPoolResult.data.data?.items ?? [];
+        const ranked = [...pool]
+            .map((post) => ({
+                post,
+                score: (post.likes ?? 0) + (post.comments ?? 0) + (post.shares ?? 0)
+            }))
+            .filter((entry) => entry.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+
+        const companionItems = ranked.map(({ post, score }) => ({
+            key: post.id,
+            label: post.title,
+            meta: `${score} interacciones · ${post.likes ?? 0} ♥ ${post.comments ?? 0} 💬 ${post.shares ?? 0} ↗`,
+            href: `/contenido/posts/${post.id}`
+        }));
+
+        return {
+            kpis: [
+                {
+                    key: 'thisMonth',
+                    label: { es: 'Este mes', en: 'This month', pt: 'Este mês' },
+                    value: thisMonth,
+                    accent: 'success',
+                    icon: 'article',
+                    href: '/contenido/posts?status=ACTIVE'
+                },
+                {
+                    key: 'totalPublished',
+                    label: { es: 'Total', en: 'Total', pt: 'Total' },
+                    value: totalPublished,
+                    accent: 'river',
+                    icon: 'activity',
+                    href: '/contenido/posts?status=ACTIVE'
+                },
+                {
+                    key: 'drafts',
+                    label: { es: 'Borradores', en: 'Drafts', pt: 'Rascunhos' },
+                    value: draftTotal,
+                    accent: 'warning',
+                    icon: 'clock',
+                    href: '/contenido/posts?status=DRAFT'
+                }
+            ],
+            companionLabel: companionItems.length > 0 ? 'Top 5 por engagement' : undefined,
+            companionItems
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
@@ -153,20 +229,21 @@ registerDataSource('editor.posts.published-this-month', (ctx) => ({
  *
  * Source ID: `'editor.posts.drafts'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc
+ * Endpoint: GET /api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc
  */
 registerDataSource('editor.posts.drafts', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.drafts', ctx),
     queryFn: async () => {
         const result = await fetchApi<AdminListApiResponse<PostItem>>({
-            path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updated_at_desc'
+            path: '/api/v1/admin/posts?status=DRAFT&pageSize=5&sort=updatedAt:desc'
         });
-        const items = result.data.data?.data ?? [];
+        const items = result.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget (companion source).
+        // Sort key is `updatedAt:desc`, so meta shows "last edited" rather than created.
         return items.map((post) => ({
             id: post.id,
             label: post.title,
-            meta: post.createdAt ? new Date(post.createdAt).toLocaleDateString('es-AR') : undefined,
+            meta: post.updatedAt ? new Date(post.updatedAt).toLocaleDateString('es-AR') : undefined,
             href: `/contenido/posts/${post.id}`
         }));
     },
@@ -178,34 +255,43 @@ registerDataSource('editor.posts.drafts', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card B: upcoming events count, list, and featured upcoming list.
+ * EDITOR card B: upcoming events list (top 5 by start date asc).
+ *
+ * The admin events list does NOT accept `sort=startDate:*` (it's a JSONB
+ * `date.start` field, not a column — only the public route exposes the
+ * synthetic sort). We page a 20-row buffer with `startDateAfter={now}` to
+ * cap the candidate set, then sort + slice client-side.
  *
  * Source ID: `'editor.events.upcoming'`
  * Scope: `'all'`
- * Endpoints:
- *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=1
- *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=5&sort=start_date_asc
- *   - GET /api/v1/admin/events?isFeatured=true&startDateAfter={now}&pageSize=5
+ * Endpoint: GET /api/v1/admin/events?startDateAfter={now}&pageSize=20
  */
 registerDataSource('editor.events.upcoming', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.upcoming', ctx),
     queryFn: async () => {
         const now = nowIso();
-        // Only the upcoming list is needed for the ListWidget.
-        // Count and featured queries are dropped from this resolver; if a future
-        // multi-stat card needs them, add a separate dedicated source.
         const listResult = await fetchApi<AdminListApiResponse<EventItem>>({
-            path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=5&sort=start_date_asc`
+            path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=20`
         });
 
-        const upcomingItems = listResult.data.data?.data ?? [];
+        const upcomingItems = listResult.data.data?.items ?? [];
+
+        // Client-side sort by start date ascending; events without a date land last.
+        const sorted = [...upcomingItems].sort((a, b) => {
+            const aStart = a.date?.start;
+            const bStart = b.date?.start;
+            if (!aStart && !bStart) return 0;
+            if (!aStart) return 1;
+            if (!bStart) return -1;
+            return aStart.localeCompare(bStart);
+        });
 
         // Normalize to ListItem[] shape expected by ListWidget.
-        return upcomingItems.map((event) => ({
+        return sorted.slice(0, 5).map((event) => ({
             id: event.id,
-            label: event.title,
-            meta: event.startDate
-                ? new Date(event.startDate).toLocaleDateString('es-AR')
+            label: event.name,
+            meta: event.date?.start
+                ? new Date(event.date.start).toLocaleDateString('es-AR')
                 : undefined,
             badge: event.isFeatured ? 'destacado' : undefined,
             href: `/catalogo/eventos/${event.id}`
@@ -219,58 +305,107 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card C: newsletter subscriber count + breakdown by content preference.
+ * EDITOR card C: newsletter subscribers mini-grid
+ * (Activos / En verificación / Dados de baja).
+ *
+ * Multi-KPI tile pattern: every number on the card carries an explicit
+ * label instead of a single counter floating without context. Open rate
+ * is PHASE 2 (no email-open tracking today, SPEC-160).
  *
  * Requires `NEWSLETTER_SUBSCRIBER_VIEW` permission (granted to EDITOR per 03c).
- * The `by-preference` breakdown calls the new aggregation endpoint added in
- * Phase 1 (GET /api/v1/admin/newsletter/subscribers/by-preference).
- *
- * Note: open rate is PHASE 2 (no email-open tracking today).
  *
  * Source ID: `'editor.newsletter.subscribers'`
  * Scope: `'all'`
- * Endpoints:
- *   - GET /api/v1/admin/newsletter/subscribers?status=active&pageSize=1
- *   - GET /api/v1/admin/newsletter/subscribers/by-preference
+ * Endpoints (parallel, all use `subscriberStatus` — the admin schema renames
+ * `status` to avoid shadowing the base LifecycleStatusEnum filter):
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=pending_verification&pageSize=1
+ *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=unsubscribed&pageSize=1
  */
 registerDataSource('editor.newsletter.subscribers', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.subscribers', ctx),
     queryFn: async () => {
-        // Only the subscriber count is needed for KpiWidget.
-        // The by-preference breakdown is useful for a future chart/table widget
-        // but is not consumed by KpiWidget, so we skip that fetch here.
-        const countResult = await fetchApi<AdminListApiResponse>({
-            path: '/api/v1/admin/newsletter/subscribers?status=active&pageSize=1'
-        });
+        const [activeResult, pendingResult, unsubscribedResult] = await Promise.all([
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=pending_verification&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse>({
+                path: '/api/v1/admin/newsletter/subscribers?subscriberStatus=unsubscribed&pageSize=1'
+            })
+        ]);
 
-        const activeCount = countResult.data.data?.pagination?.total ?? 0;
+        const active = activeResult.data.data?.pagination?.total ?? 0;
+        const pending = pendingResult.data.data?.pagination?.total ?? 0;
+        const unsubscribed = unsubscribedResult.data.data?.pagination?.total ?? 0;
 
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: activeCount };
+        // Tile labels keep their full descriptive form; KpiWidget tiles in a
+        // 1×1 card visually truncate but expose the complete text via a
+        // native `title` tooltip on hover.
+        return {
+            kpis: [
+                {
+                    key: 'active',
+                    label: { es: 'Activos', en: 'Active', pt: 'Ativos' },
+                    value: active,
+                    accent: 'success',
+                    icon: 'users',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=active'
+                },
+                {
+                    key: 'pending',
+                    label: {
+                        es: 'En verificación',
+                        en: 'Pending verification',
+                        pt: 'Em verificação'
+                    },
+                    value: pending,
+                    accent: 'warning',
+                    icon: 'clock',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=pending_verification'
+                },
+                {
+                    key: 'unsubscribed',
+                    label: { es: 'Dados de baja', en: 'Unsubscribed', pt: 'Cancelados' },
+                    value: unsubscribed,
+                    accent: 'sand',
+                    icon: 'user',
+                    href: '/marketing/newsletter/subscribers?subscriberStatus=unsubscribed'
+                }
+            ]
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
 
 // ============================================================================
-// CARD D — Campañas Newsletter: scheduled campaigns
+// CARD D — Campañas Newsletter: recent campaigns
 // ============================================================================
 
 /**
- * EDITOR card D: upcoming scheduled newsletter campaigns.
+ * EDITOR card D: most recent newsletter campaigns regardless of status.
+ *
+ * The campaign status enum is `DRAFT | SENDING | SENT | CANCELLED` — there
+ * is no `SCHEDULED` state in MVP (scheduled sends are V2). Showing the latest
+ * activity by created_desc is more useful day-to-day than filtering by a
+ * single status; the row badge surfaces the per-campaign status.
  *
  * Requires `NEWSLETTER_CAMPAIGN_VIEW` permission (granted to EDITOR per 03c).
  *
  * Source ID: `'editor.newsletter.campaigns'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3
+ * Endpoint: GET /api/v1/admin/newsletter/campaigns?pageSize=3
+ * (sort defaults to `createdAt:desc` per AdminSearchBaseSchema)
  */
 registerDataSource('editor.newsletter.campaigns', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.campaigns', ctx),
     queryFn: async () => {
         const result = await fetchApi<AdminListApiResponse<CampaignItem>>({
-            path: '/api/v1/admin/newsletter/campaigns?status=scheduled&pageSize=3'
+            path: '/api/v1/admin/newsletter/campaigns?pageSize=3'
         });
-        const campaigns = result.data.data?.data ?? [];
+        const campaigns = result.data.data?.items ?? [];
         // Normalize to ListItem[] shape expected by ListWidget.
         return campaigns.map((campaign) => ({
             id: campaign.id,
@@ -306,7 +441,7 @@ registerDataSource('editor.newsletter.campaigns', (ctx) => ({
 registerDataSource('editor.posts.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.posts.stats', ctx),
     queryFn: async () => {
-        const [activeResult, draftResult, archivedResult, trendResult] = await Promise.all([
+        const [activeResult, draftResult, archivedResult] = await Promise.all([
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: '/api/v1/admin/posts?status=ACTIVE&pageSize=1'
             }),
@@ -315,30 +450,17 @@ registerDataSource('editor.posts.stats', (ctx) => ({
             }),
             fetchApi<AdminListApiResponse<PostItem>>({
                 path: '/api/v1/admin/posts?status=ARCHIVED&pageSize=1'
-            }),
-            fetchApi<PostsTrendApiResponse>({
-                path: '/api/v1/admin/posts/trend'
             })
         ]);
 
-        const monthlyTrend = trendResult.data.data ?? [];
-
-        // Normalize to ChartData shape expected by ChartWidget.
-        // Use the monthly trend as the chart series (posts published per month).
-        // Fall back to status-distribution bar chart when trend is empty.
-        if (monthlyTrend.length > 0) {
-            return {
-                series: monthlyTrend.map((point) => ({
-                    label: point.month,
-                    value: point.count
-                }))
-            };
-        }
-
-        // Fallback: status distribution as a bar chart
+        // Status distribution bar chart — three buckets (Publicados / Borradores
+        // / Archivados). Replaces the previous monthly-trend variant which
+        // collapsed to two visible Y-ticks when posts clustered in one month
+        // and didn't tell the editor anything actionable at a glance.
         const active = activeResult.data.data?.pagination?.total ?? 0;
         const draft = draftResult.data.data?.pagination?.total ?? 0;
         const archived = archivedResult.data.data?.pagination?.total ?? 0;
+
         return {
             series: [
                 { label: 'Publicados', value: active },
@@ -355,34 +477,322 @@ registerDataSource('editor.posts.stats', (ctx) => ({
 // ============================================================================
 
 /**
- * EDITOR card F: total events count.
+ * EDITOR card F: events stats as a 6-tile mini grid.
  *
- * Views per event are PHASE 2 (cross-entity view tracking not built).
+ * Row 1 of tiles: Total / Próximos / Destacados — overview counters.
+ * Row 2 of tiles: Sin imagen / Sin location / Sin organizer — content
+ * health proxies aggregated server-side via 3 count queries. Helps the
+ * editor spot what to fix without having to scan the events list.
+ *
+ * Views per event and per-event favorites are PHASE 2 (cross-entity
+ * view tracking — SPEC-159 — plus a new SPEC for event favorites).
  *
  * Source ID: `'editor.events.stats'`
  * Scope: `'all'`
- * Endpoint: GET /api/v1/admin/events?pageSize=1
+ * Endpoints (4 parallel):
+ *   - GET /api/v1/admin/events?pageSize=1                              (total)
+ *   - GET /api/v1/admin/events?startDateAfter={now}&pageSize=1         (upcoming)
+ *   - GET /api/v1/admin/events?isFeatured=true&pageSize=1              (featured)
+ *   - GET /api/v1/admin/events?pageSize=100                            (pool for client-side missing-* counts)
  */
 registerDataSource('editor.events.stats', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.events.stats', ctx),
     queryFn: async () => {
-        const result = await fetchApi<AdminListApiResponse<EventItem>>({
-            path: '/api/v1/admin/events?pageSize=1'
-        });
-        const totalEvents = result.data.data?.pagination?.total ?? 0;
-        // Normalize to KpiData shape expected by KpiWidget.
-        return { value: totalEvents };
+        const now = nowIso();
+        // The admin events search schema doesn't expose `hasFeaturedImage`,
+        // `hasLocation`, `hasOrganizer` filters yet, so the missing-* counts
+        // are computed client-side from a 100-row pool (the AdminSearchBase
+        // pageSize cap). A dedicated `/admin/events/health-stats` endpoint
+        // is a follow-up SPEC if the catalog ever exceeds 100 events and
+        // the approximation stops being acceptable.
+        const [totalResult, upcomingResult, featuredResult, poolResult] = await Promise.all([
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: `/api/v1/admin/events?startDateAfter=${encodeURIComponent(now)}&pageSize=1`
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?isFeatured=true&pageSize=1'
+            }),
+            fetchApi<AdminListApiResponse<EventItem>>({
+                path: '/api/v1/admin/events?pageSize=100'
+            })
+        ]);
+
+        const total = totalResult.data.data?.pagination?.total ?? 0;
+        const upcoming = upcomingResult.data.data?.pagination?.total ?? 0;
+        const featured = featuredResult.data.data?.pagination?.total ?? 0;
+        const pool = poolResult.data.data?.items ?? [];
+        const missingImage = pool.filter((e) => !e.media?.featuredImage?.url).length;
+        const missingLocation = pool.filter((e) => !e.locationId).length;
+        const missingOrganizer = pool.filter((e) => !e.organizerId).length;
+
+        return {
+            kpis: [
+                {
+                    key: 'total',
+                    label: { es: 'Total', en: 'Total', pt: 'Total' },
+                    value: total,
+                    accent: 'cyan',
+                    icon: 'calendar',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'upcoming',
+                    label: { es: 'Próximos', en: 'Upcoming', pt: 'Próximos' },
+                    value: upcoming,
+                    accent: 'success',
+                    icon: 'clock',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'featured',
+                    label: { es: 'Destacados', en: 'Featured', pt: 'Destaques' },
+                    value: featured,
+                    accent: 'warning',
+                    icon: 'star',
+                    href: '/catalogo/eventos?isFeatured=true'
+                },
+                {
+                    key: 'missingImage',
+                    label: { es: 'Sin imagen', en: 'Missing image', pt: 'Sem imagem' },
+                    value: missingImage,
+                    accent: 'danger',
+                    icon: 'shield',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'missingLocation',
+                    label: {
+                        es: 'Sin ubicación',
+                        en: 'Missing location',
+                        pt: 'Sem localização'
+                    },
+                    value: missingLocation,
+                    accent: 'danger',
+                    icon: 'compass',
+                    href: '/catalogo/eventos'
+                },
+                {
+                    key: 'missingOrganizer',
+                    label: {
+                        es: 'Sin organizador',
+                        en: 'Missing organizer',
+                        pt: 'Sem organizador'
+                    },
+                    value: missingOrganizer,
+                    accent: 'danger',
+                    icon: 'user',
+                    href: '/catalogo/eventos'
+                }
+            ]
+        };
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
 
 // ============================================================================
-// NOTE — client-side-only and deferred slots (NO resolver registration)
+// CARD — Últimos posts (NEW): top 5 published posts, most recent first
 // ============================================================================
-// Card G ('editor.content.health'): client-side checklist computed from loaded
-//   post/event lists — checks for missing featured image, tags, SEO, location,
-//   organizer, description. No remote source needed; widget uses loaded entity data.
-//
+
+/**
+ * EDITOR card: recently published posts (top 5 by publishedAt desc).
+ *
+ * Paired with `editor.events.upcoming` (card B) to give the editor a quick
+ * read on the freshest content on both publish surfaces.
+ *
+ * Source ID: `'editor.posts.latest'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc
+ */
+registerDataSource('editor.posts.latest', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.posts.latest', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: '/api/v1/admin/posts?status=ACTIVE&pageSize=5&sort=publishedAt:desc'
+        });
+        const items = result.data.data?.items ?? [];
+        return items.map((post) => ({
+            id: post.id,
+            label: post.title,
+            meta: post.publishedAt
+                ? new Date(post.publishedAt).toLocaleDateString('es-AR')
+                : post.updatedAt
+                  ? new Date(post.updatedAt).toLocaleDateString('es-AR')
+                  : undefined,
+            badge: post.isNews ? 'novedad' : undefined,
+            href: `/contenido/posts/${post.id}`
+        }));
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD — Acciones (NEW): static list of editorial quick actions
+// ============================================================================
+
+/**
+ * EDITOR card: editorial quick-action shortcuts.
+ *
+ * The shortcut widget type lives in the schema but has no implementation
+ * (only a deferred-placeholder fallback in tests). We model the actions
+ * as ListWidget items with `href`/`label`/`meta`, so the card uses an
+ * already-shipped renderer and clicking each row navigates to the
+ * matching create page.
+ *
+ * Source ID: `'editor.shortcuts'`
+ * Scope: `'all'`
+ * No network call — items are static.
+ */
+registerDataSource('editor.shortcuts', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.shortcuts', ctx),
+    queryFn: async () => {
+        return [
+            {
+                id: 'new-post',
+                label: 'Crear post',
+                meta: 'Nuevo artículo del blog',
+                href: '/contenido/posts/new'
+            },
+            {
+                id: 'new-event',
+                label: 'Crear evento',
+                meta: 'Próximo evento en agenda',
+                href: '/catalogo/eventos/new'
+            },
+            {
+                id: 'new-campaign',
+                label: 'Nueva campaña',
+                meta: 'Newsletter a suscriptores',
+                href: '/marketing/newsletter/campaigns/new'
+            },
+            {
+                id: 'media',
+                label: 'Gestionar media',
+                meta: 'Subir imágenes y videos',
+                href: '/contenido/media'
+            }
+        ];
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD G — Salud del contenido (FIXED): combined posts + events for checks
+// ============================================================================
+
+/**
+ * EDITOR card G-posts: per-post content health, top 10 worst-rated.
+ *
+ * Returns the `EntityHealthListData` shape: one row per entity (NOT one row
+ * per missing field), each carrying its completeness percentage, the list
+ * of missing labels as chips, and View/Edit hrefs. Sorted ascending by
+ * completeness so the entries that need most love float to the top.
+ *
+ * Source ID: `'editor.content.health.posts'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/posts?status=ACTIVE&pageSize=100 (pool)
+ */
+registerDataSource('editor.content.health.posts', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.content.health.posts', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: '/api/v1/admin/posts?status=ACTIVE&pageSize=100'
+        });
+        const pool = result.data.data?.items ?? [];
+
+        const evaluated = pool.map((post) => {
+            const missing: string[] = [];
+            if (!post.featuredImage) missing.push('Imagen destacada');
+            if (!post.tags || post.tags.length === 0) missing.push('Etiquetas');
+            if (!post.seoTitle) missing.push('Metadata SEO');
+            const totalChecks = 3;
+            const doneChecks = totalChecks - missing.length;
+            const completenessPct = Math.round((doneChecks / totalChecks) * 100);
+            return {
+                id: post.id,
+                title: post.title,
+                completenessPct,
+                doneChecks,
+                totalChecks,
+                missingItems: missing,
+                viewHref: `/contenido/posts/${post.id}`,
+                editHref: `/contenido/posts/${post.id}/edit`
+            };
+        });
+
+        const withIssues = [...evaluated]
+            .filter((e) => e.missingItems.length > 0)
+            .sort((a, b) => a.completenessPct - b.completenessPct);
+
+        // Return the full sorted list — the widget shows the first 10
+        // inline and exposes the rest via a "Ver todas" dialog so we don't
+        // need a second round-trip when the user opens it.
+        return {
+            entities: withIssues,
+            total: withIssues.length,
+            poolSize: pool.length
+        };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+/**
+ * EDITOR card G-events: per-event content health, top 10 worst-rated.
+ * Same `EntityHealthListData` shape as the posts variant.
+ *
+ * Source ID: `'editor.content.health.events'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/events?pageSize=100 (pool)
+ */
+registerDataSource('editor.content.health.events', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.content.health.events', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminListApiResponse<EventItem>>({
+            path: '/api/v1/admin/events?pageSize=100'
+        });
+        const pool = result.data.data?.items ?? [];
+
+        const evaluated = pool.map((event) => {
+            const missing: string[] = [];
+            if (!event.media?.featuredImage?.url) missing.push('Imagen destacada');
+            if (!event.locationId) missing.push('Ubicación');
+            if (!event.organizerId) missing.push('Organizador');
+            if (!event.description || event.description.trim().length === 0) {
+                missing.push('Descripción');
+            }
+            const totalChecks = 4;
+            const doneChecks = totalChecks - missing.length;
+            const completenessPct = Math.round((doneChecks / totalChecks) * 100);
+            return {
+                id: event.id,
+                title: event.name,
+                completenessPct,
+                doneChecks,
+                totalChecks,
+                missingItems: missing,
+                viewHref: `/catalogo/eventos/${event.id}`,
+                editHref: `/catalogo/eventos/${event.id}/edit`
+            };
+        });
+
+        const withIssues = [...evaluated]
+            .filter((e) => e.missingItems.length > 0)
+            .sort((a, b) => a.completenessPct - b.completenessPct);
+
+        return {
+            entities: withIssues,
+            total: withIssues.length,
+            poolSize: pool.length
+        };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// NOTE — deferred slots (NO resolver registration)
+// ============================================================================
 // Card H ('editor.comments.recent'): 🟡 PENDING — comment-listing endpoint
 //   must be verified/built (EDITOR-Q1). Register here once the endpoint lands.
 //

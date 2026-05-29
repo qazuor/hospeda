@@ -293,9 +293,10 @@ describe('adminSubscribersByPreferenceRoute handler — SPEC-155 T-007', () => {
 
             // Simulate service throwing FORBIDDEN
             const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
             mockGetStatsByPreference.mockRejectedValue(
                 new ServiceError(
-                    'FORBIDDEN',
+                    ServiceErrorCode.FORBIDDEN,
                     'Permission denied: NEWSLETTER_SUBSCRIBER_VIEW required'
                 )
             );

@@ -43,7 +43,15 @@ import type { RoleConfigSchema } from '../schema';
 export const adminRole: z.input<typeof RoleConfigSchema> = {
     enabled: true,
     label: { es: 'Admin', en: 'Admin', pt: 'Admin' },
-    mainMenu: ['inicio', 'catalogo', 'editorial', 'comunidad', 'plataforma', 'analisis'],
+    mainMenu: [
+        'inicio',
+        'catalogo',
+        'editorial',
+        'comunidad',
+        'comercial',
+        'plataforma',
+        'analisis'
+    ],
     dashboard: 'adminBaseDashboard',
     topbar: {
         showSearch: true,
@@ -51,7 +59,15 @@ export const adminRole: z.input<typeof RoleConfigSchema> = {
         accountInMenu: false
     },
     mobile: {
-        bottomNav: ['inicio', 'catalogo', 'editorial', 'comunidad', 'plataforma', 'analisis'],
+        bottomNav: [
+            'inicio',
+            'catalogo',
+            'editorial',
+            'comunidad',
+            'comercial',
+            'plataforma',
+            'analisis'
+        ],
         fab: null
     }
 };

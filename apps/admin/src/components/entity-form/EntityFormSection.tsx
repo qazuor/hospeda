@@ -2,6 +2,7 @@ import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums'
 import {
     AccommodationSelectField,
     CheckboxField,
+    CoordinatesField,
     CurrencyField,
     // Specific entity select fields
     DestinationSelectField,
@@ -19,9 +20,16 @@ import {
     TextareaField,
     UserSelectField
 } from '@/components/entity-form/fields';
+import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import {
+    type VideoEntry,
+    VideoGalleryField
+} from '@/components/entity-form/fields/VideoGalleryField';
+import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
+import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 
 /**
  * Per-field upload/delete handlers for media fields (e.g., GalleryField).
@@ -33,11 +41,11 @@ export interface FieldMediaHandlers {
     /** Called with the Cloudinary publicId before removing an image. */
     onDelete?: (publicId: string) => Promise<void>;
 }
-import { GridLayout } from '@/components/entity-form/layouts';
-import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
-import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
+import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
+import { PremiumBlock, type PremiumBlockItem } from '@/features/billing/PremiumBlock';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useShouldShowEntitlementGates } from '@/features/billing/use-should-show-entitlement-gates';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
@@ -100,6 +108,23 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         const title = config.title;
         const description = config.description;
 
+        // Premium-feature classification (spec §4.7 sabor 1): only HOST users
+        // without the entitlement see a feature as "premium". Staff bypass
+        // entirely; HOSTS with the entitlement get the regular field. The
+        // hook calls live here so they run unconditionally per the Rules of
+        // Hooks; the bypass is decided per-field below.
+        const shouldGateFeatures = useShouldShowEntitlementGates();
+        const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements();
+        const isFieldPremiumLocked = React.useCallback(
+            (entitlementKey: string | undefined): boolean => {
+                if (!entitlementKey) return false;
+                if (!shouldGateFeatures) return false;
+                if (entitlementsLoading) return false;
+                return !hasEntitlement(entitlementKey);
+            },
+            [shouldGateFeatures, hasEntitlement, entitlementsLoading]
+        );
+
         // Check section permissions
         const hasViewPermission = React.useMemo(() => {
             if (!config.permissions?.view || config.permissions.view.length === 0) return true;
@@ -144,8 +169,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             const readValue = (source: Record<string, unknown>, id: string): unknown => {
                 if (!id.includes('.')) return source[id];
-                if (id in source) return source[id];
-                return getNestedValue(source, id);
+                // For dot-notation ids: TanStack Form treats the name as a NESTED
+                // path on writes (`setFieldValue("a.b", v)` updates `values.a.b`),
+                // so the nested location is the freshest copy. `prepareFormValues`
+                // also seeds a flat literal key at first load — fall back to it
+                // only when the nested path resolves to undefined.
+                const nested = getNestedValue(source, id);
+                if (nested !== undefined) return nested;
+                return source[id];
             };
 
             const rawFieldValue = readValue(values, field.id);
@@ -294,6 +325,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
 
+                    case FieldTypeEnum.COORDINATES:
+                        return (
+                            <CoordinatesField
+                                {...fieldProps}
+                                value={fieldValue as CoordinatesValue | undefined}
+                            />
+                        );
+
                     case FieldTypeEnum.IMAGE:
                         return (
                             <ImageField
@@ -313,6 +352,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             />
                         );
                     }
+
+                    case FieldTypeEnum.VIDEO_GALLERY:
+                        return (
+                            <VideoGalleryField
+                                {...fieldProps}
+                                value={fieldValue as VideoEntry[]}
+                            />
+                        );
 
                     case FieldTypeEnum.CHECKBOX:
                         return (
@@ -432,20 +479,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
             const fieldContent = renderFieldComponent();
 
-            // Wrap with entitlement or limit gate if needed.
-            // PlanEntitlementGate reads from GET /api/v1/protected/users/me/entitlements
-            // so it does not need a customerId from QZPayContext.
-            if (field.entitlementKey) {
-                return (
-                    <div key={field.id}>
-                        <PlanEntitlementGate
-                            entitlementKey={field.entitlementKey}
-                            fieldLabel={field.label || field.id}
-                        >
-                            {fieldContent}
-                        </PlanEntitlementGate>
-                    </div>
-                );
+            // Derive the col-span CSS class automatically from field type.
+            // Per spec §4.2: span comes from TYPE, not per-field micro-config.
+            const colSpanClass = getFieldColSpanClass(field.type);
+
+            // Spec §4.7 sabor 1: premium-locked fields are NOT rendered in the
+            // grid — they are collected and surfaced together in a single
+            // PremiumBlock at the bottom of the section, far from editable
+            // fields. The collection happens below in the section render
+            // function; here we just signal "skip me" with `null`.
+            if (field.entitlementKey && isFieldPremiumLocked(field.entitlementKey)) {
+                return null;
             }
 
             if (field.limitKey) {
@@ -454,66 +498,74 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 // - Other field types should not set limitKey; default to 0.
                 const currentFieldCount = Array.isArray(rawFieldValue) ? rawFieldValue.length : 0;
 
+                // Spec §4.7 sabor 2: show a soft progress indicator ABOVE the
+                // resource ("junto al recurso que limita"), not as a replacement
+                // for it. The previous PlanLimitGate wrapped the field and hid
+                // it entirely at the cap, which surprised hosts and conflicted
+                // with the spec. Server-side enforcement (e.g. enforcePhotoLimit
+                // on POST /admin/media/upload) remains authoritative; this
+                // indicator is the proactive UX signal.
                 return (
-                    <div key={field.id}>
-                        <PlanLimitGate
+                    <div
+                        key={field.id}
+                        className={cn(colSpanClass, 'space-y-2')}
+                    >
+                        <LimitProgressIndicator
                             limitKey={field.limitKey}
                             currentCount={currentFieldCount}
-                            fieldLabel={field.label || field.id}
-                            fallback={
-                                <div className="space-y-2">
-                                    <div className="rounded-md border border-warning/30 bg-warning/10 p-3">
-                                        <p className="font-medium text-foreground text-sm">
-                                            {t('admin-entities.limitGate.fieldLimitReached', {
-                                                field: field.label || field.id
-                                            })}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {t('admin-entities.limitGate.description')}
-                                        </p>
-                                    </div>
-                                </div>
-                            }
-                        >
-                            {fieldContent}
-                        </PlanLimitGate>
+                            resourceLabel={field.label || field.id}
+                        />
+                        {fieldContent}
                     </div>
                 );
             }
 
-            return <div key={field.id}>{fieldContent}</div>;
+            return (
+                <div
+                    key={field.id}
+                    className={colSpanClass}
+                >
+                    {fieldContent}
+                </div>
+            );
         };
 
-        // Render section content based on layout
+        // Collect the premium-locked fields for the bottom-of-section block
+        // (spec §4.7 sabor 1). Walk the visible-field list ONCE and split
+        // into render-as-is vs surface-as-premium.
+        const premiumItems = React.useMemo<readonly PremiumBlockItem[]>(() => {
+            return visibleFields
+                .filter((field) =>
+                    field.entitlementKey ? isFieldPremiumLocked(field.entitlementKey) : false
+                )
+                .map((field) => ({
+                    id: field.id,
+                    label: field.label || field.id,
+                    description: field.description
+                }));
+        }, [visibleFields, isFieldPremiumLocked]);
+
+        // Render section content based on layout.
+        //
+        // Per spec §4.2 (anatomía de sección):
+        //   - Default layout: 2-column grid with items-start (so a tall field with error
+        //     doesn't misalign its neighbor). Mobile → 1 column (grid-cols-1).
+        //   - Each field wrapper carries its own col-span class derived from field type.
+        //   - TABS layout: fallback to stacked, no grid (nested sections handle their own layout).
         const renderSectionContent = () => {
-            if (!config.layout) {
-                // Default: simple vertical layout
+            if (config.layout === 'TABS') {
+                // TABS: stacked layout — nested sections manage their own grid
                 return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
             }
 
-            switch (config.layout) {
-                case 'GRID':
-                    return (
-                        <GridLayout
-                            columns={2}
-                            gap="md"
-                            responsive={{ sm: 1, md: 2 }}
-                        >
-                            {visibleFields.map(renderField)}
-                        </GridLayout>
-                    );
-
-                case 'TABS':
-                    // TODO: Implement tabs layout for nested sections
-                    return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-
-                // case 'ACCORDION':
-                //     // TODO: Implement accordion layout for nested sections
-                //     return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-
-                default:
-                    return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
-            }
+            // Default and GRID: 2-column responsive grid with top alignment.
+            // `items-start` is critical: fields with error messages push down only
+            // themselves, not their grid neighbors. Per spec §4.6.
+            return (
+                <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+                    {visibleFields.map(renderField)}
+                </div>
+            );
         };
 
         if (!isVisible) {
@@ -542,6 +594,9 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
                 {/* Section Content */}
                 <div className={config.className}>{renderSectionContent()}</div>
+
+                {/* Premium upsell — grouped at the bottom so editable fields stay clean. */}
+                <PremiumBlock items={premiumItems} />
 
                 {/* Section Footer Info */}
                 {visibleFields.length === 0 && (

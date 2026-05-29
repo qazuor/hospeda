@@ -32,6 +32,7 @@ export enum FieldTypeEnum {
     COLOR = 'COLOR',
     IMAGE = 'IMAGE',
     GALLERY = 'GALLERY',
+    VIDEO_GALLERY = 'VIDEO_GALLERY',
     ENTITY_SELECT = 'ENTITY_SELECT',
     ENTITY_MULTISELECT = 'ENTITY_MULTISELECT',
     // Specific entity selects with encapsulated logic
@@ -47,6 +48,7 @@ export enum FieldTypeEnum {
     AMENITY_SELECT = 'AMENITY_SELECT',
     TAG_SELECT = 'TAG_SELECT',
     RICH_TEXT = 'RICH_TEXT',
+    COORDINATES = 'COORDINATES',
     PHONE = 'PHONE',
     EMAIL = 'EMAIL',
     URL = 'URL',

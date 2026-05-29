@@ -49,10 +49,12 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
-import { Badge } from '@/components/ui-wrapped/Badge';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
+import { cn } from '@/lib/utils';
+import { ArrowRightIcon, CalendarIcon, CheckIcon, ClockIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
+import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
     WidgetEmptyBody,
@@ -102,6 +104,81 @@ export interface StatusData {
      * (uptime becomes one of the tiles instead).
      */
     readonly metrics?: StatusMetrics;
+    /**
+     * Optional usage / consumption bar shown below the badge. Used by HOST card
+     * B to surface listing-quota usage ("3 de 5 alojamientos"). The bar fills
+     * to `used / limit` and turns warning / destructive above the 80% / 100%
+     * thresholds.
+     */
+    readonly usage?: StatusUsage;
+    /**
+     * Optional next-charge date as an ISO date string (e.g. `'2026-06-15'`).
+     * Rendered below the badge as "Próximo cobro: dd MMM" when present.
+     */
+    readonly nextChargeDate?: string;
+    /**
+     * Optional trial expiration date as an ISO date string. When present and
+     * still in the future, rendered as a "Quedan N días de prueba" line.
+     */
+    readonly trialEndsAt?: string;
+    /**
+     * Optional plan-quota tiles surfaced on HOST card B (e.g. "Alojamientos
+     * 5", "Fotos / alojamiento 20", "Promos activas 3"). Each entry maps a
+     * limit key from {@link EntitlementsApiResponse} to a short label + numeric
+     * cap. Omit to hide the tile grid.
+     */
+    readonly limitTiles?: ReadonlyArray<StatusLimitTile>;
+    /**
+     * Optional URL for an "upgrade plan" call-to-action rendered at the foot
+     * of the card. Built by the resolver so it can interpolate the site URL
+     * (the admin lives on a different origin than the public web).
+     */
+    readonly upgradeHref?: string;
+    /**
+     * Optional list of plan-feature chips (HOST card B). Each entry maps an
+     * active EntitlementKey to a short Spanish label. Rendered as a compact
+     * pill row below the limit tiles so the host can see at a glance which
+     * premium features are included in their current plan.
+     */
+    readonly featureChips?: ReadonlyArray<StatusFeatureChip>;
+}
+
+/**
+ * A single plan-feature chip (HOST card B). Represents one active
+ * EntitlementKey curated for consumer-facing display.
+ */
+export interface StatusFeatureChip {
+    readonly key: string;
+    readonly label: string;
+}
+
+/**
+ * A single plan-quota tile (HOST card B). Rendered in a 3-col grid below the
+ * usage bar so the user can see their plan's caps at a glance.
+ *
+ * `used` is optional — when set, the tile shows `used / value` plus a thin
+ * progress bar coloured against the same thresholds as {@link UsageBar}
+ * (≥100% destructive, ≥80% warning, otherwise the muted accent).
+ */
+export interface StatusLimitTile {
+    readonly key: string;
+    readonly label: string;
+    readonly value: number;
+    readonly used?: number;
+}
+
+/**
+ * Usage / quota indicator (HOST card B — listing-quota gate).
+ *
+ * The renderer derives `pct = round(used / limit * 100)` and selects the bar
+ * color from the threshold bands: ≥100% destructive, ≥80% warning, otherwise
+ * success.
+ */
+export interface StatusUsage {
+    readonly used: number;
+    readonly limit: number;
+    /** Optional human-readable label (e.g. `'alojamientos'`). */
+    readonly label?: string;
 }
 
 /**
@@ -147,20 +224,6 @@ export interface StatusItem {
 export type StatusVariant = 'success' | 'warning' | 'destructive' | 'neutral';
 
 /**
- * Mapping from variant name to Tailwind utility classes for the badge background,
- * text, and border.
- *
- * These are kept outside the render function so they are defined once and shared
- * by the status indicator dot and the badge.
- */
-const VARIANT_CLASSES: Readonly<Record<StatusVariant, string>> = {
-    success: 'bg-green-100 text-green-800 border-green-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
-    destructive: 'bg-destructive/10 text-destructive border-destructive/20',
-    neutral: 'bg-muted text-muted-foreground border-border'
-} as const;
-
-/**
  * Tailwind classes for the small status indicator dot next to the badge.
  */
 const DOT_CLASSES: Readonly<Record<StatusVariant, string>> = {
@@ -168,6 +231,18 @@ const DOT_CLASSES: Readonly<Record<StatusVariant, string>> = {
     warning: 'bg-amber-500',
     destructive: 'bg-destructive',
     neutral: 'bg-muted-foreground'
+} as const;
+
+/**
+ * Tailwind classes for the refined status pill rendered in the single-status
+ * card hero (HOST card B redesign). Soft tinted background + matching ring so
+ * it reads as a sub-label, not the primary visual element of the card.
+ */
+const STATUS_PILL_CLASSES: Readonly<Record<StatusVariant, string>> = {
+    success: 'bg-green-50 text-green-700 ring-green-200/60',
+    warning: 'bg-amber-50 text-amber-700 ring-amber-200/60',
+    destructive: 'bg-rose-50 text-rose-700 ring-rose-200/60',
+    neutral: 'bg-muted text-muted-foreground ring-border/60'
 } as const;
 
 // ============================================================================
@@ -200,6 +275,14 @@ export interface StatusWidgetConfig {
     readonly accent?: string;
     /** Dashboard icon name for the card header chip (SPEC-155 redesign). */
     readonly icon?: string;
+    /** Card-specific empty-state title. */
+    readonly emptyText?: string;
+    /** Card-specific empty-state description. */
+    readonly emptyDescription?: string;
+    /** Card-specific error-state title. */
+    readonly errorText?: string;
+    /** Card-specific error-state description. */
+    readonly errorDescription?: string;
 }
 
 /**
@@ -262,6 +345,33 @@ function resolveVariant(
 ): StatusVariant {
     if (!variantMap) return 'neutral';
     return variantMap[status] ?? 'neutral';
+}
+
+// ============================================================================
+// BILLING SUB-BLOCKS — date helpers (legacy UsageBar dropped in HOST card B
+// redesign; per-tile usage progress lives inside the limit-tile grid)
+// ============================================================================
+
+/**
+ * Formats an ISO date string as `dd MMM` in Spanish locale (e.g. `15 jun`).
+ * Returns the raw string when parsing fails so we never crash the widget.
+ */
+function formatShortDate(isoDate: string): string {
+    const d = new Date(isoDate);
+    if (Number.isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+}
+
+/**
+ * Computes whole days remaining between `now` and an ISO date string.
+ * Returns `null` for invalid dates or past dates so callers can short-circuit.
+ */
+function daysUntil(isoDate: string): number | null {
+    const target = new Date(isoDate);
+    if (Number.isNaN(target.getTime())) return null;
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return null;
+    return Math.ceil(diffMs / (24 * 60 * 60 * 1000));
 }
 
 // ============================================================================
@@ -356,6 +466,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 <WidgetErrorBody
                     variant="status"
                     onRetry={() => void refetch()}
+                    text={config.errorText}
+                    description={config.errorDescription}
                 />
             </WidgetCard>
         );
@@ -371,7 +483,12 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="status" />
+                <WidgetEmptyBody
+                    variant="status"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -390,7 +507,12 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 accent={config.accent}
                 icon={config.icon}
             >
-                <WidgetEmptyBody variant="status" />
+                <WidgetEmptyBody
+                    variant="status"
+                    text={config.emptyText ?? '—'}
+                    description={config.emptyDescription}
+                    icon={config.icon}
+                />
             </WidgetCard>
         );
     }
@@ -519,6 +641,8 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
 
     const statusVariant = resolveVariant(statusData.status, config.variantMap);
     const badgeLabel = statusData.label ?? capitalize(statusData.status);
+    const statusText = STATUS_LABELS_ES[statusData.status] ?? capitalize(statusData.status);
+    const hasBillingMeta = statusData.nextChargeDate || statusData.trialEndsAt;
 
     return (
         <WidgetCard
@@ -529,30 +653,46 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
             icon={config.icon}
             ariaLabel={`${displayLabel}: ${badgeLabel}`}
         >
-            {/* Status badge row */}
+            {/* Hero — "Plan actual" caption + plan name (Geologica) + status pill below */}
             <div
-                className="flex items-center gap-2"
+                className="flex flex-col gap-1"
                 data-testid="status-badge-row"
             >
-                {/* Indicator dot */}
                 <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT_CLASSES[statusVariant]}`}
-                    data-testid="status-indicator-dot"
-                    aria-hidden="true"
-                />
-
-                {/* Badge */}
-                <Badge
-                    className={VARIANT_CLASSES[statusVariant]}
-                    data-testid="status-badge"
-                    data-variant={statusVariant}
-                    aria-label={`Status: ${badgeLabel}`}
+                    className="font-medium text-[0.65rem] text-muted-foreground uppercase tracking-wider"
+                    data-testid="status-plan-caption"
+                >
+                    Plan actual
+                </span>
+                <span
+                    className="mb-0.5 truncate font-semibold text-2xl text-foreground leading-tight tracking-tight"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                    data-testid="status-plan-name"
                 >
                     {badgeLabel}
-                </Badge>
+                </span>
+                <span
+                    className={cn(
+                        'inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs ring-1 ring-inset',
+                        STATUS_PILL_CLASSES[statusVariant]
+                    )}
+                    data-testid="status-badge"
+                    data-variant={statusVariant}
+                    aria-label={`Status: ${statusText}`}
+                >
+                    <span
+                        className={cn(
+                            'h-1.5 w-1.5 shrink-0 rounded-full',
+                            DOT_CLASSES[statusVariant]
+                        )}
+                        data-testid="status-indicator-dot"
+                        aria-hidden="true"
+                    />
+                    {statusText}
+                </span>
             </div>
 
-            {/* Optional description */}
+            {/* Optional description (legacy line, free-text) */}
             {statusData.description && (
                 <p
                     className="text-muted-foreground text-xs"
@@ -560,6 +700,154 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                 >
                     {statusData.description}
                 </p>
+            )}
+
+            {/* Billing sub-blocks (HOST card B) — plan-quota tiles, next charge, trial countdown.
+                The legacy `UsageBar` is no longer rendered: the `max_accommodations`
+                tile already surfaces `used / limit` plus a thin progress bar, so
+                the big bar would be redundant. `statusData.usage` is still consumed
+                by the resolver to feed the tile's `used` field. */}
+            {statusData.limitTiles && statusData.limitTiles.length > 0 && (
+                <div
+                    className="grid grid-cols-3 gap-2"
+                    data-testid="status-limit-tiles"
+                >
+                    {statusData.limitTiles.map((tile) => {
+                        const hasUsage = typeof tile.used === 'number' && tile.value > 0;
+                        const pct = hasUsage
+                            ? Math.min(100, Math.round(((tile.used ?? 0) / tile.value) * 100))
+                            : 0;
+                        const barClass =
+                            pct >= 100
+                                ? 'bg-destructive'
+                                : pct >= 80
+                                  ? 'bg-amber-500'
+                                  : 'bg-green-500';
+                        return (
+                            <div
+                                key={tile.key}
+                                className="flex flex-col items-start gap-1 rounded-lg bg-muted/40 p-2 ring-1 ring-border/30"
+                                data-testid={`status-limit-tile-${tile.key}`}
+                            >
+                                <span
+                                    className="font-semibold text-base text-foreground tabular-nums leading-none tracking-tight"
+                                    style={{ fontFamily: 'var(--font-heading)' }}
+                                >
+                                    {hasUsage ? (
+                                        <>
+                                            {tile.used}
+                                            <span className="text-muted-foreground/70"> / </span>
+                                            {tile.value}
+                                        </>
+                                    ) : (
+                                        tile.value
+                                    )}
+                                </span>
+                                <span className="line-clamp-2 text-[0.65rem] text-muted-foreground leading-tight">
+                                    {tile.label}
+                                </span>
+                                {hasUsage && (
+                                    <div className="h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                                        {/* biome-ignore lint/a11y/useFocusableInteractive: presentational progress indicator */}
+                                        <div
+                                            className={cn(
+                                                'h-full rounded-full transition-all duration-300',
+                                                barClass
+                                            )}
+                                            style={{ width: `${pct}%` }}
+                                            role="progressbar"
+                                            aria-valuenow={pct}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {statusData.featureChips && statusData.featureChips.length > 0 && (
+                <div
+                    className="flex flex-wrap gap-1.5"
+                    data-testid="status-feature-chips"
+                >
+                    {statusData.featureChips.map((chip) => (
+                        <span
+                            key={chip.key}
+                            className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 font-medium text-[0.65rem] text-green-700 ring-1 ring-green-200/60 ring-inset"
+                            data-testid={`status-feature-chip-${chip.key}`}
+                        >
+                            <CheckIcon
+                                className="size-3"
+                                aria-hidden="true"
+                                weight="bold"
+                            />
+                            {chip.label}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {hasBillingMeta && (
+                <div
+                    className="mt-auto space-y-2 border-border/40 border-t pt-3 text-xs"
+                    data-testid="status-billing-meta"
+                >
+                    {statusData.nextChargeDate && (
+                        <div
+                            className="flex items-center gap-2"
+                            data-testid="status-next-charge"
+                        >
+                            <ClockIcon
+                                className="size-4 shrink-0 text-muted-foreground/70"
+                                aria-hidden="true"
+                            />
+                            <span className="text-muted-foreground">Próximo cobro</span>
+                            <span className="ml-auto font-semibold text-foreground tabular-nums">
+                                {formatShortDate(statusData.nextChargeDate)}
+                            </span>
+                        </div>
+                    )}
+                    {statusData.trialEndsAt &&
+                        (() => {
+                            const days = daysUntil(statusData.trialEndsAt);
+                            if (days === null) return null;
+                            return (
+                                <div
+                                    className="flex items-center gap-2"
+                                    data-testid="status-trial-countdown"
+                                >
+                                    <CalendarIcon
+                                        className="size-4 shrink-0 text-amber-500"
+                                        aria-hidden="true"
+                                    />
+                                    <span className="text-muted-foreground">Período de prueba</span>
+                                    <span className="ml-auto font-semibold text-amber-700 tabular-nums">
+                                        {days === 1 ? 'Queda 1 día' : `Quedan ${days} días`}
+                                    </span>
+                                </div>
+                            );
+                        })()}
+                </div>
+            )}
+
+            {/* Upgrade CTA — HOST card B. Link-style consistent with the
+                ChecklistWidget foot CTA so the redesign reads uniformly. */}
+            {statusData.upgradeHref && (
+                <a
+                    href={statusData.upgradeHref}
+                    className="group/upgrade mt-auto inline-flex items-center gap-1 self-start font-medium text-xs transition-colors hover:underline hover:decoration-2 hover:underline-offset-4"
+                    style={{ color: accentVars(config.accent).fg }}
+                    data-testid="status-upgrade-cta"
+                >
+                    <span>Mejorar plan</span>
+                    <ArrowRightIcon
+                        className="size-3.5 transition-transform duration-200 group-hover/upgrade:translate-x-0.5"
+                        aria-hidden="true"
+                    />
+                </a>
             )}
         </WidgetCard>
     );

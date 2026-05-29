@@ -904,5 +904,142 @@
                 "special": "At least one special character (!@#$%^&*...)"
             }
         }
+    },
+    "security": {
+        "title": "Security",
+        "available": {
+            "title": "Available actions",
+            "subtitle": "What you can manage today"
+        },
+        "changePassword": {
+            "title": "Change password",
+            "subtitle": "Update your password to keep your account secure"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Two-factor authentication",
+                "subtitle": "An extra layer of security at sign-in"
+            },
+            "activeSessions": {
+                "title": "Active sessions",
+                "subtitle": "View and close sessions open on other devices"
+            },
+            "loginHistory": {
+                "title": "Login history",
+                "subtitle": "Record of recent access to your account"
+            },
+            "changeEmail": {
+                "title": "Change email",
+                "subtitle": "Update the address associated with your account"
+            }
+        }
+    },
+    "data": {
+        "title": "My data",
+        "comingSoon": {
+            "title": "You'll soon be able to manage your data from here",
+            "description": "We're preparing the section to export your information, pause your account, and request data deletion in accordance with current regulations."
+        },
+        "supportContact": {
+            "label": "In the meantime, write to us at:",
+            "email": "soporte@hospeda.com.ar"
+        }
+    },
+    "announcements": {
+        "title": "Global announcements",
+        "subtitle": "Messages shown on the website to every visitor",
+        "list": {
+            "loading": "Loading announcements…",
+            "error": "We couldn't load the announcements. Please try again.",
+            "empty": {
+                "title": "There are no announcements yet",
+                "description": "When you publish one it will appear here and on the website."
+            },
+            "newAnnouncement": "New announcement",
+            "editAction": "Edit",
+            "deleteAction": "Delete",
+            "deleteConfirm": "Delete this announcement? This cannot be undone.",
+            "deleteError": "We couldn't delete the announcement. Please try again.",
+            "deleteSuccess": "Announcement deleted"
+        },
+        "variant": {
+            "info": "Informational",
+            "warning": "Warning",
+            "danger": "Critical"
+        },
+        "dismissible": {
+            "yes": "Visitor can dismiss",
+            "no": "Always visible"
+        },
+        "window": {
+            "alwaysOn": "Always on",
+            "startsAt": "From {{date}}",
+            "endsAt": "Until {{date}}",
+            "between": "{{from}} to {{to}}"
+        },
+        "form": {
+            "createTitle": "Create announcement",
+            "createSubtitle": "Set the message, its variant and the publication window",
+            "editTitle": "Edit announcement",
+            "editSubtitle": "Update the announcement details",
+            "textLabel": {
+                "es": "Text (Spanish)",
+                "en": "Text (English)",
+                "pt": "Text (Portuguese)"
+            },
+            "textPlaceholder": "Write the announcement message…",
+            "variantLabel": "Variant",
+            "dismissibleLabel": "Allow dismissal",
+            "dismissibleHint": "The visitor will be able to hide it after reading.",
+            "startsAtLabel": "Starts on (optional)",
+            "endsAtLabel": "Ends on (optional)",
+            "submitCreate": "Create announcement",
+            "submitEdit": "Save changes",
+            "saving": "Saving…",
+            "cancel": "Cancel",
+            "errorGeneric": "We couldn't save the announcement. Check the fields and try again.",
+            "errorRequiredText": "Text is required in all 3 languages",
+            "errorEndBeforeStart": "End date must be after the start date"
+        }
+    },
+    "billing": {
+        "title": "My billing",
+        "subtitle": "Review your plan, usage and payment options",
+        "subscription": {
+            "title": "My plan",
+            "subtitle": "Status and validity of your subscription",
+            "status": {
+                "active": "Active",
+                "trialing": "Trial",
+                "past_due": "Past due",
+                "canceled": "Canceled",
+                "incomplete": "Incomplete",
+                "incomplete_expired": "Incomplete (expired)",
+                "unknown": "Unknown"
+            },
+            "currentPeriodEnd": "Expires on {{date}}",
+            "noActive": {
+                "title": "You don't have an active subscription",
+                "description": "Subscription details will appear here once you sign up for a plan."
+            },
+            "errorLoading": "We couldn't load your subscription. Please try again in a few minutes."
+        },
+        "usage": {
+            "title": "Plan usage",
+            "subtitle": "How much you've used against your current plan limits",
+            "accommodations": "Published accommodations",
+            "unitOfLimit": "{{used}} of {{limit}}",
+            "unlimited": "Unlimited",
+            "noActive": "Subscribe to a plan to see your usage.",
+            "errorLoading": "We couldn't load your usage. Please try again in a few minutes."
+        },
+        "actions": {
+            "title": "Actions",
+            "subtitle": "Manage your subscription and download invoices",
+            "manageSubscription": "Manage my subscription",
+            "manageSubscriptionHint": "We'll take you to hospeda.com.ar to change your plan or payment method.",
+            "downloadLatestInvoice": "Download latest invoice",
+            "noLatestInvoice": "You don't have any invoices available to download yet."
+        }
     }
 }

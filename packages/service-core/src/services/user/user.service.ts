@@ -30,7 +30,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
+import { type SQL, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -582,13 +582,19 @@ export class UserService extends BaseCrudService<
         params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
         const { entityFilters, extraConditions, ...rest } = params;
-        const { email, ...simpleFilters } = entityFilters;
+        const { email, roles, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
 
         // email partial match (ilike, not eq)
         if (email) {
             additionalConditions.push(safeIlike(userTable.email, email));
+        }
+
+        // roles multi-value filter (IN). Skipped when the parsed array is empty
+        // (e.g., `?roles=` or `?roles=,,`) so it never collapses to `WHERE FALSE`.
+        if (roles && roles.length > 0) {
+            additionalConditions.push(inArray(userTable.role, roles));
         }
 
         return super._executeAdminSearch({
