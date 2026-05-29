@@ -38,6 +38,16 @@ describe('GlobalAnnouncements.astro (T-041)', () => {
             expect(componentSrc).toContain('filterActiveByDate');
             expect(componentSrc).toContain('new Date()');
         });
+
+        it('reads response.ok (matching ApiResult), NOT response.success', () => {
+            // Regression guard: `ApiResult<T>` exposes `ok` as the
+            // discriminator (see apps/web/src/lib/api/types.ts). An earlier
+            // version of this file checked `response.success`, which always
+            // resolved to undefined and short-circuited the banner to the
+            // empty fallback — silently breaking the SSR render.
+            expect(componentSrc).toMatch(/response\.ok\s*\?\s*response\.data\s*:/);
+            expect(componentSrc).not.toMatch(/response\.success\b/);
+        });
     });
 
     describe('output', () => {

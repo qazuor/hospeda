@@ -32,7 +32,7 @@ export interface Props {
 const { locale } = Astro.props;
 
 const response = await announcementsApi.list();
-const all = response.success ? response.data : [];
+const all = response.ok ? response.data : [];
 const active = filterActiveByDate(all, new Date());
 
 const variantToneClass: Record<string, string> = {
