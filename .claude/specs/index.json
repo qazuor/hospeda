@@ -1951,6 +1951,22 @@
             "archived": false,
             "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
             "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-175-admin-whats-new",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-175-admin-whats-new",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["admin", "onboarding", "whats-new", "release-notes", "config-driven", "i18n", "frontend", "api", "ux"],
+            "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
         }
     ]
 }
