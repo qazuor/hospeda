@@ -1577,7 +1577,7 @@
             "completionRef": "PR #1308 (f7180a1c02) — last of 7 PRs",
             "archived": true,
             "archivedAt": "2026-05-29T08:19:27Z",
-            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298 infra, #1300 relocations, #1301 migration, #1302 PR-4). Post-merge per-role smoke (#1305 sign-off) surfaced 3 P1 fixes resolved in #1306 (GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap) and #1308 (4 remaining /platform/* routes gated on requireAdminApiAccess; audit grown to 12 routes / 34 tests). Staging→main promotion pending operator decision.",
+            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298 infra, #1300 relocations, #1301 migration, #1302 PR-4). Post-merge per-role smoke (#1305 sign-off) surfaced 3 P1 fixes resolved in #1306 (GlobalAnnouncements banner + /platform/critical guard + ops/email helper swap) and #1308 (4 remaining /platform/* routes gated on requireAdminApiAccess; audit grown to 12 routes / 34 tests). Smoke also surfaced TAG_SYSTEM_VIEW grant to HOST as a confusion source — confirmed by-design per SPEC-086 D-017 (tag picker in accommodation forms) and documented in #1315 (comment + packages/seed/CLAUDE.md). Staging→main promotion pending operator decision.",
             "path": "SPEC-156-admin-settings-reorganization",
             "created": "2026-05-22T00:00:00Z",
             "startedAt": "2026-05-28T05:15:00Z",
@@ -1637,6 +1637,13 @@
                     "mergedAt": "2026-05-29T08:19:27Z",
                     "mergeCommit": "f7180a1c02",
                     "tasksClosed": "follow-up to smoke; not in original 44-task roster"
+                },
+                {
+                    "pr": "#1315",
+                    "title": "docs(seed): clarify HOST TAG_SYSTEM_VIEW grant is intentional (SPEC-086 D-017)",
+                    "mergedAt": "2026-05-29T16:55:05Z",
+                    "mergeCommit": "28de258aa82c0bf12188be34cc7e45bc35530bc1",
+                    "tasksClosed": "docs-only follow-up to smoke; not in original 44-task roster"
                 }
             ],
             "tags": [
