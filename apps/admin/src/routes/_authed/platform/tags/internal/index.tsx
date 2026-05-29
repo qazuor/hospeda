@@ -7,6 +7,7 @@ import {
     useInternalTagImpact,
     useInternalTagsList
 } from '@/hooks/use-internal-tags';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { DeleteIcon, TagsIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
@@ -15,6 +16,7 @@ import { Link, createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/tags/internal/')({
+    beforeLoad: ({ context }) => requireAdminApiAccess(context),
     component: InternalTagsListPage,
     errorComponent: createErrorComponent('InternalTags'),
     pendingComponent: createPendingComponent()

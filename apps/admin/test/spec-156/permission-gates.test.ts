@@ -109,6 +109,34 @@ const ADMIN_API_PAGES: ReadonlyArray<GatedPage> = [
         file: `${ADMIN_SRC_ROOT}/platform/email/logs.tsx`,
         mustReferencePermissions: ['ACCESS_API_ADMIN'],
         viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/configuration/seo — SEO defaults editor',
+        file: `${ADMIN_SRC_ROOT}/platform/configuration/seo.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        notes: 'Page had no beforeLoad guard at all; HOST could open it via direct URL. Added requireAdminApiAccess so the gate is consistent with the other platform routes.',
+        viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/cache/revalidation — ISR revalidation panel',
+        file: `${ADMIN_SRC_ROOT}/platform/cache/revalidation/index.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        notes: 'Page only had a client-side RoutePermissionGuard (which redirected HOST to /dashboard, not /auth/forbidden). Added server-side beforeLoad as defense-in-depth and to normalize the forbidden UX.',
+        viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/tags/internal — internal tag list',
+        file: `${ADMIN_SRC_ROOT}/platform/tags/internal/index.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        notes: 'Same as cache/revalidation: only the client-side guard existed; added server-side beforeLoad for parity.',
+        viaHelper: ADMIN_API_HELPER
+    },
+    {
+        label: '/platform/tags/system — system tag list',
+        file: `${ADMIN_SRC_ROOT}/platform/tags/system/index.tsx`,
+        mustReferencePermissions: ['ACCESS_API_ADMIN'],
+        notes: 'Client-side guard checked TAG_SYSTEM_VIEW which is granted to HOST in the seed (likely intentional for tag pickers elsewhere), so HOST was reaching the admin CRUD page anyway. Added server-side beforeLoad on ACCESS_API_ADMIN to block HOST regardless of the granular grant.',
+        viaHelper: ADMIN_API_HELPER
     }
 ];
 
@@ -180,7 +208,7 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         it('audits all SPEC-156 PR-4 routes that introduce new beforeLoad gates', () => {
             // Defensive checksum so any future task adds itself to the
             // ALL_GATED_PAGES roster instead of silently being skipped.
-            expect(ALL_GATED_PAGES.length).toBe(8);
+            expect(ALL_GATED_PAGES.length).toBe(12);
         });
     });
 });

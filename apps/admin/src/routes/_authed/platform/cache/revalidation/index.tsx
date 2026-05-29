@@ -32,6 +32,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { REVALIDATION_QUERY_KEYS } from '@/hooks/useRevalidation';
+import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import {
     getRevalidationConfigs,
     getRevalidationStats,
@@ -60,6 +61,7 @@ import {
 } from '@/features/revalidation/components/revalidation-shared';
 
 export const Route = createFileRoute('/_authed/platform/cache/revalidation/')({
+    beforeLoad: ({ context }) => requireAdminApiAccess(context),
     component: RevalidationPage
 });
 
