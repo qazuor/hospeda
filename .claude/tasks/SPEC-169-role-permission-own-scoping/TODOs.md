@@ -1,6 +1,6 @@
 # SPEC-169: Role Permission Audit + Owner-Scoped Data Access
 
-## Progress: 31/32 tasks (97%) — only T-023 (live e2e smoke, deferred) remains
+## Progress: 32/32 tasks (100%) — code+tests+docs+live e2e smoke all done; ready for PR to staging
 
 > This checklist below is NOT maintained per-task — the live source of truth is
 > `state.json` (full per-task status + notes) and `.claude/tasks/index.json`

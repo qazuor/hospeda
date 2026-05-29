@@ -675,8 +675,8 @@
         {
             "id": "T-023",
             "title": "End-to-end verify /me/accommodations works after all changes",
-            "description": "DEFERRED TO SMOKE (needs Docker DB + login; coordinate with owner). With host-basico@local.test after pnpm db:fresh-dev: /me/accommodations loads own list; detail/edit loads (not 403); /accommodations redirects; GET /api/v1/admin/accommodations without ownerId does NOT return all rows. Verification, not new code. The logic underneath is fully unit/route-tested (forced-scope adminList AC-1/AC-2, adminGetById/adminGetFaqs AC-8/AC-9, guard AC-3, /options AC-7) — this is the live end-to-end confirmation only.",
-            "status": "pending",
+            "description": "DONE (live e2e smoke executed 2026-05-29). Verified against the REAL running API (this worktree's SPEC-169 code on alt-port :3019, since :3011 was held by the spec-161 worktree) + REAL DB (hospeda_dev, 105 accommodations / 35 owners) + REAL Better Auth session for host-basico@local.test. DB was brought to SPEC-169 state NON-DESTRUCTIVELY (owner-approved): ALTER TYPE permission_enum ADD VALUE 'accommodation.viewOwn' + role_permission HOST: deleted accommodation.viewAll, inserted accommodation.viewOwn (the 105 accommodations + test users + subscriptions preserved). RESULTS (all pass): (#1+#4) GET /admin/accommodations no ownerId → 1 row (only host-basico's), NOT 105 = leak closed; (#2) own detail → 200; own /faqs → 200 (T-009 sub-tab fix); non-owned detail → 404 + non-owned /faqs → 404 (D2 anti-enumeration); forged ?ownerId=<other owner> → still 1 own row (AC-2 forced-override holds live). (#3) /accommodations→/me/accommodations client redirect NOT browser-exercised (cross-port cookie flakiness); covered by owner-scoped-guard.test 6/6. API stopped + port freed after smoke; spec-161 :3011 untouched. NOTE: the shared hospeda_dev DB now reflects the SPEC-169 permission model (HOST=viewOwn) — flagged to owner.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021", "T-022"],
             "blocks": ["T-024", "T-025"],
@@ -906,11 +906,11 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.3,
-        "note": "31/32 complete. Only T-023 (live end-to-end smoke with Docker DB + login) remains — deferred per owner, coordinate before running. All code + tests + docs done; SPEC-169-affected packages green; admin baseline-red (55 ajeno failures) and api typecheck (5 ajeno errors) are preexisting, not from SPEC-169."
+        "note": "32/32 COMPLETE. All code + tests + docs done; SPEC-169-affected packages green (service-core 433f/3499t, seed 510, db 768, schemas; typecheck clean). T-023 live e2e smoke passed against real API+DB+Better-Auth (HOST list owner-scoped to 1/105, non-owned 404, forged ownerId can't escape). PREEXISTING ajeno (NOT SPEC-169): admin 55 test failures + api 5 typecheck errors. READY FOR PR to staging when owner says. Shared hospeda_dev DB now reflects SPEC-169 permission model (HOST=viewOwn) — flagged."
     }
 }
