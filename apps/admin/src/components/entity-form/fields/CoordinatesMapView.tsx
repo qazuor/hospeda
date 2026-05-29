@@ -186,6 +186,10 @@ export function CoordinatesMapView({
         const map = mapRef.current;
         if (!map) return;
 
+        // `tap` is a mobile-only handler that newer @types/leaflet omits from the
+        // Map type. It still exists at runtime on touch devices, so guard via cast.
+        const tap = (map as L.Map & { tap?: L.Handler }).tap;
+
         if (disabled) {
             map.dragging.disable();
             map.touchZoom.disable();
@@ -193,7 +197,7 @@ export function CoordinatesMapView({
             map.scrollWheelZoom.disable();
             map.boxZoom.disable();
             map.keyboard.disable();
-            if (map.tap) map.tap.disable();
+            tap?.disable();
             map.zoomControl?.remove();
             if (markerRef.current) markerRef.current.dragging?.disable();
         } else {
@@ -202,7 +206,7 @@ export function CoordinatesMapView({
             map.doubleClickZoom.enable();
             map.boxZoom.enable();
             map.keyboard.enable();
-            if (map.tap) map.tap.enable();
+            tap?.enable();
             if (markerRef.current) markerRef.current.dragging?.enable();
         }
     }, [disabled]);

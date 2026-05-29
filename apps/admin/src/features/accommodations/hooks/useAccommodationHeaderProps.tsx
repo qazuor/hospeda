@@ -52,11 +52,15 @@ export const useAccommodationHeaderProps = ({
         // ---- Media (thumbnail with type-icon fallback) --------------------
         const media = buildHeaderMedia(entityRecord);
 
+        // Helpers build dynamic i18n keys (e.g. `common.enums.accommodationType.${type}`)
+        // that aren't part of the strict TranslationKey union — accept any string here.
+        const tForHelpers = t as unknown as (key: string) => string;
+
         // ---- Subtitle ("<Type> · <Destination>") --------------------------
-        const subtitle = buildSubtitle(entityRecord, t);
+        const subtitle = buildSubtitle(entityRecord, tForHelpers);
 
         // ---- Badges (visibility / lifecycle / moderation) -----------------
-        const badges = buildBadges(entityRecord, t);
+        const badges = buildBadges(entityRecord, tForHelpers);
 
         return { media, subtitle, badges };
     }, [entity, t]);
