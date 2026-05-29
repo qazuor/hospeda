@@ -424,14 +424,20 @@ const hostDashboard: DashboardInput = {
  * Dashboard for the EDITOR role — 8-card "La redacción" view.
  *
  * Card set (SPEC-155 §3 / 03c EDITOR section):
- *   A — Posts                     (kpi + list, sources: editor.posts.published-this-month + editor.posts.drafts)
- *   B — Eventos                   (list,       source: editor.events.upcoming)
- *   C — Suscriptores Newsletter   (kpi,        source: editor.newsletter.subscribers + DeferredWidget for open rate)
- *   D — Campañas Newsletter       (list,       source: editor.newsletter.campaigns)
- *   E — Estadísticas blog         (chart,      source: editor.posts.stats + DeferredWidget for views)
- *   F — Estadísticas eventos      (kpi,        source: editor.events.stats + DeferredWidget for views)
- *   G — Salud                     (checklist,  checkset: content-health)
- *   H — Comentarios               (callout,    DeferredWidget — backend pending SPEC-165)
+ *   A — Posts                     (kpi+companion, sources: editor.posts.published-this-month + editor.posts.drafts)
+ *   B — Eventos próximos          (list,          source: editor.events.upcoming)
+ *   C — Suscriptores Newsletter   (kpi,           source: editor.newsletter.subscribers + DeferredWidget for open rate)
+ *   D — Campañas recientes        (list,          source: editor.newsletter.campaigns)
+ *   E — Estadísticas blog         (chart,         source: editor.posts.stats + DeferredWidget for views)
+ *   F — Estadísticas eventos      (kpi,           source: editor.events.stats + DeferredWidget for views)
+ *   G — Salud del contenido       (checklist,     checkset: content-health)
+ *   H — Comentarios               (callout,       DeferredWidget — backend pending SPEC-165)
+ *
+ * Bento layout (3-col grid, rendered in array order):
+ *   Row 1: A (2×1) + C (1×1)
+ *   Row 2: B (2×1) + F (1×1)
+ *   Row 3: E (2×1) + D (1×1)
+ *   Row 4: G (2×1) + H (1×1)
  *
  * @example
  * ```ts
@@ -454,27 +460,18 @@ const editorDashboard: DashboardInput = {
                 pt: 'Posts'
             },
             scope: 'all',
+            // Bento: wide (2×1) — KPI hero + draft companion list need horizontal room.
+            gridSpan: { cols: 2 },
             config: {
                 source: 'editor.posts.published-this-month',
-                companionSource: 'editor.posts.drafts'
-            }
-        },
-
-        // Card B — Eventos
-        // upcoming count + upcoming list (top 5) + featured upcoming list
-        // source: editor.events.upcoming (fetches count + list + featured in parallel)
-        {
-            id: 'editor-card-b',
-            type: 'list',
-            label: {
-                es: 'Eventos',
-                en: 'Events',
-                pt: 'Eventos'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.events.upcoming',
-                maxItems: 5
+                companionSource: 'editor.posts.drafts',
+                accent: 'success',
+                icon: 'article',
+                emptyText: 'Aún no publicaste posts este mes',
+                emptyDescription:
+                    'Cuando publiques tu primer post del mes, vas a ver el contador acá.',
+                errorText: 'No pudimos cargar tus posts',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
@@ -491,13 +488,116 @@ const editorDashboard: DashboardInput = {
                 pt: 'Assinantes Newsletter'
             },
             scope: 'all',
+            // Bento: compact (1×1) — single counter; pairs with card A on the row.
             config: {
                 source: 'editor.newsletter.subscribers',
+                accent: 'sky',
+                icon: 'users',
+                emptyText: 'Sin suscriptores activos',
+                emptyDescription:
+                    'Cuando los lectores se sumen a la newsletter, vas a ver el total acá.',
+                errorText: 'No pudimos cargar los suscriptores',
+                errorDescription: 'Probá actualizar el panel.',
                 deferredSlots: [
                     {
                         phaseSpec: 'SPEC-160',
                         description:
                             'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email.'
+                    }
+                ]
+            }
+        },
+
+        // Card B — Eventos
+        // upcoming events list (top 5 by date.start asc, client-sorted from
+        // a 20-row buffer since admin events doesn't expose a startDate sort).
+        // source: editor.events.upcoming
+        {
+            id: 'editor-card-b',
+            type: 'list',
+            label: {
+                es: 'Eventos próximos',
+                en: 'Upcoming events',
+                pt: 'Próximos eventos'
+            },
+            scope: 'all',
+            // Bento: wide (2×1) — 5 rows with date + "destacado" badge fit
+            // comfortably without truncating event names.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'editor.events.upcoming',
+                accent: 'warning',
+                icon: 'calendar',
+                maxItems: 5,
+                emptyText: 'Sin eventos próximos',
+                emptyDescription: 'Cuando se publiquen nuevos eventos, los vas a ver acá.',
+                errorText: 'No pudimos cargar los eventos',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card F — Estadísticas eventos
+        // total events count
+        // source: editor.events.stats
+        // DeferredWidget for views per event (SPEC-159 — cross-entity view tracking)
+        {
+            id: 'editor-card-f',
+            type: 'kpi',
+            label: {
+                es: 'Estadísticas eventos',
+                en: 'Event statistics',
+                pt: 'Estatísticas eventos'
+            },
+            scope: 'all',
+            // Bento: compact (1×1) — single counter; pairs with card B on the row.
+            config: {
+                source: 'editor.events.stats',
+                accent: 'cyan',
+                icon: 'calendar',
+                emptyText: 'Aún sin eventos',
+                emptyDescription: 'Cuando agregues el primer evento, vas a ver el total acá.',
+                errorText: 'No pudimos cargar las estadísticas',
+                errorDescription: 'Probá actualizar el panel.',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        description:
+                            'Vistas por evento — disponible cuando se implemente el tracking de vistas.'
+                    }
+                ]
+            }
+        },
+
+        // Card E — Estadísticas blog
+        // status distribution + popular posts + total published + posts-per-month trend
+        // source: editor.posts.stats (fetches all in parallel)
+        // DeferredWidget for views per post (SPEC-159 — cross-entity view tracking)
+        {
+            id: 'editor-card-e',
+            type: 'chart',
+            label: {
+                es: 'Estadísticas blog',
+                en: 'Blog statistics',
+                pt: 'Estatísticas blog'
+            },
+            scope: 'all',
+            // Bento: wide (2×1) — 6+ buckets in a bar chart need room to keep
+            // month labels legible.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'editor.posts.stats',
+                chartType: 'bar',
+                accent: 'river',
+                icon: 'chart',
+                emptyText: 'Aún sin estadísticas',
+                emptyDescription: 'Las métricas van apareciendo a medida que publiques contenido.',
+                errorText: 'No pudimos cargar las estadísticas',
+                errorDescription: 'Probá actualizar el panel.',
+                deferredSlots: [
+                    {
+                        phaseSpec: 'SPEC-159',
+                        description:
+                            'Vistas por post — disponible cuando se implemente el tracking de vistas.'
                     }
                 ]
             }
@@ -517,60 +617,16 @@ const editorDashboard: DashboardInput = {
                 pt: 'Campanhas recentes'
             },
             scope: 'all',
+            // Bento: compact (1×1) — only 3 rows with short subject + status badge.
             config: {
                 source: 'editor.newsletter.campaigns',
-                maxItems: 3
-            }
-        },
-
-        // Card E — Estadísticas blog
-        // status distribution + popular posts + total published + posts-per-month trend
-        // source: editor.posts.stats (fetches all in parallel)
-        // DeferredWidget for views per post (SPEC-159 — cross-entity view tracking)
-        {
-            id: 'editor-card-e',
-            type: 'chart',
-            label: {
-                es: 'Estadísticas blog',
-                en: 'Blog statistics',
-                pt: 'Estatísticas blog'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.posts.stats',
-                chartType: 'bar',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        description:
-                            'Vistas por post — disponible cuando se implemente el tracking de vistas.'
-                    }
-                ]
-            }
-        },
-
-        // Card F — Estadísticas eventos
-        // total events count
-        // source: editor.events.stats
-        // DeferredWidget for views per event (SPEC-159 — cross-entity view tracking)
-        {
-            id: 'editor-card-f',
-            type: 'kpi',
-            label: {
-                es: 'Estadísticas eventos',
-                en: 'Event statistics',
-                pt: 'Estatísticas eventos'
-            },
-            scope: 'all',
-            config: {
-                source: 'editor.events.stats',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        description:
-                            'Vistas por evento — disponible cuando se implemente el tracking de vistas.'
-                    }
-                ]
+                accent: 'purple',
+                icon: 'activity',
+                maxItems: 3,
+                emptyText: 'Aún no hay campañas',
+                emptyDescription: 'Cuando crees tu primera campaña vas a verla acá con su estado.',
+                errorText: 'No pudimos cargar las campañas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
@@ -582,13 +638,23 @@ const editorDashboard: DashboardInput = {
             id: 'editor-card-g',
             type: 'checklist',
             label: {
-                es: 'Salud',
-                en: 'Health',
-                pt: 'Saúde'
+                es: 'Salud del contenido',
+                en: 'Content health',
+                pt: 'Saúde do conteúdo'
             },
             scope: 'all',
+            // Bento: wide (2×1) — checklist items + descriptions need a bit
+            // more room than a single column.
+            gridSpan: { cols: 2 },
             config: {
-                checkset: 'content-health'
+                checkset: 'content-health',
+                accent: 'success',
+                icon: 'shield',
+                emptyText: 'Aún no podemos evaluar la salud',
+                emptyDescription:
+                    'Necesitamos contenido cargado (posts y eventos) para revisar lo que falta.',
+                errorText: 'No pudimos evaluar la salud del contenido',
+                errorDescription: 'Probá actualizar el panel.'
                 // No `source` — computed from loaded entity lists injected by the card renderer.
             }
         },
@@ -610,6 +676,8 @@ const editorDashboard: DashboardInput = {
             config: {
                 deferred: true,
                 phaseSpec: 'SPEC-165',
+                accent: 'warning',
+                icon: 'chat',
                 description:
                     'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
             }
