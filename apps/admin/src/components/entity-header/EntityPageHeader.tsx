@@ -95,8 +95,14 @@ export interface EntityPageHeaderProps {
      * Slot for the quality score widget.
      * Rendered to the right of the entity info, left of the action buttons.
      * Pass `null` for entities without a score (users, catalogs).
+     *
+     * Accepts either a static `ReactNode` or a render function that receives
+     * the current `isReduced` flag so the widget can swap to its compact
+     * variant when the header shrinks on scroll.
      */
-    readonly qualityScore?: React.ReactNode;
+    readonly qualityScore?:
+        | React.ReactNode
+        | ((options: { readonly isReduced: boolean }) => React.ReactNode);
     /**
      * Media configuration for the header thumbnail / avatar.
      * Omit to hide the image entirely (e.g. in create mode).
@@ -439,7 +445,9 @@ export function EntityPageHeader({
                             className="hidden sm:block"
                             data-testid="quality-score-slot"
                         >
-                            {qualityScore}
+                            {typeof qualityScore === 'function'
+                                ? qualityScore({ isReduced })
+                                : qualityScore}
                         </div>
                     )}
 

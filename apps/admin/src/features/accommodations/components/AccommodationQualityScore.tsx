@@ -12,6 +12,15 @@ import { createAccommodationSignals } from '../config/score-signals';
 type FormStore = Parameters<typeof useStore>[0];
 type FormStoreState = { readonly values: Record<string, unknown> };
 
+export interface AccommodationQualityScoreProps {
+    /**
+     * Compact rendering for the sticky reduced header. The route flips this
+     * via the EntityPageHeader's `isReduced` flag — the route can keep
+     * declaring the widget as a render function and forward the bit through.
+     */
+    readonly compact?: boolean;
+}
+
 /**
  * Quality-score widget specialised for accommodation.
  *
@@ -22,7 +31,9 @@ type FormStoreState = { readonly values: Record<string, unknown> };
  * en edit"). In view mode the form's initial values mirror the loaded entity,
  * giving the same widget a stable snapshot without any extra plumbing.
  */
-export const AccommodationQualityScore = React.memo(function AccommodationQualityScoreComponent() {
+export const AccommodationQualityScore = React.memo(function AccommodationQualityScoreComponent({
+    compact = false
+}: AccommodationQualityScoreProps) {
     const { form } = useEntityFormContext();
     const entitlements = useMockEntitlements();
 
@@ -43,7 +54,12 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
 
     const result = React.useMemo(() => computeScore(signals, values), [signals, values]);
 
-    return <QualityScore result={result} />;
+    return (
+        <QualityScore
+            result={result}
+            compact={compact}
+        />
+    );
 });
 
 AccommodationQualityScore.displayName = 'AccommodationQualityScore';

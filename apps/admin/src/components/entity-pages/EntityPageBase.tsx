@@ -77,11 +77,15 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
      */
     headerBadges?: ReactNode;
     /**
-     * Placeholder slot for the quality score widget.
+     * Slot for the quality score widget.
      * Pass `null` for entities without a score (users, catalogs).
-     * Defaults to `null` until the score widget is implemented (another task).
+     *
+     * Accepts either a static `ReactNode` or a render function that receives
+     * the current header reduced state so the widget can swap to its compact
+     * variant when the header shrinks on scroll. The flag is provided by the
+     * EntityPageHeader's scroll-shrink hook downstream.
      */
-    qualityScore?: ReactNode;
+    qualityScore?: ReactNode | ((options: { readonly isReduced: boolean }) => ReactNode);
     /** Entity data and configuration from the hook */
     entityData: {
         mode: 'view' | 'edit';

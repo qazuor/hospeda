@@ -45,7 +45,7 @@ function AccommodationViewPage() {
             headerMedia={headerProps.media}
             headerSubtitle={headerProps.subtitle}
             headerBadges={headerProps.badges}
-            qualityScore={<AccommodationQualityScore />}
+            qualityScore={({ isReduced }) => <AccommodationQualityScore compact={isReduced} />}
         >
             <EntityViewContent
                 entityType="accommodation"
