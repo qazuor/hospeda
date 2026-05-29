@@ -561,7 +561,7 @@
             "specId": "SPEC-169",
             "title": "Role Permission Audit + Owner-Scoped Data Access",
             "status": "in-progress",
-            "progress": "7/32",
+            "progress": "8/32",
             "path": "SPEC-169-role-permission-own-scoping",
             "branch": "fix/SPEC-169-role-permission-own-scoping",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-169-role-permission-own-scoping",
