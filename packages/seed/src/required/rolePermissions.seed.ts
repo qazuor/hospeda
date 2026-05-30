@@ -205,6 +205,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_PERMISSIONS_MANAGE,
 
+        // PERMISSION: granular per-user permission management (SPEC-170).
+        // Seeded explicitly to SUPER_ADMIN so the panel's gate (canViewPermissions /
+        // canAssignPermissions / canRevokePermissions) is satisfied by a real grant
+        // rather than relying on the all-permissions short-circuit. SUPER_ADMIN-only
+        // by design — managing per-user overrides is a self-escalation-risk operation.
+        PermissionEnum.PERMISSION_VIEW,
+        PermissionEnum.PERMISSION_ASSIGN,
+        PermissionEnum.PERMISSION_REVOKE,
+
         // LOGGING & ERROR TRACKING: All permissions
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
