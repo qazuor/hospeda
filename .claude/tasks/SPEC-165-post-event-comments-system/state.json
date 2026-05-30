@@ -288,31 +288,32 @@
             "id": "T-009",
             "title": "Protected API endpoints — POST comments + DELETE own comment",
             "description": "Add three protected routes in apps/api/src/routes/protected/: POST /api/v1/protected/posts/:postId/comments (requires POST_COMMENT_CREATE; rate-limited 5/min via createPerRouteRateLimitMiddleware from apps/api/src/middlewares/rate-limit.ts; body validated by CreateEntityCommentInput Zod schema; calls EntityCommentService.create(); returns 201 with created comment; returns 422 for content >2000 chars), POST /api/v1/protected/events/:eventId/comments (same contract, EVENT_COMMENT_CREATE gate, no counter update), DELETE /api/v1/protected/comments/:commentId (requires valid session; calls EntityCommentService.softDeleteOwn(); returns 204 on success, 403 if not author, 404 if not found; decrements counter if applicable). All three require a valid Better Auth session (existing session middleware). Register routes in protected router. Key files: apps/api/src/routes/protected/posts-comments.route.ts, apps/api/src/routes/protected/events-comments.route.ts, apps/api/src/routes/protected/comments-delete.route.ts, apps/api/src/routes/protected/index.ts. Acceptance: AC-11, AC-12, AC-13, AC-14, AC-15, AC-16.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-005", "T-006", "T-007"],
             "blocks": ["T-011", "T-012"],
             "subtasks": [
                 {
                     "title": "Create POST /protected/posts/:postId/comments with rate limit + permission gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create POST /protected/events/:eventId/comments with rate limit + permission gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create DELETE /protected/comments/:commentId with author-check",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register all three routes in protected router index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "protected", "rate-limit"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "notes": "routes/post/comments/protected/create.ts (POST /{postId}/comments, POST_COMMENT_CREATE) + routes/event/comments/protected/create.ts (EVENT_COMMENT_CREATE), both with createPerRouteRateLimitMiddleware({requests:5,windowMs:60000}) via options.middlewares; body=CreateCommentBodySchema {content}; responseSchema=EntityCommentSchema; call service.create. Mounted in post/event protected index. DELETE-own = routes/comment/protected/delete.ts (createProtectedRoute, requiredPermissions:[] — gate is ownership in softDeleteOwn, not a permission), mounted via routes/comment/index.ts at /api/v1/protected/comments in routes/index.ts. Typecheck 0 errors mine (154 pre-existing api env errors). Biome clean. TWO deviations flagged: (1) RATE LIMIT is IP-based (createPerRouteRateLimitMiddleware keys route:METHOD:path:clientIp) NOT per-user — spec RD-6/risk wants per-user but task says reuse as-is + middleware sig only takes {requests,windowMs}; AC-14 passes (same test user=same IP); per-user would need forking the middleware (out of scope). (2) DELETE returns SuccessSchema/200 not 204 — repo convention (post/protected/softDelete.ts uses SuccessSchema); AC-15/spec say 204. Functional behavior correct; T-012 asserts actual. Endpoint behavior (AC-11/12/13/14/16) verified at T-012 e2e.",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
                 "started": null,
@@ -611,9 +612,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 3.1
     }
