@@ -22,6 +22,8 @@ tags:
 
 > **Status**: DRAFT — extracted from the 2026-05-26 dashboard redefinition session as "heavy backend". Lowest priority of the extracted specs (external integration, non-critical). See `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md` (SUPER-only card H).
 
+> **Related beta feedback** (not a 1:1 match): [BETA-64](https://linear.app/hospeda-beta/issue/BETA-64) — "Agregar reporting a Sentry para errores y warnings conocidos". ⚠️ Different direction: BETA-64 is capture-side (emit more errors/warnings to Sentry), while SPEC-163 is query-side (read error counts back for a dashboard widget). Adjacent, not the same work.
+
 ## 1. Origin
 
 The SUPER_ADMIN dashboard wants an "errores Sentry (últimas 24h)" widget. Today Sentry is **write-only** in our stack (error capture + profiling); there is no path to **query** error counts / distribution / release health from our own backend. The dashboard cannot show Sentry data without a new integration.

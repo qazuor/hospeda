@@ -12,6 +12,8 @@ discovered_during: 2026-05-18 staging Sentry health check after SPEC-140 verific
 
 # SPEC-146: Sentry release wiring + SDK version alignment
 
+> **Related beta feedback** (not a 1:1 match): [BETA-50](https://linear.app/hospeda-beta/issue/BETA-50) — "Verificar que los environments de Sentry estén configurados y reportando correctamente" (adjacent: SPEC-146 wires release SHA + SDK bump; environment verification overlaps in intent but is broader/operational). [BETA-66](https://linear.app/hospeda-beta/issue/BETA-66) — "Asegurar que los source maps funcionen correctamente en Sentry" (⚠️ source maps are **explicitly out of scope** of SPEC-146, see §2; linked only so triage knows this spec does NOT cover it).
+
 ## Part 1 — Functional Specification
 
 ### 1. Overview & Goals

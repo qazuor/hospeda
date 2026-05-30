@@ -21,6 +21,8 @@ tags:
 
 > **Status**: DRAFT — extracted from the 2026-05-26 dashboard redefinition session as "heavy backend". See `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md` (SUPER-only card H).
 
+> **Related beta feedback** (not a 1:1 match): [BETA-82](https://linear.app/hospeda-beta/issue/BETA-82) — "Mejorar logging de API para terminal, archivo y visualización en admin". SPEC-162 covers the **audit/security subset** (making those events queryable + admin endpoints); BETA-82 is broader general-purpose API logging. Partial overlap on the "view logs in admin" piece.
+
 ## 1. Origin
 
 The SUPER_ADMIN dashboard wants an "audit log / recent admin actions" widget and a "security log" widget. The logging infrastructure exists (`apps/api/src/utils/audit-logger.ts`, `AuditEventType` enum) but it is **logger-only** — events are emitted as breadcrumbs/logs, not stored in a queryable form. There is no admin endpoint to read them back.
