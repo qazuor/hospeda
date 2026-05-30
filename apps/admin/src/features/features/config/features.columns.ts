@@ -8,6 +8,7 @@ import {
 import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { resolveI18nText } from '@/utils/i18n-text';
 import { EditIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
@@ -39,12 +40,25 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         header: t('admin-entities.columns.name'),
         accessorKey: 'name',
         enableSorting: true,
-        columnType: ColumnType.ENTITY,
+        columnType: ColumnType.WIDGET,
         entityOptions: {
             entityType: EntityType.FEATURE,
             color: BadgeColor.INDIGO
         },
-        linkHandler: (row) => ({ to: `/content/accommodation-features/${row.id}` })
+        linkHandler: (row) => ({ to: `/content/accommodation-features/${row.id}` }),
+        widgetRenderer: (row) => {
+            const displayName = resolveI18nText(row.name);
+            return createElement(
+                Link,
+                {
+                    to: '/content/accommodation-features/$id' as never,
+                    params: { id: row.id } as never,
+                    className:
+                        'inline-flex max-w-xs items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-sm ring-1 ring-inset bg-indigo-50 text-indigo-700 ring-indigo-700/20 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:ring-indigo-400/30 dark:hover:bg-indigo-900/30 truncate'
+                } as never,
+                displayName
+            );
+        }
     },
     {
         id: 'slug',
@@ -58,7 +72,17 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         header: t('admin-entities.columns.description'),
         accessorKey: 'description',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => {
+            const text = resolveI18nText(row.description);
+            if (!text) return createElement('span', { className: 'text-muted-foreground' }, '—');
+            const truncated = text.length > 80 ? `${text.slice(0, 80)}…` : text;
+            return createElement(
+                'span',
+                { className: 'text-sm text-foreground', title: text },
+                truncated
+            );
+        }
     },
     {
         id: 'icon',
@@ -84,7 +108,7 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         widgetRenderer: (row) =>
             createElement(InlineFeaturedCell<Partial<Feature>>, {
                 entityId: row.id,
-                entityName: row.name,
+                entityName: resolveI18nText(row.name),
                 entityLabelKey: 'admin-entities.entities.feature.singular',
                 checked: row.isFeatured ?? false,
                 permission: PermissionEnum.FEATURE_FEATURED_TOGGLE,
@@ -115,7 +139,7 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
         widgetRenderer: (row) =>
             createElement(InlineStateSelectCell<Partial<Feature>>, {
                 entityId: row.id,
-                entityName: row.name,
+                entityName: resolveI18nText(row.name),
                 entityLabelKey: 'admin-entities.entities.feature.singular',
                 field: 'lifecycleState',
                 currentValue: row.lifecycleState,
@@ -158,7 +182,7 @@ export const createFeaturesColumns = (t: ColumnTFunction): readonly ColumnConfig
                 ),
                 createElement(DeleteRowButton, {
                     entityId: row.id,
-                    entityName: row.name,
+                    entityName: resolveI18nText(row.name),
                     entityLabel: t('admin-entities.entities.feature.singular'),
                     permission: PermissionEnum.FEATURE_DELETE,
                     useDeleteMutation: useDeleteFeatureMutation,

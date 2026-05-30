@@ -27,7 +27,10 @@ export function getFieldColSpanClass(type: FieldTypeEnum): 'col-span-2' | 'col-s
         FieldTypeEnum.VIDEO_GALLERY,
         FieldTypeEnum.IMAGE,
         FieldTypeEnum.FILE,
-        FieldTypeEnum.JSON
+        FieldTypeEnum.JSON,
+        // i18n fields stack three inputs vertically — they need full width
+        FieldTypeEnum.I18N_TEXT,
+        FieldTypeEnum.I18N_TEXTAREA
     ]);
 
     return fullWidthTypes.has(type) ? 'col-span-2' : 'col-span-1';

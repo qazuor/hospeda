@@ -26,6 +26,7 @@ import {
     CurrencyViewField,
     EntitySelectViewField,
     GalleryViewField,
+    I18nTextViewField,
     ImageViewField,
     RichTextViewField,
     SelectViewField,
@@ -36,6 +37,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import { EditIcon, EyeIcon } from '@repo/icons';
+import type { I18nText } from '@repo/schemas';
 import * as React from 'react';
 
 /**
@@ -380,6 +382,15 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         <VideoGalleryViewField
                             {...baseFieldProps}
                             value={fieldValue as VideoEntry[]}
+                        />
+                    );
+
+                case FieldTypeEnum.I18N_TEXT:
+                case FieldTypeEnum.I18N_TEXTAREA:
+                    return wrap(
+                        <I18nTextViewField
+                            {...baseFieldProps}
+                            value={fieldValue as Partial<I18nText> | null | undefined}
                         />
                     );
 
