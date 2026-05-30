@@ -177,39 +177,40 @@
             "id": "T-006",
             "title": "Implement EntityCommentService — create + soft-delete-own + counter sync",
             "description": "Create packages/service-core/src/services/entity-comment.service.ts extending BaseCrudService. Implement in this task: (1) create(): validate entityType is in ALLOWED_ENTITY_TYPES ['POST', 'EVENT'] (return INVALID_ENTITY_TYPE error otherwise — AC-3), set moderationState=APPROVED, set authorId from actor; if entityType=POST atomically increment posts.comments counter. (2) softDeleteOwn(): validate actor is the comment author (return 403-equivalent error if not — AC-16); soft-delete; if entityType=POST and comment was APPROVED decrement posts.comments counter. (3) countApprovedByPostId(): recompute counter via COUNT (used for reconciliation). Use runWithLoggingAndValidation() and Result<T>. Unit tests (Vitest) covering: create happy path (POST counter incremented, AC-11 baseline), create invalid entity type (AC-3), create event (no counter change, AC-26), softDeleteOwn as author (AC-15), softDeleteOwn as non-author (AC-16), content too long returns error (AC-13 at service layer). Key files: packages/service-core/src/services/entity-comment.service.ts, packages/service-core/src/services/index.ts, packages/service-core/test/entity-comment-create.test.ts. Acceptance: AC-3, AC-11 (partial), AC-13 (service), AC-15, AC-16, AC-26 (no event counter); ≥90% branch coverage target (AC-36).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-002", "T-005"],
             "blocks": ["T-007", "T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Scaffold EntityCommentService extending BaseCrudService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement create() with entityType allowlist + counter sync for POST",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement softDeleteOwn() with author check + counter decrement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement countApprovedByPostId() recompute helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: create, invalid entityType, no event counter, softDeleteOwn auth",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "business-logic", "tests"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "notes": "Built on BaseCrudService (user choice; standard entity-service convention). Retrofitted T-002 model EntityCommentModel to BaseModelImpl<EntityComment> (was $inferSelect) to satisfy BaseModel<TEntity>. Added PostModel.adjustCommentCount({id,delta}) atomic ±1 (GREATEST(...,0)) — mockable, mirrors incrementLikes. RESOLVED counter conflict: RD-7 says 'recompute via COUNT' but AC-24/AC-25 require ±1 from a baseline (start=5,+2,-1=6 would be 1 under recompute) — used ±1 on the hot path; countApprovedByPostId is reconciliation-only (per task text). create: _canCreate asserts POST|EVENT allowlist (AC-3 VALIDATION_ERROR) + _CREATE perm by entityType; _beforeCreate injects authorId+APPROVED; _afterCreate +1 if POST. softDeleteOwn: custom, author-gated (AC-15/16), -1 if approved POST. Delete dual-path: softDeleteOwn (author) vs inherited softDelete gated by _canSoftDelete=MODERATE (admin, wired T-007). Permissions in entityComment.permissions.ts resolve POST_/EVENT_ by entityType. updateSchema = minimal {moderationState} placeholder (comments not editable; moderate() is T-007). Tests: 25 passing, 100% branch coverage on service + permissions (exceeds AC-36 90%). Typecheck: 0 new errors (7 pre-existing @repo/billing-not-built in db + service-core, unrelated). T-007 adds listPublic/listAdmin/getById/moderate/hardDelete/restore.",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -608,9 +609,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 3.1
     }
