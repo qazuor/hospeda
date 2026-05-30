@@ -156,105 +156,105 @@
             "id": "T-005",
             "title": "PlanService \u2014 update (incl. billing_prices, slug immutable)",
             "description": "Implement update(uuid, input): mutate plan row + sync billing_prices (create/update monthly + annual, deactivate annual when cleared). Enforce slug (name) immutability \u2014 reject any attempt to change it (D1). Wrap in tx, emit audit with before/after diff. Tests: unit \u2014 update price reflects in billing_prices, entitlements/limits update, slug-change rejected, audit diff correct, tx rollback on partial failure.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Update plan row + reconcile billing_prices",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enforce slug immutability",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Transaction + audit before/after",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (price sync, slug-reject, rollback, audit)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "qzpay", "write", "transaction"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "PlanService \u2014 toggleActive + soft-delete",
             "description": "Implement toggleActive(uuid, active) and softDelete(uuid) (active=false default per D4), both emitting audit. soft-delete keeps the row for referential integrity. Tests: unit \u2014 toggle flips active, soft-delete sets active=false and is reversible via toggle, audit emitted, getById still resolves a soft-deleted plan.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "toggleActive + softDelete with audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (toggle, soft-delete, audit)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "qzpay", "lifecycle"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "PlanService \u2014 hard-delete with referential guard",
             "description": "Implement hardDelete(uuid): BEFORE deleting, query billing_subscriptions WHERE plan_id = uuid (D1: plan_id stores the UUID). If any subscription references the plan, REJECT with a typed error (referenced-by-subscriptions). Only delete when zero references. Emit audit. Tests: unit \u2014 hard-delete blocked when a subscription references the plan UUID, allowed when none, audit emitted, error type correct.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Reference check: subs WHERE plan_id = uuid",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Block hard-delete when referenced, else delete + audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (blocked-when-referenced, allowed-when-clear)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "qzpay", "lifecycle", "referential-integrity"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 19,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 3.1
     }
