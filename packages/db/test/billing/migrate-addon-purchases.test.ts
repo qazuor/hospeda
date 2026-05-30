@@ -74,6 +74,11 @@ vi.mock('../../src/billing/schemas.ts', () => ({
         customerId: 'customer_id',
         planId: 'plan_id',
         metadata: 'metadata'
+    },
+    billingPlans: {
+        id: 'id',
+        name: 'name',
+        metadata: 'metadata'
     }
 }));
 
