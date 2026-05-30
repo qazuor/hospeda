@@ -1,106 +1,275 @@
 /**
- * @file variant-tokens.ts
- * @description SPEC-176 — Variant token map scaffold.
+ * @file generators/variant-tokens.ts
+ * @description SPEC-176 T-003 (consolidated) — Complete VARIANT_TOKEN_MAP with all 114 entries.
  *
- * Defines the `VariantTokenSpec` type and the `VARIANT_TOKEN_MAP` constant.
- * In T-001 (regression guard setup) this map is intentionally empty — the
- * three coverage tests in `variant-token-coverage.test.ts` iterate it and
- * pass trivially while it holds no entries.
+ * This file assembles the VARIANT_TOKEN_MAP from two modules:
+ * - `variant-tokens-alpha.ts` — 92 alpha-family entries (conservatively consolidated)
+ * - This file — 22 lightness-family entries (multiply × 10, subtract × 10, add × 2)
  *
- * T-002 installs `culori` and implements `formatSRGB()`.
- * T-003 populates VARIANT_TOKEN_MAP with all 42 derived entries.
- * T-004 extends `generate-css.ts` to emit the dual-declaration blocks.
+ * Every entry was derived by scanning `apps/web/src/` for `oklch(from var(--BASE) TRANSFORM)`
+ * patterns. The faithful scan found 116 alpha pairs; consolidation reduced them to 92.
  *
- * SPEC-176: populate VARIANT_TOKEN_MAP in T-002/T-003 to make this guard
- * meaningful (RED→GREEN).
+ *   - 92 alpha-family (consolidated from 116; 15 merge groups, max snap delta 0.020)
+ *   - 10 lightness-multiply (base, factor) pairs — FAITHFUL 1:1, unchanged
+ *   - 10 lightness-subtract (base, offset) pairs — FAITHFUL 1:1, unchanged
+ *   -  2 lightness-add (base, offset) pairs — FAITHFUL 1:1, unchanged
+ *   = 114 total canonical entries
+ *
+ * Alpha consolidation grid (14 steps): 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25,
+ *   0.30, 0.35, 0.40, 0.50, 0.60, 0.75, 0.90.
+ * Snap rule: snap only if |value − step| ≤ 0.025. Values farther than 0.025 keep own token.
+ *
+ * The `replaces` field holds the canonical spelling; `replacesVariants` holds
+ * additional literal forms. T-005's codemod must replace BOTH `replaces` AND
+ * each entry in `replacesVariants` with `var(--{name})`.
+ *
+ * Naming convention (D6 — locked, SPEC-176):
+ * - Alpha:              `{base}-a{NN}` — NN = round(canonicalAlpha × 100), min 2 digits.
+ * - Lightness-multiply: `{base}-l{NN}` — NN = round(factor × 100).
+ * - Lightness-subtract: `{base}-lm{NN}` — NN = round(offset × 100).
+ * - Lightness-add:      `{base}-lp{NN}` — NN = round(offset × 100).
+ *
+ * @see variant-tokens-alpha.ts for the 92 alpha-family entries.
+ * @see variant-token-schema.ts for the Zod schema and VariantTokenEntry type.
+ * @see generate-css.ts (T-004) for the CSS emitter that consumes this map.
+ * @see scripts/codemod-relative-colors.mjs (T-005) for the codemod.
+ * @see variant-token-derivation.md for derivation methodology and consolidation table.
  */
 
+import type { VariantTokenEntry } from './variant-token-schema.js';
+import { ALPHA_VARIANT_ENTRIES } from './variant-tokens-alpha.js';
+
 // ============================================================================
-// Types
+// Lightness-multiply family — oklch(from var(--BASE) calc(l * FACTOR) c h)
+// 10 entries, sorted by base then factor.
+// ============================================================================
+
+const LIGHTNESS_MULTIPLY_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
+    // --- brand-accent ---
+    {
+        name: 'brand-accent-l82',
+        base: 'brand-accent',
+        family: 'lightness-multiply',
+        param: 0.82,
+        replaces: 'oklch(from var(--brand-accent) calc(l * 0.82) c h)'
+    },
+    {
+        name: 'brand-accent-l90',
+        base: 'brand-accent',
+        family: 'lightness-multiply',
+        param: 0.9,
+        replaces: 'oklch(from var(--brand-accent) calc(l * 0.9) c h)'
+    },
+    {
+        name: 'brand-accent-l112',
+        base: 'brand-accent',
+        family: 'lightness-multiply',
+        param: 1.12,
+        replaces: 'oklch(from var(--brand-accent) calc(l * 1.12) c h)'
+    },
+
+    // --- brand-primary ---
+    {
+        name: 'brand-primary-l80',
+        base: 'brand-primary',
+        family: 'lightness-multiply',
+        param: 0.8,
+        replaces: 'oklch(from var(--brand-primary) calc(l * 0.8) c h)'
+    },
+    {
+        name: 'brand-primary-l85',
+        base: 'brand-primary',
+        family: 'lightness-multiply',
+        param: 0.85,
+        replaces: 'oklch(from var(--brand-primary) calc(l * 0.85) c h)'
+    },
+    {
+        name: 'brand-primary-l90',
+        base: 'brand-primary',
+        family: 'lightness-multiply',
+        param: 0.9,
+        replaces: 'oklch(from var(--brand-primary) calc(l * 0.9) c h)'
+    },
+    {
+        name: 'brand-primary-l115',
+        base: 'brand-primary',
+        family: 'lightness-multiply',
+        param: 1.15,
+        replaces: 'oklch(from var(--brand-primary) calc(l * 1.15) c h)'
+    },
+
+    // --- core-card ---
+    {
+        name: 'core-card-l97',
+        base: 'core-card',
+        family: 'lightness-multiply',
+        param: 0.97,
+        replaces: 'oklch(from var(--core-card) calc(l * 0.97) c h)'
+    },
+
+    // --- core-foreground ---
+    {
+        name: 'core-foreground-l115',
+        base: 'core-foreground',
+        family: 'lightness-multiply',
+        param: 1.15,
+        replaces: 'oklch(from var(--core-foreground) calc(l * 1.15) c h)'
+    },
+
+    // --- destructive ---
+    {
+        name: 'destructive-l85',
+        base: 'destructive',
+        family: 'lightness-multiply',
+        param: 0.85,
+        replaces: 'oklch(from var(--destructive) calc(l * 0.85) c h)'
+    }
+] as const;
+
+// ============================================================================
+// Lightness-subtract family — oklch(from var(--BASE) calc(l - OFFSET) c h)
+// 10 entries, sorted by base then offset.
+// ============================================================================
+
+const LIGHTNESS_SUBTRACT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
+    // --- border ---
+    {
+        name: 'border-lm05',
+        base: 'border',
+        family: 'lightness-subtract',
+        param: 0.05,
+        replaces: 'oklch(from var(--border) calc(l - 0.05) c h)'
+    },
+
+    // --- brand-accent ---
+    {
+        name: 'brand-accent-lm04',
+        base: 'brand-accent',
+        family: 'lightness-subtract',
+        param: 0.04,
+        replaces: 'oklch(from var(--brand-accent) calc(l - 0.04) c h)'
+    },
+    {
+        name: 'brand-accent-lm05',
+        base: 'brand-accent',
+        family: 'lightness-subtract',
+        param: 0.05,
+        replaces: 'oklch(from var(--brand-accent) calc(l - 0.05) c h)'
+    },
+    {
+        name: 'brand-accent-lm06',
+        base: 'brand-accent',
+        family: 'lightness-subtract',
+        param: 0.06,
+        replaces: 'oklch(from var(--brand-accent) calc(l - 0.06) c h)'
+    },
+    {
+        name: 'brand-accent-lm15',
+        base: 'brand-accent',
+        family: 'lightness-subtract',
+        param: 0.15,
+        replaces: 'oklch(from var(--brand-accent) calc(l - 0.15) c h)'
+    },
+
+    // --- brand-primary ---
+    {
+        name: 'brand-primary-lm05',
+        base: 'brand-primary',
+        family: 'lightness-subtract',
+        param: 0.05,
+        replaces: 'oklch(from var(--brand-primary) calc(l - 0.05) c h)'
+    },
+    {
+        name: 'brand-primary-lm06',
+        base: 'brand-primary',
+        family: 'lightness-subtract',
+        param: 0.06,
+        replaces: 'oklch(from var(--brand-primary) calc(l - 0.06) c h)'
+    },
+    {
+        name: 'brand-primary-lm12',
+        base: 'brand-primary',
+        family: 'lightness-subtract',
+        param: 0.12,
+        replaces: 'oklch(from var(--brand-primary) calc(l - 0.12) c h)'
+    },
+
+    // --- core-card ---
+    {
+        name: 'core-card-lm03',
+        base: 'core-card',
+        family: 'lightness-subtract',
+        param: 0.03,
+        replaces: 'oklch(from var(--core-card) calc(l - 0.03) c h)'
+    },
+
+    // --- destructive ---
+    {
+        name: 'destructive-lm04',
+        base: 'destructive',
+        family: 'lightness-subtract',
+        param: 0.04,
+        replaces: 'oklch(from var(--destructive) calc(l - 0.04) c h)'
+    }
+] as const;
+
+// ============================================================================
+// Lightness-add family — oklch(from var(--BASE) calc(l + OFFSET) c h)
+// 2 entries found in gradient-stop usages. Sorted by base then offset.
+// ============================================================================
+
+const LIGHTNESS_ADD_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
+    // --- brand-primary ---
+    {
+        name: 'brand-primary-lp10',
+        base: 'brand-primary',
+        family: 'lightness-add',
+        param: 0.1,
+        replaces: 'oklch(from var(--brand-primary) calc(l + 0.1) c h)'
+    },
+
+    // --- surface-dark ---
+    {
+        name: 'surface-dark-lp05',
+        base: 'surface-dark',
+        family: 'lightness-add',
+        param: 0.05,
+        replaces: 'oklch(from var(--surface-dark) calc(l + 0.05) c h)'
+    }
+] as const;
+
+// ============================================================================
+// VARIANT_TOKEN_MAP — assembled from all four families
 // ============================================================================
 
 /**
- * Describes the transform kind applied to a base token to produce a variant.
+ * Ordered list of all 114 variant tokens that need sRGB fallbacks (SPEC-176).
  *
- * - `'alpha'` — multiplies the channel's alpha component: `oklch(from var(--base) l c h / ALPHA)`.
- * - `'lightness-mul'` — scales lightness: `oklch(from var(--base) calc(l * FACTOR) c h)`.
- * - `'lightness-sub'` — subtracts from lightness: `oklch(from var(--base) calc(l - OFFSET) c h)`.
- */
-export type VariantTransformKind = 'alpha' | 'lightness-mul' | 'lightness-sub';
-
-/**
- * A single entry in the VARIANT_TOKEN_MAP.
+ * Each entry maps a canonical CSS custom property name (`name`) to:
+ * - The base theme token it derives from (`base`).
+ * - The transform applied (`family` + `param`).
+ * - The exact inline `oklch(from ...)` string the T-005 codemod replaces
+ *   (`replaces`), plus any alternative literal spellings (`replacesVariants`).
  *
- * Each entry records:
- * - The CSS custom property name for the variant (without leading `--`).
- * - The base token CSS name (without leading `--`).
- * - The transform family and its numeric parameter.
- * - The exact `oklch(from ...)` string the codemod must replace across web source.
- *
- * Naming convention (D6 — locked):
- * - Alpha: `{base}-a{NN}` where NN = `Math.round(alpha * 100).toString().padStart(2, '0')`.
- *   Example: base `brand-primary`, alpha 0.15 → `brand-primary-a15`.
- * - Lightness multiply: `{base}-l{NN}` where NN = `Math.round(factor * 100)`.
- *   Example: base `brand-primary`, factor 0.85 → `brand-primary-l85`.
- * - Lightness subtract: `{base}-lm{NN}` where NN = `Math.round(offset * 100)`.
- *   Example: base `core-background`, offset 0.20 → `core-background-lm20`.
- * - Combined: `{base}-l{NN}-a{NN}` when both transforms apply.
- *
- * @example
- * ```ts
- * const entry: VariantTokenSpec = {
- *   name: 'brand-primary-a15',
- *   base: 'brand-primary',
- *   kind: 'alpha',
- *   amount: 0.15,
- *   replaces: 'oklch(from var(--brand-primary) l c h / 0.15)',
- * };
+ * T-004 (`emitVariantTokens`) consumes this map to produce:
+ * ```css
+ * :root { --name: rgb(R G B [/ ALPHA]); }
+ * @supports (color: oklch(from white l c h)) { :root { --name: oklch(from var(--base) ...); } }
  * ```
+ *
+ * T-005 (codemod) consumes `replaces` and `replacesVariants` to swap 676+
+ * call-sites in `apps/web/src/` to `var(--name)`.
+ *
+ * Order: alpha-family (92) → lightness-multiply (10) → lightness-subtract (10)
+ * → lightness-add (2). Within each family: sorted by base name, then by param.
+ *
+ * @see variant-tokens-alpha.ts for the 92 alpha entries (split file).
+ * @see variant-token-schema.ts — VariantTokenEntry type and VariantTokenMapSchema.
+ * @see variant-token-derivation.md — scan methodology and consolidation table.
  */
-export interface VariantTokenSpec {
-    /** CSS custom property name (without leading `--`). Must match D6 naming convention. */
-    readonly name: string;
-    /** Base token CSS name (without leading `--`). Must map to an OKLCH entry in webLight theme. */
-    readonly base: string;
-    /** Transform kind applied to the base token. */
-    readonly kind: VariantTransformKind;
-    /**
-     * Numeric parameter for the transform.
-     * - alpha: 0 < amount ≤ 1 (the alpha fraction, e.g. 0.15).
-     * - lightness-mul: 0 < amount ≤ 2 (the scale factor, e.g. 0.85).
-     * - lightness-sub: 0 < amount < 1 (the subtracted offset, e.g. 0.20).
-     */
-    readonly amount: number;
-    /**
-     * The exact `oklch(from var(--{base}) ...)` string that the codemod
-     * (`codemod-relative-colors.mjs`, T-005) replaces with `var(--{name})`.
-     * Must be byte-for-byte identical to how the pattern appears in web source.
-     */
-    readonly replaces: string;
-}
-
-// ============================================================================
-// VARIANT_TOKEN_MAP
-// ============================================================================
-
-/**
- * Ordered list of all variant tokens that need sRGB fallbacks.
- *
- * In T-001 this array is empty — the coverage tests iterate it and pass
- * trivially. T-003 populates it with all 42 entries derived from the SPEC-176
- * oklch census of `apps/web/src/`.
- *
- * The `replaces` field is what the T-005 codemod searches for and replaces
- * with `var(--{name})`. Keep each entry's `replaces` string byte-for-byte
- * identical to the actual usage in web source files.
- *
- * @see T-003 for derivation methodology (census script + naming convention D6).
- * @see T-004 for the generator that emits dual-declaration CSS blocks.
- * @see T-005 for the codemod that replaces 679 call-sites.
- *
- * SPEC-176: populate this map in T-002/T-003 to make the regression guard
- * meaningful (RED→GREEN).
- */
-export const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenSpec> = [
-    // T-003: 42 entries (alpha family + lightness families) go here.
+export const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenEntry> = [
+    ...ALPHA_VARIANT_ENTRIES,
+    ...LIGHTNESS_MULTIPLY_ENTRIES,
+    ...LIGHTNESS_SUBTRACT_ENTRIES,
+    ...LIGHTNESS_ADD_ENTRIES
 ];
