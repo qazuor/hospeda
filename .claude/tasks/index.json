@@ -616,14 +616,16 @@
         {
             "specId": "SPEC-161",
             "title": "Cron Run History",
-            "status": "in-progress",
-            "progress": "0/10",
+            "status": "completed",
+            "progress": "10/10",
             "path": "SPEC-161-cron-run-history",
             "branch": "spec/SPEC-161-cron-run-history",
             "base": "staging",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-161-cron-run-history",
             "createdAt": "2026-05-29T00:00:00.000Z",
-            "note": "Backend-only. Persist per-cron-execution results (cron_runs table) + admin read endpoints (list/detail/summary) + differentiated purge cron (success>60d, failed/timeout>180d). Single hook at 2 execution sites (bootstrap + cron-admin trigger). Fire-and-forget recording. Enables SPEC-155 ADMIN card D."
+            "completedAt": "2026-05-29T23:42:18.000Z",
+            "completionRef": "PR #1310 + PR #1317 + PR #1322 (merge d94188a54) — all merged to staging",
+            "note": "Backend-only. Persist per-cron-execution results (cron_runs table) + admin read endpoints (list/detail/summary) + differentiated purge cron (success>60d, failed/timeout>180d). Single hook at 2 execution sites (bootstrap + cron-admin trigger). Fire-and-forget recording. Enables SPEC-155 ADMIN card D. Progress shown nominal (task-master tracking was not wired; delivered via 3 PRs)."
         }
     ],
     "standalone": {
