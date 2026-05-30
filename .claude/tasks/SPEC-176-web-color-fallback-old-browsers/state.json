@@ -216,43 +216,43 @@
             "id": "T-004",
             "title": "Extend generate-css.ts with emitVariantTokens() and regenerate dist/tokens.css",
             "description": "Add the CSS emission functions to the design-tokens generator and produce the updated `dist/tokens.css`.\n\n**Step 1 — Add `emitVariantTokens()` to `packages/design-tokens/src/generators/generate-css.ts`:**\n\nThe function emits a SINGLE :root block (sRGB fallbacks for ALL 42 tokens), then a SINGLE @supports block with the oklch overrides for all 42 tokens:\n\n```ts\n/* SPEC-176: 42 variant tokens — sRGB fallback + @supports oklch override. */\n:root {\n    --brand-primary-a15: rgb(78 100 210 / 0.15);\n    /* ... 41 more ... */\n}\n@supports (color: oklch(from white l c h)) {\n    :root {\n        --brand-primary-a15: oklch(from var(--brand-primary) l c h / 0.15);\n        /* ... 41 more ... */\n    }\n}\n```\n\nFor each entry:\n- Alpha family: sRGB = `rgb({formatSRGB(baseOklch)} / {param})`\n- Lightness-multiply: compute `{l: base.l * param, c: base.c, h: base.h}`, then `formatSRGB()`, no alpha suffix\n- Lightness-subtract: compute `{l: Math.max(0, base.l - param), c: base.c, h: base.h}`, then `formatSRGB()`\n\nThe `baseOklchValues` record is derived from the existing `webLight` theme map filtered to OKLCH-typed tokens.\n\n**Step 2 — Integrate into `buildCSS()`:**\nAppend the variant tokens section at the end of the :root section (after palette, before theme overrides).\n\n**Step 3 — Run the generator:**\n```bash\ncd packages/design-tokens && pnpm build:css\n```\nInspect `dist/tokens.css` to verify:\n- The 42 `--{name}: rgb(...)` declarations appear in `:root` BEFORE the @supports block\n- The @supports block exists with all 42 oklch redefinitions\n- No undefined token references (all bases are present in webLight)\n\n**Step 4 — Make coverage test GREEN:**\nWith the 42 entries now in VARIANT_TOKEN_MAP and the generator emitting them, the three coverage `it` blocks from T-001 will now be meaningful assertions. Run `pnpm test` in packages/design-tokens — all tests must pass.\n\nAcceptance criteria:\n- `dist/tokens.css` contains exactly 42 sRGB fallback declarations + 42 oklch @supports declarations\n- All three coverage test `it` blocks pass GREEN (T-001 tests now meaningful)\n- No existing tests broken (no token name collisions with existing palette/theme tokens)\n- `generate-css.ts` stays under 500 lines; VARIANT_TOKEN_MAP lives in `variant-tokens.ts` (imported)\n\nFiles affected:\n- `packages/design-tokens/src/generators/generate-css.ts` (add emitVariantTokens, integrate into buildCSS)\n- `packages/design-tokens/dist/tokens.css` (regenerated artifact)\n\nAC mapping: PDR Rule 5, Story 2 AC2 (modern browser resolves via @supports).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
                 {
                     "title": "Implement emitVariantTokens() with sRGB + @supports dual-block logic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Derive baseOklchValues record from webLight theme map",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integrate into buildCSS() and run pnpm build:css",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Inspect dist/tokens.css — verify 42+42 declarations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm all coverage test it blocks are GREEN",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
