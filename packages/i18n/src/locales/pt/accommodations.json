@@ -365,7 +365,9 @@
         "blackout_curtains": "Cortinas blackout",
         "baby_crib": "Berço",
         "wheelchair_accessible": "Acessível para cadeirantes",
-        "pet_friendly": "Aceita pets"
+        "pet_friendly": "Aceita pets",
+        "electric_kettle": "Chaleira elétrica",
+        "kitchen_utensils": "Utensílios de cozinha"
     },
     "list": {
         "searchContext": {
