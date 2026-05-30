@@ -6,6 +6,7 @@ export * from './amenity/amenity.service';
 export * from './attraction/attraction.service';
 export * from './destination/destination.service';
 export * from './destinationReview/destinationReview.service';
+export * from './entityComment/entityComment.service';
 export * from './event/event.service';
 export * from './exchange-rate';
 export * from './geocoding';
