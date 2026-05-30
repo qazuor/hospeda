@@ -75,40 +75,30 @@ export const createLocationConsolidatedSection = (): ConsolidatedSectionConfig =
             },
             typeConfig: {}
         },
+        // SPEC-154 Phase 6 PR4: replaced two separate lat/long NUMBER fields
+        // with a single COORDINATES field (Leaflet map + Nominatim
+        // geocoding). Paridad with accommodation location-info — the
+        // user can drop the pin on the map or paste the country / state /
+        // city fields above for reverse geocoding.
         {
-            id: 'location.coordinates.lat',
-            type: FieldTypeEnum.NUMBER,
+            id: 'location.coordinates',
+            type: FieldTypeEnum.COORDINATES,
             required: false,
             modes: ['view', 'edit', 'create'],
-            label: 'Latitud',
-            description: 'Coordenada de latitud',
-            placeholder: '-32.4833',
+            label: 'Coordenadas',
+            description:
+                'Punto en el mapa. Arrastrá el marcador o hacé click para ubicarlo. También podés ingresar latitud y longitud manualmente.',
+            placeholder: '-32.4833, -58.2333',
             permissions: {
                 view: [PermissionEnum.DESTINATION_VIEW_ALL],
                 edit: [PermissionEnum.DESTINATION_UPDATE]
             },
             typeConfig: {
-                min: -90,
-                max: 90,
-                step: 0.000001
-            }
-        },
-        {
-            id: 'location.coordinates.long',
-            type: FieldTypeEnum.NUMBER,
-            required: false,
-            modes: ['view', 'edit', 'create'],
-            label: 'Longitud',
-            description: 'Coordenada de longitud',
-            placeholder: '-58.2333',
-            permissions: {
-                view: [PermissionEnum.DESTINATION_VIEW_ALL],
-                edit: [PermissionEnum.DESTINATION_UPDATE]
-            },
-            typeConfig: {
-                min: -180,
-                max: 180,
-                step: 0.000001
+                type: 'COORDINATES',
+                addressFields: {
+                    cityContext: 'location.city'
+                },
+                geocodingCountryCodes: ['ar']
             }
         }
     ]

@@ -2,6 +2,7 @@ import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -71,6 +72,7 @@ function PostEditPage() {
                     initialMode="edit"
                     entityData={entityData}
                     zodSchema={PostUpdateInputSchema}
+                    qualityScore={({ isReduced }) => <PostQualityScore compact={isReduced} />}
                 >
                     <EntityEditContent
                         entityType="post"

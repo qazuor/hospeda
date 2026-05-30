@@ -33,7 +33,10 @@ function FeatureEditPage() {
                 entityData={entityData}
                 zodSchema={FeatureUpdateInputSchema}
             >
-                <EntityEditContent entityType="feature" />
+                <EntityEditContent
+                    entityType="feature"
+                    flat
+                />
             </EntityPageBase>
         </RoutePermissionGuard>
     );

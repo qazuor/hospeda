@@ -1767,11 +1767,13 @@
             "title": "Cron Run History",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-161-cron-run-history",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-161-cron-run-history",
             "branch": "spec/SPEC-161-cron-run-history",
             "created": "2026-05-26T00:00:00Z",
+            "completedAt": "2026-05-29T23:42:18.000Z",
+            "completionRef": "PR #1310 (backend) + PR #1317 (card D wiring) + PR #1322 (observability UX, merge d94188a54) — all merged to staging",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. ADMIN 'failed crons / last run' widget has nothing to read: cron-admin lists jobs + triggers but does not persist per-execution results.",
             "dependsOn": [],
             "enables": ["SPEC-155"],
@@ -1970,6 +1972,32 @@
             "archived": false,
             "tags": ["billing", "plans", "admin", "api", "schemas", "service-core", "web", "qzpay"],
             "note": "Canonical replacement for SPEC-093 (now superseded). Runtime-editable billing plans: DB (qzpay billing_plans + billing_prices, via storage adapter) becomes source of truth, @repo/billing config = seed only. Origin: SPEC-143 smoke found admin plans list 502s (transformPlanRecord rejects config flat shape) + Editar/Eliminar/Crear call non-existent endpoints. Verified 2026-05-29: billing_plans table already exists in @qazuor/qzpay-drizzle (id UUID, name=slug, metadata JSON, entitlements array, limits object); seed (billingPlans.seed.ts) already populates from ALL_PLANS idempotently; createBillingAdapter exposes storage.plans.*. Scope: PlanService CRUD via adapter + audit log, API read+write rewrite + public-read switch, @repo/schemas SSOT, admin transformPlanRecord/PlanDialog wiring + header fix, web pricing freshness strategy, operator docs, ADR-020 supersedence. CRITICAL open question: billing_subscriptions.plan_id (varchar) stores slug vs UUID — gates edit/delete referential integrity. Other open Qs: permission model (reuse BILLING_* vs new BILLING_PLAN_*, coordinate SPEC-164), web SSG-vs-endpoint cache, seed re-run policy. Ghost worktree spec/SPEC-168-admin-plan-management points at SPEC-155 commits with untracked spec.md — to be cleaned, fresh worktree on dev start. NOT atomized, implementation NOT started (owner: spec+registry only for now)."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-175-admin-whats-new",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-175-admin-whats-new",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": [
+                "admin",
+                "onboarding",
+                "whats-new",
+                "release-notes",
+                "config-driven",
+                "i18n",
+                "frontend",
+                "api",
+                "ux"
+            ],
+            "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
         }
     ]
 }

@@ -2,7 +2,7 @@ import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/fo
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
@@ -162,7 +162,13 @@ export const createBasicInfoConsolidatedSection = (
                 minCharToSearch: 2,
                 searchDebounce: 300,
                 showAvatar: true,
-                clearable: true
+                clearable: true,
+                // Re-enabled after PR #1313 shipped the backend `?roles=` filter.
+                // SPEC-154 walkthrough commit 73e0dd945 dropped it as a temp-fix
+                // because the API rejected `?roles=HOST` with "Invalid pagination
+                // parameters"; that gap is now fixed and the picker filters to
+                // HOST users (the only role that can own an accommodation).
+                roleFilter: [RoleEnum.HOST]
             }
         }
     ]

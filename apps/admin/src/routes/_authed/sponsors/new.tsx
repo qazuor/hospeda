@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createSponsorConsolidatedConfig } from '@/features/sponsors/config';
 import { useCreateSponsorMutation } from '@/features/sponsors/hooks/useSponsorQuery';
@@ -40,7 +40,7 @@ function SponsorCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.POST_SPONSOR_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={PostSponsorCreateInputSchema}
                 createConsolidatedConfig={() => createSponsorConsolidatedConfig(t)}

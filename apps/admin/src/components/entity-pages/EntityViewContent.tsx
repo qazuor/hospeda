@@ -5,6 +5,8 @@ import {
 } from '@/components/entity-form/accordion/SectionAccordion';
 import { EntitlementGatedSection } from '@/components/entity-form/sections/EntitlementGatedSection';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { cn } from '@/lib/utils';
 import type { PermissionEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { type SectionSortOptions, filterAndSortSections } from './utils/section-sorter';
@@ -37,6 +39,13 @@ export interface EntityViewContentProps {
      * When undefined, sections are shown in config order after permission filtering.
      */
     anchorSectionIds?: readonly string[];
+    /**
+     * When `true`, render each section as a separate always-open `Card`
+     * (no accordion, no collapsed summary). Used by simpler entities
+     * (catalogs and sub-entities — SPEC-154 Phase 6) where the
+     * accordion adds friction without paying for itself.
+     */
+    flat?: boolean;
     /** Additional CSS classes */
     className?: string;
 }
@@ -59,6 +68,7 @@ export const EntityViewContent = ({
     renderSection,
     sectionSummarizers,
     anchorSectionIds,
+    flat = false,
     className
 }: EntityViewContentProps) => {
     if (!entity) {
@@ -73,6 +83,59 @@ export const EntityViewContent = ({
     };
     const orderedSections = filterAndSortSections(sections, sortOptions);
 
+    /**
+     * Shared per-section body builder — same logic for accordion and flat modes.
+     */
+    const buildSectionBody = (section: SectionConfig, index: number): ReactNode => {
+        if (renderSection) return renderSection(section, index);
+
+        const viewSection = (
+            <EntityViewSection
+                key={section.id || `section-${index}`}
+                config={section}
+                values={entity}
+                mode="detailed"
+                entityData={entity}
+                userPermissions={userPermissions}
+            />
+        );
+
+        return section.entitlementKey ? (
+            <EntitlementGatedSection
+                key={section.id || `section-${index}`}
+                entitlementKey={section.entitlementKey}
+                sectionTitle={section.title}
+            >
+                {viewSection}
+            </EntitlementGatedSection>
+        ) : (
+            viewSection
+        );
+    };
+
+    // ------------------------------------------------------------------
+    // Flat mode — each section in its own always-open Card. No collapsed
+    // summary, no toggle, no accordion semantics. Used by simpler
+    // catalog / sub-entity surfaces (SPEC-154 Phase 6).
+    // ------------------------------------------------------------------
+    if (flat) {
+        return (
+            <div className={cn('space-y-4', className)}>
+                {orderedSections.map((section, index) => (
+                    <Card key={section.id || `section-${index}`}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                {section.title ?? section.id}
+                                {section.badge}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>{buildSectionBody(section, index)}</CardContent>
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
     // 2. First section is open by default; rest are collapsed
     const defaultOpenIds =
         orderedSections.length > 0 && orderedSections[0] ? [orderedSections[0].id] : [];
@@ -81,42 +144,11 @@ export const EntityViewContent = ({
         <div className={`space-y-3 ${className ?? ''}`}>
             <SectionAccordion defaultOpenIds={defaultOpenIds}>
                 {orderedSections.map((section, index) => {
-                    // Collapsed summary
                     const collapsedSummary = computeSectionSummary({
                         values: entity,
                         section,
                         customFn: sectionSummarizers?.[section.id]
                     });
-
-                    // Section body
-                    let sectionBody: ReactNode;
-
-                    if (renderSection) {
-                        sectionBody = renderSection(section, index);
-                    } else {
-                        const viewSection = (
-                            <EntityViewSection
-                                key={section.id || `section-${index}`}
-                                config={section}
-                                values={entity}
-                                mode="detailed"
-                                entityData={entity}
-                                userPermissions={userPermissions}
-                            />
-                        );
-
-                        sectionBody = section.entitlementKey ? (
-                            <EntitlementGatedSection
-                                key={section.id || `section-${index}`}
-                                entitlementKey={section.entitlementKey}
-                                sectionTitle={section.title}
-                            >
-                                {viewSection}
-                            </EntitlementGatedSection>
-                        ) : (
-                            viewSection
-                        );
-                    }
 
                     return (
                         <SectionAccordionItem
@@ -128,7 +160,7 @@ export const EntityViewContent = ({
                             collapsedSummary={collapsedSummary}
                             defaultCollapsed={index !== 0}
                         >
-                            {sectionBody}
+                            {buildSectionBody(section, index)}
                         </SectionAccordionItem>
                     );
                 })}
