@@ -63,9 +63,14 @@ describe('EntityCommentService.create', () => {
         });
         expectSuccess(result);
         // _beforeCreate injects authorId + APPROVED state into the insert payload.
-        const insertPayload = asMock(modelMock.create).mock.calls[0][0];
-        expect(insertPayload.authorId).toBe(AUTHOR_ID);
-        expect(insertPayload.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        const insertPayload = asMock(modelMock.create).mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(insertPayload).toMatchObject({
+            authorId: AUTHOR_ID,
+            moderationState: ModerationStatusEnum.APPROVED
+        });
         // counter bumped exactly once, +1, for the post.
         expect(asMock(postModelMock.adjustCommentCount)).toHaveBeenCalledTimes(1);
         expect(asMock(postModelMock.adjustCommentCount)).toHaveBeenCalledWith(

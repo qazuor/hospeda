@@ -1,5 +1,10 @@
 import { EntityCommentModel, PostModel } from '@repo/db';
-import { EntityTypeEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
+import {
+    EntityCommentAdminSearchSchema,
+    EntityTypeEnum,
+    ModerationStatusEnum,
+    PermissionEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EntityCommentService } from '../../../src/services/entityComment/entityComment.service';
 import { createActor } from '../../factories/actorFactory';
@@ -31,16 +36,19 @@ describe('EntityCommentService admin search backing (_executeSearch / _executeCo
     });
 
     it('builds a where clause from all entity filters and excludes deleted by default', async () => {
-        const result = await service.search(actor, {
-            page: 1,
-            pageSize: 20,
-            entityType: EntityTypeEnum.POST,
-            entityId: POST_ID,
-            authorId: AUTHOR_ID,
-            moderationState: ModerationStatusEnum.REJECTED
-        });
+        const result = await service.search(
+            actor,
+            EntityCommentAdminSearchSchema.parse({
+                page: 1,
+                pageSize: 20,
+                entityType: EntityTypeEnum.POST,
+                entityId: POST_ID,
+                authorId: AUTHOR_ID,
+                moderationState: ModerationStatusEnum.REJECTED
+            })
+        );
         expectSuccess(result);
-        const where = asMock(modelMock.findAll).mock.calls[0][0];
+        const where = asMock(modelMock.findAll).mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where).toMatchObject({
             entityType: EntityTypeEnum.POST,
             entityId: POST_ID,
@@ -51,26 +59,28 @@ describe('EntityCommentService admin search backing (_executeSearch / _executeCo
     });
 
     it('includes soft-deleted rows when includeDeleted is true and omits unset filters', async () => {
-        const result = await service.search(actor, {
-            page: 1,
-            pageSize: 20,
-            includeDeleted: true
-        });
+        const result = await service.search(
+            actor,
+            EntityCommentAdminSearchSchema.parse({ page: 1, pageSize: 20, includeDeleted: true })
+        );
         expectSuccess(result);
-        const where = asMock(modelMock.findAll).mock.calls[0][0];
+        const where = asMock(modelMock.findAll).mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where.deletedAt).toBeUndefined();
         expect(where.entityType).toBeUndefined();
     });
 
     it('counts with the same where clause', async () => {
-        const result = await service.count(actor, {
-            page: 1,
-            pageSize: 20,
-            entityType: EntityTypeEnum.EVENT
-        });
+        const result = await service.count(
+            actor,
+            EntityCommentAdminSearchSchema.parse({
+                page: 1,
+                pageSize: 20,
+                entityType: EntityTypeEnum.EVENT
+            })
+        );
         expectSuccess(result);
         expect(asMock(modelMock.count)).toHaveBeenCalledTimes(1);
-        const where = asMock(modelMock.count).mock.calls[0][0];
+        const where = asMock(modelMock.count).mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where).toMatchObject({ entityType: EntityTypeEnum.EVENT, deletedAt: null });
     });
 

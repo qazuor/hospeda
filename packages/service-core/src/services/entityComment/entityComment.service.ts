@@ -1,4 +1,4 @@
-import { EntityCommentModel, PostModel } from '@repo/db';
+import { EntityCommentModel, EventModel, PostModel } from '@repo/db';
 import {
     type CountResponse,
     type CreateEntityCommentInput,
@@ -7,9 +7,13 @@ import {
     type EntityCommentAdminSearch,
     EntityCommentAdminSearchSchema,
     EntityTypeEnum,
+    EntityTypeEnumSchema,
+    ModerateEntityCommentInputSchema,
     ModerationStatusEnum,
     ModerationStatusEnumSchema,
-    ServiceErrorCode
+    PublicCommentThreadQuerySchema,
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -21,12 +25,26 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
+import { isCountedApprovedPostComment, moderationCounterDelta } from './entityComment.helpers';
 import {
+    assertCommentEntityType,
     checkCanCreateComment,
     checkCanListComments,
     checkCanModerateComment,
     checkCanViewComment
 } from './entityComment.permissions';
+import type { EntityCommentHookState } from './entityComment.types';
+
+/** Service-level input for the public comment thread (path + query combined). */
+const ListPublicCommentsInputSchema = PublicCommentThreadQuerySchema.extend({
+    entityType: EntityTypeEnumSchema,
+    entityId: z.string().uuid()
+});
+
+/** Service-level input for a moderation-state change (PATCH body + comment id). */
+const ModerateCommentInputSchema = ModerateEntityCommentInputSchema.extend({
+    commentId: z.string().uuid()
+});
 
 /**
  * Minimal update schema for the comment entity. Comments are NOT content-editable
@@ -64,19 +82,30 @@ export class EntityCommentService extends BaseCrudService<
     protected readonly entityName = EntityCommentService.ENTITY_NAME;
     protected readonly model: EntityCommentModel;
     private readonly postModel: PostModel;
+    private readonly eventModel: EventModel;
 
     protected readonly createSchema = CreateEntityCommentInputSchema;
     protected readonly updateSchema = EntityCommentServiceUpdateSchema;
     protected readonly searchSchema = EntityCommentAdminSearchSchema;
 
-    constructor(ctx: ServiceConfig, model?: EntityCommentModel, postModel?: PostModel) {
+    constructor(
+        ctx: ServiceConfig,
+        model?: EntityCommentModel,
+        postModel?: PostModel,
+        eventModel?: EventModel
+    ) {
         super(ctx, EntityCommentService.ENTITY_NAME);
         this.model = model ?? new EntityCommentModel();
         this.postModel = postModel ?? new PostModel();
+        this.eventModel = eventModel ?? new EventModel();
         this.adminSearchSchema = EntityCommentAdminSearchSchema;
     }
 
     protected getDefaultListRelations() {
+        return { author: true };
+    }
+
+    protected getDefaultGetByIdRelations() {
         return { author: true };
     }
 
@@ -266,7 +295,247 @@ export class EntityCommentService extends BaseCrudService<
     }
 
     // ========================================================================
-    // SEARCH / COUNT — admin list backing (filters refined in T-007)
+    // PUBLIC THREAD
+    // ========================================================================
+
+    /**
+     * Returns whether the target entity exists and is publicly visible
+     * (`visibility === PUBLIC`, not soft-deleted). Used to enforce the 404
+     * contract on the public thread endpoint (AC-9). Only POST and EVENT are
+     * supported (RD-3).
+     */
+    private async _isEntityPublished(
+        entityType: EntityComment['entityType'],
+        entityId: string,
+        tx?: ServiceContext['tx']
+    ): Promise<boolean> {
+        const resolved = assertCommentEntityType(entityType);
+        const entity =
+            resolved === EntityTypeEnum.POST
+                ? await this.postModel.findById(entityId, tx)
+                : await this.eventModel.findById(entityId, tx);
+        return Boolean(
+            entity &&
+                !(entity as { deletedAt?: Date | null }).deletedAt &&
+                (entity as { visibility?: string }).visibility === VisibilityEnum.PUBLIC
+        );
+    }
+
+    /**
+     * Public comment thread for a post or event (no auth). Returns APPROVED,
+     * non-deleted comments ordered oldest-first (natural thread order), paginated.
+     * The author relation is loaded so the route can resolve the display name.
+     * Responds with NOT_FOUND when the entity does not exist or is not published
+     * (AC-9); an existing published entity with zero approved comments yields an
+     * empty page, not a 404 (AC-10).
+     *
+     * @param actor - The (possibly guest) actor from the public middleware.
+     * @param input - `{ entityType, entityId, page, pageSize }`.
+     * @param ctx - Optional service context.
+     */
+    public async listPublic(
+        actor: Actor,
+        input: {
+            entityType: EntityComment['entityType'];
+            entityId: string;
+            page?: number;
+            pageSize?: number;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PaginatedListOutput<EntityComment>>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listPublic',
+            input: { ...input, actor },
+            schema: ListPublicCommentsInputSchema,
+            ctx,
+            execute: async (validated, _validActor, execCtx) => {
+                assertCommentEntityType(validated.entityType);
+                const published = await this._isEntityPublished(
+                    validated.entityType,
+                    validated.entityId,
+                    execCtx?.tx
+                );
+                if (!published) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'The requested post or event was not found.'
+                    );
+                }
+                return this.model.findAllWithRelations(
+                    { author: true },
+                    {
+                        entityType: validated.entityType,
+                        entityId: validated.entityId,
+                        moderationState: ModerationStatusEnum.APPROVED,
+                        deletedAt: null
+                    },
+                    {
+                        page: validated.page,
+                        pageSize: validated.pageSize,
+                        sortBy: 'createdAt',
+                        sortOrder: 'asc'
+                    },
+                    undefined,
+                    execCtx?.tx
+                );
+            }
+        });
+    }
+
+    // ========================================================================
+    // MODERATE — approve / reject (admin tier), with counter sync
+    // ========================================================================
+
+    /**
+     * Changes a comment's moderation state (APPROVED ↔ REJECTED). Gated by the
+     * `_MODERATE` permission resolved from the comment's entity type. For POST
+     * comments the `posts.comments` counter is adjusted: +1 when a comment becomes
+     * APPROVED, -1 when it leaves APPROVED (AC-19 / AC-20 / AC-25).
+     *
+     * @param actor - The moderating actor.
+     * @param input - `{ commentId, moderationState }` (APPROVED | REJECTED).
+     * @param ctx - Optional service context.
+     * @returns The updated comment, or a `ServiceError` (NOT_FOUND if missing/deleted).
+     */
+    public async moderate(
+        actor: Actor,
+        input: { commentId: string; moderationState: 'APPROVED' | 'REJECTED' },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<EntityComment>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'moderate',
+            input: { ...input, actor },
+            schema: ModerateCommentInputSchema,
+            ctx,
+            execute: async (validated, validActor, execCtx) => {
+                const comment = await this.model.findById(validated.commentId, execCtx?.tx);
+                if (!comment || comment.deletedAt) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Comment not found.');
+                }
+                checkCanModerateComment(validActor, comment.entityType);
+
+                const delta = moderationCounterDelta(
+                    comment.moderationState,
+                    validated.moderationState
+                );
+
+                await this.model.updateById(
+                    validated.commentId,
+                    { moderationState: validated.moderationState, updatedById: validActor.id },
+                    execCtx?.tx
+                );
+
+                if (comment.entityType === EntityTypeEnum.POST && delta !== 0) {
+                    await this.postModel.adjustCommentCount(
+                        { id: comment.entityId, delta },
+                        execCtx?.tx
+                    );
+                }
+
+                const updated = await this.model.findById(validated.commentId, execCtx?.tx);
+                if (!updated) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Comment not found.');
+                }
+                return updated;
+            }
+        });
+    }
+
+    // ========================================================================
+    // ADMIN DELETE / RESTORE LIFECYCLE HOOKS — counter sync
+    //
+    // These hooks back the INHERITED softDelete / hardDelete / restore (admin
+    // tier, gated by _MODERATE via the _can* hooks). The author-gated path is the
+    // separate softDeleteOwn() above.
+    // ========================================================================
+
+    /**
+     * Captures the pre-mutation comment snapshot into the hook state under `key`,
+     * so the matching `_after*` hook can adjust the counter. Centralises the
+     * `hookState` guard shared by all three delete/restore before-hooks.
+     */
+    private async _snapshotForCounter(
+        id: string,
+        key: keyof EntityCommentHookState,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<void> {
+        const comment = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState[key] = comment ?? undefined;
+        }
+    }
+
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<string> {
+        await this._snapshotForCounter(id, 'softDeletedComment', ctx);
+        return id;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<{ count: number }> {
+        const comment = ctx.hookState?.softDeletedComment;
+        if (comment && isCountedApprovedPostComment(comment)) {
+            await this.postModel.adjustCommentCount({ id: comment.entityId, delta: -1 }, ctx?.tx);
+        }
+        return result;
+    }
+
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<string> {
+        await this._snapshotForCounter(id, 'hardDeletedComment', ctx);
+        return id;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<{ count: number }> {
+        const comment = ctx.hookState?.hardDeletedComment;
+        if (comment && isCountedApprovedPostComment(comment)) {
+            await this.postModel.adjustCommentCount({ id: comment.entityId, delta: -1 }, ctx?.tx);
+        }
+        return result;
+    }
+
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<string> {
+        await this._snapshotForCounter(id, 'restoredComment', ctx);
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<EntityCommentHookState>
+    ): Promise<{ count: number }> {
+        // The captured snapshot is the pre-restore (soft-deleted) row; once restored
+        // it becomes visible again, so an APPROVED post comment re-enters the count.
+        const comment = ctx.hookState?.restoredComment;
+        if (
+            comment &&
+            comment.entityType === EntityTypeEnum.POST &&
+            comment.moderationState === ModerationStatusEnum.APPROVED
+        ) {
+            await this.postModel.adjustCommentCount({ id: comment.entityId, delta: 1 }, ctx?.tx);
+        }
+        return result;
+    }
+
+    // ========================================================================
+    // SEARCH / COUNT — admin list backing
     // ========================================================================
 
     /**
