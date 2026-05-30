@@ -25,6 +25,8 @@ branch: null
 > SPEC-168 keeps the correct qzpay-backed architecture and absorbs the broader scope that
 > SPEC-093 carried.
 
+> **Related beta feedback**: [BETA-58](https://linear.app/hospeda-beta/issue/BETA-58) — "Reubicar configuracion de planes fuera de packages/billing/src/config". SPEC-168 resolves this: after seeding, the DB is the source of truth for plans, so `packages/billing/src/config/plans.config.ts` is read only once (to seed) and is no longer the live config location. Inherited from SPEC-093 on consolidation.
+
 ## Origin
 
 Discovered during the SPEC-143 billing local smoke (admin write-ops, Chrome).
@@ -63,9 +65,10 @@ Consequences:
   - **Prices live in a separate qzpay table `billing_prices`** (monthly always,
     annual only when `annualPriceArs > 0`), seeded alongside the plan.
   - `billing_subscriptions.plan_id` is **varchar** while `billing_plans.id` is UUID
-    (the CLAUDE.md gotcha). What `plan_id` actually stores (slug vs UUID-as-string)
-    is an **open question** — see Open Questions #1, it gates edit/delete referential
-    integrity.
+    (the CLAUDE.md gotcha). **RESOLVED 2026-05-29 (D1)**: `plan_id` stores the **UUID**
+    (`billing_plans.id`), not the slug. Verified against real DB rows (hospeda_dev):
+    10/10 subscriptions match `billing_plans.id`, 0/10 match `name`/slug. See
+    Resolved Decisions §D1.
 - **Seed**: `packages/seed/src/required/billingPlans.seed.ts` (`seedBillingPlans()`)
   reads `ALL_PLANS` from `@repo/billing` and inserts into `billing_plans` +
   `billing_prices`. Idempotent by `billingPlans.name === plan.slug` (skip if exists).
@@ -154,7 +157,10 @@ Consequences:
    - `GET /` (list) and `GET /{id}` read from DB (response includes `id` + timestamps).
    - Add `POST /` (create), `PUT /{id}` (update), a `PATCH`/toggle for active status,
      `DELETE /{id}` (soft), and optionally `POST /{id}/restore` + `DELETE /{id}/hard`.
-   - Apply per-route admin rate limit and the chosen permission model (Open Q #2).
+     **`{id}` is the DB UUID** (per D1), NOT the slug.
+   - Apply per-route admin rate limit. **Permission model (D2)**: read =
+     `PermissionEnum.BILLING_READ_ALL`, all writes = `PermissionEnum.BILLING_MANAGE`
+     (reuse existing generic perms; SUPER_ADMIN-only via SPEC-164 — no new perms).
    - `getActorFromContext(c)` for `actor.id` on every audit call.
    - Keep the public read endpoint (`routes/billing/public/listPlans.ts`) working;
      switch its source to the DB/service so public and admin agree.
@@ -162,7 +168,10 @@ Consequences:
 3. **@repo/schemas** — plan request/response schemas (`Create/Update/Response`,
    `Search`) as the **SSOT** (NOT loose schemas in apps/api — per the rule applied in
    the SPEC-143 promo-code fix). Mirror the qzpay row shape, not the SPEC-093 flat shape.
-   Decide on `id` (DB uuid) vs `slug` as the mutation identifier (Open Q #1).
+   **Mutation identifier = DB `id` (UUID)** per D1. `slug` (`name`) is **immutable after
+   creation** (the `PlanDialog` form already disables it for existing plans) — editable
+   on create only — because config/entitlements/web still resolve by slug; freezing it
+   avoids re-mapping every slug-based consumer.
 
 4. **Front** `apps/admin/src/features/billing-plans/` — align `transformPlanRecord` /
    types to the DB response shape (with `id` + `metadata` + timestamps), wire the form
@@ -170,10 +179,12 @@ Consequences:
    `createThrowingStorage('plans')` adapter with a real one, and **fix the page header +
    i18n text** (drop "managed in source code", keep an audit-log hint).
 
-5. **Web** `apps/web` — decide whether the pricing pages stay on SSG (build-time
-   `ALL_PLANS` import) or move to the public `/api/v1/public/plans` endpoint with a cache
-   strategy so operator edits surface without a redeploy (Open Q #3). Whichever path,
-   the display-vs-charge invariant must hold.
+5. **Web** `apps/web` — **(D3)** move the pricing pages OFF the build-time `ALL_PLANS`
+   import to consume the public `/api/v1/public/plans` endpoint at runtime (SSR), with
+   `Cache-Control: s-maxage=N, stale-while-revalidate` and an explicit **Cloudflare cache
+   purge on plan save** (infra is Coolify + Cloudflare, NOT Vercel — no native ISR). This
+   makes operator edits surface without a redeploy. The display-vs-charge invariant must
+   hold (admin write + checkout + web all read the same DB store).
 
 6. **Seed** — confirm config → DB seed runs once and is idempotent by slug; ensure
    runtime edits are not clobbered by a re-seed (decide the merge/skip policy explicitly).
@@ -193,37 +204,51 @@ Consequences:
 - Plan versioning, A/B experiments framework, region routing, promo-codes UI,
   addon DB catalog, multi-tenant plan catalogs.
 
-## Open Questions
+## Resolved Decisions (2026-05-29)
 
-These must be answered before implementation starts.
+- **D1 — Mutation identifier & referential integrity (was CRITICAL OQ).** Edit/delete use
+  the DB **`id` (UUID)**. Verified against real `hospeda_dev` rows: `billing_subscriptions.plan_id`
+  stores the plan **UUID** (10/10 subs match `billing_plans.id`, 0/10 match `name`/slug).
+  Consequences: (a) routes are `PUT /{uuid}` / `DELETE /{uuid}`; (b) **delete semantics
+  (D4 below)** — a plan referenced by any subscription cannot be hard-deleted; (c) the
+  **slug (`name`) is immutable after creation** because config/entitlements/web still
+  resolve by slug while subscriptions reference by UUID — freezing the slug avoids a
+  cross-codebase re-map.
+- **D2 — Permission model.** Reuse the existing generic `BILLING_*` permissions:
+  read = `BILLING_READ_ALL`, all writes = `BILLING_MANAGE`. No new `BILLING_PLAN_*` perms.
+  Rationale: SPEC-164 already made the entire admin-billing surface SUPER_ADMIN-only;
+  finer granularity is dead weight since SUPER_ADMIN holds every permission via the
+  `actor.ts` runtime bypass. Revisit only if a separate finance/ops role is introduced.
+- **D3 — Web pricing-page freshness.** Move web pricing pages off the build-time
+  `ALL_PLANS` SSG import to consume `/api/v1/public/plans` at runtime (SSR) with
+  `Cache-Control: s-maxage + stale-while-revalidate` and an explicit **Cloudflare cache
+  purge on plan save**. Rationale: infra is Coolify self-hosted behind Cloudflare (no
+  Vercel ISR); this is the only option that reflects operator edits without a redeploy.
+- **D4 — Delete semantics (derived from D1).** Soft-delete (`active:false`) is the default.
+  Hard-delete is allowed ONLY when no subscription references the plan UUID (referential
+  guard). UI hides hard-delete when references exist.
 
-1. **Mutation identifier & referential integrity (CRITICAL).** Is the edit/delete
-   identifier the DB `id` (uuid) or the `slug`? `billing_subscriptions.plan_id` is
-   varchar — and the evidence conflicts: `resolvePlanId()` in the seed looks up by
-   `name === slug` and stores the returned **UUID** in `plan_id`
-   (`testUsers.seed.ts`), yet other readers treat `plan_id` as a slug. **Verify against
-   real DB rows** what subscriptions actually store before allowing slug edits or plan
-   deletes (renaming/deleting a referenced plan could orphan subscriptions).
-2. **Permission model.** Reuse the existing generic `BILLING_*` permissions
-   (`BILLING_MANAGE` for writes, `BILLING_READ_ALL` for reads) — simpler, matches the
-   rest of admin billing and SPEC-164 (admin-billing super-only) — OR introduce
-   dedicated `BILLING_PLAN_VIEW/CREATE/UPDATE/DELETE/HARD_DELETE` for finer control?
-   Coordinate with SPEC-164.
-3. **Web pricing-page freshness.** Options: stay SSG + build-trigger on save; move to
-   the public endpoint with `Cache-Control: s-maxage + stale-while-revalidate` and
-   explicit purge on save; or ISR-style revalidate window. Tradeoff: latency-to-reflect
-   vs operational complexity vs deploy frequency.
-4. **QZPay sync semantics.** When admin updates a price, does qzpay need any extra step
-   beyond writing `billing_plans`/`billing_prices` (e.g. does checkout read a cached
-   plan, or re-read storage each time)? Confirm `storage.plans.update` + price update is
-   sufficient and seen by checkout immediately.
-5. **Delete semantics.** Soft-delete (`active:false`) by default; hard-delete only when
-   no active subscription references the plan. Confirm with product/finance.
-6. **Seed re-run policy.** On a re-seed after runtime edits, skip-existing (current) is
-   safe but drifts DB from config silently. Is silent skip acceptable, or do we want a
-   warning/report of config-vs-DB divergence?
-7. **Limits/entitlements editing granularity.** Inline with the plan (smoke decision
+## Open Questions (remaining — implementation-detail, do not block schema/routes)
+
+1. **QZPay sync / read-through.** After writing `billing_plans` + `billing_prices`, does
+   checkout re-read storage immediately, or is there an in-process plan cache to bust?
+   Confirm `storage.plans.update` + price write is seen by the next checkout with no extra
+   step (the SPEC-143 note about a 300s in-memory cache not being write-invalidated is a
+   lead to check).
+2. **Seed re-run policy.** Current seed skips existing slugs (safe) but drifts DB from
+   config silently after runtime edits. Acceptable as-is, or emit a config-vs-DB
+   divergence warning/report on re-seed?
+3. **Limits/entitlements editing granularity.** Inline with the plan (smoke decision
    implies yes) vs separate sub-resources.
+
+## Known bug to fix (found during this analysis)
+
+- `packages/db/src/billing/migrate-addon-purchases.ts:168-169` resolves the plan with
+  `ALL_PLANS.find((p) => p.slug === row.planId)` and a comment claiming `plan_id` is the
+  "external ID / slug". Per D1, `plan_id` is the **UUID**, so this lookup returns
+  `undefined` every time. It is a migration helper (not the hot path) but the logic is
+  dead — fix it to resolve by UUID (or via `storage.plans.get(planId)`) as part of the
+  consumer-migration phase, and add a regression test.
 
 ## Risks
 
@@ -234,16 +259,18 @@ These must be answered before implementation starts.
 - **Cache staleness → display-vs-charge mismatch.** The exact bug ADR-020 guarded
   against. Mitigation: admin write and checkout read the same store; integration test
   targets this specifically.
-- **Referential integrity on edit/delete.** See Open Q #1 — resolve before shipping
-  write/delete.
+- **Referential integrity on edit/delete.** Resolved by D1/D4: mutate by UUID, slug
+  immutable, hard-delete guarded by a no-references check. Implement the guard before
+  shipping delete.
 - **Seed clobbering runtime edits.** Mitigation: idempotent skip-by-slug + explicit
   policy (Open Q #6).
 
 ## Implementation Phases
 
-1. **Resolve Open Questions #1 + #2 + #3** (identifier, permissions, web strategy) — these
-   gate the schema and routes.
-2. **schemas SSOT** — Create/Update/Response/Search mirroring the qzpay row shape.
+1. ~~Resolve the schema/route-gating decisions~~ — **DONE 2026-05-29** (D1 identifier=UUID,
+   D2 permissions=`BILLING_*`, D3 web=endpoint+Cloudflare purge, D4 delete=soft-default).
+2. **schemas SSOT** — Create/Update/Response/Search mirroring the qzpay row shape
+   (identifier = UUID; slug write-once on create).
 3. **service-core PlanService** — CRUD over `storage.plans.*` + `billing_prices`, audit
    log, transaction wrapper, unit tests.
 4. **API admin CRUD + public read switch** — rewrite `plans.ts`, wire permissions +
