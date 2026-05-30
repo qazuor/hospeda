@@ -397,31 +397,31 @@
             "id": "T-012",
             "title": "Admin \u2014 fix transformPlanRecord/types to DB response shape",
             "description": "apps/admin/src/features/billing-plans/: align transformPlanRecord + types to the DB response (id + metadata + timestamps) so QZPayPlanRecordSchema validation passes and the list stops 502-ing/falling back to config. Tests: unit/component \u2014 a DB-shaped record parses; usePlansQuery no longer errors on the real response.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Align transformPlanRecord + types to DB shape",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component/unit test (no 502, parses real response)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 3.1
     }

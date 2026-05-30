@@ -1,78 +1,40 @@
 import { fetchApi } from '@/lib/api/client';
 import { ApiError, reportError } from '@/lib/errors';
+import { BillingPlanResponseSchema } from '@repo/schemas';
+import type { BillingPlanResponse } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import type { CreatePlanPayload, UpdatePlanPayload } from './types';
+import type { CreatePlanPayload, ParsedPlanRecord, UpdatePlanPayload } from './types';
+
+export type { ParsedPlanRecord } from './types';
 
 /**
- * Parsed plan record shape returned by transformPlanRecord.
- * Uses plain string arrays for entitlements and simplified limit objects,
- * since QZPay records don't carry the full LimitDefinition type.
+ * Zod schema for the list-endpoint envelope.
+ * GET /api/v1/admin/billing/plans → { success, data: { items, pagination }, metadata }
  */
-interface ParsedPlanRecord {
-    readonly id: string;
-    readonly name: string;
-    readonly description: string;
-    readonly slug: string;
-    readonly category: 'owner' | 'complex' | 'tourist';
-    readonly isActive: boolean;
-    readonly isDefault: boolean;
-    readonly sortOrder: number;
-    readonly hasTrial: boolean;
-    readonly trialDays: number;
-    readonly monthlyPriceArs: number;
-    readonly annualPriceArs: number | null;
-    readonly monthlyPriceUsdRef: number;
-    readonly entitlements: readonly string[];
-    readonly limits: readonly { readonly key: string; readonly value: number }[];
-}
-
-/**
- * Zod schema for the metadata sub-object inside a QZPay plan record.
- * Each field has a safe default so a missing metadata property won't crash.
- */
-const QZPayMetadataSchema = z.object({
-    slug: z.string().default(''),
-    category: z.enum(['owner', 'complex', 'tourist']).default('owner'),
-    isDefault: z.boolean().default(false),
-    sortOrder: z.number().default(0),
-    hasTrial: z.boolean().default(false),
-    trialDays: z.number().default(0),
-    monthlyPriceArs: z.number().default(0),
-    annualPriceArs: z.number().nullable().default(null),
-    monthlyPriceUsdRef: z.number().default(0)
+const PlanListResponseSchema = z.object({
+    success: z.boolean(),
+    data: z.object({
+        items: z.array(z.unknown()),
+        pagination: z.record(z.string(), z.unknown())
+    })
 });
 
 /**
- * Zod schema for validating a QZPay plan record before transformation.
- * Replaces unsafe `as` casts with runtime validation.
- */
-const QZPayPlanRecordSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().nullable().default(null),
-    active: z.boolean(),
-    entitlements: z.array(z.string()).default([]),
-    limits: z.record(z.string(), z.number()).default({}),
-    metadata: z.unknown().transform((val) => {
-        const parsed = QZPayMetadataSchema.safeParse(val ?? {});
-        return parsed.success ? parsed.data : QZPayMetadataSchema.parse({});
-    }),
-    createdAt: z.string(),
-    updatedAt: z.string()
-});
-
-/**
- * Transform a QZPay plan record to a parsed plan format using Zod validation.
- * Throws a clear error if the record does not match the expected schema.
+ * Transform a raw API record (BillingPlanResponse shape) to a ParsedPlanRecord.
+ *
+ * Validates the record against BillingPlanResponseSchema and surfaces schema
+ * mismatches as a 502 ApiError to the query layer, consistent with the
+ * project's error-boundary convention for malformed server responses.
+ *
+ * @param record - Raw unknown value from the API items array.
+ * @returns Typed ParsedPlanRecord.
+ * @throws ApiError(502) when the record does not match BillingPlanResponseSchema.
  */
 function transformPlanRecord(record: unknown): ParsedPlanRecord {
-    const parseResult = QZPayPlanRecordSchema.safeParse(record);
+    const parseResult = BillingPlanResponseSchema.safeParse(record);
 
     if (!parseResult.success) {
-        // Surface as 502 so the friendly-error helper maps it to a generic
-        // "invalid server response" message. Full Zod issues go to Sentry via
-        // `details.zodIssues` — never to the user-facing UI.
         const apiError = new ApiError('Plan record failed schema validation', {
             status: 502,
             code: 'BAD_REQUEST',
@@ -86,28 +48,27 @@ function transformPlanRecord(record: unknown): ParsedPlanRecord {
         throw apiError;
     }
 
-    const parsed = parseResult.data;
-    const meta = parsed.metadata;
+    const p = parseResult.data;
 
     return {
-        id: parsed.id,
-        name: parsed.name,
-        description: parsed.description ?? '',
-        slug: meta.slug,
-        category: meta.category,
-        isActive: parsed.active,
-        isDefault: meta.isDefault,
-        sortOrder: meta.sortOrder,
-        hasTrial: meta.hasTrial,
-        trialDays: meta.trialDays,
-        monthlyPriceArs: meta.monthlyPriceArs,
-        annualPriceArs: meta.annualPriceArs,
-        monthlyPriceUsdRef: meta.monthlyPriceUsdRef,
-        entitlements: parsed.entitlements,
-        limits: Object.entries(parsed.limits).map(([key, value]) => ({
-            key,
-            value
-        }))
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        slug: p.slug,
+        category: p.category,
+        isActive: p.isActive,
+        isDefault: p.isDefault,
+        sortOrder: p.sortOrder,
+        hasTrial: p.hasTrial,
+        trialDays: p.trialDays,
+        monthlyPriceArs: p.monthlyPriceArs,
+        annualPriceArs: p.annualPriceArs,
+        monthlyPriceUsdRef: p.monthlyPriceUsdRef,
+        entitlements: p.entitlements,
+        // Convert Record<string, number> → { key, value }[] for DataTable
+        limits: Object.entries(p.limits).map(([key, value]) => ({ key, value })),
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
     };
 }
 
@@ -126,7 +87,11 @@ export const planQueryKeys = {
 };
 
 /**
- * Fetch plans with filters
+ * Fetch plans with filters.
+ *
+ * Calls GET /api/v1/admin/billing/plans and transforms the items array using
+ * BillingPlanResponseSchema validation. Throws on network errors or schema
+ * mismatches.
  */
 async function fetchPlans(filters: Record<string, unknown> = {}) {
     const params = new URLSearchParams();
@@ -139,67 +104,103 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
 
     const result = await fetchApi<{
         success: boolean;
-        data: unknown[];
-        pagination: Record<string, unknown>;
+        data: { items: unknown[]; pagination: Record<string, unknown> };
     }>({
         path: `/api/v1/admin/billing/plans?${params.toString()}`
     });
 
-    // Transform and validate API records using Zod schema
-    const apiData = result.data.data ?? [];
-    const items = apiData.map(transformPlanRecord);
-    return { items, pagination: result.data.pagination };
+    const envelopeResult = PlanListResponseSchema.safeParse(result.data);
+    if (!envelopeResult.success) {
+        const apiError = new ApiError('Plan list response failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST',
+            details: { zodIssues: envelopeResult.error.issues }
+        });
+        reportError({
+            error: apiError,
+            source: 'billing-plans/fetchPlans',
+            tags: { feature: 'billing', stage: 'response-parse' }
+        });
+        throw apiError;
+    }
+
+    const items = envelopeResult.data.data.items.map(transformPlanRecord);
+    return { items, pagination: envelopeResult.data.data.pagination };
 }
 
 /**
- * Create a new plan
+ * Create a new plan.
+ *
+ * POST /api/v1/admin/billing/plans — returns the created BillingPlanResponse.
  */
-async function createPlan(payload: CreatePlanPayload) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+async function createPlan(payload: CreatePlanPayload): Promise<BillingPlanResponse> {
+    const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: '/api/v1/admin/billing/plans',
         method: 'POST',
         body: payload
     });
-    return result.data.data;
+    const parsed = BillingPlanResponseSchema.safeParse(result.data.data);
+    if (!parsed.success) {
+        throw new ApiError('Create plan response failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST'
+        });
+    }
+    return parsed.data;
 }
 
 /**
- * Update an existing plan
+ * Update an existing plan by UUID (slug is immutable per D1, absent from payload type).
+ *
+ * PUT /api/v1/admin/billing/plans/{id} — partial update, returns updated plan.
  */
-async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+async function updatePlan({ id, ...payload }: UpdatePlanPayload): Promise<BillingPlanResponse> {
+    const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: `/api/v1/admin/billing/plans/${id}`,
         method: 'PUT',
         body: payload
     });
-    return result.data.data;
+    const parsed = BillingPlanResponseSchema.safeParse(result.data.data);
+    if (!parsed.success) {
+        throw new ApiError('Update plan response failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST'
+        });
+    }
+    return parsed.data;
 }
 
 /**
- * Toggle plan active status
+ * Toggle plan active status by UUID.
+ *
+ * PATCH /api/v1/admin/billing/plans/{id} with `{ active: boolean }`.
  */
-async function togglePlanActive(id: string, isActive: boolean) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+async function togglePlanActive(id: string, isActive: boolean): Promise<void> {
+    await fetchApi<{ success: boolean }>({
         path: `/api/v1/admin/billing/plans/${id}`,
         method: 'PATCH',
-        body: { isActive }
+        body: { active: isActive }
     });
-    return result.data.data;
 }
 
 /**
- * Delete a plan
+ * Soft-delete a plan by UUID.
+ *
+ * DELETE /api/v1/admin/billing/plans/{id}
  */
-async function deletePlan(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+async function deletePlan(id: string): Promise<void> {
+    await fetchApi<{ success: boolean }>({
         path: `/api/v1/admin/billing/plans/${id}`,
         method: 'DELETE'
     });
-    return result.data.data;
 }
 
 /**
- * Hook to fetch plans
+ * Hook to fetch plans with optional filters.
+ *
+ * Returns the parsed list of plans from BillingPlanResponse-shaped records.
+ * Falls back to an empty items array only when the API itself returns empty;
+ * schema mismatches are surfaced as query errors.
  */
 export const usePlansQuery = (filters: Record<string, unknown> = {}) => {
     return useQuery({
@@ -210,7 +211,9 @@ export const usePlansQuery = (filters: Record<string, unknown> = {}) => {
 };
 
 /**
- * Hook to create a new plan
+ * Hook to create a new plan.
+ *
+ * On success invalidates the list query so the table refreshes automatically.
  */
 export const useCreatePlanMutation = () => {
     const queryClient = useQueryClient();
@@ -224,21 +227,28 @@ export const useCreatePlanMutation = () => {
 };
 
 /**
- * Hook to update a plan
+ * Hook to update a plan by UUID.
+ *
+ * On success invalidates the list query and any cached detail.
  */
 export const useUpdatePlanMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (payload: UpdatePlanPayload) => updatePlan(payload),
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: planQueryKeys.plans.lists() });
+            queryClient.invalidateQueries({
+                queryKey: planQueryKeys.plans.detail(variables.id)
+            });
         }
     });
 };
 
 /**
- * Hook to toggle plan active status
+ * Hook to toggle plan active status by UUID.
+ *
+ * On success invalidates the list query.
  */
 export const useTogglePlanActiveMutation = () => {
     const queryClient = useQueryClient();
@@ -253,7 +263,9 @@ export const useTogglePlanActiveMutation = () => {
 };
 
 /**
- * Hook to delete a plan
+ * Hook to soft-delete a plan by UUID.
+ *
+ * On success invalidates the list query.
  */
 export const useDeletePlanMutation = () => {
     const queryClient = useQueryClient();

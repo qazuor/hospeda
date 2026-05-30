@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { formatCentsToArs } from '@/lib/format-helpers';
 import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
-import type { PlanDefinition } from './types';
+import type { ParsedPlanRecord } from './types';
 
 interface PlanColumnsOptions {
-    onEdit?: (plan: PlanDefinition) => void;
+    onEdit?: (plan: ParsedPlanRecord) => void;
     onToggleActive?: (id: string, isActive: boolean) => void;
     onDelete?: (id: string) => void;
     isTogglingActive?: boolean;
@@ -19,11 +19,14 @@ interface PlanColumnsOptions {
 }
 
 /**
- * Get DataTable columns for plans list
+ * Get DataTable columns for plans list.
+ *
+ * All action callbacks (onEdit, onToggleActive, onDelete) use the plan `id`
+ * (UUID) as the mutation identifier per SPEC-168 decision D1.
  */
 export function getPlanColumns(
     options: PlanColumnsOptions
-): ReadonlyArray<DataTableColumn<PlanDefinition>> {
+): ReadonlyArray<DataTableColumn<ParsedPlanRecord>> {
     const {
         onEdit,
         onToggleActive,
@@ -162,7 +165,7 @@ export function getPlanColumns(
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onToggleActive(row.slug, !row.isActive)}
+                            onClick={() => onToggleActive(row.id, !row.isActive)}
                             disabled={isTogglingActive}
                             title={
                                 row.isActive
@@ -191,7 +194,7 @@ export function getPlanColumns(
                         <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => onDelete(row.slug)}
+                            onClick={() => onDelete(row.id)}
                             disabled={isDeleting}
                             title={t('admin-billing.plans.actionDelete')}
                         >
