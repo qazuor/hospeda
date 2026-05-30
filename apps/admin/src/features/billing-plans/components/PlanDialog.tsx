@@ -32,14 +32,15 @@ import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
-import type { CreatePlanPayload, PlanDefinition } from '../types';
+import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
 
 import { ENTITLEMENT_GROUP_KEYS, getEntitlementName } from './plan-entitlement-groups';
 
 interface PlanDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    plan?: PlanDefinition | null;
+    /** The plan being edited (undefined/null for create mode). */
+    plan?: ParsedPlanRecord | null;
     onSubmit: (payload: CreatePlanPayload) => Promise<void>;
     isSubmitting?: boolean;
 }

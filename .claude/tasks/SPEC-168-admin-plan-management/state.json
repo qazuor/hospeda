@@ -463,35 +463,35 @@
             "id": "T-014",
             "title": "Admin \u2014 wire PlanDialog to CRUD + restore Create button",
             "description": "apps/admin/src/features/billing-plans/: connect PlanDialog onSubmit to the real create/update mutations, restore the 'Create New' button in plans.tsx (remove the read-only omission), keep the slug field disabled on edit (slug immutable, D1). Tests: component \u2014 create flow submits POST, edit flow submits PUT, slug input disabled when editing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "PlanDialog submit \u2192 create/update mutations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Restore Create New button",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests (create, edit, slug-disabled)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 3.1
     }
