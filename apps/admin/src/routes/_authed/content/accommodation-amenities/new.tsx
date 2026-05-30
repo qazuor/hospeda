@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createAmenityConsolidatedConfig } from '@/features/amenities/config';
 import { useCreateAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
@@ -43,7 +43,7 @@ function AmenityCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.AMENITY_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={AmenityCreateInputSchema}
                 createConsolidatedConfig={() => createAmenityConsolidatedConfig(t)}

@@ -680,7 +680,10 @@
             "price": { "label": "Precio cargado" },
             "videoGallery": { "label": "Galería con videos" },
             "virtualTour": { "label": "Tour virtual 360°" },
+            "dates": { "label": "Fechas del evento" },
+            "organizer": { "label": "Organizador asignado" },
             "category": { "label": "Categoría seleccionada" },
+            "location": { "label": "Lugar del evento" },
             "content": {
                 "label": "Cuerpo del artículo",
                 "hint": "{current} de {target} caracteres"

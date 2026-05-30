@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createFeatureConsolidatedConfig } from '@/features/features/config';
 import { useCreateFeatureMutation } from '@/features/features/hooks/useFeatureQuery';
@@ -41,7 +41,7 @@ function FeatureCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.FEATURE_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={FeatureCreateInputSchema}
                 createConsolidatedConfig={() => createFeatureConsolidatedConfig(t)}
