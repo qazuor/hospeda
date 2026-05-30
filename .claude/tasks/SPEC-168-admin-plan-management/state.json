@@ -734,32 +734,33 @@
             "id": "T-022",
             "title": "Docs \u2014 operator guide + CLAUDE.md updates",
             "description": "Add docs/guides/managing-billing-plans.md (how to edit plans from admin, audit log location, rollback). Update packages/billing/CLAUDE.md (config now seeds the DB; DB is runtime source of truth) and the packages/db/CLAUDE.md plans gotcha (plan_id stores the UUID, mutate by id, slug immutable).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "managing-billing-plans.md operator guide",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update billing + db CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "Created docs/guides/managing-billing-plans.md: super-admin operator guide covering create/edit/deactivate/delete from Comercial → Planes, field reference (slug immutable, prices in centavos ARS, entitlements, limits, trial, default, sortOrder, active), web freshness via Cloudflare revalidation on save, audit log location (billing_audit_logs with actor + before/after diff), soft-delete (reversible) vs hard-delete (blocked with 409 when subscriptions reference the plan), and rollback procedure via audit diff. Linked from docs/guides/README.md. Updated packages/billing/CLAUDE.md (config is seed-only, DB is runtime source of truth via PlanService). Expanded the packages/db/CLAUDE.md plans gotcha: plan_id stores the UUID not the slug, mutations target id (UUID), slug (name) immutable, plans runtime-editable (SPEC-168). markdownlint clean (0 errors)."
         },
         {
             "id": "T-023",
@@ -795,9 +796,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 3.1
     }
