@@ -117,39 +117,39 @@
             "id": "T-004",
             "title": "PlanService \u2014 create (plan row + billing_prices + audit, in tx)",
             "description": "Implement create(input): map CreateBillingPlanSchema \u2192 qzpay billing_plans insert (name=slug, metadata, entitlements, limits) AND the related billing_prices rows (monthly always; annual only when annualPriceArs>0). Wrap in the billing transaction wrapper; emit audit (T-002) with before=null/after=row. Reject duplicate slug. Tests: unit \u2014 creates plan+monthly price, adds annual price when set, rolls back on price failure, duplicate-slug rejected, audit emitted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Map input \u2192 billing_plans insert + billing_prices",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Transaction wrapper + audit emit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Duplicate-slug guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (create, annual price, rollback, audit)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "qzpay", "write", "transaction"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 3.1
     }
