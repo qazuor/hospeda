@@ -17,6 +17,7 @@
         "format": "biome format --write .",
         "typecheck": "astro sync && tsc --noEmit --project ./tsconfig.json",
         "check-tokens": "node scripts/check-css-tokens.cjs",
+        "check:relative-colors": "node scripts/check-css-relative-colors.cjs",
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
         "clean": "rm -rf node_modules dist .astro"
     },
