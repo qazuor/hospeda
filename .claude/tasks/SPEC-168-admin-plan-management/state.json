@@ -498,35 +498,35 @@
             "id": "T-015",
             "title": "Admin \u2014 fix plans page header + i18n copy",
             "description": "Update packages/i18n admin-billing.json plans.* keys (es/en/pt): drop 'managed in source code / read-only' verbiage, switch to edit-enabled copy, keep a soft audit-log hint. Fix the page header text on plans.tsx. Tests: i18n key-presence test across locales; render test asserts the new header.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Rewrite plans.* i18n keys (es/en/pt)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix page header text",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n + render tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "i18n"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 3.1
     }
