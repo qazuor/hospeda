@@ -38,7 +38,6 @@ import type {
     QZPayCustomerLimit,
     QZPayEntitlementStorage,
     QZPayLimitStorage,
-    QZPayListOptions,
     QZPayPlan,
     QZPayPlanStorage,
     QZPayStorageAdapter
@@ -123,10 +122,7 @@ const limits = withThrowingFallback<QZPayLimitStorage>('limits', {
  * `withThrowingFallback`.
  */
 const plans = withThrowingFallback<QZPayPlanStorage>('plans', {
-    findById: async (id: string) => billingFetch<QZPayPlan>(`/api/v1/admin/billing/plans/${id}`),
-
-    list: async (_options?: QZPayListOptions) =>
-        billingFetch<QZPayPlan[]>('/api/v1/admin/billing/plans')
+    findById: async (id: string) => billingFetch<QZPayPlan>(`/api/v1/admin/billing/plans/${id}`)
 });
 
 /**
