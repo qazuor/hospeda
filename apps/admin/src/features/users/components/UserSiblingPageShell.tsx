@@ -82,7 +82,7 @@ export function UserSiblingPageShell({ userId, children }: UserSiblingPageShellP
         <>
             <ImpersonateButton
                 userId={userId}
-                variant="full"
+                variant="responsive"
             />
             <DeleteRowButton
                 entityId={userId}
@@ -90,7 +90,7 @@ export function UserSiblingPageShell({ userId, children }: UserSiblingPageShellP
                 entityLabel={t('admin-entities.entities.user.singular')}
                 permission={PermissionEnum.USER_DELETE}
                 useDeleteMutation={useDeleteUserMutation}
-                variant="full"
+                variant="responsive"
                 onDeleted={() => navigate({ to: '/access/users' })}
             />
         </>

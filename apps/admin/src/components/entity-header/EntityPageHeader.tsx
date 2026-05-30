@@ -204,7 +204,7 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
                 leftIcon={<ChevronLeftIcon className="h-4 w-4" />}
                 aria-label="Volver al listado"
             >
-                Volver
+                <span className="hidden sm:inline">Volver</span>
             </Button>
             <Button
                 variant="default"
@@ -213,7 +213,7 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
                 leftIcon={<EditIcon className="h-4 w-4" />}
                 aria-label="Editar entidad"
             >
-                Editar
+                <span className="hidden sm:inline">Editar</span>
             </Button>
         </>
     );
@@ -241,7 +241,7 @@ function EditActions({ actions }: { readonly actions: EditModeActions }) {
                 leftIcon={<XCircleIcon className="h-4 w-4" />}
                 aria-label="Cancelar edición"
             >
-                Cancelar
+                <span className="hidden sm:inline">Cancelar</span>
             </Button>
             <Button
                 variant="default"
@@ -251,7 +251,9 @@ function EditActions({ actions }: { readonly actions: EditModeActions }) {
                 leftIcon={actions.isSaving ? undefined : <SaveIcon className="h-4 w-4" />}
                 aria-label="Guardar cambios"
             >
-                {actions.isSaving ? 'Guardando…' : 'Guardar'}
+                <span className="hidden sm:inline">
+                    {actions.isSaving ? 'Guardando…' : 'Guardar'}
+                </span>
             </Button>
         </>
     );
@@ -270,7 +272,7 @@ function CreateActions({ actions }: { readonly actions: CreateModeActions }) {
                 leftIcon={<XCircleIcon className="h-4 w-4" />}
                 aria-label="Cancelar creación"
             >
-                Cancelar
+                <span className="hidden sm:inline">Cancelar</span>
             </Button>
             <Button
                 variant="default"
@@ -280,7 +282,9 @@ function CreateActions({ actions }: { readonly actions: CreateModeActions }) {
                 leftIcon={actions.isCreating ? undefined : <AddIcon className="h-4 w-4" />}
                 aria-label="Crear entidad"
             >
-                {actions.isCreating ? 'Creando…' : 'Crear'}
+                <span className="hidden sm:inline">
+                    {actions.isCreating ? 'Creando…' : 'Crear'}
+                </span>
             </Button>
         </>
     );

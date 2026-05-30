@@ -42,7 +42,7 @@ function UserViewPage() {
         <>
             <ImpersonateButton
                 userId={id}
-                variant="full"
+                variant="responsive"
             />
             <DeleteRowButton
                 entityId={id}
@@ -50,7 +50,7 @@ function UserViewPage() {
                 entityLabel={t('admin-entities.entities.user.singular')}
                 permission={PermissionEnum.USER_DELETE}
                 useDeleteMutation={useDeleteUserMutation}
-                variant="full"
+                variant="responsive"
                 onDeleted={() => navigate({ to: '/access/users' })}
             />
         </>
