@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
     PermissionAssignmentOutputSchema,
+    PermissionEffectSchema,
     PermissionRemovalOutputSchema,
     PermissionsByRoleInputSchema,
     PermissionsByUserInputSchema,
@@ -17,6 +18,24 @@ import {
 import { PermissionEnum, RoleEnum } from '../../../src/enums/index.js';
 
 describe('Permission Management Schemas', () => {
+    describe('PermissionEffectSchema', () => {
+        it('should validate the "grant" effect', () => {
+            expect(PermissionEffectSchema.parse('grant')).toBe('grant');
+        });
+
+        it('should validate the "deny" effect', () => {
+            expect(PermissionEffectSchema.parse('deny')).toBe('deny');
+        });
+
+        it('should reject an unknown effect', () => {
+            expect(() => PermissionEffectSchema.parse('revoke')).toThrow(ZodError);
+        });
+
+        it('should reject a non-string effect', () => {
+            expect(() => PermissionEffectSchema.parse(1)).toThrow(ZodError);
+        });
+    });
+
     describe('RolePermissionManagementInputSchema', () => {
         it('should validate valid role-permission assignment', () => {
             const input = {
@@ -106,6 +125,37 @@ describe('Permission Management Schemas', () => {
                 userId: faker.string.uuid(),
                 permission: PermissionEnum.USER_CREATE,
                 unexpectedField: 'should be rejected'
+            };
+
+            expect(() => UserPermissionManagementInputSchema.parse(input)).toThrow(ZodError);
+        });
+
+        it('should default effect to "grant" when omitted', () => {
+            const input = {
+                userId: faker.string.uuid(),
+                permission: PermissionEnum.USER_CREATE
+            };
+
+            const result = UserPermissionManagementInputSchema.parse(input);
+            expect(result.effect).toBe('grant');
+        });
+
+        it('should accept an explicit "deny" effect', () => {
+            const input = {
+                userId: faker.string.uuid(),
+                permission: PermissionEnum.USER_CREATE,
+                effect: 'deny'
+            };
+
+            const result = UserPermissionManagementInputSchema.parse(input);
+            expect(result.effect).toBe('deny');
+        });
+
+        it('should reject an invalid effect value', () => {
+            const input = {
+                userId: faker.string.uuid(),
+                permission: PermissionEnum.USER_CREATE,
+                effect: 'revoke'
             };
 
             expect(() => UserPermissionManagementInputSchema.parse(input)).toThrow(ZodError);
