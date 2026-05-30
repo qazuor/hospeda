@@ -9,6 +9,7 @@
 > **Estimated effort**: ~30-40 hours (~1.5-2 weeks)
 > **Depends on**: ADR-020 (single source of truth for plans), SPEC-058 (BaseModel interface alignment), SPEC-059 (service transactions), beta launch completed (validates real demand for runtime pricing changes)
 > **Blocks**: future pricing experiments, region-specific pricing, A/B price tests, marketing-led promo launches
+> **Related beta feedback**: [BETA-58](https://linear.app/hospeda-beta/issue/BETA-58) — "Reubicar configuracion de planes fuera de packages/billing/src/config". ⚠️ **This spec (SPEC-093) is deprecated / superseded by [SPEC-168](../SPEC-168-admin-plan-management/spec.md)** (admin-plan-management). BETA-58 is now tracked there; this reference is kept for trace only.
 
 ---
 
