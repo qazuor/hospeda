@@ -243,15 +243,16 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
      * Lightness families remain faithful 1:1.
      *
      *   -  92 alpha-family (consolidated from 116; 15 merge groups, 19 kept-own)
+     *   -   1 white-origin alpha (oklch(from white l c h / 0.75))
      *   -  10 lightness-multiply pairs
      *   -  10 lightness-subtract pairs
      *   -   2 lightness-add pairs
-     *   = 114 total canonical entries.
+     *   = 115 total canonical entries.
      *
      * Max snap delta applied: 0.020 (imperceptible visually).
      */
-    it('has the expected consolidated count (114 canonical entries)', () => {
-        expect(VARIANT_TOKEN_MAP.length).toBe(114);
+    it('has the expected consolidated count (115 canonical entries)', () => {
+        expect(VARIANT_TOKEN_MAP.length).toBe(115);
     });
 
     /**
@@ -279,11 +280,23 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
     });
 
     /**
-     * replaces field correctness — every replaces string must start with
-     * 'oklch(from var(--' and contain the entry's base token name.
+     * replaces field correctness — every replaces string must reference its
+     * base token.
+     *
+     * For ordinary tokens the form is `oklch(from var(--BASE) ...)`. The single
+     * white-origin token uses the bare CSS keyword (`oklch(from white ...)`),
+     * which is handled as an explicit exception.
      */
     it('every replaces string references the correct base token', () => {
         for (const entry of VARIANT_TOKEN_MAP) {
+            if (entry.base === 'white') {
+                // White-origin tokens reference the CSS keyword, not var(--white).
+                expect(
+                    entry.replaces,
+                    `replaces for '${entry.name}' must start with 'oklch(from white'`
+                ).toMatch(/^oklch\(from white /);
+                continue;
+            }
             expect(
                 entry.replaces,
                 `replaces for '${entry.name}' must start with 'oklch(from var(--'`
@@ -361,7 +374,8 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
     /**
      * Family breakdown — verify per-family counts match post-consolidation totals.
      *
-     * Alpha: 116 faithful → 92 after conservative ≤0.025 grid consolidation.
+     * Alpha: 116 faithful → 92 after conservative ≤0.025 grid consolidation,
+     * plus 1 white-origin alpha token (white-a75) = 93.
      * Lightness families: unchanged 1:1 faithful counts.
      */
     it('per-family breakdown matches consolidated counts', () => {
@@ -373,7 +387,7 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
                 .length,
             'lightness-add': VARIANT_TOKEN_MAP.filter((e) => e.family === 'lightness-add').length
         };
-        expect(counts.alpha).toBe(92);
+        expect(counts.alpha).toBe(93);
         expect(counts['lightness-multiply']).toBe(10);
         expect(counts['lightness-subtract']).toBe(10);
         expect(counts['lightness-add']).toBe(2);

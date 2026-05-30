@@ -1,19 +1,22 @@
 /**
  * @file generators/variant-tokens.ts
- * @description SPEC-176 T-003 (consolidated) — Complete VARIANT_TOKEN_MAP with all 114 entries.
+ * @description SPEC-176 T-003 (consolidated) — Complete VARIANT_TOKEN_MAP with all 115 entries.
  *
  * This file assembles the VARIANT_TOKEN_MAP from two modules:
  * - `variant-tokens-alpha.ts` — 92 alpha-family entries (conservatively consolidated)
- * - This file — 22 lightness-family entries (multiply × 10, subtract × 10, add × 2)
+ * - This file — 1 white-origin alpha entry + 22 lightness-family entries
+ *   (multiply × 10, subtract × 10, add × 2)
  *
  * Every entry was derived by scanning `apps/web/src/` for `oklch(from var(--BASE) TRANSFORM)`
- * patterns. The faithful scan found 116 alpha pairs; consolidation reduced them to 92.
+ * patterns (plus the single `oklch(from white l c h / 0.75)` white-origin usage).
+ * The faithful scan found 116 var-based alpha pairs; consolidation reduced them to 92.
  *
  *   - 92 alpha-family (consolidated from 116; 15 merge groups, max snap delta 0.020)
+ *   -  1 white-origin alpha (oklch(from white l c h / 0.75)) — SPEC-176 T-005 part A
  *   - 10 lightness-multiply (base, factor) pairs — FAITHFUL 1:1, unchanged
  *   - 10 lightness-subtract (base, offset) pairs — FAITHFUL 1:1, unchanged
  *   -  2 lightness-add (base, offset) pairs — FAITHFUL 1:1, unchanged
- *   = 114 total canonical entries
+ *   = 115 total canonical entries
  *
  * Alpha consolidation grid (14 steps): 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25,
  *   0.30, 0.35, 0.40, 0.50, 0.60, 0.75, 0.90.
@@ -239,11 +242,35 @@ const LIGHTNESS_ADD_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
 ] as const;
 
 // ============================================================================
+// White-origin alpha family — oklch(from white l c h / ALPHA)
+// 1 entry. SPEC-176 T-005 part A.
+//
+// Unlike every other alpha entry, the base is the CSS-wide `white` keyword, NOT
+// a theme token in webLight. White resolves to a fixed OKLCH of {l:1, c:0, h:0}.
+// The emitter (emit-variant-tokens.ts) special-cases base === 'white' so the
+// base lookup does not throw (white is not a webLight key).
+//
+// The 0.95 white-origin literal that exists at components.css:539 is the
+// CONDITION of an `@supports` feature-detection probe, NOT a color value, so it
+// is intentionally NOT tokenized here.
+// ============================================================================
+
+const WHITE_ALPHA_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
+    {
+        name: 'white-a75',
+        base: 'white',
+        family: 'alpha',
+        param: 0.75,
+        replaces: 'oklch(from white l c h / 0.75)'
+    }
+] as const;
+
+// ============================================================================
 // VARIANT_TOKEN_MAP — assembled from all four families
 // ============================================================================
 
 /**
- * Ordered list of all 114 variant tokens that need sRGB fallbacks (SPEC-176).
+ * Ordered list of all 115 variant tokens that need sRGB fallbacks (SPEC-176).
  *
  * Each entry maps a canonical CSS custom property name (`name`) to:
  * - The base theme token it derives from (`base`).
@@ -260,8 +287,9 @@ const LIGHTNESS_ADD_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
  * T-005 (codemod) consumes `replaces` and `replacesVariants` to swap 676+
  * call-sites in `apps/web/src/` to `var(--name)`.
  *
- * Order: alpha-family (92) → lightness-multiply (10) → lightness-subtract (10)
- * → lightness-add (2). Within each family: sorted by base name, then by param.
+ * Order: alpha-family (92) → white-origin alpha (1) → lightness-multiply (10)
+ * → lightness-subtract (10) → lightness-add (2). Within each family: sorted by
+ * base name, then by param.
  *
  * @see variant-tokens-alpha.ts for the 92 alpha entries (split file).
  * @see variant-token-schema.ts — VariantTokenEntry type and VariantTokenMapSchema.
@@ -269,6 +297,7 @@ const LIGHTNESS_ADD_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
  */
 export const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenEntry> = [
     ...ALPHA_VARIANT_ENTRIES,
+    ...WHITE_ALPHA_ENTRIES,
     ...LIGHTNESS_MULTIPLY_ENTRIES,
     ...LIGHTNESS_SUBTRACT_ENTRIES,
     ...LIGHTNESS_ADD_ENTRIES

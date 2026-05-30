@@ -1,30 +1,34 @@
 /**
  * @file generators/emit-variant-tokens.ts
- * @description SPEC-176 T-004 — CSS emitter for the 114 variant tokens.
+ * @description SPEC-176 T-004 — CSS emitter for the 115 variant tokens.
  *
  * Produces two CSS blocks:
  *
- * 1. A `:root { }` block with sRGB fallback declarations for all 114 variant
+ * 1. A `:root { }` block with sRGB fallback declarations for all 115 variant
  *    tokens. Preceded by the exact sentinel comment required by the
  *    variant-token-coverage test:
  *
  *    `/* SPEC-176: Variant tokens — sRGB fallback + @supports oklch override. *​/`
  *
  * 2. A `@supports (color: oklch(from white l c h)) { :root { } }` block
- *    containing the 114 oklch relative-color overrides. On modern browsers
+ *    containing the 115 oklch relative-color overrides. On modern browsers
  *    (Chrome 111+, Firefox 128+, Safari 16.4+) the @supports block wins and
  *    the variant tokens track the live base-token value. On older browsers the
  *    :root sRGB fallback is used instead.
  *
  * ## Base OKLCH resolution strategy
  *
- * All 114 variant token `base` fields reference a theme token in `webLight`.
- * Most are OKLCH-typed objects. Two exceptions:
+ * Almost all variant token `base` fields reference a theme token in `webLight`.
+ * Most are OKLCH-typed objects. Exceptions:
  *
  * - `footer-fg` → webLight value is `'var(--surface-dark-foreground)'` (a CSS
  *   var reference). Resolution: look up `surface-dark-foreground` in webLight,
  *   which IS OKLCH (`{ l: 0.92, c: 0.01, h: 210 }`).
  * - `ring` → webLight value is `river[500]` (OKLCH), no indirection needed.
+ * - `white` → the CSS-wide `white` keyword, NOT a webLight token. Special-cased
+ *   to the fixed achromatic triple `{ l: 1, c: 0, h: 0 }`. Its @supports
+ *   override emits the bare keyword (`oklch(from white l c h / 0.75)`), not
+ *   `var(--white)`.
  *
  * Any unresolvable base throws immediately so the build fails loudly rather
  * than emitting `rgb(NaN NaN NaN)` or `rgb(undefined)` into the CSS.
@@ -40,7 +44,7 @@
  * functionality issue, and is explicitly acceptable per SPEC-176 §14.
  * On modern browsers the @supports block correctly tracks dark-mode overrides.
  *
- * @see variant-tokens.ts for VARIANT_TOKEN_MAP (114 entries).
+ * @see variant-tokens.ts for VARIANT_TOKEN_MAP (115 entries).
  * @see srgb.ts for formatSRGB() — the OKLCH→sRGB converter.
  * @see generate-css.ts — integrates this module into buildCSS().
  */
@@ -54,6 +58,16 @@ import { VARIANT_TOKEN_MAP } from './variant-tokens.js';
 
 const INDENT = '    ';
 const NL = '\n';
+
+/**
+ * Fixed OKLCH triple for the CSS-wide `white` keyword.
+ *
+ * `white` is not a theme token in webLight, so it cannot be looked up like the
+ * other variant bases. It is the achromatic maximum-lightness color, which in
+ * OKLCH is `{ l: 1, c: 0, h: 0 }`. Used to resolve the `white-a75` variant
+ * token (`oklch(from white l c h / 0.75)`) to its sRGB fallback at build time.
+ */
+const WHITE_OKLCH: OKLCH = { l: 1, c: 0, h: 0 };
 
 // ============================================================================
 // Sentinel comment — MUST match the prefix the coverage test keys on.
@@ -125,6 +139,14 @@ function buildBaseOklchLookup(
     const uniqueBases = [...new Set(map.map((e) => e.base))];
 
     for (const base of uniqueBases) {
+        // Special case: the CSS-wide `white` keyword is not a webLight token.
+        // Resolve it to the fixed achromatic maximum-lightness OKLCH triple so
+        // the lookup does not throw on a missing theme key.
+        if (base === 'white') {
+            lookup[base] = WHITE_OKLCH;
+            continue;
+        }
+
         const rawValue = theme[base];
 
         if (rawValue === undefined) {
@@ -194,20 +216,35 @@ function alphaFallback(baseOklch: OKLCH, param: number): string {
 }
 
 /**
+ * Render the base reference used inside an `oklch(from ...)` relative-color.
+ *
+ * For ordinary theme tokens this is `var(--BASE)`. For the CSS-wide `white`
+ * keyword it is the bare keyword `white` (matching the original source literal
+ * `oklch(from white l c h / 0.75)`), since `--white` is not a declared token.
+ *
+ * @param base - The base token name (without leading `--`), or `white`.
+ * @returns The `from` reference: `var(--BASE)` or `white`.
+ */
+function oklchBaseRef(base: string): string {
+    return base === 'white' ? 'white' : `var(--${base})`;
+}
+
+/**
  * Compute the oklch relative-color value for an alpha-family entry.
  *
- * SPECIAL CASE — param === 1: emit `oklch(from var(--BASE) l c h)` without
+ * SPECIAL CASE — param === 1: emit `oklch(from <ref> l c h)` without
  * alpha channel (matches the sRGB fallback's opaque treatment).
  *
- * @param base - The base token name (without leading `--`).
+ * @param base - The base token name (without leading `--`), or `white`.
  * @param param - The canonical alpha value (0–1).
  * @returns CSS oklch() relative-color string.
  */
 function alphaOklch(base: string, param: number): string {
+    const ref = oklchBaseRef(base);
     if (param === 1) {
-        return `oklch(from var(--${base}) l c h)`;
+        return `oklch(from ${ref} l c h)`;
     }
-    return `oklch(from var(--${base}) l c h / ${param})`;
+    return `oklch(from ${ref} l c h / ${param})`;
 }
 
 /**
@@ -312,7 +349,7 @@ function computeValuePair(
 /**
  * Emit the variant token CSS section: a `:root` sRGB fallback block and a
  * `@supports (color: oklch(from white l c h)) { :root { } }` override block
- * for all 114 entries in `VARIANT_TOKEN_MAP`.
+ * for all 115 entries in `VARIANT_TOKEN_MAP`.
  *
  * The output is a standalone CSS string ready to be appended to the main
  * `:root` token block in `buildCSS()`. It begins with the exact sentinel
@@ -341,7 +378,7 @@ export function emitVariantTokens(): string {
     // Build base OKLCH lookup — throws loudly if any base is unresolvable.
     const baseOklch = buildBaseOklchLookup(VARIANT_TOKEN_MAP);
 
-    // Compute value pairs for all 114 entries.
+    // Compute value pairs for all 115 entries.
     const pairs: Array<{
         readonly name: string;
         readonly fallback: string;
