@@ -7,10 +7,18 @@
  * Access control (permission checks) is enforced at the API route layer
  * (T-008+), not here. This service receives `actorId` for audit log purposes.
  *
+ * Side effect (SPEC-168 T-017): every successful plan write triggers a
+ * best-effort cache revalidation of the public pricing pages via the
+ * RevalidationService singleton. Revalidation failures are logged and
+ * swallowed — they never block the write operation.
+ *
  * @module services/billing/plan/plan.service
  */
 
 import type { QueryContext } from '@repo/db';
+import { createLogger } from '@repo/logger';
+import { getLocalizedPath } from '../../../revalidation/entity-path-mapper.js';
+import { getRevalidationService } from '../../../revalidation/revalidation-init.js';
 import {
     createPlan,
     getPlanById,
@@ -22,12 +30,44 @@ import {
 } from './plan.crud.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 
+/** Locales supported by the web app — must stay in sync with entity-path-mapper SUPPORTED_LOCALES */
+const PRICING_LOCALES = ['es', 'en', 'pt'] as const;
+
+/**
+ * Returns the full set of public pricing page paths that must be revalidated
+ * whenever a billing plan changes. Covers both owner and tourist pricing pages
+ * for every supported locale.
+ *
+ * @returns Readonly array of locale-prefixed pricing page paths
+ *
+ * @example
+ * ```ts
+ * getPricingPaths()
+ * // ['/suscriptores/planes/', '/suscriptores/turistas/',
+ * //  '/en/suscriptores/planes/', '/en/suscriptores/turistas/',
+ * //  '/pt/suscriptores/planes/', '/pt/suscriptores/turistas/']
+ * ```
+ */
+function getPricingPaths(): readonly string[] {
+    const paths: string[] = [];
+    for (const locale of PRICING_LOCALES) {
+        paths.push(getLocalizedPath('/suscriptores/planes/', locale));
+        paths.push(getLocalizedPath('/suscriptores/turistas/', locale));
+    }
+    return paths;
+}
+
 /**
  * Plan Service
  *
  * Manages billing plan lifecycle: create, read, update, toggle, soft-delete,
  * hard-delete. All write operations accept an optional `actorId` for audit log
  * attribution and an optional `livemode` flag.
+ *
+ * Every successful write (create, update, toggleActive, softDelete, hardDelete)
+ * triggers a best-effort cache revalidation of the public pricing pages via the
+ * RevalidationService singleton (SPEC-168 T-017, decision D3). Revalidation
+ * failures are logged and swallowed — they never block the write operation.
  *
  * @example
  * ```ts
@@ -39,6 +79,50 @@ import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.
  * ```
  */
 export class PlanService {
+    private readonly logger = createLogger('plan-service');
+
+    /**
+     * Triggers a best-effort revalidation of all public pricing pages.
+     *
+     * Called after every successful plan write. Uses the global RevalidationService
+     * singleton; if it has not been initialized (e.g. in a test harness), this is a
+     * silent no-op. Revalidation failures are logged and swallowed — they never block
+     * the write operation.
+     *
+     * @param reason - Human-readable reason for the revalidation log entry
+     */
+    private triggerPricingRevalidation(reason: string): void {
+        try {
+            const svc = getRevalidationService();
+            if (!svc) {
+                this.logger.warn(
+                    'Plan write: RevalidationService not initialized — pricing revalidation skipped'
+                );
+                return;
+            }
+            // Fire-and-forget — must not block the write response.
+            void svc
+                .revalidatePaths({
+                    paths: getPricingPaths(),
+                    triggeredBy: 'system',
+                    trigger: 'hook',
+                    entityType: 'plan',
+                    reason
+                })
+                .catch((error: unknown) => {
+                    this.logger.warn(
+                        { error },
+                        `Plan write: pricing revalidation failed (best-effort, non-blocking): ${error instanceof Error ? error.message : String(error)}`
+                    );
+                });
+        } catch (error) {
+            this.logger.warn(
+                { error },
+                'Plan write: pricing revalidation scheduling failed (best-effort, non-blocking)'
+            );
+        }
+    }
+
     /**
      * Lists billing plans with optional filtering and pagination.
      *
@@ -66,6 +150,9 @@ export class PlanService {
     /**
      * Creates a new billing plan with associated pricing rows.
      *
+     * On success, triggers a best-effort cache revalidation of the public pricing pages
+     * so that newly-created plans are immediately visible to site visitors.
+     *
      * @param input - Plan creation data
      * @param options - Optional settings
      * @param options.livemode - Whether to create in live mode (default: false)
@@ -78,13 +165,18 @@ export class PlanService {
         options: { readonly livemode?: boolean; readonly actorId?: string } = {},
         ctx?: QueryContext
     ) {
-        return createPlan(input, options, ctx);
+        const result = await createPlan(input, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan created: ${input.slug}`);
+        }
+        return result;
     }
 
     /**
      * Updates mutable fields of a billing plan.
      *
      * Slug is immutable and cannot be changed via this method.
+     * On success, triggers a best-effort cache revalidation of the public pricing pages.
      *
      * @param id - UUID of the plan to update
      * @param input - Fields to update (all optional)
@@ -99,11 +191,18 @@ export class PlanService {
         options: { readonly actorId?: string } = {},
         ctx?: QueryContext
     ) {
-        return updatePlan(id, input, options, ctx);
+        const result = await updatePlan(id, input, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan updated: ${id}`);
+        }
+        return result;
     }
 
     /**
      * Toggles the `active` flag of a billing plan.
+     *
+     * On success, triggers a best-effort cache revalidation of the public pricing pages
+     * so that toggled plans (shown/hidden) immediately reflect on the site.
      *
      * @param id - UUID of the plan
      * @param active - Desired active state
@@ -118,13 +217,18 @@ export class PlanService {
         options: { readonly actorId?: string } = {},
         ctx?: QueryContext
     ) {
-        return togglePlanActive(id, active, options, ctx);
+        const result = await togglePlanActive(id, active, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan ${active ? 'activated' : 'deactivated'}: ${id}`);
+        }
+        return result;
     }
 
     /**
      * Soft-deletes a billing plan (sets `deletedAt = now()`, `active = false`).
      *
      * The row is retained; `getById` will return NOT_FOUND for it.
+     * On success, triggers a best-effort cache revalidation of the public pricing pages.
      *
      * @param id - UUID of the plan to soft-delete
      * @param options - Optional settings
@@ -133,7 +237,11 @@ export class PlanService {
      * @returns Success or error
      */
     async softDelete(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
-        return softDeletePlan(id, options, ctx);
+        const result = await softDeletePlan(id, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan soft-deleted: ${id}`);
+        }
+        return result;
     }
 
     /**
@@ -141,6 +249,7 @@ export class PlanService {
      *
      * Blocked if any `billing_subscriptions` row references this plan's UUID.
      * Deletes associated `billing_prices` rows before removing the plan.
+     * On success, triggers a best-effort cache revalidation of the public pricing pages.
      *
      * @param id - UUID of the plan to hard-delete
      * @param options - Optional settings
@@ -149,6 +258,10 @@ export class PlanService {
      * @returns Success or error (ALREADY_EXISTS if referenced by subscriptions)
      */
     async hardDelete(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
-        return hardDeletePlan(id, options, ctx);
+        const result = await hardDeletePlan(id, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan hard-deleted: ${id}`);
+        }
+        return result;
     }
 }

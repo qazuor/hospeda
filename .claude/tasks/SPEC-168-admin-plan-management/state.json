@@ -569,36 +569,37 @@
             "id": "T-017",
             "title": "Web/API \u2014 Cloudflare cache purge on plan save (D3)",
             "description": "On every successful plan write (create/update/lifecycle), trigger a Cloudflare cache purge for the public pricing URLs (and the /public/plans cache). Add the purge call after the audit commit in the route/service layer; make it best-effort (failure logged, not fatal). Tests: unit \u2014 purge invoked with the right URLs on save; not invoked on read; write still succeeds if purge fails.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-016"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Cloudflare purge helper (best-effort)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Invoke on plan write success",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (invoked-on-save, non-fatal on failure)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "api", "cloudflare", "cache"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "Reused existing RevalidationService (getRevalidationService + revalidatePaths) in PlanService facade. Every successful write (create/update/toggleActive/softDelete/hardDelete) calls triggerPricingRevalidation() fire-and-forget with 6 pricing page paths (/suscriptores/planes/ and /suscriptores/turistas/ for es/en/pt). Revalidation failures are logged and swallowed. 16 unit tests in test/billing/plan-service-revalidation.test.ts."
         },
         {
             "id": "T-018",
@@ -789,9 +790,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 3.1
     }
