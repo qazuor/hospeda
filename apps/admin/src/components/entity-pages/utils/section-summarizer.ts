@@ -1,3 +1,4 @@
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 
@@ -29,9 +30,25 @@ function readValue(values: Record<string, unknown>, fieldId: string): unknown {
     return cursor;
 }
 
+/** UUID v4 pattern — 8-4-4-4-12 hex groups separated by hyphens. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Returns true when the value looks like a UUID string.
+ * Used to detect arrays of entity-reference IDs that should never be
+ * shown verbatim in the accordion summary (SPEC-172 PR4).
+ */
+function isUuidLike(s: unknown): boolean {
+    return typeof s === 'string' && UUID_RE.test(s);
+}
+
 /**
  * Converts a raw field value to a display string.
  * Handles strings, numbers, booleans, arrays (count or join), and objects.
+ *
+ * Arrays of UUID strings are collapsed to a count ("N items") instead of
+ * showing raw IDs — these arise from AMENITY_SELECT / FEATURE_SELECT and
+ * similar entity-reference multi-selects (SPEC-172 PR4 fix).
  */
 function valueToDisplayString(value: unknown): string | null {
     if (value === null || value === undefined || value === '') return null;
@@ -43,6 +60,9 @@ function valueToDisplayString(value: unknown): string | null {
         if (value.length === 0) return null;
         // For arrays of objects (gallery images, etc.) — show count
         if (typeof value[0] === 'object') return `${value.length} elementos`;
+        // For arrays whose first element looks like a UUID — show count only.
+        // Joining UUIDs produces unreadable garbage in the accordion header.
+        if (isUuidLike(value[0])) return `${value.length} elementos`;
         // For string/primitive arrays — join first few
         return value.slice(0, 3).join(', ');
     }
@@ -90,14 +110,72 @@ function galleryCount(values: Record<string, unknown>, fields: FieldConfig[]): s
 /** Maximum number of field values to include in the summary. */
 const MAX_SUMMARY_FIELDS = 3;
 
+// ---------------------------------------------------------------------------
+// Entity-select count summarizer
+// ---------------------------------------------------------------------------
+
+/**
+ * Produces a readable count summary for entity-select multi-value fields
+ * (AMENITY_SELECT, FEATURE_SELECT, ENTITY_SELECT with multiple=true).
+ *
+ * Returns null when no entity-select fields are present or all are empty,
+ * so the caller can fall back to the generic field-scan strategy.
+ *
+ * Label mapping (SPEC-172 PR4):
+ *   AMENITY_SELECT → "amenidad / amenidades"
+ *   FEATURE_SELECT → "característica / características"
+ *   ENTITY_SELECT  → "elemento / elementos"
+ */
+function entitySelectCountSummary(
+    values: Record<string, unknown>,
+    fields: FieldConfig[]
+): string | null {
+    const selectFields = fields.filter((f) =>
+        [
+            FieldTypeEnum.AMENITY_SELECT,
+            FieldTypeEnum.FEATURE_SELECT,
+            FieldTypeEnum.ENTITY_SELECT
+        ].includes(f.type as FieldTypeEnum)
+    );
+
+    if (selectFields.length === 0) return null;
+
+    const parts: string[] = [];
+
+    for (const field of selectFields) {
+        const raw = readValue(values, field.id);
+        if (!Array.isArray(raw) || raw.length === 0) continue;
+        const count = raw.length;
+
+        let singular: string;
+        let plural: string;
+        if (field.type === FieldTypeEnum.AMENITY_SELECT) {
+            singular = 'amenidad';
+            plural = 'amenidades';
+        } else if (field.type === FieldTypeEnum.FEATURE_SELECT) {
+            singular = 'característica';
+            plural = 'características';
+        } else {
+            singular = 'elemento';
+            plural = 'elementos';
+        }
+
+        parts.push(`${count} ${count === 1 ? singular : plural}`);
+    }
+
+    return parts.length > 0 ? parts.join(', ') : null;
+}
+
 /**
  * Generic section summarizer.
  *
  * Strategy:
  * 1. If the section has any GALLERY fields → show photo count.
- * 2. Otherwise: pick up to `MAX_SUMMARY_FIELDS` non-empty field values,
+ * 2. If the section has AMENITY_SELECT / FEATURE_SELECT / multi ENTITY_SELECT
+ *    fields → show "N amenidades, M características" count summary.
+ * 3. Otherwise: pick up to `MAX_SUMMARY_FIELDS` non-empty field values,
  *    join with " · ".
- * 3. If nothing is non-empty → return "— sin datos".
+ * 4. If nothing is non-empty → return "— sin datos".
  */
 function genericSummarize(values: Record<string, unknown>, section: SectionConfig): string {
     const fields = section.fields ?? [];
@@ -105,6 +183,10 @@ function genericSummarize(values: Record<string, unknown>, section: SectionConfi
     // Gallery shortcut
     const galleryResult = galleryCount(values, fields);
     if (galleryResult !== null) return galleryResult;
+
+    // Entity-select count shortcut (amenities, features, multi entity-selects)
+    const entitySelectResult = entitySelectCountSummary(values, fields);
+    if (entitySelectResult !== null) return entitySelectResult;
 
     const parts: string[] = [];
 
