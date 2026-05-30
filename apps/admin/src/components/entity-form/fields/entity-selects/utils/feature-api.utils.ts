@@ -1,16 +1,19 @@
 /**
  * Feature entity select utilities.
  *
- * SPEC-172 PR3: Uses the PUBLIC catalog endpoint (/api/v1/public/features)
- * because features are read-only catalog data that requires no admin auth.
- * The endpoint carries a 5-min HTTP cache so repeated calls are cheap.
+ * SPEC-172 PR3 / PR4-fix: Uses the ADMIN catalog endpoint
+ * (/api/v1/admin/features) instead of the public endpoint.
+ *
+ * Rationale: the public endpoint (/api/v1/public/features) has a server-side
+ * bug where requesting pageSize=100 returns only 20 items but reports
+ * totalPages that depend on the effective cap, not the requested pageSize.
+ * The admin endpoint correctly returns all 80 features in a single request
+ * with pageSize=100. Since the admin panel is always authenticated, the admin
+ * endpoint is appropriate here.
  *
  * Client-side search is used (searchMode: 'client') because the catalog is
- * small (~80 items) and the 5-min cache makes full-list fetches essentially
- * free. Chip labels are resolved with resolveI18nText() (es → en → pt).
- *
- * loadAllFeatures paginates through ALL pages (pageSize=100, API max) so the
- * chip list is never silently truncated if the catalog grows past 100 entries.
+ * small (~80 items). Chip labels are resolved with resolveI18nText()
+ * (es → en → pt fallback).
  */
 
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
@@ -24,6 +27,13 @@ const MAX_PAGES = 20;
 
 /** Page size used per request — matches API MAX_PAGE_SIZE to minimise round-trips. */
 const PAGE_SIZE = 100;
+
+/**
+ * Admin endpoint for features — returns the full catalog (all ~80 items)
+ * in a single request with pageSize=100, unlike the public endpoint which
+ * has a server-side cap that prevents retrieving the full catalog.
+ */
+const ADMIN_FEATURES_ENDPOINT = '/api/v1/admin/features';
 
 /**
  * Shape of a single feature item returned by the public list endpoint.
@@ -73,24 +83,27 @@ const toSelectOption = (item: PublicFeatureItem): SelectOption => {
 };
 
 /**
- * Fetch a single page of the public feature catalog.
+ * Fetch a single page of the admin feature catalog.
+ *
+ * Uses the admin endpoint (/api/v1/admin/features) because the public
+ * endpoint has a server-side pagination bug that prevents retrieving the
+ * full catalog in a single request. The admin endpoint returns all items
+ * correctly.
  */
 const fetchFeaturePage = async (page: number) => {
     return fetchApi<PublicListResponse>({
-        path: `/api/v1/public/features?pageSize=${PAGE_SIZE}&page=${page}`,
+        path: `${ADMIN_FEATURES_ENDPOINT}?pageSize=${PAGE_SIZE}&page=${page}`,
         method: 'GET'
     });
 };
 
 /**
- * Load the full feature catalog from the public endpoint.
+ * Load the full feature catalog from the admin endpoint.
  *
- * Iterates through all pages (pageSize=100 per request, matching the API cap)
- * until every item has been collected. This prevents silent truncation if the
- * catalog ever grows beyond 100 entries. A hard cap of MAX_PAGES (20 pages =
- * 2000 items) guards against infinite loops on misbehaving API responses.
+ * Iterates through all pages (pageSize=100 per request) until every item
+ * has been collected. A hard cap of MAX_PAGES (20 pages = 2000 items)
+ * guards against infinite loops on misbehaving API responses.
  *
- * The 5-min HTTP cache on the endpoint makes repeated page fetches cheap.
  * The result is used for client-side filtering inside EntitySelectField
  * (searchMode: 'client').
  */
@@ -113,7 +126,7 @@ export const loadAllFeatures = async (): Promise<SelectOption[]> => {
         return allItems.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error loading public feature catalog:',
+            'Error loading admin feature catalog:',
             error instanceof Error ? error.message : String(error)
         );
         return [];

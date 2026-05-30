@@ -1,18 +1,20 @@
 /**
  * Amenity entity select utilities.
  *
- * SPEC-172 PR3: Uses the PUBLIC catalog endpoint (/api/v1/public/amenities)
- * because amenities are read-only catalog data that requires no admin auth.
- * The endpoint carries a 5-min HTTP cache so repeated calls are cheap.
+ * SPEC-172 PR3 / PR4-fix: Uses the ADMIN catalog endpoint
+ * (/api/v1/admin/amenities) instead of the public endpoint.
+ *
+ * Rationale: the public endpoint (/api/v1/public/amenities) has a server-side
+ * bug where requesting pageSize=100 returns only 10 items but reports
+ * totalPages=1, making it impossible to retrieve all 90 amenities via
+ * pagination. The admin endpoint correctly returns all 90 in a single
+ * request with pageSize=100. Since the admin panel is always authenticated,
+ * the admin endpoint is appropriate here.
  *
  * Client-side search is used (searchMode: 'client') because the catalog is
- * small (~90 items) and the 5-min cache makes full-list fetches essentially
- * free. Chip labels are resolved by translating the snake_case slug via
- * @repo/i18n `accommodations.amenityNames.<slug>`, with a humanize fallback
- * (replace `_` with space + Title Case) when the key is missing.
- *
- * loadAllAmenities paginates through ALL pages (pageSize=100, API max) so the
- * chip list is never silently truncated if the catalog grows past 100 entries.
+ * small (~90 items). Chip labels are resolved by translating the snake_case
+ * slug via @repo/i18n `accommodations.amenityNames.<slug>`, with a humanize
+ * fallback (replace `_` with space + Title Case) when the key is missing.
  */
 
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
@@ -24,6 +26,13 @@ import type { I18nText } from '@repo/schemas';
 
 /** Maximum number of pages fetched as a defensive hard-cap (100 items/page = 2000 items). */
 const MAX_PAGES = 20;
+
+/**
+ * Admin endpoint for amenities — returns the full catalog (all ~90 items)
+ * in a single request with pageSize=100, unlike the public endpoint which
+ * has a server-side cap of 10 items per page regardless of pageSize.
+ */
+const ADMIN_AMENITIES_ENDPOINT = '/api/v1/admin/amenities';
 
 /**
  * Converts a snake_case string to a human-readable Title Case label.
@@ -125,24 +134,27 @@ const toSelectOption = (item: PublicAmenityItem): SelectOption => {
 };
 
 /**
- * Fetch a single page of the public amenity catalog.
+ * Fetch a single page of the admin amenity catalog.
+ *
+ * Uses the admin endpoint (/api/v1/admin/amenities) because the public
+ * endpoint has a server-side pagination bug: requesting pageSize=100
+ * returns only 10 items but reports totalPages=1, silently truncating
+ * the catalog. The admin endpoint returns all items correctly.
  */
 const fetchAmenityPage = async (page: number) => {
     return fetchApi<PublicListResponse>({
-        path: `/api/v1/public/amenities?pageSize=${PAGE_SIZE}&page=${page}`,
+        path: `${ADMIN_AMENITIES_ENDPOINT}?pageSize=${PAGE_SIZE}&page=${page}`,
         method: 'GET'
     });
 };
 
 /**
- * Load the full amenity catalog from the public endpoint.
+ * Load the full amenity catalog from the admin endpoint.
  *
- * Iterates through all pages (pageSize=100 per request, matching the API cap)
- * until every item has been collected. This prevents silent truncation if the
- * catalog ever grows beyond 100 entries. A hard cap of MAX_PAGES (20 pages =
- * 2000 items) guards against infinite loops on misbehaving API responses.
+ * Iterates through all pages (pageSize=100 per request) until every item
+ * has been collected. A hard cap of MAX_PAGES (20 pages = 2000 items)
+ * guards against infinite loops on misbehaving API responses.
  *
- * The 5-min HTTP cache on the endpoint makes repeated page fetches cheap.
  * The result is used for client-side filtering inside EntitySelectField
  * (searchMode: 'client').
  */
@@ -165,7 +177,7 @@ export const loadAllAmenities = async (): Promise<SelectOption[]> => {
         return allItems.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error loading public amenity catalog:',
+            'Error loading admin amenity catalog:',
             error instanceof Error ? error.message : String(error)
         );
         return [];
