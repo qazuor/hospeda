@@ -279,12 +279,32 @@ describe('migrateAddonPurchases', () => {
             // Insert succeeds
             mockDbReturning.mockResolvedValue([{ id: 'purchase_limit_1' }]);
 
-            // getBasePlanLimit: return planId and match to owner-basico (MAX_PHOTOS = 5).
-            // This query DOES use .limit(1) internally — chain: select -> from -> where -> limit
+            // getBasePlanLimit — now a TWO-query sequence (SPEC-168 T-021 fix):
+            //
+            // Query 1: billing_subscriptions — returns plan_id as UUID (per D1).
+            //   chain: select -> from -> where -> limit
             mockDbSelect.mockReturnValueOnce({
                 from: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue([{ planId: 'owner-basico' }])
+                        limit: vi
+                            .fn()
+                            .mockResolvedValue([{ planId: 'aaaaaaaa-0000-0000-0000-000000000001' }])
+                    })
+                })
+            });
+
+            // Query 2: billing_plans — resolves UUID to slug so ALL_PLANS lookup works.
+            //   chain: select -> from -> where -> limit
+            // name='owner-basico' maps to the canonical ALL_PLANS entry with
+            // max_photos_per_accommodation = 5 (basePlanLimit for owner-basico).
+            mockDbSelect.mockReturnValueOnce({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi
+                            .fn()
+                            .mockResolvedValue([
+                                { slug: 'owner-basico', metadata: { slug: 'owner-basico' } }
+                            ])
                     })
                 })
             });
@@ -305,6 +325,80 @@ describe('migrateAddonPurchases', () => {
                     maxValue: 25, // basePlanLimit(5) + limitIncrease(20)
                     source: 'addon',
                     sourceId: 'purchase_limit_1'
+                })
+            );
+        });
+
+        // ─── SPEC-168 T-021 regression test ─────────────────────────────────────
+        it('T-021 regression: resolves plan by UUID (not slug), returning correct base limit', async () => {
+            // Before the T-021 fix, getBasePlanLimit did:
+            //   ALL_PLANS.find(p => p.slug === row.planId)
+            // where row.planId was a UUID (e.g. 'aaaaaaaa-...'). No plan has a
+            // slug that is a UUID, so the find always returned undefined, making
+            // basePlanLimit always null and limitsBackfilled always 0.
+            //
+            // After the fix, getBasePlanLimit does two queries:
+            //   1. billing_subscriptions: fetch plan_id UUID
+            //   2. billing_plans: fetch name (slug) from that UUID
+            // Then: ALL_PLANS.find(p => p.slug === resolvedSlug)
+
+            const sub = createLimitSubscription();
+
+            // Fetch subscriptions
+            mockDbSelect.mockReturnValueOnce({
+                from: vi.fn().mockResolvedValue([sub])
+            });
+
+            // Idempotency check — not found
+            mockDbSelect.mockReturnValueOnce({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockResolvedValue([])
+                })
+            });
+
+            // Insert succeeds
+            mockDbReturning.mockResolvedValue([{ id: 'purchase_regression_1' }]);
+
+            // Query 1: billing_subscriptions returns a UUID plan_id (per D1).
+            // A slug lookup on this UUID would return undefined in ALL_PLANS.
+            const PLAN_UUID = 'deadbeef-0000-0000-0000-000000000001';
+            mockDbSelect.mockReturnValueOnce({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue([{ planId: PLAN_UUID }])
+                    })
+                })
+            });
+
+            // Query 2: billing_plans resolves the UUID → slug 'owner-basico'.
+            // This is the fix: we look up billing_plans by UUID to get the slug.
+            mockDbSelect.mockReturnValueOnce({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue([{ slug: 'owner-basico', metadata: {} }])
+                    })
+                })
+            });
+
+            // Plan restoration
+            mockGetStorage.mockReturnValue({
+                plans: { list: vi.fn().mockResolvedValue({ data: [] }), update: vi.fn() }
+            });
+
+            const stats = await migrateAddonPurchases({ dryRun: false, verbose: true });
+
+            // With the fix: limit is correctly resolved and backfilled.
+            // Without the fix: limitsBackfilled would be 0 and errors would have
+            // an entry about "Could not determine base plan limit".
+            expect(stats.addonsMigrated).toBe(1);
+            expect(stats.limitsBackfilled).toBe(1);
+            expect(stats.errors).toHaveLength(0);
+            expect(mockLimitsSet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    limitKey: 'max_photos_per_accommodation',
+                    maxValue: 25, // owner-basico basePlanLimit(5) + limitIncrease(20)
+                    source: 'addon',
+                    sourceId: 'purchase_regression_1'
                 })
             );
         });
