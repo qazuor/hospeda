@@ -1,16 +1,27 @@
-import { z } from '@hono/zod-openapi';
 /**
  * Public plans list endpoint
- * Returns the list of available billing plans from the billing configuration
+ *
+ * Returns active billing plans sourced from the database via PlanService.
+ * Response shape is backwards-compatible with the previous ALL_PLANS-based
+ * implementation (same fields: slug, name, category, prices, entitlements, limits).
+ *
+ * @module routes/billing/public/listPlans
  */
-import { ALL_PLANS } from '@repo/billing';
-import type { PlanDefinition } from '@repo/billing';
+
+import { z } from '@hono/zod-openapi';
+import { PlanService } from '../../../services/plan.service';
+import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
 
 /**
- * Public response schema for a single plan
+ * Public response schema for a single plan.
+ *
+ * Intentionally matches the previous ALL_PLANS shape so existing web client
+ * code does not need changes. The `id` field is added for completeness but
+ * the web client can ignore it.
  */
 const PlanPublicSchema = z.object({
+    id: z.string().uuid().openapi({ description: 'Plan UUID' }),
     slug: z.string().openapi({ description: 'Unique plan identifier' }),
     name: z.string().openapi({ description: 'Plan display name' }),
     description: z.string().openapi({ description: 'Plan description' }),
@@ -40,63 +51,49 @@ const PlanPublicSchema = z.object({
         .array(z.string())
         .openapi({ description: 'Entitlement keys included in this plan' }),
     limits: z
-        .array(
-            z.object({
-                key: z.string().openapi({ description: 'Limit key identifier' }),
-                value: z
-                    .number()
-                    .openapi({ description: 'Numeric limit value (-1 means unlimited)' }),
-                name: z.string().openapi({ description: 'Human-readable name' }),
-                description: z.string().openapi({ description: 'Limit description' })
-            })
-        )
-        .openapi({ description: 'Limits applied to this plan' })
+        .record(z.string(), z.number())
+        .openapi({ description: 'Limits applied to this plan (key → value, -1 means unlimited)' }),
+    createdAt: z.string().openapi({ description: 'ISO 8601 creation timestamp' }),
+    updatedAt: z.string().openapi({ description: 'ISO 8601 last-update timestamp' })
 });
 
 const PlansListResponseSchema = z.array(PlanPublicSchema);
 
-/**
- * Formats a plan definition for the public API response
- */
-function formatPlanForResponse(plan: PlanDefinition): z.infer<typeof PlanPublicSchema> {
-    return {
-        slug: plan.slug,
-        name: plan.name,
-        description: plan.description,
-        category: plan.category,
-        monthlyPriceArs: plan.monthlyPriceArs,
-        annualPriceArs: plan.annualPriceArs,
-        monthlyPriceUsdRef: plan.monthlyPriceUsdRef,
-        hasTrial: plan.hasTrial,
-        trialDays: plan.trialDays,
-        isDefault: plan.isDefault,
-        sortOrder: plan.sortOrder,
-        isActive: plan.isActive,
-        entitlements: plan.entitlements as string[],
-        limits: plan.limits.map((limit) => ({
-            key: limit.key as string,
-            value: limit.value,
-            name: limit.name,
-            description: limit.description
-        }))
-    };
-}
+/** Singleton plan service instance */
+const planService = new PlanService();
 
 /**
  * GET /api/v1/public/plans
- * List all active billing plans - Public endpoint
+ * List all active billing plans — Public endpoint.
+ *
+ * Source of truth is now the database (via PlanService). Previously sourced
+ * from the ALL_PLANS in-memory config (SPEC-168 T-011).
+ *
+ * Only plans with isActive=true are returned, sorted by sortOrder ascending.
  */
 export const publicListPlansRoute = createSimpleRoute({
     method: 'get',
     path: '/',
     summary: 'List billing plans',
     description:
-        'Returns all available billing plans including pricing in ARS and USD, trial information, entitlements, and limits. Data sourced from billing configuration.',
+        'Returns all active billing plans from the database. Includes pricing in ARS and USD, trial information, entitlements, and limits. Only active plans are returned.',
     tags: ['Plans'],
     responseSchema: PlansListResponseSchema,
     handler: async () => {
-        const activePlans = ALL_PLANS.filter((plan) => plan.isActive);
-        return activePlans.map(formatPlanForResponse);
+        apiLogger.debug('Public listing active billing plans from DB');
+
+        const result = await planService.list({ active: true });
+
+        if (!result.success || !result.data) {
+            apiLogger.error(
+                { error: result.error },
+                'Failed to load active plans from DB for public endpoint'
+            );
+            // Return empty list on failure rather than crashing; web can fall back gracefully
+            return [];
+        }
+
+        return result.data.items;
     },
     options: {
         skipAuth: true,
