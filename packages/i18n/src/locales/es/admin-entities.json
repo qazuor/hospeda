@@ -683,7 +683,15 @@
             "dates": { "label": "Fechas del evento" },
             "organizer": { "label": "Organizador asignado" },
             "category": { "label": "Categoría seleccionada" },
-            "location": { "label": "Lugar del evento" }
+            "location": { "label": "Lugar del evento" },
+            "content": {
+                "label": "Cuerpo del artículo",
+                "hint": "{current} de {target} caracteres"
+            },
+            "readingTime": { "label": "Tiempo de lectura cargado" },
+            "author": { "label": "Autor asignado" },
+            "relatedEntity": { "label": "Relacionado con otra entidad" },
+            "publishedAt": { "label": "Fecha de publicación" }
         }
     }
 }
