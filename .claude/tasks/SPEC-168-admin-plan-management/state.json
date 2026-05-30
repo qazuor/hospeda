@@ -261,136 +261,136 @@
             "id": "T-008",
             "title": "API \u2014 rewrite admin read endpoints to read from DB/service",
             "description": "apps/api/src/routes/billing/admin/plans.ts: switch GET / (list) and GET /:id from ALL_PLANS config to PlanService (response now includes id + timestamps + metadata). Gate with PermissionEnum.BILLING_READ_ALL (D2). Tests: integration \u2014 list/getById return DB shape with id; REGRESSION for the 502 (response now satisfies the admin transformPlanRecord contract); ADMIN\u2192403 / SUPER_ADMIN\u2192200 (SPEC-164).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003"],
             "blocks": ["T-012", "T-023"],
             "subtasks": [
                 {
                     "title": "GET / and GET /:id read from PlanService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "BILLING_READ_ALL gating",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests + 502 regression",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "read"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "API \u2014 add create/update write endpoints (POST /, PUT /:id)",
             "description": "Add POST / (create) and PUT /:id (update) to admin/plans.ts wired to PlanService. Gate with PermissionEnum.BILLING_MANAGE (D2), apply per-route admin rate limit, and getActorFromContext(c) for actor.id on the audit call. Validate via @repo/schemas (T-001). Tests: integration \u2014 create returns id; update mutates; missing-perm\u2192403; invalid body\u2192422; slug-change-on-update\u2192422.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-013", "T-017", "T-019", "T-022", "T-023"],
             "subtasks": [
                 {
                     "title": "POST / create + PUT /:id update routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "BILLING_MANAGE + rate limit + actor audit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (create, update, 403, 422)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "write"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "API \u2014 lifecycle endpoints (toggle, soft-delete, restore, hard-delete)",
             "description": "Add PATCH /:id (toggle active), DELETE /:id (soft-delete), POST /:id/restore, DELETE /:id/hard to admin/plans.ts wired to PlanService (T-006/T-007). BILLING_MANAGE + rate limit + audit. {id} is the UUID. Tests: integration \u2014 toggle flips active; soft-delete then restore; hard-delete BLOCKED (409/422) when a subscription references the plan, allowed when none.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-013", "T-020", "T-022", "T-023"],
             "subtasks": [
                 {
                     "title": "PATCH toggle + DELETE soft + restore",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "DELETE /:id/hard with referential guard surfaced as 409/422",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (soft semantics, hard-delete guard)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "lifecycle"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "API \u2014 switch public /plans endpoint to DB/service source",
             "description": "apps/api/src/routes/billing/public/listPlans.ts: read active plans from PlanService/DB instead of ALL_PLANS, keeping the response shape backwards-compatible with the web client. Tests: integration \u2014 public list returns only active plans from DB; public and admin agree on the same plan after an edit.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-016", "T-019"],
             "subtasks": [
                 {
                     "title": "Read active plans from service, keep response shape",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test (active-only, public==admin)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "public"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 16,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 3.1
     }
