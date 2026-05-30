@@ -188,7 +188,7 @@ describe('mapDbToPlan', () => {
         it('should map all fields correctly to BillingPlanResponse', () => {
             const result = mapDbToPlan(
                 mockPlanRow as Parameters<typeof mapDbToPlan>[0],
-                [mockMonthlyPrice, mockAnnualPrice] as Parameters<typeof mapDbToPlan>[1]
+                [mockMonthlyPrice, mockAnnualPrice] as unknown as Parameters<typeof mapDbToPlan>[1]
             );
             expect(result.id).toBe('plan-uuid-001');
             expect(result.slug).toBe('owner-basico');
@@ -213,7 +213,7 @@ describe('mapDbToPlan', () => {
         it('should set annualPriceArs to null', () => {
             const result = mapDbToPlan(
                 mockPlanRow as Parameters<typeof mapDbToPlan>[0],
-                [mockMonthlyPrice] as Parameters<typeof mapDbToPlan>[1]
+                [mockMonthlyPrice] as unknown as Parameters<typeof mapDbToPlan>[1]
             );
             expect(result.annualPriceArs).toBeNull();
         });
