@@ -1,22 +1,24 @@
 /**
  * @file generators/variant-tokens.ts
- * @description SPEC-176 T-003 (consolidated) — Complete VARIANT_TOKEN_MAP with all 115 entries.
+ * @description SPEC-176 T-003 (consolidated) — Complete VARIANT_TOKEN_MAP with all 128 entries.
  *
  * This file assembles the VARIANT_TOKEN_MAP from two modules:
- * - `variant-tokens-alpha.ts` — 92 alpha-family entries (conservatively consolidated)
- * - This file — 1 white-origin alpha entry + 22 lightness-family entries
- *   (multiply × 10, subtract × 10, add × 2)
+ * - `variant-tokens-alpha.ts` — 104 alpha-family entries (92 consolidated + 12 FAITHFUL
+ *   kept-own added in T-005 part C to close var-fallback alpha-gaps)
+ * - This file — 1 white-origin alpha entry + 23 lightness-family entries
+ *   (multiply × 11, subtract × 10, add × 2)
  *
  * Every entry was derived by scanning `apps/web/src/` for `oklch(from var(--BASE) TRANSFORM)`
  * patterns (plus the single `oklch(from white l c h / 0.75)` white-origin usage).
  * The faithful scan found 116 var-based alpha pairs; consolidation reduced them to 92.
  *
  *   - 92 alpha-family (consolidated from 116; 15 merge groups, max snap delta 0.020)
+ *   - 12 alpha-family FAITHFUL kept-own (T-005 part C; close var-fallback alpha-gaps)
  *   -  1 white-origin alpha (oklch(from white l c h / 0.75)) — SPEC-176 T-005 part A
- *   - 10 lightness-multiply (base, factor) pairs — FAITHFUL 1:1, unchanged
+ *   - 11 lightness-multiply (base, factor) pairs — FAITHFUL 1:1 (incl. muted-l105 part C)
  *   - 10 lightness-subtract (base, offset) pairs — FAITHFUL 1:1, unchanged
  *   -  2 lightness-add (base, offset) pairs — FAITHFUL 1:1, unchanged
- *   = 115 total canonical entries
+ *   = 128 total canonical entries
  *
  * Alpha consolidation grid (14 steps): 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.25,
  *   0.30, 0.35, 0.40, 0.50, 0.60, 0.75, 0.90.
@@ -44,7 +46,7 @@ import { ALPHA_VARIANT_ENTRIES } from './variant-tokens-alpha.js';
 
 // ============================================================================
 // Lightness-multiply family — oklch(from var(--BASE) calc(l * FACTOR) c h)
-// 10 entries, sorted by base then factor.
+// 11 entries, sorted by base then factor.
 // ============================================================================
 
 const LIGHTNESS_MULTIPLY_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
@@ -126,6 +128,19 @@ const LIGHTNESS_MULTIPLY_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         family: 'lightness-multiply',
         param: 0.85,
         replaces: 'oklch(from var(--destructive) calc(l * 0.85) c h)'
+    },
+
+    // --- muted ---
+    // FAITHFUL (T-005 part C): brightens --muted by 5% for the login shimmer
+    // (auth SignIn/SignUp, 6 usages). The source spells the fallback inline as
+    // `oklch(from var(--muted, oklch(0.93 0 0)) calc(l * 1.05) c h)`; the codemod
+    // normalizes the var() fallback away before matching this canonical literal.
+    {
+        name: 'muted-l105',
+        base: 'muted',
+        family: 'lightness-multiply',
+        param: 1.05,
+        replaces: 'oklch(from var(--muted) calc(l * 1.05) c h)'
     }
 ] as const;
 
@@ -270,7 +285,7 @@ const WHITE_ALPHA_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
 // ============================================================================
 
 /**
- * Ordered list of all 115 variant tokens that need sRGB fallbacks (SPEC-176).
+ * Ordered list of all 128 variant tokens that need sRGB fallbacks (SPEC-176).
  *
  * Each entry maps a canonical CSS custom property name (`name`) to:
  * - The base theme token it derives from (`base`).
@@ -287,11 +302,11 @@ const WHITE_ALPHA_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
  * T-005 (codemod) consumes `replaces` and `replacesVariants` to swap 676+
  * call-sites in `apps/web/src/` to `var(--name)`.
  *
- * Order: alpha-family (92) → white-origin alpha (1) → lightness-multiply (10)
+ * Order: alpha-family (104) → white-origin alpha (1) → lightness-multiply (11)
  * → lightness-subtract (10) → lightness-add (2). Within each family: sorted by
  * base name, then by param.
  *
- * @see variant-tokens-alpha.ts for the 92 alpha entries (split file).
+ * @see variant-tokens-alpha.ts for the 104 alpha entries (split file).
  * @see variant-token-schema.ts — VariantTokenEntry type and VariantTokenMapSchema.
  * @see variant-token-derivation.md — scan methodology and consolidation table.
  */

@@ -2,9 +2,10 @@
  * @file generators/variant-tokens-alpha.ts
  * @description SPEC-176 T-003 (consolidated) — Alpha-family entries for VARIANT_TOKEN_MAP.
  *
- * Contains 92 conservatively-consolidated alpha-family entries derived from the CSS scan
- * of apps/web/src/. Imported by variant-tokens.ts which assembles the complete
- * VARIANT_TOKEN_MAP.
+ * Contains 104 alpha-family entries: 92 conservatively-consolidated entries from the
+ * initial CSS scan of apps/web/src/, plus 12 FAITHFUL kept-own entries added in T-005
+ * part C to close real var-with-fallback alpha-gaps (exact value, no snapping).
+ * Imported by variant-tokens.ts which assembles the complete VARIANT_TOKEN_MAP.
  *
  * Alpha transform pattern: `oklch(from var(--BASE) l c h / ALPHA)`
  * Naming convention (D6): `{base}-a{NN}` where NN = round(canonicalAlpha * 100),
@@ -44,10 +45,11 @@
 import type { VariantTokenEntry } from './variant-token-schema.js';
 
 /**
- * All 92 consolidated alpha-family variant token entries.
+ * All 104 alpha-family variant token entries (92 consolidated + 12 FAITHFUL kept-own).
  * Sorted by base token name, then by canonical alpha parameter ascending.
  *
- * Merge legend in comments: `[MERGED: 0.xx, 0.yy → canonical step]`
+ * Merge legend in comments: `[MERGED: 0.xx, 0.yy → canonical step]`.
+ * FAITHFUL kept-own entries (T-005 part C) are marked with a `FAITHFUL kept-own` comment.
  */
 export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
     // -------------------------------------------------------------------------
@@ -394,6 +396,15 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         param: 0.4,
         replaces: 'oklch(from var(--core-background) l c h / 0.4)'
     },
+    // FAITHFUL kept-own (T-005 part C): 0.70 — fills var-fallback alpha-gap
+    // (PaginationLoading overlay). Nearest existing a40 (0.40) delta 0.30 > 0.025.
+    {
+        name: 'core-background-a70',
+        base: 'core-background',
+        family: 'alpha',
+        param: 0.7,
+        replaces: 'oklch(from var(--core-background) l c h / 0.7)'
+    },
 
     // -------------------------------------------------------------------------
     // core-card — 8 tokens (was 9; 1 merge group)
@@ -402,6 +413,33 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
     // KEPT-OWN: 0.55, 0.70, 0.85, 0.95
     // a100: alpha=1.0 (opaque, always kept)
     // -------------------------------------------------------------------------
+    // FAITHFUL kept-own (T-005 part C): 0.25 — fills var-fallback alpha-gap
+    // (NewsletterForm). Nearest existing a55 (0.55) delta 0.30 > 0.025.
+    {
+        name: 'core-card-a25',
+        base: 'core-card',
+        family: 'alpha',
+        param: 0.25,
+        replaces: 'oklch(from var(--core-card) l c h / 0.25)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.30 — fills var-fallback alpha-gap
+    // (NewsletterForm). Nearest existing a55 (0.55) delta 0.25 > 0.025.
+    {
+        name: 'core-card-a30',
+        base: 'core-card',
+        family: 'alpha',
+        param: 0.3,
+        replaces: 'oklch(from var(--core-card) l c h / 0.3)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.50 — fills var-fallback alpha-gap
+    // (NewsletterForm). Nearest existing a55 (0.55) delta 0.05 > 0.025.
+    {
+        name: 'core-card-a50',
+        base: 'core-card',
+        family: 'alpha',
+        param: 0.5,
+        replaces: 'oklch(from var(--core-card) l c h / 0.5)'
+    },
     // kept-own: 0.55 — nearest grid steps are 0.50 (delta=0.05) and 0.60 (delta=0.05)
     {
         name: 'core-card-a55',
@@ -710,8 +748,26 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
     },
 
     // -------------------------------------------------------------------------
-    // destructive — 7 tokens (7 values; 0.80 kept-own; rest exact grid hits)
+    // destructive — 11 tokens (7 grid + 4 FAITHFUL kept-own from T-005 part C)
     // -------------------------------------------------------------------------
+    // FAITHFUL kept-own (T-005 part C): 0.04 — fills var-fallback alpha-gap
+    // (ErrorBanner). Nearest existing a08 (0.08) delta 0.04 > 0.025.
+    {
+        name: 'destructive-a04',
+        base: 'destructive',
+        family: 'alpha',
+        param: 0.04,
+        replaces: 'oklch(from var(--destructive) l c h / 0.04)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.05 — fills var-fallback alpha-gap
+    // (ErrorBanner). Nearest existing a08 (0.08) delta 0.03 > 0.025.
+    {
+        name: 'destructive-a05',
+        base: 'destructive',
+        family: 'alpha',
+        param: 0.05,
+        replaces: 'oklch(from var(--destructive) l c h / 0.05)'
+    },
     // exact grid hit
     {
         name: 'destructive-a08',
@@ -743,6 +799,24 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         family: 'alpha',
         param: 0.15,
         replaces: 'oklch(from var(--destructive) l c h / 0.15)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.18 — fills var-fallback alpha-gap
+    // (ContactForm, components.css). Nearest existing a15 (0.15) delta 0.03 > 0.025.
+    {
+        name: 'destructive-a18',
+        base: 'destructive',
+        family: 'alpha',
+        param: 0.18,
+        replaces: 'oklch(from var(--destructive) l c h / 0.18)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.25 — fills var-fallback alpha-gap
+    // (12 occurrences; account/* error surfaces). Nearest existing a15/a35 delta 0.10 > 0.025.
+    {
+        name: 'destructive-a25',
+        base: 'destructive',
+        family: 'alpha',
+        param: 0.25,
+        replaces: 'oklch(from var(--destructive) l c h / 0.25)'
     },
     // exact grid hit
     {
@@ -815,6 +889,15 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         param: 0.08,
         replaces: 'oklch(from var(--info) l c h / 0.08)'
     },
+    // FAITHFUL kept-own (T-005 part C): 0.20 — fills var-fallback alpha-gap
+    // (ToastViewport). Nearest existing a08 (0.08) delta 0.12 > 0.025.
+    {
+        name: 'info-a20',
+        base: 'info',
+        family: 'alpha',
+        param: 0.2,
+        replaces: 'oklch(from var(--info) l c h / 0.2)'
+    },
 
     // -------------------------------------------------------------------------
     // primary-foreground — 4 tokens (4 values; 0.80 and 0.85 kept-own)
@@ -864,7 +947,7 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
     },
 
     // -------------------------------------------------------------------------
-    // success — 1 token (1 value: 0.12 exact grid hit)
+    // success — 3 tokens (1 grid + 2 FAITHFUL kept-own from T-005 part C)
     // -------------------------------------------------------------------------
     {
         name: 'success-a12',
@@ -872,6 +955,24 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         family: 'alpha',
         param: 0.12,
         replaces: 'oklch(from var(--success) l c h / 0.12)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.15 — fills var-fallback alpha-gap
+    // (SubscriptionDashboard). Nearest existing a12 (0.12) delta 0.03 > 0.025.
+    {
+        name: 'success-a15',
+        base: 'success',
+        family: 'alpha',
+        param: 0.15,
+        replaces: 'oklch(from var(--success) l c h / 0.15)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.30 — fills var-fallback alpha-gap
+    // (SubscriptionDashboard). Nearest existing a12 (0.12) delta 0.18 > 0.025.
+    {
+        name: 'success-a30',
+        base: 'success',
+        family: 'alpha',
+        param: 0.3,
+        replaces: 'oklch(from var(--success) l c h / 0.3)'
     },
 
     // -------------------------------------------------------------------------
@@ -897,7 +998,7 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
     },
 
     // -------------------------------------------------------------------------
-    // warning — 2 tokens (2 values; both exact grid hits)
+    // warning — 3 tokens (2 grid + 1 FAITHFUL kept-own from T-005 part C)
     // -------------------------------------------------------------------------
     {
         name: 'warning-a10',
@@ -912,5 +1013,14 @@ export const ALPHA_VARIANT_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
         family: 'alpha',
         param: 0.12,
         replaces: 'oklch(from var(--warning) l c h / 0.12)'
+    },
+    // FAITHFUL kept-own (T-005 part C): 0.35 — fills var-fallback alpha-gap
+    // (ArticleCard, publicaciones/[slug]). Nearest existing a12 (0.12) delta 0.23 > 0.025.
+    {
+        name: 'warning-a35',
+        base: 'warning',
+        family: 'alpha',
+        param: 0.35,
+        replaces: 'oklch(from var(--warning) l c h / 0.35)'
     }
 ] as const;
