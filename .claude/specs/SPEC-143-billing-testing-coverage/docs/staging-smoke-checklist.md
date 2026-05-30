@@ -1070,6 +1070,85 @@ because it has no other regression check)
 
 ---
 
+---
+
+## SPEC-168: Admin Plan Management
+
+This section covers the manual smoke for **runtime-editable plans**: an operator
+edits a plan price in the admin panel and the change propagates to the web
+pricing page and to new checkouts.
+
+**Run where**: Staging (required for Cloudflare cache purge + MP checkout amount
+verification). The automated vitest e2e suite (`plan-price-change.test.ts`)
+covers the DB write + public endpoint read at the API level; the steps below
+cover the web rendering + real MP checkout amount path that the stub cannot exercise.
+
+**Pre-conditions**:
+
+- A superadmin account on `https://admin.staging.hospeda.com.ar` (or the staging
+  admin URL configured in Coolify).
+- An active MercadoPago sandbox buyer (see "Pre-flight: MP test buyer browser
+  session" at the top of this file).
+- Know the current `monthlyPriceArs` of a real seeded plan (e.g. `owner-basico`).
+  Read it from the admin → Facturación → Planes list before the edit.
+
+### SPEC-168.1 — operator edits a plan price in admin
+
+1. Log in to the admin panel as superadmin.
+2. Navigate to **Facturación → Planes**.
+3. Click on a plan (e.g. `owner-basico`). Click **Editar**.
+4. Change `monthlyPriceArs` to a new value (e.g. 600,000 centavos = 6,000 ARS).
+   Leave all other fields unchanged. Click **Guardar**.
+5. Verify the plan list page now shows the new price.
+6. Verify the audit log entry is present (admin → Auditoría or equivalent).
+
+**Expected**: 200 response, plan card shows new price, audit row created.
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-168.2 — web /suscriptores/planes/ reflects new price after cache purge
+
+1. Immediately after step 4 above, open a new incognito window.
+2. Navigate to `https://staging.hospeda.com.ar/suscriptores/planes/`.
+3. Verify the updated plan card shows the **new** `monthlyPriceArs`.
+   (The Cloudflare cache purge is triggered by the admin write; the page
+   should show the new value within seconds, not minutes.)
+4. If the old price still appears, wait 60 seconds and hard-refresh. If still
+   stale after that, log it as a cache purge failure (engram bug entry required).
+
+**Expected**: new price visible immediately or within one TTL cycle (≤ 300s).
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-168.3 — new checkout charges the updated price
+
+1. From the incognito window in step SPEC-168.2, click **Suscribirme** on the
+   updated plan.
+2. Complete the checkout flow using an MP test card (see `mp-test-cards-reference.md`
+   — use "successful payment" card).
+3. After authorisation, check the MP sandbox dashboard for the preapproval amount.
+   The `transaction_amount` on the MP preapproval must equal the new price in
+   major units (e.g. 6000.00 ARS for 600,000 centavos).
+4. Verify `billing_subscriptions.plan_id` on staging DB matches the plan UUID.
+   (`hops psql --target=staging` → `SELECT plan_id FROM billing_subscriptions ORDER BY created_at DESC LIMIT 1;`)
+
+**Expected**: MP preapproval amount = new price / 100 (major units). plan_id = UUID.
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-168.4 — reactivate a soft-deleted plan and verify it re-appears
+
+1. In the admin panel, soft-delete a plan (DELETE action → it becomes inactive).
+2. Verify the plan disappears from the public `/suscriptores/planes/` page.
+3. In the admin panel, use **Restaurar** (the restore endpoint) to reactivate.
+4. Verify the plan reappears on the public page.
+
+**Expected**: plan toggles between visible/invisible matching isActive state.
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
 ## Sign-off block
 
 After completing the sections relevant to the PR, file a sign-off entry:
