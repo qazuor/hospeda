@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createDestinationConsolidatedConfig } from '@/features/destinations/config';
 import { useCreateDestinationMutation } from '@/features/destinations/hooks/useDestinationQuery';
@@ -40,7 +40,7 @@ function DestinationCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.DESTINATION_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={DestinationCreateInputSchema}
                 createConsolidatedConfig={() => createDestinationConsolidatedConfig(t)}
