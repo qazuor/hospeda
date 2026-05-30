@@ -1,0 +1,698 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-170",
+    "title": "Per-User Granular Permission Management Panel",
+    "created": "2026-05-30T00:00:00.000Z",
+    "summary": {
+        "total": 31,
+        "pending": 31,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PermissionEffectSchema and PermissionEffect type to @repo/schemas",
+            "description": "Create or extend `packages/schemas/src/entities/permission/permission.management.schema.ts`.\n\n**What to create/modify:**\n- Export `PermissionEffectSchema = z.enum(['grant', 'deny'])` and `PermissionEffect = z.infer<...>`.\n- Extend `UserPermissionAssignmentSchema` to include `effect: PermissionEffectSchema.default('grant')`.\n- Extend `UserPermissionManagementInputSchema` (strict) to include `effect: PermissionEffectSchema.optional().default('grant')`. Verify `.strict()` still accepts callers that omit `effect`.\n- Export all new types from the relevant `index.ts`.\n\n**Key files affected:**\n- `packages/schemas/src/entities/permission/permission.management.schema.ts`\n- `packages/schemas/src/index.ts` (or domain barrel)\n\n**Acceptance criteria:**\n- `PermissionEffect`, `PermissionEffectSchema` are exported from `@repo/schemas`.\n- Modified schemas are backward-compatible (callers omitting `effect` get `'grant'`).\n- `pnpm typecheck` passes across the monorepo.\n\n**Test requirements:**\n- Unit tests in `packages/schemas/src/__tests__/permission-management.schema.test.ts`.\n- Assert: `PermissionEffectSchema.parse('grant')` = `'grant'`; `.parse('deny')` = `'deny'`; `.parse('other')` throws.\n- Assert: `UserPermissionAssignmentSchema.parse({ userId, permission })` defaults `effect` to `'grant'`.\n- Assert: `UserPermissionManagementInputSchema.parse({ userId, permission, extra: 1 })` throws (strict still enforced).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "types"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add API endpoint Zod schemas for user permission overrides",
+            "description": "Create `packages/schemas/src/entities/user/permission.schema.ts` (new file) with the API-specific schemas.\n\n**What to create:**\n- `UserPermissionOverridesResponseSchema` — GET response `{ fromRole: PermissionEnum[], grantOverrides: PermissionEnum[], denyOverrides: PermissionEnum[] }`.\n- `AssignUserPermissionOverrideBodySchema` — POST body `{ permission: PermissionEnum, effect: PermissionEffect }` (strict).\n- `DeleteUserPermissionOverrideParamsSchema` — DELETE params `{ id: UserIdSchema, permission: PermissionEnumSchema }`.\n- Export all types inferred from schemas.\n- Barrel-export from `packages/schemas/src/index.ts`.\n\n**Key files affected:**\n- `packages/schemas/src/entities/user/permission.schema.ts` (new)\n- `packages/schemas/src/index.ts`\n\n**Acceptance criteria:**\n- All three schemas parse valid inputs and reject invalid ones.\n- Types are importable from `@repo/schemas`.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- Unit tests in `packages/schemas/src/__tests__/user-permission.schema.test.ts`.\n- Assert GET response shape parses correctly.\n- Assert POST body rejects missing `effect` and invalid `permission`.\n- Assert DELETE params reject non-UUID `id`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-018"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "api"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add PermissionEffectPgEnum to DB enums and pgEnum declaration",
+            "description": "Add the pgEnum `permission_effect_enum` to the database schema layer (owner decision: Option 2 — pgEnum, not varchar+check).\n\n**What to create/modify:**\n- In `packages/db/src/schemas/enums.dbschema.ts` (or equivalent): add `export const permissionEffectPgEnum = pgEnum('permission_effect_enum', ['grant', 'deny'])`.\n- Export from the DB package barrel.\n\n**Key files affected:**\n- `packages/db/src/schemas/enums.dbschema.ts`\n- `packages/db/src/index.ts`\n\n**Acceptance criteria:**\n- `permissionEffectPgEnum` is exported from `@repo/db`.\n- Import is available for use in `r_user_permission.dbschema.ts` (T-004).\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- No dedicated test needed (pure declaration). Covered by T-004 DB integration test.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [],
+            "tags": ["backend", "database", "schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add effect column to user_permission DB schema and run migration",
+            "description": "Modify the Drizzle schema for `user_permission` to add the `effect` column using the pgEnum defined in T-003.\n\n**What to modify:**\n- `packages/db/src/schemas/user/r_user_permission.dbschema.ts`: add `effect: permissionEffectPgEnum('effect').notNull().default('grant')`.\n- Update the TypeScript return type of the model if needed (add `effect` field).\n- Run `pnpm db:generate` to produce the Drizzle migration SQL file (for prod path), or `pnpm db:push` for dev.\n- Confirm existing rows are backfilled with `'grant'` (DEFAULT handles this automatically).\n- Confirm no extras-script changes needed (pgEnum = no CHECK constraint).\n\n**Key files affected:**\n- `packages/db/src/schemas/user/r_user_permission.dbschema.ts`\n- Generated migration file in `packages/db/src/migrations/` (if `db:generate` run)\n\n**Acceptance criteria:**\n- `user_permission` table has `effect permission_effect_enum NOT NULL DEFAULT 'grant'`.\n- Existing rows show `effect = 'grant'` after migration.\n- `pnpm typecheck` passes.\n- No extras-script modification needed (pgEnum = no hidden CHECK constraint).\n\n**Test requirements:**\n- Integration test in `packages/db/src/__tests__/r-user-permission.model.test.ts` (or existing test file).\n- Insert a row without `effect` → confirm it returns `{ effect: 'grant' }`.\n- Insert a row with `effect: 'deny'` → confirm it persists correctly.\n- Attempt to insert `effect: 'invalid'` → expect DB error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-007"],
+            "subtasks": [],
+            "tags": ["backend", "database", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add getUserPermissionsWithEffect export to user-permissions-cache.ts",
+            "description": "Extend `apps/api/src/middlewares/user-permissions-cache.ts` (or wherever the cache lives) to export a new function that returns overrides split by effect.\n\n**What to create/modify:**\n- Add `UserPermissionsWithEffect` interface: `{ readonly grants: readonly PermissionEnum[]; readonly denies: readonly PermissionEnum[] }`.\n- Add `getUserPermissionsWithEffect({ userId }): Promise<UserPermissionsWithEffect>` — queries the model (or uses cached result) and splits rows by `effect`.\n- Keep the existing `getUserPermissions` export unchanged (backward compat).\n- Add a code comment documenting the multi-instance cache-skew caveat (single-VPS today, theoretical; Redis would fix it).\n\n**Key files affected:**\n- `apps/api/src/middlewares/user-permissions-cache.ts`\n\n**Acceptance criteria:**\n- `getUserPermissionsWithEffect` returns `{ grants: [...], denies: [...] }` correctly split.\n- Existing `getUserPermissions` callers are unaffected.\n- Multi-instance caveat is documented in a code comment.\n- `pnpm typecheck` passes.\n\n**Test requirements (TDD — write tests FIRST):**\n- Unit tests in `apps/api/src/middlewares/__tests__/user-permissions-cache.test.ts`.\n- Mock the model to return `[{ permission: P1, effect: 'grant' }, { permission: P2, effect: 'deny' }]`.\n- Assert `getUserPermissionsWithEffect` returns `{ grants: [P1], denies: [P2] }`.\n- Assert empty overrides → `{ grants: [], denies: [] }`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [],
+            "tags": ["backend", "cache", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "[TDD] Write all 10 actor.ts precedence test cases BEFORE touching actor.ts",
+            "description": "**CRITICAL GATE — TDD mandatory. Write tests first, implementation comes in T-007.**\n\nThis task produces ONLY the test file. The implementation (`actor.ts` change) is T-007.\n\n**What to create:**\n- New test file: `apps/api/src/middlewares/__tests__/actor.resolution.test.ts`.\n- Mock dependencies: `getUserPermissionsWithEffect`, `getPermissionsForRole`, `UserModel` or whatever `actor.ts` calls.\n- Write all 10 cases from tech-analysis §6:\n  1. Perm only in role, no overrides → [P1].\n  2. Perm in role + grant override (same perm) → [P1] (no duplicate).\n  3. Perm in role + deny override → [] (P1 removed).\n  4. Grant override for perm NOT in role → [P2].\n  5. Deny override for perm NOT in role → [] (no-op, silent).\n  6. Both grant and deny for same perm → IMPOSSIBLE: assert only one row can exist in DB (PK enforcement — can be a schema-level assertion or a comment test).\n  7. SUPER_ADMIN with deny override → ALL_PERMISSIONS (deny ignored via short-circuit).\n  8. SUPER_ADMIN with grant override → ALL_PERMISSIONS (redundant, not harmful).\n  9. Multiple denies subtracted from role → [P2] when [P1,P2,P3] role, [P1,P3] denies.\n  10. Mixed: role [P1,P2] + grants [P3] + denies [P2] → [P1, P3].\n- Tests MUST FAIL (RED) until T-007 is implemented.\n\n**Key files affected:**\n- `apps/api/src/middlewares/__tests__/actor.resolution.test.ts` (new)\n\n**Acceptance criteria:**\n- All 10 test cases are written, structured with AAA pattern.\n- Running `pnpm test` against this file shows 10 failing tests (red — expected, implementation not done yet).\n- No imports from implementation that don't exist yet (use mocks).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["backend", "auth", "testing", "tdd"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement deny-override resolution in actor.ts — make all 10 tests pass",
+            "description": "**CRITICAL HOT-PATH — implement only after T-006 tests are written and RED.**\n\nModify `apps/api/src/middlewares/actor.ts` to replace the current simple union logic with `(rolePerms ∪ grants) \\ denies`.\n\n**What to modify:**\n- Lines ~164-173 of `actor.ts`: replace `[...new Set([...rolePermissions, ...userPermissions])]` with the two-step formula:\n  1. `const unionSet = new Set([...rolePermissions, ...userOverrides.grants])`\n  2. `for (const denied of userOverrides.denies) { unionSet.delete(denied); }`\n  3. `const allPermissions = Array.from(unionSet) as PermissionEnum[]`\n- Switch from `getUserPermissions` to `getUserPermissionsWithEffect` (exported in T-005).\n- Confirm SUPER_ADMIN short-circuit (line ~153) is BEFORE this block — deny subtraction never runs for SUPER_ADMIN.\n\n**Key files affected:**\n- `apps/api/src/middlewares/actor.ts`\n\n**Acceptance criteria:**\n- All 10 tests from T-006 pass (GREEN).\n- SUPER_ADMIN short-circuit is verified intact (test case 7 and 8 green).\n- `pnpm typecheck` passes.\n- No regression in existing auth middleware tests.\n\n**Test requirements:**\n- T-006 covers all cases. Also run full existing test suite to confirm no regressions.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-010", "T-018"],
+            "subtasks": [],
+            "tags": ["backend", "auth", "critical-path"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Extend PermissionService.assignPermissionToUser with effect param and upsert",
+            "description": "Modify `PermissionService.assignPermissionToUser` in `packages/service-core/src/services/permission/permission.service.ts`.\n\n**What to modify:**\n- Add `effect: 'grant' | 'deny'` param (default `'grant'`).\n- Change from `findOne + create (if !exists)` to **upsert** pattern: `ON CONFLICT (userId, permission) DO UPDATE SET effect = EXCLUDED.effect`. If Drizzle's `onConflictDoUpdate` is not available on the base model, use a `hardDelete + create` pattern (document trade-off in comment).\n- Add SUPER_ADMIN guard: if target user has role `SUPER_ADMIN`, throw a 400 error with message `'cannot assign overrides to a SUPER_ADMIN'`.\n- Call `invalidateUserPermissionsCache({ userId })` immediately after the DB write.\n- Emit `AuditEventType.PERMISSION_CHANGE` audit event with `{ actorId, actorRole, targetUserId, permission, effect, action: 'assign' }`.\n\n**Key files affected:**\n- `packages/service-core/src/services/permission/permission.service.ts`\n\n**Acceptance criteria:**\n- Upsert replaces existing override with new effect (grant→deny and deny→grant both work).\n- SUPER_ADMIN targets return a 400 error, no DB write.\n- Cache is invalidated after each successful write.\n- Audit event is emitted.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- Unit tests in `packages/service-core/src/__tests__/permission.service.test.ts`.\n- Test: grant perm to non-super → success, cache invalidated, audit emitted.\n- Test: deny perm to non-super → success.\n- Test: assign to SUPER_ADMIN → 400 error, no DB write.\n- Test: upsert changes effect (grant→deny) → single row with updated effect.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [],
+            "tags": ["backend", "service", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add getPermissionOverridesForUser service method",
+            "description": "Add a new method `getPermissionOverridesForUser` to `PermissionService`.\n\n**What to create:**\n- Method signature: `getPermissionOverridesForUser(actor: Actor, input: { userId: string }, ctx?): Promise<ServiceOutput<UserPermissionOverridesResponse>>`.\n- Wrap with `runWithLoggingAndValidation`.\n- Permission check: `canViewPermissions(actor)`.\n- Fetch all user overrides, split by `effect` into `grantOverrides` and `denyOverrides`.\n- Fetch target user's role, then get `fromRole` permissions via `getPermissionsForRole`.\n- Return `{ fromRole, grantOverrides, denyOverrides }`.\n- Inject `UserModel` into the service constructor if not already present (Option A from tech-analysis §5 — keep logic in service layer).\n\n**Key files affected:**\n- `packages/service-core/src/services/permission/permission.service.ts`\n\n**Acceptance criteria:**\n- Returns correct split `{ fromRole, grantOverrides, denyOverrides }` for a user with mixed overrides.\n- Forbidden for actors without `PERMISSION_VIEW`.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- Unit tests in `packages/service-core/src/__tests__/permission.service.test.ts`.\n- Test: actor with `PERMISSION_VIEW` gets correct response structure.\n- Test: actor without `PERMISSION_VIEW` gets FORBIDDEN error.\n- Test: user with no overrides returns `{ fromRole: [...], grantOverrides: [], denyOverrides: [] }`.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["backend", "service", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add audit emission and cache invalidation to removePermissionFromUser",
+            "description": "Modify `PermissionService.removePermissionFromUser` (or `revokePermissionFromUser`) to add cache invalidation and audit emission, symmetric with `assignPermissionToUser`.\n\n**What to modify:**\n- After the existing delete logic, call `invalidateUserPermissionsCache({ userId })`.\n- Emit `AuditEventType.PERMISSION_CHANGE` with `{ actorId, actorRole, targetUserId, permission, action: 'revoke' }` (no `effect` field — revoke removes regardless of effect).\n\n**Key files affected:**\n- `packages/service-core/src/services/permission/permission.service.ts`\n\n**Acceptance criteria:**\n- Cache is invalidated after revoke.\n- Audit event is emitted after revoke.\n- Existing revoke functionality is unchanged.\n\n**Test requirements:**\n- Add test cases to `packages/service-core/src/__tests__/permission.service.test.ts`.\n- Test: revoke perm → cache invalidated, audit emitted.\n- Test: revoke non-existent perm → no error, no cache call (or graceful no-op — match existing behavior).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["backend", "service", "permissions", "audit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Fix seed: add PERMISSION_VIEW, PERMISSION_ASSIGN, PERMISSION_REVOKE to SUPER_ADMIN",
+            "description": "Fix the seed file so SUPER_ADMIN explicitly holds the granular permission-management trio.\n\n**What to modify:**\n- `packages/seed/src/data/rolePermissions.seed.ts` (or equivalent): in the SUPER_ADMIN block, add `PermissionEnum.PERMISSION_VIEW`, `PermissionEnum.PERMISSION_ASSIGN`, `PermissionEnum.PERMISSION_REVOKE`.\n- These are NOT currently in the seed (only `ACCESS_PERMISSIONS_MANAGE` is at line ~206). SUPER_ADMIN currently passes the helper checks only via its all-permissions short-circuit. This makes the seed honest and removes reliance on the short-circuit for gating purposes.\n\n**Key files affected:**\n- `packages/seed/src/data/rolePermissions.seed.ts`\n\n**Acceptance criteria:**\n- After `pnpm db:fresh-dev`, a SUPER_ADMIN seeded actor has `PERMISSION_VIEW`, `PERMISSION_ASSIGN`, `PERMISSION_REVOKE` in its role permissions.\n- `canViewPermissions(actor)`, `canAssignPermissions(actor)`, `canRevokePermissions(actor)` all return `true` for the seeded SUPER_ADMIN actor WITHOUT relying on the all-permissions short-circuit.\n\n**Test requirements:**\n- Verify in seed integration test or manual `db:fresh-dev` check.\n- Assert in a unit test: `canViewPermissions({ role: SUPER_ADMIN, permissions: [PERMISSION_VIEW, PERMISSION_ASSIGN, PERMISSION_REVOKE] })` returns `true`.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["backend", "seed", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "[TDD] Write permission-grouping helper with tests first",
+            "description": "**TDD — write tests first, implementation in T-013.**\n\nCreate test file for the `permission-grouping.ts` helper. This is pure logic — TDD is the right approach.\n\n**What to create:**\n- Test file: `packages/schemas/src/__tests__/permission-grouping.test.ts`.\n- Test: `PERMISSION_TO_CATEGORY` maps every `PermissionEnum` value to a non-fallback `PermissionCategoryEnum` (assert zero entries mapped to fallback `SYSTEM` unexpectedly).\n- Test: `getPermissionsByCategory()` returns a Map with all 59 categories as keys.\n- Test: a known permission (e.g., `ACCOMMODATION_CREATE`) maps to `ACCOMMODATION` category.\n- Test: a known subcategory permission (e.g., `ACCOMMODATION_LISTING_CREATE` if it exists) maps to `ACCOMMODATION_LISTING` (longest-prefix-wins).\n- Test: all ~270 permissions appear in the output (no missing entries).\n- Tests MUST FAIL until T-013 is implemented.\n\n**Key files affected:**\n- `packages/schemas/src/__tests__/permission-grouping.test.ts` (new)\n\n**Acceptance criteria:**\n- Tests are written, structured with AAA.\n- Test file compiles (imports from to-be-created `permission-grouping.ts` using the planned API).\n- Running the test suite shows failing tests (RED).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "testing", "tdd"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement permission-grouping.ts helper — make all grouping tests pass",
+            "description": "Implement `packages/schemas/src/utils/permission-grouping.ts` using the prefix-derive approach (no hand-maintained static map).\n\n**What to create:**\n- `PERMISSION_TO_CATEGORY: Readonly<Record<PermissionEnum, PermissionCategoryEnum>>` — computed at module load via longest-prefix match (categories sorted descending by length for greedy match; fallback to `PermissionCategoryEnum.SYSTEM`).\n- `getPermissionsByCategory(): ReadonlyMap<PermissionCategoryEnum, readonly PermissionEnum[]>` — returns all permissions grouped, sorted alphabetically by category and by permission within each category.\n- Export both from `packages/schemas/src/utils/index.ts` (create if doesn't exist) and from the package barrel.\n\n**Key files affected:**\n- `packages/schemas/src/utils/permission-grouping.ts` (new)\n- `packages/schemas/src/utils/index.ts` (new or extend)\n- `packages/schemas/src/index.ts`\n\n**Acceptance criteria:**\n- All tests from T-012 pass (GREEN).\n- No permission falls to SYSTEM fallback unexpectedly (assert in test).\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- T-012 covers all cases. Run `pnpm test packages/schemas` to confirm GREEN.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add i18n keys for user permissions panel to admin-pages.json",
+            "description": "Add all required i18n strings under `admin-pages.access.users.permissions.*` in the admin i18n locale file.\n\n**What to add (under `admin-pages.access.users.permissions`):**\n- `directOverrides`, `directOverridesDesc`, `noDirectOverrides`, `noDirectOverridesDesc`\n- `grantOverrides`, `denyOverrides`\n- `addOverride`, `removeOverride`, `confirmRemove`, `confirmRemoveDesc`\n- `effectGrant`, `effectDeny`, `inheritedFromRole`\n- `sensitivePermissionWarning`\n- `changesTakeEffectNextRequest`\n- `searchPermissions`, `selectEffect`, `grantPermission`, `denyPermission`\n- Full Spanish values as specified in tech-analysis §10.\n\n**Key files affected:**\n- `packages/i18n/locales/es/admin-pages.json` (or equivalent path)\n- If EN/PT locales exist, add placeholder keys there too (can be same Spanish value initially).\n\n**Acceptance criteria:**\n- All new keys are present in the `es` locale.\n- `pnpm typecheck` passes (if i18n keys are typed — no type errors for the new keys).\n- No existing keys are modified.\n\n**Test requirements:**\n- No dedicated test needed (key existence validated by i18n type system or CI lint).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-023", "T-024", "T-025"],
+            "subtasks": [],
+            "tags": ["frontend", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create GET /admin/users/:id/permissions API route",
+            "description": "Create the GET endpoint for listing a user's split permission view.\n\n**What to create:**\n- File: `apps/api/src/routes/user/admin/permissions.ts` (new — will also contain POST and DELETE in T-016 and T-017, or split per file per project convention — check existing user admin routes pattern).\n- Use `createAdminRoute` factory.\n- Path: `/:id/permissions`.\n- `requiredPermissions: [PermissionEnum.PERMISSION_VIEW]`.\n- Handler calls `PermissionService.getPermissionOverridesForUser(actor, { userId: params.id })`.\n- Response: `UserPermissionOverridesResponseSchema`.\n- Status codes: 200, 401, 403, 404.\n\n**Registration:**\n- Register in user admin `index.ts` BEFORE the `/:id` route (path conflict if after).\n\n**Key files affected:**\n- `apps/api/src/routes/user/admin/permissions.ts` (new)\n- `apps/api/src/routes/user/admin/index.ts`\n\n**Acceptance criteria:**\n- `GET /api/v1/admin/users/:id/permissions` returns `{ fromRole, grantOverrides, denyOverrides }`.\n- Returns 403 when actor lacks `PERMISSION_VIEW`.\n- Returns 404 when user not found.\n- Route is registered before `/:id`.\n\n**Test requirements:**\n- API integration test in `apps/api/src/routes/user/admin/__tests__/permissions.test.ts`.\n- Test: actor with `PERMISSION_VIEW` → 200 with correct shape.\n- Test: actor without `PERMISSION_VIEW` → 403.\n- Test: unknown user id → 404.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-007", "T-009"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["backend", "api", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create POST /admin/users/:id/permissions API route",
+            "description": "Create the POST endpoint for assigning a per-user permission override (grant or deny).\n\n**What to create/modify:**\n- In `apps/api/src/routes/user/admin/permissions.ts`: add the POST route.\n- Use `createAdminRoute` factory.\n- `requiredPermissions: [PermissionEnum.PERMISSION_ASSIGN]`.\n- Body: `AssignUserPermissionOverrideBodySchema` (`{ permission, effect }`).\n- Handler calls `PermissionService.assignPermissionToUser(actor, { userId: params.id, permission, effect })`.\n- Response: `{ assigned: boolean }`.\n- Status codes: 201, 400 (SUPER_ADMIN target), 401, 403, 404.\n\n**Key files affected:**\n- `apps/api/src/routes/user/admin/permissions.ts`\n\n**Acceptance criteria:**\n- `POST /api/v1/admin/users/:id/permissions` with valid body → 201 `{ assigned: true }`.\n- SUPER_ADMIN target → 400 with message.\n- Missing `effect` field → 400 (Zod validation).\n- Actor without `PERMISSION_ASSIGN` → 403.\n\n**Test requirements:**\n- Add to `apps/api/src/routes/user/admin/__tests__/permissions.test.ts`.\n- Test: valid grant → 201.\n- Test: valid deny → 201.\n- Test: SUPER_ADMIN target → 400.\n- Test: invalid permission value → 400.\n- Test: actor without `PERMISSION_ASSIGN` → 403.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-007", "T-008"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["backend", "api", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create DELETE /admin/users/:id/permissions/:permission API route",
+            "description": "Create the DELETE endpoint for removing a per-user permission override.\n\n**What to create/modify:**\n- In `apps/api/src/routes/user/admin/permissions.ts`: add the DELETE route.\n- Use `createAdminRoute` factory.\n- Path: `/:id/permissions/:permission`.\n- `requiredPermissions: [PermissionEnum.PERMISSION_REVOKE]`.\n- Params: `{ id: UserIdSchema, permission: PermissionEnumSchema }`.\n- Handler calls `PermissionService.revokePermissionFromUser(actor, { userId: params.id, permission: params.permission })`.\n- Response: `{ removed: boolean }`.\n- Status codes: 200, 401, 403, 404.\n\n**Key files affected:**\n- `apps/api/src/routes/user/admin/permissions.ts`\n\n**Acceptance criteria:**\n- `DELETE /api/v1/admin/users/:id/permissions/:permission` → 200 `{ removed: true }`.\n- Non-existent override → 200 `{ removed: false }` (or 404, match existing service behavior).\n- Actor without `PERMISSION_REVOKE` → 403.\n\n**Test requirements:**\n- Add to `apps/api/src/routes/user/admin/__tests__/permissions.test.ts`.\n- Test: revoke existing override → 200 `{ removed: true }`.\n- Test: invalid `permission` param value → 400.\n- Test: actor without `PERMISSION_REVOKE` → 403.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-007", "T-010"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["backend", "api", "routes"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Write API integration tests for all 3 permission routes",
+            "description": "Write a comprehensive integration test suite for the three new admin permission routes. This is a dedicated testing task, going beyond the inline tests in T-015/T-016/T-017 to cover cross-cutting concerns.\n\n**What to create:**\n- Integration tests in `apps/api/src/routes/user/admin/__tests__/permissions.integration.test.ts` (or extend existing test file).\n- Use real DB (test container or in-memory, per project test setup).\n- Scenarios:\n  - Full flow: grant → GET shows it in `grantOverrides` → revoke → GET shows it gone.\n  - Full flow: deny → GET shows it in `denyOverrides` → revoke → GET shows it gone.\n  - Upsert: grant then deny same perm → single row with `effect: 'deny'`.\n  - SUPER_ADMIN target → 400 on POST.\n  - Actor gating: `PERMISSION_VIEW` only allows GET; `PERMISSION_ASSIGN` allows POST; `PERMISSION_REVOKE` allows DELETE (cross-route permission isolation).\n  - AC-5 from spec: user without any `PERMISSION_*` → 403 on all three routes.\n\n**Key files affected:**\n- `apps/api/src/routes/user/admin/__tests__/permissions.integration.test.ts`\n\n**Acceptance criteria:**\n- All scenarios pass.\n- AC-5 (gating) is explicitly covered.\n- `pnpm test` is green.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-007", "T-011", "T-015", "T-016", "T-017"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["backend", "testing", "api", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create useUserPermissionOverrides TanStack Query hook",
+            "description": "Create the data-fetching hook for the GET endpoint.\n\n**What to create:**\n- File: `apps/admin/src/features/users/hooks/useUserPermissionOverrides.ts`.\n- Export `useUserPermissionOverrides(userId: string)` using `useQuery`.\n- `queryKey: ['users', userId, 'permissions']`.\n- `queryFn`: calls `fetchApi('/api/v1/admin/users/${userId}/permissions')`.\n- `staleTime: 30_000`.\n- Return type inferred from `UserPermissionOverridesResponseSchema`.\n\n**Key files affected:**\n- `apps/admin/src/features/users/hooks/useUserPermissionOverrides.ts` (new)\n\n**Acceptance criteria:**\n- Hook is exported and usable in components.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- Unit test in `apps/admin/src/features/users/hooks/__tests__/useUserPermissionOverrides.test.ts`.\n- Mock `fetchApi`; assert `queryKey` is correct; assert returned data shape matches schema.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-007"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "hooks", "tanstack-query"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create useAssignUserPermission and useRevokeUserPermission mutation hooks",
+            "description": "Create the mutation hooks for POST and DELETE endpoints.\n\n**What to create:**\n- `apps/admin/src/features/users/hooks/useAssignUserPermission.ts`:\n  - `useAssignUserPermission(userId: string)`: `useMutation` for POST.\n  - On success: `queryClient.invalidateQueries({ queryKey: ['users', userId, 'permissions'] })`.\n  - Show toast: use project toast pattern for success/error.\n  - `mutationFn` receives `AssignUserPermissionOverrideBody`.\n- `apps/admin/src/features/users/hooks/useRevokeUserPermission.ts`:\n  - `useRevokeUserPermission(userId: string)`: `useMutation` for DELETE.\n  - On success: invalidate same query key.\n  - Show toast on success.\n\n**Key files affected:**\n- `apps/admin/src/features/users/hooks/useAssignUserPermission.ts` (new)\n- `apps/admin/src/features/users/hooks/useRevokeUserPermission.ts` (new)\n\n**Acceptance criteria:**\n- Both hooks exported and typed correctly.\n- Query invalidation triggers re-fetch on success.\n- Toasts shown on success.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- Unit tests for both hooks.\n- Assert `mutationFn` is called with correct URL + method.\n- Assert `invalidateQueries` is called on success.\n- Assert toast is triggered.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-007"],
+            "blocks": ["T-024", "T-025"],
+            "subtasks": [],
+            "tags": ["frontend", "hooks", "tanstack-query"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create OverrideRow component",
+            "description": "Create the atomic UI component for a single permission override row.\n\n**What to create:**\n- File: `apps/admin/src/features/users/components/permissions/OverrideRow.tsx`.\n- Props: `{ permission: PermissionEnum, effect: 'grant' | 'deny', onRemove: () => void }`.\n- Render: permission label (prettified key or i18n key), effect badge (green for grant, red for deny), remove button.\n- Remove button triggers a confirm dialog (use Shadcn `AlertDialog` or the project's existing confirm pattern) before calling `onRemove`.\n- Confirm dialog text: use i18n keys `confirmRemove` / `confirmRemoveDesc`.\n\n**Key files affected:**\n- `apps/admin/src/features/users/components/permissions/OverrideRow.tsx` (new)\n\n**Acceptance criteria:**\n- Renders a row with correct badge color for each effect.\n- Remove button opens confirm dialog; confirming calls `onRemove`; cancelling does not.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- RTL test in `apps/admin/src/features/users/components/permissions/__tests__/OverrideRow.test.tsx`.\n- Test: renders grant badge, deny badge correctly.\n- Test: clicking remove → confirm dialog appears.\n- Test: confirming → `onRemove` called; cancelling → `onRemove` not called.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "components", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create RolePermissionBadge component",
+            "description": "Create the read-only badge component for role-inherited permissions shown in the picker.\n\n**What to create:**\n- File: `apps/admin/src/features/users/components/permissions/RolePermissionBadge.tsx`.\n- Props: `{ permission: PermissionEnum, category: PermissionCategoryEnum }`.\n- Render: permission label + `Heredado` badge (i18n key `inheritedFromRole`), visually disabled/greyed.\n- Uses `PERMISSION_TO_CATEGORY` from `@repo/schemas` for display (T-013).\n\n**Key files affected:**\n- `apps/admin/src/features/users/components/permissions/RolePermissionBadge.tsx` (new)\n\n**Acceptance criteria:**\n- Renders with correct label and badge.\n- Visually distinct from editable rows (greyed out).\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- RTL test.\n- Assert: `Heredado` badge visible; permission label rendered.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["frontend", "components", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create PermissionPicker dialog component",
+            "description": "Create the categorized searchable permission picker dialog.\n\n**What to create:**\n- File: `apps/admin/src/features/users/components/permissions/PermissionPicker.tsx`.\n- Uses Shadcn `Dialog` (Radix-backed, keyboard nav works out of the box).\n- Props: `{ fromRole: PermissionEnum[], grantOverrides: PermissionEnum[], denyOverrides: PermissionEnum[], onAssign: (permission: PermissionEnum, effect: 'grant' | 'deny') => void, open: boolean, onOpenChange: (open: boolean) => void }`.\n- Uses `getPermissionsByCategory()` from `@repo/schemas` (T-013) to group all ~270 permissions.\n- Search input: filters by permission key or label.\n- **4 visual states per permission:**\n  1. `from-role disabled`: in `fromRole` → `RolePermissionBadge` + `Denegar` button on hover.\n  2. `grant-override active`: in `grantOverrides` → green badge, not re-grantable.\n  3. `deny-override active`: in `denyOverrides` → red badge, shown in role section.\n  4. `grantable`: neither in role nor overrides → grant button.\n- **Effect selector:** radio/toggle `Otorgar / Denegar` before confirming selection.\n- **Sensitive permission warning (R-1):** if selected permission key contains `_VIEW_ALL`, `_READ_ALL`, or `_HARD_DELETE` → show inline warning banner using i18n key `sensitivePermissionWarning`.\n- i18n keys from T-014.\n\n**Key files affected:**\n- `apps/admin/src/features/users/components/permissions/PermissionPicker.tsx` (new)\n\n**Acceptance criteria:**\n- All ~270 permissions are shown grouped by category.\n- Search filters correctly.\n- Role-inherited permissions are disabled (shown as `RolePermissionBadge`).\n- Sensitive permission warning appears for `_VIEW_ALL` / `_READ_ALL` / `_HARD_DELETE`.\n- `onAssign` called with correct `permission` + `effect`.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- RTL tests in `__tests__/PermissionPicker.test.tsx`.\n- Test: renders categories from `getPermissionsByCategory`.\n- Test: search filters permissions by key.\n- Test: role-inherited permission is disabled.\n- Test: selecting a `_HARD_DELETE` permission shows warning.\n- Test: selecting effect then confirming calls `onAssign` with correct args.\n- AC-6 from spec: grouped by category, role-inherited shown disabled.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-013", "T-014", "T-022"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["frontend", "components", "ui", "permissions"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create PermissionOverridesCard component",
+            "description": "Create the card component that replaces the stub `CardContent` body in the user permissions page.\n\n**What to create:**\n- File: `apps/admin/src/features/users/components/permissions/PermissionOverridesCard.tsx`.\n- Props: `{ userId: string }`.\n- Uses `useUserPermissionOverrides(userId)` (T-019) for data.\n- Uses `useAssignUserPermission(userId)` (T-020) for grant/deny mutations.\n- Uses `useRevokeUserPermission(userId)` (T-020) for revoke mutations.\n- Sections:\n  1. Grant overrides: list of `OverrideRow` (T-021) with `effect: 'grant'`.\n  2. Deny overrides: list of `OverrideRow` (T-021) with `effect: 'deny'`.\n  3. Empty state: `noDirectOverrides` i18n key when both lists are empty.\n  4. Add override button: opens `PermissionPicker` (T-023).\n- Loading state: skeleton rows.\n- Error state: error alert with retry.\n- No optimistic updates (security-sensitive: wait for server confirm).\n- Toast message: `changesTakeEffectNextRequest` shown after grant/revoke.\n\n**Key files affected:**\n- `apps/admin/src/features/users/components/permissions/PermissionOverridesCard.tsx` (new)\n\n**Acceptance criteria:**\n- Renders grant and deny sections correctly.\n- Empty state shown when no overrides.\n- Loading skeleton shown while fetching.\n- Error alert with retry shown on fetch error.\n- AC-1, AC-2, AC-3 from spec are exercised by this component.\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- RTL tests in `__tests__/PermissionOverridesCard.test.tsx`.\n- Test: shows grant override rows.\n- Test: shows deny override rows.\n- Test: empty state shown when no overrides.\n- Test: loading skeleton shown.\n- Test: add button opens picker dialog.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-019", "T-020", "T-021", "T-023"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["frontend", "components", "ui", "permissions"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Wire PermissionOverridesCard into $id_.permissions.tsx, replace stub",
+            "description": "Replace the stub `CardContent` body in the existing user permissions route with the new `PermissionOverridesCard` component.\n\n**What to modify:**\n- `apps/admin/src/routes/_authed/access/users/$id_.permissions.tsx`.\n- Import and render `PermissionOverridesCard` in place of the stub body.\n- Verify the existing role-info cards (role + inherited permissions) are preserved and clearly labelled as read-only.\n- Add `beforeLoad` guard: if actor lacks `PERMISSION_VIEW`, redirect or show 403 (AC-5 UI guard).\n\n**Key files affected:**\n- `apps/admin/src/routes/_authed/access/users/$id_.permissions.tsx`\n\n**Acceptance criteria:**\n- Page renders `PermissionOverridesCard` for the user.\n- Existing role-info cards unchanged.\n- Actor without `PERMISSION_VIEW` is blocked at the page level (not just API).\n- `pnpm typecheck` passes.\n\n**Test requirements:**\n- RTL integration test or Playwright smoke (within existing test suite).\n- Test: page renders correctly for authorized actor.\n- Test: page redirects/blocks for unauthorized actor (AC-5 UI guard).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014", "T-020", "T-024"],
+            "blocks": ["T-029", "T-030"],
+            "subtasks": [],
+            "tags": ["frontend", "routes", "permissions"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Write RTL tests for OverrideRow and RolePermissionBadge",
+            "description": "Dedicated testing task for the two atomic UI components, expanding coverage beyond the inline tests in T-021 and T-022.\n\n**What to create/extend:**\n- Extend `apps/admin/src/features/users/components/permissions/__tests__/OverrideRow.test.tsx`.\n- Extend `apps/admin/src/features/users/components/permissions/__tests__/RolePermissionBadge.test.tsx`.\n\n**Scenarios:**\n- `OverrideRow`: accessibility (button has label), badge color contrast, dialog keyboard dismiss.\n- `RolePermissionBadge`: renders correctly for various `PermissionEnum` values, visually distinct.\n\n**Acceptance criteria:**\n- Coverage ≥ 90% for both components.\n- All tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "testing", "components"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Write RTL tests for PermissionPicker",
+            "description": "Dedicated RTL test suite for `PermissionPicker` — the most complex UI component in this spec.\n\n**What to create:**\n- Test file: `apps/admin/src/features/users/components/permissions/__tests__/PermissionPicker.test.tsx`.\n\n**Scenarios (AC-6 focus):**\n- All permissions visible, grouped by expected categories.\n- Search by key narrows list.\n- Search by label narrows list.\n- Role-inherited: permission appears disabled + `Heredado` badge.\n- Grantable: permission shows grant button.\n- Sensitive warning: `_VIEW_ALL` permission shows warning banner.\n- Effect toggle: selecting `Denegar` then confirming calls `onAssign` with `effect: 'deny'`.\n- Keyboard navigation: Tab through picker, Enter to select (Radix Dialog baseline).\n\n**Acceptance criteria:**\n- All scenarios pass.\n- AC-6 is explicitly covered (categorized, searchable, role-inherited disabled).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "testing", "components"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Write RTL tests for PermissionOverridesCard",
+            "description": "Dedicated RTL test suite for `PermissionOverridesCard` — the main card orchestrator.\n\n**What to create:**\n- Test file: `apps/admin/src/features/users/components/permissions/__tests__/PermissionOverridesCard.test.tsx`.\n- Mock `useUserPermissionOverrides`, `useAssignUserPermission`, `useRevokeUserPermission`.\n\n**Scenarios:**\n- Loading state: skeleton visible while `isLoading` is true.\n- Error state: error alert visible with retry button when `isError` is true.\n- Empty state: `noDirectOverrides` shown when both override lists are empty.\n- Grant rows rendered with correct permissions.\n- Deny rows rendered with correct permissions.\n- Add button opens picker (picker renders in dialog).\n- After grant mutation success: toast shown, query invalidated.\n- After revoke confirm: `useRevokeUserPermission.mutate` called.\n\n**Acceptance criteria:**\n- All scenarios pass.\n- AC-1, AC-2, AC-3 scenarios explicitly covered.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "testing", "components"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Write E2E test: grant override → re-auth → actor.permissions includes override",
+            "description": "End-to-end test covering AC-4 from spec: a granted override takes effect on the user's next auth resolution.\n\n**What to create:**\n- E2E test in the project's existing E2E test suite (Playwright or Vitest integration with real API + DB).\n- Scenario:\n  1. Create a test user with role (e.g., EDITOR).\n  2. POST grant override for a permission the role doesn't have.\n  3. Re-authenticate as that user (simulate new request).\n  4. Assert `actor.permissions` includes the granted permission.\n\n**Acceptance criteria:**\n- AC-4 explicitly covered.\n- Test runs against real DB + API (not mocked).\n- Test passes.\n\n**Test requirements:**\n- Use existing E2E infra/helpers (check `apps/api/src/test/` or project E2E setup).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-025"],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "permissions"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Write E2E test: deny override → re-auth → actor.permissions excludes denied perm",
+            "description": "End-to-end test for the deny-override precedence: a denied permission is removed from actor.permissions on next auth resolution.\n\n**What to create:**\n- E2E test alongside T-029.\n- Scenario:\n  1. Create a test user with a role that grants permission P.\n  2. POST deny override for P.\n  3. Re-authenticate as that user.\n  4. Assert `actor.permissions` does NOT include P.\n  5. Also verify SUPER_ADMIN is unaffected (deny on super → still has all permissions).\n\n**Acceptance criteria:**\n- Deny-wins precedence verified end-to-end.\n- SUPER_ADMIN exemption verified.\n- R-4 (precedence bug) risk is mitigated by this test.\n\n**Test requirements:**\n- Use same E2E infra as T-029.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-025"],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "permissions", "security"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Smoke test: db:fresh-dev + manual QA of full grant/revoke/deny flow",
+            "description": "Manual verification task to confirm the full feature works end-to-end in the local dev environment.\n\n**What to do:**\n1. Run `pnpm db:fresh-dev` (resets DB, applies schema, seeds data including seed fix from T-011).\n2. Log in to admin panel as SUPER_ADMIN (`super@local.test` or equivalent).\n3. Navigate to a non-super user's permissions page (`/access/users/:id/permissions`).\n4. Verify: split view shows `fromRole` and empty overrides sections.\n5. Grant a permission not in the user's role → confirm it appears in `grantOverrides`.\n6. Deny a permission in the user's role → confirm it appears in `denyOverrides`.\n7. Revoke both overrides → confirm they disappear.\n8. Log out and log in as the target user → verify permissions reflect the state (no grant/deny active).\n9. Log in as non-super ADMIN → confirm `/access/users/:id/permissions` is blocked (AC-5).\n\n**Key files affected:** None (manual check).\n\n**Acceptance criteria:**\n- All steps complete without error.\n- AC-1, AC-2, AC-3, AC-5 verified manually.\n- Record results (pass/fail) in a comment or progress.md.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-029", "T-030"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "smoke", "manual"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

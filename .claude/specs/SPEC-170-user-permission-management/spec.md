@@ -75,12 +75,14 @@ mostly an **API-surface + UI build**, not a backend redesign.
 ## 3. Goals / Non-goals
 
 **Goals**
-- Expose API endpoints to **list / grant / revoke** per-user permission overrides.
-- Complete the admin UI: a usable, categorized permission picker + grant/revoke flow on the
+- Expose API endpoints to **list / grant / revoke / deny** per-user permission overrides.
+- Complete the admin UI: a usable, categorized permission picker + grant/revoke/deny flow on the
   user permissions page, replacing the stub.
 - Make the effective-permissions view clear: show what comes from the **role** vs what is a
-  **direct override**, and let the admin add/remove only the overrides.
-- Gate the panel itself correctly (only users who may manage permissions can grant/revoke).
+  **direct override** (grant or deny), and let the admin add/remove only the overrides.
+- Support **deny (negative) overrides** that subtract a role-granted permission from a single
+  user, with `deny`-wins precedence at auth resolution (§8 Q2 resolved → IN scope).
+- Gate the panel itself correctly (only users who may manage permissions can grant/revoke/deny).
 - Document the posts permission model so the owner knows exactly which posts use-cases this
   panel enables and which need a follow-up decision (§6).
 
@@ -88,34 +90,53 @@ mostly an **API-surface + UI build**, not a backend redesign.
 - Re-architecting the permission model or the catalog (it already exists).
 - Editing the **role→permission** seed map from the UI (this spec manages **per-user**
   overrides, not role definitions — role editing is a separate, larger decision).
-- Introducing `_OWN`/`_ANY` permission tiers for posts (that's a model change — §6 / §8 Q4).
-- Negative overrides (revoking a permission a user gets *from their role*) unless §8 Q2 says so.
+- Introducing `_OWN`/`_ANY` permission tiers for posts (that's a model change — §6 / §8 Q4 → deferred).
+- Applying deny overrides to SUPER_ADMIN (§8 Q2b resolved → super keeps the "all permissions"
+  short-circuit; denies apply to non-super roles only).
 
 ## 4. Design (high level — subject to §8 open questions)
 
 ### 4.1 API endpoints (admin tier)
 - `GET  /api/v1/admin/users/:id/permissions` — returns the user's effective permission set,
-  split into `{ fromRole: [...], overrides: [...] }` so the UI can render the distinction.
-- `POST /api/v1/admin/users/:id/permissions` — grant a per-user permission. Body `{ permission }`.
-  Calls `PermissionService.assignPermissionToUser`.
-- `DELETE /api/v1/admin/users/:id/permissions/:permission` — revoke a per-user override.
-  Calls `PermissionService.revokePermissionFromUser`.
-- Gating: a dedicated permission (e.g. `USER_PERMISSIONS_MANAGE`) or the existing
-  `canAssignPermissions`/`canViewPermissions` checks. **(§8 Q1 — confirm the gate.)**
+  split into `{ fromRole: [...], grantOverrides: [...], denyOverrides: [...] }` so the UI can
+  render the distinction.
+- `POST /api/v1/admin/users/:id/permissions` — create a per-user override. Body
+  `{ permission, effect: 'grant' | 'deny' }`. Calls `PermissionService.assignPermissionToUser`
+  (extended to carry `effect`).
+- `DELETE /api/v1/admin/users/:id/permissions/:permission` — remove a per-user override
+  (grant or deny). Calls `PermissionService.revokePermissionFromUser`.
+- **Gating (§8 Q1 resolved):** the existing granular trio wired in `PermissionService` —
+  `PERMISSION_VIEW` (read the panel), `PERMISSION_ASSIGN` (grant/deny), `PERMISSION_REVOKE`
+  (remove an override). These are seeded **explicitly to SUPER_ADMIN only** (§8 Q1b), which
+  also fixes the existing mismatch (today the helpers check `PERMISSION_*` but only
+  `ACCESS_PERMISSIONS_MANAGE` is seeded — SUPER_ADMIN passes purely via its all-permissions
+  short-circuit).
 
 ### 4.2 Admin UI
 - Replace the stub "Direct Permission Overrides" card with:
-  - The current overrides as removable chips/rows (revoke with confirm).
+  - The current overrides as rows (grant overrides + deny overrides), each removable with confirm.
   - An "add permission" control: a **searchable picker grouped by `PermissionCategoryEnum`**
-    (built dynamically from the catalog), excluding permissions the user already has from
-    their role (or showing them disabled with a "from role" badge — §8 Q3).
-  - Toasts on grant/revoke; optimistic update + invalidation via TanStack Query.
+    (built dynamically from the catalog). Role-inherited permissions are shown **disabled with a
+    "from role" badge** (§8 Q3 resolved → shown, not hidden); each can be turned into a **deny
+    override**. Permissions the user has neither from role nor override can be **granted**.
+  - Toasts on grant/revoke/deny; optimistic update + invalidation via TanStack Query.
 - Keep the inherited-from-role list visible and clearly labelled as non-editable here.
 
 ### 4.3 Catalog grouping
 - The picker needs `category → permissions[]` grouping. Today the enum has categories but no
-  explicit category→permissions map. Derive it (by permission-name prefix / a small static
-  map in `@repo/schemas`). **(§8 Q3.)**
+  explicit category→permissions map. **(§8 Q3 — grouping mechanism deferred to the design/tech
+  phase; leading candidate: derive by permission-name prefix + i18n labels from `@repo/i18n`,
+  no hand-maintained static map.)**
+
+### 4.4 Deny-override data model (§8 Q2/Q2a resolved)
+- Add an `effect: 'grant' | 'deny'` column to `user_permission` (default `'grant'`). The PK
+  stays `(userId, permission)` — a user cannot simultaneously grant AND deny the same
+  permission. Additive-safe (new column with a default; existing rows become `'grant'`).
+- **Auth resolution change** (`apps/api/src/middlewares/actor.ts`): effective set becomes
+  `(rolePermissions ∪ grantOverrides) \ denyOverrides` with **deny winning over grant**. This
+  runs on the authenticated request hot-path — it needs unit coverage for every precedence case.
+- **SUPER_ADMIN is exempt** (§8 Q2b): the all-permissions short-circuit is untouched; deny
+  overrides never apply to a super.
 
 ## 5. Functional Requirements (draft)
 
@@ -193,27 +214,45 @@ AC-6  Given the catalog (~270 permissions)
       not offered as grantable duplicates (disabled or filtered — per §8 Q3).
 ```
 
-## 8. Open Questions (for owner — must resolve before implementation)
+## 8. Open Questions — ALL RESOLVED (owner, 2026-05-30)
 
-- **Q1 — Gating.** What capability gates this panel? A new `USER_PERMISSIONS_MANAGE`
-  permission, or reuse the existing `canAssignPermissions`/`canViewPermissions` checks in
-  `PermissionService`? Who should hold it by default (SUPER_ADMIN only? ADMIN too?).
-- **Q2 — Negative overrides.** Scope is per-user *additive* overrides (grant beyond role).
-  Do we also need to **subtract** a permission a user gets from their role (a deny override)?
-  The current `user_permission` table only models additive grants — a deny model would need
-  schema + resolution changes. Recommendation: **additive only** for v1.
-- **Q3 — Picker UX for role-inherited permissions.** When adding overrides, should
-  role-inherited permissions be **hidden**, or **shown disabled** with a "from role" badge?
-  And how do we build the category→permissions grouping (static map in `@repo/schemas` vs
-  derive by name prefix)?
-- **Q4 — Posts `_OWN` model (the §6 case).** Do we want, in a FUTURE spec, to add
-  `POST_RESTORE_OWN` / `POST_HARD_DELETE_OWN` (+ author fallback) so "manage only my own
-  posts (full lifecycle)" becomes assignable? Default per SPEC-169: **no, defer** — confirm.
-- **Q5 — Confirm `POST_PUBLISH_TOGGLE` behavior.** The audit could not find an explicit
-  publish check in `post.permissions.ts`; it appears to inherit base update gating. Confirm
-  the real behavior so §6's table is accurate (this is a verification task, not a change).
-- **Q6 — Audit log.** Should grant/revoke actions be written to an audit trail (who changed
-  whose permissions, when)? Recommendation: **yes**, given the security weight.
+- **Q1 — Gating.** ✅ RESOLVED: use the existing granular trio already wired in
+  `PermissionService` — `PERMISSION_VIEW` (read panel), `PERMISSION_ASSIGN` (grant/deny),
+  `PERMISSION_REVOKE` (remove override). Seed them **explicitly to SUPER_ADMIN** so the gate
+  stops relying on the all-permissions short-circuit (fixes the existing mismatch where the
+  helpers check `PERMISSION_*` but only `ACCESS_PERMISSIONS_MANAGE` was seeded). Rejected: a
+  new `USER_PERMISSIONS_MANAGE` (duplicates existing perms) and the single
+  `ACCESS_PERMISSIONS_MANAGE` gate (too coarse — no view/assign/revoke split).
+- **Q1b — Who holds it.** ✅ RESOLVED: **SUPER_ADMIN only.** Consistent with SPEC-164, which
+  already revoked `ACCESS_PERMISSIONS_MANAGE` from ADMIN. Managing per-user permissions is a
+  max-privilege operation (self-escalation risk), so it stays super-only.
+- **Q2 — Negative (deny) overrides.** ✅ RESOLVED: **IN scope.** The panel supports deny
+  overrides (subtract a role-granted permission from one user), not just additive grants.
+  See §4.4 for the model. (Owner chose the more powerful option over the additive-only
+  recommendation, accepting the schema + auth-resolution cost.)
+- **Q2a — Deny data model.** ✅ RESOLVED: add an `effect: 'grant' | 'deny'` column to
+  `user_permission` (default `'grant'`), PK unchanged. Rejected: a separate
+  `user_permission_deny` table (duplicate structure + two-table resolution).
+- **Q2b — Deny vs SUPER_ADMIN.** ✅ RESOLVED: **deny never applies to SUPER_ADMIN.** Super
+  keeps the all-permissions short-circuit; this avoids the self-lockout / break-the-invariant
+  risk. Denies apply to non-super roles only.
+- **Q3 — Picker UX for role-inherited permissions.** ✅ RESOLVED: **shown disabled with a
+  "from role" badge** (not hidden), so the admin sees the full effective picture and can turn
+  any role-inherited permission into a deny override. The category→permissions grouping
+  *mechanism* is a design-phase detail (leading candidate: derive by name prefix + i18n labels,
+  no hand-maintained static map).
+- **Q4 — Posts `_OWN` model (the §6 case).** ✅ RESOLVED: **defer, do not add now.** Consistent
+  with SPEC-169 D7 + YAGNI. "Manage my own posts" already works via author-fallback; only
+  restore/hard-delete-own is non-assignable, and there is no concrete need yet. Revisit in a
+  separate spec if one appears.
+- **Q5 — `POST_PUBLISH_TOGGLE` behavior.** ✅ VERIFIED (code, 2026-05-30): there is no explicit
+  `checkCanPublishPost` in `post.permissions.ts`; publish/unpublish inherits the base
+  `_canUpdate` gate, which **does** carry author-fallback (`actor.id === post.authorId`). So
+  §6's table is accurate: an author can publish/unpublish their own posts; `restore` and
+  `hardDelete` remain permission-only (no fallback). No change required — documentation only.
+- **Q6 — Audit log.** ✅ RESOLVED: **yes.** Emit the existing `PERMISSION_CHANGE` event type
+  (`@repo/logger`) on every grant / revoke / deny, recording actor + target user + permission
+  + effect + timestamp. Infra already exists; low extra cost for high security value.
 
 ## 9. Risks
 
@@ -227,13 +266,18 @@ AC-6  Given the catalog (~270 permissions)
 - **R-3** Overrides are resolved at auth time; a change may not reflect until the user's
   session/token refreshes. Mitigation: document the propagation timing; consider forcing a
   permission re-resolution.
+- **R-4** (deny) The deny-override resolution runs on the authenticated-request hot-path in
+  `actor.ts`. A precedence bug (grant winning over deny, or deny leaking onto SUPER_ADMIN)
+  is a platform-wide auth failure, not a single-screen bug. Mitigation: exhaustive unit
+  coverage of the `(role ∪ grant) \ deny` resolution for every case, plus an explicit
+  super-is-exempt test.
 
 ## 10. Out of scope
 
 - Editing role→permission definitions from the UI (separate spec).
 - Posts `_OWN`/`_ANY` model change (§8 Q4 — deferred).
 - CLIENT_MANAGER role activation/tightening (still owned by a future SPEC per SPEC-169 §11).
-- Deny/negative overrides unless Q2 flips.
+- Applying deny overrides to SUPER_ADMIN (§8 Q2b — super stays exempt).
 
 ## 11. Notes
 

@@ -1887,15 +1887,16 @@
             "title": "Per-User Granular Permission Management Panel",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-170-user-permission-management",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-170-user-permission-management",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda3-spec-170-user-permission-management",
             "base": "staging",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
             "tags": ["permissions", "admin", "rbac", "frontend"],
-            "note": "Spun off from SPEC-169 decision D7. Backend for per-user permission overrides ALREADY EXISTS (user_permission table + PermissionService.assign/revoke + actor.middleware merges role+overrides). Missing = admin UI (the /access/users/:id/permissions 'Direct Permission Overrides' card is a half-finished stub) + grant/revoke API endpoints + categorized permission picker over the ~270-permission catalog. Mostly a UI build on a complete backend. Includes a COMMENTED posts section: posts use author-fallback model (not _OWN/_ANY), so 'manage my own posts' (edit/delete/publish) already works via author fallback, 'manage all posts' is grantable (POST_RESTORE/HARD_DELETE), but 'restore/hard-delete only my own' needs a deferred _OWN model change (Q4). 6 open questions for owner (gating, deny-overrides, picker UX, posts _OWN, publish behavior, audit log). Draft — NOT atomized, implementation not started."
+            "note": "IN PROGRESS (worktree spec-170, branch spec/SPEC-170-user-permission-management from staging). Planning COMPLETE: all 6 OQs resolved by owner 2026-05-30 (gating=granular PERMISSION_VIEW/ASSIGN/REVOKE seeded explicit to SUPER_ADMIN; deny overrides IN scope via effect pgEnum column on user_permission; deny never applies to super, API 400 on super target; immediate cache invalidation; picker role-inherited disabled+badge & denyable; posts _OWN deferred per SPEC-169 D7; audit via PERMISSION_CHANGE). tech-analysis.md written (16 sections). Atomized into 31 tasks (avg complexity 2.6, all ≤4). TDD gates: T-006 (actor.ts 10 precedence cases) + T-012 (permission-grouping). GATE task T-007 (deny-resolution) blocks API/UI integration testing. Backend ~95% exists; work = effect column migration + actor.ts resolution rewrite + 3 admin API routes + admin UI picker. Implementation not yet started."
         },
         {
             "specId": "SPEC-173",
