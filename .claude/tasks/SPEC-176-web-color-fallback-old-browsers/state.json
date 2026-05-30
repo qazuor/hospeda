@@ -259,47 +259,47 @@
             "id": "T-005",
             "title": "Write and run codemod to swap 679 call-sites from inline oklch to var(--token)",
             "description": "Create and execute the codemod script that replaces all 679 inline `oklch(from var(--...))` expressions in web CSS with `var(--token)` references.\n\n**Step 1 — Create `packages/design-tokens/scripts/codemod-relative-colors.mjs`:**\n(Kept in design-tokens since it references VARIANT_TOKEN_MAP)\n\nLogic:\n1. Dynamically import VARIANT_TOKEN_MAP from `../src/generators/variant-tokens.ts` (use tsx/esm interop)\n2. Collect all target CSS/Astro/TSX files under `apps/web/src/` matching `.css`, `.astro`, `.tsx`\n3. For each file, build the replacement table from VARIANT_TOKEN_MAP `replaces` → `var(--{name})`\n4. Apply ALL replacements (loop through all 42 entries with `String.replaceAll`)\n5. Write file back only if changed (avoid unnecessary dirty state)\n6. After substitution, scan each file for any remaining `oklch(from var(` patterns\n7. Write `packages/design-tokens/scripts/codemod-report.md` listing unmatched occurrences with file:line references\n\n**Step 2 — Run the codemod:**\n```bash\nnode --loader tsx packages/design-tokens/scripts/codemod-relative-colors.mjs\n```\n\n**Step 3 — Analyze codemod-report.md:**\nThe ~49 lightness-math cases (and any edge cases) will appear in the report. For each:\n- If a clean token exists in VARIANT_TOKEN_MAP: verify the substitution happened (likely the replaces string was slightly different — fix the VARIANT_TOKEN_MAP entry in T-003 and re-run)\n- If no token covers it: add a new entry to VARIANT_TOKEN_MAP, regenerate CSS (T-004), re-run codemod\n- If it's a genuinely non-tokenizable expression: inline a static sRGB hex approximation with a TODO comment (per tech-analysis §14 — acceptable transition approach)\n\n**Step 4 — Generalize components.css:539 existing @supports block:**\nDelete the hand-crafted `@supports` block at `apps/web/src/styles/components.css:539`. Verify that `--core-card-a95` token from VARIANT_TOKEN_MAP covers the `.navbar--scrolled` background-color usage.\n\nAcceptance criteria:\n- `codemod-report.md` exists and lists all unresolved usages\n- Zero `oklch(from var(` patterns remain in ANY web CSS/Astro/TSX file EXCEPT inside the generated `dist/tokens.css`\n- The existing @supports block at components.css:539 is deleted and replaced by the token reference\n- `pnpm check` (Biome lint) passes on all modified files\n- Files in report are manually resolved (added to map or hex-inlined with TODO)\n\nFiles affected:\n- `packages/design-tokens/scripts/codemod-relative-colors.mjs` (new)\n- `apps/web/src/styles/components.css` (679 replacements + @supports block deletion)\n- `apps/web/src/styles/global.css` (1 replacement: outline-color at line 29)\n- Potentially other `.astro`/`.tsx` files in apps/web/src/ if any contain inline usages\n\nAC mapping: PDR Story 1 AC1 AC3 AC4 (all pages render with brand colors on Chrome 109), Rule 1 (sRGB fallback for old browsers).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Create codemod-relative-colors.mjs with VARIANT_TOKEN_MAP import + replaceAll loop",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement unmatched-case scanner + codemod-report.md writer",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run codemod against apps/web/src/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Analyze codemod-report.md and resolve all unmatched cases",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete components.css:539 hand-crafted @supports block, verify --core-card-a95 covers it",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm check — no Biome errors on modified files",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-176", "phase-2", "web", "codemod", "css"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
