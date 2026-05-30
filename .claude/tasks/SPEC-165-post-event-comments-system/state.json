@@ -143,33 +143,34 @@
             "id": "T-005",
             "title": "Create entity-comment Zod schemas (base, crud, query, http, access, admin-search)",
             "description": "Create the following files in packages/schemas/src/entities/entity-comment/: entity-comment.schema.ts (base schema + EntityCommentSchema + CreateEntityCommentSchema with content 1-2000 chars), entity-comment.crud.ts (CreateEntityCommentInput, UpdateEntityCommentInput), entity-comment.query.ts (list query params: page, pageSize, entityType, entityId, moderationState, authorId, includeDeleted, sort, search), entity-comment.http.ts (public response shape without moderationState: {id, authorName, content, createdAt}; admin response shape: full), entity-comment.access.ts (access control types), entity-comment.admin-search.ts (extends AdminSearchBaseSchema with entityType + moderationState filters). Export all from packages/schemas/src/entities/index.ts. Convention: same file-per-concern pattern as other entities. Key files: packages/schemas/src/entities/entity-comment/*.ts, packages/schemas/src/entities/index.ts. Acceptance: all schemas compile under strict mode, content max 2000 chars enforced (AC-13 baseline).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003"],
             "blocks": ["T-006", "T-007", "T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Create base + crud schemas (CreateEntityCommentInput, content 1-2000)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create query schema (list params + admin-search extension)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create http schema (public shape without moderationState; admin full shape)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Create access schema types", "completed": false },
-                { "title": "Export all from entities/index.ts", "completed": false }
+                { "title": "Create access schema types", "completed": true },
+                { "title": "Export all from entities/index.ts", "completed": true }
             ],
             "tags": ["schemas", "validation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "notes": "Created entities/entityComment/ (camelCase dir to match schemas-package convention; task said entity-comment but db uses kebab / schemas uses camelCase). Files: entityComment.schema (EntityCommentSchema + CommentContentSchema 1-2000), .crud (CreateEntityCommentInput {entityType,entityId,content} strict; ModerateEntityCommentInput {moderationState: APPROVED|REJECTED} only — publish-immediately, no PENDING via API), .query (PublicCommentThreadQuery pageSize def20/max50; RecentCommentsQuery pageSize def10/max50), .admin-search (extends AdminSearchBaseSchema + entityType/moderationState/entityId/authorId; inherits unused lifecycle 'status' harmlessly), .http (public DTO {id,authorName,content,createdAt} no moderationState/no raw authorId; admin item full+authorName; recent item; path params; bodies), .access (Public/Admin field-visibility). Added EntityCommentIdSchema to common/id.schema.ts. authorId nullable in base (SET NULL resolution). Verified: schemas typecheck 0 errors, full suite 3838/3838, new tests 12/12, biome clean. NO content-update input (comments not editable in MVP).",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -607,9 +608,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 3.1
     }
