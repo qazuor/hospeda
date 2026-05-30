@@ -16,7 +16,7 @@ describe('AmenityService.getAdminInfo', () => {
     let actor: Actor;
     const adminInfo = { notes: 'test', favorite: false };
     const amenity = AmenityFactoryBuilder.create({
-        name: 'Test Amenity',
+        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         adminInfo
     });

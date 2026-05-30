@@ -11,6 +11,10 @@ export const getMockAmenityId = (id?: string): AmenityIdType =>
 /**
  * Builder for Amenity test objects.
  * Allows fluent creation of amenity test data with sensible defaults.
+ *
+ * The `name` and `description` fields are now I18nText objects (`{es, en, pt}`)
+ * matching the JSONB DB column. All three locales default to the same test value
+ * as a placeholder (real translations are a content task).
  */
 export class AmenityFactoryBuilder {
     private amenity: Amenity;
@@ -19,10 +23,14 @@ export class AmenityFactoryBuilder {
         this.amenity = {
             id: getMockAmenityId(),
             slug: 'test-amenity',
-            name: 'Test Amenity',
+            name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
             icon: '🛏️',
-            description: 'A test amenity',
+            description: {
+                es: 'A test amenity description',
+                en: 'A test amenity description',
+                pt: 'A test amenity description'
+            },
             isBuiltin: false,
             isFeatured: false,
             displayWeight: 50,
