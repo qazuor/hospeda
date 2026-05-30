@@ -35,7 +35,7 @@
 .entityHeader {
     padding-top: 1.75rem; /* clearance for the decorative quote icon */
     margin-bottom: 0.25rem;
-    border-bottom: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+    border-bottom: 1px solid var(--core-foreground-a08);
     padding-bottom: 0.75rem;
     display: flex;
     flex-direction: column;
@@ -62,13 +62,13 @@
 }
 
 .entityTypeAccommodation {
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--brand-primary-a12);
     color: var(--brand-primary-dark);
 }
 
 .entityTypeDestination {
-    background-color: oklch(from var(--brand-accent) l c h / 0.14);
-    color: oklch(from var(--brand-accent) calc(l - 0.15) c h);
+    background-color: var(--brand-accent-a15);
+    color: var(--brand-accent-lm15);
 }
 
 .entityName {
@@ -149,7 +149,7 @@
     gap: 0.75rem;
     margin-top: auto;
     padding-top: 0.75rem;
-    border-top: 1px solid oklch(from var(--core-foreground) l c h / 0.06);
+    border-top: 1px solid var(--core-foreground-a05);
 }
 
 .avatarWrapper {

@@ -438,8 +438,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 35% 35%,
-			oklch(from var(--brand-primary) l c h / 0.15),
-			oklch(from var(--brand-accent) l c h / 0.08) 55%,
+			var(--brand-primary-a15),
+			var(--brand-accent-a08) 55%,
 			transparent 75%
 		);
 		filter: blur(2px);
@@ -465,14 +465,14 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		left: 8%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+		background-color: var(--brand-primary-a30);
 	}
 	.about-hero__dot--2 {
 		bottom: 22%;
 		right: 10%;
 		width: 10px;
 		height: 10px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 
 	/* Mission wave */
@@ -529,21 +529,21 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		left: 8%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+		background-color: var(--brand-primary-a30);
 	}
 	.about-values__dot--2 {
 		top: 50%;
 		right: 6%;
 		width: 9px;
 		height: 9px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 	.about-values__dot--3 {
 		bottom: 14%;
 		left: 22%;
 		width: 14px;
 		height: 14px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.22);
+		background-color: var(--brand-primary-a20);
 	}
 
 	/* Region: tree watermark + dashed river + bubbles */
@@ -571,7 +571,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	.about-region__bubble {
 		position: absolute;
 		border-radius: 50%;
-		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+		background-color: var(--brand-primary-a25);
 	}
 	.about-region__bubble--1 {
 		top: 25%;
@@ -603,8 +603,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 50% 50%,
-			oklch(from var(--brand-accent) l c h / 0.18),
-			oklch(from var(--brand-primary) l c h / 0.08) 55%,
+			var(--brand-accent-a20),
+			var(--brand-primary-a08) 55%,
 			transparent 75%
 		);
 		filter: blur(3px);

@@ -54,15 +54,15 @@
     align-items: flex-start;
     gap: var(--space-3, 0.75rem);
     padding: var(--space-3, 0.75rem);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+    border: 1px solid var(--brand-primary-a15);
     border-radius: var(--radius-md, 10px);
-    background-color: oklch(from var(--core-card) l c h / 0.6);
+    background-color: var(--core-card-a60);
     cursor: pointer;
     transition: background-color var(--duration-fast, 150ms) ease;
 }
 
 .label:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    background-color: var(--brand-primary-a05);
 }
 
 .checkbox {

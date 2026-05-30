@@ -217,7 +217,7 @@ const adminPanelUrl = getAdminUrl();
         top: 0;
         z-index: var(--z-nav, 50);
         width: 100%;
-        background-color: oklch(from var(--core-card) l c h / 0.85);
+        background-color: var(--core-card-a85);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -235,7 +235,7 @@ const adminPanelUrl = getAdminUrl();
     }
 
     .header:global(.navbar--scrolled) {
-        background-color: oklch(from var(--core-card) l c h / 0.95);
+        background-color: var(--core-card-a95);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -487,7 +487,7 @@ const adminPanelUrl = getAdminUrl();
            surface plus blur so the controls stay readable while still
            letting the photo show through. */
         .header--hero {
-            background-color: oklch(from var(--core-card) l c h / 0.7);
+            background-color: var(--core-card-a70);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }

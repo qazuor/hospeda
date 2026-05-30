@@ -33,7 +33,7 @@
 }
 
 .radioRowSelected {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    background-color: var(--brand-primary-a05);
     border-color: var(--brand-primary);
 }
 
@@ -145,7 +145,7 @@
     min-width: 22px;
     padding: 0 var(--space-1, 4px);
     height: 20px;
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     color: var(--brand-primary);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
@@ -175,7 +175,7 @@
 }
 
 .newCollectionBtn:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    background-color: var(--brand-primary-a05);
     border-color: var(--brand-primary);
     border-style: solid;
 }

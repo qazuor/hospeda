@@ -20,8 +20,8 @@
 }
 
 .errorWrap {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
-    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card);
     padding: var(--space-5, 20px);
     color: var(--destructive, oklch(0.6 0.2 25));
@@ -83,7 +83,7 @@
     align-items: center;
     gap: 4px;
     padding: 2px var(--space-2, 8px);
-    background-color: oklch(from var(--brand-accent) l c h / 0.15);
+    background-color: var(--brand-accent-a15);
     color: var(--brand-accent);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
@@ -187,11 +187,11 @@
     text-align: center;
     padding: var(--space-12, 48px) var(--space-6, 24px);
     background-color: var(--core-card);
-    border: 1px dashed oklch(from var(--brand-primary) l c h / 0.25);
+    border: 1px dashed var(--brand-primary-a25);
     border-radius: var(--radius-card);
     background-image: radial-gradient(
         circle at 50% 0%,
-        oklch(from var(--brand-primary) l c h / 0.06),
+        var(--brand-primary-a05),
         transparent 60%
     );
 }
@@ -206,11 +206,11 @@
     border-radius: var(--radius-pill);
     background: linear-gradient(
         135deg,
-        oklch(from var(--brand-primary) l c h / 0.15),
-        oklch(from var(--brand-accent) l c h / 0.15)
+        var(--brand-primary-a15),
+        var(--brand-accent-a15)
     );
     color: var(--brand-primary);
-    box-shadow: 0 8px 18px oklch(from var(--brand-primary) l c h / 0.18);
+    box-shadow: 0 8px 18px var(--brand-primary-a20);
 }
 
 .emptyTitle {
@@ -249,8 +249,8 @@
 
 .emptyCta:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 16px oklch(from var(--brand-accent) l c h / 0.3);
-    background-color: oklch(from var(--brand-accent) calc(l - 0.04) c h);
+    box-shadow: 0 8px 16px var(--brand-accent-a30);
+    background-color: var(--brand-accent-lm04);
 }
 
 .emptyCta:focus-visible {

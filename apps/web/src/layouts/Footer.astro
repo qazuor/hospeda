@@ -537,7 +537,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     .footer__newsletter-input {
         flex: 1;
         min-width: 0;
-        background-color: oklch(from var(--footer-fg) l c h / 0.08);
+        background-color: var(--footer-fg-a08);
         border: 1px solid var(--footer-border);
         border-radius: var(--radius-button);
         padding: 0.625rem 0.875rem;
@@ -554,8 +554,8 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     }
 
     .footer__newsletter-input:focus {
-        border-color: oklch(from var(--footer-fg) l c h / 0.5);
-        background-color: oklch(from var(--footer-fg) l c h / 0.12);
+        border-color: var(--footer-fg-a50);
+        background-color: var(--footer-fg-a12);
     }
 
     .footer__newsletter-btn {

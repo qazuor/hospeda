@@ -128,17 +128,17 @@ const { variant, title, body, primaryCta, secondaryCta } = Astro.props;
 
 	.checkout-result__icon--success {
 		color: var(--success);
-		background-color: oklch(from var(--success) l c h / 0.12);
+		background-color: var(--success-a12);
 	}
 
 	.checkout-result__icon--failure {
 		color: var(--destructive);
-		background-color: oklch(from var(--destructive) l c h / 0.12);
+		background-color: var(--destructive-a12);
 	}
 
 	.checkout-result__icon--pending {
 		color: var(--warning);
-		background-color: oklch(from var(--warning) l c h / 0.12);
+		background-color: var(--warning-a12);
 	}
 
 	.checkout-result__title {

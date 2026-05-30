@@ -120,9 +120,9 @@ function getVariantColors({
             };
         case 'dot':
             return {
-                bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)',
+                bg: 'var(--core-muted-foreground-a08)',
                 color: 'var(--core-foreground)',
-                border: '1px solid oklch(from var(--core-muted-foreground) l c h / 0.15)'
+                border: '1px solid var(--core-muted-foreground-a15)'
             };
     }
 }

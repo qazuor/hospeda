@@ -13,18 +13,18 @@
 .section {
     position: relative;
     background-color: var(--core-card);
-    border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+    border: 1px solid var(--core-foreground-a08);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
-    box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+    box-shadow: 0 1px 2px var(--core-foreground-a05);
     overflow: hidden;
     isolation: isolate;
     transition: box-shadow var(--duration-normal) ease, border-color var(--duration-normal) ease;
 }
 
 .section:hover {
-    box-shadow: 0 6px 16px oklch(from var(--core-foreground) l c h / 0.06);
-    border-color: oklch(from var(--brand-primary) l c h / 0.18);
+    box-shadow: 0 6px 16px var(--core-foreground-a05);
+    border-color: var(--brand-primary-a20);
 }
 
 /* Brand accent bar across the top of every section. */
@@ -48,7 +48,7 @@
     color: var(--core-foreground);
     margin: 0 0 var(--space-5, 20px);
     padding-bottom: var(--space-3);
-    border-bottom: 1px solid oklch(from var(--core-foreground) l c h / 0.06);
+    border-bottom: 1px solid var(--core-foreground-a05);
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -63,7 +63,7 @@
     border-radius: var(--radius-pill);
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
     flex-shrink: 0;
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.12);
+    box-shadow: 0 0 0 3px var(--brand-primary-a12);
 }
 
 /* ── Fields grid ───────────────────────────────────────────────────────── */
@@ -124,7 +124,7 @@
 .input:focus,
 .textarea:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .input.inputError,
@@ -134,7 +134,7 @@
 
 .input.inputError:focus,
 .textarea.inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--destructive-a15);
 }
 
 .textarea {
@@ -251,15 +251,15 @@
 }
 
 .feedbackBannerSuccess {
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     color: var(--brand-primary);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+    border: 1px solid var(--brand-primary-a25);
 }
 
 .feedbackBannerError {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
+    background-color: var(--destructive-a10);
     color: var(--destructive, oklch(0.6 0.2 25));
-    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    border: 1px solid var(--destructive-a25);
 }
 
 /* ── Submit row ────────────────────────────────────────────────────────── */

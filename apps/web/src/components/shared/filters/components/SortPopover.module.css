@@ -17,7 +17,7 @@
     height: 1.75rem;
     padding: 0;
     background: none;
-    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    border: 1px solid var(--border-a50);
     border-radius: var(--radius-pill);
     font-size: 0.875rem;
     color: var(--core-muted-foreground);
@@ -28,8 +28,8 @@
 
 .sortPopoverTrigger:hover {
     color: var(--brand-primary);
-    border-color: oklch(from var(--brand-primary) l c h / 0.3);
-    background-color: oklch(from var(--brand-primary) l c h / 0.04);
+    border-color: var(--brand-primary-a30);
+    background-color: var(--brand-primary-a05);
 }
 
 /* ============================================================
@@ -72,7 +72,7 @@
 }
 
 .sortPopoverOption:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    background-color: var(--brand-primary-a05);
 }
 
 .sortPopoverOptionActive {

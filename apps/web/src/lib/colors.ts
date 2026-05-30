@@ -14,11 +14,11 @@ import { PostCategoryEnum } from '@repo/schemas';
  * Apply via inline style: `background-color: ${scheme.bg}; color: ${scheme.text}; border-color: ${scheme.border};`
  */
 export interface ColorScheme {
-    /** CSS background-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.15)') */
+    /** CSS background-color value (e.g. 'var(--brand-accent-a15)') */
     readonly bg: string;
     /** CSS color value (e.g. 'var(--brand-accent)') */
     readonly text: string;
-    /** CSS border-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.30)') */
+    /** CSS border-color value (e.g. 'var(--brand-accent-a30)') */
     readonly border: string;
 }
 
@@ -114,7 +114,7 @@ function schemeSolid({
  * @example
  * ```ts
  * getAccommodationTypeColor({ type: 'hotel' })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', text: 'var(--brand-accent)', border: 'oklch(from var(--brand-accent) l c h / 0.30)' }
+ * // { bg: 'var(--brand-accent-a15)', text: 'var(--brand-accent)', border: 'var(--brand-accent-a30)' }
  * ```
  */
 export function getAccommodationTypeColor({ type }: { readonly type: string }): ColorScheme {
@@ -193,10 +193,10 @@ export function getAccommodationTypeLabel({
  * @example
  * ```ts
  * getEventCategoryColor({ category: 'music' })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', ... }
+ * // { bg: 'var(--brand-accent-a15)', ... }
  *
  * getEventCategoryColor({ category: 'music', bgOpacity: 0.85 })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.85)', ... }
+ * // { bg: 'var(--brand-accent-a85)', ... }
  * ```
  */
 export function getEventCategoryColor({
@@ -298,7 +298,7 @@ const POST_CATEGORY_I18N_KEY: Readonly<Record<string, string>> = {
  * @example
  * ```ts
  * getPostCategoryColor({ category: 'SPORT' })
- * // { bg: 'oklch(from var(--hospeda-sky) l c h / 0.15)', ... }
+ * // { bg: 'var(--hospeda-sky-a15)', ... }
  * ```
  */
 export function getPostCategoryColor({ category }: { readonly category: string }): ColorScheme {
@@ -440,7 +440,7 @@ export function getBadgeStatusColor({ status }: { readonly status: string }): Co
  * @example
  * ```ts
  * getDestinationBadgeColor()
- * // { bg: 'oklch(from var(--brand-primary) l c h / 0.15)', text: 'var(--brand-primary)', border: 'oklch(from var(--brand-primary) l c h / 0.30)' }
+ * // { bg: 'var(--brand-primary-a15)', text: 'var(--brand-primary)', border: 'var(--brand-primary-a30)' }
  * ```
  */
 export function getDestinationBadgeColor(): ColorScheme {
@@ -460,14 +460,14 @@ export function getDestinationBadgeColor(): ColorScheme {
  * @example
  * ```ts
  * getMutedColorScheme()
- * // { bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)', text: 'var(--core-muted-foreground)', border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)' }
+ * // { bg: 'var(--core-muted-foreground-a08)', text: 'var(--core-muted-foreground)', border: 'var(--core-muted-foreground-a20)' }
  * ```
  */
 export function getMutedColorScheme(): ColorScheme {
     return {
-        bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)',
+        bg: 'var(--core-muted-foreground-a08)',
         text: 'var(--core-muted-foreground)',
-        border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)'
+        border: 'var(--core-muted-foreground-a20)'
     };
 }
 

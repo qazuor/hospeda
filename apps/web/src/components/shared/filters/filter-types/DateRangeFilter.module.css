@@ -44,7 +44,7 @@
 
 .triggerActive {
     border-color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    background-color: var(--brand-primary-a05);
 }
 
 .triggerIcon {
@@ -83,13 +83,13 @@
     background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 10px 32px oklch(from var(--core-foreground) l c h / 0.18);
+    box-shadow: 0 10px 32px var(--core-foreground-a20);
     padding: 12px;
 }
 
 .calendarRoot {
     --rdp-accent-color: var(--brand-primary);
-    --rdp-background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    --rdp-background-color: var(--brand-primary-a10);
     font-family: var(--font-sans);
     font-size: 13px;
     color: var(--core-foreground);
@@ -154,7 +154,7 @@
     display: flex;
     justify-content: flex-end;
     padding: 8px 4px 0;
-    border-top: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+    border-top: 1px solid var(--core-foreground-a08);
     margin-top: 4px;
 }
 
@@ -171,5 +171,5 @@
 }
 
 .popoverClearBtn:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    background-color: var(--brand-primary-a08);
 }

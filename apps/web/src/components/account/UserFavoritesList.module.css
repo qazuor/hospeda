@@ -63,7 +63,7 @@
     min-width: 1.25rem;
     height: 1.25rem;
     padding: 0 var(--space-1, 4px);
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--brand-primary-a12);
     color: var(--brand-primary);
     border-radius: var(--radius-pill, 9999px);
     font-size: 0.75rem;
@@ -107,8 +107,8 @@
 }
 
 .errorWrap {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
-    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card);
     padding: var(--space-5, 20px);
     color: var(--destructive, oklch(0.6 0.2 25));
@@ -245,7 +245,7 @@
 }
 
 .moveBtn:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    background-color: var(--brand-primary-a08);
 }
 
 .moveBtn:focus-visible {
@@ -273,7 +273,7 @@
 }
 
 .removeBtn:hover:not(:disabled) {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
+    background-color: var(--destructive-a10);
 }
 
 .removeBtn:disabled {
@@ -312,7 +312,7 @@
     min-width: 1.5rem;
     height: 1.5rem;
     padding: 0 var(--space-2, 8px);
-    background-color: oklch(from var(--core-muted-foreground) l c h / 0.12);
+    background-color: var(--core-muted-foreground-a12);
     color: var(--core-muted-foreground);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);

@@ -90,7 +90,7 @@
     border-radius: 50%;
     background-color: var(--core-muted-foreground);
     border: 2px solid var(--core-card);
-    box-shadow: 0 1px 4px oklch(from var(--core-foreground) l c h / 0.2);
+    box-shadow: 0 1px 4px var(--core-foreground-a20);
     transition:
         width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
         var(--duration-fast) ease, transform var(--duration-fast) ease, opacity var(--duration-fast) ease;
@@ -108,8 +108,8 @@
     height: 30px;
     background-color: var(--brand-accent);
     border: 4px solid var(--core-card);
-    box-shadow: 0 0 0 6px oklch(from var(--brand-accent) l c h / 0.32), 0 6px 20px
-        oklch(from var(--brand-accent) l c h / 0.7);
+    box-shadow: 0 0 0 6px var(--brand-accent-a30), 0 6px 20px
+        var(--brand-accent-a70);
     opacity: 1;
 }
 
@@ -122,8 +122,8 @@
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        oklch(from var(--brand-accent) l c h / 0.32) 0%,
-        oklch(from var(--brand-accent) l c h / 0.12) 60%,
+        var(--brand-accent-a30) 0%,
+        var(--brand-accent-a12) 60%,
         transparent 100%
     );
     z-index: -1;
@@ -173,7 +173,7 @@
         1px -1px 0 var(--core-card),
         -1px 1px 0 var(--core-card),
         1px 1px 0 var(--core-card),
-        0 0 3px oklch(from var(--core-card) l c h / 0.9);
+        0 0 3px var(--core-card-a90);
     pointer-events: none;
     transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease, font-weight
         var(--duration-fast) ease;
@@ -198,7 +198,7 @@
         1px -1px 0 var(--core-card),
         -1px 1px 0 var(--core-card),
         1px 1px 0 var(--core-card),
-        0 0 8px oklch(from var(--core-card) l c h / 1);
+        0 0 8px var(--core-card-a100);
 }
 
 /* Label positioned to the left side of the pin */
@@ -287,8 +287,8 @@
     background-color: var(--brand-accent);
     border: 3px solid var(--core-card);
     opacity: 1;
-    box-shadow: 0 0 0 5px oklch(from var(--brand-accent) l c h / 0.28), 0 5px 14px
-        oklch(from var(--brand-accent) l c h / 0.55);
+    box-shadow: 0 0 0 5px var(--brand-accent-a30), 0 5px 14px
+        var(--brand-accent-a55);
 }
 
 .secondaryDotActive::before {
@@ -298,8 +298,8 @@
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        oklch(from var(--brand-accent) l c h / 0.28) 0%,
-        oklch(from var(--brand-accent) l c h / 0.1) 65%,
+        var(--brand-accent-a30) 0%,
+        var(--brand-accent-a10) 65%,
         transparent 100%
     );
     z-index: -1;
@@ -316,7 +316,7 @@
         1px -1px 0 var(--core-card),
         -1px 1px 0 var(--core-card),
         1px 1px 0 var(--core-card),
-        0 0 3px oklch(from var(--core-card) l c h / 0.9);
+        0 0 3px var(--core-card-a90);
     opacity: 0.55;
     max-width: 80px;
     white-space: normal;
@@ -336,7 +336,7 @@
         1px -1px 0 var(--core-card),
         -1px 1px 0 var(--core-card),
         1px 1px 0 var(--core-card),
-        0 0 8px oklch(from var(--core-card) l c h / 1);
+        0 0 8px var(--core-card-a100);
 }
 
 .secondaryPin:hover .secondaryLabel {
@@ -403,7 +403,7 @@
     font-weight: 500;
     color: var(--brand-primary);
     line-height: 1.2;
-    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9);
+    text-shadow: 0 0 4px var(--core-card-a90);
     white-space: nowrap;
 }
 
@@ -414,7 +414,7 @@
     color: var(--brand-primary);
     opacity: 0.45;
     line-height: 1.2;
-    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9);
+    text-shadow: 0 0 4px var(--core-card-a90);
     white-space: nowrap;
 }
 

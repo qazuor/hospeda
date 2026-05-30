@@ -41,7 +41,7 @@
 .textarea:focus {
     outline: none;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 2px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 2px var(--brand-primary-a15);
 }
 
 .textareaError {
@@ -76,7 +76,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-accent) calc(l - 0.05) c h);
+    background-color: var(--brand-accent-lm05);
 }
 
 .submitButton:disabled {
@@ -88,8 +88,8 @@
     font-family: var(--font-sans);
     font-size: 0.85rem;
     color: var(--destructive, #e74c3c);
-    background-color: oklch(from var(--destructive, #e74c3c) l c h / 0.08);
-    border: 1px solid oklch(from var(--destructive, #e74c3c) l c h / 0.25);
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;
@@ -99,8 +99,8 @@
     font-family: var(--font-sans);
     font-size: 0.85rem;
     color: var(--core-foreground);
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a30);
     border-radius: var(--radius-button, 8px);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;

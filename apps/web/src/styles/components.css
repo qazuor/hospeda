@@ -211,28 +211,28 @@
     color: var(--accent-foreground, #fff);
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent-l112) 0%,
         var(--brand-accent) 50%,
-        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+        var(--brand-accent-l82) 100%
     );
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-accent-a30);
 }
 .btn-gradient--accent:hover {
-    box-shadow: 0 6px 20px oklch(from var(--brand-accent) l c h / 0.45);
+    box-shadow: 0 6px 20px var(--brand-accent-a45);
 }
 
 .btn-gradient--primary {
     color: var(--primary-foreground, #fff);
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary-l115) 0%,
         var(--brand-primary) 50%,
-        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+        var(--brand-primary-l80) 100%
     );
-    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-primary-a30);
 }
 .btn-gradient--primary:hover {
-    box-shadow: 0 6px 20px oklch(from var(--brand-primary) l c h / 0.45);
+    box-shadow: 0 6px 20px var(--brand-primary-a45);
 }
 
 /* === Outline variants — transparent, fills with gradient on hover === */
@@ -266,18 +266,18 @@
 .btn-gradient--outline-primary::before {
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary-l115) 0%,
         var(--brand-primary) 50%,
-        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+        var(--brand-primary-l80) 100%
     );
 }
 
 .btn-gradient--outline-accent::before {
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent-l112) 0%,
         var(--brand-accent) 50%,
-        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+        var(--brand-accent-l82) 100%
     );
 }
 
@@ -289,12 +289,12 @@
 
 .btn-gradient--outline-primary:hover {
     border-color: transparent;
-    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-primary-a30);
 }
 
 .btn-gradient--outline-accent:hover {
     border-color: transparent;
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-accent-a30);
 }
 
 .btn-gradient--outline-primary:hover::before,
@@ -409,11 +409,11 @@
 .btn-icon--solid {
     background-color: var(--brand-accent);
     color: var(--accent-foreground);
-    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.28);
+    box-shadow: 0 2px 8px var(--brand-accent-a30);
 }
 .btn-icon--solid:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.42);
+    box-shadow: 0 4px 14px var(--brand-accent-a40);
 }
 .btn-icon--solid:active {
     transform: translateY(0);
@@ -481,7 +481,7 @@
     transition: background var(--duration-normal) ease;
 }
 .search-bar__button:hover {
-    background: oklch(from var(--brand-accent) calc(l * 0.9) c h);
+    background: var(--brand-accent-l90);
 }
 
 /* === Grid Layouts === */
@@ -538,7 +538,7 @@
 }
 @supports (background-color: oklch(from white l c h / 0.95)) {
     .navbar--scrolled {
-        background-color: oklch(from var(--core-card) l c h / 0.95);
+        background-color: var(--core-card-a95);
     }
 }
 
@@ -608,9 +608,9 @@
     min-width: 3rem;
     background: linear-gradient(
         90deg,
-        oklch(from var(--core-muted-foreground) l c h / 0.15) 25%,
-        oklch(from var(--core-background) l c h / 0.4) 50%,
-        oklch(from var(--core-muted-foreground) l c h / 0.15) 75%
+        var(--core-muted-foreground-a15) 25%,
+        var(--core-background-a40) 50%,
+        var(--core-muted-foreground-a15) 75%
     );
     background-size: 200% 100%;
     animation: stat-shimmer 1.5s infinite;
@@ -631,7 +631,7 @@
 @media (prefers-reduced-motion: reduce) {
     .stat-value--loading {
         animation: none;
-        background: oklch(from var(--core-muted-foreground) l c h / 0.15);
+        background: var(--core-muted-foreground-a15);
     }
 }
 
@@ -750,10 +750,10 @@
  * background stays readable on busy content. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .frosted-light {
-        background-color: oklch(from var(--core-card) l c h / 0.95);
+        background-color: var(--core-card-a95);
     }
     .frosted-dark {
-        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+        background-color: var(--core-foreground-a90);
     }
 }
 
@@ -815,7 +815,7 @@
 .form-textarea {
     width: 100%;
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    border: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.15));
+    border: 1px solid var(--border, var(--core-foreground-a15));
     border-radius: var(--radius-button);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -836,7 +836,7 @@
 .form-textarea:focus {
     outline: none;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.18);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
 }
 
 .form-input[aria-invalid="true"],
@@ -848,7 +848,7 @@
 .form-input[aria-invalid="true"]:focus,
 .form-select[aria-invalid="true"]:focus,
 .form-textarea[aria-invalid="true"]:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.18);
+    box-shadow: 0 0 0 3px var(--destructive-a18);
 }
 
 .form-select {
@@ -877,7 +877,7 @@
 
 .form-error-banner {
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    background-color: oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.1);
+    background-color: var(--destructive-a10);
     border: 1px solid var(--destructive, oklch(0.6 0.22 25));
     border-radius: var(--radius-button);
     font-family: var(--font-sans);
@@ -905,8 +905,8 @@
     gap: var(--space-4, 1rem);
     margin: var(--space-5, 1.25rem) 0 0;
     padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
-    background-color: oklch(from var(--brand-accent) l c h / 0.14);
-    border: 1px solid oklch(from var(--brand-accent) l c h / 0.35);
+    background-color: var(--brand-accent-a15);
+    border: 1px solid var(--brand-accent-a35);
     border-left: 4px solid var(--brand-accent);
     border-radius: var(--radius-card);
     text-align: left;
@@ -1038,17 +1038,17 @@
 }
 
 .combobox__option--highlighted {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    background-color: var(--brand-primary-a05);
 }
 
 .combobox__option--selected {
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     color: var(--brand-primary);
     font-weight: 600;
 }
 
 .combobox__option--selected.combobox__option--highlighted {
-    background-color: oklch(from var(--brand-primary) l c h / 0.14);
+    background-color: var(--brand-primary-a15);
 }
 
 .combobox__option-icon {
@@ -1059,7 +1059,7 @@
     width: 24px;
     height: 24px;
     border-radius: 6px;
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    background-color: var(--brand-primary-a08);
     color: var(--brand-primary);
 }
 

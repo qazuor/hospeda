@@ -147,9 +147,9 @@
 }
 
 .primaryButton:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-accent) calc(l - 0.04) c h);
+    background-color: var(--brand-accent-lm04);
     transform: translateY(-1px);
-    box-shadow: 0 8px 16px oklch(from var(--brand-accent) l c h / 0.3);
+    box-shadow: 0 8px 16px var(--brand-accent-a30);
 }
 
 .primaryButton:focus-visible {
@@ -164,7 +164,7 @@
 }
 
 .secondaryButton:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    background-color: var(--brand-primary-a08);
 }
 
 .dangerButton {
@@ -174,7 +174,7 @@
 }
 
 .dangerButton:hover:not(:disabled) {
-    background-color: oklch(from var(--destructive) calc(l - 0.04) c h);
+    background-color: var(--destructive-lm04);
 }
 
 .primaryButton:disabled,
@@ -226,7 +226,7 @@
     justify-content: space-between;
     gap: var(--space-3, 0.75rem);
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+    border: 1px solid var(--brand-primary-a15);
     border-radius: var(--radius-md, 10px);
 }
 
@@ -250,11 +250,11 @@
 }
 
 .channelBadgeOn {
-    background-color: oklch(from var(--brand-primary) l c h / 0.15);
+    background-color: var(--brand-primary-a15);
     color: var(--brand-primary);
 }
 
 .channelBadgeSoon {
-    background-color: oklch(from var(--core-muted-foreground) l c h / 0.12);
+    background-color: var(--core-muted-foreground-a12);
     color: var(--core-muted-foreground);
 }

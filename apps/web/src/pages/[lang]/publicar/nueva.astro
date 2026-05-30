@@ -416,8 +416,8 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
         border-radius: 50%;
         background: radial-gradient(
             circle at 30% 30%,
-            oklch(from var(--brand-primary) l c h / 0.18),
-            oklch(from var(--brand-accent) l c h / 0.08) 60%,
+            var(--brand-primary-a20),
+            var(--brand-accent-a08) 60%,
             transparent 75%
         );
         filter: blur(2px);
@@ -503,7 +503,7 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
         max-width: 520px;
         margin: 0 auto;
         background-color: var(--core-card);
-        border: 1px solid oklch(from var(--brand-accent) l c h / 0.3);
+        border: 1px solid var(--brand-accent-a30);
         border-radius: var(--radius-card);
         padding: var(--space-8) var(--space-6);
         text-align: center;
@@ -517,7 +517,7 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
         width: 72px;
         height: 72px;
         border-radius: 50%;
-        background-color: oklch(from var(--brand-accent) l c h / 0.12);
+        background-color: var(--brand-accent-a12);
         color: var(--brand-accent);
         margin-bottom: var(--space-4);
     }
