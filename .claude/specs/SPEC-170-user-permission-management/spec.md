@@ -2,7 +2,7 @@
 id: SPEC-170
 slug: user-permission-management
 title: Per-User Granular Permission Management Panel
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-05-29
 relatedSpecs:

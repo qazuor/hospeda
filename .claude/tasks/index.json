@@ -606,8 +606,8 @@
         {
             "specId": "SPEC-170",
             "title": "Per-User Granular Permission Management Panel",
-            "status": "pending",
-            "progress": "0/31",
+            "status": "in-progress",
+            "progress": "28/31",
             "path": "SPEC-170-user-permission-management",
             "branch": "spec/SPEC-170-user-permission-management",
             "base": "staging",

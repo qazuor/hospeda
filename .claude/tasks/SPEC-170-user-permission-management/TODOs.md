@@ -144,43 +144,43 @@ Level 12:
 
 ### setup (3 tasks)
 
-- [ ] **T-001** `[complexity:2]` Add PermissionEffectSchema and PermissionEffect type to @repo/schemas
-- [ ] **T-002** `[complexity:2]` Add API endpoint Zod schemas for user permission overrides
-- [ ] **T-003** `[complexity:1]` Add PermissionEffectPgEnum to DB enums and pgEnum declaration
+- [x] **T-001** `[complexity:2]` Add PermissionEffectSchema and PermissionEffect type to @repo/schemas
+- [x] **T-002** `[complexity:2]` Add API endpoint Zod schemas for user permission overrides
+- [x] **T-003** `[complexity:1]` Add PermissionEffectPgEnum to DB enums and pgEnum declaration
 
 ### core (10 tasks)
 
-- [ ] **T-004** `[complexity:2]` Add effect column to user_permission DB schema and run migration
-- [ ] **T-005** `[complexity:2]` Add getUserPermissionsWithEffect export to user-permissions-cache.ts
-- [ ] **T-006** `[complexity:3]` ⚠️ [TDD] Write all 10 actor.ts precedence test cases BEFORE touching actor.ts
-- [ ] **T-007** `[complexity:3]` ⚠️ Implement deny-override resolution in actor.ts — make all 10 tests pass
-- [ ] **T-008** `[complexity:3]` Extend PermissionService.assignPermissionToUser with effect param and upsert
-- [ ] **T-009** `[complexity:3]` Add getPermissionOverridesForUser service method
-- [ ] **T-010** `[complexity:2]` Add audit emission and cache invalidation to removePermissionFromUser
-- [ ] **T-011** `[complexity:1]` Fix seed: add PERMISSION_VIEW, PERMISSION_ASSIGN, PERMISSION_REVOKE to SUPER_ADMIN
-- [ ] **T-012** `[complexity:2]` ⚠️ [TDD] Write permission-grouping helper with tests first
-- [ ] **T-013** `[complexity:3]` Implement permission-grouping.ts helper — make all grouping tests pass
-- [ ] **T-014** `[complexity:1]` Add i18n keys for user permissions panel to admin-pages.json
+- [x] **T-004** `[complexity:2]` Add effect column to user_permission DB schema and run migration
+- [x] **T-005** `[complexity:2]` Add getUserPermissionsWithEffect export to user-permissions-cache.ts
+- [x] **T-006** `[complexity:3]` ⚠️ [TDD] Write all 10 actor.ts precedence test cases BEFORE touching actor.ts
+- [x] **T-007** `[complexity:3]` ⚠️ Implement deny-override resolution in actor.ts — make all 10 tests pass
+- [x] **T-008** `[complexity:3]` Extend PermissionService.assignPermissionToUser with effect param and upsert
+- [x] **T-009** `[complexity:3]` Add getPermissionOverridesForUser service method
+- [x] **T-010** `[complexity:2]` Add audit emission and cache invalidation to removePermissionFromUser
+- [x] **T-011** `[complexity:1]` Fix seed: add PERMISSION_VIEW, PERMISSION_ASSIGN, PERMISSION_REVOKE to SUPER_ADMIN
+- [x] **T-012** `[complexity:2]` ⚠️ [TDD] Write permission-grouping helper with tests first
+- [x] **T-013** `[complexity:3]` Implement permission-grouping.ts helper — make all grouping tests pass
+- [x] **T-014** `[complexity:1]` Add i18n keys for user permissions panel to admin-pages.json
 
 ### integration (10 tasks)
 
-- [ ] **T-015** `[complexity:3]` Create GET /admin/users/:id/permissions API route
-- [ ] **T-016** `[complexity:3]` Create POST /admin/users/:id/permissions API route
-- [ ] **T-017** `[complexity:2]` Create DELETE /admin/users/:id/permissions/:permission API route
-- [ ] **T-019** `[complexity:2]` Create useUserPermissionOverrides TanStack Query hook
-- [ ] **T-020** `[complexity:2]` Create useAssignUserPermission and useRevokeUserPermission mutation hooks
-- [ ] **T-021** `[complexity:2]` Create OverrideRow component
-- [ ] **T-022** `[complexity:1]` Create RolePermissionBadge component
-- [ ] **T-023** `[complexity:4]` Create PermissionPicker dialog component
-- [ ] **T-024** `[complexity:4]` Create PermissionOverridesCard component
-- [ ] **T-025** `[complexity:2]` Wire PermissionOverridesCard into $id_.permissions.tsx, replace stub
+- [x] **T-015** `[complexity:3]` Create GET /admin/users/:id/permissions API route
+- [x] **T-016** `[complexity:3]` Create POST /admin/users/:id/permissions API route
+- [x] **T-017** `[complexity:2]` Create DELETE /admin/users/:id/permissions/:permission API route
+- [x] **T-019** `[complexity:2]` Create useUserPermissionOverrides TanStack Query hook
+- [x] **T-020** `[complexity:2]` Create useAssignUserPermission and useRevokeUserPermission mutation hooks
+- [x] **T-021** `[complexity:2]` Create OverrideRow component
+- [x] **T-022** `[complexity:1]` Create RolePermissionBadge component
+- [x] **T-023** `[complexity:4]` Create PermissionPicker dialog component
+- [x] **T-024** `[complexity:4]` Create PermissionOverridesCard component
+- [x] **T-025** `[complexity:2]` Wire PermissionOverridesCard into $id_.permissions.tsx, replace stub
 
 ### testing (8 tasks)
 
-- [ ] **T-018** `[complexity:4]` Write API integration tests for all 3 permission routes
-- [ ] **T-026** `[complexity:2]` Write RTL tests for OverrideRow and RolePermissionBadge
-- [ ] **T-027** `[complexity:3]` Write RTL tests for PermissionPicker
-- [ ] **T-028** `[complexity:3]` Write RTL tests for PermissionOverridesCard
+- [x] **T-018** `[complexity:4]` Write API integration tests for all 3 permission routes
+- [x] **T-026** `[complexity:2]` Write RTL tests for OverrideRow and RolePermissionBadge
+- [x] **T-027** `[complexity:3]` Write RTL tests for PermissionPicker
+- [x] **T-028** `[complexity:3]` Write RTL tests for PermissionOverridesCard
 - [ ] **T-029** `[complexity:3]` Write E2E test: grant override → re-auth → actor.permissions includes override
 - [ ] **T-030** `[complexity:3]` Write E2E test: deny override → re-auth → actor.permissions excludes denied perm
 - [ ] **T-031** `[complexity:2]` Smoke test: db:fresh-dev + manual QA of full grant/revoke/deny flow
