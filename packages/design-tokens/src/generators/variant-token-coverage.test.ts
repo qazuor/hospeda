@@ -1,6 +1,7 @@
 /**
  * @file variant-token-coverage.test.ts
- * @description SPEC-176 T-001 — Regression guard for variant token CSS coverage.
+ * @description SPEC-176 T-001 + T-002 — Regression guard for variant token CSS coverage
+ * and formatSRGB() unit tests.
  *
  * Guards that:
  * 1. Every variant token in VARIANT_TOKEN_MAP has a sRGB fallback declaration
@@ -13,6 +14,11 @@
  * iterate an empty array and pass trivially. This is by design: the guard
  * structure is proven before the fix lands.
  *
+ * T-002 adds the `formatSRGB` describe block below with 3 unit tests:
+ * - Output shape matches CSS rgb() space-separated integer syntax.
+ * - A known in-gamut achromatic value converts to the correct gray.
+ * - A high-chroma out-of-gamut value produces no negative or overflow channels.
+ *
  * SPEC-176: populate VARIANT_TOKEN_MAP in T-002/T-003 to make this guard
  * meaningful (RED→GREEN). Once T-004 runs `emitVariantTokens()`, the three
  * assertions will enforce the dual-declaration pattern for all 42 entries.
@@ -21,6 +27,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildCSS } from './generate-css.ts';
+import { formatSRGB } from './srgb.ts';
 import { VARIANT_TOKEN_MAP } from './variant-tokens.ts';
 
 // ============================================================================
@@ -188,6 +195,67 @@ describe('variant-token-coverage (SPEC-176 T-001 guard)', () => {
                 nonVariantDeclared.has(entry.name),
                 `Variant token --${entry.name} collides with an existing palette or theme token`
             ).toBe(false);
+        }
+    });
+});
+
+// ============================================================================
+// T-002 — formatSRGB() unit tests
+// ============================================================================
+
+describe('formatSRGB (SPEC-176 T-002 — OKLCH→sRGB converter)', () => {
+    /**
+     * Case 1 — Output shape: the returned string must match the CSS rgb()
+     * space-separated integer syntax `/^rgb\(\d+ \d+ \d+\)$/`.
+     *
+     * Uses the brand-primary river blue (0.63 0.19 259) as a representative
+     * in-gamut value. The regex guards that:
+     * - No commas (legacy format) are present.
+     * - Exactly three space-separated integer components appear.
+     * - The function returns a complete, parseable CSS value.
+     */
+    it('output matches CSS rgb() space-separated integer syntax', () => {
+        const result = formatSRGB({ l: 0.63, c: 0.19, h: 259 });
+        expect(result).toMatch(/^rgb\(\d+ \d+ \d+\)$/);
+    });
+
+    /**
+     * Case 2 — In-gamut achromatic sanity: an achromatic OKLCH value
+     * (c=0, any hue) must convert to a neutral gray with equal R, G, B
+     * channels and a reasonable mid-range value.
+     *
+     * OKLCH l=0.6 with c=0 maps to rgb(128 128 128) in perceptual lightness
+     * (confirmed: culori converter('rgb') at l=0.6 yields r≈g≈b≈0.502).
+     * This verifies that the gamut mapping pipeline passes achromatic values
+     * through unchanged and that channel math (×255 + round) is correct.
+     */
+    it('achromatic mid-gray produces equal r/g/b channels around 128', () => {
+        const result = formatSRGB({ l: 0.6, c: 0.0, h: 0 });
+        // Must be rgb(128 128 128) — OKLCH l=0.6, c=0 is precisely mid-gray.
+        expect(result).toBe('rgb(128 128 128)');
+    });
+
+    /**
+     * Case 3 — Out-of-gamut high-chroma: a supersaturated color that exceeds
+     * the sRGB gamut boundaries must produce NO negative channels and NO
+     * overflow channels (all R, G, B must be in [0, 255]).
+     *
+     * Uses l=0.7, c=0.4, h=140 — a vivid yellow-green that is significantly
+     * outside sRGB. culori's clampChroma reduces chroma until the color fits,
+     * yielding sRGB-safe integer values. The Math.max/Math.min clamp in the
+     * implementation provides an additional floating-point noise guard.
+     */
+    it('out-of-gamut high-chroma value produces no negative or overflow channels', () => {
+        const result = formatSRGB({ l: 0.7, c: 0.4, h: 140 });
+        // Must still match the shape guard.
+        expect(result).toMatch(/^rgb\(\d+ \d+ \d+\)$/);
+        // Extract and validate each channel.
+        const inner = result.slice(4, -1); // strip 'rgb(' and ')'
+        const channels = inner.split(' ').map(Number);
+        expect(channels).toHaveLength(3);
+        for (const ch of channels) {
+            expect(ch, `Channel value ${ch} must be >= 0`).toBeGreaterThanOrEqual(0);
+            expect(ch, `Channel value ${ch} must be <= 255`).toBeLessThanOrEqual(255);
         }
     });
 });

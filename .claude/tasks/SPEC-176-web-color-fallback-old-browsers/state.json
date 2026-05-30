@@ -138,39 +138,39 @@
             "id": "T-002",
             "title": "Add culori devDependency and implement formatSRGB() in design-tokens",
             "description": "Install `culori` as a devDependency on `packages/design-tokens` and implement the `formatSRGB()` converter function.\n\n**Step 1 — Install:**\nAdd `culori` to `packages/design-tokens/package.json` under `devDependencies`. This is a build-time-only dependency. It is NOT added to any consumer package.\n\n**Step 2 — Implement formatSRGB() in `packages/design-tokens/src/tokens/colors.ts`:**\nAdd immediately after the existing `formatOKLCH()` function:\n\n```ts\n/**\n * Convert an OKLCH value to a CSS `rgb(R G B)` string via sRGB gamut-mapped\n * conversion using culori's CSS Color Level 4 clampChroma algorithm.\n * Used at build time by the design-tokens generator (SPEC-176).\n * Components are rounded to integers after gamut mapping.\n *\n * @param value - OKLCH triple {l, c, h} to convert.\n * @returns CSS `rgb(R G B)` string with space-separated integer components (no alpha — caller appends / ALPHA).\n */\nexport function formatSRGB(value: OKLCH): string {\n    // culori import is dynamic to avoid bundling at consumer sites\n    const { oklch, formatRgb, clampChroma } = require('culori');\n    const mapped = clampChroma({ mode: 'oklch', l: value.l, c: value.c, h: value.h }, 'oklch', 'p3');\n    const rgb = formatRgb(mapped);\n    // formatRgb returns 'rgb(R, G, B)' — normalize to space-syntax CSS\n    return rgb.replace(/,/g, '').replace('rgb(', 'rgb(');\n}\n```\n\nNote: use `require('culori')` inside the function body (CJS interop) or an ESM dynamic import if the generator runs under `tsx`. Match whichever module resolution pattern `generate-css.ts` already uses.\n\n**Step 3 — Unit test for formatSRGB:**\nAdd a describe block to the coverage test file from T-001:\n- Test `formatSRGB({ l: 0.63, c: 0.19, h: 259 })` returns a string matching `/^rgb\\(\\d+ \\d+ \\d+\\)$/`\n- Test a known in-gamut value (e.g. `{l: 0.5, c: 0.0, h: 0}` → mid-gray) returns approximately `rgb(128 128 128)`\n- Test a high-chroma out-of-gamut value does NOT return negative component values (gamut mapping correctly clamps)\n\nAcceptance criteria:\n- `pnpm build:css` in packages/design-tokens succeeds (no errors importing culori)\n- New formatSRGB unit tests pass\n- formatSRGB output is a valid CSS rgb() string with space-separated integers\n- culori is NOT in the production dependency list of any other package\n\nFiles affected:\n- `packages/design-tokens/package.json` (devDependencies)\n- `packages/design-tokens/src/tokens/colors.ts` (add formatSRGB)\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (add formatSRGB unit tests)\n\nAC mapping: PDR Rule 5 (deterministic derivation from canonical token values).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001B"],
             "blocks": ["T-003"],
             "subtasks": [
                 {
                     "title": "Add culori to packages/design-tokens devDependencies and pnpm install",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement formatSRGB() in colors.ts with JSDoc",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add 3 unit tests for formatSRGB in variant-token-coverage.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify pnpm build:css succeeds",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling", "culori"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
