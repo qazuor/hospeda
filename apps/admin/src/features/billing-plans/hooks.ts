@@ -129,6 +129,25 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
 }
 
 /**
+ * Convert the dialog payload's `limits` (an array of `{ key, value }` pairs used
+ * by the form UI) into the API contract's `Record<string, number>` map. The API
+ * schemas (`Create/UpdateBillingPlanSchema`) model `limits` as `z.record(...)`,
+ * so sending the array shape would be rejected with a 422.
+ */
+function toApiLimits<T extends { limits?: ReadonlyArray<{ key: string; value: number }> }>(
+    payload: T
+): Omit<T, 'limits'> & { limits?: Record<string, number> } {
+    if (!payload.limits) {
+        const { limits: _omit, ...rest } = payload;
+        return rest;
+    }
+    return {
+        ...payload,
+        limits: Object.fromEntries(payload.limits.map((l) => [l.key, l.value]))
+    };
+}
+
+/**
  * Create a new plan.
  *
  * POST /api/v1/admin/billing/plans — returns the created BillingPlanResponse.
@@ -137,7 +156,7 @@ async function createPlan(payload: CreatePlanPayload): Promise<BillingPlanRespon
     const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: '/api/v1/admin/billing/plans',
         method: 'POST',
-        body: payload
+        body: toApiLimits(payload)
     });
     const parsed = BillingPlanResponseSchema.safeParse(result.data.data);
     if (!parsed.success) {
@@ -158,7 +177,7 @@ async function updatePlan({ id, ...payload }: UpdatePlanPayload): Promise<Billin
     const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: `/api/v1/admin/billing/plans/${id}`,
         method: 'PUT',
-        body: payload
+        body: toApiLimits(payload)
     });
     const parsed = BillingPlanResponseSchema.safeParse(result.data.data);
     if (!parsed.success) {

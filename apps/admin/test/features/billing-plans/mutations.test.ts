@@ -104,6 +104,52 @@ describe('billing-plans/mutations — T-013 (HTTP adapter + mutations wired)', (
             expect(capturedBody).toMatchObject({ slug: 'owner-basico', name: 'Básico' });
         });
 
+        it('converts the limits array to a Record<string, number> in the body (regression)', async () => {
+            // The form models limits as { key, value }[] but the API contract
+            // (CreateBillingPlanSchema) is z.record(...). Sending the array shape
+            // is rejected with a 422 — verified against the running API.
+            let capturedBody: unknown = null;
+            server.use(
+                http.post(`${API_BASE}/api/v1/admin/billing/plans`, async ({ request }) => {
+                    capturedBody = await request.json();
+                    return HttpResponse.json(wrapData(planResponse));
+                })
+            );
+
+            const { result } = renderHook(() => useCreatePlanMutation(), {
+                wrapper: createTestWrapper()
+            });
+
+            act(() => {
+                result.current.mutate({
+                    slug: 'owner-basico',
+                    name: 'Básico',
+                    description: 'Plan básico',
+                    category: 'owner',
+                    monthlyPriceArs: 150000,
+                    annualPriceArs: null,
+                    monthlyPriceUsdRef: 12,
+                    hasTrial: false,
+                    trialDays: 0,
+                    isDefault: false,
+                    sortOrder: 1,
+                    entitlements: [],
+                    limits: [
+                        { key: 'max_accommodations', value: 3 },
+                        { key: 'max_photos', value: 10 }
+                    ],
+                    isActive: true
+                });
+            });
+
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            expect((capturedBody as { limits: unknown }).limits).toEqual({
+                max_accommodations: 3,
+                max_photos: 10
+            });
+        });
+
         it('should invalidate the list query on success', async () => {
             // Arrange
             const invalidateSpy = vi.fn();
