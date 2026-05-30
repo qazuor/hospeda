@@ -90,11 +90,16 @@ const TOURIST_ACTIVE_3 = makePlan({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function mockFetchOk(body: unknown): void {
+/**
+ * Mock a 200 response wrapping `data` in the ResponseFactory envelope
+ * `{ success: true, data }`, mirroring the real public endpoint. Passing a
+ * non-array `data` exercises the invalid-shape paths.
+ */
+function mockFetchOk(data: unknown): void {
     global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve(body)
+        json: () => Promise.resolve({ success: true, data })
     } as Response);
 }
 
@@ -213,7 +218,7 @@ describe('fetchPublicPlans', () => {
             // Assert
             expect(result.ok).toBe(false);
             if (result.ok) throw new Error('Expected ok:false');
-            expect(result.error).toContain('array');
+            expect(result.error).toContain('shape');
         });
 
         it('returns ok:false when response body is a string', async () => {

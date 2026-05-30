@@ -4,10 +4,10 @@
  * public API endpoint. Replaces the build-time ALL_PLANS import so that
  * operator price edits are reflected without a redeploy (SPEC-168 D3, T-016).
  *
- * The public endpoint (`GET /api/v1/public/plans`) returns an array of plan
- * objects whose shape is designed to be backwards-compatible with the previous
- * ALL_PLANS config. We map the endpoint response to a type that PricingCardsGrid
- * can consume without modification.
+ * The public endpoint (`GET /api/v1/public/plans`) returns a ResponseFactory
+ * envelope `{ success, data: [...] }` whose `data` array is backwards-compatible
+ * with the previous ALL_PLANS config. We unwrap `data` and map it to a type that
+ * PricingCardsGrid can consume without modification.
  *
  * NOTE: `limits` in the API response is `Record<string, number>` (key → value
  * pairs). `PlanDefinition.limits` in @repo/billing is `LimitDefinition[]`
@@ -95,11 +95,16 @@ export async function fetchPublicPlans(): Promise<FetchPlansResult> {
 
         const body: unknown = await response.json();
 
-        if (!Array.isArray(body)) {
-            return { ok: false, error: 'Unexpected response shape: expected array' };
+        // The public endpoint wraps its payload via ResponseFactory:
+        // `{ success: true, data: [...] }`. Accept the wrapped shape and, as a
+        // fallback, a bare array.
+        const plans = Array.isArray(body) ? body : (body as { data?: unknown } | null)?.data;
+
+        if (!Array.isArray(plans)) {
+            return { ok: false, error: 'Unexpected response shape: expected { data: [...] }' };
         }
 
-        return { ok: true, plans: body as readonly PublicPlanData[] };
+        return { ok: true, plans: plans as readonly PublicPlanData[] };
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Network error';
         return { ok: false, error: message };
