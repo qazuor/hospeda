@@ -3,16 +3,19 @@
  *
  * Displays permissions for a specific user based on their role.
  * Shows inherited permissions from role and any direct overrides.
+ *
+ * Uses the same sticky header chrome as `$id.tsx` and `$id_.edit.tsx` via
+ * `UserSiblingPageShell` so navigation between Perfil / Permisos / Actividad
+ * stays visually cohesive.
  */
 
-import { PageTabs, userTabs } from '@/components/layout/PageTabs';
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
-import { AlertCircleIcon, InfoIcon, LoaderIcon, ShieldIcon } from '@repo/icons';
+import { InfoIcon, ShieldIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -21,61 +24,21 @@ export const Route = createFileRoute('/_authed/access/users/$id_/permissions')({
 });
 
 function UserPermissionsPage() {
-    const { t } = useTranslations();
     const { id } = Route.useParams();
 
-    // Fetch user data
-    const { data: user, isLoading, error } = useUserQuery(id);
+    return (
+        <UserSiblingPageShell userId={id}>
+            <PermissionsBody userId={id} />
+        </UserSiblingPageShell>
+    );
+}
 
-    if (isLoading) {
-        return (
-            <SidebarPageLayout titleKey="admin-pages.titles.usersView">
-                <div className="space-y-4">
-                    <PageTabs
-                        tabs={userTabs}
-                        basePath={`/access/users/${id}`}
-                    />
-                    <div className="flex items-center justify-center py-12">
-                        <div className="flex flex-col items-center gap-3">
-                            <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
-                            <p className="text-muted-foreground text-sm">
-                                {t('admin-pages.access.users.loadingData')}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </SidebarPageLayout>
-        );
-    }
+function PermissionsBody({ userId }: { readonly userId: string }) {
+    const { t } = useTranslations();
+    const { data: user } = useUserQuery(userId);
 
-    if (error || !user) {
-        return (
-            <SidebarPageLayout titleKey="admin-pages.titles.usersView">
-                <div className="space-y-4">
-                    <PageTabs
-                        tabs={userTabs}
-                        basePath={`/access/users/${id}`}
-                    />
-                    <div className="flex items-center justify-center py-12">
-                        <div className="flex flex-col items-center gap-3 text-center">
-                            <AlertCircleIcon className="h-12 w-12 text-destructive" />
-                            <div>
-                                <p className="font-semibold">
-                                    {t('admin-pages.access.users.errorLoading')}
-                                </p>
-                                <p className="text-muted-foreground text-sm">
-                                    {error?.message || t('admin-pages.access.users.userNotFound')}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </SidebarPageLayout>
-        );
-    }
+    if (!user) return null;
 
-    // Get role info from the same i18n catalog used by /access/roles, so
-    // role labels stay consistent and locale-aware across the admin.
     const userRole = (user.role || RoleEnum.USER) as RoleEnum;
     const roleInfo = {
         label: t(`admin-pages.access.roles.catalog.${userRole}.name` as TranslationKey),
@@ -83,148 +46,121 @@ function UserPermissionsPage() {
     };
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.usersView">
-            <div className="space-y-4">
-                <PageTabs
-                    tabs={userTabs}
-                    basePath={`/access/users/${id}`}
-                />
+        <div className="space-y-6">
+            {/* User role card */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                            <ShieldIcon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-lg">
+                                {t('admin-pages.access.users.permissions.currentRole')}
+                            </CardTitle>
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-pages.access.users.permissions.currentRoleDesc')}
+                            </p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Badge
+                                variant="default"
+                                className="text-sm"
+                            >
+                                {roleInfo.label}
+                            </Badge>
+                        </div>
+                        <p className="text-muted-foreground text-sm">{roleInfo.description}</p>
+                    </div>
+                </CardContent>
+            </Card>
 
-                <div className="space-y-6">
-                    {/* User role card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                    <ShieldIcon className="h-5 w-5 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-lg">
-                                        {t('admin-pages.access.users.permissions.currentRole')}
-                                    </CardTitle>
-                                    <p className="text-muted-foreground text-sm">
-                                        {t('admin-pages.access.users.permissions.currentRoleDesc')}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <Badge
-                                        variant="default"
-                                        className="text-sm"
-                                    >
-                                        {roleInfo.label}
-                                    </Badge>
-                                </div>
-                                <p className="text-muted-foreground text-sm">
-                                    {roleInfo.description}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+            {/* Inherited permissions info */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+                            <InfoIcon className="h-5 w-5 text-info" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-lg">
+                                {t('admin-pages.access.users.permissions.inheritedPermissions')}
+                            </CardTitle>
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-pages.access.users.permissions.inheritedPermissionsDesc')}
+                            </p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <p className="text-muted-foreground text-sm">
+                            {t('admin-pages.access.users.permissions.inheritedDesc')}{' '}
+                            <strong>{roleInfo.label}</strong>{' '}
+                            {t('admin-pages.access.users.permissions.inheritedNote')}
+                        </p>
 
-                    {/* Inherited permissions info */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-400/10">
-                                    <InfoIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-lg">
-                                        {t(
-                                            'admin-pages.access.users.permissions.inheritedPermissions'
-                                        )}
-                                    </CardTitle>
-                                    <p className="text-muted-foreground text-sm">
-                                        {t(
-                                            'admin-pages.access.users.permissions.inheritedPermissionsDesc'
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <p className="text-muted-foreground text-sm">
-                                    {t('admin-pages.access.users.permissions.inheritedDesc')}{' '}
-                                    <strong>{roleInfo.label}</strong>{' '}
-                                    {t('admin-pages.access.users.permissions.inheritedNote')}
-                                </p>
+                        <div className="rounded-lg border border-info/30 bg-info/10 p-4">
+                            <p className="text-foreground text-sm">
+                                <strong>
+                                    {t('admin-pages.access.users.permissions.viewRoleDetails')}
+                                </strong>{' '}
+                                {t('admin-pages.access.users.permissions.viewRoleDetailsDesc')}{' '}
+                                {roleInfo.label},{' '}
+                                <a
+                                    href="/access/roles"
+                                    className="underline hover:text-info"
+                                >
+                                    {t('admin-pages.access.users.permissions.rolesPageLink')}
+                                </a>
+                                .
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
-                                <div className="rounded-lg border border-info/30 bg-info/10 p-4">
-                                    <p className="text-foreground text-sm">
-                                        <strong>
-                                            {t(
-                                                'admin-pages.access.users.permissions.viewRoleDetails'
-                                            )}
-                                        </strong>{' '}
-                                        {t(
-                                            'admin-pages.access.users.permissions.viewRoleDetailsDesc'
-                                        )}{' '}
-                                        {roleInfo.label},{' '}
-                                        <a
-                                            href="/access/roles"
-                                            className="underline hover:text-info"
-                                        >
-                                            {t(
-                                                'admin-pages.access.users.permissions.rolesPageLink'
-                                            )}
-                                        </a>
-                                        .
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Direct permission overrides (placeholder) */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 dark:bg-amber-400/10">
-                                    <ShieldIcon className="h-5 w-5 text-amber-500 dark:text-amber-400" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-lg">
-                                        {t('admin-pages.access.users.permissions.directOverrides')}
-                                    </CardTitle>
-                                    <p className="text-muted-foreground text-sm">
-                                        {t(
-                                            'admin-pages.access.users.permissions.directOverridesDesc'
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <ShieldIcon className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-                                <p className="mb-1 text-muted-foreground text-sm">
-                                    {t('admin-pages.access.users.permissions.noDirectOverrides')}
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                    {t(
-                                        'admin-pages.access.users.permissions.noDirectOverridesDesc'
-                                    )}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Feature note */}
-                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
-                        <p className="text-foreground text-sm">
-                            <strong>
-                                {t('admin-pages.access.users.permissions.futureFeature')}
-                            </strong>{' '}
-                            {t('admin-pages.access.users.permissions.futureFeatureDesc')}
+            {/* Direct permission overrides (placeholder) */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                            <ShieldIcon className="h-5 w-5 text-warning" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-lg">
+                                {t('admin-pages.access.users.permissions.directOverrides')}
+                            </CardTitle>
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-pages.access.users.permissions.directOverridesDesc')}
+                            </p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <ShieldIcon className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+                        <p className="mb-1 text-muted-foreground text-sm">
+                            {t('admin-pages.access.users.permissions.noDirectOverrides')}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                            {t('admin-pages.access.users.permissions.noDirectOverridesDesc')}
                         </p>
                     </div>
-                </div>
+                </CardContent>
+            </Card>
+
+            {/* Feature note */}
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                <p className="text-foreground text-sm">
+                    <strong>{t('admin-pages.access.users.permissions.futureFeature')}</strong>{' '}
+                    {t('admin-pages.access.users.permissions.futureFeatureDesc')}
+                </p>
             </div>
-        </SidebarPageLayout>
+        </div>
     );
 }
