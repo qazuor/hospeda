@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "065-feature-dairy_farm_production",
-    "name": "Tambo y producción de campo",
+    "name": {
+        "es": "Tambo y producción de campo",
+        "en": "Tambo y producción de campo",
+        "pt": "Tambo y producción de campo"
+    },
     "slug": "dairy_farm_production",
-    "description": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
+    "description": {
+        "es": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
+        "en": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
+        "pt": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola"
+    },
     "icon": "DairyProductionIcon",
     "isBuiltin": true,
     "isFeatured": false,

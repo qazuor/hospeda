@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "062-feature-remote_coworking_suitable",
-    "name": "Apto para trabajo remoto",
+    "name": {
+        "es": "Apto para trabajo remoto",
+        "en": "Apto para trabajo remoto",
+        "pt": "Apto para trabajo remoto"
+    },
     "slug": "remote_coworking_suitable",
-    "description": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional",
+    "description": {
+        "es": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional",
+        "en": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional",
+        "pt": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional"
+    },
     "icon": "CoworkingSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,

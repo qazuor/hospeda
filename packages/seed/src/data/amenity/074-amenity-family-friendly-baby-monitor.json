@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "074-amenity-family-friendly-baby-monitor",
-    "name": "baby_monitor",
+    "name": {
+        "es": "baby_monitor",
+        "en": "baby_monitor",
+        "pt": "baby_monitor"
+    },
     "slug": "baby_monitor",
-    "description": "Detector de ruido / cámara bebé",
+    "description": {
+        "es": "Detector de ruido / cámara bebé",
+        "en": "Detector de ruido / cámara bebé",
+        "pt": "Detector de ruido / cámara bebé"
+    },
     "type": "FAMILY_FRIENDLY",
     "icon": "BabyMonitorIcon",
     "isBuiltin": false,

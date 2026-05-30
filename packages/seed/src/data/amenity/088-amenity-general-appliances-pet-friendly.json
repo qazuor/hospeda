@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "088-amenity-general-appliances-pet-friendly",
-    "name": "pet_friendly",
+    "name": {
+        "es": "pet_friendly",
+        "en": "pet_friendly",
+        "pt": "pet_friendly"
+    },
     "slug": "pet_friendly",
-    "description": "Espacio pet friendly",
+    "description": {
+        "es": "Espacio pet friendly",
+        "en": "Espacio pet friendly",
+        "pt": "Espacio pet friendly"
+    },
     "type": "GENERAL_APPLIANCES",
     "icon": "PetAllowedIcon",
     "isBuiltin": false,

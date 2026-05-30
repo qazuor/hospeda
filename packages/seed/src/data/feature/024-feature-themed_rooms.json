@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "024-feature-themed_rooms",
-    "name": "Habitaciones temáticas",
+    "name": {
+        "es": "Habitaciones temáticas",
+        "en": "Habitaciones temáticas",
+        "pt": "Habitaciones temáticas"
+    },
     "slug": "themed_rooms",
-    "description": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
+    "description": {
+        "es": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
+        "en": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
+        "pt": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas"
+    },
     "icon": "ThemedRoomsIcon",
     "isBuiltin": true,
     "isFeatured": false,

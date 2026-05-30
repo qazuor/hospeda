@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "027-feature-adults_only_area",
-    "name": "Sector solo adultos",
+    "name": {
+        "es": "Sector solo adultos",
+        "en": "Sector solo adultos",
+        "pt": "Sector solo adultos"
+    },
     "slug": "adults_only_area",
-    "description": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado",
+    "description": {
+        "es": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado",
+        "en": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado",
+        "pt": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado"
+    },
     "icon": "AdultsOnlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

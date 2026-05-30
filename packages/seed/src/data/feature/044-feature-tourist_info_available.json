@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "044-feature-tourist_info_available",
-    "name": "Información turística disponible",
+    "name": {
+        "es": "Información turística disponible",
+        "en": "Información turística disponible",
+        "pt": "Información turística disponible"
+    },
     "slug": "tourist_info_available",
-    "description": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
+    "description": {
+        "es": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
+        "en": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
+        "pt": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona"
+    },
     "icon": "TouristInfoIcon",
     "isBuiltin": true,
     "isFeatured": false,

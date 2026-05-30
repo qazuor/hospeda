@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "043-feature-internal_parking",
-    "name": "Estacionamiento interno",
+    "name": {
+        "es": "Estacionamiento interno",
+        "en": "Estacionamiento interno",
+        "pt": "Estacionamiento interno"
+    },
     "slug": "internal_parking",
-    "description": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo",
+    "description": {
+        "es": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo",
+        "en": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo",
+        "pt": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo"
+    },
     "icon": "InternalParkingIcon",
     "isBuiltin": true,
     "isFeatured": false,

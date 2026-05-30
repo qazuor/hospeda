@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "045-feature-organized_activities",
-    "name": "Actividades organizadas",
+    "name": {
+        "es": "Actividades organizadas",
+        "en": "Actividades organizadas",
+        "pt": "Actividades organizadas"
+    },
     "slug": "organized_activities",
-    "description": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
+    "description": {
+        "es": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
+        "en": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
+        "pt": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento"
+    },
     "icon": "OrganizedActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,
