@@ -533,36 +533,37 @@
             "id": "T-016",
             "title": "Web \u2014 move pricing pages from SSG import to runtime endpoint (D3)",
             "description": "apps/web/src/pages/[lang]/suscriptores/planes/index.astro (+ turistas): stop importing ALL_PLANS at build time; fetch /api/v1/public/plans at runtime (SSR, prerender=false) and set Cache-Control: s-maxage=N, stale-while-revalidate. Preserve current rendering/sorting (by sortOrder, active only). Tests: e2e/integration \u2014 page renders plans from the endpoint; cache headers present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-011"],
             "blocks": ["T-017", "T-020"],
             "subtasks": [
                 {
                     "title": "Switch planes + turistas pages to SSR endpoint fetch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set Cache-Control s-maxage + SWR",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render/cache-header tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "astro", "ssr"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "Migrated both pricing pages (planes + turistas) from SSG ALL_PLANS import to SSR fetch from /api/v1/public/plans. Created @/lib/billing/fetch-plans.ts helper with fetchPublicPlans(), filterPlansByCategory(), and cache constants. Updated PricingCardsGrid.astro to use a local PricingPlan interface instead of PlanDefinition (decouples from limits field shape diff). Updated billing-i18n.ts to use a PlanLike interface. Cache-Control: s-maxage=300, stale-while-revalidate=60. Graceful fallback (empty array) on fetch error. 56 tests (32 source-reading + 24 unit) all pass."
         },
         {
             "id": "T-017",
@@ -788,9 +789,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 3.1
     }
