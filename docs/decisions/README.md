@@ -21,7 +21,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-017](ADR-017-postgres-specific-features.md) | PostgreSQL-Specific Features via Manual Migrations | Accepted |
 | [ADR-018](ADR-018-transaction-propagation-pattern.md) | Transaction Propagation Pattern | Accepted |
 | [ADR-019](ADR-019-billing-transaction-isolation.md) | Billing Transaction Isolation | Accepted |
-| [ADR-020](ADR-020-billing-plans-source-of-truth.md) | Billing Plans Source of Truth | Accepted |
+| [ADR-020](ADR-020-billing-plans-source-of-truth.md) | Billing Plans Source of Truth | Superseded by SPEC-168 |
 | [ADR-021](ADR-021-type-cast-policy.md) | `as unknown as X` Double-Cast Policy | Accepted |
 | [ADR-022](ADR-022-service-return-type-safety-with-relations.md) | Service Return Type Safety with Relations | Accepted |
 | [ADR-023](ADR-023-soft-deleted-related-entities.md) | Soft-Deleted Related Entities Behavior Policy | Accepted |

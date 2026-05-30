@@ -2,7 +2,28 @@
 
 ## Status
 
-Accepted (2026-04-26)
+Superseded by SPEC-168 (2026-05-30)
+
+Originally Accepted (2026-04-26).
+
+SPEC-168 ("Admin Plan Management — runtime-editable plans on the DB") reverses
+the core decision below. Plans are no longer code-only: the qzpay `billing_plans`
+table (with prices in `billing_prices`) is now the runtime source of truth, and
+the `@repo/billing` config (`ALL_PLANS` / `PlanDefinition`) is read **only once,
+to seed** an empty database. After seeding, operators create, edit, deactivate,
+and delete plans from the admin panel; a re-seed never overwrites runtime edits.
+The display-vs-charge invariant this ADR was written to protect is preserved a
+different way: the admin write, checkout, and web pricing pages all read the same
+DB store, and the audit log (`billing_audit_logs`) records every mutation with
+actor and before/after diff. Web freshness is handled via the public
+`/api/v1/public/plans` endpoint plus Cloudflare cache revalidation on save (D3),
+replacing the build-time SSG import. See:
+
+- SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
+- [Managing Billing Plans guide](../guides/managing-billing-plans.md)
+
+The rest of this ADR is preserved as a historical record of the prior decision
+and the audit that motivated it.
 
 ## Context
 

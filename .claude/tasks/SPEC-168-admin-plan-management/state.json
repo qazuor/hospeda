@@ -766,39 +766,40 @@
             "id": "T-023",
             "title": "Docs \u2014 supersede ADR-020 with SPEC-168",
             "description": "Flip docs/decisions/ADR-020-billing-plans-source-of-truth.md status to 'Superseded by SPEC-168' and add a short pointer; optionally add ADR-021 documenting the DB-backed migration approach + the D3 cache strategy. No code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008", "T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "ADR-020 status \u2192 Superseded by SPEC-168",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Optional ADR-021 (migration + cache strategy)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "adr"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "Superseded ADR-020 following the existing ADR-018 pattern: Status line changed to 'Superseded by SPEC-168 (2026-05-30)' with 'Originally Accepted (2026-04-26)' kept, plus a short explanatory paragraph (plans now DB-backed runtime-editable via qzpay billing_plans + billing_prices, config seed-only, display-vs-charge preserved via shared DB store + audit log, web freshness via /api/v1/public/plans + Cloudflare revalidation on save) linking SPEC-168 spec.md and the new operator guide. All historical content preserved. Also updated the status column in docs/decisions/README.md (ADR-020 row -> 'Superseded by SPEC-168'). Did NOT add a separate ADR-021: that number is already taken by ADR-021-type-cast-policy.md, and the task said to omit a new ADR if it does not fit the convention. The DB-backed approach + D3 cache strategy are captured in the ADR-020 supersedence note and the operator guide instead. markdownlint clean."
         }
     ],
     "summary": {
         "total": 23,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 3.1
     }
