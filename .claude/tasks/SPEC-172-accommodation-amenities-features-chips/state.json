@@ -259,7 +259,7 @@
             "id": "T-009",
             "title": "Open PR1 to staging",
             "description": "Open the PR1 pull request targeting `staging` branch once T-008 quality gate passes.\n\nPR title: `feat(service-core): accommodation amenities/features write path + remove standalone feature endpoints`\n\nPR body must reference:\n- AC-1.1 through AC-1.8 (all addressed)\n- Deleted files: `addFeatureToAccommodation.ts`, `removeFeatureFromAccommodation.ts`\n- Service contract documentation: absent vs empty array semantics\n- No breaking changes to existing read paths\n\nBranch: `spec/SPEC-172-accommodation-amenities-features-chips` → `staging`\n\nAC: all PR1 ACs shipped",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
@@ -267,14 +267,14 @@
             "tags": ["PR1", "workflow"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
                 "started": "2026-05-30T00:00:00.000Z",
-                "completed": null
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
