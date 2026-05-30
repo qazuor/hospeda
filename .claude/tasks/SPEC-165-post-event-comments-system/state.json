@@ -1,0 +1,614 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-165",
+    "title": "Post and Event Comments System",
+    "created": "2026-05-30T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add entity_comments Drizzle schema + migration + trigger registration",
+            "description": "Create packages/db/src/schemas/entity-comment/entity_comment.dbschema.ts following the user_bookmark.dbschema.ts polymorphic FK pattern. Columns: id (uuid PK), entity_type (EntityTypePgEnum NOT NULL), entity_id (uuid NOT NULL), author_id (uuid NOT NULL FK→users SET NULL), content (text NOT NULL), moderation_state (ModerationStatusPgEnum NOT NULL DEFAULT 'APPROVED'), created_at, updated_at, created_by_id, updated_by_id, deleted_at, deleted_by_id. Add compound index on (entity_id, entity_type, deleted_at) matching idx_user_bookmarks_entity_active pattern. Register the table in packages/db/scripts/apply-postgres-extras.sh so the set_updated_at trigger is applied after every schema push. Run pnpm db:generate to produce the migration file. Key files: packages/db/src/schemas/entity-comment/entity_comment.dbschema.ts, packages/db/src/schemas/index.ts (re-export), packages/db/scripts/apply-postgres-extras.sh. Acceptance: AC-1 (columns + index), AC-2 (DEFAULT APPROVED verified via migration inspect).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create entity_comment.dbschema.ts with all columns + index",
+                    "completed": true
+                },
+                { "title": "Re-export from packages/db/src/schemas/index.ts", "completed": true },
+                {
+                    "title": "Register set_updated_at trigger in apply-postgres-extras.sh",
+                    "completed": true
+                },
+                { "title": "Run pnpm db:generate and verify migration file", "completed": true }
+            ],
+            "tags": ["backend", "database", "schema"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "notes": "Schema applied via db:push --force + db:apply-extras (project dev workflow; db:generate intentionally NOT run since src/migrations/ starts empty and would emit a full-monorepo migration). set_updated_at trigger attaches automatically via the dynamic loop in 0005_set_updated_at_trigger.sql (no script edit needed). author_id resolved to NULLABLE + ON DELETE SET NULL (RD-5 vs R6 conflict; enforced registered-users at service layer). AC-1 + AC-2 verified in DB (12 cols, idx_entity_comments_entity_active, DEFAULT APPROVED, trigger trg_set_updated_at_entity_comments).",
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement EntityCommentModel extending BaseModel",
+            "description": "Create packages/db/src/models/entity-comment.model.ts. Extend BaseModel with the entity_comments table. Implement typed query helpers needed by the service: findByEntity({ entityId, entityType, includeDeleted }), findById, softDelete, hardDelete, restore, countApprovedByPostId (for counter sync). Follow the pattern of existing models (e.g., packages/db/src/models/user-bookmark.model.ts). Export from packages/db/src/models/index.ts. Key files: packages/db/src/models/entity-comment.model.ts, packages/db/src/models/index.ts. Acceptance: model compiles cleanly, all query helpers typed with no 'any'.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Create entity-comment.model.ts extending BaseModel",
+                    "completed": false
+                },
+                {
+                    "title": "Add findByEntity, findById, softDelete, hardDelete, restore helpers",
+                    "completed": false
+                },
+                {
+                    "title": "Add countApprovedByPostId helper for counter sync",
+                    "completed": false
+                },
+                { "title": "Export from models/index.ts", "completed": false }
+            ],
+            "tags": ["backend", "database", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add POST_COMMENT_VIEW/MODERATE and EVENT_COMMENT_VIEW/MODERATE to PermissionEnum",
+            "description": "Edit packages/schemas/src/enums/permission.enum.ts. In the POST section (near line 209 where POST_COMMENT_CREATE lives), add POST_COMMENT_VIEW = 'post.comment.view' and POST_COMMENT_MODERATE = 'post.comment.moderate'. In the EVENT section (near line 188 where EVENT_COMMENT_CREATE lives), add EVENT_COMMENT_VIEW = 'event.comment.view' and EVENT_COMMENT_MODERATE = 'event.comment.moderate'. Do NOT add _WRITE variants (RD-9). Also add POST_COMMENT = 'POST_COMMENT' and EVENT_COMMENT = 'EVENT_COMMENT' to PermissionCategoryEnum. Verify POST_COMMENT_CREATE and EVENT_COMMENT_CREATE remain unmodified. Key file: packages/schemas/src/enums/permission.enum.ts. Acceptance: AC-5 (four new entries present, existing _CREATE untouched).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Add POST_COMMENT_VIEW + POST_COMMENT_MODERATE entries",
+                    "completed": false
+                },
+                {
+                    "title": "Add EVENT_COMMENT_VIEW + EVENT_COMMENT_MODERATE entries",
+                    "completed": false
+                },
+                {
+                    "title": "Add POST_COMMENT + EVENT_COMMENT to PermissionCategoryEnum",
+                    "completed": false
+                },
+                { "title": "Verify _CREATE entries remain unmodified", "completed": false }
+            ],
+            "tags": ["schemas", "permissions"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Reconcile role seed grants + seed unit tests (AC-38, AC-39)",
+            "description": "Edit packages/seed/src/required/rolePermissions.seed.ts. Inspect current grant arrays for each role and apply additive-only changes: TOURIST — add POST_COMMENT_CREATE + EVENT_COMMENT_CREATE only where missing (do not duplicate). HOST — same as TOURIST. EDITOR — add POST_COMMENT_CREATE, POST_COMMENT_VIEW, POST_COMMENT_MODERATE, EVENT_COMMENT_CREATE, EVENT_COMMENT_VIEW, EVENT_COMMENT_MODERATE only where missing. ADMIN — same as EDITOR. Do NOT touch SUPER_ADMIN (runtime bypass). Write vitest assertions in packages/seed/test/: (AC-38) ROLE_PERMISSIONS[TOURIST] includes _CREATE perms and excludes _MODERATE/_VIEW. (AC-39) ROLE_PERMISSIONS[EDITOR] includes all six comment permissions. Run pnpm test to confirm existing role-acceptance tests for EDITOR + ADMIN pass (these already assert _CREATE; must not break). Key files: packages/seed/src/required/rolePermissions.seed.ts, packages/seed/test/role-comment-permissions.test.ts. Acceptance: AC-6, AC-7, AC-38, AC-39.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Inspect existing _CREATE grants and add TOURIST/HOST only where missing",
+                    "completed": false
+                },
+                {
+                    "title": "Add VIEW + MODERATE grants for EDITOR + ADMIN where missing",
+                    "completed": false
+                },
+                {
+                    "title": "Write seed test asserting TOURIST lacks _MODERATE/_VIEW (AC-38)",
+                    "completed": false
+                },
+                {
+                    "title": "Write seed test asserting EDITOR has all six comment perms (AC-39)",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm existing EDITOR + ADMIN role-acceptance tests still pass",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "permissions", "tests"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create entity-comment Zod schemas (base, crud, query, http, access, admin-search)",
+            "description": "Create the following files in packages/schemas/src/entities/entity-comment/: entity-comment.schema.ts (base schema + EntityCommentSchema + CreateEntityCommentSchema with content 1-2000 chars), entity-comment.crud.ts (CreateEntityCommentInput, UpdateEntityCommentInput), entity-comment.query.ts (list query params: page, pageSize, entityType, entityId, moderationState, authorId, includeDeleted, sort, search), entity-comment.http.ts (public response shape without moderationState: {id, authorName, content, createdAt}; admin response shape: full), entity-comment.access.ts (access control types), entity-comment.admin-search.ts (extends AdminSearchBaseSchema with entityType + moderationState filters). Export all from packages/schemas/src/entities/index.ts. Convention: same file-per-concern pattern as other entities. Key files: packages/schemas/src/entities/entity-comment/*.ts, packages/schemas/src/entities/index.ts. Acceptance: all schemas compile under strict mode, content max 2000 chars enforced (AC-13 baseline).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-006", "T-007", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Create base + crud schemas (CreateEntityCommentInput, content 1-2000)",
+                    "completed": false
+                },
+                {
+                    "title": "Create query schema (list params + admin-search extension)",
+                    "completed": false
+                },
+                {
+                    "title": "Create http schema (public shape without moderationState; admin full shape)",
+                    "completed": false
+                },
+                { "title": "Create access schema types", "completed": false },
+                { "title": "Export all from entities/index.ts", "completed": false }
+            ],
+            "tags": ["schemas", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement EntityCommentService — create + soft-delete-own + counter sync",
+            "description": "Create packages/service-core/src/services/entity-comment.service.ts extending BaseCrudService. Implement in this task: (1) create(): validate entityType is in ALLOWED_ENTITY_TYPES ['POST', 'EVENT'] (return INVALID_ENTITY_TYPE error otherwise — AC-3), set moderationState=APPROVED, set authorId from actor; if entityType=POST atomically increment posts.comments counter. (2) softDeleteOwn(): validate actor is the comment author (return 403-equivalent error if not — AC-16); soft-delete; if entityType=POST and comment was APPROVED decrement posts.comments counter. (3) countApprovedByPostId(): recompute counter via COUNT (used for reconciliation). Use runWithLoggingAndValidation() and Result<T>. Unit tests (Vitest) covering: create happy path (POST counter incremented, AC-11 baseline), create invalid entity type (AC-3), create event (no counter change, AC-26), softDeleteOwn as author (AC-15), softDeleteOwn as non-author (AC-16), content too long returns error (AC-13 at service layer). Key files: packages/service-core/src/services/entity-comment.service.ts, packages/service-core/src/services/index.ts, packages/service-core/test/entity-comment-create.test.ts. Acceptance: AC-3, AC-11 (partial), AC-13 (service), AC-15, AC-16, AC-26 (no event counter); ≥90% branch coverage target (AC-36).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Scaffold EntityCommentService extending BaseCrudService",
+                    "completed": false
+                },
+                {
+                    "title": "Implement create() with entityType allowlist + counter sync for POST",
+                    "completed": false
+                },
+                {
+                    "title": "Implement softDeleteOwn() with author check + counter decrement",
+                    "completed": false
+                },
+                {
+                    "title": "Implement countApprovedByPostId() recompute helper",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: create, invalid entityType, no event counter, softDeleteOwn auth",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "business-logic", "tests"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement EntityCommentService — list, getById, moderate, hardDelete, restore",
+            "description": "Continue packages/service-core/src/services/entity-comment.service.ts adding: (4) listPublic({ entityId, entityType, page, pageSize }): returns APPROVED + non-deleted only, sorted createdAt ASC, returns 404 if entity not found or not published (delegate entity lookup to PostModel/EventModel). (5) listAdmin({ filters }): full list with all moderationState values, supports filters from T-005 admin-search schema. (6) getById(id): resolves entityType to check appropriate VIEW permission. (7) moderate({ id, moderationState, actor }): update moderationState; if entityType=POST recompute posts.comments counter (add 1 for REJECTED→APPROVED, subtract 1 for APPROVED→REJECTED). (8) hardDelete(id): permanent removal; recompute counter if applicable. (9) restore(id): clear deletedAt + deletedById; if entityType=POST and comment was APPROVED increment counter. Unit tests for moderate (AC-19, AC-20, AC-25 counter scenarios), hardDelete (AC-22), restore (AC-23), and counter integrity (AC-24). Key files: packages/service-core/src/services/entity-comment.service.ts (cont.), packages/service-core/test/entity-comment-admin.test.ts. Acceptance: AC-19, AC-20, AC-22, AC-23, AC-24, AC-25; ≥90% branch coverage (AC-36).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Implement listPublic() with APPROVED filter + entity existence check",
+                    "completed": false
+                },
+                { "title": "Implement listAdmin() with full filter support", "completed": false },
+                {
+                    "title": "Implement getById() with permission resolution by entityType",
+                    "completed": false
+                },
+                {
+                    "title": "Implement moderate() with counter sync (APPROVED↔REJECTED)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement hardDelete() and restore() with counter adjustments",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: moderate counter scenarios, hardDelete, restore (AC-19/20/22/23/24/25)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "business-logic", "tests"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Public API endpoints — GET comments for post and event",
+            "description": "Add two public routes in apps/api/src/routes/public/: GET /api/v1/public/posts/:postId/comments and GET /api/v1/public/events/:eventId/comments. Use createSimpleRoute or createListRoute factory. No auth middleware. Call EntityCommentService.listPublic(). Return paginated list with response shape {id, authorName, content, createdAt} (no moderationState exposed — AC-8). Map null authorId to '[Usuario eliminado]' display name. Return 404 if entity not found or unpublished (AC-9). Query params: page (default 1), pageSize (default 20, max 50). Sort: createdAt ASC. Register routes in the public router. Key files: apps/api/src/routes/public/posts-comments.route.ts, apps/api/src/routes/public/events-comments.route.ts, apps/api/src/routes/public/index.ts. Acceptance: AC-8, AC-9, AC-10 (empty array for zero comments).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006", "T-007", "T-004"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Create GET /public/posts/:postId/comments route", "completed": false },
+                {
+                    "title": "Create GET /public/events/:eventId/comments route",
+                    "completed": false
+                },
+                {
+                    "title": "Map null authorId → '[Usuario eliminado]' in response DTO",
+                    "completed": false
+                },
+                { "title": "Register routes in public router index", "completed": false }
+            ],
+            "tags": ["api", "public"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Protected API endpoints — POST comments + DELETE own comment",
+            "description": "Add three protected routes in apps/api/src/routes/protected/: POST /api/v1/protected/posts/:postId/comments (requires POST_COMMENT_CREATE; rate-limited 5/min via createPerRouteRateLimitMiddleware from apps/api/src/middlewares/rate-limit.ts; body validated by CreateEntityCommentInput Zod schema; calls EntityCommentService.create(); returns 201 with created comment; returns 422 for content >2000 chars), POST /api/v1/protected/events/:eventId/comments (same contract, EVENT_COMMENT_CREATE gate, no counter update), DELETE /api/v1/protected/comments/:commentId (requires valid session; calls EntityCommentService.softDeleteOwn(); returns 204 on success, 403 if not author, 404 if not found; decrements counter if applicable). All three require a valid Better Auth session (existing session middleware). Register routes in protected router. Key files: apps/api/src/routes/protected/posts-comments.route.ts, apps/api/src/routes/protected/events-comments.route.ts, apps/api/src/routes/protected/comments-delete.route.ts, apps/api/src/routes/protected/index.ts. Acceptance: AC-11, AC-12, AC-13, AC-14, AC-15, AC-16.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-006", "T-007"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Create POST /protected/posts/:postId/comments with rate limit + permission gate",
+                    "completed": false
+                },
+                {
+                    "title": "Create POST /protected/events/:eventId/comments with rate limit + permission gate",
+                    "completed": false
+                },
+                {
+                    "title": "Create DELETE /protected/comments/:commentId with author-check",
+                    "completed": false
+                },
+                {
+                    "title": "Register all three routes in protected router index",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "protected", "rate-limit"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Admin API endpoints — recent feed + full list + getById",
+            "description": "Add three admin routes in apps/api/src/routes/admin/comments/: GET /api/v1/admin/comments/recent (requires POST_COMMENT_VIEW AND EVENT_COMMENT_VIEW; query param pageSize default 10 max 50; returns comments sorted createdAt DESC all moderationState values; response shape {id, entityType, entityId, content, authorName, moderationState, createdAt} — AC-17), GET /api/v1/admin/comments (requires POST_COMMENT_VIEW OR EVENT_COMMENT_VIEW; full paginated list with filters from admin-search schema: entityType, moderationState, entityId, authorId, includeDeleted, page, pageSize, sort, search), GET /api/v1/admin/comments/:commentId (requires POST_COMMENT_VIEW or EVENT_COMMENT_VIEW resolved from stored entityType; returns full comment detail). Use createListRoute and createOpenApiRoute factories. Register routes in admin router. Key files: apps/api/src/routes/admin/comments/comments.route.ts, apps/api/src/routes/admin/comments/index.ts, apps/api/src/routes/admin/index.ts. Acceptance: AC-17, AC-18 (403 without both VIEW perms).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006", "T-007"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Create GET /admin/comments/recent with dual VIEW perm gate",
+                    "completed": false
+                },
+                {
+                    "title": "Create GET /admin/comments list with filter support",
+                    "completed": false
+                },
+                {
+                    "title": "Create GET /admin/comments/:id with entityType-resolved VIEW perm",
+                    "completed": false
+                },
+                { "title": "Register routes in admin router index", "completed": false }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Admin API endpoints — moderation PATCH + soft/hard delete + restore",
+            "description": "Add four admin moderation routes in apps/api/src/routes/admin/comments/ continuing the same file from T-010: PATCH /api/v1/admin/comments/:commentId/moderation (requires POST_COMMENT_MODERATE or EVENT_COMMENT_MODERATE resolved from stored entityType; body {moderationState: 'APPROVED'|'REJECTED'}; calls EntityCommentService.moderate(); recomputes posts.comments if POST — AC-19, AC-20), DELETE /api/v1/admin/comments/:commentId (soft-delete any comment — AC-21), DELETE /api/v1/admin/comments/:commentId/hard (permanent removal — AC-22), POST /api/v1/admin/comments/:commentId/restore (clears deletedAt — AC-23). All four require MODERATE permission resolved from entityType. Use ResponseFactory for consistent 200/204 responses. Key files: apps/api/src/routes/admin/comments/comments.route.ts (cont.), apps/api/src/routes/admin/comments/index.ts. Acceptance: AC-19, AC-20, AC-21, AC-22, AC-23.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-013", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Create PATCH /admin/comments/:id/moderation with counter sync",
+                    "completed": false
+                },
+                { "title": "Create DELETE /admin/comments/:id (soft-delete)", "completed": false },
+                {
+                    "title": "Create DELETE /admin/comments/:id/hard (permanent)",
+                    "completed": false
+                },
+                { "title": "Create POST /admin/comments/:id/restore", "completed": false }
+            ],
+            "tags": ["api", "admin", "moderation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Integration tests — all endpoint groups (AC-37)",
+            "description": "Write Vitest integration tests in apps/api/test/e2e/comments/ against the test DB. Cover all AC-8 through AC-26 scenarios: public read (APPROVED only, 404 on missing entity, 200 empty array), protected write (201 with counter increment, 401 unauth, 422 content too long, 429 rate limit, 204 soft-delete own, 403 soft-delete other), admin (recent feed auth, 403 without VIEW perms, moderation state update with counter adjustment, soft-delete any, hard-delete, restore). Use seeded test actors: TOURIST (has _CREATE), EDITOR (has all six), anonymous (no session). Verify posts.comments counter state after each write operation (AC-24, AC-25). Key files: apps/api/test/e2e/comments/public-comments.test.ts, apps/api/test/e2e/comments/protected-comments.test.ts, apps/api/test/e2e/comments/admin-comments.test.ts. Acceptance: AC-37 (all AC-8 through AC-26 have a corresponding test case passing).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-011"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Integration tests for public endpoints (AC-8, AC-9, AC-10)",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests for protected write + rate limit (AC-11 through AC-16)",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests for admin feed + list + getById (AC-17, AC-18)",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests for moderation + counter integrity (AC-19 through AC-26)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "tests", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add comments.* translation keys to es, en, pt locale files",
+            "description": "Add a 'comments' namespace to packages/i18n/src/locales/es/comments.ts (or equivalent locale file structure — follow the existing pattern for other namespaces). Keys to add: thread.header, thread.empty ('Sé el primero en comentar' / 'Be the first to comment' / 'Seja o primeiro a comentar'), form.placeholder, form.submit, form.submitting, form.error_network, form.error_rate_limit ('Demasiados comentarios, esperá un momento.' / equivalents), form.error_auth_cta, form.char_count, moderation.approved, moderation.rejected, moderation.pending, actions.approve, actions.reject, actions.delete, actions.restore, actions.hard_delete, card_h.title, card_h.empty, list.filters.entity_type, list.filters.moderation_state. Export from packages/i18n/src/locales/index.ts if needed. All three locales must have all keys (AC-35). Key files: packages/i18n/src/locales/es/comments.ts, packages/i18n/src/locales/en/comments.ts, packages/i18n/src/locales/pt/comments.ts. Acceptance: AC-35 (no missing key visible in any locale).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-014", "T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Add es locale comments.* keys (all keys listed above)",
+                    "completed": false
+                },
+                { "title": "Add en locale comments.* keys", "completed": false },
+                { "title": "Add pt locale comments.* keys", "completed": false },
+                {
+                    "title": "Export namespace from i18n index if required by package conventions",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Web comment thread component (Astro + React island) for post detail page",
+            "description": "Create the comment thread infrastructure for the post detail page (apps/web/src/pages/blog/[slug].astro or equivalent). Work: (1) CommentThread.astro — static container that renders the thread section below post content; fetches initial comments via SSR from GET /api/v1/public/posts/:postId/comments; shows skeleton placeholder while loading. (2) CommentList.tsx (React island, client:visible) — renders APPROVED comments sorted oldest-first with optimistic update after submit; shows empty state ('Sé el primero en comentar') when zero comments (AC-30 equivalent for posts). (3) CommentSubmitForm.tsx (React island, client:visible) — authenticated users see submit form; guests see login CTA (AC-29); on submit calls POST /protected/posts/:postId/comments; inline error on network failure (form content preserved); rate-limit 429 shows 'Demasiados comentarios' message (AC-28). Styling: CSS Modules (*.module.css). i18n: all strings via comments.* keys from T-013. Key files: apps/web/src/components/comments/CommentThread.astro, CommentList.tsx, CommentList.module.css, CommentSubmitForm.tsx, CommentSubmitForm.module.css. Acceptance: AC-27, AC-28, AC-29.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-008", "T-009", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Create CommentThread.astro with SSR initial fetch",
+                    "completed": false
+                },
+                {
+                    "title": "Create CommentList.tsx React island with optimistic update + empty state",
+                    "completed": false
+                },
+                {
+                    "title": "Create CommentSubmitForm.tsx with auth CTA, error states, rate-limit feedback",
+                    "completed": false
+                },
+                { "title": "Add CSS Modules for both React components", "completed": false },
+                { "title": "Wire i18n strings from comments.* namespace", "completed": false }
+            ],
+            "tags": ["web", "frontend", "react"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Web comment thread on event detail page (reuse thread component)",
+            "description": "Wire the CommentThread component (built in T-014) into the event detail page (apps/web/src/pages/events/[slug].astro or equivalent). The component must be parametrized by entityType ('EVENT') and entityId. SSR initial fetch uses GET /api/v1/public/events/:eventId/comments. Submit form calls POST /protected/events/:eventId/comments (EVENT_COMMENT_CREATE gate). No counter update needed for events (AC-26 — events table has no comments field). Empty state: same 'Sé el primero en comentar' message (AC-30 — for events). Verify the thread component accepts both POST and EVENT entity types without code duplication. Key files: apps/web/src/pages/events/[slug].astro (or equivalent event detail page), apps/web/src/components/comments/CommentThread.astro (parametrize if needed). Acceptance: AC-30 (empty state for event with zero comments), AC-26 (no event table modification on submit).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Parametrize CommentThread.astro to accept entityType + entityId props",
+                    "completed": false
+                },
+                {
+                    "title": "Wire CommentThread into event detail page with entityType='EVENT'",
+                    "completed": false
+                },
+                {
+                    "title": "Verify submit form calls /protected/events/:eventId/comments endpoint",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Upgrade Admin EDITOR card H from placeholder to live feed",
+            "description": "Edit apps/admin/src/lib/dashboard-sources/editor.ts — card H source definition. Replace the deferred placeholder with a live data source that calls GET /api/v1/admin/comments/recent (pageSize=10). Render each item as: entity type badge (POST/EVENT), content excerpt (truncated ~80 chars), author name, moderationState badge (APPROVED/PENDING/REJECTED color-coded), relative timestamp. Use TanStack Query for data fetching with appropriate stale time. Apply onMissing:'hide' gating on POST_COMMENT_VIEW AND EVENT_COMMENT_VIEW (card must be invisible when the acting user lacks either permission — AC-31 gate, pattern from SPEC-155 IA config). Empty state when no comments exist (AC-32). Key files: apps/admin/src/lib/dashboard-sources/editor.ts, apps/admin/src/components/dashboard/cards/CommentsFeedCard.tsx (new), relevant Tailwind CSS. Acceptance: AC-31, AC-32.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-013"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Update editor.ts card H source to call /admin/comments/recent",
+                    "completed": false
+                },
+                {
+                    "title": "Create CommentsFeedCard.tsx with item rendering (badge, excerpt, author, state, time)",
+                    "completed": false
+                },
+                {
+                    "title": "Apply onMissing:'hide' permission gate for POST_COMMENT_VIEW+EVENT_COMMENT_VIEW",
+                    "completed": false
+                },
+                { "title": "Add empty state when no comments (AC-32)", "completed": false }
+            ],
+            "tags": ["admin", "dashboard", "SPEC-155"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Admin moderation queue page (/admin/comments)",
+            "description": "Create the admin moderation queue route at apps/admin/src/routes/_authed/comments/index.tsx (TanStack Start file-based routing). Components: filter bar (entityType select, moderationState select, date range, free-text search), paginated table (TanStack Table) with columns: entity type + link, content excerpt, author, moderation state badge, created at, actions column. Inline actions per row: Approve button (calls PATCH .../moderation {moderationState:'APPROVED'}), Reject button (calls PATCH .../moderation {moderationState:'REJECTED'}), Soft-delete button (calls DELETE .../), with confirmation dialog for hard-delete. TanStack Query for data fetching (useQuery + useMutation). On mutation success, invalidate the comments list query (optimistic or refetch — AC-34). beforeLoad guard: requires POST_COMMENT_VIEW OR EVENT_COMMENT_VIEW (redirect to forbidden if neither). Shadcn UI components (Table, Badge, Button, Dialog, Select). Tailwind CSS v4 styling. i18n strings from comments.* namespace (T-013). Key files: apps/admin/src/routes/_authed/comments/index.tsx, apps/admin/src/components/comments/CommentsTable.tsx, CommentsFilters.tsx. Acceptance: AC-33, AC-34.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create /admin/comments route file with beforeLoad guard",
+                    "completed": false
+                },
+                {
+                    "title": "Build CommentsFilters component (entityType, moderationState, date, search)",
+                    "completed": false
+                },
+                {
+                    "title": "Build CommentsTable with TanStack Table + inline Approve/Reject/Delete actions",
+                    "completed": false
+                },
+                {
+                    "title": "Wire TanStack Query mutations with list invalidation on success (AC-34)",
+                    "completed": false
+                },
+                { "title": "Add confirmation dialog for hard-delete action", "completed": false }
+            ],
+            "tags": ["admin", "moderation", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Admin comment detail page (/admin/comments/:id)",
+            "description": "Create the comment detail route at apps/admin/src/routes/_authed/comments/$commentId.tsx. Page sections: (1) full comment content display (no truncation), (2) author info panel (name, link to /admin/users/:id), (3) entity panel (type badge, link to the post or event), (4) metadata: moderationState badge, createdAt, updatedAt (lightweight moderation history using updatedAt + updatedById — no separate audit table in MVP). Action buttons: Approve (PATCH moderation), Reject (PATCH moderation), Soft-delete (DELETE), Restore (POST restore — only visible if deletedAt is set), Hard-delete (DELETE .../hard — with confirmation dialog). beforeLoad guard: requires POST_COMMENT_VIEW or EVENT_COMMENT_VIEW (resolved from stored entityType; use a shared permission helper). TanStack Query for data fetch (useQuery on GET /admin/comments/:id) and mutations. Shadcn UI (Card, Button, Badge, Dialog, Separator). Tailwind CSS v4. i18n strings from comments.* namespace. Key files: apps/admin/src/routes/_authed/comments/$commentId.tsx, apps/admin/src/components/comments/CommentDetailPanel.tsx. Acceptance: full display of AC-17 response fields, all moderation actions available inline.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create $commentId.tsx route with beforeLoad guard",
+                    "completed": false
+                },
+                {
+                    "title": "Build CommentDetailPanel with full content + author + entity sections",
+                    "completed": false
+                },
+                {
+                    "title": "Wire all moderation action buttons (Approve/Reject/Soft-delete/Restore/Hard-delete)",
+                    "completed": false
+                },
+                { "title": "Add confirmation dialog for hard-delete", "completed": false }
+            ],
+            "tags": ["admin", "moderation", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 17,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 3.1
+    }
+}
