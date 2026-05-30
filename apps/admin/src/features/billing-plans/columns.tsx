@@ -47,10 +47,15 @@ export function getPlanColumns(
             cell: ({ row }) => {
                 // Description is sourced from packages/billing/src/config/plans.config.ts
                 // in English. Translate via i18n keyed by plan slug, fall back to the
-                // source-defined string when no translation is registered.
+                // DB-stored description when no translation is registered. The `t()`
+                // helper returns `[MISSING: <key>]` (not the bare key) for unknown
+                // keys, so admin-created plans — which have no static i18n entry —
+                // must fall back to `row.description` to avoid showing the raw marker.
                 const i18nKey = `admin-billing.plans.descriptions.${row.slug}`;
                 const translated = t(i18nKey);
-                const description = translated === i18nKey ? row.description : translated;
+                const description = translated.startsWith('[MISSING:')
+                    ? row.description
+                    : translated;
                 return (
                     <div>
                         <div className="font-medium">{row.name}</div>
