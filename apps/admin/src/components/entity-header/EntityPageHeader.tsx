@@ -423,59 +423,70 @@ export function EntityPageHeader({
                 data-testid="entity-page-header"
                 data-reduced={isReduced}
             >
-                {/* ---- Main row: media + info + actions ---- */}
+                {/* ---- Main row: title-group + actions ---- */}
+                {/* On phones the action set wraps to a second row so the title */}
+                {/* has full width to breathe instead of being squashed next to 4 */}
+                {/* labelled buttons. Reduced mode stays single-row to keep the */}
+                {/* compact strip compact (sm+ everywhere). */}
                 <div
                     className={cn(
-                        'flex items-center gap-3',
-                        isReduced ? 'px-6 py-3' : 'px-4 py-3 sm:px-5 sm:py-4'
+                        'flex gap-3',
+                        isReduced
+                            ? 'items-center px-6 py-3'
+                            : 'flex-col items-stretch px-4 py-3 sm:px-5 sm:py-4 md:flex-row md:items-center'
                     )}
                 >
-                    {/* ---- Media (thumbnail / avatar) ---- */}
-                    {media && (
-                        <HeaderMedia
-                            media={media}
-                            title={title}
-                            isReduced={isReduced}
-                        />
-                    )}
-
-                    {/* ---- Entity info ---- */}
-                    <div className="min-w-0 flex-1">
-                        <h1
-                            className={cn(
-                                'truncate font-heading font-semibold text-foreground leading-tight',
-                                isReduced ? 'text-base' : 'text-xl sm:text-2xl'
-                            )}
-                        >
-                            {title}
-                        </h1>
-
-                        {/* Subtitle + badges — hidden in reduced mode */}
-                        {!isReduced && (
-                            <>
-                                {subtitle && (
-                                    <p className="mt-0.5 truncate text-muted-foreground text-sm">
-                                        {subtitle}
-                                    </p>
-                                )}
-                                {badges && (
-                                    <div
-                                        className="mt-1.5 flex flex-wrap items-center gap-1.5"
-                                        data-testid="header-badges"
-                                    >
-                                        {badges}
-                                    </div>
-                                )}
-                            </>
+                    {/* ---- Title group: media + entity info ---- */}
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                        {/* ---- Media (thumbnail / avatar) ---- */}
+                        {media && (
+                            <HeaderMedia
+                                media={media}
+                                title={title}
+                                isReduced={isReduced}
+                            />
                         )}
+
+                        {/* ---- Entity info ---- */}
+                        <div className="min-w-0 flex-1">
+                            <h1
+                                className={cn(
+                                    'truncate font-heading font-semibold text-foreground leading-tight',
+                                    isReduced ? 'text-base' : 'text-xl sm:text-2xl'
+                                )}
+                            >
+                                {title}
+                            </h1>
+
+                            {/* Subtitle + badges — hidden in reduced mode */}
+                            {!isReduced && (
+                                <>
+                                    {subtitle && (
+                                        <p className="mt-0.5 truncate text-muted-foreground text-sm">
+                                            {subtitle}
+                                        </p>
+                                    )}
+                                    {badges && (
+                                        <div
+                                            className="mt-1.5 flex flex-wrap items-center gap-1.5"
+                                            data-testid="header-badges"
+                                        >
+                                            {badges}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {/* ---- Right side: quality score + extras + actions ---- */}
-                    {/* When reduced, nudge the actions down a touch (`mt-1`) so the buttons */}
-                    {/* don't feel glued to the bar's top edge in the slim chrome state. */}
+                    {/* Phones stack this below the title group with end alignment so */}
+                    {/* the action set sits flush right; sm+ goes inline. When reduced, */}
+                    {/* nudge the actions down a touch so they don't feel glued to */}
+                    {/* the top edge of the slim chrome. */}
                     <div
                         className={cn(
-                            'flex flex-none items-center gap-2 sm:gap-3',
+                            'flex flex-none flex-wrap items-center justify-end gap-2 sm:gap-3',
                             isReduced && 'mt-1'
                         )}
                     >
