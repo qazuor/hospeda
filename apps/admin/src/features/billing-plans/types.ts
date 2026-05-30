@@ -29,6 +29,10 @@ export interface ParsedPlanRecord {
     readonly limits: readonly { readonly key: string; readonly value: number }[];
     readonly createdAt: string;
     readonly updatedAt: string;
+    /** Whether the plan is soft-deleted (admin list only) */
+    readonly isDeleted: boolean;
+    /** Count of live subscribers (active/trialing) referencing the plan */
+    readonly activeSubscriptionCount: number;
 }
 
 /**

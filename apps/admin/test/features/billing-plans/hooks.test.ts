@@ -19,7 +19,7 @@ import { server } from '../../mocks/server';
 
 const API_BASE = 'http://localhost:3001';
 
-/** Minimal valid BillingPlanResponse fixture */
+/** Minimal valid AdminBillingPlanResponse fixture (admin list shape, SPEC-168) */
 const validPlanRecord = {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     slug: 'owner-basico',
@@ -37,7 +37,10 @@ const validPlanRecord = {
     limits: { max_accommodations: 5, max_photos: 20 },
     isActive: true,
     createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-15T00:00:00.000Z'
+    updatedAt: '2024-01-15T00:00:00.000Z',
+    // Admin list-only fields (SPEC-168)
+    isDeleted: false,
+    activeSubscriptionCount: 3
 };
 
 /** Valid API list envelope */

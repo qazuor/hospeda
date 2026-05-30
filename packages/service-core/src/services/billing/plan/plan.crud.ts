@@ -29,7 +29,7 @@ import {
     withTransaction
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import type { BillingPlanResponse } from '@repo/schemas';
+import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 
@@ -90,13 +90,20 @@ export function mapDbToPlan(
 /**
  * Lists billing plans with optional filters and pagination.
  *
- * Excludes soft-deleted plans (`deletedAt IS NOT NULL`).
- * Orders by `metadata->>'sortOrder'` ascending (cast to integer), then by
- * `name` ascending as a secondary sort for stability.
+ * By default excludes soft-deleted plans (`deletedAt IS NOT NULL`); pass
+ * `includeDeleted: true` to include them. Orders by `metadata->>'sortOrder'`
+ * ascending (cast to integer), then by `name` ascending as a secondary sort
+ * for stability.
+ *
+ * Each returned item is an {@link AdminBillingPlanResponse}: the base plan DTO
+ * plus `isDeleted` and `activeSubscriptionCount`. The subscription count is the
+ * number of subscriptions referencing the plan whose status is `active` or
+ * `trialing` and that are not soft-deleted, resolved with a SINGLE grouped
+ * query over all listed plan ids.
  *
  * @param filters - Filter and pagination options
  * @param ctx - Optional query context carrying a transaction client
- * @returns Paginated plan list or error
+ * @returns Paginated admin plan list or error
  *
  * @example
  * ```ts
@@ -109,9 +116,14 @@ export function mapDbToPlan(
 export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryContext) {
     try {
         const db = ctx?.tx ?? getDb();
-        const { page = 1, pageSize = 20, category, active, search } = filters;
+        const { page = 1, pageSize = 20, category, active, search, includeDeleted } = filters;
 
-        const conditions = [isNull(billingPlans.deletedAt)];
+        const conditions = [];
+
+        // Exclude soft-deleted plans unless the caller explicitly opts in.
+        if (!includeDeleted) {
+            conditions.push(isNull(billingPlans.deletedAt));
+        }
 
         if (category !== undefined) {
             conditions.push(sql`${billingPlans.metadata}->>'category' = ${category}`);
@@ -156,7 +168,7 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             return {
                 success: true as const,
                 data: {
-                    items: [] as BillingPlanResponse[],
+                    items: [] as AdminBillingPlanResponse[],
                     pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) }
                 }
             };
@@ -186,7 +198,40 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             pricesByPlanId.set(price.planId, existing);
         }
 
-        const items = planRows.map((row) => mapDbToPlan(row, pricesByPlanId.get(row.id) ?? []));
+        // Count live subscribers (status active/trialing, not soft-deleted) for
+        // all listed plans in a SINGLE grouped query, mirroring the prices fetch
+        // above. The plan UUID is stored as a varchar in billing_subscriptions.
+        const subscriptionCountRows = await db
+            .select({
+                planId: billingSubscriptions.planId,
+                value: count()
+            })
+            .from(billingSubscriptions)
+            .where(
+                and(
+                    sql`${billingSubscriptions.planId} = ANY(ARRAY[${sql.join(
+                        planIds.map((id) => sql`${id}`),
+                        sql`, `
+                    )}]::text[])`,
+                    sql`${billingSubscriptions.status} IN ('active', 'trialing')`,
+                    isNull(billingSubscriptions.deletedAt)
+                )
+            )
+            .groupBy(billingSubscriptions.planId);
+
+        const subCountByPlanId = new Map<string, number>();
+        for (const sub of subscriptionCountRows) {
+            subCountByPlanId.set(sub.planId, sub.value);
+        }
+
+        const items: AdminBillingPlanResponse[] = planRows.map((row) => {
+            const base = mapDbToPlan(row, pricesByPlanId.get(row.id) ?? []);
+            return {
+                ...base,
+                isDeleted: row.deletedAt != null,
+                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0
+            };
+        });
 
         return {
             success: true as const,

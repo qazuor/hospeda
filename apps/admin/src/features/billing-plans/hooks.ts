@@ -1,6 +1,6 @@
 import { fetchApi } from '@/lib/api/client';
 import { ApiError, reportError } from '@/lib/errors';
-import { BillingPlanResponseSchema } from '@repo/schemas';
+import { AdminBillingPlanResponseSchema, BillingPlanResponseSchema } from '@repo/schemas';
 import type { BillingPlanResponse } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
@@ -21,18 +21,20 @@ const PlanListResponseSchema = z.object({
 });
 
 /**
- * Transform a raw API record (BillingPlanResponse shape) to a ParsedPlanRecord.
+ * Transform a raw API record (AdminBillingPlanResponse shape) to a ParsedPlanRecord.
  *
- * Validates the record against BillingPlanResponseSchema and surfaces schema
- * mismatches as a 502 ApiError to the query layer, consistent with the
- * project's error-boundary convention for malformed server responses.
+ * Validates the record against AdminBillingPlanResponseSchema — the admin list
+ * route returns the base plan plus `isDeleted` and `activeSubscriptionCount` —
+ * and surfaces schema mismatches as a 502 ApiError to the query layer,
+ * consistent with the project's error-boundary convention for malformed
+ * server responses.
  *
  * @param record - Raw unknown value from the API items array.
  * @returns Typed ParsedPlanRecord.
- * @throws ApiError(502) when the record does not match BillingPlanResponseSchema.
+ * @throws ApiError(502) when the record does not match AdminBillingPlanResponseSchema.
  */
 function transformPlanRecord(record: unknown): ParsedPlanRecord {
-    const parseResult = BillingPlanResponseSchema.safeParse(record);
+    const parseResult = AdminBillingPlanResponseSchema.safeParse(record);
 
     if (!parseResult.success) {
         const apiError = new ApiError('Plan record failed schema validation', {
@@ -68,7 +70,9 @@ function transformPlanRecord(record: unknown): ParsedPlanRecord {
         // Convert Record<string, number> → { key, value }[] for DataTable
         limits: Object.entries(p.limits).map(([key, value]) => ({ key, value })),
         createdAt: p.createdAt,
-        updatedAt: p.updatedAt
+        updatedAt: p.updatedAt,
+        isDeleted: p.isDeleted,
+        activeSubscriptionCount: p.activeSubscriptionCount
     };
 }
 
@@ -215,6 +219,32 @@ async function deletePlan(id: string): Promise<void> {
 }
 
 /**
+ * Restore a soft-deleted plan by UUID.
+ *
+ * POST /api/v1/admin/billing/plans/{id}/restore
+ */
+async function restorePlan(id: string): Promise<void> {
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/billing/plans/${id}/restore`,
+        method: 'POST'
+    });
+}
+
+/**
+ * Permanently delete a plan by UUID.
+ *
+ * DELETE /api/v1/admin/billing/plans/{id}/hard. The API returns 409 when the
+ * plan is still referenced by subscriptions; that surfaces as an ApiError with
+ * `status === 409`, which the calling hook maps to a specific toast.
+ */
+async function hardDeletePlan(id: string): Promise<void> {
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/billing/plans/${id}/hard`,
+        method: 'DELETE'
+    });
+}
+
+/**
  * Hook to fetch plans with optional filters.
  *
  * Returns the parsed list of plans from BillingPlanResponse-shaped records.
@@ -291,6 +321,41 @@ export const useDeletePlanMutation = () => {
 
     return useMutation({
         mutationFn: (id: string) => deletePlan(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: planQueryKeys.plans.lists() });
+        }
+    });
+};
+
+/**
+ * Hook to restore a soft-deleted plan by UUID.
+ *
+ * On success invalidates the list query so the restored plan reappears in the
+ * non-deleted view.
+ */
+export const useRestorePlanMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => restorePlan(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: planQueryKeys.plans.lists() });
+        }
+    });
+};
+
+/**
+ * Hook to permanently delete a plan by UUID.
+ *
+ * On success invalidates the list query. A 409 from the API (plan still
+ * referenced by subscriptions) propagates as an ApiError so the caller can
+ * show a specific "blocked" toast; the list is left untouched in that case.
+ */
+export const useHardDeletePlanMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => hardDeletePlan(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: planQueryKeys.plans.lists() });
         }

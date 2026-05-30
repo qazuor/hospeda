@@ -3,15 +3,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCentsToArs } from '@/lib/format-helpers';
 import { defaultIntlLocale } from '@repo/i18n';
-import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
+import { DeleteIcon, EditIcon, PowerIcon, RotateCcwIcon } from '@repo/icons';
 import type { ParsedPlanRecord } from './types';
 
 interface PlanColumnsOptions {
     onEdit?: (plan: ParsedPlanRecord) => void;
     onToggleActive?: (id: string, isActive: boolean) => void;
-    onDelete?: (id: string) => void;
+    /** Soft-delete a non-deleted plan. Receives the full row so the caller can show subscriber impact. */
+    onDelete?: (plan: ParsedPlanRecord) => void;
+    /** Restore a soft-deleted plan. */
+    onRestore?: (plan: ParsedPlanRecord) => void;
+    /** Permanently delete a soft-deleted plan. */
+    onHardDelete?: (plan: ParsedPlanRecord) => void;
     isTogglingActive?: boolean;
     isDeleting?: boolean;
+    isRestoring?: boolean;
+    isHardDeleting?: boolean;
     /** Translation function from useTranslations hook */
     t: (key: string) => string;
     /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
@@ -31,8 +38,12 @@ export function getPlanColumns(
         onEdit,
         onToggleActive,
         onDelete,
+        onRestore,
+        onHardDelete,
         isTogglingActive,
         isDeleting,
+        isRestoring,
+        isHardDeleting,
         t,
         locale = defaultIntlLocale
     } = options;
@@ -164,51 +175,81 @@ export function getPlanColumns(
             header: t('admin-billing.plans.columns.actions'),
             enableSorting: false,
             enableHiding: false,
-            cell: ({ row }) => (
-                <div className="flex gap-2">
-                    {onToggleActive && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onToggleActive(row.id, !row.isActive)}
-                            disabled={isTogglingActive}
-                            title={
-                                row.isActive
+            cell: ({ row }) =>
+                // Soft-deleted rows expose only restore + permanent-delete; the
+                // toggle/edit/soft-delete actions do not apply to them.
+                row.isDeleted ? (
+                    <div className="flex gap-2">
+                        {onRestore && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onRestore(row)}
+                                disabled={isRestoring}
+                                title={t('admin-billing.plans.actionRestore')}
+                            >
+                                <RotateCcwIcon className="mr-1 h-3 w-3" />
+                                {t('admin-billing.plans.actionRestore')}
+                            </Button>
+                        )}
+                        {onHardDelete && (
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => onHardDelete(row)}
+                                disabled={isHardDeleting}
+                                title={t('admin-billing.plans.actionHardDelete')}
+                            >
+                                <DeleteIcon className="mr-1 h-3 w-3" />
+                                {t('admin-billing.plans.actionHardDelete')}
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex gap-2">
+                        {onToggleActive && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onToggleActive(row.id, !row.isActive)}
+                                disabled={isTogglingActive}
+                                title={
+                                    row.isActive
+                                        ? t('admin-billing.plans.actionDeactivate')
+                                        : t('admin-billing.plans.actionActivate')
+                                }
+                            >
+                                <PowerIcon className="mr-1 h-3 w-3" />
+                                {row.isActive
                                     ? t('admin-billing.plans.actionDeactivate')
-                                    : t('admin-billing.plans.actionActivate')
-                            }
-                        >
-                            <PowerIcon className="mr-1 h-3 w-3" />
-                            {row.isActive
-                                ? t('admin-billing.plans.actionDeactivate')
-                                : t('admin-billing.plans.actionActivate')}
-                        </Button>
-                    )}
-                    {onEdit && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(row)}
-                            title={t('admin-billing.plans.actionEdit')}
-                        >
-                            <EditIcon className="mr-1 h-3 w-3" />
-                            {t('admin-billing.plans.actionEdit')}
-                        </Button>
-                    )}
-                    {onDelete && (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onDelete(row.id)}
-                            disabled={isDeleting}
-                            title={t('admin-billing.plans.actionDelete')}
-                        >
-                            <DeleteIcon className="mr-1 h-3 w-3" />
-                            {t('admin-billing.plans.actionDelete')}
-                        </Button>
-                    )}
-                </div>
-            )
+                                    : t('admin-billing.plans.actionActivate')}
+                            </Button>
+                        )}
+                        {onEdit && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onEdit(row)}
+                                title={t('admin-billing.plans.actionEdit')}
+                            >
+                                <EditIcon className="mr-1 h-3 w-3" />
+                                {t('admin-billing.plans.actionEdit')}
+                            </Button>
+                        )}
+                        {onDelete && (
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => onDelete(row)}
+                                disabled={isDeleting}
+                                title={t('admin-billing.plans.actionDelete')}
+                            >
+                                <DeleteIcon className="mr-1 h-3 w-3" />
+                                {t('admin-billing.plans.actionDelete')}
+                            </Button>
+                        )}
+                    </div>
+                )
         }
     ];
 }

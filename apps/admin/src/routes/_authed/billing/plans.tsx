@@ -11,20 +11,27 @@ import { DataTable } from '@/components/table/DataTable';
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
     type CreatePlanPayload,
+    HardDeleteConfirmDialog,
     type ParsedPlanRecord,
     PlanDialog,
+    SoftDeleteConfirmDialog,
     getPlanColumns,
     useCreatePlanMutation,
     useDeletePlanMutation,
+    useHardDeletePlanMutation,
     usePlansQuery,
+    useRestorePlanMutation,
     useTogglePlanActiveMutation,
     useUpdatePlanMutation
 } from '@/features/billing-plans';
+import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
+import { getFriendlyErrorInfo, isApiError, reportError } from '@/lib/errors';
 import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -38,21 +45,30 @@ type PlanCategory = 'all' | 'owner' | 'complex' | 'tourist';
 
 function BillingPlansPage() {
     const { t } = useTranslations();
+    const { addToast } = useToast();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [categoryFilter, setCategoryFilter] = useState<PlanCategory>('all');
+    const [includeDeleted, setIncludeDeleted] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<ParsedPlanRecord | null>(null);
+    // Plan pending a soft-delete confirmation (shows subscriber impact).
+    const [planToSoftDelete, setPlanToSoftDelete] = useState<ParsedPlanRecord | null>(null);
+    // Plan pending a permanent-delete confirmation.
+    const [planToHardDelete, setPlanToHardDelete] = useState<ParsedPlanRecord | null>(null);
 
     // Fetch plans from the DB-backed API endpoint
     const { data, isLoading, error } = usePlansQuery({
         page,
         pageSize,
-        category: categoryFilter
+        category: categoryFilter,
+        includeDeleted
     });
 
     const toggleActiveMutation = useTogglePlanActiveMutation();
     const deleteMutation = useDeletePlanMutation();
+    const restoreMutation = useRestorePlanMutation();
+    const hardDeleteMutation = useHardDeletePlanMutation();
     const createMutation = useCreatePlanMutation();
     const updateMutation = useUpdatePlanMutation();
 
@@ -119,20 +135,112 @@ function BillingPlansPage() {
     };
 
     /**
-     * Soft-deletes a plan by UUID (D1: id-based mutations).
+     * Opens the soft-delete confirmation dialog for the given plan. The dialog
+     * surfaces the plan's live subscriber count before the destructive action.
      */
-    const handleDelete = (id: string) => {
-        if (confirm(t('admin-billing.plans.confirmDelete'))) {
-            deleteMutation.mutate(id);
-        }
+    const handleDelete = (plan: ParsedPlanRecord) => {
+        setPlanToSoftDelete(plan);
+    };
+
+    /**
+     * Confirms the pending soft-delete (D1: id-based mutations).
+     */
+    const confirmSoftDelete = () => {
+        if (!planToSoftDelete) return;
+        deleteMutation.mutate(planToSoftDelete.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastDeletedTitle'),
+                    message: t('admin-billing.plans.toastDeletedMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message:
+                        mutationError instanceof Error
+                            ? mutationError.message
+                            : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+        setPlanToSoftDelete(null);
+    };
+
+    /**
+     * Restores a soft-deleted plan by UUID.
+     */
+    const handleRestore = (plan: ParsedPlanRecord) => {
+        restoreMutation.mutate(plan.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastRestoredTitle'),
+                    message: t('admin-billing.plans.toastRestoredMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message:
+                        mutationError instanceof Error
+                            ? mutationError.message
+                            : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+    };
+
+    /**
+     * Opens the permanent-delete confirmation dialog for a soft-deleted plan.
+     */
+    const handleHardDelete = (plan: ParsedPlanRecord) => {
+        setPlanToHardDelete(plan);
+    };
+
+    /**
+     * Confirms the pending permanent-delete. A 409 from the API (plan still
+     * referenced by subscriptions) is mapped to a specific "blocked" toast.
+     */
+    const confirmHardDelete = () => {
+        if (!planToHardDelete) return;
+        hardDeleteMutation.mutate(planToHardDelete.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastHardDeletedTitle'),
+                    message: t('admin-billing.plans.toastHardDeletedMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                const blocked = isApiError(mutationError) && mutationError.status === 409;
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message: blocked
+                        ? t('admin-billing.plans.hardDeleteBlocked')
+                        : mutationError instanceof Error
+                          ? mutationError.message
+                          : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+        setPlanToHardDelete(null);
     };
 
     const columns = getPlanColumns({
         onEdit: handleEdit,
         onToggleActive: handleToggleActive,
         onDelete: handleDelete,
+        onRestore: handleRestore,
+        onHardDelete: handleHardDelete,
         isTogglingActive: toggleActiveMutation.isPending,
         isDeleting: deleteMutation.isPending,
+        isRestoring: restoreMutation.isPending,
+        isHardDeleting: hardDeleteMutation.isPending,
         t: t as (key: string) => string
     });
 
@@ -180,9 +288,11 @@ function BillingPlansPage() {
                     columns={columns}
                     isLoading={isLoading}
                     categoryFilter={categoryFilter}
+                    includeDeleted={includeDeleted}
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                     onCategoryFilterChange={setCategoryFilter}
+                    onIncludeDeletedChange={setIncludeDeleted}
                 />
 
                 <PlanDialog
@@ -191,6 +301,18 @@ function BillingPlansPage() {
                     plan={editingPlan}
                     onSubmit={handleSubmit}
                     isSubmitting={createMutation.isPending || updateMutation.isPending}
+                />
+
+                <SoftDeleteConfirmDialog
+                    plan={planToSoftDelete}
+                    onCancel={() => setPlanToSoftDelete(null)}
+                    onConfirm={confirmSoftDelete}
+                />
+
+                <HardDeleteConfirmDialog
+                    plan={planToHardDelete}
+                    onCancel={() => setPlanToHardDelete(null)}
+                    onConfirm={confirmHardDelete}
                 />
             </div>
         </SidebarPageLayout>
@@ -232,9 +354,11 @@ interface PlansTableProps {
     columns: ReadonlyArray<DataTableColumn<ParsedPlanRecord>>;
     isLoading: boolean;
     categoryFilter: PlanCategory;
+    includeDeleted: boolean;
     onPageChange: (page: number) => void;
     onPageSizeChange: (pageSize: number) => void;
     onCategoryFilterChange: (filter: PlanCategory) => void;
+    onIncludeDeletedChange: (value: boolean) => void;
 }
 
 function PlansTable({
@@ -245,15 +369,17 @@ function PlansTable({
     columns,
     isLoading,
     categoryFilter,
+    includeDeleted,
     onPageChange,
     onPageSizeChange,
-    onCategoryFilterChange
+    onCategoryFilterChange,
+    onIncludeDeletedChange
 }: PlansTableProps) {
     const { t } = useTranslations();
 
     return (
         <div className="space-y-4">
-            {/* Category filter */}
+            {/* Category filter + show-deleted toggle */}
             <div className="flex items-center gap-4">
                 <select
                     aria-label={t('admin-billing.plans.allCategories')}
@@ -266,6 +392,18 @@ function PlansTable({
                     <option value="complex">{t('admin-billing.plans.categoryComplex')}</option>
                     <option value="tourist">{t('admin-billing.plans.categoryTourist')}</option>
                 </select>
+
+                <div className="flex items-center gap-2 text-sm">
+                    <Switch
+                        id="plans-show-deleted"
+                        checked={includeDeleted}
+                        onCheckedChange={onIncludeDeletedChange}
+                        aria-label={t('admin-billing.plans.showDeleted')}
+                    />
+                    <Label htmlFor="plans-show-deleted">
+                        {t('admin-billing.plans.showDeleted')}
+                    </Label>
+                </div>
             </div>
 
             {/* Table */}

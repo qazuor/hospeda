@@ -92,6 +92,11 @@ export interface ListPlansFilters {
     readonly active?: boolean;
     /** Free-text search over slug/display name */
     readonly search?: string;
+    /**
+     * When true, soft-deleted plans (`deletedAt IS NOT NULL`) are included.
+     * Defaults to excluding them. Admin-only.
+     */
+    readonly includeDeleted?: boolean;
     /** Pagination page (1-based, default: 1) */
     readonly page?: number;
     /** Page size (default: 20) */

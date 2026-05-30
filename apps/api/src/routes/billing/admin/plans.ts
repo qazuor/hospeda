@@ -22,6 +22,7 @@
  */
 
 import {
+    AdminBillingPlanResponseSchema,
     BillingPlanResponseSchema,
     BillingPlanSearchSchema,
     CreateBillingPlanSchema,
@@ -72,12 +73,13 @@ export const adminListPlansRoute = createAdminListRoute({
     tags: ['Billing', 'Plans'],
     requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
     requestQuery: BillingPlanSearchSchema.shape,
-    responseSchema: BillingPlanResponseSchema,
+    responseSchema: AdminBillingPlanResponseSchema,
     handler: async (_c, _params, _body, query) => {
         const filters = query as {
             category?: 'owner' | 'complex' | 'tourist';
             active?: boolean;
             search?: string;
+            includeDeleted?: boolean;
             page?: number;
             pageSize?: number;
         };
@@ -88,6 +90,7 @@ export const adminListPlansRoute = createAdminListRoute({
             category: filters.category,
             active: filters.active,
             search: filters.search,
+            includeDeleted: filters.includeDeleted,
             page: filters.page ?? 1,
             pageSize: filters.pageSize ?? 20
         });

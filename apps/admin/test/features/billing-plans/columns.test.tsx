@@ -22,7 +22,14 @@ import type { ParsedPlanRecord } from '../../../src/features/billing-plans/types
  * string for known keys and `[MISSING: <key>]` for everything else.
  */
 const KNOWN_TRANSLATIONS: Record<string, string> = {
-    'admin-billing.plans.descriptions.owner-basico': 'Plan básico (traducido por i18n)'
+    'admin-billing.plans.descriptions.owner-basico': 'Plan básico (traducido por i18n)',
+    'admin-billing.plans.actionActivate': 'Activar',
+    'admin-billing.plans.actionDeactivate': 'Desactivar',
+    'admin-billing.plans.actionEdit': 'Editar',
+    'admin-billing.plans.actionDelete': 'Eliminar',
+    'admin-billing.plans.actionRestore': 'Restaurar',
+    'admin-billing.plans.actionHardDelete': 'Eliminar permanentemente',
+    'admin-billing.plans.columns.actions': 'Acciones'
 };
 const t = (key: string): string => KNOWN_TRANSLATIONS[key] ?? `[MISSING: ${key}]`;
 
@@ -46,6 +53,8 @@ function makePlan(overrides: Partial<ParsedPlanRecord>): ParsedPlanRecord {
         isActive: true,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-15T00:00:00.000Z',
+        isDeleted: false,
+        activeSubscriptionCount: 0,
         ...overrides
     };
 }
@@ -59,6 +68,23 @@ function renderNameCell(plan: ParsedPlanRecord): void {
     }
     // The cell renderer receives the record directly as `row`.
     render(nameColumn.cell({ row: plan } as never) as ReactElement);
+}
+
+/** Renders the `actions` column cell for a given plan row, wiring all callbacks. */
+function renderActionsCell(plan: ParsedPlanRecord): void {
+    const columns = getPlanColumns({
+        t,
+        onEdit: () => {},
+        onToggleActive: () => {},
+        onDelete: () => {},
+        onRestore: () => {},
+        onHardDelete: () => {}
+    });
+    const actionsColumn = columns.find((col) => col.id === 'actions');
+    if (!actionsColumn?.cell) {
+        throw new Error('actions column with a cell renderer not found');
+    }
+    render(actionsColumn.cell({ row: plan } as never) as ReactElement);
 }
 
 describe('getPlanColumns — description cell fallback (SPEC-168)', () => {
@@ -89,5 +115,41 @@ describe('getPlanColumns — description cell fallback (SPEC-168)', () => {
 
         // Assert — the translated copy wins over the raw description
         expect(screen.getByText('Plan básico (traducido por i18n)')).toBeInTheDocument();
+    });
+});
+
+describe('getPlanColumns — actions per row state (SPEC-168)', () => {
+    it('renders Restaurar + Eliminar permanentemente for a soft-deleted row, NOT toggle/edit/soft-delete', () => {
+        // Arrange — a soft-deleted plan
+        const plan = makePlan({ isDeleted: true });
+
+        // Act
+        renderActionsCell(plan);
+
+        // Assert — restore + permanent-delete present
+        expect(screen.getByText('Restaurar')).toBeInTheDocument();
+        expect(screen.getByText('Eliminar permanentemente')).toBeInTheDocument();
+        // Toggle / edit / soft-delete absent for deleted rows
+        expect(screen.queryByText('Activar')).not.toBeInTheDocument();
+        expect(screen.queryByText('Desactivar')).not.toBeInTheDocument();
+        expect(screen.queryByText('Editar')).not.toBeInTheDocument();
+        // The plain "Eliminar" (soft-delete) must NOT render; only the hard-delete label.
+        expect(screen.queryByText('Eliminar')).not.toBeInTheDocument();
+    });
+
+    it('renders toggle/edit/soft-delete for a non-deleted row, NOT restore/hard-delete', () => {
+        // Arrange — a live plan (active)
+        const plan = makePlan({ isDeleted: false, isActive: true });
+
+        // Act
+        renderActionsCell(plan);
+
+        // Assert — standard actions present
+        expect(screen.getByText('Desactivar')).toBeInTheDocument();
+        expect(screen.getByText('Editar')).toBeInTheDocument();
+        expect(screen.getByText('Eliminar')).toBeInTheDocument();
+        // Deleted-row actions absent
+        expect(screen.queryByText('Restaurar')).not.toBeInTheDocument();
+        expect(screen.queryByText('Eliminar permanentemente')).not.toBeInTheDocument();
     });
 });

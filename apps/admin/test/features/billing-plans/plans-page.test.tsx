@@ -35,7 +35,9 @@ const existingPlan: ParsedPlanRecord = {
     limits: [{ key: 'max_accommodations', value: 5 }],
     isActive: true,
     createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-15T00:00:00.000Z'
+    updatedAt: '2024-01-15T00:00:00.000Z',
+    isDeleted: false,
+    activeSubscriptionCount: 0
 };
 
 describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {

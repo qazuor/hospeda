@@ -193,6 +193,12 @@ export const BillingPlanSearchSchema = z.object({
     active: queryBooleanParam(),
     /** Free-text search over slug/name */
     search: z.string().optional(),
+    /**
+     * When true, soft-deleted plans (`deletedAt IS NOT NULL`) are included in
+     * the result. Defaults to excluding them. Admin-only — the public endpoint
+     * never sets this.
+     */
+    includeDeleted: queryBooleanParam(),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20)
 });
@@ -247,3 +253,27 @@ export const BillingPlanResponseSchema = z.object({
 
 /** TypeScript type inferred from {@link BillingPlanResponseSchema} */
 export type BillingPlanResponse = z.infer<typeof BillingPlanResponseSchema>;
+
+/**
+ * Admin-only response schema for a billing plan.
+ *
+ * Extends {@link BillingPlanResponseSchema} with operational fields that MUST
+ * NOT leak to the public endpoint:
+ * - `isDeleted` — whether the plan is soft-deleted (`deletedAt IS NOT NULL`).
+ * - `activeSubscriptionCount` — number of live subscribers (status `active` or
+ *   `trialing`, not soft-deleted) referencing the plan.
+ *
+ * This DTO is used ONLY by the admin list route so the admin UI can surface
+ * subscriber impact before destructive actions. The base
+ * {@link BillingPlanResponseSchema} stays free of these fields because it is
+ * shared with the public plans endpoint.
+ */
+export const AdminBillingPlanResponseSchema = BillingPlanResponseSchema.extend({
+    /** Whether the plan is soft-deleted (`deletedAt IS NOT NULL`) */
+    isDeleted: z.boolean(),
+    /** Count of live subscribers (status active/trialing, not soft-deleted) */
+    activeSubscriptionCount: z.number().int().nonnegative()
+});
+
+/** TypeScript type inferred from {@link AdminBillingPlanResponseSchema} */
+export type AdminBillingPlanResponse = z.infer<typeof AdminBillingPlanResponseSchema>;
