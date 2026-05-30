@@ -128,7 +128,7 @@ const result = await accommodationsApi.getBySlug({ slug });
 if (!result.ok || !result.data) return new Response(null, { status: 404 });
 
 const rawAccommodation = result.data as Record<string, unknown>;
-const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation });
+const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
 
 // Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
 const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');

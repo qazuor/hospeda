@@ -539,6 +539,20 @@ export interface DetailFaq {
 }
 
 /**
+ * Type alias used by AmenitiesGrid.astro.
+ * Mirrors {@link DetailAmenity} — name has been pre-resolved to a plain string
+ * by the transform layer (SPEC-172 PR4: amenity.name is an i18n object in the API).
+ */
+export type AccommodationAmenityItem = DetailAmenity;
+
+/**
+ * Type alias used by FeaturesGrid.astro.
+ * Mirrors {@link DetailFeature} — name has been pre-resolved to a plain string
+ * by the transform layer (SPEC-172 PR4: feature.name is an i18n object in the API).
+ */
+export type AccommodationFeatureItem = DetailFeature;
+
+/**
  * Typed data shape for the accommodation detail page.
  * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
  */
