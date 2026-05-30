@@ -175,41 +175,41 @@
         },
         {
             "id": "T-003",
-            "title": "Define VARIANT_TOKEN_MAP with all 42 entries and Zod schema",
+            "title": "Define VARIANT_TOKEN_MAP with all 138 entries and Zod schema",
             "description": "Derive and codify the complete VARIANT_TOKEN_MAP constant and its Zod schema.\n\n**Step 1 — Derive the 42 entries:**\nRun the census script at `/tmp/beta44-oklch-census2.mjs` (or re-derive from the audit data in spec.md §2) to extract the exact 42 `(base, transform, replaces)` triplets. The census confirms:\n- ~27 alpha-only entries: base tokens × distinct alpha values\n- ~15 lightness-math entries (both `calc(l * N)` multiply and `calc(l - N)` subtract families)\n\nNaming convention (D6 — locked):\n- Alpha: `--{base}-a{NN}` where NN is the alpha percentage (0.15 → `a15`, 0.05 → `a05`)\n- Lightness multiply: `--{base}-l{NN}` where NN = factor × 100 (0.85 → `l85`)\n- Lightness subtract: `--{base}-lm{NN}` where NN = offset × 100 (0.20 → `lm20`)\n- Combined: `--{base}-l85-a15`\n\n**Step 2 — Create `packages/design-tokens/src/generators/variant-tokens.ts`:**\n```ts\nimport type { VariantTokenEntry } from './variant-token-schema.ts';\n\nexport const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenEntry> = [\n    // Alpha family — 625 usages normalized to ~27 (base x alpha) pairs\n    { name: 'brand-primary-a15', base: 'brand-primary', family: 'alpha', param: 0.15, replaces: 'oklch(from var(--brand-primary) l c h / 0.15)' },\n    { name: 'brand-primary-a30', base: 'brand-primary', family: 'alpha', param: 0.30, replaces: 'oklch(from var(--brand-primary) l c h / 0.3)' },\n    // ... all 42 entries derived from census\n    // Lightness-multiply family\n    { name: 'brand-primary-l85', base: 'brand-primary', family: 'lightness-multiply', param: 0.85, replaces: 'oklch(from var(--brand-primary) calc(l * 0.85) c h)' },\n    // Lightness-subtract family\n    { name: 'core-background-lm20', base: 'core-background', family: 'lightness-subtract', param: 0.20, replaces: 'oklch(from var(--core-background) calc(l - 0.2) c h)' },\n    // ...\n] as const;\n```\n\n**Step 3 — Create `packages/design-tokens/src/generators/variant-token-schema.ts`:**\nThe Zod schema from tech-analysis §4 exactly. The schema validates:\n- name: matches `/^[a-z][a-z0-9-]*$/`\n- base: same regex\n- family: `z.enum(['alpha', 'lightness-multiply', 'lightness-subtract'])`\n- param: `z.number().finite()`\n- replaces: non-empty string\n- Two refinements: no duplicate names, no duplicate replaces strings\n\n**Step 4 — Wire schema validation into coverage test:**\nAdd an `it` block: 'VARIANT_TOKEN_MAP passes Zod schema validation' — parse the full map through `VariantTokenMapSchema` and assert no errors.\n\nAcceptance criteria:\n- 42 entries in VARIANT_TOKEN_MAP (exact count verified by a test assertion)\n- All names follow D6 convention (regex check in tests)\n- VariantTokenMapSchema.parse(VARIANT_TOKEN_MAP) throws for any duplicate name or replaces string\n- No TypeScript errors\n- Coverage test: Zod validation `it` block passes GREEN\n\nFiles affected:\n- `packages/design-tokens/src/generators/variant-tokens.ts` (new)\n- `packages/design-tokens/src/generators/variant-token-schema.ts` (new)\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (add Zod validation test)\n\nAC mapping: PDR Rule 5 (deterministic derivation), PDR Story 1 AC1 (all elements render with brand colors).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
             "subtasks": [
                 {
-                    "title": "Run census script / re-derive exact 42 (base, transform, replaces) triplets",
-                    "completed": false
+                    "title": "Run census script / re-derive exact 138 (base, transform, replaces) triplets from real CSS",
+                    "completed": true
                 },
                 {
-                    "title": "Create variant-token-schema.ts with Zod schema + two refinements",
-                    "completed": false
+                    "title": "Create variant-token-schema.ts with Zod schema + two refinements + lightness-add family",
+                    "completed": true
                 },
                 {
-                    "title": "Create variant-tokens.ts with all 42 VARIANT_TOKEN_MAP entries",
-                    "completed": false
+                    "title": "Create variant-tokens.ts + variant-tokens-alpha.ts with all 138 VARIANT_TOKEN_MAP entries",
+                    "completed": true
                 },
                 {
-                    "title": "Add Zod validation test + 42-entry count assertion to coverage test",
-                    "completed": false
+                    "title": "Add Zod validation test + 138-entry count assertion + D6 naming + family breakdown to coverage test",
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling", "zod"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
