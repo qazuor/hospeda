@@ -13,16 +13,22 @@ import {
  */
 
 /**
- * Create feature-specific entity fields
+ * Create feature-specific entity fields.
+ * name and description are I18nText objects ({es, en, pt}).
+ * All locales default to the same Spanish value as a placeholder.
  */
-const createFeatureEntityFields = () => ({
-    slug: faker.lorem.slug(3),
-    name: faker.lorem.words({ min: 2, max: 5 }).slice(0, 100),
-    description: faker.lorem.paragraph().slice(0, 500),
-    icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
-    isBuiltin: faker.datatype.boolean(),
-    isFeatured: faker.datatype.boolean()
-});
+const createFeatureEntityFields = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 5 }).slice(0, 100);
+    const descEs = faker.lorem.paragraph().slice(0, 490);
+    return {
+        slug: faker.lorem.slug(3),
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        description: { es: descEs, en: descEs, pt: descEs },
+        icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
+        isBuiltin: faker.datatype.boolean(),
+        isFeatured: faker.datatype.boolean()
+    };
+};
 
 export const createValidFeature = () => ({
     ...createBaseIdFields(),
@@ -32,38 +38,44 @@ export const createValidFeature = () => ({
     ...createBaseAdminFields()
 });
 
-export const createMinimalFeature = () => ({
-    id: faker.string.uuid(),
-    slug: faker.lorem.slug(3),
-    name: faker.lorem.words({ min: 2, max: 3 }),
-    lifecycleState: 'ACTIVE',
-    createdAt: faker.date.past(),
-    updatedAt: faker.date.recent(),
-    createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
-});
+export const createMinimalFeature = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 3 });
+    return {
+        id: faker.string.uuid(),
+        slug: faker.lorem.slug(3),
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        lifecycleState: 'ACTIVE',
+        createdAt: faker.date.past(),
+        updatedAt: faker.date.recent(),
+        createdById: faker.string.uuid(),
+        updatedById: faker.string.uuid()
+    };
+};
 
-export const createComplexFeature = () => ({
-    ...createValidFeature(),
-    description: faker.lorem.paragraphs(2),
-    icon: 'feature-icon',
-    isBuiltin: true,
-    isFeatured: true
-});
+export const createComplexFeature = () => {
+    const descEs = faker.lorem.sentence().slice(0, 490);
+    return {
+        ...createValidFeature(),
+        description: { es: descEs, en: descEs, pt: descEs },
+        icon: 'feature-icon',
+        isBuiltin: true,
+        isFeatured: true
+    };
+};
 
 export const createFeatureEdgeCases = () => [
     // Minimum length strings
     {
         ...createMinimalFeature(),
         slug: 'abc', // minimum 3 chars
-        name: 'Wi' // minimum 2 chars
+        name: { es: 'Wi', en: 'Wi', pt: 'Wi' } // minimum 2 chars per locale
     },
     // Maximum length strings
     {
         ...createMinimalFeature(),
         slug: 'a'.repeat(100), // maximum 100 chars
-        name: 'A'.repeat(100), // maximum 100 chars
-        description: 'D'.repeat(500) // maximum 500 chars
+        name: { es: 'A'.repeat(100), en: 'A'.repeat(100), pt: 'A'.repeat(100) }, // maximum 100 chars
+        description: { es: 'D'.repeat(500), en: 'D'.repeat(500), pt: 'D'.repeat(500) } // maximum 500 chars
     },
     // All optional fields present
     {
@@ -97,12 +109,20 @@ export const createFeatureWithInvalidFields = () => [
         ...createMinimalFeature(),
         slug: 'Invalid Slug With Spaces'
     },
-    // Too long strings
+    // Too long strings — name/description are I18nText objects; each locale must violate max
     {
         ...createMinimalFeature(),
         slug: createTooLongString(101),
-        name: createTooLongString(101),
-        description: createTooLongString(501)
+        name: {
+            es: createTooLongString(101),
+            en: createTooLongString(101),
+            pt: createTooLongString(101)
+        },
+        description: {
+            es: createTooLongString(501),
+            en: createTooLongString(501),
+            pt: createTooLongString(501)
+        }
     },
     // Invalid boolean
     {
@@ -186,20 +206,28 @@ export const createMinimalFeatureCreateInput = () => {
     return input;
 };
 
-export const createValidFeatureUpdateInput = () => ({
-    name: faker.lorem.words({ min: 2, max: 5 }).slice(0, 100),
-    description: faker.lorem.paragraph().slice(0, 500),
-    icon: faker.lorem.word(),
-    isBuiltin: faker.datatype.boolean(),
-    isFeatured: faker.datatype.boolean(),
-    // TODO usar el enum
-    lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
-});
+export const createValidFeatureUpdateInput = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 5 }).slice(0, 100);
+    const descEs = faker.lorem.paragraph().slice(0, 490);
+    return {
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        description: { es: descEs, en: descEs, pt: descEs },
+        icon: faker.lorem.word(),
+        isBuiltin: faker.datatype.boolean(),
+        isFeatured: faker.datatype.boolean(),
+        // TODO usar el enum
+        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
+    };
+};
 
-export const createPartialFeatureUpdateInput = () => ({
-    name: faker.lorem.words({ min: 2, max: 3 }),
-    description: faker.lorem.sentence()
-});
+export const createPartialFeatureUpdateInput = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 3 });
+    const descEs = faker.lorem.sentence();
+    return {
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        description: { es: descEs, en: descEs, pt: descEs }
+    };
+};
 
 // ============================================================================
 // QUERY FIXTURES
@@ -236,18 +264,22 @@ export const createValidFeatureListInput = () => ({
 // ============================================================================
 
 export const createFeatureListOutput = () => {
-    const features = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
-        id: faker.string.uuid(),
-        slug: faker.lorem.slug(3),
-        name: faker.lorem.words({ min: 2, max: 5 }),
-        description: faker.lorem.paragraph().slice(0, 500),
-        icon: faker.lorem.word(),
-        isBuiltin: faker.datatype.boolean(),
-        isFeatured: faker.datatype.boolean(),
-        createdAt: faker.date.past(),
-        updatedAt: faker.date.recent(),
-        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
-    }));
+    const features = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => {
+        const nameEs = faker.lorem.words({ min: 2, max: 5 });
+        const descEs = faker.lorem.paragraph().slice(0, 490);
+        return {
+            id: faker.string.uuid(),
+            slug: faker.lorem.slug(3),
+            name: { es: nameEs, en: nameEs, pt: nameEs },
+            description: { es: descEs, en: descEs, pt: descEs },
+            icon: faker.lorem.word(),
+            isBuiltin: faker.datatype.boolean(),
+            isFeatured: faker.datatype.boolean(),
+            createdAt: faker.date.past(),
+            updatedAt: faker.date.recent(),
+            lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
+        };
+    });
 
     return createPaginatedResponse(features);
 };
@@ -292,7 +324,10 @@ export const createFeatureStatsOutput = () => ({
     mostUsedFeatures: [
         {
             id: faker.string.uuid(),
-            name: faker.lorem.words({ min: 2, max: 4 }),
+            name: (() => {
+                const n = faker.lorem.words({ min: 2, max: 4 });
+                return { es: n, en: n, pt: n };
+            })(),
             category: faker.lorem.word(),
             usageCount: faker.number.int({ min: 1, max: 100 }),
             priority: faker.number.int({ min: 0, max: 100 })

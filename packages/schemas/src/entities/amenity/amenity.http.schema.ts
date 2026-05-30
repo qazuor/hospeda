@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { i18nText } from '../../common/i18n.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -58,13 +59,14 @@ export const AmenitySearchHttpSchema = BaseHttpSearchSchema.extend({
 export type AmenitySearchHttp = z.infer<typeof AmenitySearchHttpSchema>;
 
 /**
- * HTTP-compatible amenity creation schema
- * Handles form data and JSON input for creating amenities via HTTP
+ * HTTP-compatible amenity creation schema.
+ * Accepts localized i18n objects for name and description so the admin form
+ * can submit per-language values directly.
  */
 export const AmenityCreateHttpSchema = z.object({
-    name: z.string().min(1, { message: 'zodError.amenity.name.required' }).max(100),
-    slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100),
-    description: z.string().max(1000).optional(),
+    name: i18nText({ min: 2, max: 100 }),
+    slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100).optional(),
+    description: i18nText({ min: 10, max: 500 }).optional(),
     type: AmenitiesTypeEnumSchema,
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
@@ -143,11 +145,11 @@ export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): Amenit
 });
 
 /**
- * Convert HTTP create data to domain create input
- * Maps HTTP form/JSON data to domain object with required fields
+ * Convert HTTP create data to domain create input.
+ * The admin form sends the i18n object directly; no wrapping needed.
  */
 export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityCreateInput => ({
-    // Basic amenity fields that exist in domain schema
+    // name and description are already I18nText objects from the HTTP form
     name: httpData.name,
     slug: httpData.slug,
     description: httpData.description,
@@ -165,11 +167,12 @@ export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityC
 });
 
 /**
- * Convert HTTP update data to domain update input
- * Maps HTTP PATCH data to domain object (all fields optional for updates)
+ * Convert HTTP update data to domain update input.
+ * The admin form sends the i18n object directly; no wrapping needed.
  */
 export const httpToDomainAmenityUpdate = (httpData: AmenityUpdateHttp): AmenityUpdateInput => ({
-    // Map only fields that exist in domain schema
+    // Map only fields that exist in domain schema.
+    // name and description are already I18nText objects when provided.
     name: httpData.name,
     slug: httpData.slug,
     description: httpData.description,

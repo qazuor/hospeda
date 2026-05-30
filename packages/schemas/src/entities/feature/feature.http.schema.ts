@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { i18nText } from '../../common/i18n.schema.js';
 
 /**
  * HTTP-compatible feature search schema with automatic coercion
@@ -56,13 +57,14 @@ export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type FeatureSearchHttp = z.infer<typeof FeatureSearchHttpSchema>;
 
 /**
- * HTTP-compatible feature creation schema
- * Handles form data and JSON input for creating features via HTTP
+ * HTTP-compatible feature creation schema.
+ * Accepts localized i18n objects for name and description so the admin form
+ * can submit per-language values directly.
  */
 export const FeatureCreateHttpSchema = z.object({
-    name: z.string().min(1, { message: 'zodError.feature.name.required' }).max(100),
-    slug: z.string().min(1, { message: 'zodError.feature.slug.required' }).max(100),
-    description: z.string().max(1000).optional(),
+    name: i18nText({ min: 2, max: 100 }),
+    slug: z.string().min(1, { message: 'zodError.feature.slug.required' }).max(100).optional(),
+    description: i18nText({ min: 10, max: 500 }).optional(),
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
@@ -118,14 +120,16 @@ export function httpToDomainFeatureSearch(httpData: FeatureSearchHttp): Partial<
 }
 
 /**
- * Convert HTTP feature creation data to domain format
+ * Convert HTTP feature creation data to domain format.
+ * The admin form sends the i18n object directly; no wrapping needed.
  */
 export function httpToDomainFeatureCreate(
     httpData: FeatureCreateHttp
 ): z.infer<typeof FeatureCreateInputSchema> {
     return {
+        // name and description are already I18nText objects from the HTTP form
         name: httpData.name,
-        slug: httpData.slug || httpData.name.toLowerCase().replace(/\s+/g, '-'),
+        slug: httpData.slug,
         description: httpData.description,
         icon: httpData.icon,
         isBuiltin: false, // Default value
@@ -135,12 +139,14 @@ export function httpToDomainFeatureCreate(
 }
 
 /**
- * Convert HTTP feature update data to domain format
+ * Convert HTTP feature update data to domain format.
+ * The admin form sends the i18n object directly; no wrapping needed.
  */
 export function httpToDomainFeatureUpdate(
     httpData: FeatureUpdateHttp
 ): z.infer<typeof FeatureUpdateInputSchema> {
     return {
+        // name and description are already I18nText objects when provided
         name: httpData.name,
         slug: httpData.slug,
         description: httpData.description,

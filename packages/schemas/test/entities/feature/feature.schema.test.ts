@@ -67,9 +67,10 @@ describe('FeatureSchema', () => {
         });
 
         it('should validate optional fields when present', () => {
+            const descVal = 'This is a detailed description of the feature for testing';
             const featureWithOptionals = {
                 ...createMinimalFeature(),
-                description: 'This is a detailed description of the feature',
+                description: { es: descVal, en: descVal, pt: descVal },
                 icon: 'feature-icon',
                 isBuiltin: true,
                 isFeatured: true
@@ -78,7 +79,7 @@ describe('FeatureSchema', () => {
             expect(() => FeatureSchema.parse(featureWithOptionals)).not.toThrow();
 
             const result = FeatureSchema.parse(featureWithOptionals);
-            expect(result.description).toBe(featureWithOptionals.description);
+            expect(result.description).toEqual(featureWithOptionals.description);
             expect(result.icon).toBe(featureWithOptionals.icon);
             expect(result.isBuiltin).toBe(featureWithOptionals.isBuiltin);
             expect(result.isFeatured).toBe(featureWithOptionals.isFeatured);
@@ -247,10 +248,12 @@ describe('FeatureSchema', () => {
         });
 
         it('should validate description length limits', () => {
+            const shortDesc = 'Short description ok';
+            const maxDesc = 'A'.repeat(500);
             const validDescriptions = [
                 undefined, // optional
-                'Short description',
-                'A'.repeat(500) // max length
+                { es: shortDesc, en: shortDesc, pt: shortDesc },
+                { es: maxDesc, en: maxDesc, pt: maxDesc } // max length per locale
             ];
 
             validDescriptions.forEach((description, index) => {
@@ -265,10 +268,11 @@ describe('FeatureSchema', () => {
                 ).not.toThrow();
             });
 
-            // Test invalid description (too long)
+            // Test invalid description (too long per locale)
+            const tooLong = 'A'.repeat(501);
             const tooLongDescription = {
                 ...createMinimalFeature(),
-                description: 'A'.repeat(501)
+                description: { es: tooLong, en: tooLong, pt: tooLong }
             };
 
             expect(() => FeatureSchema.parse(tooLongDescription)).toThrow(ZodError);
@@ -380,14 +384,20 @@ describe('FeatureSchema', () => {
             // Type checks
             expect(typeof result.id).toBe('string');
             expect(typeof result.slug).toBe('string');
-            expect(typeof result.name).toBe('string');
+            // name is now an I18nText object with es/en/pt locale keys
+            expect(typeof result.name).toBe('object');
+            expect(typeof result.name.es).toBe('string');
+            expect(typeof result.name.en).toBe('string');
+            expect(typeof result.name.pt).toBe('string');
             expect(typeof result.lifecycleState).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);
             expect(result.updatedAt).toBeInstanceOf(Date);
 
             // Optional fields type checks
             if (result.description) {
-                expect(typeof result.description).toBe('string');
+                // description is now an I18nText object with es/en/pt locale keys
+                expect(typeof result.description).toBe('object');
+                expect(typeof result.description.es).toBe('string');
             }
             if (result.icon) {
                 expect(typeof result.icon).toBe('string');
