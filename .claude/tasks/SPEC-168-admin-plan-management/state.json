@@ -605,36 +605,37 @@
             "id": "T-018",
             "title": "Seed \u2014 harden idempotency so re-seed never clobbers runtime edits",
             "description": "packages/seed/src/required/billingPlans.seed.ts: confirm skip-by-slug idempotency keeps runtime-edited plans intact on re-seed; decide and implement the divergence policy (silent skip vs warn/report config-vs-DB drift). Tests: seed test \u2014 re-seed after a runtime edit does NOT overwrite the edited fields; (if chosen) a divergence warning is emitted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Confirm skip-by-slug preserves runtime edits",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement divergence policy (skip vs warn)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Seed test (no clobber on re-seed)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "data"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "Added detectDivergences() helper comparing 12 fields (description, active, entitlements, limits, and 8 metadata fields). ensurePlan() now does a full select (all comparable fields) when a plan exists; if any differ, returns status='diverged' and logs a per-field warn via @repo/logger \u2014 never overwrites. seedBillingPlans() tracks plansDiverged counter and emits a summary warning. EnsurePlanResult gets a 'diverged' status variant. 17 tests (8 existing updated + 9 new): detectDivergences unit tests, ensurePlan divergence policy (no clobber, diverged status, warn emitted)."
         },
         {
             "id": "T-019",
@@ -790,9 +791,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 3.1
     }
