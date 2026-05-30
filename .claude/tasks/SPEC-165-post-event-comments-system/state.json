@@ -71,32 +71,33 @@
             "id": "T-003",
             "title": "Add POST_COMMENT_VIEW/MODERATE and EVENT_COMMENT_VIEW/MODERATE to PermissionEnum",
             "description": "Edit packages/schemas/src/enums/permission.enum.ts. In the POST section (near line 209 where POST_COMMENT_CREATE lives), add POST_COMMENT_VIEW = 'post.comment.view' and POST_COMMENT_MODERATE = 'post.comment.moderate'. In the EVENT section (near line 188 where EVENT_COMMENT_CREATE lives), add EVENT_COMMENT_VIEW = 'event.comment.view' and EVENT_COMMENT_MODERATE = 'event.comment.moderate'. Do NOT add _WRITE variants (RD-9). Also add POST_COMMENT = 'POST_COMMENT' and EVENT_COMMENT = 'EVENT_COMMENT' to PermissionCategoryEnum. Verify POST_COMMENT_CREATE and EVENT_COMMENT_CREATE remain unmodified. Key file: packages/schemas/src/enums/permission.enum.ts. Acceptance: AC-5 (four new entries present, existing _CREATE untouched).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Add POST_COMMENT_VIEW + POST_COMMENT_MODERATE entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add EVENT_COMMENT_VIEW + EVENT_COMMENT_MODERATE entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add POST_COMMENT + EVENT_COMMENT to PermissionCategoryEnum",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify _CREATE entries remain unmodified", "completed": false }
+                { "title": "Verify _CREATE entries remain unmodified", "completed": true }
             ],
             "tags": ["schemas", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "notes": "Added 4 perms (POST/EVENT _VIEW + _MODERATE) after each existing _CREATE, additive-only, with inline comments matching surrounding style. Added POST_COMMENT + EVENT_COMMENT to PermissionCategoryEnum (alphabetical). NO _WRITE (RD-9). No permission->category map exists in the repo, so nothing else needed. schemas typecheck 0 errors; enum tests 91/91 pass; biome clean. Confirmed seed already grants _CREATE to 3 roles (rolePermissions.seed.ts lines ~109/133, 419/442, 651/669) — T-004 reconciles VIEW/MODERATE + TOURIST/HOST.",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -606,9 +607,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 3.1
     }
