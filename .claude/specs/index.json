@@ -1530,6 +1530,8 @@
             "complexity": "high",
             "status": "completed",
             "archived": true,
+            "archivedAt": "2026-05-30T06:19:27Z",
+            "archiveNote": "Phase 6 propagation closed end-to-end after the original SPEC-154 completion (PR #1251). Phase 6 PRs: #1326 (PR1 catalogs+sub-entities), #1327 (PR2 events), #1329 (PR3 posts), #1330 (PR4 destinations), #1334 (PR5 users + tabs/extraActions shell slots + responsive header). Phase 6 final merge commit 616f680.",
             "completedAt": "2026-05-25T00:00:00Z",
             "completionRef": "PR #1251 (merge commit f2618b42d)",
             "path": "SPEC-154-admin-config-driven-ia",
@@ -1744,7 +1746,7 @@
             "specId": "SPEC-160",
             "title": "Newsletter Engagement Tracking (Open / Click)",
             "type": "feature",
-            "complexity": "high",
+            "complexity": "low",
             "status": "draft",
             "path": "SPEC-160-newsletter-engagement-tracking",
             "created": "2026-05-26T00:00:00Z",
@@ -1752,15 +1754,9 @@
             "dependsOn": ["SPEC-101"],
             "enables": ["SPEC-155"],
             "firstAllocatedViaEngramProtocol": true,
-            "tags": [
-                "newsletter",
-                "analytics",
-                "open-rate",
-                "ctr",
-                "tracking",
-                "backend",
-                "phase-2"
-            ]
+            "revised": "2026-05-30T00:00:00.000Z",
+            "note": "Re-scoped 2026-05-30: the open/click tracking backend (newsletter_campaign_deliveries table, NewsletterTrackingService applyOpened/applyClick, Brevo webhook handler, NewsletterCampaignService.computeMetrics, GET /admin/newsletter/campaigns/{id}/metrics endpoint, use-campaign-metrics hook) ALREADY shipped under SPEC-101. Remaining work is frontend-only: EDITOR dashboard Card C widget (apps/admin/src/lib/dashboard-sources/editor.ts:29 still says PHASE 2) plus optionally exposing openRate/clickRate percentages in the API response. Complexity downgraded high->low.",
+            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"]
         },
         {
             "specId": "SPEC-161",
@@ -1863,6 +1859,20 @@
             "tags": ["reviews", "moderation", "admin", "backend", "phase-2"]
         },
         {
+            "specId": "SPEC-167",
+            "title": "Downgrade preflight + excess remediation",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-167-downgrade-preflight-remediation",
+            "created": "2026-05-27T00:00:00.000Z",
+            "origin": "SPEC-143 local smoke findings F-F1/F-F2",
+            "dependsOn": ["SPEC-143"],
+            "archived": false,
+            "tags": ["billing", "downgrade", "entitlements", "limits", "backend"],
+            "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry — registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land."
+        },
+        {
             "specId": "SPEC-169",
             "title": "Role Permission Audit + Owner-Scoped Data Access",
             "type": "fix",
@@ -1933,14 +1943,16 @@
             "title": "Accommodation amenities & features — chips with junction tables (deprecate booleans)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-172-accommodation-amenities-features-chips",
             "created": "2026-05-29T00:00:00.000Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-172-accommodation-amenities-features-chips",
+            "branch": "spec/SPEC-172-accommodation-amenities-features-chips",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
             "extractedFrom": "SPEC-154",
             "tags": ["schemas", "database", "migration", "admin", "web", "breaking"],
-            "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Owner chose Option B (migrate booleans → junction + drop legacy boolean columns, accepting that web reads break and must be migrated in lockstep). Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized."
+            "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized. | RECONCILED 2026-05-30: index said draft but engram had it in-progress AND a physical worktree exists — flipped to in-progress to match reality. BLOCKED: 0 commits, FALSE PREMISE confirmed (NO boolean hasWifi/hasPool columns exist on accommodation; catalog + junction tables already shipped, so the original 'migrate booleans -> drop columns' framing is moot). Real remaining scope = finish junction write path (crud schema amenityIds/featureIds + service _beforeCreate/_beforeUpdate sync + admin chips UI replacing legacy switches + web read migration). Needs re-scope before implementation."
         },
         {
             "specId": "SPEC-174",

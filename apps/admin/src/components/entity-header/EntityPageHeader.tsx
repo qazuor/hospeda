@@ -114,6 +114,23 @@ export interface EntityPageHeaderProps {
     readonly editActions?: EditModeActions;
     /** Actions for create mode. Required when `mode === 'create'`. */
     readonly createActions?: CreateModeActions;
+    /**
+     * Extra actions rendered between the quality score slot and the mode-specific
+     * action set. Use for entity-level actions that are not Edit/Save/Cancel
+     * (e.g. user impersonate + delete in the access/users routes).
+     *
+     * A vertical divider is inserted automatically between the extras and the
+     * mode actions when both are present.
+     */
+    readonly extraActions?: React.ReactNode;
+    /**
+     * Tab navigation rendered as a sticky strip below the main header row.
+     * Stays visible while the header is in reduced (scrolled) state.
+     *
+     * Pass a `<PageTabs>` element (or equivalent). The strip is hidden when
+     * `tabs` is `undefined`.
+     */
+    readonly tabs?: React.ReactNode;
     /** Additional CSS classes applied to the outermost wrapper. */
     readonly className?: string;
 }
@@ -187,7 +204,7 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
                 leftIcon={<ChevronLeftIcon className="h-4 w-4" />}
                 aria-label="Volver al listado"
             >
-                Volver
+                <span className="hidden sm:inline">Volver</span>
             </Button>
             <Button
                 variant="default"
@@ -196,7 +213,7 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
                 leftIcon={<EditIcon className="h-4 w-4" />}
                 aria-label="Editar entidad"
             >
-                Editar
+                <span className="hidden sm:inline">Editar</span>
             </Button>
         </>
     );
@@ -224,7 +241,7 @@ function EditActions({ actions }: { readonly actions: EditModeActions }) {
                 leftIcon={<XCircleIcon className="h-4 w-4" />}
                 aria-label="Cancelar edición"
             >
-                Cancelar
+                <span className="hidden sm:inline">Cancelar</span>
             </Button>
             <Button
                 variant="default"
@@ -234,7 +251,9 @@ function EditActions({ actions }: { readonly actions: EditModeActions }) {
                 leftIcon={actions.isSaving ? undefined : <SaveIcon className="h-4 w-4" />}
                 aria-label="Guardar cambios"
             >
-                {actions.isSaving ? 'Guardando…' : 'Guardar'}
+                <span className="hidden sm:inline">
+                    {actions.isSaving ? 'Guardando…' : 'Guardar'}
+                </span>
             </Button>
         </>
     );
@@ -253,7 +272,7 @@ function CreateActions({ actions }: { readonly actions: CreateModeActions }) {
                 leftIcon={<XCircleIcon className="h-4 w-4" />}
                 aria-label="Cancelar creación"
             >
-                Cancelar
+                <span className="hidden sm:inline">Cancelar</span>
             </Button>
             <Button
                 variant="default"
@@ -263,7 +282,9 @@ function CreateActions({ actions }: { readonly actions: CreateModeActions }) {
                 leftIcon={actions.isCreating ? undefined : <AddIcon className="h-4 w-4" />}
                 aria-label="Crear entidad"
             >
-                {actions.isCreating ? 'Creando…' : 'Crear'}
+                <span className="hidden sm:inline">
+                    {actions.isCreating ? 'Creando…' : 'Crear'}
+                </span>
             </Button>
         </>
     );
@@ -359,6 +380,8 @@ export function EntityPageHeader({
     viewActions,
     editActions,
     createActions,
+    extraActions,
+    tabs,
     className
 }: EntityPageHeaderProps) {
     const [isReduced, sentinelRef] = useScrollShrink();
@@ -389,10 +412,10 @@ export function EntityPageHeader({
                     isReduced
                         ? '-mx-6 -mt-6 rounded-none border-border border-x-0 border-t-0 border-b bg-card shadow-sm'
                         : 'rounded-lg border border-border bg-card shadow-sm',
-                    // Spacing — transitions between full and reduced
-                    isReduced ? 'px-6 py-3' : 'px-4 py-3 sm:px-5 sm:py-4',
-                    // Flex layout
-                    'flex items-center gap-3',
+                    // Stack the main row and the optional tabs strip vertically. The main row
+                    // keeps its horizontal flex; padding is applied per-row so the tabs strip
+                    // can run edge-to-edge with its own bottom border.
+                    'flex flex-col',
                     // Smooth transitions for padding + children
                     'transition-all duration-200',
                     className
@@ -400,79 +423,136 @@ export function EntityPageHeader({
                 data-testid="entity-page-header"
                 data-reduced={isReduced}
             >
-                {/* ---- Media (thumbnail / avatar) ---- */}
-                {media && (
-                    <HeaderMedia
-                        media={media}
-                        title={title}
-                        isReduced={isReduced}
-                    />
-                )}
-
-                {/* ---- Entity info ---- */}
-                <div className="min-w-0 flex-1">
-                    <h1
-                        className={cn(
-                            'truncate font-heading font-semibold text-foreground leading-tight',
-                            isReduced ? 'text-base' : 'text-xl sm:text-2xl'
-                        )}
-                    >
-                        {title}
-                    </h1>
-
-                    {/* Subtitle + badges — hidden in reduced mode */}
-                    {!isReduced && (
-                        <>
-                            {subtitle && (
-                                <p className="mt-0.5 truncate text-muted-foreground text-sm">
-                                    {subtitle}
-                                </p>
-                            )}
-                            {badges && (
-                                <div
-                                    className="mt-1.5 flex flex-wrap items-center gap-1.5"
-                                    data-testid="header-badges"
-                                >
-                                    {badges}
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {/* ---- Right side: quality score + actions ---- */}
-                {/* When reduced, nudge the actions down a touch (`mt-1`) so the buttons */}
-                {/* don't feel glued to the bar's top edge in the slim chrome state. */}
+                {/* ---- Main row: title-group + actions ---- */}
+                {/* On phones the action set wraps to a second row so the title */}
+                {/* has full width to breathe instead of being squashed next to 4 */}
+                {/* labelled buttons. Reduced mode stays single-row to keep the */}
+                {/* compact strip compact (sm+ everywhere). */}
                 <div
                     className={cn(
-                        'flex flex-none items-center gap-2 sm:gap-3',
-                        isReduced && 'mt-1'
+                        'flex gap-3',
+                        isReduced
+                            ? 'items-center px-6 py-3'
+                            : 'flex-col items-stretch px-4 py-3 sm:px-5 sm:py-4 md:flex-row md:items-center'
                     )}
                 >
-                    {/* Quality score slot — always visible (it's the point of sticky) */}
-                    {qualityScore && (
-                        <div
-                            className="hidden sm:block"
-                            data-testid="quality-score-slot"
-                        >
-                            {typeof qualityScore === 'function'
-                                ? qualityScore({ isReduced })
-                                : qualityScore}
-                        </div>
-                    )}
-
-                    {/* Mode-specific action buttons */}
-                    <div
-                        className="flex items-center gap-2"
-                        data-testid="header-actions"
-                    >
-                        {mode === 'view' && viewActions && <ViewActions actions={viewActions} />}
-                        {mode === 'edit' && editActions && <EditActions actions={editActions} />}
-                        {mode === 'create' && createActions && (
-                            <CreateActions actions={createActions} />
+                    {/* ---- Title group: media + entity info ---- */}
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                        {/* ---- Media (thumbnail / avatar) ---- */}
+                        {media && (
+                            <HeaderMedia
+                                media={media}
+                                title={title}
+                                isReduced={isReduced}
+                            />
                         )}
+
+                        {/* ---- Entity info ---- */}
+                        <div className="min-w-0 flex-1">
+                            <h1
+                                className={cn(
+                                    'truncate font-heading font-semibold text-foreground leading-tight',
+                                    isReduced ? 'text-base' : 'text-xl sm:text-2xl'
+                                )}
+                            >
+                                {title}
+                            </h1>
+
+                            {/* Subtitle + badges — hidden in reduced mode */}
+                            {!isReduced && (
+                                <>
+                                    {subtitle && (
+                                        <p className="mt-0.5 truncate text-muted-foreground text-sm">
+                                            {subtitle}
+                                        </p>
+                                    )}
+                                    {badges && (
+                                        <div
+                                            className="mt-1.5 flex flex-wrap items-center gap-1.5"
+                                            data-testid="header-badges"
+                                        >
+                                            {badges}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ---- Right side: quality score + extras + actions ---- */}
+                    {/* Phones stack this below the title group with end alignment so */}
+                    {/* the action set sits flush right; sm+ goes inline. When reduced, */}
+                    {/* nudge the actions down a touch so they don't feel glued to */}
+                    {/* the top edge of the slim chrome. */}
+                    <div
+                        className={cn(
+                            'flex flex-none flex-wrap items-center justify-end gap-2 sm:gap-3',
+                            isReduced && 'mt-1'
+                        )}
+                    >
+                        {/* Quality score slot — always visible (it's the point of sticky) */}
+                        {qualityScore && (
+                            <div
+                                className="hidden sm:block"
+                                data-testid="quality-score-slot"
+                            >
+                                {typeof qualityScore === 'function'
+                                    ? qualityScore({ isReduced })
+                                    : qualityScore}
+                            </div>
+                        )}
+
+                        {/* Entity-level extra actions (e.g. impersonate, delete) */}
+                        {extraActions && (
+                            <div
+                                className="flex items-center gap-2"
+                                data-testid="header-extra-actions"
+                            >
+                                {extraActions}
+                            </div>
+                        )}
+
+                        {/* Visual divider between extras and mode-specific actions */}
+                        {extraActions && (
+                            <span
+                                aria-hidden="true"
+                                className="hidden h-5 w-px bg-border sm:inline-block"
+                            />
+                        )}
+
+                        {/* Mode-specific action buttons */}
+                        <div
+                            className="flex items-center gap-2"
+                            data-testid="header-actions"
+                        >
+                            {mode === 'view' && viewActions && (
+                                <ViewActions actions={viewActions} />
+                            )}
+                            {mode === 'edit' && editActions && (
+                                <EditActions actions={editActions} />
+                            )}
+                            {mode === 'create' && createActions && (
+                                <CreateActions actions={createActions} />
+                            )}
+                        </div>
                     </div>
                 </div>
+
+                {/* ---- Tabs strip ---- */}
+                {/* Sits inside the same sticky <header>, so the tabs stay visible while */}
+                {/* scrolled. Uses a top border so the strip feels like a footer to the */}
+                {/* main row at rest, and like a second bar when the header is reduced. */}
+                {tabs && (
+                    <div
+                        className={cn(
+                            'border-border border-t',
+                            isReduced ? 'px-6' : 'px-4 sm:px-5'
+                        )}
+                        data-testid="header-tabs"
+                    >
+                        {tabs}
+                    </div>
+                )}
             </header>
 
             {/* ----------------------------------------------------------------

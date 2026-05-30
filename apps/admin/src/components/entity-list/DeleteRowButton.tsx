@@ -45,8 +45,13 @@ export interface DeleteRowButtonProps {
      * per render.
      */
     readonly useDeleteMutation: () => DeleteMutationLike;
-    /** Visual variant. `icon` for table rows, `full` for detail header. */
-    readonly variant?: 'icon' | 'full';
+    /**
+     * Visual variant.
+     * - `icon`: table rows (icon-only button).
+     * - `full`: detail page action headers (icon + label).
+     * - `responsive`: icon-only on small screens, icon + label on `sm` and up.
+     */
+    readonly variant?: 'icon' | 'full' | 'responsive';
     /**
      * Grammatical gender of the entity label, used to pick the correct success
      * message variant (es/pt have gendered past participles). Defaults to `'m'`.
@@ -105,18 +110,22 @@ export function DeleteRowButton({
 
     const ariaLabel = `${t('admin-entities.actions.delete')} ${entityName}`;
 
+    const isLabelled = variant === 'full' || variant === 'responsive';
+
     return (
         <PermissionGate permissions={[permission]}>
-            {variant === 'full' ? (
+            {isLabelled ? (
                 <button
                     type="button"
                     onClick={() => setOpen(true)}
                     disabled={mutation.isPending}
-                    className="inline-flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/10 disabled:opacity-50 sm:px-3"
                     aria-label={ariaLabel}
                 >
                     <DeleteIcon size={16} />
-                    {t('admin-entities.actions.delete')}
+                    <span className={variant === 'responsive' ? 'hidden sm:inline' : undefined}>
+                        {t('admin-entities.actions.delete')}
+                    </span>
                 </button>
             ) : (
                 <button
