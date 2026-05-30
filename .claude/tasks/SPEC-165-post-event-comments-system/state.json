@@ -38,32 +38,33 @@
             "id": "T-002",
             "title": "Implement EntityCommentModel extending BaseModel",
             "description": "Create packages/db/src/models/entity-comment.model.ts. Extend BaseModel with the entity_comments table. Implement typed query helpers needed by the service: findByEntity({ entityId, entityType, includeDeleted }), findById, softDelete, hardDelete, restore, countApprovedByPostId (for counter sync). Follow the pattern of existing models (e.g., packages/db/src/models/user-bookmark.model.ts). Export from packages/db/src/models/index.ts. Key files: packages/db/src/models/entity-comment.model.ts, packages/db/src/models/index.ts. Acceptance: model compiles cleanly, all query helpers typed with no 'any'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Create entity-comment.model.ts extending BaseModel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add findByEntity, findById, softDelete, hardDelete, restore helpers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add countApprovedByPostId helper for counter sync",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Export from models/index.ts", "completed": false }
+                { "title": "Export from models/index.ts", "completed": true }
             ],
             "tags": ["backend", "database", "model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "notes": "Created packages/db/src/models/entity-comment/entity-comment.model.ts (subdir to mirror schemas/entity-comment/). Generic typed against typeof entityComments.$inferSelect (EntityCommentRecord) because T-002 precedes T-005's @repo/schemas EntityComment type. findById/softDelete/hardDelete/restore/findAll/count are INHERITED from BaseModelImpl — only findByEntity + countApprovedByPostId added (raw SQL). Typecheck: 0 new errors (7 pre-existing in billing/migrate-addon-purchases.ts, unrelated). Biome clean. Behavioral coverage of the 2 helpers lands in T-012 integration (real DB; mocking raw SQL tests nothing) and T-006 service mocks the model.",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -605,9 +606,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 3.1
     }
