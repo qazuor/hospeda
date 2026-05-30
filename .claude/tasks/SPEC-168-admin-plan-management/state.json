@@ -641,28 +641,29 @@
             "id": "T-019",
             "title": "Integration test \u2014 admin price edit reflects in /public/plans",
             "description": "End-to-end-ish integration test (API level): change a plan price via the admin write endpoint, then GET /api/v1/public/plans and assert the new price appears. Guards the display-vs-charge invariant at the API boundary.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test: PUT price \u2192 GET /public/plans returns new price",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            },
+            "summary": "3 integration tests at route/service level (mock PlanService): (1) PUT price update admin -> GET public returns new monthlyPriceArs; (2) display-vs-charge invariant: value written via admin matches value served by public; (3) graceful degradation: public returns [] even when service fails after edit. File: apps/api/test/routes/billing/admin/plan-price-edit-reflected-in-public.test.ts."
         },
         {
             "id": "T-020",
@@ -791,9 +792,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 3.1
     }
