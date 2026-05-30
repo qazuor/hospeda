@@ -99,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 150 palettes + 155 webLight = 305', () => {
+    it('total :root declarations = 150 palettes + 208 webLight = 358', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(150 + Object.keys(webLight).length);
-        expect(total).toBe(305);
+        expect(total).toBe(358); // post-SSOT sponsors/amenities/auth/post-categories: 150 + 208
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -185,12 +185,12 @@ describe('buildCSS — web dark theme block', () => {
 describe('buildCSS — admin light theme block', () => {
     const block = blockOf(CSS, '[data-app="admin"]');
 
-    it(`emits all ${Object.keys(adminLight).length} (=39) admin light declarations`, () => {
+    it(`emits all ${Object.keys(adminLight).length} (=92) admin light declarations`, () => {
         for (const key of Object.keys(adminLight)) {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(adminLight).length);
-        expect(countDeclarations(block)).toBe(39);
+        expect(countDeclarations(block)).toBe(92); // post-SSOT sponsors/amenities/auth/post-categories
     });
 
     it('exposes the web brand tokens (cross-app badge support) in the admin scope', () => {

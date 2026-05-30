@@ -36,16 +36,14 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('adminLight — coverage and naming', () => {
-    it('declares 39 entries (17 doc 05 §6.2 core + 12 web brand tokens + 10 per-type tokens)', () => {
-        // Original narrow admin surface = 17 (doc 05 §6.2). The brand-cohesion
-        // pass added 12 web brand tokens (brand-primary/accent/secondary,
-        // hospeda-river/sky/forest/sand, muted, info, warning,
-        // warning-foreground, core-foreground) so the admin scope can render
-        // cross-app visual mappings (e.g. the accommodation-type badge whose
-        // SSOT lives in @repo/icons) with the SAME colors web uses. The layered
-        // color model added 10 more: the per-accommodation-type tokens
-        // (--accommodation-type-*), shared verbatim with web-light.
-        expect(Object.keys(adminLight)).toHaveLength(39);
+    it('declares 92 entries', () => {
+        // Original narrow admin surface = 17 (doc 05 §6.2). Brand-cohesion
+        // pass added 12 web brand tokens. Layered color model added 10
+        // per-accommodation-type tokens (39 total prior count). The SSOT
+        // icon+color passes then added event-category (8), post-category (18),
+        // user-role (7), auth-provider (5), amenity-type (12) and sponsor-type
+        // (3) families — bringing the count to 92.
+        expect(Object.keys(adminLight)).toHaveLength(92); // post-SSOT sponsors/amenities/auth/post-categories
     });
 
     it('keys do not include leading "--"', () => {
