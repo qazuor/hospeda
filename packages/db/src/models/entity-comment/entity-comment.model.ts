@@ -1,3 +1,4 @@
+import type { EntityComment } from '@repo/schemas';
 import { type SQL, and, asc, count, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { entityComments } from '../../schemas/entity-comment/entity_comment.dbschema.ts';
@@ -6,29 +7,30 @@ import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
- * Row shape inferred directly from the `entity_comments` Drizzle table.
- *
- * The model is intentionally typed against the inferred select type rather than
- * a `@repo/schemas` domain type: T-002 (this model) precedes T-005 (the Zod
- * schemas) in the SPEC-165 dependency order, so the canonical `EntityComment`
- * type does not exist yet. The service layer (T-006/T-007) maps this row to the
- * public/admin DTOs.
+ * Raw row shape inferred directly from the `entity_comments` Drizzle table. Used
+ * internally to type the result of hand-written `select()` queries before they
+ * are surfaced as the canonical `EntityComment` domain type.
  */
 export type EntityCommentRecord = typeof entityComments.$inferSelect;
 
 /**
- * Model for polymorphic post/event comments (SPEC-165). Inherits the standard
- * CRUD, soft/hard delete, restore, and pagination methods from {@link BaseModelImpl}
- * (`findById`, `softDelete`, `hardDelete`, `restore`, `findAll`, `count`, ...).
+ * Model for polymorphic post/event comments (SPEC-165). Typed against the
+ * canonical `EntityComment` domain type (matching the `UserBookmark` /
+ * `AccommodationReview` model convention) so it satisfies
+ * `BaseModel<EntityComment>` for the CRUD service.
+ *
+ * Inherits the standard CRUD, soft/hard delete, restore, and pagination methods
+ * from {@link BaseModelImpl} (`findById`, `softDelete`, `hardDelete`, `restore`,
+ * `findAll`, `count`, ...).
  *
  * Adds two query helpers the comment service needs that are not expressible via
  * the generic base methods:
  * - {@link findByEntity}: the per-entity comment thread, optionally including
  *   soft-deleted rows.
- * - {@link countApprovedByPostId}: the authoritative recount used to keep the
- *   `posts.comments` integer counter in sync.
+ * - {@link countApprovedByPostId}: the authoritative recount used by the
+ *   `posts.comments` reconciliation path.
  */
-export class EntityCommentModel extends BaseModelImpl<EntityCommentRecord> {
+export class EntityCommentModel extends BaseModelImpl<EntityComment> {
     protected table = entityComments;
     public entityName = 'entityComments';
 
@@ -55,10 +57,10 @@ export class EntityCommentModel extends BaseModelImpl<EntityCommentRecord> {
      */
     async findByEntity(params: {
         entityId: string;
-        entityType: EntityCommentRecord['entityType'];
+        entityType: EntityComment['entityType'];
         includeDeleted?: boolean;
         tx?: DrizzleClient;
-    }): Promise<EntityCommentRecord[]> {
+    }): Promise<EntityComment[]> {
         const { entityId, entityType, includeDeleted = false, tx } = params;
         const db = this.getClient(tx);
         const logContext = { entityId, entityType, includeDeleted };
@@ -81,7 +83,9 @@ export class EntityCommentModel extends BaseModelImpl<EntityCommentRecord> {
             try {
                 logQuery(this.entityName, 'findByEntity', logContext, { count: items.length });
             } catch {}
-            return items;
+            // DRIZZLE-LIMITATION: select() returns the inferred row shape; the model
+            // contract surfaces the canonical EntityComment domain type.
+            return items as unknown as EntityComment[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
