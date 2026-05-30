@@ -1530,6 +1530,8 @@
             "complexity": "high",
             "status": "completed",
             "archived": true,
+            "archivedAt": "2026-05-30T06:19:27Z",
+            "archiveNote": "Phase 6 propagation closed end-to-end after the original SPEC-154 completion (PR #1251). Phase 6 PRs: #1326 (PR1 catalogs+sub-entities), #1327 (PR2 events), #1329 (PR3 posts), #1330 (PR4 destinations), #1334 (PR5 users + tabs/extraActions shell slots + responsive header). Phase 6 final merge commit 616f680.",
             "completedAt": "2026-05-25T00:00:00Z",
             "completionRef": "PR #1251 (merge commit f2618b42d)",
             "path": "SPEC-154-admin-config-driven-ia",
