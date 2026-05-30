@@ -470,7 +470,7 @@ export function PlanDialog({
                             {(field) => (
                                 <div className="space-y-3 rounded-md border bg-card p-4">
                                     {field.state.value.map((limit, index) => {
-                                        const meta = LIMIT_METADATA[limit.key];
+                                        const meta = LIMIT_METADATA[limit.key as LimitKey];
                                         return (
                                             <div
                                                 key={limit.key}

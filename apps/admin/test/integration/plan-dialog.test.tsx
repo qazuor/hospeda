@@ -7,7 +7,6 @@
  * @module test/integration/plan-dialog
  */
 
-import type { EntitlementKey, LimitKey } from '@repo/billing';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
@@ -426,7 +425,10 @@ describe('PlanDialog', () => {
                 sortOrder: 0,
                 isActive: true,
                 entitlements: [],
-                limits: []
+                limits: [],
+                id: '11111111-1111-4111-8111-111111111111',
+                createdAt: '2026-05-30T00:00:00.000Z',
+                updatedAt: '2026-05-30T00:00:00.000Z'
             };
 
             // Act
@@ -633,18 +635,11 @@ describe('PlanDialog', () => {
                 isDefault: true,
                 sortOrder: 1,
                 isActive: true,
-                entitlements: [
-                    'publish_accommodations',
-                    'edit_accommodation_info'
-                ] as EntitlementKey[],
-                limits: [
-                    {
-                        key: 'max_accommodations' as LimitKey,
-                        value: 1,
-                        name: 'Max Accommodations',
-                        description: 'Max published'
-                    }
-                ]
+                entitlements: ['publish_accommodations', 'edit_accommodation_info'],
+                limits: [{ key: 'max_accommodations', value: 1 }],
+                id: '22222222-2222-4222-8222-222222222222',
+                createdAt: '2026-05-30T00:00:00.000Z',
+                updatedAt: '2026-05-30T00:00:00.000Z'
             };
 
             // Act
@@ -709,7 +704,10 @@ describe('PlanDialog', () => {
                 sortOrder: 2,
                 isActive: true,
                 entitlements: [],
-                limits: []
+                limits: [],
+                id: '33333333-3333-4333-8333-333333333333',
+                createdAt: '2026-05-30T00:00:00.000Z',
+                updatedAt: '2026-05-30T00:00:00.000Z'
             };
 
             // Act

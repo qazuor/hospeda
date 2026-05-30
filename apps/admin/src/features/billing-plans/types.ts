@@ -72,8 +72,8 @@ export interface CreatePlanPayload {
     readonly trialDays: number;
     readonly isDefault: boolean;
     readonly sortOrder: number;
-    readonly entitlements: EntitlementKey[];
-    readonly limits: ReadonlyArray<{ readonly key: LimitKey; readonly value: number }>;
+    readonly entitlements: string[];
+    readonly limits: ReadonlyArray<{ readonly key: string; readonly value: number }>;
     readonly isActive: boolean;
 }
 
