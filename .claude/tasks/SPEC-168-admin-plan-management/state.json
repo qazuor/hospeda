@@ -428,35 +428,35 @@
             "id": "T-013",
             "title": "Admin \u2014 replace throwing plan storage with real HTTP adapter + wire mutations",
             "description": "apps/admin/src/lib/billing-http-adapter/: replace createThrowingStorage('plans') with a real adapter pointing to the new admin endpoints; wire useCreatePlanMutation/useUpdatePlanMutation/useDeletePlanMutation/useTogglePlanActiveMutation to the live routes (id-based). Tests: hook tests with mocked HTTP \u2014 each mutation hits the right method/path and invalidates the list query.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010", "T-012"],
             "blocks": ["T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "Real plans HTTP adapter to new endpoints",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire 4 mutations (id-based) + query invalidation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hook tests (method/path/invalidation)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "tanstack-query"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -788,9 +788,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 3.1
     }
