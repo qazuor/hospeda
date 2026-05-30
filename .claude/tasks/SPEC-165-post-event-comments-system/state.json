@@ -217,40 +217,41 @@
             "id": "T-007",
             "title": "Implement EntityCommentService — list, getById, moderate, hardDelete, restore",
             "description": "Continue packages/service-core/src/services/entity-comment.service.ts adding: (4) listPublic({ entityId, entityType, page, pageSize }): returns APPROVED + non-deleted only, sorted createdAt ASC, returns 404 if entity not found or not published (delegate entity lookup to PostModel/EventModel). (5) listAdmin({ filters }): full list with all moderationState values, supports filters from T-005 admin-search schema. (6) getById(id): resolves entityType to check appropriate VIEW permission. (7) moderate({ id, moderationState, actor }): update moderationState; if entityType=POST recompute posts.comments counter (add 1 for REJECTED→APPROVED, subtract 1 for APPROVED→REJECTED). (8) hardDelete(id): permanent removal; recompute counter if applicable. (9) restore(id): clear deletedAt + deletedById; if entityType=POST and comment was APPROVED increment counter. Unit tests for moderate (AC-19, AC-20, AC-25 counter scenarios), hardDelete (AC-22), restore (AC-23), and counter integrity (AC-24). Key files: packages/service-core/src/services/entity-comment.service.ts (cont.), packages/service-core/test/entity-comment-admin.test.ts. Acceptance: AC-19, AC-20, AC-22, AC-23, AC-24, AC-25; ≥90% branch coverage (AC-36).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Implement listPublic() with APPROVED filter + entity existence check",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Implement listAdmin() with full filter support", "completed": false },
+                { "title": "Implement listAdmin() with full filter support", "completed": true },
                 {
                     "title": "Implement getById() with permission resolution by entityType",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement moderate() with counter sync (APPROVED↔REJECTED)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement hardDelete() and restore() with counter adjustments",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: moderate counter scenarios, hardDelete, restore (AC-19/20/22/23/24/25)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "business-logic", "tests"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "notes": "Added listPublic (custom, public/guest, 404 via _isEntityPublished checking visibility===PUBLIC on PostModel/EventModel — AC-9/AC-10; loads author relation; APPROVED+notdeleted, createdAt ASC), moderate (custom, APPROVED↔REJECTED, MODERATE perm by entityType, counter ±1 via moderationCounterDelta — AC-19/20/25), and counter-sync lifecycle hooks for the INHERITED admin softDelete (AC-21)/hardDelete (AC-22)/restore (AC-23). getById + listAdmin/search/count covered by BaseCrudService (getDefaultGetByIdRelations={author:true}; _canView/_canList resolve perms). Extracted entityComment.helpers.ts (isCountedApprovedPostComment, moderationCounterDelta) + entityComment.types.ts (EntityCommentHookState) + _snapshotForCounter helper (DRY the 3 before-hook guards). Tests: 38 entityComment tests, 100% lines/funcs, 97% branch (service.ts 96.15%, exceeds AC-36 90%; lone uncovered = unreachable hookState guard). NOTE: full service-core suite = 3524 tests pass / 5 files fail to LOAD, full db suite = 648 pass / 10 files fail to LOAD — ALL load failures are pre-existing env: @repo/schemas dist not built in fresh worktree, so value-import test files fail to resolve (type-import files pass). Verified I touched none of the failing files; 0 test logic failures; CI (builds first) would be green. AC-24 final-value assertion is T-012 integration; unit tests assert the ±1 deltas.",
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -609,9 +610,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 3.1
     }
