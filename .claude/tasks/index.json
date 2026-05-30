@@ -626,6 +626,13 @@
             "completedAt": "2026-05-29T23:42:18.000Z",
             "completionRef": "PR #1310 + PR #1317 + PR #1322 (merge d94188a54) — all merged to staging",
             "note": "Backend-only. Persist per-cron-execution results (cron_runs table) + admin read endpoints (list/detail/summary) + differentiated purge cron (success>60d, failed/timeout>180d). Single hook at 2 execution sites (bootstrap + cron-admin trigger). Fire-and-forget recording. Enables SPEC-155 ADMIN card D. Progress shown nominal (task-master tracking was not wired; delivered via 3 PRs)."
+        },
+        {
+            "specId": "SPEC-168",
+            "title": "Admin Plan Management — runtime-editable plans on the DB",
+            "status": "pending",
+            "progress": "0/23",
+            "path": "SPEC-168-admin-plan-management"
         }
     ],
     "standalone": {

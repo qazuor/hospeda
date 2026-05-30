@@ -1,0 +1,567 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-168",
+    "title": "Admin Plan Management — runtime-editable plans on the DB",
+    "created": "2026-05-30T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add plan CRUD Zod schemas as SSOT in @repo/schemas",
+            "description": "Create BillingPlanResponseSchema, CreateBillingPlanSchema, UpdateBillingPlanSchema, BillingPlanSearchSchema in packages/schemas, mirroring the qzpay billing_plans row shape (id UUID, name=slug, description, active, entitlements string[], limits Record<string,number>, metadata{category,displayName,isDefault,sortOrder,trialDays,hasTrial,monthlyPriceArs,annualPriceArs,monthlyPriceUsdRef}) plus the related billing_prices (monthly/annual). Mutation identifier = id (UUID) per D1. slug write-once: present in Create, OMITTED/forbidden in Update. Re-export from @repo/schemas. NOT loose in apps/api (SSOT rule from SPEC-143 promo fix). Tests: packages/schemas/test — parse valid payloads, reject missing id on update target, reject slug in Update, reject negative prices, reject unknown fields.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-004", "T-005", "T-006", "T-007", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Response/Create/Update/Search schemas mirroring qzpay row + prices",
+                    "completed": false
+                },
+                {
+                    "title": "Enforce id=UUID identifier and slug write-once (Create only)",
+                    "completed": false
+                },
+                { "title": "Re-export from @repo/schemas index", "completed": false },
+                { "title": "Parse/validation unit tests", "completed": false }
+            ],
+            "tags": ["schemas", "zod", "ssot"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add plan-mutation audit event + before/after diff helper",
+            "description": "Wire the audit emission used by every plan write: reuse AuditEventType.BILLING_* (no new BILLING_PLAN_* per D2) and a field-level before/after diff helper for plan rows (price, entitlements, limits, active, metadata). Lives in service-core (alongside the billing audit pattern from SPEC-064). Tests: unit test the diff helper (added/removed/changed fields, price deltas, no-op when unchanged).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-006", "T-007"],
+            "subtasks": [
+                { "title": "Plan before/after diff helper", "completed": false },
+                {
+                    "title": "Audit emit wrapper using AuditEventType.BILLING_*",
+                    "completed": false
+                },
+                { "title": "Diff helper unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "audit"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "PlanService — read (list + getById) over qzpay storage adapter",
+            "description": "Scaffold PlanService in packages/service-core/src/services/billing/plan/ with read methods backed by storage.plans.* (createBillingAdapter, packages/db/src/billing/drizzle-adapter.ts), NOT a hand-rolled BaseModel. list() and getById(uuid) map the qzpay row + billing_prices to BillingPlanResponseSchema (id + timestamps + metadata + prices). Tests: unit — mapping row→response, getById not-found returns typed error, list ordering by metadata.sortOrder.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008", "T-011"],
+            "subtasks": [
+                { "title": "PlanService scaffold + adapter wiring", "completed": false },
+                { "title": "list() + getById() with row→Response mapping", "completed": false },
+                { "title": "Unit tests (mapping, not-found, ordering)", "completed": false }
+            ],
+            "tags": ["service-core", "qzpay", "read"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "PlanService — create (plan row + billing_prices + audit, in tx)",
+            "description": "Implement create(input): map CreateBillingPlanSchema → qzpay billing_plans insert (name=slug, metadata, entitlements, limits) AND the related billing_prices rows (monthly always; annual only when annualPriceArs>0). Wrap in the billing transaction wrapper; emit audit (T-002) with before=null/after=row. Reject duplicate slug. Tests: unit — creates plan+monthly price, adds annual price when set, rolls back on price failure, duplicate-slug rejected, audit emitted.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Map input → billing_plans insert + billing_prices",
+                    "completed": false
+                },
+                { "title": "Transaction wrapper + audit emit", "completed": false },
+                { "title": "Duplicate-slug guard", "completed": false },
+                {
+                    "title": "Unit tests (create, annual price, rollback, audit)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "qzpay", "write", "transaction"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "PlanService — update (incl. billing_prices, slug immutable)",
+            "description": "Implement update(uuid, input): mutate plan row + sync billing_prices (create/update monthly + annual, deactivate annual when cleared). Enforce slug (name) immutability — reject any attempt to change it (D1). Wrap in tx, emit audit with before/after diff. Tests: unit — update price reflects in billing_prices, entitlements/limits update, slug-change rejected, audit diff correct, tx rollback on partial failure.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Update plan row + reconcile billing_prices", "completed": false },
+                { "title": "Enforce slug immutability", "completed": false },
+                { "title": "Transaction + audit before/after", "completed": false },
+                {
+                    "title": "Unit tests (price sync, slug-reject, rollback, audit)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "qzpay", "write", "transaction"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "PlanService — toggleActive + soft-delete",
+            "description": "Implement toggleActive(uuid, active) and softDelete(uuid) (active=false default per D4), both emitting audit. soft-delete keeps the row for referential integrity. Tests: unit — toggle flips active, soft-delete sets active=false and is reversible via toggle, audit emitted, getById still resolves a soft-deleted plan.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "toggleActive + softDelete with audit", "completed": false },
+                { "title": "Unit tests (toggle, soft-delete, audit)", "completed": false }
+            ],
+            "tags": ["service-core", "qzpay", "lifecycle"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "PlanService — hard-delete with referential guard",
+            "description": "Implement hardDelete(uuid): BEFORE deleting, query billing_subscriptions WHERE plan_id = uuid (D1: plan_id stores the UUID). If any subscription references the plan, REJECT with a typed error (referenced-by-subscriptions). Only delete when zero references. Emit audit. Tests: unit — hard-delete blocked when a subscription references the plan UUID, allowed when none, audit emitted, error type correct.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Reference check: subs WHERE plan_id = uuid", "completed": false },
+                {
+                    "title": "Block hard-delete when referenced, else delete + audit",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (blocked-when-referenced, allowed-when-clear)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "qzpay", "lifecycle", "referential-integrity"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "API — rewrite admin read endpoints to read from DB/service",
+            "description": "apps/api/src/routes/billing/admin/plans.ts: switch GET / (list) and GET /:id from ALL_PLANS config to PlanService (response now includes id + timestamps + metadata). Gate with PermissionEnum.BILLING_READ_ALL (D2). Tests: integration — list/getById return DB shape with id; REGRESSION for the 502 (response now satisfies the admin transformPlanRecord contract); ADMIN→403 / SUPER_ADMIN→200 (SPEC-164).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-012", "T-023"],
+            "subtasks": [
+                { "title": "GET / and GET /:id read from PlanService", "completed": false },
+                { "title": "BILLING_READ_ALL gating", "completed": false },
+                { "title": "Integration tests + 502 regression", "completed": false }
+            ],
+            "tags": ["api", "hono", "read"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "API — add create/update write endpoints (POST /, PUT /:id)",
+            "description": "Add POST / (create) and PUT /:id (update) to admin/plans.ts wired to PlanService. Gate with PermissionEnum.BILLING_MANAGE (D2), apply per-route admin rate limit, and getActorFromContext(c) for actor.id on the audit call. Validate via @repo/schemas (T-001). Tests: integration — create returns id; update mutates; missing-perm→403; invalid body→422; slug-change-on-update→422.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-013", "T-017", "T-019", "T-022", "T-023"],
+            "subtasks": [
+                { "title": "POST / create + PUT /:id update routes", "completed": false },
+                { "title": "BILLING_MANAGE + rate limit + actor audit", "completed": false },
+                { "title": "Integration tests (create, update, 403, 422)", "completed": false }
+            ],
+            "tags": ["api", "hono", "write"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "API — lifecycle endpoints (toggle, soft-delete, restore, hard-delete)",
+            "description": "Add PATCH /:id (toggle active), DELETE /:id (soft-delete), POST /:id/restore, DELETE /:id/hard to admin/plans.ts wired to PlanService (T-006/T-007). BILLING_MANAGE + rate limit + audit. {id} is the UUID. Tests: integration — toggle flips active; soft-delete then restore; hard-delete BLOCKED (409/422) when a subscription references the plan, allowed when none.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-013", "T-020", "T-022", "T-023"],
+            "subtasks": [
+                { "title": "PATCH toggle + DELETE soft + restore", "completed": false },
+                {
+                    "title": "DELETE /:id/hard with referential guard surfaced as 409/422",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (soft semantics, hard-delete guard)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "lifecycle"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "API — switch public /plans endpoint to DB/service source",
+            "description": "apps/api/src/routes/billing/public/listPlans.ts: read active plans from PlanService/DB instead of ALL_PLANS, keeping the response shape backwards-compatible with the web client. Tests: integration — public list returns only active plans from DB; public and admin agree on the same plan after an edit.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-016", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Read active plans from service, keep response shape",
+                    "completed": false
+                },
+                { "title": "Integration test (active-only, public==admin)", "completed": false }
+            ],
+            "tags": ["api", "hono", "public"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Admin — fix transformPlanRecord/types to DB response shape",
+            "description": "apps/admin/src/features/billing-plans/: align transformPlanRecord + types to the DB response (id + metadata + timestamps) so QZPayPlanRecordSchema validation passes and the list stops 502-ing/falling back to config. Tests: unit/component — a DB-shaped record parses; usePlansQuery no longer errors on the real response.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Align transformPlanRecord + types to DB shape", "completed": false },
+                {
+                    "title": "Component/unit test (no 502, parses real response)",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "frontend"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Admin — replace throwing plan storage with real HTTP adapter + wire mutations",
+            "description": "apps/admin/src/lib/billing-http-adapter/: replace createThrowingStorage('plans') with a real adapter pointing to the new admin endpoints; wire useCreatePlanMutation/useUpdatePlanMutation/useDeletePlanMutation/useTogglePlanActiveMutation to the live routes (id-based). Tests: hook tests with mocked HTTP — each mutation hits the right method/path and invalidates the list query.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010", "T-012"],
+            "blocks": ["T-014", "T-015"],
+            "subtasks": [
+                { "title": "Real plans HTTP adapter to new endpoints", "completed": false },
+                { "title": "Wire 4 mutations (id-based) + query invalidation", "completed": false },
+                { "title": "Hook tests (method/path/invalidation)", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "tanstack-query"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Admin — wire PlanDialog to CRUD + restore Create button",
+            "description": "apps/admin/src/features/billing-plans/: connect PlanDialog onSubmit to the real create/update mutations, restore the 'Create New' button in plans.tsx (remove the read-only omission), keep the slug field disabled on edit (slug immutable, D1). Tests: component — create flow submits POST, edit flow submits PUT, slug input disabled when editing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "PlanDialog submit → create/update mutations", "completed": false },
+                { "title": "Restore Create New button", "completed": false },
+                { "title": "Component tests (create, edit, slug-disabled)", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "forms"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Admin — fix plans page header + i18n copy",
+            "description": "Update packages/i18n admin-billing.json plans.* keys (es/en/pt): drop 'managed in source code / read-only' verbiage, switch to edit-enabled copy, keep a soft audit-log hint. Fix the page header text on plans.tsx. Tests: i18n key-presence test across locales; render test asserts the new header.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Rewrite plans.* i18n keys (es/en/pt)", "completed": false },
+                { "title": "Fix page header text", "completed": false },
+                { "title": "i18n + render tests", "completed": false }
+            ],
+            "tags": ["admin", "i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Web — move pricing pages from SSG import to runtime endpoint (D3)",
+            "description": "apps/web/src/pages/[lang]/suscriptores/planes/index.astro (+ turistas): stop importing ALL_PLANS at build time; fetch /api/v1/public/plans at runtime (SSR, prerender=false) and set Cache-Control: s-maxage=N, stale-while-revalidate. Preserve current rendering/sorting (by sortOrder, active only). Tests: e2e/integration — page renders plans from the endpoint; cache headers present.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-017", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Switch planes + turistas pages to SSR endpoint fetch",
+                    "completed": false
+                },
+                { "title": "Set Cache-Control s-maxage + SWR", "completed": false },
+                { "title": "Render/cache-header tests", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Web/API — Cloudflare cache purge on plan save (D3)",
+            "description": "On every successful plan write (create/update/lifecycle), trigger a Cloudflare cache purge for the public pricing URLs (and the /public/plans cache). Add the purge call after the audit commit in the route/service layer; make it best-effort (failure logged, not fatal). Tests: unit — purge invoked with the right URLs on save; not invoked on read; write still succeeds if purge fails.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Cloudflare purge helper (best-effort)", "completed": false },
+                { "title": "Invoke on plan write success", "completed": false },
+                {
+                    "title": "Unit tests (invoked-on-save, non-fatal on failure)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "api", "cloudflare", "cache"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Seed — harden idempotency so re-seed never clobbers runtime edits",
+            "description": "packages/seed/src/required/billingPlans.seed.ts: confirm skip-by-slug idempotency keeps runtime-edited plans intact on re-seed; decide and implement the divergence policy (silent skip vs warn/report config-vs-DB drift). Tests: seed test — re-seed after a runtime edit does NOT overwrite the edited fields; (if chosen) a divergence warning is emitted.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm skip-by-slug preserves runtime edits", "completed": false },
+                { "title": "Implement divergence policy (skip vs warn)", "completed": false },
+                { "title": "Seed test (no clobber on re-seed)", "completed": false }
+            ],
+            "tags": ["seed", "data"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Integration test — admin price edit reflects in /public/plans",
+            "description": "End-to-end-ish integration test (API level): change a plan price via the admin write endpoint, then GET /api/v1/public/plans and assert the new price appears. Guards the display-vs-charge invariant at the API boundary.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: PUT price → GET /public/plans returns new price",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "E2E + staging smoke — edit price → web reflects → checkout charges new",
+            "description": "E2E: operator edits a plan price in admin → a freshly-loaded web pricing page shows the new price (after purge) → a new checkout charges the new price. Plus the SPEC-143 staging billing smoke against the real MP sandbox (billing-surface PR gate per CLAUDE.md). File the smoke sign-off.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-016", "T-017", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "E2E: edit → web shows new price → checkout charges new",
+                    "completed": false
+                },
+                {
+                    "title": "Staging billing smoke (real MP sandbox) + sign-off",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e", "billing-smoke"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Fix latent bug: migrate-addon-purchases.ts resolves plan by slug vs UUID",
+            "description": "packages/db/src/billing/migrate-addon-purchases.ts:168-169 does ALL_PLANS.find(p => p.slug === row.planId) with a comment claiming plan_id is the slug. Per D1, plan_id is the UUID → this returns undefined every time. Fix to resolve by UUID (storage.plans.get(planId) or ALL_PLANS by id mapping) and correct the comment. Tests: regression — given a UUID plan_id, the resolver returns the right plan.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Resolve plan by UUID, fix the misleading comment", "completed": false },
+                { "title": "Regression test (UUID plan_id resolves)", "completed": false }
+            ],
+            "tags": ["bugfix", "billing"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Docs — operator guide + CLAUDE.md updates",
+            "description": "Add docs/guides/managing-billing-plans.md (how to edit plans from admin, audit log location, rollback). Update packages/billing/CLAUDE.md (config now seeds the DB; DB is runtime source of truth) and the packages/db/CLAUDE.md plans gotcha (plan_id stores the UUID, mutate by id, slug immutable).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "managing-billing-plans.md operator guide", "completed": false },
+                { "title": "Update billing + db CLAUDE.md", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Docs — supersede ADR-020 with SPEC-168",
+            "description": "Flip docs/decisions/ADR-020-billing-plans-source-of-truth.md status to 'Superseded by SPEC-168' and add a short pointer; optionally add ADR-021 documenting the DB-backed migration approach + the D3 cache strategy. No code.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "ADR-020 status → Superseded by SPEC-168", "completed": false },
+                { "title": "Optional ADR-021 (migration + cache strategy)", "completed": false }
+            ],
+            "tags": ["docs", "adr"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 23,
+        "pending": 23,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 3.1
+    }
+}
