@@ -30,7 +30,10 @@ export function getFieldColSpanClass(type: FieldTypeEnum): 'col-span-2' | 'col-s
         FieldTypeEnum.JSON,
         // i18n fields stack three inputs vertically — they need full width
         FieldTypeEnum.I18N_TEXT,
-        FieldTypeEnum.I18N_TEXTAREA
+        FieldTypeEnum.I18N_TEXTAREA,
+        // Catalog multi-select chip fields need full width so chips wrap naturally
+        FieldTypeEnum.AMENITY_SELECT,
+        FieldTypeEnum.FEATURE_SELECT
     ]);
 
     return fullWidthTypes.has(type) ? 'col-span-2' : 'col-span-1';
