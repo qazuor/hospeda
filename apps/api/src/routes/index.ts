@@ -21,6 +21,7 @@ import {
     protectedAttractionRoutes,
     publicAttractionRoutes
 } from './attraction';
+import { protectedCommentRoutes } from './comment';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -244,6 +245,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
         app.route('/api/v1/protected/posts', protectedPostRoutes);
+        app.route('/api/v1/protected/comments', protectedCommentRoutes);
         app.route('/api/v1/protected/amenities', protectedAmenityRoutes);
         app.route('/api/v1/protected/features', protectedFeatureRoutes);
         app.route('/api/v1/protected/attractions', protectedAttractionRoutes);
