@@ -7,7 +7,9 @@
  *
  * Client-side search is used (searchMode: 'client') because the catalog is
  * small (~90 items) and the 5-min cache makes full-list fetches essentially
- * free. Chip labels are resolved with resolveI18nText() (es → en → pt).
+ * free. Chip labels are resolved by translating the snake_case slug via
+ * @repo/i18n `accommodations.amenityNames.<slug>`, with a humanize fallback
+ * (replace `_` with space + Title Case) when the key is missing.
  *
  * loadAllAmenities paginates through ALL pages (pageSize=100, API max) so the
  * chip list is never silently truncated if the catalog grows past 100 entries.
@@ -17,10 +19,42 @@ import type { SelectOption } from '@/components/entity-form/types/field-config.t
 import { fetchApi } from '@/lib/api/client';
 import { resolveI18nText } from '@/utils/i18n-text';
 import { adminLogger } from '@/utils/logger';
+import { defaultLocale, trans } from '@repo/i18n';
 import type { I18nText } from '@repo/schemas';
 
 /** Maximum number of pages fetched as a defensive hard-cap (100 items/page = 2000 items). */
 const MAX_PAGES = 20;
+
+/**
+ * Converts a snake_case string to a human-readable Title Case label.
+ * Used as fallback when an i18n translation key is missing.
+ *
+ * @example humanizeSlug('air_conditioning') → 'Air Conditioning'
+ */
+const humanizeSlug = (slug: string): string =>
+    slug
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+/**
+ * Translates an amenity slug to its display label using @repo/i18n.
+ *
+ * Lookup key: `accommodations.amenityNames.<slug>` in the default locale ('es').
+ * Falls back to humanizeSlug when the key is absent (avoids showing raw
+ * `[MISSING: ...]` strings in the UI).
+ *
+ * @param slug - The snake_case amenity name (e.g. 'air_conditioning', 'wifi').
+ * @returns Human-readable display label in the default locale.
+ */
+const translateAmenityName = (slug: string): string => {
+    const key = `accommodations.amenityNames.${slug}`;
+    const translated = trans[defaultLocale as keyof typeof trans]?.[key];
+    if (translated && !translated.startsWith('[MISSING:')) {
+        return translated;
+    }
+    return humanizeSlug(slug);
+};
 
 /** Page size used per request — matches API MAX_PAGE_SIZE to minimise round-trips. */
 const PAGE_SIZE = 100;
@@ -58,17 +92,34 @@ interface PublicListResponse {
 
 /**
  * Map a public amenity item to a SelectOption.
- * Resolves the i18n `name` object via resolveI18nText (es → en → pt fallback).
+ *
+ * The display label is resolved by translating the snake_case slug via
+ * `accommodations.amenityNames.<slug>` in @repo/i18n (default locale: 'es').
+ * This matches the behaviour of AmenitiesGrid.astro on the web app. A humanize
+ * fallback (Title Case) is used when the translation key is absent so the UI
+ * never shows a raw slug or a `[MISSING: ...]` string.
+ *
+ * The `value` stays as the amenity UUID so form submission is unaffected.
+ *
+ * Resolution order for the slug:
+ * 1. `item.slug` — explicit catalog slug (preferred: guaranteed snake_case).
+ * 2. `item.name.es` — the es locale from the I18nText name object.
+ * 3. `item.id` — last-resort fallback (humanize will just return the raw id).
  */
 const toSelectOption = (item: PublicAmenityItem): SelectOption => {
-    const label =
+    // Derive the snake_case slug used as the i18n key suffix.
+    const nameEs =
         typeof item.name === 'object' && item.name !== null
             ? resolveI18nText(item.name)
-            : (item.name as string) || item.id;
+            : ((item.name as string | undefined) ?? '');
+    // The i18n keys are keyed by the snake_case NAME (e.g. 'air_conditioning'),
+    // matching the web's AmenitiesGrid. The catalog `slug` strips underscores
+    // ('airconditioning') so it would miss the key — prefer name.es.
+    const slug = nameEs || item.slug || item.id;
 
     return {
         value: item.id,
-        label,
+        label: translateAmenityName(slug),
         description: item.slug
     };
 };
