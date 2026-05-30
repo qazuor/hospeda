@@ -19,8 +19,13 @@ import { useCallback, useState } from 'react';
 export interface ImpersonateButtonProps {
     /** The user ID to impersonate */
     readonly userId: string;
-    /** Visual variant of the button */
-    readonly variant?: 'icon' | 'full';
+    /**
+     * Visual variant of the button.
+     * - `icon`: only the icon (table rows).
+     * - `full`: icon + label (detail headers on desktop).
+     * - `responsive`: icon-only on small screens, icon + label on `sm` and up.
+     */
+    readonly variant?: 'icon' | 'full' | 'responsive';
 }
 
 /**
@@ -56,29 +61,42 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
         }
     }, [userId, t]);
 
-    return (
-        <PermissionGate permissions={[PermissionEnum.USER_IMPERSONATE]}>
-            {variant === 'full' ? (
+    const label = t('admin-common.impersonation.start' as TranslationKey);
+
+    if (variant === 'icon') {
+        return (
+            <PermissionGate permissions={[PermissionEnum.USER_IMPERSONATE]}>
                 <button
                     type="button"
                     onClick={handleImpersonate}
                     disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 font-medium text-sm text-warning transition-colors hover:bg-warning/20 disabled:opacity-50"
-                >
-                    <UserSwitchIcon size={16} />
-                    {t('admin-common.impersonation.start' as TranslationKey)}
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    onClick={handleImpersonate}
-                    disabled={isLoading}
-                    title={t('admin-common.impersonation.start' as TranslationKey)}
+                    title={label}
+                    aria-label={label}
                     className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-warning/20 hover:text-warning disabled:opacity-50"
                 >
                     <UserSwitchIcon size={16} />
                 </button>
-            )}
+            </PermissionGate>
+        );
+    }
+
+    // `full` and `responsive` share the same chrome — only the label visibility
+    // differs at the `sm` breakpoint.
+    return (
+        <PermissionGate permissions={[PermissionEnum.USER_IMPERSONATE]}>
+            <button
+                type="button"
+                onClick={handleImpersonate}
+                disabled={isLoading}
+                title={label}
+                aria-label={label}
+                className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 font-medium text-sm text-warning transition-colors hover:bg-warning/20 disabled:opacity-50 sm:px-3"
+            >
+                <UserSwitchIcon size={16} />
+                <span className={variant === 'responsive' ? 'hidden sm:inline' : undefined}>
+                    {label}
+                </span>
+            </button>
         </PermissionGate>
     );
 }

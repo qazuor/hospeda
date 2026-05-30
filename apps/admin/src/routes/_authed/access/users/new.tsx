@@ -1,5 +1,5 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createUserConsolidatedConfig } from '@/features/users/config';
 import { useCreateUserMutation } from '@/features/users/hooks/useUserQuery';
@@ -40,7 +40,7 @@ function UserCreatePage() {
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.USER_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={UserCreateInputSchema}
                 createConsolidatedConfig={() => createUserConsolidatedConfig(t)}
