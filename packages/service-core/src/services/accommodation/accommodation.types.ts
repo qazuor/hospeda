@@ -87,4 +87,18 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * and trigger side effects such as HOST role auto-assignment.
      */
     previousLifecycleState?: string;
+    /**
+     * Amenity UUIDs extracted from create/update input (SPEC-172 write-only sync).
+     * Stored here by `_beforeCreate`/`_beforeUpdate` so `_afterCreate`/`_afterUpdate`
+     * can perform the transactional junction sync without re-reading the original input.
+     * `undefined` → field was absent in the input (no-op contract).
+     * `[]` → clear all relations.
+     * `[…]` → sync to exact set.
+     */
+    pendingAmenityIds?: readonly string[];
+    /**
+     * Feature UUIDs extracted from create/update input (SPEC-172 write-only sync).
+     * Same three-way contract as `pendingAmenityIds`.
+     */
+    pendingFeatureIds?: readonly string[];
 }
