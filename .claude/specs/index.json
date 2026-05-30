@@ -202,12 +202,15 @@
         {
             "specId": "SPEC-093",
             "title": "Admin-Editable Billing Plans",
-            "status": "draft",
+            "status": "obsolete",
             "complexity": "large",
             "path": "SPEC-093-admin-editable-billing-plans",
             "priority": "P2",
             "created": "2026-04-26T00:00:00.000Z",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "tags": ["superseded-by-SPEC-168"],
+            "archiveNote": "Superseded by SPEC-168 (Admin Plan Management). Same feature (runtime-editable plans, DB as source of truth, config as seed) but SPEC-093's core architecture is obsolete: it assumed creating a new billing_plans table + BillingPlanModel extends BaseModel in packages/db. Verified 2026-05-29 that billing_plans already exists (provided by @qazuor/qzpay-drizzle, re-exported in packages/db/src/billing/schemas.ts), the seed already populates it from ALL_PLANS, and a qzpay storage adapter (storage.plans.*) already exists. SPEC-168 keeps the qzpay-backed architecture and absorbs SPEC-093's broader scope (audit log, web cache strategy, operator docs, ADR-020 supersedence). Spec.md retained for reference."
         },
         {
             "specId": "SPEC-094",
@@ -1951,6 +1954,22 @@
             "archived": false,
             "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
             "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15."
+        },
+        {
+            "specId": "SPEC-168",
+            "title": "Admin Plan Management — runtime-editable plans on the DB",
+            "type": "feat",
+            "complexity": "large",
+            "status": "draft",
+            "path": "SPEC-168-admin-plan-management",
+            "priority": "P2",
+            "created": "2026-05-28T00:00:00.000Z",
+            "consolidatedFrom": "SPEC-093",
+            "consolidatedAt": "2026-05-29T00:00:00.000Z",
+            "relatedSpecs": ["SPEC-143", "SPEC-164"],
+            "archived": false,
+            "tags": ["billing", "plans", "admin", "api", "schemas", "service-core", "web", "qzpay"],
+            "note": "Canonical replacement for SPEC-093 (now superseded). Runtime-editable billing plans: DB (qzpay billing_plans + billing_prices, via storage adapter) becomes source of truth, @repo/billing config = seed only. Origin: SPEC-143 smoke found admin plans list 502s (transformPlanRecord rejects config flat shape) + Editar/Eliminar/Crear call non-existent endpoints. Verified 2026-05-29: billing_plans table already exists in @qazuor/qzpay-drizzle (id UUID, name=slug, metadata JSON, entitlements array, limits object); seed (billingPlans.seed.ts) already populates from ALL_PLANS idempotently; createBillingAdapter exposes storage.plans.*. Scope: PlanService CRUD via adapter + audit log, API read+write rewrite + public-read switch, @repo/schemas SSOT, admin transformPlanRecord/PlanDialog wiring + header fix, web pricing freshness strategy, operator docs, ADR-020 supersedence. CRITICAL open question: billing_subscriptions.plan_id (varchar) stores slug vs UUID — gates edit/delete referential integrity. Other open Qs: permission model (reuse BILLING_* vs new BILLING_PLAN_*, coordinate SPEC-164), web SSG-vs-endpoint cache, seed re-run policy. Ghost worktree spec/SPEC-168-admin-plan-management points at SPEC-155 commits with untracked spec.md — to be cleaned, fresh worktree on dev start. NOT atomized, implementation NOT started (owner: spec+registry only for now)."
         }
     ]
 }
