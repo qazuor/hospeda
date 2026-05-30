@@ -7,7 +7,13 @@
  *
  *   :root {
  *       <150 palette declarations — theme-independent primitives>
- *       <155 web light theme declarations — web is the default scope>
+ *       <208 web light theme declarations — web is the default scope>
+ *   }
+ *
+ *   /* SPEC-176: Variant tokens — sRGB fallback + @supports oklch override. *\/
+ *   :root { <114 sRGB fallback variant token declarations> }
+ *   @supports (color: oklch(from white l c h)) {
+ *       :root { <114 oklch relative-color override declarations> }
  *   }
  *
  *   @media (min-width: 1600px) {
@@ -15,7 +21,7 @@
  *   }
  *
  *   [data-theme="dark"]:not([data-app="admin"]) { <56 web dark overrides> }
- *   [data-app="admin"] { <17 admin light declarations — color-* naming> }
+ *   [data-app="admin"] { <92 admin light declarations — color-* naming> }
  *   [data-app="admin"][data-theme="dark"] { <14 admin dark overrides> }
  *
  * The pure `buildCSS()` function returns the full output as a string so the
@@ -36,6 +42,7 @@ import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
 import { type OKLCH, SHADES, formatOKLCH, palettes } from '../tokens/colors.js';
 import { layoutMediaOverrides } from '../tokens/layout.js';
+import { emitVariantTokens } from './emit-variant-tokens.js';
 
 const INDENT = '    ';
 const NL = '\n';
@@ -136,6 +143,7 @@ export function buildCSS(): string {
     parts.push(emitTheme(webLight, INDENT));
     parts.push('}');
     parts.push('');
+    parts.push(emitVariantTokens());
     parts.push('/* Viewport-conditional overrides from layoutMediaOverrides. */');
     parts.push(emitMediaOverrides());
     parts.push('');

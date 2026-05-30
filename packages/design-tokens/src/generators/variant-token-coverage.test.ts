@@ -64,16 +64,22 @@ function extractSupportsBlock(css: string): string {
 }
 
 /**
- * Strip the content of every `@supports` block from a CSS string to isolate
- * the unconditional `:root` declarations.
+ * Strip the content of every `@supports` AT-RULE block from a CSS string to
+ * isolate the unconditional `:root` declarations.
+ *
+ * The regex anchors to `@supports` followed by a parenthesis `(` so it only
+ * matches actual CSS at-rules, not the word `@supports` when it appears inside
+ * CSS comment text (e.g. the SPEC-176 sentinel comment contains `@supports`
+ * as part of its prose description and must NOT be treated as an at-rule).
  *
  * @param css - Full CSS string.
- * @returns CSS string with `@supports` blocks replaced by empty space.
+ * @returns CSS string with `@supports (...)` at-rule blocks replaced by empty
+ *   space of the same length so character offsets remain stable.
  */
 function stripSupportBlocks(css: string): string {
-    // Replace each @supports { ... } block with whitespace so character offsets
-    // remain stable and the regex `/--name: rgb\(/` finds only :root declarations.
-    return css.replace(/@supports[^{]*\{(?:[^{}]*|\{[^{}]*\})*\}/g, (match) =>
+    // Anchor: @supports MUST be followed by optional whitespace then `(`.
+    // This prevents false-positive matches on `@supports` inside comment text.
+    return css.replace(/@supports\s*\([^{]*\{(?:[^{}]*|\{[^{}]*\})*\}/g, (match) =>
         ' '.repeat(match.length)
     );
 }
@@ -114,26 +120,20 @@ describe('variant-token-coverage (SPEC-176 T-001 guard)', () => {
      *
      * Pattern: `--{name}: rgb(` OUTSIDE any @supports block.
      *
-     * T-001/T-003 phase: VARIANT_TOKEN_MAP is now populated (138 entries) but
-     * T-004 (emitVariantTokens) has not yet run. The generated CSS therefore
-     * does NOT yet contain variant token declarations. This guard checks for
-     * the presence of the @supports variant block as a pre-condition: if that
-     * block is absent, T-004 has not emitted anything yet, and the assertion
-     * is skipped (not faked). After T-004 lands, these assertions become the
-     * primary regression guard for the 138-entry dual-declaration pattern.
+     * T-004 (emitVariantTokens) is now implemented. This assertion is
+     * UNCONDITIONAL — the sentinel comment MUST be present and every variant
+     * token MUST have a sRGB fallback declaration in `:root`.
      *
-     * This ordering concern is documented in the T-003 implementation note.
+     * If this test fails after T-004 lands, the generator is broken — fix
+     * the generator, not the test.
      */
     it('every variant token has a non-oklch sRGB :root declaration', () => {
-        const variantBlockPresent = CSS.includes('/* SPEC-176: Variant tokens');
-        if (!variantBlockPresent) {
-            // T-004 (emitVariantTokens) has not run yet — assertions are
-            // deferred until CSS emission is implemented.
-            // The map is populated; the guard structure is verified.
-            expect(VARIANT_TOKEN_MAP.length).toBeGreaterThan(0);
-            return;
-        }
-        // T-004 is present — enforce the full dual-declaration invariant.
+        // Sentinel must be present — proves emitVariantTokens() ran.
+        expect(CSS, 'Expected SPEC-176 variant sentinel comment in generated CSS').toContain(
+            '/* SPEC-176: Variant tokens'
+        );
+
+        // Every entry must have a sRGB rgb() fallback OUTSIDE the @supports block.
         for (const entry of VARIANT_TOKEN_MAP) {
             const pattern = `--${entry.name}: rgb(`;
             expect(
@@ -149,18 +149,15 @@ describe('variant-token-coverage (SPEC-176 T-001 guard)', () => {
      * Pattern: `--{name}:` containing `oklch(from var(` INSIDE the
      * `@supports (color: oklch(from white l c h))` block.
      *
-     * Same deferred-assertion strategy as Guard 1 (T-004 pre-condition check).
-     * When T-004 has not run, the @supports block for variant tokens is absent
-     * from the generated CSS and this guard skips rather than failing spuriously.
+     * T-004 (emitVariantTokens) is now implemented. This assertion is
+     * UNCONDITIONAL — the @supports block MUST be present and every variant
+     * token MUST have an oklch relative-color declaration inside it.
+     *
+     * If this test fails after T-004 lands, the generator is broken — fix
+     * the generator, not the test.
      */
     it('every variant token has an oklch declaration inside @supports', () => {
-        const variantBlockPresent = CSS.includes('/* SPEC-176: Variant tokens');
-        if (!variantBlockPresent) {
-            // T-004 (emitVariantTokens) has not run yet — assertions deferred.
-            expect(VARIANT_TOKEN_MAP.length).toBeGreaterThan(0);
-            return;
-        }
-        // T-004 is present — @supports block must exist and contain all entries.
+        // @supports block must exist.
         expect(
             supportsBlock,
             'Expected @supports (color: oklch(from white l c h)) block to be present in CSS'
