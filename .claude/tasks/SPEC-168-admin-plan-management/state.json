@@ -8,29 +8,29 @@
             "id": "T-001",
             "title": "Add plan CRUD Zod schemas as SSOT in @repo/schemas",
             "description": "Create BillingPlanResponseSchema, CreateBillingPlanSchema, UpdateBillingPlanSchema, BillingPlanSearchSchema in packages/schemas, mirroring the qzpay billing_plans row shape (id UUID, name=slug, description, active, entitlements string[], limits Record<string,number>, metadata{category,displayName,isDefault,sortOrder,trialDays,hasTrial,monthlyPriceArs,annualPriceArs,monthlyPriceUsdRef}) plus the related billing_prices (monthly/annual). Mutation identifier = id (UUID) per D1. slug write-once: present in Create, OMITTED/forbidden in Update. Re-export from @repo/schemas. NOT loose in apps/api (SSOT rule from SPEC-143 promo fix). Tests: packages/schemas/test — parse valid payloads, reject missing id on update target, reject slug in Update, reject negative prices, reject unknown fields.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-003", "T-004", "T-005", "T-006", "T-007", "T-018"],
             "subtasks": [
                 {
                     "title": "Response/Create/Update/Search schemas mirroring qzpay row + prices",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enforce id=UUID identifier and slug write-once (Create only)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Re-export from @repo/schemas index", "completed": false },
-                { "title": "Parse/validation unit tests", "completed": false }
+                { "title": "Re-export from @repo/schemas index", "completed": true },
+                { "title": "Parse/validation unit tests", "completed": true }
             ],
             "tags": ["schemas", "zod", "ssot"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
             }
         },
         {
@@ -558,9 +558,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 3.1
     }
