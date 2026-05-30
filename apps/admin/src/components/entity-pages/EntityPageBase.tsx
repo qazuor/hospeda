@@ -86,6 +86,20 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
      * EntityPageHeader's scroll-shrink hook downstream.
      */
     qualityScore?: ReactNode | ((options: { readonly isReduced: boolean }) => ReactNode);
+    /**
+     * Extra header actions (e.g. impersonate, delete). Rendered to the left of
+     * the mode-specific action set, with a divider between them.
+     *
+     * Forwarded as-is to `EntityPageHeader.extraActions`.
+     */
+    headerExtraActions?: ReactNode;
+    /**
+     * Tab navigation rendered as a sticky strip below the main header row.
+     * Stays visible while the header is in reduced (scrolled) state.
+     *
+     * Forwarded as-is to `EntityPageHeader.tabs`. Pass a `<PageTabs>` element.
+     */
+    headerTabs?: ReactNode;
     /** Entity data and configuration from the hook */
     entityData: {
         mode: 'view' | 'edit';
@@ -139,6 +153,8 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     headerSubtitle,
     headerBadges,
     qualityScore = null,
+    headerExtraActions,
+    headerTabs,
     entityData
 }: EntityPageBaseProps<T>) => {
     const { t } = useTranslations();
@@ -321,6 +337,8 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                             badges={headerBadges}
                             media={headerMedia}
                             qualityScore={qualityScore}
+                            extraActions={headerExtraActions}
+                            tabs={headerTabs}
                             viewActions={
                                 mode === 'view'
                                     ? {
