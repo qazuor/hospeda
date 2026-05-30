@@ -1935,14 +1935,16 @@
             "title": "Accommodation amenities & features — chips with junction tables (deprecate booleans)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-172-accommodation-amenities-features-chips",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-172-accommodation-amenities-features-chips",
+            "branch": "spec/SPEC-172-accommodation-amenities-features-chips",
             "created": "2026-05-29T00:00:00.000Z",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
             "extractedFrom": "SPEC-154",
-            "tags": ["schemas", "database", "migration", "admin", "web", "breaking"],
-            "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Owner chose Option B (migrate booleans → junction + drop legacy boolean columns, accepting that web reads break and must be migrated in lockstep). Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized."
+            "tags": ["schemas", "database", "migration", "admin", "web", "i18n"],
+            "note": "Spun off from SPEC-154. PREMISE CORRECTED 2026-05-30: original spec assumed boolean columns (hasWifi/hasPool) on accommodation to migrate+drop — those columns DO NOT EXIST. hasWifi/hasPool/hasParking/allowsPets are VIRTUAL search filters in accommodation.http.schema.ts resolved to amenity slugs via quick-amenity-resolver.ts; they stay as-is. Real scope after owner decisions (2026-05-30): (PR1) write path — AccommodationCreate/UpdateInputSchema accept amenityIds[]/featureIds[] + accommodation.service syncs junctions transactionally, replacing the standalone add/removeFeatureFromAccommodation endpoints; (PR2) fix AccommodationWithFeaturesSchema removing phantom isOptional/additionalCost (r_accommodation_feature lacks them) + migrate amenity/feature name+description to JSONB i18n {es,en,pt}; (PR3) admin MultiSelectChipsField over public catalog endpoints; (PR4) web reads from amenities[] + search_index + fixtures. Decisions: Q-1 keep amenity & feature SEPARATE; Q-2 align schema to DB (remove phantom fields); Q-3 STAGED multi-PR; Q-4 migrate catalogs to JSONB i18n; Q-5 virtual filters documented, not dropped. spec.md to be rewritten via task-master:spec in the worktree. Tasks not yet atomized."
         },
         {
             "specId": "SPEC-174",
