@@ -107,6 +107,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
+        PermissionEnum.EVENT_COMMENT_VIEW,
+        PermissionEnum.EVENT_COMMENT_MODERATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
@@ -131,6 +133,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_MODERATION_CHANGE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
+        PermissionEnum.POST_COMMENT_VIEW,
+        PermissionEnum.POST_COMMENT_MODERATE,
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
         PermissionEnum.POST_VIEW_ALL,
@@ -417,6 +421,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
+        PermissionEnum.EVENT_COMMENT_VIEW,
+        PermissionEnum.EVENT_COMMENT_MODERATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
         PermissionEnum.EVENT_VIEW_ALL,
@@ -440,6 +446,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_MODERATION_CHANGE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
+        PermissionEnum.POST_COMMENT_VIEW,
+        PermissionEnum.POST_COMMENT_MODERATE,
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
         PermissionEnum.POST_VIEW_ALL,
@@ -649,6 +657,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
+        // SPEC-165: EDITOR moderates event comments (view all states + approve/reject/delete).
+        PermissionEnum.EVENT_COMMENT_VIEW,
+        PermissionEnum.EVENT_COMMENT_MODERATE,
         // SPEC-169 §3 verdict (KEEP — legitimate editorial visibility, see the POST_VIEW_* note below).
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
@@ -667,6 +678,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_FEATURED_TOGGLE,
         PermissionEnum.POST_SLUG_MANAGE,
         PermissionEnum.POST_COMMENT_CREATE,
+        // SPEC-165: EDITOR moderates post comments (view all states + approve/reject/delete).
+        PermissionEnum.POST_COMMENT_VIEW,
+        PermissionEnum.POST_COMMENT_MODERATE,
         // SPEC-169 §3 verdict (KEEP — confirmed legitimate, not a leak): EDITOR sees ALL editorial
         // content (posts + events, including private) by design — that is the editorial role. A
         // SUPER_ADMIN can narrow this for a specific user via direct per-user permission overrides
@@ -743,6 +757,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     [RoleEnum.HOST]: [
+        // POST/EVENT: comment on blog posts and events (SPEC-165).
+        PermissionEnum.POST_COMMENT_CREATE,
+        PermissionEnum.EVENT_COMMENT_CREATE,
+
         // ACCOMMODATION: own accommodations only (SPEC-169: VIEW_OWN forces server-side owner
         // scoping on adminList + getById; VIEW_ALL removed — it was a cross-tenant read leak that
         // let a HOST list and open every accommodation via the admin endpoints reused by
@@ -862,6 +880,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     [RoleEnum.USER]: [
+        // SPEC-165: registered users (tourist role) may comment on posts and events.
+        PermissionEnum.POST_COMMENT_CREATE,
+        PermissionEnum.EVENT_COMMENT_CREATE,
+
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
         PermissionEnum.USER_UPDATE_PROFILE,
