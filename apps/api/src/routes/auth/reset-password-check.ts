@@ -14,7 +14,7 @@
  * state with a "Solicitá un enlace nuevo" CTA instead of an empty form when
  * the link is dead.
  *
- * See `.claude/specs/SPEC-118-reset-password-token-validation/spec.md` for
+ * See `.qtm/specs/SPEC-118-reset-password-token-validation/spec.md` for
  * the Phase 0 decision behind the 2-reason contract.
  */
 import { getDb, verifications } from '@repo/db';

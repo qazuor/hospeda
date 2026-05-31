@@ -1,6 +1,6 @@
 # E2E Testing Infrastructure
 
-> **Canonical reference**: [`.claude/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md`](../../../../.claude/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md) is the authoritative description of the e2e infra as of SPEC-143 (factories, fixtures, vitest configs, sealed test patterns, Workstream A vs B). The sections below predate that doc and describe scenarios that no longer exist; the **Isolation contract** and **CI wiring** sections immediately below are current — the rest is being phased out.
+> **Canonical reference**: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md`](../../../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md) is the authoritative description of the e2e infra as of SPEC-143 (factories, fixtures, vitest configs, sealed test patterns, Workstream A vs B). The sections below predate that doc and describe scenarios that no longer exist; the **Isolation contract** and **CI wiring** sections immediately below are current — the rest is being phased out.
 
 ## Isolation contract (SPEC-143 T-143-56)
 
