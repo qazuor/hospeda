@@ -164,7 +164,7 @@ real-client bucket.
 
 ## 6. Related
 
-- Spec: `.claude/specs/SPEC-110-rate-limit-ip-extraction-fix/spec.md`
+- Spec: `.qtm/specs/SPEC-110-rate-limit-ip-extraction-fix/spec.md`
 - Background discovery: SPEC-103 T-086 redis verify, 2026-05-13.
 - Implementation: `apps/api/src/middlewares/rate-limit.ts`.
 - Tests: `apps/api/test/middlewares/rate-limit-ip-extraction.test.ts`,

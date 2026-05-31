@@ -147,7 +147,7 @@ function mockSessionPending() {
  * file (`unauthenticated user`, `API error`, `network error`,
  * `idle state rendering`) remain enabled.
  *
- * See `.claude/specs/SPEC-131-plan-purchase-button-async-state-tests/spec.md`.
+ * See `.qtm/specs/SPEC-131-plan-purchase-button-async-state-tests/spec.md`.
  */
 const SPEC_131_PENDING = true;
 

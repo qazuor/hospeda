@@ -33,7 +33,7 @@ import {
 
 /**
  * Test helpers — build canonical fixtures matching the real traffic
- * captured in the SPEC-120 Phase 0 catalog (`.claude/specs/SPEC-120-...`).
+ * captured in the SPEC-120 Phase 0 catalog (`.qtm/specs/SPEC-120-...`).
  */
 function buildGoogleCancelFixture() {
     return {

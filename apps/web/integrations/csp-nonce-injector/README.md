@@ -4,7 +4,7 @@ Logical module that stamps the per-request CSP nonce onto inline `<style>` and `
 
 ## Why this is NOT an Astro integration
 
-Originally scoped as **Path A2** in [`research/astro-csp-options.md`](../../../../.claude/specs/SPEC-046-csp-post-deploy-verification/research/astro-csp-options.md) — a small Astro integration registering an HTML transformation hook. After confirming via Astro 6 docs (context7), there is no per-request response hook in Astro 6:
+Originally scoped as **Path A2** in [`research/astro-csp-options.md`](../../../../.qtm/specs/SPEC-046-csp-post-deploy-verification/research/astro-csp-options.md) — a small Astro integration registering an HTML transformation hook. After confirming via Astro 6 docs (context7), there is no per-request response hook in Astro 6:
 
 - `astro:server:setup` runs once at dev-server startup; receives the Vite server, not per-request responses.
 - `astro:build:*` hooks run at build time only.
