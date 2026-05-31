@@ -1,5 +1,8 @@
 {
     "$comment": "Worktree skill config for the hospeda monorepo, consumed by the worktree skill (~/.claude/skills/worktree). Placeholders {api}/{admin}/{web}/{slug}/{dbname} are filled per-worktree at creation time. DB credentials here are the shared dev-local ones (already in docker-compose.yml/.env.test), not production secrets.",
+    "taskMaster": {
+        "dir": ".qtm"
+    },
     "baseBranch": "staging",
     "protectedBranches": ["main", "staging"],
     "worktree": {

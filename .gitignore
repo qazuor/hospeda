@@ -137,7 +137,8 @@ node_modules
 # worktree skill: per-worktree local state (ephemeral, never committed)
 .claude/worktree-state.local.json
 .claude/wt-logs/
-.claude/tasks/.index.lock
+# task-master index lock (specs/tasks now live under .qtm/)
+.qtm/tasks/.index.lock
 apps/web-test
 apps/web-old
 
