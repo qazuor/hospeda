@@ -134,7 +134,7 @@ SPEC-143 stays narrow on testing what exists. SPEC-145 stays narrow on enforceme
 
 ## Activation criteria
 
-This spec is `reserved`. Activation (flip to `in-progress`, create worktree `hospeda-spec-145-billing-entitlements-and-limits-enforcement`, cut branch `spec/SPEC-145-billing-entitlements-and-limits-enforcement` from staging, register in `.claude/tasks/index.json`) happens when **either** of:
+This spec is `reserved`. Activation (flip to `in-progress`, create worktree `hospeda-spec-145-billing-entitlements-and-limits-enforcement`, cut branch `spec/SPEC-145-billing-entitlements-and-limits-enforcement` from staging, register in `.qtm/tasks/index.json`) happens when **either** of:
 
 1. SPEC-143 merges to staging (preferred sequential path).
 2. The user explicitly authorizes parallelization while SPEC-143 is still in flight.

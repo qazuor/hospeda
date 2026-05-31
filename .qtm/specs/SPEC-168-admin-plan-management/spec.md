@@ -282,7 +282,7 @@ Consequences:
 
 ## References
 
-- **SPEC-093** (archived, superseded-by-SPEC-168): `.claude/specs/SPEC-093-admin-editable-billing-plans/spec.md`
+- **SPEC-093** (archived, superseded-by-SPEC-168): `.qtm/specs/SPEC-093-admin-editable-billing-plans/spec.md`
   — original goal/scope, obsolete create-the-table architecture.
 - **ADR-020**: `docs/decisions/ADR-020-billing-plans-source-of-truth.md` (Accepted; to be Superseded).
 - Engram: `spec-143/f-admin-plans` (discovery), `spec-143/f-admin-promo-create` (SSOT-schema pattern to mirror).

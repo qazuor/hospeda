@@ -223,6 +223,6 @@ Start
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks.
 - [`docs/billing/coverage-audit-2026.md`](./coverage-audit-2026.md) — backend coverage audit.
 - [`docs/billing/sentry-alerts-runbook.md`](./sentry-alerts-runbook.md) — alert configurations.
-- `.claude/specs/SPEC-143-billing-testing-coverage/` — spec + tasks.
+- `.qtm/specs/SPEC-143-billing-testing-coverage/` — spec + tasks.
 - `apps/admin/CLAUDE.md` — admin tier rule that Phase 3 migration enforces.
 - Engram topic `bug/no-user-self-cancel-endpoint` — SPEC-147 gap.

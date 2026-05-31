@@ -124,7 +124,7 @@ These five decisions are part of the approved scope and not subject to re-litiga
 ## Deliverables structure
 
 ```
-.claude/specs/SPEC-143-billing-testing-coverage/
+.qtm/specs/SPEC-143-billing-testing-coverage/
 ├── spec.md                                 (this file)
 ├── metadata.json
 └── docs/
@@ -135,7 +135,7 @@ These five decisions are part of the approved scope and not subject to re-litiga
     ├── billing-runbooks.md                 (Workstream D, Phase 4)
     └── mp-test-cards-reference.md          (Phase 4)
 
-.claude/tasks/SPEC-143-billing-testing-coverage/
+.qtm/tasks/SPEC-143-billing-testing-coverage/
 ├── state.json
 └── progress.md                             (created lazily as work lands)
 

@@ -261,7 +261,7 @@ No merge conflicts expected.
 
 ### References
 
-- Origin spec: `.claude/specs/SPEC-042-csp-nonce-integration/spec.md`
-- Gap analysis: `.claude/specs/specs-gaps-042.md` (38 gaps, 3 audits)
-- Next in chain: `.claude/specs/SPEC-046-csp-post-deploy-verification/spec.md`
-- Parallel track: `.claude/specs/SPEC-047-csp-unsafe-inline-removal/spec.md`
+- Origin spec: `.qtm/specs/SPEC-042-csp-nonce-integration/spec.md`
+- Gap analysis: `.qtm/specs/specs-gaps-042.md` (38 gaps, 3 audits)
+- Next in chain: `.qtm/specs/SPEC-046-csp-post-deploy-verification/spec.md`
+- Parallel track: `.qtm/specs/SPEC-047-csp-unsafe-inline-removal/spec.md`

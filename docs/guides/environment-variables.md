@@ -535,5 +535,5 @@ scripts need.
 
 Some variables were renamed during the SPEC-035 cleanup. If you encounter a
 variable name not in the registry, it is likely a legacy name. Consult the
-SPEC-035 spec at `.claude/specs/SPEC-035-env-vars-cleanup/spec.md` for the
+SPEC-035 spec at `.qtm/specs/SPEC-035-env-vars-cleanup/spec.md` for the
 mapping of old names to new ones.

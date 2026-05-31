@@ -276,6 +276,6 @@ Update `metadata.json` `branch` and `worktree` fields when the work begins.
 ### Cross-references
 
 - Spike doc: `apps/web/.claude/baseline/S-10-spike.md`
-- Origin spec: `.claude/specs/SPEC-099-home-audit-remediation/spec.md` (Phase 8 deferred)
+- Origin spec: `.qtm/specs/SPEC-099-home-audit-remediation/spec.md` (Phase 8 deferred)
 - Schemas package: `packages/schemas/src/`
 - Transform module: `apps/web/src/lib/api/transforms.ts`

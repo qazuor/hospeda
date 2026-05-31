@@ -237,6 +237,6 @@ AC-6  Given the catalog (~270 permissions)
 
 ## 11. Notes
 
-- Spun off from SPEC-169 decision D7 (see `.claude/specs/SPEC-169-role-permission-own-scoping/decision-log.md`).
+- Spun off from SPEC-169 decision D7 (see `.qtm/specs/SPEC-169-role-permission-own-scoping/decision-log.md`).
 - Backend audit confidence: high (model + service + actor resolution all confirmed present).
   Frontend: the stub at `$id_.permissions.tsx` is the anchor to extend.

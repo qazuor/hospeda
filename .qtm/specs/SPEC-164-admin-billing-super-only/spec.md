@@ -279,4 +279,4 @@ These were open questions in the DRAFT; both are now resolved and must NOT be re
 - `apps/admin/src/routes/_authed/billing/*.tsx` (14 files) — billing route files; today none has a `beforeLoad` permission guard.
 - `packages/service-core/src/services/sponsorship/*`, `.../owner-promotion/*` — sole consumers of the revoked `_ANY` perms.
 - Engram: `spec/spec-164/billing-tier-architecture` (#834), `spec/spec-164/corrected-blast-radius` (#839), `spec/spec-164/renderer-wiring-and-wide-safety`.
-- `.claude/specs/SPEC-155-admin-dashboards-v1/spec.md` — original "Change 2" with the incorrect names; references SPEC-164 as the receiver.
+- `.qtm/specs/SPEC-155-admin-dashboards-v1/spec.md` — original "Change 2" with the incorrect names; references SPEC-164 as the receiver.

@@ -75,7 +75,7 @@
         {
             "id": "T-003",
             "title": "⛔ OWNER-REVIEW GATE (§12) — present audit outputs, receive explicit approval on ALL verdicts",
-            "description": "HARD GATE. Human-in-the-loop. CLOSED 2026-05-29. All §12 decisions approved by owner — recorded in .claude/specs/SPEC-169-role-permission-own-scoping/decision-log.md. Key verdicts: D1 VIEW_OWN only accommodation; D2 404 NOT_FOUND for non-owned; D3 resolver accommodation-only; D4 /options for 6 entities (users/destinations/accommodations/events/event-organizers/event-locations, ACCESS_PANEL_ADMIN, accommodation payload +type+destination); D5 beforeLoad only on /accommodations list; D6 seed wording; D7 posts = document only (Option C), NOT touched. CLIENT_MANAGER untouched. Posts granular model deferred to new SPEC-170.",
+            "description": "HARD GATE. Human-in-the-loop. CLOSED 2026-05-29. All §12 decisions approved by owner — recorded in .qtm/specs/SPEC-169-role-permission-own-scoping/decision-log.md. Key verdicts: D1 VIEW_OWN only accommodation; D2 404 NOT_FOUND for non-owned; D3 resolver accommodation-only; D4 /options for 6 entities (users/destinations/accommodations/events/event-organizers/event-locations, ACCESS_PANEL_ADMIN, accommodation payload +type+destination); D5 beforeLoad only on /accommodations list; D6 seed wording; D7 posts = document only (Option C), NOT touched. CLIENT_MANAGER untouched. Posts granular model deferred to new SPEC-170.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001", "T-002"],
@@ -822,7 +822,7 @@
         {
             "id": "T-029",
             "title": "Add CLIENT_MANAGER known-debt comment + tracking note",
-            "description": "DONE. Added a KNOWN DEBT (SPEC-169) comment block before the [RoleEnum.CLIENT_MANAGER] block in rolePermissions.seed.ts (lists the 5 broad grants, points to the AC-6 allow-list + debt-items.md, revisit when role activated / SPEC-170). Created .claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md with D-1 (CLIENT_MANAGER), D-2 (posts read model), D-3 (PostSponsorship unmounted route OQ1), D-4 (shared vs local checkCanFindOptions).",
+            "description": "DONE. Added a KNOWN DEBT (SPEC-169) comment block before the [RoleEnum.CLIENT_MANAGER] block in rolePermissions.seed.ts (lists the 5 broad grants, points to the AC-6 allow-list + debt-items.md, revisit when role activated / SPEC-170). Created .qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md with D-1 (CLIENT_MANAGER), D-2 (posts read model), D-3 (PostSponsorship unmounted route OQ1), D-4 (shared vs local checkCanFindOptions).",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-010"],

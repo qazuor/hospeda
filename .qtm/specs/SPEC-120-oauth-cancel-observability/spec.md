@@ -126,7 +126,7 @@ This spec is "done" when:
 
 Discovered during SPEC-103 T-024 operator smoke pass on 2026-05-14. The operator (qazuor) revoked the existing Google OAuth grant for the Hospeda app from `https://myaccount.google.com/permissions`, re-attempted Google signin from `/es/auth/signin/`, and clicked "Cancel" on the consent screen. The browser redirected back to `/es/auth/signin/` with no visible change; DevTools console clean; Sentry filter on `environment:staging` returned no event for the cancel.
 
-Recorded as `session-finding-32` in `.claude/tasks/SPEC-103-vps-migration-post-merge-cleanup/TODOs.md`.
+Recorded as `session-finding-32` in `.qtm/tasks/SPEC-103-vps-migration-post-merge-cleanup/TODOs.md`.
 
 ### Sequencing
 

@@ -385,8 +385,8 @@ escalation path documented).
 
 ## Cross-references
 
-- Spec: `.claude/specs/SPEC-143-billing-testing-coverage/spec.md`
-- Task state: `.claude/tasks/SPEC-143-billing-testing-coverage/state.json`
+- Spec: `.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`
+- Task state: `.qtm/tasks/SPEC-143-billing-testing-coverage/state.json`
 - Staging smoke (full surface, sandbox): `staging-smoke-checklist.md`
   (T-143-20, T-143-36, T-143-45)
 - MP test cards reference (sandbox-only): `mp-test-cards-reference.md`
