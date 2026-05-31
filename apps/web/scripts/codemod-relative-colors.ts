@@ -86,7 +86,7 @@
  *
  * @see packages/design-tokens/src/generators/variant-tokens.ts — VARIANT_TOKEN_MAP.
  * @see packages/design-tokens/src/generators/variant-token-schema.ts — entry type.
- * @see .claude/specs/SPEC-176-web-color-fallback-old-browsers/variant-token-derivation.md
+ * @see .qtm/specs/SPEC-176-web-color-fallback-old-browsers/variant-token-derivation.md
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
