@@ -225,9 +225,9 @@ pnpm --filter @repo/design-tokens extract:web
 
 ## Referencias
 
-- **Spec**: `.claude/specs/SPEC-153-admin-design-tokens/spec.md` (AC-1 a AC-14)
+- **Spec**: `.qtm/specs/SPEC-153-admin-design-tokens/spec.md` (AC-1 a AC-14)
 - **Design proposal**: `.claude/audit/admin-redesign/proposals/05-visual-tokens.md` (8 axes locked)
-- **Task state**: `.claude/tasks/SPEC-153-admin-design-tokens/state.json`
+- **Task state**: `.qtm/tasks/SPEC-153-admin-design-tokens/state.json`
 - **Seed manifest**: `packages/design-tokens/seed/web-baseline.json` (199 tokens)
 - **Engram pin**: `mem_search "spec/SPEC-153/checkpoint-half-phase-1"` o más fino
   `mem_search "spec/SPEC-153/T-153-15"` etc.

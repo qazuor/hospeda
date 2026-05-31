@@ -30,7 +30,7 @@
             "path": "SPEC-029-web-homepage-redesign",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Superseded by SPEC-048 (Web2 Homepage Componentization) and SPEC-065 (Figma to Code Homepage) which shipped the homepage redesign. Marked obsolete."
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Superseded by SPEC-048 (Web2 Homepage Componentization) and SPEC-065 (Figma to Code Homepage) which shipped the homepage redesign. Marked obsolete."
         },
         {
             "specId": "SPEC-032",
@@ -56,7 +56,7 @@
             "path": "SPEC-036-gaps-remediation",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-036 completed; no gaps work was started. Marked obsolete."
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-036 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-026-GAPS",
@@ -66,7 +66,7 @@
             "path": "SPEC-026-security-testing-gaps",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-026 completed; no gaps work was started. Marked obsolete."
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-026 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-038",
@@ -94,7 +94,7 @@
             "path": "SPEC-020-gaps-remediation",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-020 completed; no gaps work was started. Marked obsolete."
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-020 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-044",
@@ -150,7 +150,7 @@
             "path": "SPEC-034-gaps-remediation",
             "archived": true,
             "archivedAt": "2026-05-15T00:00:00.000Z",
-            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .claude/specs/. Parent SPEC-034 completed; no gaps work was started. Marked obsolete."
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-034 completed; no gaps work was started. Marked obsolete."
         },
         {
             "specId": "SPEC-040",

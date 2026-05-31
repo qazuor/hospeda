@@ -52,7 +52,7 @@ Can start any time but recommend AFTER Phase A so the team can re-verify visual/
 
 Once SPEC-135 / 136 / 137 are merged:
 
-1. Re-run the audit script: `cd .claude/specs/SPEC-134-admin-audit-remediation/audit-baseline/_scripts && bun install && bun sweep.ts`
+1. Re-run the audit script: `cd .qtm/specs/SPEC-134-admin-audit-remediation/audit-baseline/_scripts && bun install && bun sweep.ts`
 2. Run aggregator: `bun aggregate-axe.ts`
 3. Compare `_fixtures/axe-aggregate.json` against the original findings to confirm fixed items are closed.
 4. For any NEW findings introduced by the remediation work, file as follow-up SPEC.
@@ -79,7 +79,7 @@ The screenshots + axe reports from the original SPEC-131 sweep are NOT committed
 To regenerate the audit environment:
 
 ```bash
-cd .claude/specs/SPEC-134-admin-audit-remediation/audit-baseline/_scripts
+cd .qtm/specs/SPEC-134-admin-audit-remediation/audit-baseline/_scripts
 bun install
 bunx playwright install chromium  # one-time, ~113MB
 # Ensure admin is running on localhost:3000 with VITE_FEEDBACK_ENABLED=false

@@ -182,7 +182,7 @@ Add a root-level alias: `"db:seed:test-users": "pnpm --filter @repo/seed seed:te
 
 - Update `packages/seed/CLAUDE.md` with the test users matrix and the command.
 - Update root `CLAUDE.md` ("Development Guidelines" or a new "Local testing" section) noting that for entitlement/limit work, prefer local + `pnpm db:seed:test-users` over staging redeploys.
-- Update `.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md` with a note that Block 1 sections 1.15-A/B/C/E, 2.x (mostly), and 3.x can be exercised locally with the test users seed. Block 4 (webhooks) and the MP checkout pieces still need staging.
+- Update `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md` with a note that Block 1 sections 1.15-A/B/C/E, 2.x (mostly), and 3.x can be exercised locally with the test users seed. Block 4 (webhooks) and the MP checkout pieces still need staging.
 
 ### Step 5 — Validate
 

@@ -589,7 +589,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     // NOT tightened in SPEC-169. The role is currently unused, so owner-scoping it now would be
     // untestable churn. These grants are explicitly allow-listed in the AC-6 audit test
     // (packages/seed/test/role-permission-audit.test.ts) and tracked in
-    // .claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
+    // .qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
     // activated (likely alongside the per-user permission panel, SPEC-170).
     [RoleEnum.CLIENT_MANAGER]: [
         // USER: Client management permissions

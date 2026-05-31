@@ -4,7 +4,7 @@
  *
  * Auth: the admin endpoints (`/api/v1/admin/*`) require a Better Auth
  * session cookie minted from an admin login. There is NO bearer-token
- * auth on these endpoints today — see `.claude/specs/SPEC-102-*` for
+ * auth on these endpoints today — see `.qtm/specs/SPEC-102-*` for
  * the planned alternative.
  *
  * Until SPEC-102 lands, the operator pastes the full `Cookie` header

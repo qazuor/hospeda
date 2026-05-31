@@ -175,7 +175,7 @@ list route** is guarded — detail/edit/new are covered server-side (D5).
   posts is deferred to SPEC-170.
 - **CLIENT_MANAGER is not tightened** — the role is unused; tightening it now
   is untestable churn. Tracked as known debt (allow-listed in AC-6 with a
-  comment) and in `.claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md`.
+  comment) and in `.qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md`.
 - The broken `PostSponsorshipSelectField` (points at an unmounted
   `/admin/post-sponsorships` route) is a separate bug, left with a SPEC-169/OQ1
   comment for whoever mounts the route to wire `/options`-style gating.
@@ -219,5 +219,5 @@ list route** is guarded — detail/edit/new are covered server-side (D5).
 - `apps/api/src/routes/accommodation/admin/{list,getById,getFaqs,options}.ts`
 - `apps/admin/src/lib/owner-scoped-guard.ts` — front redirect guard
 - `docs/security/permission-model.md` — living reference for the tiers
-- `.claude/specs/SPEC-169-role-permission-own-scoping/decision-log.md` — D1–D7 + OQ1–OQ5
+- `.qtm/specs/SPEC-169-role-permission-own-scoping/decision-log.md` — D1–D7 + OQ1–OQ5
 - SPEC-170 — per-user permission panel (deferred granular overrides)

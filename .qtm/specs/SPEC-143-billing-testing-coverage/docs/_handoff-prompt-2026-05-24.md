@@ -17,9 +17,9 @@ mem_search "workflow/post-merge-new-branch-mandatory"       # regla mandatoria p
 
 Y leé estos docs (son la fuente de verdad):
 ```
-.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md  # ← PRIMER PASO: implementar esto
-.claude/specs/SPEC-143-billing-testing-coverage/docs/smoke-execution-plan.md        # findings tracker + Block plan
-.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md     # checklist con run-logs ya filleadas para 1.15-A.1
+.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md  # ← PRIMER PASO: implementar esto
+.qtm/specs/SPEC-143-billing-testing-coverage/docs/smoke-execution-plan.md        # findings tracker + Block plan
+.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md     # checklist con run-logs ya filleadas para 1.15-A.1
 ```
 
 ## Estado del SPEC-143 Block 1

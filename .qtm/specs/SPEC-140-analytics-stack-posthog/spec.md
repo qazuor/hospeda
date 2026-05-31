@@ -266,7 +266,7 @@ On 2026-05-17, during a re-evaluation conversation, the user decided to switch t
 3. **Coverage of admin** — original Umami scope explicitly excluded admin; PostHog covers both web and admin under the same org with separate projects.
 4. **Custom events from day one** — original Umami scope deferred events to a "Phase 2" follow-up spec; user wanted explicit business events instrumented as part of the initial rollout.
 
-The Umami draft is preserved in git history (`git log --diff-filter=R --follow .claude/specs/SPEC-140-*`). Same SPEC number is retained; the slug was renamed from `analytics-stack-umami` to `analytics-stack-posthog` in this revision.
+The Umami draft is preserved in git history (`git log --diff-filter=R --follow .qtm/specs/SPEC-140-*`). Same SPEC number is retained; the slug was renamed from `analytics-stack-umami` to `analytics-stack-posthog` in this revision.
 
 ### Why this is one spec, not several
 

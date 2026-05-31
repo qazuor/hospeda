@@ -3,7 +3,7 @@
 ## Progress: 32/32 tasks (100%) — code+tests+docs+live e2e smoke all done; ready for PR to staging
 
 > This checklist below is NOT maintained per-task — the live source of truth is
-> `state.json` (full per-task status + notes) and `.claude/tasks/index.json`
+> `state.json` (full per-task status + notes) and `.qtm/tasks/index.json`
 > (progress mirror). See those for current state.
 
 **Average Complexity:** 2.3/4 (max)

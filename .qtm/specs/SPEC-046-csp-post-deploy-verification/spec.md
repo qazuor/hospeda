@@ -6,7 +6,7 @@
 > **Priority**: HIGH
 > **Origin**: SPEC-042 (post-deploy verification items that cannot be tested locally)
 > **Depends on**: SPEC-042 deployed to staging, SPEC-045 (Vite 7 migration) for admin nonce injection
-> **Gap Analysis**: [`.claude/specs/specs-gaps-042.md`](../specs-gaps-042.md) (38 gaps, 3 audits)
+> **Gap Analysis**: [`.qtm/specs/specs-gaps-042.md`](../specs-gaps-042.md) (38 gaps, 3 audits)
 > **Extended**: 2026-05-16 — added GAP-046-09a / 09b / 10 / 11 / 12 / 13 derived from real staging violations observed on `staging.hospeda.com.ar/es/alojamientos/` with CSP in Report-Only mode. See §1C.
 
 ---
@@ -43,10 +43,10 @@ SPEC-046 is Phase D in the CSP enforcement chain. It is the FINAL GATE before Ph
 
 ### References
 
-- Origin spec: `.claude/specs/SPEC-042-csp-nonce-integration/spec.md`
-- Gap analysis: `.claude/specs/specs-gaps-042.md` (38 gaps, 3 audits)
-- Prerequisite: `.claude/specs/SPEC-045-vite7-migration/spec.md`
-- Prerequisite: `.claude/specs/SPEC-047-csp-unsafe-inline-removal/spec.md`
+- Origin spec: `.qtm/specs/SPEC-042-csp-nonce-integration/spec.md`
+- Gap analysis: `.qtm/specs/specs-gaps-042.md` (38 gaps, 3 audits)
+- Prerequisite: `.qtm/specs/SPEC-045-vite7-migration/spec.md`
+- Prerequisite: `.qtm/specs/SPEC-047-csp-unsafe-inline-removal/spec.md`
 
 ---
 
@@ -588,7 +588,7 @@ The following console messages appear on staging and are **expected by the CSP s
 <!-- Added: Audit #3, 2026-03-17 -->
 ## 12. References
 
-- **Gap Analysis**: [`.claude/specs/specs-gaps-042.md`](../specs-gaps-042.md) .. Full report of 38 gaps across 3 audits. This spec incorporates findings from all 3 audits.
+- **Gap Analysis**: [`.qtm/specs/specs-gaps-042.md`](../specs-gaps-042.md) .. Full report of 38 gaps across 3 audits. This spec incorporates findings from all 3 audits.
 - **SPEC-042**: CSP Nonce Integration (Phase 1 implementation, completed).
 - **SPEC-045**: Vite 7 Migration .. prerequisite for admin nonce injection (GAP-042-01, GAP-042-13, GAP-042-18, GAP-042-19).
 - **Astro Issue #14798**: Style hash opt-out for `experimental.csp` (upstream, open).

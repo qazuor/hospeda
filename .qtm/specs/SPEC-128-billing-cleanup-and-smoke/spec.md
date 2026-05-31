@@ -139,7 +139,7 @@ After all smokes pass:
 - [ ] Ops runbook at `docs/migration/mercadopago-sandbox-runbook.md` complete
 - [ ] 10/10 smokes executed against MP sandbox, results documented in engram
 - [ ] SPEC-109 updated with current status (ready for Phases 3-7)
-- [ ] SPEC-122 + all 6 children marked `completed` in `.claude/specs/index.json` + engram
+- [ ] SPEC-122 + all 6 children marked `completed` in `.qtm/specs/index.json` + engram
 - [ ] Final engram observation `spec/spec-122/closure-summary` saved with the full story
 
 ## Engram references

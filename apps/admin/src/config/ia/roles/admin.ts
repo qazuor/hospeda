@@ -12,7 +12,7 @@
  *
  * Design source of truth:
  *   `.claude/audit/admin-redesign/proposals/01-information-architecture.md` §13.
- *   `.claude/specs/SPEC-155-admin-dashboards-v1/spec.md` §4 AC-8, AC-31.
+ *   `.qtm/specs/SPEC-155-admin-dashboards-v1/spec.md` §4 AC-8, AC-31.
  *
  * @see apps/admin/src/config/ia/schema.ts    — RoleConfigSchema
  * @see apps/admin/src/config/ia/sections.ts  — Section IDs referenced in mainMenu

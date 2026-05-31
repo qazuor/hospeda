@@ -1091,8 +1091,8 @@ be filed as a follow-up task in `state.json` or as a new engram bug entry.
 
 ## Cross-references
 
-- Spec: `.claude/specs/SPEC-143-billing-testing-coverage/spec.md`
-- Task state: `.claude/tasks/SPEC-143-billing-testing-coverage/state.json`
+- Spec: `.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`
+- Task state: `.qtm/tasks/SPEC-143-billing-testing-coverage/state.json`
 - Workstream A coverage: `apps/api/test/e2e/flows/billing/`
 - Web-side page coverage: `apps/web/test/pages/checkout-pages.test.ts`
 - Production smoke: `prod-smoke-checklist.md` (T-143-22, Phase 1 Workstream C)

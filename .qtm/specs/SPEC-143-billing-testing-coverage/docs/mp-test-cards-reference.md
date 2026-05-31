@@ -193,8 +193,8 @@ year). To stay current:
 
 ## Cross-references
 
-- Spec: `.claude/specs/SPEC-143-billing-testing-coverage/spec.md`
-- Task state: `.claude/tasks/SPEC-143-billing-testing-coverage/state.json`
+- Spec: `.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`
+- Task state: `.qtm/tasks/SPEC-143-billing-testing-coverage/state.json`
 - Staging smoke: `staging-smoke-checklist.md` (T-143-20, T-143-36, T-143-45)
 - Production smoke: `prod-smoke-checklist.md` (T-143-22)
 - Billing runbooks (incident response): `billing-runbooks.md` (T-143-49+,
