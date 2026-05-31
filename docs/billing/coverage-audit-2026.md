@@ -390,7 +390,7 @@ The audit's recommendation: **leave the 43 lines uncovered, document why here, a
 
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks (functional-audit input)
 - [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/) — e2e test inventory
-- [`.claude/specs/SPEC-143-billing-testing-coverage/`](../../.claude/specs/SPEC-143-billing-testing-coverage/) — spec + tasks state
-- [`.claude/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/`](../../.claude/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/) — forward spec (cron-lag grace + plan lifecycle, deferred from T-143-63)
-- [`.claude/specs/SPEC-149-billing-provider-error-propagation-and-sentry/`](../../.claude/specs/SPEC-149-billing-provider-error-propagation-and-sentry/) — forward spec (MP error propagation + Sentry + retry policy, deferred from T-143-59)
-- [`.claude/specs/SPEC-150-billing-multi-currency-support/`](../../.claude/specs/SPEC-150-billing-multi-currency-support/) — forward spec (multi-currency support, deferred from T-143-62)
+- [`.qtm/specs/SPEC-143-billing-testing-coverage/`](../../.qtm/specs/SPEC-143-billing-testing-coverage/) — spec + tasks state
+- [`.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/`](../../.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/) — forward spec (cron-lag grace + plan lifecycle, deferred from T-143-63)
+- [`.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/`](../../.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/) — forward spec (MP error propagation + Sentry + retry policy, deferred from T-143-59)
+- [`.qtm/specs/SPEC-150-billing-multi-currency-support/`](../../.qtm/specs/SPEC-150-billing-multi-currency-support/) — forward spec (multi-currency support, deferred from T-143-62)

@@ -65,7 +65,7 @@ The seed inserts directly into `users` + `account` + `billing_customers` + `bill
 
 When `loadEntitlements()` runs on login, the active subscription drives `userLimits` and `userEntitlements`, so limit-enforcement endpoints behave exactly as they would for a real paying user.
 
-Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
+Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
 
 ## Role Permission Gotchas
 

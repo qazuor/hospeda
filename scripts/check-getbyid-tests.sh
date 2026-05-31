@@ -21,7 +21,7 @@
 #      so the OTHER read method is explicitly verified as not invoked.
 #      This forces the test to pin the exact path.
 #
-# To resolve a CI failure: read the spec at .claude/specs/SPEC-083 (or
+# To resolve a CI failure: read the spec at .qtm/specs/SPEC-083 (or
 # the project history) for the canonical pattern, then update the test
 # to either mock+assert `findOne` (for services WITHOUT relations) or
 # mock+assert `findOneWithRelations` with the explicit relation config

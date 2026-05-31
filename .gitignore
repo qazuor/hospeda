@@ -134,6 +134,11 @@ node_modules
 .playwright-mcp
 .claude/design-clones
 .claude/worktrees/
+# worktree skill: per-worktree local state (ephemeral, never committed)
+.claude/worktree-state.local.json
+.claude/wt-logs/
+# task-master index lock (specs/tasks now live under .qtm/)
+.qtm/tasks/.index.lock
 apps/web-test
 apps/web-old
 
