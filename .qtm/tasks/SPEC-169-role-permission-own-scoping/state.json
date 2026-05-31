@@ -1,0 +1,916 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-169",
+    "title": "Role Permission Audit + Owner-Scoped Data Access",
+    "created": "2026-05-29T02:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create audit script — programmatic scan of role x permission matrix",
+            "description": "One-off TS script importing RoleEnum/PermissionEnum/ROLE_PERMISSIONS from packages/seed/src/required/rolePermissions.seed.ts; emit per-role table of every _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE grant (role | permission | category) as the 'read' audit baseline. File: packages/seed/scripts/audit-role-permissions.ts. DONE: executed, seed matches spec §3 exactly (no discrepancy); only live cross-tenant READ leak = accommodation (HOST holds VIEW_ALL).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Import role-permissions map from seed file", "completed": false },
+                {
+                    "title": "Filter to _VIEW_ALL/_READ_ALL/_VIEW_PRIVATE suffixes",
+                    "completed": false
+                },
+                {
+                    "title": "Emit structured output (role | permission | category)",
+                    "completed": false
+                },
+                { "title": "Run and capture output as the read audit baseline", "completed": false }
+            ],
+            "tags": ["audit", "backend", "scripts"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:30:00.000Z",
+                "completed": "2026-05-29T02:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create audit script — enumerate admin list/getById endpoints + write-enforcement matrix",
+            "description": "Walk apps/api/src/routes/*/admin/ to record entity | route | method | requiredPermissions | optional-owner-filter? Walk packages/service-core/src/services/*/ permission files to classify each write/destructive op as isOwner / permission-only / staff-only / NA — INCLUDING UI-less routes (/{id}/hard, batch, restore). DONE (static analysis — worktree node_modules incomplete, tsx/vitest missing): accommodation is the ONLY non-staff-exploitable leak (list+getById). NO write-leaks for any _OWN role; accommodation matches §2.2. conversations/admin/list.ts already implements the §5.2 forced-scope pattern = reference impl. Selectors needing /options: users, destinations, accommodations, events. 5 open questions logged for owner.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Enumerate admin list routes and requiredPermissions",
+                    "completed": false
+                },
+                {
+                    "title": "Flag routes with optional ownerId-style query param",
+                    "completed": false
+                },
+                {
+                    "title": "Enumerate write ops + their check function per owner-scoped entity",
+                    "completed": false
+                },
+                {
+                    "title": "Classify each write op: isOwner / permission-only / no check",
+                    "completed": false
+                },
+                {
+                    "title": "Emit endpoint table + write-enforcement matrix for owner review",
+                    "completed": false
+                }
+            ],
+            "tags": ["audit", "backend", "scripts"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:30:00.000Z",
+                "completed": "2026-05-29T02:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "⛔ OWNER-REVIEW GATE (§12) — present audit outputs, receive explicit approval on ALL verdicts",
+            "description": "HARD GATE. Human-in-the-loop. CLOSED 2026-05-29. All §12 decisions approved by owner — recorded in .qtm/specs/SPEC-169-role-permission-own-scoping/decision-log.md. Key verdicts: D1 VIEW_OWN only accommodation; D2 404 NOT_FOUND for non-owned; D3 resolver accommodation-only; D4 /options for 6 entities (users/destinations/accommodations/events/event-organizers/event-locations, ACCESS_PANEL_ADMIN, accommodation payload +type+destination); D5 beforeLoad only on /accommodations list; D6 seed wording; D7 posts = document only (Option C), NOT touched. CLIENT_MANAGER untouched. Posts granular model deferred to new SPEC-170.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": [
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-010",
+                "T-017",
+                "T-018",
+                "T-020",
+                "T-021",
+                "T-022"
+            ],
+            "subtasks": [
+                { "title": "Present T-001 role×permission matrix to owner", "completed": false },
+                {
+                    "title": "Present T-002 endpoint + write-enforcement matrix to owner",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve which entities get _VIEW_OWN + exact permission names",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve _canAdminView semantics for PRIVATE/RESTRICTED",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve ownership resolver shape (§5.6) + which entities get a descriptor",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve /options payload shape, gating, and which entities get one",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve seed wording (HOST grant removal, EDITOR rationale comment)",
+                    "completed": false
+                },
+                {
+                    "title": "⛔ §12: approve which admin routes get beforeLoad guard + redirect targets",
+                    "completed": false
+                },
+                { "title": "Confirm CLIENT_MANAGER is NOT touched", "completed": false },
+                { "title": "Record all approvals in a decision log file", "completed": false }
+            ],
+            "tags": ["decision-gate", "audit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T02:55:00.000Z",
+                "completed": "2026-05-29T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add ACCOMMODATION_VIEW_OWN (and approved _VIEW_OWN perms) to PermissionEnum",
+            "description": "DONE. Added ACCOMMODATION_VIEW_OWN = 'accommodation.viewOwn' to permission.enum.ts right after VIEW_ALL (D1: accommodation only). PermissionEnumSchema is z.nativeEnum so the value is picked up automatically — no manual list. Extended test/enums/enum.schemas.test.ts (value in validPermissions + 2 dedicated SPEC-169 assertions). Tests 24/24 pass; @repo/schemas typecheck clean.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006", "T-007", "T-008", "T-031"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm exact permission names from T-003 before adding",
+                    "completed": false
+                },
+                {
+                    "title": "Add ACCOMMODATION_VIEW_OWN with value 'accommodation.viewOwn'",
+                    "completed": false
+                },
+                { "title": "Add any other approved _VIEW_OWN permissions", "completed": false },
+                { "title": "Verify TypeScript compiles, no any", "completed": false },
+                {
+                    "title": "Extend permission.enum.test.ts asserting new values",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "permissions", "backend"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T03:45:00.000Z",
+                "completed": "2026-05-29T04:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Define per-entity ownership resolver (ownerColumn + isOwner)",
+            "description": "DONE. Created packages/service-core/src/utils/ownership.ts: OwnershipDescriptor { ownerColumn, isOwner } + ownedByColumn() helper + OWNERSHIP_REGISTRY (D3: accommodation only → ownerColumn 'ownerId') + getOwnershipDescriptor(). Re-exported from utils/index.ts. Test test/utils/ownership.test.ts 6/6 pass. @repo/service-core typecheck clean (after building @repo/billing dist to clear a preexisting worktree baseline-red unrelated to this change). §12 column-name checkpoint satisfied by D3 (accommodation=ownerId, confirmed by audit).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm ownership column names per entity from T-003 (authorId? createdById? ownerId?)",
+                    "completed": false
+                },
+                { "title": "Define OwnershipDescriptor interface", "completed": false },
+                {
+                    "title": "Define OWNERSHIP_REGISTRY (only _VIEW_OWN entities)",
+                    "completed": false
+                },
+                { "title": "Implement getOwnershipDescriptor", "completed": false },
+                { "title": "Export from utils index", "completed": false }
+            ],
+            "tags": ["service-core", "backend", "architecture"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T04:10:00.000Z",
+                "completed": "2026-05-29T04:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement checkCanAdminView (VIEW_ALL OR VIEW_OWN+isOwner) in accommodation.permissions",
+            "description": "DONE. Added checkCanAdminView in accommodation.permissions.ts (PURE fn). VIEW_ALL → any; VIEW_OWN → getOwnershipDescriptor('accommodation').isOwner else NOT_FOUND (D2, no existence leak); neither → FORBIDDEN. Does NOT reuse checkCanView (which allows any PUBLIC). Uses the T-005 resolver so isOwner stays single-sourced (§5.6). Tests: 5 cases in accommodation.permissions.test.ts (AC-4 VIEW_ALL any, AC-8 own, AC-9 other PUBLIC+PRIVATE → NOT_FOUND, neither → FORBIDDEN) — 34/34 file pass; typecheck clean. SERVICE method + getById route wiring deferred to T-009 (§12 approach checkpoint).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-008", "T-009", "T-013"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm error code (FORBIDDEN vs NOT_FOUND) from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Export checkCanAdminView from accommodation.permissions.ts",
+                    "completed": false
+                },
+                { "title": "Override _canAdminView in AccommodationService", "completed": false },
+                {
+                    "title": "Use getOwnershipDescriptor('accommodation').isOwner for VIEW_OWN branch",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T04:35:00.000Z",
+                "completed": "2026-05-29T04:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement forced owner-scoping in adminList for accommodation (VIEW_OWN path)",
+            "description": "DONE. checkCanAdminList now accepts VIEW_ALL OR VIEW_OWN (new error msg). _executeAdminSearch override in AccommodationService FORCES entityFilters.ownerId = actor.id for a VIEW_OWN-only actor (overwrites any client/forged ownerId); VIEW_ALL lists unscoped; neither → FORBIDDEN (checkCanAdminList). No hookState stash needed — actor is available in _executeAdminSearch params. Tests: admin-search.test.ts +4 forced-scope cases (AC-1/AC-2 forced, AC-4 unscoped + staff explicit filter), adminListPermission +VIEW_OWN-allowed + updated msg, permissions.test +VIEW_OWN-allowed + updated msg. Full accommodation folder 312/312 pass; typecheck clean.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-008", "T-009", "T-012", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Update checkCanAdminList to accept VIEW_ALL OR VIEW_OWN",
+                    "completed": false
+                },
+                {
+                    "title": "In _canAdminList detect held permission and stash on context",
+                    "completed": false
+                },
+                {
+                    "title": "In _executeAdminSearch force ownerId = actor.id for VIEW_OWN-only",
+                    "completed": false
+                },
+                { "title": "Confirm neither-perm path still throws FORBIDDEN", "completed": false }
+            ],
+            "tags": ["service-core", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T05:05:00.000Z",
+                "completed": "2026-05-29T05:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update accommodation adminList route gate to accept VIEW_ALL OR VIEW_OWN",
+            "description": "DONE. Factory middleware uses hasAllPermissions (AND-only) — §12 checkpoint resolved by owner: Option A (the service decides). Removed requiredPermissions:[VIEW_ALL] from list.ts (+ dropped now-unused PermissionEnum import); the admin middleware only requires admin access (HOST keeps ACCESS_PANEL_ADMIN), and checkCanAdminList (T-007) enforces VIEW_ALL OR VIEW_OWN + owner-scoping. Route test apps/api/test/routes/accommodation/admin/list.test.ts (3 tests): VIEW_OWN host passes the gate (the core fix), VIEW_ALL passes, guest 401/403; the no-entity-perm→403 case is covered at service level (T-007) since route tests mock the service. HARNESS FIX (owner-approved Option 1): the API route-test harness was fully broken (initApp threw on missing @repo/db models → 0 route tests collected). Fixed db-mock (GenericMockModel + ConversationModel/MessageModel + ~30 models), revalidation.test.ts local service-core mock (now spreads ...actual, 73/73 pass), and admin-list-routes.test.ts (representativeRoute moved off accommodations since it now delegates to service; Destination 2 cases skipped with note — preexisting generic-mock gap, ajeno SPEC-158). Result: test/routes/ now 1427 pass / 6 skip / 0 fail (was 0 collecting).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-006", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Read createAdminListRoute permission-check logic", "completed": false },
+                {
+                    "title": "⛔ §12: if factory is AND-only, present options before changing the factory",
+                    "completed": false
+                },
+                {
+                    "title": "Update accommodation list route gate to allow VIEW_OWN",
+                    "completed": false
+                },
+                { "title": "Verify existing ADMIN actor tests still pass", "completed": false }
+            ],
+            "tags": ["api", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T05:40:00.000Z",
+                "completed": "2026-05-29T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update accommodation admin getById route + service to use _canAdminView",
+            "description": "DONE. §12 approach checkpoint resolved by owner: Option 1 (dedicated adminGetById). Added AccommodationService.adminGetById (fetch + checkCanAdminView + _afterGetByField projections) and getById.ts route now calls it with VIEW_ALL removed from the gate (admin-access-only). SUB-TAB GAP (owner-approved Option 1): getFaqs route also required VIEW_ALL → would 403 a HOST's own FAQs (breaks AC-8). Added AccommodationService.adminGetFaqs (checkCanAdminView, leaves generic getFaqs intact for protected/public path which getFaqs is also used by) and getFaqs.ts route now calls it, VIEW_ALL removed. batch left staff-only intentionally (HOST does no bulk ops). Tests: accommodation.adminGetById.test.ts 7/7 (AC-4/8/9 for getById+getFaqs: own ok, others PUBLIC→NOT_FOUND, staff any), route getById.test.ts 5/5 (gate accepts VIEW_OWN for detail+faqs). service-core typecheck clean; my files absent from the preexisting API typecheck baseline-red (feedback/newsletter/conversation, ajeno).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-010", "T-016"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm approach (dedicated adminGetById vs admin-context detection)",
+                    "completed": false
+                },
+                {
+                    "title": "Update route requiredPermissions to OR-accept VIEW_OWN",
+                    "completed": false
+                },
+                {
+                    "title": "Wire route to invoke _canAdminView (not _canView)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify sub-tab routes (faqs, amenities, gallery) use same path",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "backend", "accommodation", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T06:50:00.000Z",
+                "completed": "2026-05-29T07:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed: remove HOST ACCOMMODATION_VIEW_ALL, add VIEW_OWN; document EDITOR rationale",
+            "description": "DONE (change verified). rolePermissions.seed.ts: HOST ACCOMMODATION_VIEW_ALL → ACCOMMODATION_VIEW_OWN + updated D6 comment; EDITOR POST_VIEW_*/EVENT_VIEW_PRIVATE got the §3 KEEP rationale comment (refs SPEC-170 for the per-user override UI); CLIENT_MANAGER untouched. Verified via: @repo/seed typecheck clean + the T-001 audit script now reports HOST broad-grants=(none), EDITOR=3 (legit), CLIENT_MANAGER unchanged. NOTE: `pnpm db:fresh-dev` not run (needs Docker DB). Seed vitest has 7 suites failing to COLLECT — NOT my change: 'Cannot find @repo/feedback/@repo/logger/@repo/media' = worktree has several @repo/* packages unbuilt (no dist). Preexisting build-setup gap flagged to owner.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004", "T-009"],
+            "blocks": ["T-011", "T-014", "T-015", "T-016", "T-022", "T-027", "T-028", "T-029"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm exact wording for HOST + EDITOR comments from T-003",
+                    "completed": false
+                },
+                { "title": "Remove ACCOMMODATION_VIEW_ALL from HOST block", "completed": false },
+                { "title": "Add ACCOMMODATION_VIEW_OWN to HOST block", "completed": false },
+                { "title": "Add EDITOR rationale comment block", "completed": false },
+                { "title": "Do NOT touch CLIENT_MANAGER", "completed": false },
+                { "title": "Run pnpm db:fresh-dev to verify seed applies", "completed": false }
+            ],
+            "tags": ["seed", "backend", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T07:25:00.000Z",
+                "completed": "2026-05-29T07:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write AC-6 regression test — no unauthorized broad grants in non-staff roles",
+            "description": "DONE. packages/seed/test/role-permission-audit.test.ts (10/10): exported ROLE_PERMISSIONS from the seed; value→key reverse map detects broad grants (_VIEW_ALL/_READ_ALL/_VIEW_PRIVATE by enum KEY); asserts HOST has zero broad grants + holds VIEW_OWN; per non-staff role, no broad grant outside ALLOWED_BROAD_GRANTS (EDITOR=3 legit; CLIENT_MANAGER=5 tracked-debt with explicit comment, deferred); EDITOR keeps exactly its 3. Systemic guard: any future broad grant re-added to a non-staff role fails this. Full seed suite 510 pass / 2 skip / 0 fail (after the workspace `pnpm build` resolved the worktree's unbuilt @repo/* deps).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Import ROLE_PERMISSIONS from seed", "completed": false },
+                {
+                    "title": "Define NON_STAFF_ROLES + PERMITTED_BROAD_GRANTS allow-list",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no broad grant outside allow-list per non-staff role",
+                    "completed": false
+                },
+                { "title": "Assert HOST has no ACCOMMODATION_VIEW_ALL", "completed": false }
+            ],
+            "tags": ["testing", "security", "regression"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T07:45:00.000Z",
+                "completed": "2026-05-29T08:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write AC-1/AC-2 service unit tests — forced owner scope in adminList",
+            "description": "DONE — covered by admin-search.test.ts (added in T-007): AC-1 (VIEW_OWN no ownerId → forced actor.id), AC-2 (forged ?ownerId=other → still forced), VIEW_ALL → unscoped. 15/15 pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Mock model with spy-tracked list", "completed": false },
+                { "title": "Verify forced ownerId insertion (AC-1, AC-2)", "completed": false },
+                { "title": "Verify unscoped path for VIEW_ALL (AC-4)", "completed": false }
+            ],
+            "tags": ["testing", "service-core", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write AC-8/AC-9 service unit tests — _canAdminView own vs other",
+            "description": "DONE — covered by accommodation.permissions.test.ts (T-006, checkCanAdminView 5 cases) + accommodation.adminGetById.test.ts (T-009, adminGetById/adminGetFaqs 7 cases): VIEW_OWN+own→ok, VIEW_OWN+other PUBLIC→NOT_FOUND (AC-9), VIEW_ALL+any→ok (AC-4/AC-8). 3-way branch exhaustive.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert VIEW_OWN + own → no error (AC-8)", "completed": false },
+                { "title": "Assert VIEW_OWN + other's PUBLIC → error (AC-9)", "completed": false },
+                { "title": "Assert VIEW_ALL + any → no error (AC-4)", "completed": false }
+            ],
+            "tags": ["testing", "service-core", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Write AC-10 integration tests — HOST write ops blocked on other's accommodation",
+            "description": "DONE — accommodation.writeOwnership.test.ts (9 tests): an _OWN-only HOST on ANOTHER owner's accommodation → FORBIDDEN for update/softDelete/restore/hardDelete; on its OWN → allowed for update/softDelete/restore, hardDelete still FORBIDDEN (staff-only). Uses the real permission fns (no mocks). publish/visibility/featured derive from checkCanUpdate/explicit isOwner (§2.2) already verified. AC-10.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Seed two HOST actors + two accommodations", "completed": false },
+                { "title": "Assert each write op cross-owner → FORBIDDEN", "completed": false },
+                { "title": "Assert each write op same-owner → succeeds", "completed": false }
+            ],
+            "tags": ["testing", "security", "integration", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write AC-11 write-enforcement matrix test from audit output",
+            "description": "DONE — AC-11 ownership-enforcement matrix is the 'matrix' describe in accommodation.writeOwnership.test.ts: each owner-scoped write op enforces isOwner for _OWN-only actors (FORBIDDEN cross-owner) while staff with _ANY may act on any record; hardDelete documented staff-only. Accommodation is the only owner-scoped entity in OWNERSHIP_REGISTRY (T-005/D3), so the matrix covers the registry.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Import each owner-scoped entity's write permission fns",
+                    "completed": false
+                },
+                {
+                    "title": "Assert VIEW_OWN-only actor on non-owned entity → FORBIDDEN",
+                    "completed": false
+                },
+                { "title": "Cross-check against T-002 matrix", "completed": false }
+            ],
+            "tags": ["testing", "security", "audit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write AC-4/AC-5 regression tests — staff unscoped + /me/accommodations works",
+            "description": "DONE — covered in admin-search.test.ts: AC-4 (VIEW_ALL unscoped + staff explicit ownerId filter kept) and AC-5/REQ-4 (VIEW_OWN host with ownerId=self still sees own rows — /me/accommodations not broken after VIEW_ALL removal; also AC-1 no-ownerId forced own). No separate /me route exists — /me/accommodations reuses admin list with ownerId=self (spec §2). 15/15 pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009", "T-010"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert ADMIN VIEW_ALL → no forced ownerId (AC-4)", "completed": false },
+                {
+                    "title": "Assert HOST VIEW_OWN + ownerId=self → 200 own rows (AC-5)",
+                    "completed": false
+                },
+                {
+                    "title": "Assert HOST VIEW_OWN + no ownerId → 200 forced own (AC-5)",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "regression", "accommodation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement GET /api/v1/admin/accommodations/options lookup endpoint",
+            "description": "DONE. GET /api/v1/admin/accommodations/options: createAdminRoute, NO requiredPermissions (admin-access gate), registered BEFORE /{id}. Shared EntityOptionsQuerySchema/EntityOptionsItemSchema/EntityOptionsListSchema in @repo/schemas/common/entity-options.schema.ts; accommodation.options.schema.ts extends with type+destination (D4/OQ3). Service AccommodationService.findOptions → checkCanFindOptions (ACCESS_PANEL_ADMIN/API_ADMIN) + model.searchWithRelations projected to {id,label,slug,type,destination}, DRAFT-inclusive. Tests: find-options.test.ts 7/7 + options route 3/3. schemas+service-core typecheck clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-018", "T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm payload shape/fields/DRAFT/gating from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Create options.ts route + AccommodationOptionsQuerySchema",
+                    "completed": false
+                },
+                {
+                    "title": "Return {id,label,slug} only — no admin/private/pricing/contact",
+                    "completed": false
+                },
+                { "title": "Register before /:id in index.ts", "completed": false }
+            ],
+            "tags": ["api", "backend", "accommodation", "lookup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T08:10:00.000Z",
+                "completed": "2026-05-29T08:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement /options for destination (+ any other approved entities)",
+            "description": "DONE. Replicated /options to the 5 D4 entities: destinations, events, event-organizers, event-locations, users. checkCanFindOptions moved SHARED to service-core/utils/permission.ts (entity-agnostic, reused by all 5). Per-entity findOptions via model.findAll + buildSearchCondition/safeIlike, DRAFT-inclusive, projected to {id,label,slug}. Label fallbacks (owner-approved §12, see decision-log D4 addendum): users = displayName ?? email (PII tradeoff accepted); event-locations = placeName ?? slug. Tests: 6 service find-options files (34 total) + 6 route options files (18 total) green. schemas+service-core typecheck clean; new files absent from API baseline-red.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm which entities beyond accommodation get /options",
+                    "completed": false
+                },
+                {
+                    "title": "Create destination options.ts + register before /:id",
+                    "completed": false
+                },
+                { "title": "Repeat for each additional approved entity", "completed": false }
+            ],
+            "tags": ["api", "backend", "destinations", "lookup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T08:30:00.000Z",
+                "completed": "2026-05-29T09:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Verify AccommodationAdminSearchSchema accepts ownerId as optional filter",
+            "description": "DONE (verified, no change needed). AccommodationAdminSearchSchema.ownerId is already `.string().uuid().optional()` (lines 40-44). Functionally exercised by T-007 (admin-search.test.ts passes ownerId in entityFilters) and covered by the existing group-a.admin-search.schema.test.ts. The service forces the value regardless, so the optional client field is correct.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-010"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Verify ownerId?: string present", "completed": false },
+                {
+                    "title": "Assert safeParse({ ownerId }) and safeParse({}) both succeed",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "backend", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": "2026-05-29T09:15:00.000Z",
+                "completed": "2026-05-29T09:18:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Migrate OwnerSelect to /options endpoint",
+            "description": "DONE. OwnerSelect.tsx now calls /api/v1/admin/users/options; transformer adapted to { id, label, slug } (label = displayName ?? email per D4 addendum); heavyweight fields dropped; queryKey → ['users','options']. user-api.utils searchUsers/loadInitialUsers/loadAllUsers migrated (loadUsersByIds keeps /batch by-id). admin typecheck clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017"],
+            "blocks": ["T-023", "T-025"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm OwnerSelect /options target from T-003",
+                    "completed": false
+                },
+                { "title": "Update API call URL to /options", "completed": false },
+                { "title": "Update response transformer for {id,label,slug}", "completed": false },
+                { "title": "Verify owners populate correctly in admin UI", "completed": false }
+            ],
+            "tags": ["admin-frontend", "selects", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Migrate DestinationSelect, entity-select fields, generic entity-search to /options",
+            "description": "DONE. Migrated to /options: DestinationSelect.tsx + entity-select utils (user/destination/accommodation/event/event-organizer/event-location-api.utils via new createOptionsSelectUtils factory) + entity-search.utils.ts (dead /search fallback → /options, dual-shape normalizer). loadXByIds keep /batch. OQ1: post-sponsorship-api.utils left pointing at the unmounted /admin/post-sponsorships with a SPEC-169/OQ1 comment (out of scope; secure when mounted). UX flag (owner-approved): DestinationSelect label = name only, no (region,country) — accepted regression. admin typecheck clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-017", "T-018"],
+            "blocks": ["T-023", "T-025"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm complete selector list to migrate from T-003",
+                    "completed": false
+                },
+                {
+                    "title": "Update DestinationSelect to /admin/destinations/options",
+                    "completed": false
+                },
+                { "title": "Update entity-search.utils.ts to /options", "completed": false },
+                { "title": "Update entity-select fields to /options pattern", "completed": false }
+            ],
+            "tags": ["admin-frontend", "selects", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Add beforeLoad owner-scope guard on /accommodations admin route(s)",
+            "description": "DONE. Pure decideOwnerScopedRedirect in apps/admin/src/lib/owner-scoped-guard.ts: returns '/me/accommodations' when permissions include ACCOMMODATION_VIEW_OWN and NOT VIEW_ALL, else null (VIEW_ALL wins; neither → null). Wired into /_authed/accommodations/index.tsx beforeLoad (throw redirect) reading context auth like conversations/index.tsx; validateSearch reflected to keep search params. D5: ONLY the list route (detail/edit/new covered server-side). /me/accommodations confirmed to exist (no redirect loop). Test owner-scoped-guard.test.ts 6/6. admin typecheck clean.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-010"],
+            "blocks": ["T-023", "T-024"],
+            "subtasks": [
+                {
+                    "title": "⛔ §12: confirm which routes get the guard + redirect target from T-003",
+                    "completed": false
+                },
+                { "title": "Create owner-scoped-guard.ts pure function", "completed": false },
+                { "title": "Add beforeLoad to accommodation list route", "completed": false },
+                { "title": "Add beforeLoad to detail/edit routes if approved", "completed": false },
+                {
+                    "title": "Ensure /me/accommodations never redirects (no loop)",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin-frontend", "routing", "security"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "End-to-end verify /me/accommodations works after all changes",
+            "description": "DONE (live e2e smoke executed 2026-05-29). Verified against the REAL running API (this worktree's SPEC-169 code on alt-port :3019, since :3011 was held by the spec-161 worktree) + REAL DB (hospeda_dev, 105 accommodations / 35 owners) + REAL Better Auth session for host-basico@local.test. DB was brought to SPEC-169 state NON-DESTRUCTIVELY (owner-approved): ALTER TYPE permission_enum ADD VALUE 'accommodation.viewOwn' + role_permission HOST: deleted accommodation.viewAll, inserted accommodation.viewOwn (the 105 accommodations + test users + subscriptions preserved). RESULTS (all pass): (#1+#4) GET /admin/accommodations no ownerId → 1 row (only host-basico's), NOT 105 = leak closed; (#2) own detail → 200; own /faqs → 200 (T-009 sub-tab fix); non-owned detail → 404 + non-owned /faqs → 404 (D2 anti-enumeration); forged ?ownerId=<other owner> → still 1 own row (AC-2 forced-override holds live). (#3) /accommodations→/me/accommodations client redirect NOT browser-exercised (cross-port cookie flakiness); covered by owner-scoped-guard.test 6/6. API stopped + port freed after smoke; spec-161 :3011 untouched. NOTE: the shared hospeda_dev DB now reflects the SPEC-169 permission model (HOST=viewOwn) — flagged to owner.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020", "T-021", "T-022"],
+            "blocks": ["T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Verify /me/accommodations list loads own accommodations",
+                    "completed": false
+                },
+                { "title": "Verify accommodation detail/edit loads (not 403)", "completed": false },
+                { "title": "Verify HOST redirected from /accommodations", "completed": false },
+                {
+                    "title": "Verify no-ownerId admin list does not leak all rows",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "regression", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write AC-3 route-guard test — redirect HOST from /accommodations",
+            "description": "DONE (covered by T-022, owner-approved 'mark covered + explicit AC assertion'). AC-3 is fully satisfied by apps/admin/test/lib/owner-scoped-guard.test.ts (6/6): HOST with VIEW_OWN (not VIEW_ALL) → redirect /me/accommodations; staff with VIEW_ALL → null (allow). No separate accommodations.guard.test.ts file created (would duplicate the pure-function coverage). Added an AC-3 traceability note to the test file header. The function is decideOwnerScopedRedirect (task desc used an outdated name).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-023"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert HOST → redirect decision", "completed": false },
+                { "title": "Assert ADMIN → allow decision", "completed": false }
+            ],
+            "tags": ["testing", "frontend", "routing", "e2e"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write AC-7 integration test — selectors work for EDITOR with ACCESS_PANEL_ADMIN only",
+            "description": "DONE (covered by T-017/T-018, owner-approved 'mark covered + explicit AC assertion'). AC-7 split across two layers: ROUTE half = apps/api/test/routes/*/admin/options.test.ts (EDITOR with only ACCESS_PANEL_ADMIN, no _VIEW_ALL, reaches /options without 403/404); PAYLOAD half = packages/service-core/test/services/*/find-options.test.ts (projection {id,label,slug}[+type+destination], DRAFT-inclusive, FORBIDDEN without panel access). Added AC-7 traceability notes to both file headers. Route tests mock the service by design (harness), so payload is asserted at the service layer — a true DB-backed integration is part of T-023 (deferred to smoke).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-021", "T-023"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Assert EDITOR → accommodations/options 200", "completed": false },
+                { "title": "Assert EDITOR → destinations/options 200", "completed": false },
+                {
+                    "title": "Assert response only {id,label,slug}, DRAFT present",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "api", "selectors"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Run full test suite and fix regressions from seed/permission changes",
+            "description": "DONE (zero SPEC-169 regressions). SPEC-169-affected packages ALL GREEN: @repo/schemas + @repo/service-core (incl. host()+VIEW_OWN factory change) + @repo/seed (510✓/2skip, AC-6 audit 10✓, rolePermissions 126✓) + @repo/db (768✓/10skip, enum-consistency✓) + hospeda-api (route suite green). admin: 55 tests fail across 10 files (ImageField, PageTabs, OwnTagManager, promo-code-dialog, billing-http-adapter, billing.smoke, accommodation-consolidated, RoutePermissionGuard, roles.test, role-acceptance.admin-super) — ALL classified PREEXISTING BASELINE-RED, NOT SPEC-169: git log origin/staging..HEAD shows SPEC-169 touched none of those files NOR their subjects (config/ia, accommodation form sections, RoutePermissionGuard.tsx, permission-visibility, sidebar-items); failure modes are menu-section counts (4/5/7), form field counts (7 vs 8), unresolved i18n keys, and navigate mocks — none reference viewOwn/viewAll/options/owner-scope. owner-scoped-guard.test (the SPEC-169 admin test) passes 6/6 in isolation. Flagged to owner; the admin baseline-red is out of scope for this spec.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-024", "T-025"],
+            "blocks": ["T-027", "T-031", "T-032"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm test in service-core/schemas/seed/api/admin",
+                    "completed": false
+                },
+                { "title": "Fix fixture-update test failures", "completed": false },
+                { "title": "Flag genuine regressions for review", "completed": false }
+            ],
+            "tags": ["testing", "regression", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Update SPEC-143 test-user matrix fixtures for HOST permission change",
+            "description": "DONE. AUDIT RESULT: the SPEC-143 test-users seed (testUsers.seed.ts) does NOT hardcode permissions — HOST users seed by RoleEnum.HOST and inherit ROLE_PERMISSIONS, which T-010 already flipped (VIEW_ALL→VIEW_OWN). So no test-user fixture change was needed (no ACCOMMODATION_VIEW_ALL reference there). The one real fixture: service-core test factory ActorFactoryBuilder.host() had [CREATE, UPDATE_OWN, DELETE_OWN] and never had VIEW_ALL (the VIEW_ALL at actorFactory.ts:114 is admin()'s, correct; base.service.mockData.ts:69 is mockAdminActor SUPER_ADMIN, correct). Added ACCOMMODATION_VIEW_OWN to host() so the mock HOST matches the post-SPEC-169 seed. Re-ran service-core+api+admin suites — host() change caused ZERO regressions. pnpm db:fresh-dev not run (needs Docker; covered by T-023 smoke).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Update test-user seed references if any", "completed": false },
+                { "title": "Update HOST actor factory defaults", "completed": false },
+                { "title": "Run pnpm db:fresh-dev + seed coverage", "completed": false }
+            ],
+            "tags": ["testing", "seed", "billing", "spec-143"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Document permission model + allow-list rationale (ADR)",
+            "description": "DONE (owner-approved 'both'). Created docs/decisions/ADR-028-role-permission-own-scoping.md (the frozen decision: context/leak, options A/B/C, decision, per-role verdict table, scope guards, consequences) AND docs/security/permission-model.md (living reference: tiers, route-gate pattern, ownership resolver, add-a-new-_VIEW_OWN recipe, /options tier, AC-6 guard). Indexed ADR-028 in docs/decisions/README.md.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Write tier + enforcement semantics", "completed": false },
+                { "title": "Embed per-role verdict table from T-003", "completed": false },
+                {
+                    "title": "Document ownership resolver + /options + _canAdminView",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "permissions", "security"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add CLIENT_MANAGER known-debt comment + tracking note",
+            "description": "DONE. Added a KNOWN DEBT (SPEC-169) comment block before the [RoleEnum.CLIENT_MANAGER] block in rolePermissions.seed.ts (lists the 5 broad grants, points to the AC-6 allow-list + debt-items.md, revisit when role activated / SPEC-170). Created .qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md with D-1 (CLIENT_MANAGER), D-2 (posts read model), D-3 (PostSponsorship unmounted route OQ1), D-4 (shared vs local checkCanFindOptions).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Add debt comment on CLIENT_MANAGER seed block", "completed": false },
+                { "title": "Create debt-items.md tracking note", "completed": false }
+            ],
+            "tags": ["docs", "debt", "client-manager"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Remove (or keep, per owner) one-off audit scripts",
+            "description": "DONE (§12 checkpoint: owner chose KEEP). packages/seed/scripts/audit-role-permissions.ts retained as a re-runnable dev tool for future role/permission audits (CLIENT_MANAGER activation, SPEC-170). Added a 'KEPT ON PURPOSE (SPEC-169 T-030)' header note explaining the AC-6 test is the permanent guard while the script stays for ad-hoc audits. No deletion; typecheck unaffected.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "⛔ §12: confirm delete vs keep scripts", "completed": false },
+                { "title": "Apply decision; verify typecheck", "completed": false }
+            ],
+            "tags": ["cleanup", "scripts"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Verify enum-consistency tests pass for new PermissionEnum values",
+            "description": "DONE. @repo/db suite GREEN (768 pass / 10 skip, 60 files incl. enum-consistency.test.ts). The permission enum IS replicated at DB level (PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum)) in enums.dbschema.ts, used as a column type in r_user_permission + r_role_permission dbschemas) — but it is DERIVED from PermissionEnum, so ACCOMMODATION_VIEW_OWN flows in automatically and enum-consistency passes with no manual edit. NO migration generated: the project is push-managed for enums (packages/db/src/migrations has only manual/; there is ZERO precedent migration for ANY permission addition — drizzle-kit push / db:fresh-dev syncs the enum). Documented in ADR-028.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                { "title": "Run packages/db tests", "completed": false },
+                { "title": "If DB enum replicated, add values + migration", "completed": false }
+            ],
+            "tags": ["cleanup", "testing", "schema"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Final typecheck + lint pass across all affected packages",
+            "description": "DONE. Typecheck CLEAN (exit 0): @repo/schemas, @repo/db, @repo/service-core, @repo/seed, admin. hospeda-api typecheck has 5 PREEXISTING ajeno errors (newsletter/admin/subscribers-by-preference, billing-perm.middleware.test, newsletter test, post admin-trend test, user admin-stats test) — NONE in SPEC-169 files (accommodation/options/ownership/permission); my apps/api change (options.test.ts) is clean. biome check CLEAN on all 6 changed files. NOTE: T-032 (lint) caught a REAL bug I introduced — two AC traceability comments contained glob paths with '*/' inside /** */ blocks (routes/*/admin, services/*/find-options), which prematurely closed the block comment and broke find-options.test.ts + options.test.ts (tsc TS1003/TS1161). Fixed (replaced '*/' glob with '<entity>'); re-verified: find-options 34/34, options route 3/3, service-core typecheck exit 0.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-026", "T-027", "T-028", "T-029", "T-030", "T-031"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "pnpm typecheck affected packages", "completed": false },
+                { "title": "pnpm lint monorepo + fix Biome issues", "completed": false }
+            ],
+            "tags": ["cleanup", "quality"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-29T02:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 32,
+        "blocked": 0,
+        "averageComplexity": 2.3,
+        "note": "32/32 COMPLETE. All code + tests + docs done; SPEC-169-affected packages green (service-core 433f/3499t, seed 510, db 768, schemas; typecheck clean). T-023 live e2e smoke passed against real API+DB+Better-Auth (HOST list owner-scoped to 1/105, non-owned 404, forged ownerId can't escape). PREEXISTING ajeno (NOT SPEC-169): admin 55 test failures + api 5 typecheck errors. READY FOR PR to staging when owner says. Shared hospeda_dev DB now reflects SPEC-169 permission model (HOST=viewOwn) — flagged."
+    }
+}

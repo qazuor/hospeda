@@ -58,12 +58,12 @@ component identification for downstream framework conversion.
 
 ### Output Location
 
-- If an active spec directory exists (check `.claude/tasks/index.json`): output to `design-clone/` inside that spec directory
+- If an active spec directory exists (check `.qtm/tasks/index.json`): output to `design-clone/` inside that spec directory
 - Otherwise: create a standalone directory at `.claude/design-clones/<descriptive-name>/`
 
 ### Discovery
 
-- Read `.claude/tasks/index.json` for in-progress epics to determine context
+- Read `.qtm/tasks/index.json` for in-progress epics to determine context
 - Check the current working directory for existing project structure
 - Detect framework usage (package.json, config files) for informed decisions
 

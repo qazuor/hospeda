@@ -77,6 +77,6 @@ Documented in `seed/web-baseline.json` under `outOfScope`:
 
 ## References
 
-- SPEC: `.claude/specs/SPEC-153-admin-design-tokens/spec.md`
+- SPEC: `.qtm/specs/SPEC-153-admin-design-tokens/spec.md`
 - Design proposal: `.claude/audit/admin-redesign/proposals/05-visual-tokens.md`
 - Phase 0 deliverables: `seed/web-baseline.json`, `apps/web/tests/visual-snapshots/`

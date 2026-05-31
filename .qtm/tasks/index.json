@@ -1,0 +1,647 @@
+{
+    "version": "1.0",
+    "epics": [
+        {
+            "specId": "SPEC-003",
+            "title": "Billing System Production Readiness",
+            "status": "completed",
+            "progress": "34/34",
+            "path": "SPEC-003-billing-production-readiness"
+        },
+        {
+            "specId": "SPEC-004",
+            "title": "Clerk to Better Auth Migration",
+            "status": "completed",
+            "progress": "38/38",
+            "path": "SPEC-004-clerk-to-better-auth-migration"
+        },
+        {
+            "specId": "SPEC-014",
+            "title": "i18n Complete Translations (EN/PT)",
+            "status": "completed",
+            "progress": "21/21",
+            "path": "SPEC-014-i18n-complete-translations"
+        },
+        {
+            "specId": "SPEC-029",
+            "title": "Web Homepage Redesign: New Visual Identity",
+            "status": "obsolete",
+            "progress": "0/47",
+            "path": "SPEC-029-web-homepage-redesign",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Superseded by SPEC-048 (Web2 Homepage Componentization) and SPEC-065 (Figma to Code Homepage) which shipped the homepage redesign. Marked obsolete."
+        },
+        {
+            "specId": "SPEC-032",
+            "title": "Interactive CLI Tool for Development Workflows",
+            "status": "completed",
+            "progress": "29/29",
+            "path": "SPEC-032-interactive-cli-tool",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-036",
+            "title": "Unified Zod Validation Error i18n System",
+            "status": "completed",
+            "progress": "24/24",
+            "path": "SPEC-036-zod-validation-i18n",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-036-gaps",
+            "title": "SPEC-036 Gaps Remediation - Zod Validation i18n",
+            "status": "obsolete",
+            "progress": "0/29",
+            "path": "SPEC-036-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-036 completed; no gaps work was started. Marked obsolete."
+        },
+        {
+            "specId": "SPEC-026-GAPS",
+            "title": "Security Testing Gaps Remediation",
+            "status": "obsolete",
+            "progress": "0/34",
+            "path": "SPEC-026-security-testing-gaps",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-026 completed; no gaps work was started. Marked obsolete."
+        },
+        {
+            "specId": "SPEC-038",
+            "title": "Addon Entitlements Architecture Fix",
+            "status": "completed",
+            "progress": "15/15",
+            "path": "SPEC-038-addon-entitlements-architecture",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-034",
+            "title": "On-Demand ISR Revalidation System",
+            "status": "completed",
+            "progress": "86/86",
+            "path": "SPEC-034-on-demand-isr-revalidation",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-020-GAPS",
+            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
+            "status": "obsolete",
+            "progress": "0/17",
+            "path": "SPEC-020-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-020 completed; no gaps work was started. Marked obsolete."
+        },
+        {
+            "specId": "SPEC-044",
+            "title": "Addon Purchase Schema Cleanup",
+            "status": "completed",
+            "progress": "21/21",
+            "path": "SPEC-044-addon-purchase-schema-cleanup",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-042",
+            "title": "CSP Nonce/Hash Integration",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-042-csp-nonce-integration",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-043",
+            "title": "Addon Lifecycle Events",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-043-addon-lifecycle-events",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-043-GAPS",
+            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+            "status": "completed",
+            "progress": "65/65",
+            "path": "SPEC-043-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json (as SPEC-043-gaps lowercase) but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-042-GAPS",
+            "title": "CSP Security Gaps Remediation",
+            "status": "completed",
+            "progress": "27/27",
+            "path": "SPEC-042-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json (as SPEC-042-gaps lowercase) but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-034-GAPS",
+            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
+            "status": "obsolete",
+            "progress": "0/28",
+            "path": "SPEC-034-gaps-remediation",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: orphan entry, never formalized as spec dir in .qtm/specs/. Parent SPEC-034 completed; no gaps work was started. Marked obsolete."
+        },
+        {
+            "specId": "SPEC-040",
+            "title": "Critical Package Coverage - auth-ui, billing, logger, email",
+            "status": "completed",
+            "progress": "35/35",
+            "path": "SPEC-040-critical-package-coverage",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-041",
+            "title": "Admin Integration Tests",
+            "status": "completed",
+            "progress": "29/29",
+            "path": "SPEC-041-admin-integration-tests",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-048",
+            "title": "Web2 Homepage Componentization & Tokenization",
+            "status": "completed",
+            "progress": "82/82",
+            "path": "SPEC-048-web2-homepage-componentization",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-049",
+            "title": "Admin List Filtering: adminList() Method for BaseCrudService",
+            "status": "completed",
+            "progress": "64/64",
+            "path": "SPEC-049-admin-list-filtering",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-065",
+            "title": "Figma to Code: Homepage Production Migration",
+            "status": "completed",
+            "progress": "66/66",
+            "path": "SPEC-065-figma-to-code-homepage",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-054",
+            "title": "Admin Entity List Filter Bar & Default Filters Indicator",
+            "status": "completed",
+            "progress": "25/25",
+            "path": "SPEC-054-default-filters-ui-indicator",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-058",
+            "title": "Align BaseModel Interface with Implementation",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-058-basemodel-interface-alignment",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-075",
+            "title": "Web App Complete Page Structure",
+            "status": "merged",
+            "progress": "66/66",
+            "path": "SPEC-075-web-complete-page-structure",
+            "archived": true,
+            "mergedInto": "SPEC-096",
+            "archivedAt": "2026-04-29T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-096",
+            "title": "Web App Beta-Readiness",
+            "status": "completed",
+            "progress": "70/70",
+            "path": "SPEC-096-web-beta-readiness",
+            "completedAt": "2026-04-29T18:30:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-04-29T18:45:00.000Z",
+            "absorbs": ["SPEC-075"]
+        },
+        {
+            "specId": "SPEC-060-gaps",
+            "title": "SPEC-060 Gap Remediation — All 56 Gaps",
+            "status": "completed",
+            "progress": "58/58",
+            "path": "SPEC-060-gaps",
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commits 9d81f1a87 + daa7c57f7) but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-059",
+            "title": "Service-Layer Transaction Support & Concurrency Safety",
+            "status": "completed",
+            "progress": "32/32",
+            "path": "SPEC-059-service-layer-transaction-support",
+            "archived": true,
+            "archivedAt": "2026-04-29T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-14: spec was archived (commit d5f08de3a + aabd94a99) but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-068",
+            "title": "Type-Safe list() Options via Generics",
+            "status": "completed",
+            "progress": "4/4",
+            "path": "SPEC-068-list-execute-search-generics",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-062",
+            "title": "Runtime Response Schema Enforcement",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-062-runtime-response-validation",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-066",
+            "title": "getById Relation Loading Consistency",
+            "status": "completed",
+            "progress": "7/7",
+            "path": "SPEC-066-getbyid-relation-loading",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-063",
+            "title": "Lifecycle State Standardization",
+            "status": "completed",
+            "progress": "63/63",
+            "path": "SPEC-063-lifecycle-state-standardization",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-078",
+            "title": "Cloudinary Image Management System",
+            "status": "completed",
+            "progress": "25/25",
+            "path": "SPEC-078-cloudinary-image-management",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-064",
+            "title": "Billing Transaction Safety — Advisory Locks and Atomic Operations",
+            "status": "completed",
+            "progress": "35/35",
+            "path": "SPEC-064-billing-transaction-safety",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-080",
+            "title": "Service-Layer Integration Tests with Real Database",
+            "status": "completed",
+            "progress": "22/22",
+            "path": "SPEC-080-service-integration-tests",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-086",
+            "title": "Tag System Refactor (Two Subsystems: PostTag + User-Tag)",
+            "status": "completed",
+            "progress": "46/46",
+            "path": "SPEC-086-tag-system-refactor",
+            "archived": true
+        },
+        {
+            "specId": "SPEC-092",
+            "title": "End-to-End Test Suite for Pre-Beta Validation",
+            "status": "completed",
+            "progress": "99/99",
+            "path": "SPEC-092-e2e-test-suite",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 94/99 — bumped to full since spec is closed."
+        },
+        {
+            "specId": "SPEC-098",
+            "title": "Favorites & Collections MVP",
+            "status": "completed",
+            "progress": "110/110",
+            "path": "SPEC-098-favorites-collections-mvp"
+        },
+        {
+            "specId": "SPEC-103",
+            "title": "VPS Migration Post-Merge Cleanup & Hardening Backlog",
+            "status": "completed",
+            "progress": "92/92",
+            "path": "SPEC-103-vps-migration-post-merge-cleanup",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 — bumped to full since spec is closed."
+        },
+        {
+            "specId": "SPEC-119",
+            "title": "Accommodation Example Seeds Realism",
+            "status": "completed",
+            "progress": "35/35",
+            "path": "SPEC-119-accommodation-example-seeds-realism",
+            "archived": true,
+            "archivedAt": "2026-05-15T00:00:00.000Z",
+            "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped."
+        },
+        {
+            "specId": "SPEC-111",
+            "title": "Astro server islands runtime crash — manifest.serverIslandMap.get is not a function",
+            "status": "completed",
+            "progress": "9/9",
+            "path": "SPEC-111-astro-server-islands-fix",
+            "archived": true,
+            "archivedAt": "2026-05-17T22:30:00Z",
+            "archiveNote": "Completed via Astro 6.3.3 bump (commit 64c77925c). Drift fix per audit 2026-05-17."
+        },
+        {
+            "specId": "SPEC-130",
+            "title": "Deprecate or remove pnpm env:pull/push/sync/check Vercel stubs",
+            "status": "completed",
+            "progress": "5/5",
+            "path": "SPEC-130-deprecate-vercel-env-stubs",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-130-deprecate-vercel-env-stubs",
+            "branch": "spec/SPEC-130-deprecate-vercel-env-stubs",
+            "startedAt": "2026-05-18T03:50:00Z",
+            "completedAt": "2026-05-18T02:31:16.000Z",
+            "completionRef": "PR #1142 (commit d5a1353fd91c7c65eee9f1ba9bf49a197b4d4635)",
+            "archived": true,
+            "archivedAt": "2026-05-18T02:31:16.000Z"
+        },
+        {
+            "specId": "SPEC-131",
+            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests"
+        },
+        {
+            "specId": "SPEC-132",
+            "title": "Migrate shared packages to Zod 4 top-level format validators",
+            "status": "draft",
+            "progress": "0/6",
+            "path": "SPEC-132-zod-4-cross-package-migration"
+        },
+        {
+            "specId": "SPEC-133",
+            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+            "status": "draft",
+            "progress": "0/5",
+            "path": "SPEC-133-evaluate-astro-env"
+        },
+        {
+            "specId": "SPEC-046",
+            "title": "CSP Post-Deployment Verification",
+            "status": "completed",
+            "progress": "14/15 (T-015 deferred to SPEC-142)",
+            "path": "SPEC-046-csp-post-deploy-verification",
+            "completedAt": "2026-05-17T18:30:00.000Z",
+            "followUpSpec": "SPEC-142"
+        },
+        {
+            "specId": "SPEC-141",
+            "title": "Subscription post-launch follow-ups (annual + plan changes)",
+            "status": "completed",
+            "progress": "full (4 phases shipped)",
+            "path": "SPEC-141-subscription-post-launch-followups",
+            "completedAt": "2026-05-17T23:15:41.000Z",
+            "completionRef": "PR #1139 (merge commit 7c27b995a)",
+            "archived": true,
+            "archiveNote": "Backfilled 2026-05-17T23:50Z after merge. Collision with prior SPEC-141-admin-design-token-contrast resolved by renumbering that draft to SPEC-144."
+        },
+        {
+            "specId": "SPEC-143",
+            "title": "Billing Testing Coverage (e2e + manual smoke)",
+            "status": "completed",
+            "progress": "49/65",
+            "path": "SPEC-143-billing-testing-coverage",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-143-billing-testing-coverage",
+            "branch": "spec/SPEC-143-billing-testing-coverage",
+            "startedAt": "2026-05-17T23:55:00Z",
+            "completedAt": "2026-05-27T23:12:38Z",
+            "completionRef": "Multi-PR effort closed via last billing-local smoke PR #1288 (commit 40731b375).",
+            "archived": true,
+            "archivedAt": "2026-05-27T23:12:38Z",
+            "archiveNote": "Drift fix 2026-05-28: status was stale `in_progress` despite all local-smoke PRs merged. Closed at 49/65 — remaining 16 tasks were intentionally extracted to follow-up specs SPEC-145 (entitlements/limits), SPEC-147 (user self-service cancel), SPEC-148 (defensive grace + plan lifecycle), SPEC-149 (provider error propagation), SPEC-150 (multi-currency), SPEC-167. Engram: spec-143/local-billing-green-status (#798), spec-143/session-end-2026-05-25 (#752).",
+            "followUpSpec": "SPEC-145"
+        },
+        {
+            "specId": "SPEC-145",
+            "title": "Billing Entitlements and Limits Enforcement",
+            "status": "reserved",
+            "progress": "0/0",
+            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+            "worktree": null,
+            "branch": null,
+            "dependsOn": ["SPEC-143"],
+            "reservedAt": "2026-05-18T22:00:00Z",
+            "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
+        },
+        {
+            "specId": "SPEC-153",
+            "title": "Admin Design Tokens — Shared Brand Tokens for Admin/Web",
+            "status": "completed",
+            "progress": "32/32",
+            "path": "SPEC-153-admin-design-tokens",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-153-admin-design-tokens",
+            "branch": "spec/SPEC-153-admin-design-tokens",
+            "dependsOn": [],
+            "reservedAt": "2026-05-22T00:00:00Z",
+            "note": "Tasks not yet atomized — atomization at activation per spec.md task breakdown (estimated 28 tasks across 3 migration phases).",
+            "activatedAt": "2026-05-22T20:55:20Z"
+        },
+        {
+            "specId": "SPEC-154",
+            "title": "Admin Config-Driven Information Architecture",
+            "status": "completed",
+            "progress": "40/40",
+            "archived": true,
+            "archivedAt": "2026-05-30T06:19:27Z",
+            "archiveNote": "Phase 6 closeout merged 2026-05-30 (PR #1334, commit 616f680). All Phase 6 propagation PRs (#1326/#1327/#1329/#1330/#1334) merged into staging.",
+            "completionRef": "PR #1251 (merge commit f2618b42d)",
+            "path": "SPEC-154-admin-config-driven-ia",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-154-admin-config-driven-ia",
+            "branch": "spec/SPEC-154-admin-config-driven-ia",
+            "dependsOn": [],
+            "reservedAt": "2026-05-22T00:00:00Z",
+            "activatedAt": "2026-05-24T00:00:00Z",
+            "tasksAtomizedAt": "2026-05-24T00:00:00Z",
+            "note": "38 atomic tasks generated (all complexity <=4, avg 2.7). Phase breakdown: core 20 (avg 2.7), integration 9 (avg 3.1), testing 6 (avg 2.3), cleanup 3 (avg 2.3). Critical path ~14 tasks deep. Binding decisions in spec.md §11."
+        },
+        {
+            "specId": "SPEC-155",
+            "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
+            "status": "completed",
+            "progress": "38/38",
+            "path": "SPEC-155-admin-dashboards-v1",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-155-admin-dashboards-v1",
+            "branch": "spec/SPEC-155-admin-dashboards-v1",
+            "dependsOn": ["SPEC-154"],
+            "reservedAt": "2026-05-22T00:00:00Z",
+            "activatedAt": "2026-05-26T00:00:00Z",
+            "tasksAtomizedAt": "2026-05-27T00:00:00Z",
+            "completedAt": "2026-05-27T20:54:51Z",
+            "completionRef": "PR #1287 (commit b2a9c1393)",
+            "note": "38 active tasks COMPLETE (41 IDs - 3 tombstones: T-009→SPEC-165 comments, T-011→SPEC-166 review-moderation, T-013 maintenance-flag deferred no-spec). Full per-role dashboards: 6 backend routes, EDITOR newsletter grant, resolver infra + 21 sources, 6 widget renderers, 4 configs, renderer + page migration (useDashboardStats deleted after parity), shadcn charts (recharts 2.x). Typecheck-clean. Shipped via PR #1287."
+        },
+        {
+            "specId": "SPEC-107",
+            "title": "Beta Tester Docs Screenshots Rollout",
+            "status": "completed",
+            "progress": "1/2",
+            "path": "SPEC-107-beta-tester-docs-screenshots",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PR #1064 (Phase 0 only); Phase 1 deferred WONTFIX",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "Phase 0 (foundation: lightbox + structure) shipped via cd6a9eeee in PR #1064. Phase 1 (42 ALTA screenshots in 7 batches) deferred indefinitely — no follow-up spec planned. Closed as WONTFIX 2026-05-29."
+        },
+        {
+            "specId": "SPEC-140",
+            "title": "PostHog Cloud Analytics Stack (web + admin)",
+            "status": "completed",
+            "progress": "N/N",
+            "path": "SPEC-140-analytics-stack-posthog",
+            "completedAt": "2026-05-29T00:00:00.000Z",
+            "completionRef": "PRs #1127, #1146, #1151, #1157 (all merged to staging)",
+            "archived": true,
+            "archivedAt": "2026-05-29T00:00:00.000Z",
+            "archiveNote": "PostHog Cloud analytics fully shipped to staging across 4 PRs (web snippet + admin client + consent gating + CSP). Tasks index entry backfilled at close. Closed 2026-05-29."
+        },
+        {
+            "specId": "SPEC-156",
+            "title": "Admin Settings Reorganization — V1 Page Consolidation",
+            "status": "completed",
+            "progress": "44/44",
+            "completedAt": "2026-05-29T08:19:27Z",
+            "completionRef": "PR #1308 (f7180a1c02) — last of 7 PRs",
+            "archived": true,
+            "archivedAt": "2026-05-29T08:19:27Z",
+            "archiveNote": "All 44 tasks shipped via 4 base PRs (#1298, #1300, #1301, #1302). Post-merge smoke (#1305) + 2 P1 fix PRs (#1306, #1308) merged to staging.",
+            "path": "SPEC-156-admin-settings-reorganization",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-156-admin-settings-reorganization",
+            "branch": "spec/SPEC-156-admin-settings-reorganization",
+            "dependsOn": ["SPEC-154"],
+            "reservedAt": "2026-05-22T00:00:00Z",
+            "activatedAt": "2026-05-28T05:15:00Z",
+            "tasksAtomizedAt": "2026-05-28T05:35:00Z",
+            "taskCount": 44,
+            "averageComplexity": 2.7,
+            "prStrategy": "4-prs-in-order",
+            "note": "Atomized 2026-05-28 to 44 tasks across 4 PRs (PR-1 platform_settings infra+8 new perms: 11 tasks; PR-2 page relocations+IA config+honest disclosure: 16 tasks; PR-3 localStorage→API migration: 5 tasks; PR-4 Mi facturación HOST+anuncios editor+web display+smoke: 12 tasks). All complexity ≤4 (avg 2.7). Decisions D1-D8 resolved 2026-05-28 — see tech-analysis.md §5. Owner override: D1 = create 8 new permissions literal (vs R1 map-to-existing). Suggested start: T-001 + T-003 + T-005 in parallel (no deps)."
+        },
+        {
+            "specId": "SPEC-157",
+            "title": "Web SEO Polish — Audit Backlog Remediation",
+            "status": "completed",
+            "progress": "31/31",
+            "completedAt": "2026-05-24T21:26:00Z",
+            "completionRef": "PR #1245 (bafccef6)",
+            "path": "SPEC-157-web-seo-polish",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-157-web-seo-polish",
+            "branch": "spec/SPEC-157-web-seo-polish",
+            "startedAt": "2026-05-24T00:00:00.000Z",
+            "note": "31 atomic tasks across 3 risk-based phases. 8 test-first (RED) tasks. 2 decision-blocked tasks (D-1 JSON-LD strategy, D-2 theme_color value). Avg complexity 2.16."
+        },
+        {
+            "specId": "SPEC-158",
+            "title": "Destinations Rich Content + Structured FAQs",
+            "status": "in-progress",
+            "progress": "39/42",
+            "path": "SPEC-158-destinations-content-faqs",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-158-destinations-content-faqs",
+            "branch": "spec/SPEC-158-destinations-content-faqs",
+            "base": "staging",
+            "createdAt": "2026-05-26T00:00:00.000Z",
+            "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only. | PR #1269 open to staging. 39/42 done; T-008 (local db push) + T-013 (CI integ) + T-041 e2e gated."
+        },
+        {
+            "specId": "SPEC-164",
+            "title": "Admin Billing Access — SUPER_ADMIN-Only",
+            "status": "completed",
+            "progress": "8/8",
+            "path": "SPEC-164-admin-billing-super-only",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-164-admin-billing-super-only",
+            "branch": "spec/SPEC-164-admin-billing-super-only",
+            "base": "staging",
+            "createdAt": "2026-05-27T00:00:00.000Z",
+            "completedAt": "2026-05-28T04:34:09Z",
+            "completionRef": "PR #1291 (commit bd6188c32)",
+            "note": "8 atomic tasks across 5 phases (avg complexity 2.1). Extracted from SPEC-155 T-002. WIDE revoke (19 perms) + mainMenu hide + onMissing:'hide'/re-gate leaks + 14-page beforeLoad guards + seed/integration/degradation tests. OQ-1=WIDE, OQ-2=Option B (both resolved). Renderer-wiring confirmed: comercialSidebar renders on direct /billing/* URL regardless of mainMenu, so T-005 is strictly required. HOST self-billing (protected tier) verified unaffected."
+        },
+        {
+            "specId": "SPEC-169",
+            "title": "Role Permission Audit + Owner-Scoped Data Access",
+            "status": "completed",
+            "progress": "32/32",
+            "path": "SPEC-169-role-permission-own-scoping",
+            "branch": "fix/SPEC-169-role-permission-own-scoping",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-169-role-permission-own-scoping",
+            "base": "staging",
+            "createdAt": "2026-05-28T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-05-29T17:49:53.000Z",
+            "completionRef": "PR #1320 (merge commit 557909a0acbf52769fcd4f5eb660a212daae8433) to staging",
+            "archiveNote": "Shipped 32/32. HOST accommodation read-leak closed (VIEW_ALL→VIEW_OWN + forced server-side owner-scoping + 404 anti-enum + /options tier + front guard + AC-6 systemic guard). Live e2e smoke passed. Merged via owner override over preexisting ajeno CI red (admin/lint/build, predates branch). SPEC-170 (per-user permission panel) spun off.",
+            "note": "Atomized into 32 tasks (avg complexity 2.3, 6 phases) via task-from-spec. T-003 owner-review GATE + §12 checkpoints. Backbone: audit → schema _VIEW_OWN → service forced owner-scoping on adminList + _canAdminView on getById + ownership resolver → seed (HOST VIEW_ALL→VIEW_OWN, EDITOR rationale, CLIENT_MANAGER untouched) → /options endpoints + selector migration → beforeLoad guard → AC-1..AC-11 tests. Read-only data-leak fix."
+        },
+        {
+            "specId": "SPEC-170",
+            "title": "Per-User Granular Permission Management Panel",
+            "status": "in-progress",
+            "progress": "28/31",
+            "path": "SPEC-170-user-permission-management",
+            "branch": "spec/SPEC-170-user-permission-management",
+            "base": "staging",
+            "createdAt": "2026-05-29T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
+            "taskCount": 31,
+            "averageComplexity": 2.6,
+            "note": "31 atomic tasks atomized 2026-05-30. All complexity ≤4 (avg 2.6). Phase breakdown: setup 3 (avg 1.7), core 10 (avg 2.5), integration 10 (avg 2.5), testing 8 (avg 2.9). Critical path 14 tasks deep (T-001→T-031). Two mandatory TDD gates: T-006 (actor.ts 10 precedence cases, write RED first) + T-012 (permission-grouping pure logic). GATE task: T-007 (actor.ts deny-resolution) — no API or UI integration testing is meaningful until this passes. All 6 OQs resolved by owner 2026-05-30. Decisions: pgEnum for effect column, immediate cache invalidation, 400 on SUPER_ADMIN target."
+        },
+        {
+            "specId": "SPEC-161",
+            "title": "Cron Run History",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-161-cron-run-history",
+            "branch": "spec/SPEC-161-cron-run-history",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-161-cron-run-history",
+            "createdAt": "2026-05-29T00:00:00.000Z",
+            "completedAt": "2026-05-29T23:42:18.000Z",
+            "completionRef": "PR #1310 + PR #1317 + PR #1322 (merge d94188a54) — all merged to staging",
+            "note": "Backend-only. Persist per-cron-execution results (cron_runs table) + admin read endpoints (list/detail/summary) + differentiated purge cron (success>60d, failed/timeout>180d). Single hook at 2 execution sites (bootstrap + cron-admin trigger). Fire-and-forget recording. Enables SPEC-155 ADMIN card D. Progress shown nominal (task-master tracking was not wired; delivered via 3 PRs)."
+        },
+        {
+            "specId": "SPEC-168",
+            "title": "Admin Plan Management — runtime-editable plans on the DB",
+            "status": "pending",
+            "progress": "0/23",
+            "path": "SPEC-168-admin-plan-management"
+        }
+    ],
+    "standalone": {
+        "path": "standalone",
+        "total": 0,
+        "completed": 0
+    }
+}

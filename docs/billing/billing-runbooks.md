@@ -2,7 +2,7 @@
 
 > **Audience**: oncall, ops, anyone responding to a billing incident in production.
 > **Scope**: seven recurring failure scenarios with symptoms, investigation steps, resolution, and verification. NOT a feature reference — see [`packages/billing/docs/`](../../packages/billing/docs/) for that.
-> **Companion docs**: [staging smoke](./../../.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md), [prod smoke + rollback](./../../.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md), [dispute handling v1](./dispute-handling-v1.md), [grace period source-of-truth](./grace-period-source-of-truth.md).
+> **Companion docs**: [staging smoke](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md), [prod smoke + rollback](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md), [dispute handling v1](./dispute-handling-v1.md), [grace period source-of-truth](./grace-period-source-of-truth.md).
 > **Status**: SPEC-143 T-143-48, 2026-05-20.
 
 ---
@@ -327,7 +327,7 @@ Before refunding ANYTHING:
 
 ### The refund-flow-gaps bug topic
 
-This procedure works around `bug/refund-flow-gaps` (engram), which has 5 sub-gaps in the in-app refund flow. Until those gaps are closed, ALL refunds go through the MP dashboard manually, NOT via our admin UI. See [`prod-smoke-checklist.md`](./../../.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) rollback section for context.
+This procedure works around `bug/refund-flow-gaps` (engram), which has 5 sub-gaps in the in-app refund flow. Until those gaps are closed, ALL refunds go through the MP dashboard manually, NOT via our admin UI. See [`prod-smoke-checklist.md`](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) rollback section for context.
 
 ### Resolution
 
