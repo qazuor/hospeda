@@ -7,7 +7,7 @@ LEER EN ORDEN antes de hacer nada:
 
 1. `memory/project_spec_117_in_flight.md` — checkpoint condensado 2026-05-15
    con todo el progreso de Phase 6 (fixes + features pending).
-2. `.claude/specs/SPEC-117-admin-pages-stabilization/spec.md` Part 5 — tabla
+2. `.qtm/specs/SPEC-117-admin-pages-stabilization/spec.md` Part 5 — tabla
    de tasks + findings catalog actualizado.
 3. Engram topic `spec/SPEC-117/checkpoint-2026-05-15-phase-6-fixes` — recap
    de decisiones técnicas y trade-offs aprobados (incluye el cambio de

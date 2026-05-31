@@ -171,5 +171,5 @@ Everything else — including schemas that "obviously" nobody uses yet — is tr
 - `packages/schemas/CLAUDE.md` — schema package guidelines.
 - `packages/schemas/docs/guides/composition.md` — how to extend schemas additively.
 - `packages/schemas/docs/guides/testing.md` — general testing patterns.
-- `.claude/specs/SPEC-078-GAPS/spec.md` — source of the policy (GAP-078-122, GAP-078-201).
+- `.qtm/specs/SPEC-078-GAPS/spec.md` — source of the policy (GAP-078-122, GAP-078-201).
 - Root `CLAUDE.md` → "Push-only Migration Policy" — how DB migrations interact with this policy.

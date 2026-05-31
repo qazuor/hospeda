@@ -9,7 +9,7 @@
  * DO NOT migrate this to a /options endpoint until the base route is mounted.
  * When the route is mounted, ALSO add a /options variant gated by
  * ACCESS_PANEL_ADMIN (NOT by a broad _VIEW_ALL permission). See decision OQ1 in
- * .claude/specs/SPEC-169-role-permission-own-scoping/decision-log.md.
+ * .qtm/specs/SPEC-169-role-permission-own-scoping/decision-log.md.
  *
  * Current state: left as-is (pointing at the unmounted route). The authorization
  * path is documented here so whoever mounts the route knows what to wire.
