@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 3.0
     },
@@ -51,19 +51,19 @@
         {
             "id": "T-003",
             "title": "Build migrations/extras/ — consolidate the 21 category-A extras (NNN-name.kind.sql)",
-            "description": "Create packages/db/src/migrations/extras/ and move the 21 surviving category-A files there, consolidating evolutionary chains: search_index (manual 0001-0004 + 0030 -> one matview file with the final definition), delete_entity_bookmarks (0006/0014/0018 -> one final enum-cast version), set_updated_at trigger (0005), billing CHECKs (0007/0008/0010), media shape CHECKs (0011 A-part + 0012), conversation partial indexes (0015), messages length CHECK (0016), bookmark indexes (0019/0020), newsletter partial indexes (0022/0023). Name each NNN-name.kind.sql (3-digit prefix for lexical ordering). All idempotent (CREATE OR REPLACE / IF NOT EXISTS). Acceptance: ~14 consolidated files; apply cleanly + idempotently after migrate on an empty DB.",
-            "status": "pending",
+            "description": "Create packages/db/src/migrations/extras/ and move the 21 surviving category-A files there, consolidating evolutionary chains: search_index (manual 0001-0004 + 0030 -> one matview file with the final definition), delete_entity_bookmarks (0006/0014/0018 -> one final enum-cast version), set_updated_at trigger (0005), billing CHECKs (0007/0008/0010), media shape CHECKs (0011 A-part + 0012), conversation partial indexes (0015), messages length CHECK (0016), bookmark indexes (0019/0020), newsletter partial indexes (0022/0023). Name each NNN-name.kind.sql (3-digit prefix for lexical ordering). All idempotent (CREATE OR REPLACE / IF NOT EXISTS). Acceptance: ~14 consolidated files; apply cleanly + idempotently after migrate on an empty DB. DONE: 9 consolidated files in packages/db/src/migrations/extras/ (001-search-index.matview, 002-set-updated-at.trigger, 003-delete-entity-bookmarks.trigger, 004-billing.constraints, 005-media.constraints, 006-conversation.indexes, 007-messages.constraints, 008-bookmark.indexes, 009-newsletter.indexes). manual/ left intact (T-004 deletes). VALIDATED on ephemeral postgres:15-alpine: baseline + all 9 extras apply exit 0; idempotency re-apply exit 0; objects: 1 search_index matview, 3 functions (set_updated_at/delete_entity_bookmarks/refresh_search_index), 15 CHECK constraints. Note: 0011's DROP-NOT-NULL excluded (already nullable in baseline); 0018's UUID-cast version of delete_entity_bookmarks is canonical (the TEXT version crashed hard-deletes).",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-009", "T-015", "T-016"],
             "subtasks": [],
             "tags": ["db", "extras", "postgres", "consolidation", "phase-foundations"],
             "phase": "foundations",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
