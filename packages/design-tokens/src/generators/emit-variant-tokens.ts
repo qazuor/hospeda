@@ -33,23 +33,35 @@
  * Any unresolvable base throws immediately so the build fails loudly rather
  * than emitting `rgb(NaN NaN NaN)` or `rgb(undefined)` into the CSS.
  *
- * ## Dark-mode on Chrome 109 (documented intentional degradation)
+ * ## Dark-mode on Chrome 109 (T-009 — dark sRGB fallback block)
  *
- * Variant token sRGB fallbacks are computed from LIGHT-theme base values.
- * On Chrome 109 (pre-@supports), `[data-theme='dark']` overrides the BASE
- * token but the `:root` VARIANT token's sRGB value is NOT updated by that
- * override — CSS custom property inheritance doesn't retroactively recompute
- * static values. This means dark-mode users on Chrome 109 see LIGHT-mode
- * variant colors. This is a cosmetic limitation, not a security or
- * functionality issue, and is explicitly acceptable per SPEC-176 §14.
- * On modern browsers the @supports block correctly tracks dark-mode overrides.
+ * The `:root` sRGB fallbacks are computed from LIGHT-theme base values. On
+ * Chrome 109 (pre-@supports), a `[data-theme='dark']` override of the BASE
+ * token does NOT retroactively recompute the static `:root` VARIANT value, so
+ * the light sRGB would leak into dark mode. To satisfy PDR Story 1 AC5 and
+ * Edge Case 3, this emitter also produces a dark fallback block:
  *
- * @see variant-tokens.ts for VARIANT_TOKEN_MAP (115 entries).
+ *   `@supports not (color: oklch(from white l c h)) {
+ *        [data-theme="dark"]:not([data-app="admin"]) { ...dark sRGB... } }`
+ *
+ * - On Chrome 109: `@supports not(...)` matches, so the dark sRGB overrides
+ *   win (the dark selector out-specifies `:root`). Dark mode shows dark colors.
+ * - On modern browsers: `@supports not(...)` does NOT match, so the dark sRGB
+ *   block is inert and the `@supports (oklch) :root { oklch(from var(--base)) }`
+ *   block wins, tracking the live dark base value. Zero modern regression.
+ *
+ * Only tokens whose dark sRGB DIFFERS from light are emitted (bases overridden
+ * in webDark — ~17 non-domain bases; the 63 domain bases have no dark override
+ * and are skipped). Dark fallbacks are computed against the effective dark
+ * theme `{ ...webLight, ...webDark }`.
+ *
+ * @see variant-tokens.ts for VARIANT_TOKEN_MAP.
  * @see srgb.ts for formatSRGB() — the OKLCH→sRGB converter.
  * @see generate-css.ts — integrates this module into buildCSS().
  */
 
 import type { Theme } from '../themes/types.js';
+import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
 import type { OKLCH } from '../tokens/colors.js';
 import { resolveBaseToOklch } from './resolve-base-oklch.js';
@@ -297,8 +309,8 @@ export function emitVariantTokens(): string {
     // Build base OKLCH lookup — throws loudly if any base is unresolvable.
     const baseOklch = buildBaseOklchLookup(VARIANT_TOKEN_MAP);
 
-    // Compute value pairs for all 115 entries.
-    const pairs: Array<{
+    // Compute value pairs for every entry: light sRGB fallback + oklch override.
+    const rows: Array<{
         readonly name: string;
         readonly fallback: string;
         readonly oklchValue: string;
@@ -319,7 +331,7 @@ export function emitVariantTokens(): string {
     const rootLines: string[] = [];
     rootLines.push(VARIANT_SENTINEL);
     rootLines.push(':root {');
-    for (const { name, fallback } of pairs) {
+    for (const { name, fallback } of rows) {
         rootLines.push(`${INDENT}--${name}: ${fallback};`);
     }
     rootLines.push('}');
@@ -328,11 +340,72 @@ export function emitVariantTokens(): string {
     const supportsLines: string[] = [];
     supportsLines.push('@supports (color: oklch(from white l c h)) {');
     supportsLines.push(`${INDENT}:root {`);
-    for (const { name, oklchValue } of pairs) {
+    for (const { name, oklchValue } of rows) {
         supportsLines.push(`${INDENT}${INDENT}--${name}: ${oklchValue};`);
     }
     supportsLines.push(`${INDENT}}`);
     supportsLines.push('}');
 
     return [...rootLines, '', ...supportsLines, ''].join(NL);
+}
+
+/**
+ * Emit the dark-mode sRGB fallback block for variant tokens (T-009).
+ *
+ * Produces a `@supports not (color: oklch(from white l c h))` block scoped to
+ * `[data-theme="dark"]:not([data-app="admin"])` that re-declares the sRGB
+ * fallback for every variant token whose BASE is overridden in the dark theme
+ * (so its dark sRGB differs from the light `:root` value). Tokens whose base is
+ * NOT dark-overridden (e.g. the 63 domain tokens) are skipped — their light and
+ * dark fallbacks are identical.
+ *
+ * Behavior:
+ * - Chrome 109 (no relative-color support): the `not(...)` condition matches, so
+ *   this block applies and dark mode shows dark colors instead of the light
+ *   `:root` values (fixes PDR Story 1 AC5 / Edge Case 3).
+ * - Modern browsers: the `not(...)` condition is false, so this block is inert
+ *   and the live-tracking `@supports (oklch) :root { ... }` block governs dark
+ *   mode. Zero modern regression.
+ *
+ * Emitted as a SEPARATE top-level block (placed after the admin-dark theme block
+ * in {@link buildCSS}) so it does not shadow the base-token dark override block
+ * that shares the same `[data-theme="dark"]:not([data-app="admin"])` selector.
+ *
+ * @returns CSS string for the dark variant fallback block, or an empty string
+ *   when no variant token has a dark-overridden base.
+ */
+export function emitVariantDarkFallback(): string {
+    const lightLookup = buildBaseOklchLookup(VARIANT_TOKEN_MAP);
+    const darkTheme: Theme = { ...webLight, ...webDark };
+    const darkLookup = buildBaseOklchLookup(VARIANT_TOKEN_MAP, darkTheme);
+
+    const darkDecls: string[] = [];
+    for (const entry of VARIANT_TOKEN_MAP) {
+        const lightBase = lightLookup[entry.base];
+        const darkBase = darkLookup[entry.base];
+        if (lightBase === undefined || darkBase === undefined) {
+            throw new Error(
+                `[emit-variant-tokens] Internal: base '${entry.base}' missing from dark lookup.`
+            );
+        }
+        const light = computeValuePair(entry, lightBase).fallback;
+        const dark = computeValuePair(entry, darkBase).fallback;
+        if (dark !== light) {
+            darkDecls.push(`${INDENT}${INDENT}--${entry.name}: ${dark};`);
+        }
+    }
+
+    if (darkDecls.length === 0) {
+        return '';
+    }
+
+    return [
+        '/* SPEC-176 T-009: dark-mode sRGB fallbacks — Chrome 109 only (@supports not). */',
+        '@supports not (color: oklch(from white l c h)) {',
+        `${INDENT}[data-theme="dark"]:not([data-app="admin"]) {`,
+        ...darkDecls,
+        `${INDENT}}`,
+        '}',
+        ''
+    ].join(NL);
 }

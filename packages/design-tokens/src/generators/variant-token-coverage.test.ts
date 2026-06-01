@@ -218,6 +218,66 @@ describe('variant-token-coverage (SPEC-176 T-001 guard)', () => {
             ).toBe(false);
         }
     });
+
+    /**
+     * Guard 4 (T-009) — dark-mode sRGB fallback block for Chrome 109.
+     *
+     * The emitter produces a `@supports not (color: oklch(from white l c h))`
+     * block scoped to `[data-theme="dark"]:not([data-app="admin"])` that
+     * re-declares the sRGB fallbacks for variant tokens whose BASE token is
+     * overridden in the dark theme. On Chrome 109 this block wins (the `not`
+     * condition matches), so dark mode shows dark colors instead of leaking the
+     * light `:root` values — satisfying PDR Story 1 AC5 / Edge Case 3. On modern
+     * browsers the `not` condition is false, the block is inert, and the
+     * live-tracking `@supports (oklch)` block governs dark mode instead.
+     *
+     * Assertions:
+     * 1. The dark block exists and is gated by `@supports not (oklch...)`.
+     * 2. A token on an overridden base (brand-primary-a15) is re-declared with a
+     *    dark value that DIFFERS from its light `:root` value.
+     * 3. Domain tokens (no dark base override) are NOT in the dark block.
+     */
+    it('emits a dark-mode sRGB fallback block gated by @supports not (oklch) (T-009)', () => {
+        const DARK_PROBE = '@supports not (color: oklch(from white l c h))';
+        const darkStart = CSS.indexOf(DARK_PROBE);
+        expect(darkStart, 'Expected the @supports not(oklch) dark fallback block').toBeGreaterThan(
+            -1
+        );
+
+        // Isolate the dark block content (naive matched-brace walk from the probe).
+        const braceOpen = CSS.indexOf('{', darkStart);
+        let depth = 0;
+        let end = braceOpen;
+        for (let i = braceOpen; i < CSS.length; i++) {
+            if (CSS[i] === '{') depth++;
+            else if (CSS[i] === '}') {
+                depth--;
+                if (depth === 0) {
+                    end = i;
+                    break;
+                }
+            }
+        }
+        const darkBlock = CSS.slice(braceOpen, end);
+
+        // Scoped to the web dark selector, not admin.
+        expect(darkBlock).toContain('[data-theme="dark"]:not([data-app="admin"])');
+
+        // A token on a dark-overridden base is re-declared with a different value.
+        const lightMatch = /--brand-primary-a15: (rgb\([^)]*\));/.exec(cssWithoutSupports);
+        const darkMatch = /--brand-primary-a15: (rgb\([^)]*\));/.exec(darkBlock);
+        expect(lightMatch?.[1], 'light brand-primary-a15 must be declared').toBeTruthy();
+        expect(darkMatch?.[1], 'dark brand-primary-a15 must be declared').toBeTruthy();
+        expect(darkMatch?.[1], 'dark brand-primary-a15 must differ from the light value').not.toBe(
+            lightMatch?.[1]
+        );
+
+        // Domain tokens have no dark base override → must NOT appear in the block.
+        expect(
+            darkBlock,
+            'domain tokens (no dark override) must not be in the dark block'
+        ).not.toContain('--accommodation-type-hotel-a15:');
+    });
 });
 
 // ============================================================================

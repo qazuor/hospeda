@@ -42,7 +42,7 @@ import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
 import { type OKLCH, SHADES, formatOKLCH, palettes } from '../tokens/colors.js';
 import { layoutMediaOverrides } from '../tokens/layout.js';
-import { emitVariantTokens } from './emit-variant-tokens.js';
+import { emitVariantDarkFallback, emitVariantTokens } from './emit-variant-tokens.js';
 
 const INDENT = '    ';
 const NL = '\n';
@@ -162,6 +162,13 @@ export function buildCSS(): string {
     parts.push(emitTheme(adminDark, INDENT));
     parts.push('}');
     parts.push('');
+    // SPEC-176 T-009 — dark-mode sRGB fallbacks for variant tokens, emitted LAST
+    // so its `[data-theme="dark"]:not([data-app="admin"])` selector (nested under
+    // `@supports not (oklch)`) does not shadow the base-token dark block above.
+    const variantDarkFallback = emitVariantDarkFallback();
+    if (variantDarkFallback !== '') {
+        parts.push(variantDarkFallback);
+    }
     return parts.join(NL);
 }
 

@@ -176,9 +176,16 @@ describe('buildCSS — web dark theme block', () => {
         );
     });
 
-    it('uses the dark-scoped selector exactly once', () => {
+    it('uses the dark-scoped selector twice: base overrides + T-009 variant fallback', () => {
+        // One occurrence is the top-level web-dark base-override block; the second
+        // is the SPEC-176 T-009 variant dark fallback nested under @supports not.
         const matches = [...CSS.matchAll(/\[data-theme="dark"\]:not\(\[data-app="admin"\]\)/g)];
-        expect(matches).toHaveLength(1);
+        expect(matches).toHaveLength(2);
+        // The base-override block must be the FIRST occurrence (top-level, not
+        // inside @supports) so validate.ts + blockOf() resolve it correctly.
+        const firstIdx = CSS.indexOf('[data-theme="dark"]:not([data-app="admin"]) {');
+        const supportsNotIdx = CSS.indexOf('@supports not (color: oklch(from white l c h))');
+        expect(firstIdx).toBeLessThan(supportsNotIdx);
     });
 });
 
