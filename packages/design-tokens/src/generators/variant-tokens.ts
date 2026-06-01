@@ -43,6 +43,7 @@
 
 import type { VariantTokenEntry } from './variant-token-schema.js';
 import { ALPHA_VARIANT_ENTRIES } from './variant-tokens-alpha.js';
+import { DOMAIN_ALPHA_ENTRIES } from './variant-tokens-domain.js';
 
 // ============================================================================
 // Lightness-multiply family — oklch(from var(--BASE) calc(l * FACTOR) c h)
@@ -285,7 +286,7 @@ const WHITE_ALPHA_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
 // ============================================================================
 
 /**
- * Ordered list of all 128 variant tokens that need sRGB fallbacks (SPEC-176).
+ * Ordered list of all 254 variant tokens that need sRGB fallbacks (SPEC-176).
  *
  * Each entry maps a canonical CSS custom property name (`name`) to:
  * - The base theme token it derives from (`base`).
@@ -302,11 +303,21 @@ const WHITE_ALPHA_ENTRIES: ReadonlyArray<VariantTokenEntry> = [
  * T-005 (codemod) consumes `replaces` and `replacesVariants` to swap 676+
  * call-sites in `apps/web/src/` to `var(--name)`.
  *
- * Order: alpha-family (104) → white-origin alpha (1) → lightness-multiply (11)
- * → lightness-subtract (10) → lightness-add (2). Within each family: sorted by
- * base name, then by param.
+ * T-006 (domain alpha tokens) adds 126 entries for the 63 domain base tokens
+ * (7 domain groups × their types × 2 alpha steps: a15 + a30).
+ *
+ * Order:
+ * - alpha-family (104) from apps/web CSS scan
+ * - white-origin alpha (1)
+ * - lightness-multiply (11)
+ * - lightness-subtract (10)
+ * - lightness-add (2)
+ * - domain alpha (126) for icon subtle variants (T-006)
+ *
+ * Within each family: sorted by base name, then by param.
  *
  * @see variant-tokens-alpha.ts for the 104 alpha entries (split file).
+ * @see variant-tokens-domain.ts for the 126 domain alpha entries (T-006).
  * @see variant-token-schema.ts — VariantTokenEntry type and VariantTokenMapSchema.
  * @see variant-token-derivation.md — scan methodology and consolidation table.
  */
@@ -315,5 +326,6 @@ export const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenEntry> = [
     ...WHITE_ALPHA_ENTRIES,
     ...LIGHTNESS_MULTIPLY_ENTRIES,
     ...LIGHTNESS_SUBTRACT_ENTRIES,
-    ...LIGHTNESS_ADD_ENTRIES
+    ...LIGHTNESS_ADD_ENTRIES,
+    ...DOMAIN_ALPHA_ENTRIES
 ];

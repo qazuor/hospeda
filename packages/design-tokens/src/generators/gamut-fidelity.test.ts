@@ -42,8 +42,8 @@
 import { type Oklch, clampChroma, converter, differenceEuclidean } from 'culori';
 import { describe, expect, it } from 'vitest';
 
-import { webLight } from '../themes/web-light.js';
 import type { OKLCH } from '../tokens/colors.js';
+import { resolveBaseToOklch } from './resolve-base-oklch.js';
 import type { VariantTokenEntry } from './variant-token-schema.js';
 import { VARIANT_TOKEN_MAP } from './variant-tokens.js';
 
@@ -54,9 +54,6 @@ import { VARIANT_TOKEN_MAP } from './variant-tokens.js';
 const toRgb = converter('rgb');
 const toOklab = converter('oklab');
 const deltaEOk = differenceEuclidean('oklab');
-
-/** Fixed OKLCH for the CSS-wide `white` keyword (matches emit-variant-tokens). */
-const WHITE_OKLCH: OKLCH = { l: 1, c: 0, h: 0 };
 
 /** Hard fidelity bar for in-gamut tokens (imperceptible per SPEC-176). */
 const IN_GAMUT_DELTA_E = 0.02;
@@ -69,49 +66,27 @@ const IN_GAMUT_DELTA_E = 0.02;
 const GAMUT_CLAMP_TOLERANCE = 1e-4;
 
 // ============================================================================
-// Base OKLCH resolver — mirrors emit-variant-tokens.buildBaseOklchLookup
-// (replicated here, minimally, plus the white special-case, so the test does
-// not depend on a non-exported generator internal).
+// Base OKLCH resolver — delegates to the shared resolve-base-oklch module.
+//
+// Previously this file contained an inline one-level resolver. It is now
+// replaced by `resolveBaseToOklch` from `resolve-base-oklch.ts` (T-006) so
+// both the emitter and the fidelity test always use the same resolution logic
+// and cannot diverge. The shared resolver handles: white keyword, direct
+// OKLCH entries, one-level var() to theme OKLCH, and two-level var() to
+// palette OKLCH (for domain tokens like `accommodation-type-hotel`).
 // ============================================================================
 
-/** Narrow an unknown theme value to the OKLCH branch. */
-function isOklch(value: unknown): value is OKLCH {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        typeof (value as OKLCH).l === 'number' &&
-        typeof (value as OKLCH).c === 'number' &&
-        typeof (value as OKLCH).h === 'number'
-    );
-}
-
-/** Resolve a `var(--NAME)` theme value to its referenced token name, else null. */
-function parseVarRef(value: string): string | null {
-    const m = /^var\(--([a-z][a-z0-9-]*)\)$/.exec(value);
-    return m?.[1] ?? null;
-}
-
 /**
- * Resolve a variant token `base` to its OKLCH triple. Throws (naming the base)
- * if it cannot be resolved — guards against silent drift if the map gains a
- * base the generator can't handle.
+ * Resolve a variant token `base` to its OKLCH triple.
+ *
+ * Thin wrapper over the shared {@link resolveBaseToOklch} so the existing
+ * call-site below (`resolveBase(entry.base)`) works unchanged.
  *
  * @param base - Base token name (without `--`), or the `white` keyword.
  * @returns The resolved OKLCH triple.
  */
 function resolveBase(base: string): OKLCH {
-    if (base === 'white') return WHITE_OKLCH;
-
-    const raw = webLight[base];
-    if (isOklch(raw)) return raw;
-
-    if (typeof raw === 'string') {
-        const ref = parseVarRef(raw);
-        const refValue = ref !== null ? webLight[ref] : undefined;
-        if (isOklch(refValue)) return refValue;
-    }
-
-    throw new Error(`gamut-fidelity: cannot resolve base '${base}' to an OKLCH value.`);
+    return resolveBaseToOklch(base);
 }
 
 /**

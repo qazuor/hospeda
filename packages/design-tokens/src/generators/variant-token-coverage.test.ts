@@ -236,27 +236,29 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
     });
 
     /**
-     * Count assertion — the consolidated count after conservative ≤0.025 snap,
-     * plus the T-005 part C FAITHFUL gap-fillers.
+     * Count assertion — consolidated count (T-005) plus domain alpha tokens (T-006).
      *
      * The faithful scan found 116 alpha-family pairs. Conservative consolidation
      * onto a 14-step grid (snap rule: |value − step| ≤ 0.025) reduced them to 92.
      * T-005 part C added 12 FAITHFUL kept-own alpha tokens (exact value, no snap)
      * to close real var-with-fallback alpha-gaps, plus 1 lightness-multiply token
      * (muted-l105) for the login shimmer.
+     * T-006 added 126 domain alpha tokens (63 domain bases × 2: a15 + a30) for
+     * icon subtle badge variants that Chrome 109 could not render.
      *
      *   - 104 alpha-family (92 consolidated + 12 FAITHFUL kept-own gap-fillers)
      *   -   1 white-origin alpha (oklch(from white l c h / 0.75))
      *   -  11 lightness-multiply pairs (incl. muted-l105 — T-005 part C)
      *   -  10 lightness-subtract pairs
      *   -   2 lightness-add pairs
-     *   = 128 total canonical entries.
+     *   - 126 domain alpha (63 bases × a15+a30 — T-006)
+     *   = 254 total canonical entries.
      *
      * Max snap delta applied to consolidated tokens: 0.020 (imperceptible). The
      * FAITHFUL gap-fillers have delta 0 (exact source value).
      */
-    it('has the expected canonical count (128 entries)', () => {
-        expect(VARIANT_TOKEN_MAP.length).toBe(128);
+    it('has the expected canonical count (254 entries)', () => {
+        expect(VARIANT_TOKEN_MAP.length).toBe(254);
     });
 
     /**
@@ -377,11 +379,11 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
 
     /**
      * Family breakdown — verify per-family counts match the post-consolidation
-     * totals plus the T-005 part C FAITHFUL gap-fillers.
+     * totals plus T-005 part C FAITHFUL gap-fillers plus T-006 domain alphas.
      *
      * Alpha: 116 faithful → 92 after conservative ≤0.025 grid consolidation,
      * + 12 FAITHFUL kept-own gap-fillers (T-005 part C) + 1 white-origin alpha
-     * (white-a75) = 105.
+     * (white-a75) + 126 domain alpha (T-006) = 231.
      * Lightness-multiply: 10 + 1 (muted-l105, T-005 part C) = 11.
      * Other lightness families: unchanged 1:1 faithful counts.
      */
@@ -394,7 +396,7 @@ describe('VARIANT_TOKEN_MAP validation (SPEC-176 T-003)', () => {
                 .length,
             'lightness-add': VARIANT_TOKEN_MAP.filter((e) => e.family === 'lightness-add').length
         };
-        expect(counts.alpha).toBe(105);
+        expect(counts.alpha).toBe(231);
         expect(counts['lightness-multiply']).toBe(11);
         expect(counts['lightness-subtract']).toBe(10);
         expect(counts['lightness-add']).toBe(2);

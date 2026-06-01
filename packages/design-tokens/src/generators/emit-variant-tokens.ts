@@ -52,22 +52,13 @@
 import type { Theme } from '../themes/types.js';
 import { webLight } from '../themes/web-light.js';
 import type { OKLCH } from '../tokens/colors.js';
+import { resolveBaseToOklch } from './resolve-base-oklch.js';
 import { formatSRGB } from './srgb.js';
 import type { VariantTokenEntry } from './variant-token-schema.js';
 import { VARIANT_TOKEN_MAP } from './variant-tokens.js';
 
 const INDENT = '    ';
 const NL = '\n';
-
-/**
- * Fixed OKLCH triple for the CSS-wide `white` keyword.
- *
- * `white` is not a theme token in webLight, so it cannot be looked up like the
- * other variant bases. It is the achromatic maximum-lightness color, which in
- * OKLCH is `{ l: 1, c: 0, h: 0 }`. Used to resolve the `white-a75` variant
- * token (`oklch(from white l c h / 0.75)`) to its sRGB fallback at build time.
- */
-const WHITE_OKLCH: OKLCH = { l: 1, c: 0, h: 0 };
 
 // ============================================================================
 // Sentinel comment — MUST match the prefix the coverage test keys on.
@@ -81,50 +72,19 @@ const WHITE_OKLCH: OKLCH = { l: 1, c: 0, h: 0 };
 const VARIANT_SENTINEL =
     '/* SPEC-176: Variant tokens — sRGB fallback + @supports oklch override. */';
 
-// ============================================================================
-// Base OKLCH resolver
-// ============================================================================
-
-/**
- * Narrow a ThemeValue to the OKLCH branch.
- * Duplicated from generate-css.ts to avoid a circular dependency.
- */
-function isOklch(value: unknown): value is OKLCH {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        typeof (value as OKLCH).l === 'number' &&
-        typeof (value as OKLCH).c === 'number' &&
-        typeof (value as OKLCH).h === 'number'
-    );
-}
-
-/**
- * Attempt to resolve a CSS `var(--TOKEN-NAME)` string to the referenced
- * token name. Returns the token name on match, or `null` if the value is not
- * a plain `var(--...)` reference.
- *
- * @param value - Theme value string to test.
- * @returns Token name (without leading `--`) or `null`.
- */
-function parseVarRef(value: string): string | null {
-    const m = /^var\(--([a-z][a-z0-9-]*)\)$/.exec(value);
-    return m?.[1] ?? null;
-}
-
 /**
  * Build a lookup record of base OKLCH values for every `base` field that
  * appears in `VARIANT_TOKEN_MAP`.
  *
- * Resolution steps per base:
- * 1. Look up `base` in the provided `theme` (default: `webLight`).
- * 2. If the value is OKLCH, record it directly.
- * 3. If the value is a `var(--NAME)` string, look up `NAME` in the same
- *    theme and assert it is OKLCH.
- * 4. If neither, throw with a descriptive message so the build fails loudly.
+ * Delegates resolution to {@link resolveBaseToOklch} from `resolve-base-oklch.ts`,
+ * which handles:
+ * 1. The CSS-wide `white` keyword (fixed achromatic triple).
+ * 2. Direct OKLCH entries in `theme`.
+ * 3. One-level `var(--NAME)` indirection where `NAME` is OKLCH in `theme`.
+ * 4. Two-level `var(--palette-X-NNN)` indirection for domain tokens (T-006).
  *
  * Only the bases that actually appear in the map are resolved — the lookup
- * is built lazily to keep startup cost minimal.
+ * is built once to keep call cost minimal.
  *
  * @param map - The variant token entries to resolve bases for.
  * @param theme - The theme to look up base values in (defaults to webLight).
@@ -139,50 +99,9 @@ function buildBaseOklchLookup(
     const uniqueBases = [...new Set(map.map((e) => e.base))];
 
     for (const base of uniqueBases) {
-        // Special case: the CSS-wide `white` keyword is not a webLight token.
-        // Resolve it to the fixed achromatic maximum-lightness OKLCH triple so
-        // the lookup does not throw on a missing theme key.
-        if (base === 'white') {
-            lookup[base] = WHITE_OKLCH;
-            continue;
-        }
-
-        const rawValue = theme[base];
-
-        if (rawValue === undefined) {
-            throw new Error(
-                `[emit-variant-tokens] Cannot resolve base token '${base}': not found in webLight theme. All variant token bases must map to an OKLCH-typed entry in webLight.`
-            );
-        }
-
-        // Direct OKLCH object.
-        if (isOklch(rawValue)) {
-            lookup[base] = rawValue;
-            continue;
-        }
-
-        // CSS var() reference — resolve transitively (one level only).
-        if (typeof rawValue === 'string') {
-            const refName = parseVarRef(rawValue);
-            if (refName !== null) {
-                const refValue = theme[refName];
-                if (isOklch(refValue)) {
-                    lookup[base] = refValue;
-                    continue;
-                }
-                throw new Error(
-                    `[emit-variant-tokens] Base token '${base}' resolved to var(--${refName}), but that token ('${refName}') is not OKLCH in webLight (value: ${String(refValue)}). Cannot compute sRGB fallback.`
-                );
-            }
-
-            throw new Error(
-                `[emit-variant-tokens] Base token '${base}' has a string value in webLight that is not a plain var(--NAME) reference: '${rawValue}'. Cannot resolve to OKLCH for sRGB fallback computation.`
-            );
-        }
-
-        throw new Error(
-            `[emit-variant-tokens] Base token '${base}' has an unexpected value type in webLight (type: ${typeof rawValue}). Expected an OKLCH object or a var(--NAME) string.`
-        );
+        // resolveBaseToOklch handles: white special case, direct OKLCH, one-level
+        // var() to theme OKLCH, and two-level var() to palette OKLCH (domain tokens).
+        lookup[base] = resolveBaseToOklch(base, theme);
     }
 
     return lookup;
