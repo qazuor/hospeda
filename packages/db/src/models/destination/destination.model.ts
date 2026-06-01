@@ -204,9 +204,21 @@ export class DestinationModel extends BaseModelImpl<Destination> {
             }
             if (Object.keys(withObj).length > 0) {
                 const db = this.getClient(tx);
+                // Build the final `with` config: if `faqs` was requested, apply
+                // display_order ASC NULLS LAST, created_at ASC ordering (SPEC-177 T-012).
+                // biome-ignore lint/suspicious/noExplicitAny: Drizzle relational orderBy callback fields type is inferred at runtime; we use `any` solely for the config object shape
+                const withConfig: Record<string, any> = { ...withObj };
+                if (withObj.faqs) {
+                    withConfig.faqs = {
+                        orderBy: (fields: { displayOrder: AnyColumn; createdAt: AnyColumn }) => [
+                            sql`${fields.displayOrder} ASC NULLS LAST`,
+                            asc(fields.createdAt)
+                        ]
+                    };
+                }
                 const result = await db.query.destinations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
-                    with: withObj
+                    with: withConfig
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 // DRIZZLE-LIMITATION: findFirst with `with: { ...destination relations, audit users }` returns Drizzle's nested join shape; Destination entity uses domain-mapped relations and unbranded enum types.
