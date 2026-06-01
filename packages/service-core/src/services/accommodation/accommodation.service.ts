@@ -2255,7 +2255,6 @@ export class AccommodationService extends BaseCrudService<
      * 3. Validate that every `faqId` in `order` belongs to this accommodation
      *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
      * 4. Apply each `displayOrder` in a single transaction.
-     * 5. Write an audit entry `accommodation_faqs_reordered`.
      *
      * @param actor - The actor performing the action
      * @param data - Input containing accommodationId and the ordered array of { faqId, displayOrder }

@@ -1647,7 +1647,6 @@ export class DestinationService extends BaseCrudService<
      * 3. Validate that every `faqId` in `order` belongs to this destination
      *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
      * 4. Apply each `displayOrder` in a single transaction.
-     * 5. Write an audit entry `destination_faqs_reordered`.
      *
      * @param actor - The actor performing the action
      * @param data - Input containing destinationId and the ordered array of { faqId, displayOrder }
