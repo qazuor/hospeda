@@ -241,6 +241,33 @@ describe('CommentThreadIsland', () => {
             });
         });
 
+        it('uses currentUserName as the appended comment author when the API omits it', async () => {
+            // The create endpoint does not echo the author, so the island must fall
+            // back to the current user's name instead of rendering a blank author.
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                status: 201,
+                headers: new Headers(),
+                json: async () => ({
+                    data: {
+                        id: 'new-c',
+                        content: 'Mi comentario',
+                        createdAt: '2026-06-01T00:00:00.000Z'
+                    }
+                })
+            } as Response);
+
+            renderIsland({ isAuthenticated: true, currentUserName: 'Carla' });
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'Mi comentario' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /Comentar/i }));
+
+            await waitFor(() => {
+                expect(screen.getByText('Carla')).toBeInTheDocument();
+            });
+        });
+
         it('clears the textarea after successful submit', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: true,

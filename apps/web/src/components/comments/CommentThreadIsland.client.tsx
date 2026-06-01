@@ -50,6 +50,12 @@ export interface CommentThreadIslandProps {
     readonly isAuthenticated: boolean;
     /** Full sign-in URL with returnUrl already appended (built server-side). */
     readonly signinUrl: string;
+    /**
+     * Display name of the current user. Used as the author of an optimistically
+     * appended comment (the create endpoint does not echo the author), so the new
+     * row shows the real name instead of a blank until the next SSR load.
+     */
+    readonly currentUserName?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -101,7 +107,8 @@ export function CommentThreadIsland({
     initialComments,
     locale,
     isAuthenticated,
-    signinUrl
+    signinUrl,
+    currentUserName
 }: CommentThreadIslandProps) {
     const { t } = createTranslations(locale);
 
@@ -176,7 +183,7 @@ export function CommentThreadIsland({
             // Optimistic append: prepend is wrong — oldest-first means new ones go at the end
             const newComment: CommentItem = {
                 id: item.id ?? String(Date.now()),
-                authorName: item.author?.displayName ?? '',
+                authorName: currentUserName ?? item.author?.displayName ?? '',
                 content: item.content ?? content.trim(),
                 createdAt: item.createdAt ?? new Date().toISOString()
             };

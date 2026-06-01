@@ -34,8 +34,10 @@ describe('CommentsFilters', () => {
         // useTranslations is mocked globally — labels render as their i18n key strings
         expect(screen.getByLabelText('comments.list.filters.entityType')).toBeInTheDocument();
         expect(screen.getByLabelText('comments.list.filters.moderationState')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/contenido, autor/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/incluir eliminados/i)).toBeInTheDocument();
+        expect(
+            screen.getByPlaceholderText('comments.list.filters.searchPlaceholder')
+        ).toBeInTheDocument();
+        expect(screen.getByLabelText('comments.list.filters.includeDeleted')).toBeInTheDocument();
     });
 
     it('calls onChange with updated entityType when POST is selected', async () => {
@@ -99,7 +101,7 @@ describe('CommentsFilters', () => {
             />
         );
 
-        const input = screen.getByPlaceholderText(/contenido, autor/i);
+        const input = screen.getByPlaceholderText('comments.list.filters.searchPlaceholder');
         await user.type(input, 'a');
 
         expect(onChange).toHaveBeenCalledWith({ ...EMPTY_FILTERS, search: 'a' });
