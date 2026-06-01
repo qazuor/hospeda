@@ -1,304 +1,720 @@
 {
-  "version": "1.0",
-  "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
-  "specRef": "SPEC-177-admin-faq-management",
-  "created": "2026-06-01T00:00:00.000Z",
-  "summary": {
-    "total": 32,
-    "pending": 32,
-    "inProgress": 0,
-    "completed": 0,
-    "blocked": 0,
-    "averageComplexity": 3.4
-  },
-  "tasks": [
-    {
-      "id": "T-001",
-      "title": "Add display_order column to destination_faqs and accommodation_faqs dbschemas",
-      "description": "Add nullable `displayOrder: integer('display_order')` to packages/db/src/schemas/destination/destination_faq.dbschema.ts and packages/db/src/schemas/accommodation/accommodation_faq.dbschema.ts. Acceptance: columns present, typecheck clean.",
-      "status": "pending", "complexity": 2, "blockedBy": [], "blocks": ["T-002", "T-011", "T-012"],
-      "subtasks": [], "tags": ["db", "phase-setup"], "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+    "version": "1.0",
+    "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
+    "specRef": "SPEC-177-admin-faq-management",
+    "created": "2026-06-01T00:00:00.000Z",
+    "summary": {
+        "total": 32,
+        "pending": 27,
+        "inProgress": 0,
+        "completed": 5,
+        "blocked": 0,
+        "averageComplexity": 3.4
     },
-    {
-      "id": "T-002",
-      "title": "Generate formal Drizzle migration + backfill display_order by created_at per parent",
-      "description": "Run pnpm db:generate; edit the generated migration to backfill display_order per parent ordered by created_at (stable order for seeded FAQs). NOT db:push alone (search_index/triggers gotcha, ADR-017). Acceptance: migration is additive, backfills both tables, applies cleanly on db:fresh-dev + apply-postgres-extras.sh.",
-      "status": "pending", "complexity": 5, "blockedBy": ["T-001"], "blocks": ["T-027"],
-      "subtasks": [], "tags": ["db", "migration", "phase-setup"], "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-003",
-      "title": "Add displayOrder to BaseFaqSchema (additive)",
-      "description": "In packages/schemas/src/common/faq.schema.ts add `displayOrder: z.number().int().nonnegative().nullish()` to BaseFaqSchema. Additive; must not break Phase 1. Acceptance: schema exports, typecheck clean, existing faq schema tests green.",
-      "status": "pending", "complexity": 2, "blockedBy": [], "blocks": ["T-004", "T-006"],
-      "subtasks": [], "tags": ["schemas", "phase-setup"], "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-004",
-      "title": "Add FaqReorderPayloadSchema + per-entity reorder input schemas",
-      "description": "Shared FaqReorderPayloadSchema = { order: Array<{ faqId: uuid, displayOrder: int }> }. Add DestinationFaqReorderInputSchema + AccommodationFaqReorderInputSchema mirroring existing *FaqAdd/Update/Remove input shapes. Acceptance: schemas exported + typed, typecheck clean.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-003"], "blocks": ["T-009", "T-010", "T-017"],
-      "subtasks": [], "tags": ["schemas", "phase-setup"], "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-005",
-      "title": "Export FAQ_BASELINE_CATEGORIES constant from @repo/schemas",
-      "description": "Add a shared baseline categories constant (Cómo llegar, Qué hacer, Cuándo visitar, Servicios) so admin combobox and any future web use agree. Acceptance: exported as const, typecheck clean.",
-      "status": "pending", "complexity": 1, "blockedBy": [], "blocks": ["T-021"],
-      "subtasks": [], "tags": ["schemas", "phase-setup"], "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-006",
-      "title": "destination.service: add updateFaq (mirror accommodation)",
-      "description": "Add updateFaq to destination.service.ts mirroring accommodation.service.ts (~2116). _canUpdate gate. Acceptance: method works, typecheck clean.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-003"], "blocks": ["T-015", "T-026"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-007",
-      "title": "destination.service: add removeFaq (mirror accommodation)",
-      "description": "Add removeFaq to destination.service.ts mirroring accommodation.service.ts (~2080). Soft-delete + _canUpdate gate + audit. Acceptance: method works, typecheck clean.",
-      "status": "pending", "complexity": 3, "blockedBy": [], "blocks": ["T-016", "T-026"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-008",
-      "title": "destination.service: add adminGetFaqs (admin-gated view)",
-      "description": "Add adminGetFaqs to destination.service.ts mirroring accommodation.service.ts (~2205). Acceptance: method works, typecheck clean.",
-      "status": "pending", "complexity": 3, "blockedBy": [], "blocks": ["T-013", "T-026"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-009",
-      "title": "destination.service: add reorderFaqs",
-      "description": "reorderFaqs(actor, { destinationId, order }). _canUpdate gate; validate each faqId belongs to the destination; apply display_order in a transaction; write audit entry; reject unknown faqIds. Acceptance: persists order, ownership + membership enforced.",
-      "status": "pending", "complexity": 5, "blockedBy": ["T-004"], "blocks": ["T-017", "T-027"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-010",
-      "title": "accommodation.service: add reorderFaqs",
-      "description": "Same as T-009 for accommodation.service.ts. _canUpdate gate + membership validation + transaction + audit. Acceptance: persists order, ownership enforced.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-004"], "blocks": ["T-017", "T-027"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-011",
-      "title": "addFaq assigns display_order = max+1 (both services)",
-      "description": "Update addFaq in destination.service.ts and accommodation.service.ts to set display_order = current max for that parent + 1 at create time. Acceptance: new FAQ appended last, typecheck clean.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-001"], "blocks": ["T-027"],
-      "subtasks": [], "tags": ["service-core", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-012",
-      "title": "Read order display_order ASC NULLS LAST in faq reads (both)",
-      "description": "Order getFaqs / adminGetFaqs and the destination/accommodation findWithRelations faqs load by `display_order ASC NULLS LAST, created_at ASC`. Acceptance: reads return ordered FAQs.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-001"], "blocks": ["T-030"],
-      "subtasks": [], "tags": ["service-core", "db", "phase-core"], "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-013",
-      "title": "API: destination/admin getFaqs route",
-      "description": "Create apps/api/src/routes/destination/admin/getFaqs.ts copying accommodation/admin/getFaqs.ts, swap to Destination schemas + destinationService.adminGetFaqs. Acceptance: route compiles + registered (T-018).",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-008"], "blocks": ["T-018", "T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-014",
-      "title": "API: destination/admin addFaq route",
-      "description": "Create apps/api/src/routes/destination/admin/addFaq.ts copying accommodation pattern. requestBody FaqCreatePayloadSchema. Acceptance: route compiles + registered.",
-      "status": "pending", "complexity": 2, "blockedBy": [], "blocks": ["T-018", "T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-015",
-      "title": "API: destination/admin updateFaq route",
-      "description": "Create apps/api/src/routes/destination/admin/updateFaq.ts. PUT /{id}/faqs/{faqId}, requestBody FaqUpdatePayloadSchema. Acceptance: route compiles + registered.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-006"], "blocks": ["T-018", "T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-016",
-      "title": "API: destination/admin removeFaq route",
-      "description": "Create apps/api/src/routes/destination/admin/removeFaq.ts. DELETE /{id}/faqs/{faqId}. Acceptance: route compiles + registered.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-007"], "blocks": ["T-018", "T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-017",
-      "title": "API: reorderFaqs route for destination + accommodation",
-      "description": "Create reorderFaqs.ts in both destination/admin and accommodation/admin. PATCH /{id}/faqs/reorder, requestBody FaqReorderPayloadSchema, calls *Service.reorderFaqs. Acceptance: routes compile + registered.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-009", "T-010"], "blocks": ["T-018", "T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-018",
-      "title": "API: register new FAQ routes in both admin index.ts",
-      "description": "Register destination FAQ routes (get/add/update/remove/reorder) in destination/admin/index.ts and the reorder route in accommodation/admin/index.ts (follow accommodation index ~61-70). Acceptance: routes reachable, app boots.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-017"], "blocks": ["T-028"],
-      "subtasks": [], "tags": ["api", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-019",
-      "title": "Admin: generic FaqManager + SortableFaqRow component",
-      "description": "Create apps/admin/src/components/faqs/FaqManager.tsx + SortableFaqRow.tsx, parameterized by { entityType, parentId, apiBasePath }. Per-item inline CRUD rows, field.handleChange(newArray) style, Zod safeParse, Shadcn + Tailwind. Acceptance: renders list + add/edit/delete UI.",
-      "status": "pending", "complexity": 6, "blockedBy": [], "blocks": ["T-022", "T-023", "T-024", "T-029"],
-      "subtasks": [], "tags": ["admin", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-020",
-      "title": "Admin: useFaqs TanStack Query hook (list/create/update/delete/reorder)",
-      "description": "Generic hook keyed by entityType + parentId hitting /api/v1/admin/{entity}/:id/faqs[...]. Mutations invalidate the list query. Acceptance: hooks typed, fetch via fetchApi.",
-      "status": "pending", "complexity": 4, "blockedBy": [], "blocks": ["T-019", "T-029"],
-      "subtasks": [], "tags": ["admin", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-021",
-      "title": "Admin: category combobox (baseline suggestions + free text)",
-      "description": "Combobox seeded from FAQ_BASELINE_CATEGORIES but allowing custom value, used in FaqManager rows. Acceptance: pick baseline or type custom; value persists as string.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-005"], "blocks": ["T-029"],
-      "subtasks": [], "tags": ["admin", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-022",
-      "title": "Admin: drag-to-reorder wiring (DndContext/SortableContext)",
-      "description": "Wire DndContext + SortableContext in FaqManager copying GalleryField + SortableGalleryItem (useSortable, GripVerticalIcon, prefers-reduced-motion, keyboard a11y). On drop call the reorder mutation. Acceptance: drag reorders + persists.",
-      "status": "pending", "complexity": 5, "blockedBy": ["T-019", "T-020"], "blocks": ["T-029"],
-      "subtasks": [], "tags": ["admin", "dnd", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-023",
-      "title": "Admin: add FAQs tab to destinationTabs + accommodationTabs",
-      "description": "Add a faqs tab entry to both tab arrays in apps/admin/src/components/layout/PageTabs.tsx. Acceptance: tab visible on both entity view/edit shells.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-019"], "blocks": ["T-024"],
-      "subtasks": [], "tags": ["admin", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-024",
-      "title": "Admin: $id_.faqs.tsx routes for destinations + accommodations",
-      "description": "Create routes/_authed/{destinations,accommodations}/$id_.faqs.tsx wrapping FaqManager in DestinationSubTabLayout / AccommodationSubTabLayout. Acceptance: navigable, manager mounted with correct parentId.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-019", "T-023"], "blocks": ["T-029"],
-      "subtasks": [], "tags": ["admin", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-025",
-      "title": "Admin: i18n keys es/en/pt for FAQ manager",
-      "description": "Add labels (add/edit/delete/reorder/category/answer/empty/errors) in es/en/pt. Restart admin dev after JSON edits (SSR cache gotcha). Acceptance: no [MISSING] keys.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-019"], "blocks": [],
-      "subtasks": [], "tags": ["admin", "i18n", "phase-integration"], "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-026",
-      "title": "Tests: destination service CRUD (update/remove/adminGetFaqs)",
-      "description": "Service tests for destination updateFaq/removeFaq/adminGetFaqs incl. ownership denial. Acceptance: green, covers happy + forbidden + not-found.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-006", "T-007", "T-008"], "blocks": [],
-      "subtasks": [], "tags": ["service-core", "testing", "phase-testing"], "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-027",
-      "title": "Tests: reorderFaqs (both) + addFaq order + ownership",
-      "description": "Service tests for reorderFaqs on both entities: persistence, foreign-faqId rejection, UPDATE_OWN non-owner forbidden, addFaq assigns max+1. Acceptance: green.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-009", "T-010", "T-011", "T-002"], "blocks": [],
-      "subtasks": [], "tags": ["service-core", "testing", "phase-testing"], "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-028",
-      "title": "Tests: API integration (destination routes + reorder both)",
-      "description": "Integration tests for the 4 destination admin FAQ routes + reorder on both entities. Cover success, 401 (no admin), 403 (host non-owner), 422 (bad payload), 404 (missing parent/faq). Acceptance: green.",
-      "status": "pending", "complexity": 5, "blockedBy": ["T-018"], "blocks": [],
-      "subtasks": [], "tags": ["api", "testing", "phase-testing"], "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-029",
-      "title": "Tests: admin FaqManager component",
-      "description": "testing-library tests for FaqManager: add/edit/delete/reorder happy paths, category custom value, drag fires reorder mutation. Acceptance: green.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-022", "T-021", "T-024"], "blocks": [],
-      "subtasks": [], "tags": ["admin", "testing", "phase-testing"], "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-030",
-      "title": "Tests: public detail respects display_order",
-      "description": "Keep Phase 1 destination FAQ integration test green and add assertion that public detail returns faqs ordered by display_order. Acceptance: green.",
-      "status": "pending", "complexity": 3, "blockedBy": ["T-012"], "blocks": [],
-      "subtasks": [], "tags": ["api", "testing", "phase-testing"], "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-031",
-      "title": "Docs: document admin FAQ management",
-      "description": "Add an admin FAQ note (apps/admin notes + apps/web/CLAUDE.md FAQ ordering note). Update SPEC-158 reference to mark Phase 2 done. Acceptance: docs reflect the new UI + order behavior.",
-      "status": "pending", "complexity": 2, "blockedBy": ["T-024"], "blocks": ["T-032"],
-      "subtasks": [], "tags": ["docs", "phase-docs"], "phase": "docs",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-032",
-      "title": "Cleanup: full verification + close spec",
-      "description": "db:fresh-dev + apply-postgres-extras.sh; run service + API + admin suites (≥90% new code); local browser smoke (both entities CRUD + reorder, public order); host-scope check. Flip spec status to completed + sync indexes. Acceptance: all green, spec archived.",
-      "status": "pending", "complexity": 4, "blockedBy": ["T-026", "T-027", "T-028", "T-029", "T-030", "T-031"], "blocks": [],
-      "subtasks": [], "tags": ["cleanup", "phase-cleanup"], "phase": "cleanup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
-    }
-  ]
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add display_order column to destination_faqs and accommodation_faqs dbschemas",
+            "description": "Add nullable `displayOrder: integer('display_order')` to packages/db/src/schemas/destination/destination_faq.dbschema.ts and packages/db/src/schemas/accommodation/accommodation_faq.dbschema.ts. Acceptance: columns present, typecheck clean.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-011", "T-012"],
+            "subtasks": [],
+            "tags": ["db", "phase-setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate formal Drizzle migration + backfill display_order by created_at per parent",
+            "description": "Run pnpm db:generate; edit the generated migration to backfill display_order per parent ordered by created_at (stable order for seeded FAQs). NOT db:push alone (search_index/triggers gotcha, ADR-017). Acceptance: migration is additive, backfills both tables, applies cleanly on db:fresh-dev + apply-postgres-extras.sh.",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-027"],
+            "subtasks": [],
+            "tags": ["db", "migration", "phase-setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add displayOrder to BaseFaqSchema (additive)",
+            "description": "In packages/schemas/src/common/faq.schema.ts add `displayOrder: z.number().int().nonnegative().nullish()` to BaseFaqSchema. Additive; must not break Phase 1. Acceptance: schema exports, typecheck clean, existing faq schema tests green.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-006"],
+            "subtasks": [],
+            "tags": ["schemas", "phase-setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add FaqReorderPayloadSchema + per-entity reorder input schemas",
+            "description": "Shared FaqReorderPayloadSchema = { order: Array<{ faqId: uuid, displayOrder: int }> }. Add DestinationFaqReorderInputSchema + AccommodationFaqReorderInputSchema mirroring existing *FaqAdd/Update/Remove input shapes. Acceptance: schemas exported + typed, typecheck clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009", "T-010", "T-017"],
+            "subtasks": [],
+            "tags": ["schemas", "phase-setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Export FAQ_BASELINE_CATEGORIES constant from @repo/schemas",
+            "description": "Add a shared baseline categories constant (Cómo llegar, Qué hacer, Cuándo visitar, Servicios) so admin combobox and any future web use agree. Acceptance: exported as const, typecheck clean.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "tags": ["schemas", "phase-setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "destination.service: add updateFaq (mirror accommodation)",
+            "description": "Add updateFaq to destination.service.ts mirroring accommodation.service.ts (~2116). _canUpdate gate. Acceptance: method works, typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-015", "T-026"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "destination.service: add removeFaq (mirror accommodation)",
+            "description": "Add removeFaq to destination.service.ts mirroring accommodation.service.ts (~2080). Soft-delete + _canUpdate gate + audit. Acceptance: method works, typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-016", "T-026"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "destination.service: add adminGetFaqs (admin-gated view)",
+            "description": "Add adminGetFaqs to destination.service.ts mirroring accommodation.service.ts (~2205). Acceptance: method works, typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-026"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "destination.service: add reorderFaqs",
+            "description": "reorderFaqs(actor, { destinationId, order }). _canUpdate gate; validate each faqId belongs to the destination; apply display_order in a transaction; write audit entry; reject unknown faqIds. Acceptance: persists order, ownership + membership enforced.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-017", "T-027"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "accommodation.service: add reorderFaqs",
+            "description": "Same as T-009 for accommodation.service.ts. _canUpdate gate + membership validation + transaction + audit. Acceptance: persists order, ownership enforced.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-017", "T-027"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "addFaq assigns display_order = max+1 (both services)",
+            "description": "Update addFaq in destination.service.ts and accommodation.service.ts to set display_order = current max for that parent + 1 at create time. Acceptance: new FAQ appended last, typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-027"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Read order display_order ASC NULLS LAST in faq reads (both)",
+            "description": "Order getFaqs / adminGetFaqs and the destination/accommodation findWithRelations faqs load by `display_order ASC NULLS LAST, created_at ASC`. Acceptance: reads return ordered FAQs.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-030"],
+            "subtasks": [],
+            "tags": ["service-core", "db", "phase-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "API: destination/admin getFaqs route",
+            "description": "Create apps/api/src/routes/destination/admin/getFaqs.ts copying accommodation/admin/getFaqs.ts, swap to Destination schemas + destinationService.adminGetFaqs. Acceptance: route compiles + registered (T-018).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-018", "T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "API: destination/admin addFaq route",
+            "description": "Create apps/api/src/routes/destination/admin/addFaq.ts copying accommodation pattern. requestBody FaqCreatePayloadSchema. Acceptance: route compiles + registered.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-018", "T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "API: destination/admin updateFaq route",
+            "description": "Create apps/api/src/routes/destination/admin/updateFaq.ts. PUT /{id}/faqs/{faqId}, requestBody FaqUpdatePayloadSchema. Acceptance: route compiles + registered.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-018", "T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "API: destination/admin removeFaq route",
+            "description": "Create apps/api/src/routes/destination/admin/removeFaq.ts. DELETE /{id}/faqs/{faqId}. Acceptance: route compiles + registered.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-018", "T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "API: reorderFaqs route for destination + accommodation",
+            "description": "Create reorderFaqs.ts in both destination/admin and accommodation/admin. PATCH /{id}/faqs/reorder, requestBody FaqReorderPayloadSchema, calls *Service.reorderFaqs. Acceptance: routes compile + registered.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-018", "T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "API: register new FAQ routes in both admin index.ts",
+            "description": "Register destination FAQ routes (get/add/update/remove/reorder) in destination/admin/index.ts and the reorder route in accommodation/admin/index.ts (follow accommodation index ~61-70). Acceptance: routes reachable, app boots.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-017"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["api", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Admin: generic FaqManager + SortableFaqRow component",
+            "description": "Create apps/admin/src/components/faqs/FaqManager.tsx + SortableFaqRow.tsx, parameterized by { entityType, parentId, apiBasePath }. Per-item inline CRUD rows, field.handleChange(newArray) style, Zod safeParse, Shadcn + Tailwind. Acceptance: renders list + add/edit/delete UI.",
+            "status": "pending",
+            "complexity": 6,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-023", "T-024", "T-029"],
+            "subtasks": [],
+            "tags": ["admin", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Admin: useFaqs TanStack Query hook (list/create/update/delete/reorder)",
+            "description": "Generic hook keyed by entityType + parentId hitting /api/v1/admin/{entity}/:id/faqs[...]. Mutations invalidate the list query. Acceptance: hooks typed, fetch via fetchApi.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-029"],
+            "subtasks": [],
+            "tags": ["admin", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Admin: category combobox (baseline suggestions + free text)",
+            "description": "Combobox seeded from FAQ_BASELINE_CATEGORIES but allowing custom value, used in FaqManager rows. Acceptance: pick baseline or type custom; value persists as string.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["admin", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Admin: drag-to-reorder wiring (DndContext/SortableContext)",
+            "description": "Wire DndContext + SortableContext in FaqManager copying GalleryField + SortableGalleryItem (useSortable, GripVerticalIcon, prefers-reduced-motion, keyboard a11y). On drop call the reorder mutation. Acceptance: drag reorders + persists.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["admin", "dnd", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Admin: add FAQs tab to destinationTabs + accommodationTabs",
+            "description": "Add a faqs tab entry to both tab arrays in apps/admin/src/components/layout/PageTabs.tsx. Acceptance: tab visible on both entity view/edit shells.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["admin", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Admin: $id_.faqs.tsx routes for destinations + accommodations",
+            "description": "Create routes/_authed/{destinations,accommodations}/$id_.faqs.tsx wrapping FaqManager in DestinationSubTabLayout / AccommodationSubTabLayout. Acceptance: navigable, manager mounted with correct parentId.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["admin", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Admin: i18n keys es/en/pt for FAQ manager",
+            "description": "Add labels (add/edit/delete/reorder/category/answer/empty/errors) in es/en/pt. Restart admin dev after JSON edits (SSR cache gotcha). Acceptance: no [MISSING] keys.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "i18n", "phase-integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Tests: destination service CRUD (update/remove/adminGetFaqs)",
+            "description": "Service tests for destination updateFaq/removeFaq/adminGetFaqs incl. ownership denial. Acceptance: green, covers happy + forbidden + not-found.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006", "T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["service-core", "testing", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Tests: reorderFaqs (both) + addFaq order + ownership",
+            "description": "Service tests for reorderFaqs on both entities: persistence, foreign-faqId rejection, UPDATE_OWN non-owner forbidden, addFaq assigns max+1. Acceptance: green.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-009", "T-010", "T-011", "T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["service-core", "testing", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Tests: API integration (destination routes + reorder both)",
+            "description": "Integration tests for the 4 destination admin FAQ routes + reorder on both entities. Cover success, 401 (no admin), 403 (host non-owner), 422 (bad payload), 404 (missing parent/faq). Acceptance: green.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "testing", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Tests: admin FaqManager component",
+            "description": "testing-library tests for FaqManager: add/edit/delete/reorder happy paths, category custom value, drag fires reorder mutation. Acceptance: green.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-022", "T-021", "T-024"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "testing", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Tests: public detail respects display_order",
+            "description": "Keep Phase 1 destination FAQ integration test green and add assertion that public detail returns faqs ordered by display_order. Acceptance: green.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "testing", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Docs: document admin FAQ management",
+            "description": "Add an admin FAQ note (apps/admin notes + apps/web/CLAUDE.md FAQ ordering note). Update SPEC-158 reference to mark Phase 2 done. Acceptance: docs reflect the new UI + order behavior.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-032"],
+            "subtasks": [],
+            "tags": ["docs", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Cleanup: full verification + close spec",
+            "description": "db:fresh-dev + apply-postgres-extras.sh; run service + API + admin suites (≥90% new code); local browser smoke (both entities CRUD + reorder, public order); host-scope check. Flip spec status to completed + sync indexes. Acceptance: all green, spec archived.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-026", "T-027", "T-028", "T-029", "T-030", "T-031"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["cleanup", "phase-cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
 }
