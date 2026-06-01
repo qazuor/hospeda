@@ -1058,5 +1058,39 @@
             "downloadLatestInvoice": "Download latest invoice",
             "noLatestInvoice": "You don't have any invoices available to download yet."
         }
+    },
+    "faqs": {
+        "title": "Frequently asked questions",
+        "addTitle": "New frequently asked question",
+        "empty": "No FAQs yet. Add the first one.",
+        "fields": {
+            "question": "Question",
+            "answer": "Answer",
+            "category": "Category",
+            "categoryPlaceholder": "E.g. How to get there, What to do…"
+        },
+        "actions": {
+            "add": "Add FAQ",
+            "edit": "Edit",
+            "save": "Save",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "confirmDelete": "Confirm?"
+        },
+        "errors": {
+            "loadFailed": "Could not load FAQs.",
+            "createFailed": "Could not create the FAQ. Please try again.",
+            "updateFailed": "Could not update the FAQ. Please try again.",
+            "deleteFailed": "Could not delete the FAQ. Please try again.",
+            "reorderFailed": "Could not save the new order. Please try again."
+        },
+        "dnd": {
+            "dragHandle": "Drag to reorder",
+            "instructions": "To reorder with keyboard: Space to pick up, Arrows to move, Space/Enter to drop, Escape to cancel.",
+            "onDragStart": "You picked up question number {{position}}.",
+            "onDragOver": "Moved question from position {{from}} to {{to}}.",
+            "onDragEnd": "Question dropped at position {{position}}.",
+            "onDragCancel": "Reordering cancelled. Question returned to position {{position}}."
+        }
     }
 }
