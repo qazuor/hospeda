@@ -10,6 +10,17 @@
    `@import` rules MUST appear before any other statement per the CSS spec.
    Order: design tokens first (so the var() consumers below resolve), then
    shared component classes, then content-type theme overrides.
+
+   SPEC-176 — old-browser color fallback:
+   Do NOT write `oklch(from var(--token) l c h / N)` relative-color syntax
+   inline in this repo's CSS/Astro/TSX. That syntax is invalid below Chrome 119
+   (Marta/BETA-44 saw an unstyled login). Instead use the PRECOMPUTED variant
+   tokens emitted by @repo/design-tokens — `var(--<token>-aNN)` for alpha,
+   `-lNN`/`-lmNN`/`-lpNN` for lightness — which ship a solid sRGB `:root`
+   fallback plus an `@supports`-gated oklch override. The CI guard
+   `apps/web/scripts/check-css-relative-colors.cjs` (wired into `pnpm lint`)
+   fails on any new inline `oklch(from`; genuinely runtime-dynamic cases live in
+   its count-pinned allowlist.
    ========================================================================== */
 @import "@repo/design-tokens/tokens.css";
 @import "./components.css";
